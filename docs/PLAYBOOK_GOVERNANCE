@@ -1,0 +1,7 @@
+# Playbook Governance
+
+This file defines governance expectations for contributors and AI coding agents.
+All development tasks and implementation prompts should reference this document.
+Governance guidance should remain explicit, deterministic, and CI-friendly.
+Proposed governance changes must be reviewed carefully before merge.
+When in doubt, prefer clear contributor instructions over implicit process.
