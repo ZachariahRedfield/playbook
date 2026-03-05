@@ -36,6 +36,13 @@ pnpm --filter @fawxzzy/playbook build
 node packages/cli/dist/main.js analyze
 ```
 
+Offline/limited-registry tgz test (self-contained CLI bundle):
+
+```bash
+pnpm run pack:cli
+npx --yes ./packages/cli/fawxzzy-playbook-<version>.tgz analyze
+```
+
 ## How it works
 
 ```text

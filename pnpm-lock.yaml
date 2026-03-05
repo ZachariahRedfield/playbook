@@ -31,19 +31,6 @@ importers:
         version: 3.2.4(@types/node@22.19.13)
 
   packages/cli:
-    dependencies:
-      '@zachariahredfield/playbook-core':
-        specifier: workspace:*
-        version: link:../core
-      '@zachariahredfield/playbook-engine':
-        specifier: workspace:*
-        version: link:../engine
-      '@zachariahredfield/playbook-node':
-        specifier: workspace:*
-        version: link:../node
-      commander:
-        specifier: ^13.1.0
-        version: 13.1.0
     devDependencies:
       tsup:
         specifier: ^8.4.0
