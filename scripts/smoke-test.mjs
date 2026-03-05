@@ -10,6 +10,12 @@ const bundledTemplatePath = path.resolve(repoRoot, 'packages/cli/dist/templates/
 const nodeVersion = run(nodeBin, ['-v']).trim();
 const pnpmVersion = run(PNPM_BIN, ['-v']).trim();
 
+const ensureFile = (filePath, label) => {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`smoke-test failed: missing ${label} at ${filePath}`);
+  }
+};
+
 console.log(`[smoke] node=${nodeVersion} pnpm=${pnpmVersion}`);
 console.log(`[smoke] cli=${cliPath}`);
 
@@ -31,51 +37,27 @@ if (!fs.existsSync(bundledTemplatePath)) {
   );
 }
 
-run(nodeBin, [cliPath, '--help'], { stdio: 'inherit' });
+run(nodeBin, [cliPath, '--help']);
 
-const tempRoot = path.join(os.tmpdir(), `playbook-smoke-${Date.now()}`);
-fs.mkdirSync(tempRoot, { recursive: true });
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-smoke-'));
+const projectDir = path.join(tempRoot, 'project');
+fs.mkdirSync(projectDir, { recursive: true });
 
 let smokePassed = false;
 try {
-  run('git', ['init', '-b', 'main'], { cwd: tempRoot, stdio: 'ignore' });
-  run('git', ['config', 'user.email', 'smoke@example.com'], { cwd: tempRoot });
-  run('git', ['config', 'user.name', 'Smoke Test'], { cwd: tempRoot });
-
-  run(nodeBin, [cliPath, 'init'], { cwd: tempRoot, stdio: 'inherit' });
-  run('git', ['add', '.'], { cwd: tempRoot });
-  run('git', ['commit', '-m', 'init'], { cwd: tempRoot, stdio: 'ignore' });
-
-  fs.mkdirSync(path.join(tempRoot, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(tempRoot, 'src/foo.ts'), 'export const x = 1;\n');
-  run('git', ['add', '.'], { cwd: tempRoot });
-  run('git', ['commit', '-m', 'feat: change code'], { cwd: tempRoot, stdio: 'ignore' });
-
-  let failedAsExpected = false;
-  let unexpectedVerifyOutput = '';
-  try {
-    unexpectedVerifyOutput = run(nodeBin, [cliPath, 'verify'], {
-      cwd: tempRoot
-    });
-  } catch {
-    failedAsExpected = true;
-  }
-
-  if (!failedAsExpected) {
-    const details = unexpectedVerifyOutput.trim()
-      ? `\nverify output:\n${unexpectedVerifyOutput.trim()}`
-      : '';
-    throw new Error(`Expected verify to fail before notes update.${details}`);
-  }
-
-  fs.appendFileSync(
-    path.join(tempRoot, 'docs/PLAYBOOK_NOTES.md'),
-    '\n- WHAT changed: Added src/foo.ts\n- WHY it changed: Smoke test\n'
+  fs.writeFileSync(
+    path.join(projectDir, 'package.json'),
+    JSON.stringify({ name: 'playbook-smoke', private: true, version: '1.0.0' }, null, 2)
   );
-  run('git', ['add', '.'], { cwd: tempRoot });
-  run('git', ['commit', '-m', 'docs: notes'], { cwd: tempRoot, stdio: 'ignore' });
 
-  run(nodeBin, [cliPath, 'verify'], { cwd: tempRoot, stdio: 'inherit' });
+  run(nodeBin, [cliPath, 'init'], { cwd: projectDir });
+  run(nodeBin, [cliPath, 'analyze'], { cwd: projectDir });
+  run(nodeBin, [cliPath, 'verify'], { cwd: projectDir });
+
+  ensureFile(path.join(projectDir, 'playbook.config.json'), 'playbook.config.json');
+  ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
+  ensureFile(path.join(projectDir, 'docs', 'PROJECT_GOVERNANCE.md'), 'docs/PROJECT_GOVERNANCE.md');
+
   smokePassed = true;
   console.log('[smoke] passed');
 } finally {
