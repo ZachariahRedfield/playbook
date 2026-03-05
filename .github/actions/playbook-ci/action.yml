@@ -30,10 +30,15 @@ runs:
 
     - name: Setup pnpm via Corepack
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       run: |
+        PM="$(node -p "require(process.env.GITHUB_WORKSPACE + '/package.json').packageManager")"
+        if [[ -z "$PM" || "$PM" != pnpm@* ]]; then
+          echo "Invalid or missing packageManager in package.json (expected pnpm@...). Got: '$PM'"
+          exit 1
+        fi
         corepack enable
-        corepack prepare "$(node -p \"require('./package.json').packageManager\")" --activate
+        corepack prepare "$PM" --activate
+        pnpm -v
 
     - name: Resolve pnpm store path
       shell: bash

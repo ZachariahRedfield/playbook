@@ -19,29 +19,42 @@ jobs:
         with:
           node-version: 22
 
-      - name: Enable Corepack
-        run: corepack enable
-
       - name: Activate pnpm from packageManager
-        run: corepack prepare "$(node -p \"require('./package.json').packageManager\")" --activate
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          PM="$(node -p "require(process.env.GITHUB_WORKSPACE + '/package.json').packageManager")"
+          if [[ -z "$PM" || "$PM" != pnpm@* ]]; then
+            echo "Invalid or missing packageManager in package.json (expected pnpm@...). Got: '$PM'"
+            exit 1
+          fi
+          corepack enable
+          corepack prepare "$PM" --activate
 
       - name: Verify pnpm version
+        working-directory: ${{ github.workspace }}
         run: pnpm -v
 
       - name: Force npm registry
+        working-directory: ${{ github.workspace }}
         run: npm config set registry https://registry.npmjs.org/
 
       - name: Force pnpm registry
+        working-directory: ${{ github.workspace }}
         run: pnpm config set registry https://registry.npmjs.org/
 
       - name: Assert install environment
+        working-directory: ${{ github.workspace }}
         run: node scripts/assert-install-env.mjs
 
       - name: Install
+        working-directory: ${{ github.workspace }}
         run: pnpm install --frozen-lockfile
 
       - name: Regenerate diagrams
+        working-directory: ${{ github.workspace }}
         run: pnpm playbook:diagram
 
       - name: Verify diagrams are committed
+        working-directory: ${{ github.workspace }}
         run: git diff --exit-code docs/ARCHITECTURE_DIAGRAMS.md
