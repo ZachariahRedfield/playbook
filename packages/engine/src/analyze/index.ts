@@ -1,5 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { loadPlugins } from '../plugins/loadPlugins.js';
+import {
+  getRegisteredDetectors,
+  registerDetector,
+  resetPluginRegistry
+} from '../plugins/pluginRegistry.js';
+import type { StackDetector } from '../plugins/pluginTypes.js';
 import { detectNextjs } from './detectors/nextjs.js';
 import { detectSupabase } from './detectors/supabase.js';
 import { detectTailwind } from './detectors/tailwind.js';
@@ -19,12 +26,22 @@ const readPackageDeps = (repoRoot: string): Record<string, string> => {
   return { ...pkg.dependencies, ...pkg.devDependencies };
 };
 
+const coreDetectors: StackDetector[] = [
+  { id: 'nextjs', detect: detectNextjs },
+  { id: 'supabase', detect: detectSupabase },
+  { id: 'tailwind', detect: detectTailwind }
+];
+
 export const analyzeRepo = (repoRoot: string): AnalyzeResult => {
   const deps = readPackageDeps(repoRoot);
-  const detected: string[] = [];
-  if (detectNextjs(repoRoot, deps)) detected.push('nextjs');
-  if (detectSupabase(repoRoot, deps)) detected.push('supabase');
-  if (detectTailwind(repoRoot, deps)) detected.push('tailwind');
+
+  resetPluginRegistry();
+  coreDetectors.forEach(registerDetector);
+  loadPlugins(repoRoot);
+
+  const detected = getRegisteredDetectors()
+    .filter((detector) => detector.detect(repoRoot, deps))
+    .map((detector) => detector.id);
 
   const summary = detected.length
     ? `Detected stack: ${detected.join(', ')}`

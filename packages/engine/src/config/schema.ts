@@ -9,6 +9,7 @@ export type PlaybookConfig = {
   analyze: {
     detectors: string[];
   };
+  plugins: string[];
   verify: {
     rules: {
       requireNotesOnChanges: Array<{
@@ -30,6 +31,7 @@ export const defaultConfig: PlaybookConfig = {
   analyze: {
     detectors: ['nextjs', 'supabase', 'tailwind']
   },
+  plugins: [],
   verify: {
     rules: {
       requireNotesOnChanges: [

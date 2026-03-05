@@ -299,7 +299,7 @@ Progress (current)
 - [x] Deterministic `requireNotesOnChanges` rule is active
 - [x] Structured JSON output for verify reports
 - [ ] Additional governance rules (for example `forbidLayerCrossing`, `requireArchitectureDocs`) implemented
-- [ ] Plugin-based rule loading model implemented
+- [x] Plugin-based rule and detector loading model skeleton implemented
 PHASE 4 — KNOWLEDGE ENGINE
 
 Months 7–9
