@@ -7,6 +7,7 @@ import {
   mergeSessionSnapshots,
   validateSessionSnapshot
 } from '@zachariahredfield/playbook-engine';
+import { resolveSessionMergeInputs } from './sessionMergeInputs.js';
 
 const requireOption = (value: string | undefined, flag: string): string => {
   if (!value) {
@@ -73,7 +74,7 @@ export const runSession = async (cwd: string, args: string[]): Promise<number> =
   }
 
   if (subcommand === 'merge') {
-    const inPaths = parseListOption(rest, '--in');
+    const inPaths = resolveSessionMergeInputs(cwd, parseListOption(rest, '--in'));
     if (inPaths.length < 2) {
       throw new Error('playbook session merge requires at least two --in <snapshot.json> values');
     }
@@ -83,7 +84,7 @@ export const runSession = async (cwd: string, args: string[]): Promise<number> =
     const reportJsonPath = parseOption(rest, '--json');
 
     const snapshots = inPaths.map((entry) => {
-      const loaded = JSON.parse(fs.readFileSync(resolvePath(cwd, entry), 'utf8')) as unknown;
+      const loaded = JSON.parse(fs.readFileSync(entry, 'utf8')) as unknown;
       return validateSessionSnapshot(loaded);
     });
 
