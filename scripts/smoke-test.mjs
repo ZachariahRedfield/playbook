@@ -34,13 +34,22 @@ execFileSync('git', ['add', '.'], { cwd: tempRoot });
 execFileSync('git', ['commit', '-m', 'feat: change code'], { cwd: tempRoot, stdio: 'ignore' });
 
 let failedAsExpected = false;
+let unexpectedVerifyOutput = '';
 try {
-  execFileSync('node', [cliPath, 'verify'], { cwd: tempRoot, stdio: 'pipe' });
+  const output = execFileSync('node', [cliPath, 'verify'], {
+    cwd: tempRoot,
+    stdio: 'pipe',
+    encoding: 'utf8'
+  });
+  unexpectedVerifyOutput = output;
 } catch {
   failedAsExpected = true;
 }
 if (!failedAsExpected) {
-  throw new Error('Expected verify to fail before notes update.');
+  const details = unexpectedVerifyOutput.trim()
+    ? `\nverify output:\n${unexpectedVerifyOutput.trim()}`
+    : '';
+  throw new Error(`Expected verify to fail before notes update.${details}`);
 }
 
 fs.appendFileSync(path.join(tempRoot, 'docs/PLAYBOOK_NOTES.md'), '\n- WHAT changed: Added src/foo.ts\n- WHY it changed: Smoke test\n');

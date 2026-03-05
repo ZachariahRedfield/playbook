@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- WHAT: Removed any required CI dependency on cloning `ZachariahRedfield/playbook-demo` and kept `scripts/smoke-test.mjs` as the canonical offline integration path run via the reusable Playbook CI action. WHY: Keeps PR CI deterministic and fully functional in restricted proxy/offline environments while still validating real CLI init/verify behavior end-to-end.
+- WHAT: Added an optional `demo-integration` workflow (`.github/workflows/demo-integration.yml`) that runs on manual dispatch/nightly and performs a best-effort `playbook-demo` clone plus `npx playbook analyze --ci` with warning-only behavior on network failure. WHY: Preserves external integration signal without making outbound network access a merge-blocking requirement.
+- WHAT: Hardened smoke-test diagnostics so expected `verify` pre-notes failure stays quiet, but unexpected pass now includes captured command output in the thrown error. WHY: Improves CI debugging signal while keeping routine smoke logs low-noise.
 - WHAT: Updated `.github/workflows/ci.yml` to call the reusable `./.github/actions/playbook-ci` composite action with Node 22, frozen-lockfile installs, and smoke enabled as the single CI entrypoint. WHY: Eliminates drift between documented CI behavior and actual workflow execution while keeping Playbook CI deterministic and reusable.
 - WHAT: Updated `playbook-demo` integration guidance to use the real verify action reference `ZachariahRedfield/playbook/actions/verify@main` with explicit Node 22 + `--ci` inputs. WHY: Removes placeholder adoption steps and makes external verification wiring copy/paste-ready.
 
