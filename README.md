@@ -2,46 +2,35 @@
 
 AI-aware engineering governance for modern repositories.
 
-![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg) ![Version](https://img.shields.io/badge/version-v0.1.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Node](https://img.shields.io/badge/node-%3E%3D22-339933)
+![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg) ![Version](https://img.shields.io/badge/version-v0.1.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-## Keywords
+Playbook is a governance product that is **language-agnostic, agent-agnostic, and platform-agnostic**.
 
-Playbook is related to:
+Today, the shipped CLI is implemented in Node.js.
 
-- AI engineering governance
-- repository analysis
-- developer tooling
-- AI coding agent guardrails
-- engineering architecture contracts
-- documentation governance
-- CLI developer tools
+## What Playbook does
 
-## What Playbook Does
+Playbook analyzes a repository and enforces deterministic governance checks, including:
 
-Playbook analyzes a repository and enforces engineering governance such as architecture contracts, documentation discipline, and AI-agent guardrails.
+- architecture and stack signal analysis,
+- documentation discipline,
+- CI-friendly policy verification.
 
-Core commands:
+Current CLI commands:
 
 - `playbook init`
 - `playbook analyze`
 - `playbook verify`
+- `playbook doctor`
+- `playbook diagram`
 
-## Why Playbook Exists
+## How it works
 
-Modern repositories are complex and often lack enforceable engineering governance.
-
-Playbook introduces machine-readable governance rules so both humans and AI coding agents can safely modify large codebases without architectural drift.
-
-## Try it now
-
-```bash
-npx playbook analyze
+```text
+Developer intent -> AI agent -> Playbook verify -> PR/CI gate -> merge
 ```
 
-- `playbook analyze` detects repository stack signals and produces architecture guidance in seconds.
-- Demo repository: [ZachariahRedfield/playbook-demo](https://github.com/ZachariahRedfield/playbook-demo).
-
-GitHub Action distribution is part of the roadmap and currently available as a reusable verify action pattern (see CI section below).
+Playbook turns governance into explicit, machine-readable checks so humans and AI agents can collaborate without silent architectural drift.
 
 ## Quickstart (contributors)
 
@@ -52,145 +41,50 @@ pnpm -r build
 pnpm -r test
 ```
 
-- `pnpm` is the required package manager for this repository.
-- `package.json#packageManager` is the authoritative pnpm version source for local + CI.
-- `pnpm-lock.yaml` must be committed.
+CLI runtime note: **Node >= 22 (for current CLI implementation).**
 
-## Development
+## Try it now
 
-Install:
+The npm `playbook` package may not be available in all environments yet.
+
+Use a local contributor run path from this repository:
 
 ```bash
-pnpm install
+pnpm --filter playbook build
+node packages/cli/dist/main.js analyze
 ```
 
-Lint:
+## Development checks
 
 ```bash
 pnpm lint
-```
-
-Build:
-
-```bash
 pnpm -r build
-```
-
-Test:
-
-```bash
 pnpm -r test
-```
-
-Smoke (recommended):
-
-```bash
 pnpm smoke
 ```
 
-## CI
+## Documentation spine
 
-- CI runs the Playbook composite action at `.github/actions/playbook-ci`.
-- CI runs: install → lint → build → test → smoke.
-- CI is strict: missing CLI dist output fails smoke checks, and install must pass with a frozen lockfile.
-- If `pnpm install` fails due to proxy/network runner constraints, reproduce locally or fix runner networking rather than weakening CI guarantees.
+### Vision
+- [Product Vision](docs/PRODUCT_VISION.md)
 
-### Reusable verify action
+### Concepts
+- [Policy model](docs/CONCEPTS/policy-model.md)
+- [Knowledge pipeline](docs/CONCEPTS/knowledge-pipeline.md)
+- [Plugins and adapters](docs/CONCEPTS/plugins-and-adapters.md)
 
-Use the published Playbook CLI from this repository as a reusable action in any repo:
+### Reference
+- [CLI reference](docs/REFERENCE/cli.md)
+- [Config reference](docs/REFERENCE/config.md)
+- [Exit codes](docs/REFERENCE/exit-codes.md)
 
-```yaml
-# Coming soon: stable top-level alias
-# - uses: ZachariahRedfield/playbook/verify@v0.1.0
-```
+### Roadmap
+- [Roadmap overview](docs/ROADMAP.md)
+- [Full product roadmap](docs/PLAYBOOK_PRODUCT_ROADMAP.md)
 
-```yaml
-name: Playbook Verify
+## Trust and community
 
-on:
-  pull_request:
-  push:
-    branches: [main]
-
-jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ZachariahRedfield/playbook/actions/verify@v0.1.0
-        with:
-          playbook_version: latest
-          node_version: "22"
-          args: --ci
-```
-
-## Example Output
-
-```text
-$ npx playbook analyze
-Playbook Analyze
-Repo: /repo
-Signals: 2 stack signal(s): Next.js, Supabase
-
-Recommendations (3)
-[RECOMMEND] Run governance verification  (id: analyze-run-verify)
-  Why: Analyze surfaces signals while verify enforces deterministic governance rules.
-  Fix: Run `playbook verify` before opening a pull request.
-
-[INFO] Next.js detected  (id: analyze-detected-nextjs)
-  Why: Next.js detection helps tailor architecture-aware guidance.
-  Fix: Review generated architecture suggestions and keep docs aligned with implementation.
-  Files: package.json
-
-[INFO] Supabase detected  (id: analyze-detected-supabase)
-  Why: Supabase detection helps tailor architecture-aware guidance.
-  Fix: Review generated architecture suggestions and keep docs aligned with implementation.
-  Files: package.json
-
-Next: Run `playbook verify` before opening a pull request.
-```
-
-Flags:
-- `--json` outputs stable machine-readable JSON (`ok`, `signals`, `recommendations[]`).
-- `--ci` emits low-noise CI output and exits non-zero when WARN recommendations exist.
-
-```text
-$ npx playbook analyze --ci
-playbook analyze: PASS  (warns=0 recommends=1 info=2)
-[RECOMMEND] Run governance verification  (id: analyze-run-verify)
-  Why: Analyze surfaces signals while verify enforces deterministic governance rules.
-  Fix: Run `playbook verify` before opening a pull request.
-```
-
-```text
-$ npx playbook verify
-PASS  requireNotesOnChanges
-All governance checks passed.
-```
-
-## How It Works
-
-Playbook treats repository governance as machine-readable contracts. Rules are explicit, deterministic, and designed to run locally, offline, and in CI.
-
-## Project Structure
-
-- `/packages` — monorepo packages for the Playbook CLI and governance engine.
-- `/docs` — product, architecture, governance, and contributor documentation.
-- `/scripts` — development and maintenance scripts for this repository.
-- `/Playbook` — generated governance workspace in repositories initialized with Playbook templates.
-
-## Additional Docs
-
-- [`docs/USE_CASES.md`](docs/USE_CASES.md)
-- [`docs/EXAMPLES.md`](docs/EXAMPLES.md)
-- [`docs/FAQ.md`](docs/FAQ.md)
-- [`docs/GITHUB_TOPICS.md`](docs/GITHUB_TOPICS.md)
-- [`docs/GITHUB_SETUP.md`](docs/GITHUB_SETUP.md)
-
-## Roadmap
-
-See [`docs/PLAYBOOK_PRODUCT_ROADMAP.md`](docs/PLAYBOOK_PRODUCT_ROADMAP.md).
-
-## Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, workflow, and contribution expectations.
+- [CHANGELOG.md](CHANGELOG.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
