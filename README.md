@@ -32,17 +32,29 @@ Modern repositories are complex and often lack enforceable engineering governanc
 
 Playbook introduces machine-readable governance rules so both humans and AI coding agents can safely modify large codebases without architectural drift.
 
-## Quick Start
+## Try it now
 
 ```bash
-npx playbook init
 npx playbook analyze
-npx playbook verify
 ```
 
-- `playbook init` scaffolds governance docs and configuration in your repository.
-- `playbook analyze` detects repository stack signals and produces architecture guidance.
-- `playbook verify` runs deterministic governance checks for CI and local development.
+- `playbook analyze` detects repository stack signals and produces architecture guidance in seconds.
+- Demo repository: [ZachariahRedfield/playbook-demo](https://github.com/ZachariahRedfield/playbook-demo).
+
+GitHub Action distribution is part of the roadmap and currently available as a reusable verify action pattern (see CI section below).
+
+## Quickstart (contributors)
+
+```bash
+corepack enable
+pnpm install
+pnpm -r build
+pnpm -r test
+```
+
+- `pnpm` is the required package manager for this repository.
+- `package.json#packageManager` is the authoritative pnpm version source for local + CI.
+- `pnpm-lock.yaml` must be committed.
 
 ## Development
 
@@ -88,6 +100,11 @@ pnpm smoke
 Use the published Playbook CLI from this repository as a reusable action in any repo:
 
 ```yaml
+# Coming soon: stable top-level alias
+# - uses: ZachariahRedfield/playbook/verify@v0.1.0
+```
+
+```yaml
 name: Playbook Verify
 
 on:
@@ -100,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: <OWNER>/playbook/actions/verify@v0.1.0
+      - uses: ZachariahRedfield/playbook/actions/verify@v0.1.0
         with:
           playbook_version: latest
           node_version: "22"

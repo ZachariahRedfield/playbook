@@ -152,6 +152,13 @@ run: playbook verify
 
 CI fails if governance rules are violated.
 
+Tooling & Distribution (Package Manager + Action + Demo Repo)
+
+- [ ] Adopt pnpm as the workspace standard; keep `pnpm-lock.yaml` committed and never gitignored.
+- [ ] Enforce a single pnpm version source via `package.json#packageManager`; CI setup must not pin a conflicting pnpm version (use aligned `pnpm/action-setup` or Corepack behavior).
+- [ ] Launch a `playbook-demo` repository for a sub-30-second `npx playbook analyze` experience, linked from this repo README.
+- [ ] Ship a first-class GitHub Action distribution path (for example `uses: ZachariahRedfield/playbook/verify@<ref>` or equivalent) for low-friction CI adoption.
+
 Initial Rule
 
 v0.1 rule:
@@ -187,6 +194,10 @@ Progress (current)
 - [x] CI workflow included for verification
 - [x] Initial rule `requireNotesOnChanges` implemented in engine
 - [x] Smoke test script and automated tests are present
+- [ ] pnpm policy explicitly documented and enforced as the toolchain standard
+- [ ] pnpm version governance consolidated to `packageManager` as the authoritative source
+- [ ] Public `playbook-demo` repo linked for instant `npx playbook analyze` onboarding
+- [ ] GitHub Action packaging path finalized for `uses:`-style integrations
 PHASE 2 — REPOSITORY INTELLIGENCE
 
 Months 3–4

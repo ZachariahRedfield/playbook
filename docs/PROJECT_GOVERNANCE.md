@@ -1,8 +1,15 @@
 # Project Governance
 
+## Toolchain Policy
+
+- pnpm is required for local development and CI workflows.
+- `pnpm-lock.yaml` is required, committed, and must not be gitignored.
+- `package.json#packageManager` is the authoritative pnpm version source.
+- CI may use `pnpm/action-setup` or Corepack, but must not pin a conflicting pnpm version.
+
 ## CI Guarantees
 
-- Corepack is disabled in CI, and pnpm is provisioned via `pnpm/action-setup`.
+- CI uses pnpm and must align provisioning with `packageManager` (via `pnpm/action-setup` and/or Corepack).
 - Dependency install is deterministic: `pnpm install --frozen-lockfile` is required.
 - Every pull request runs build, tests, and smoke checks via the Playbook CI composite action.
 

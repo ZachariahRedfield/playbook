@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- WHAT: Documented a pnpm-first toolchain and distribution doctrine across roadmap/governance/development/readme docs, including the single-source pnpm version rule (`package.json#packageManager`), GitHub Action distribution plan, and `playbook-demo` onboarding path. WHY: Prevents CI/local pnpm version drift, makes contributor setup deterministic, and reduces adoption friction through clear CLI + Action entry points.
 - WHAT: Added a reusable composite action at `actions/verify/action.yml` that runs `npx --yes playbook@<version> verify` with configurable `playbook_version`, `node_version`, and `args` inputs, plus README usage documentation. WHY: Lets any repository invoke published Playbook verification directly via `uses: <OWNER>/playbook/actions/verify@<ref>` without relying on this repo's local scripts.
 - WHAT: CI Pipeline Added with a deterministic GitHub Actions workflow (`checkout -> setup-node@22 -> pnpm/action-setup@v4 -> pnpm install --frozen-lockfile -> pnpm -w build -> pnpm -w verify`) plus root `.npmrc` registry pinning. WHY: Ensures every push/PR uses reproducible installs and consistent build/verify behavior while reducing pnpm/corepack/registry drift failures.
 - WHAT: `playbook analyze` now uses a Stripe-grade formatter for human, `--ci`, and `--json` output with deterministic severity ordering and snapshot coverage. WHY: Improves readability in seconds, keeps CI output low-noise, and protects output contracts from regressions.
