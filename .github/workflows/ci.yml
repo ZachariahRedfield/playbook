@@ -22,7 +22,13 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
+      - name: Ensure pnpm-lock.yaml is committed
+        run: |
+          if ! git diff --exit-code -- pnpm-lock.yaml; then
+            echo "pnpm-lock.yaml changed during install. Regenerate and commit it (or run lockfile-refresh workflow)."
+            exit 1
+          fi
       - run: pnpm build
       - run: pnpm test
       - run: node scripts/smoke-test.mjs
