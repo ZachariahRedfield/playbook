@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 describe('hygiene guardrails', () => {
   it('keeps ephemeral sessions gitignored', () => {
     const gitignore = fs.readFileSync(path.join(process.cwd(), '../../.gitignore'), 'utf8');
-    expect(gitignore).toContain('.playbook/sessions/');
+    expect(gitignore).toContain('.playbook/');
   });
 
   it('keeps conversation graph concept doc concise', () => {

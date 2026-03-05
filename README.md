@@ -92,6 +92,12 @@ pnpm -r test
 pnpm smoke
 ```
 
+### Local Playbook Session Data
+
+Session snapshots and merge outputs are written to `.playbook/` and are intentionally ignored by git.
+
+These files are ephemeral and should not be committed.
+
 ## Trust and community
 
 - [CHANGELOG.md](CHANGELOG.md)
