@@ -33,13 +33,14 @@ Local dev fallback:
 
 ```bash
 pnpm build
-pnpm playbook -- analyze
+pnpm playbook analyze
 ```
 
-On Windows, prefer passing CLI args through the root script with:
+On Windows, both argument styles are supported:
 
 ```bash
-pnpm playbook -- <args>
+pnpm playbook doctor
+pnpm playbook -- doctor
 ```
 
 If `packages/cli/dist/` is missing, run `pnpm build` first.
