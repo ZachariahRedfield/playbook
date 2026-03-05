@@ -7,16 +7,50 @@ import { info } from "../lib/output.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const templateRoot =
-  process.env.PLAYBOOK_TEMPLATES_DIR ??
-  // dist/commands/init.js -> ../templates/repo
-  path.resolve(__dirname, "../templates/repo");
+const resolveRepoTemplateRoot = (): string | undefined => {
+  let current = __dirname;
+
+  while (true) {
+    const candidate = path.resolve(current, "templates/repo");
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return undefined;
+    }
+
+    current = parent;
+  }
+};
+
+const resolveTemplateRoot = (): string => {
+  const envTemplateRoot = process.env.PLAYBOOK_TEMPLATES_DIR;
+  if (envTemplateRoot) {
+    return envTemplateRoot;
+  }
+
+  const distTemplateRoot = path.resolve(__dirname, "../templates/repo");
+  if (fs.existsSync(distTemplateRoot)) {
+    return distTemplateRoot;
+  }
+
+  const repoTemplateRoot = resolveRepoTemplateRoot();
+  if (repoTemplateRoot) {
+    return repoTemplateRoot;
+  }
+
+  return distTemplateRoot;
+};
+
+const templateRoot = resolveTemplateRoot();
 
 export const runInit = (cwd: string): void => {
   if (!fs.existsSync(templateRoot)) {
     throw new Error(
       `Templates directory not found: ${templateRoot}\n` +
-        `If running from source, run "pnpm run sync:templates" or set PLAYBOOK_TEMPLATES_DIR.`
+        `Set PLAYBOOK_TEMPLATES_DIR to a valid templates/repo directory.`
     );
   }
 

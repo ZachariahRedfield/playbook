@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- WHAT: CLI builds now copy `templates/repo` into `packages/cli/dist/templates/repo` via a post-`tsc` step. WHY: `tsc` does not copy non-TypeScript assets, which caused `playbook init` smoke tests and packaged CLI runs to fail with missing templates.
 - WHAT: Fixed reusable CI pnpm caching by installing pnpm with `pnpm/action-setup@v4` before enabling pnpm store cache, while preserving split `pnpm lint`, `pnpm test`, and optional `pnpm smoke:ci` steps. WHY: Prevents `Unable to locate executable file: pnpm` failures from setup-node pnpm cache initialization and keeps CI output readable by phase.
 - WHAT: Simplified reusable CI caching by switching to `actions/setup-node` built-in `cache: pnpm`, and split verification logs into explicit `pnpm lint`, `pnpm test`, and optional `pnpm smoke:ci` steps. WHY: Reduces cache/config drift while making CI failures faster to triage from step-level output.
 - WHAT: CI now forces optionalDependencies on during install (`pnpm install --config.optional=true`) and emits early optional-config diagnostics in the reusable CI action. WHY: Prevents missing platform-native optional packages (rollup/esbuild class) from causing opaque build failures while preserving frozen-lockfile installs.

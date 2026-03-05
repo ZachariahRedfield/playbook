@@ -200,6 +200,7 @@ Tooling & Distribution (Package Manager + Action + Demo Repo)
 - [x] Fix CI pnpm cache reliability by installing pnpm via `pnpm/action-setup` and caching the pnpm store with `actions/cache`, while keeping lint/test/smoke as separate visible phases.
 - [x] Remove CLI bundler dependency from the critical path (`packages/cli` now builds with `tsc` to `dist/main.js`) to eliminate Rollup optional native module flakiness in CI.
 - [x] Remove core/engine/node bundler dependency from the critical path (`packages/core`, `packages/engine`, and `packages/node` now build with `tsc` to `dist/index.js`) to eliminate Rollup optional native module flakiness in CI.
+- [x] Bundle CLI templates into `packages/cli/dist/templates/repo` during `packages/cli` build so smoke tests and published tarballs run `playbook init` without extra environment variables.
 - [ ] Publish CLI to npm as `@fawxzzy/playbook` (scoped org package).
 - [ ] Ensure scoped npm publish uses public access (`npm publish --access public`).
 - [ ] Ensure Windows compatibility by avoiding `sh`/`bash` lifecycle scripts in published install paths.
