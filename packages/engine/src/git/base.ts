@@ -17,12 +17,26 @@ export const getMergeBase = (repoRoot: string, baseRef: string, headRef = 'HEAD'
 
 export const resolveDiffBase = (repoRoot: string): { baseRef?: string; baseSha?: string; warning?: string } => {
   const head = 'HEAD';
+  const headSha = tryGit(repoRoot, ['rev-parse', head]);
 
   const originMain = getMergeBase(repoRoot, 'origin/main', head);
   if (originMain) return { baseRef: 'origin/main', baseSha: originMain };
 
-  const main = getMergeBase(repoRoot, 'main', head);
-  if (main) return { baseRef: 'main', baseSha: main };
+  const mergeBaseMain = getMergeBase(repoRoot, 'main', head);
+  if (mergeBaseMain) {
+    if (headSha && mergeBaseMain === headSha) {
+      const previous = tryGit(repoRoot, ['rev-parse', 'HEAD~1']);
+      if (previous) {
+        return {
+          baseRef: 'HEAD~1',
+          baseSha: previous,
+          warning: 'On main; using HEAD~1 for diff base.',
+        };
+      }
+    }
+
+    return { baseRef: 'main', baseSha: mergeBaseMain };
+  }
 
   const previous = tryGit(repoRoot, ['rev-parse', 'HEAD~1']);
   if (previous) return { baseRef: 'HEAD~1', baseSha: previous };
