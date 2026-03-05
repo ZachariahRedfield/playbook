@@ -1,5 +1,8 @@
 # Playbook Notes
 
+- WHAT changed: Added a reusable GitHub composite action at `actions/verify/action.yml` and documented copy/paste workflow usage in `README.md` for `uses: <OWNER>/playbook/actions/verify@v0.1.0`.
+- WHY it changed: Enables any repository to run the published Playbook CLI verification in CI without depending on repository-local scripts.
+
 - WHAT changed: Added explicit CI/development governance docs (`docs/CHANGELOG.md`, `README.md`, and `docs/PROJECT_GOVERNANCE.md`).
 - WHY it changed: Clarifies CI guarantees, local verification workflow, and notes-on-changes expectations for contributors.
 

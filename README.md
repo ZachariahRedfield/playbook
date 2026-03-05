@@ -83,6 +83,30 @@ pnpm smoke
 - CI is strict: missing CLI dist output fails smoke checks, and install must pass with a frozen lockfile.
 - If `pnpm install` fails due to proxy/network runner constraints, reproduce locally or fix runner networking rather than weakening CI guarantees.
 
+### Reusable verify action
+
+Use the published Playbook CLI from this repository as a reusable action in any repo:
+
+```yaml
+name: Playbook Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: <OWNER>/playbook/actions/verify@v0.1.0
+        with:
+          playbook_version: latest
+          node_version: "22"
+          args: --ci
+```
+
 ## Example Output
 
 ```text
