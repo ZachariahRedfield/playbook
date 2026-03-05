@@ -1,0 +1,35 @@
+name: demo-integration
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  demo-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Playbook CI composite action
+        uses: ./.github/actions/playbook-ci
+        with:
+          node-version: "22"
+          working-directory: "."
+          run-smoke: "true"
+          install-args: "--frozen-lockfile"
+
+      - name: Best-effort playbook-demo integration check
+        shell: bash
+        run: |
+          set -u
+          if ! git clone --depth 1 https://github.com/ZachariahRedfield/playbook-demo.git /tmp/playbook-demo; then
+            echo "::warning::Unable to clone ZachariahRedfield/playbook-demo (network/proxy restricted). Skipping demo integration check."
+            exit 0
+          fi
+
+          cd /tmp/playbook-demo
+          if ! npx --yes playbook analyze --ci; then
+            echo "::warning::Demo integration analyze check failed. This workflow is informational only."
+          fi

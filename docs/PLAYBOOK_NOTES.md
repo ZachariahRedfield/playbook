@@ -1,5 +1,8 @@
 # Playbook Notes
 
+- WHAT changed: Main CI remains offline-first with canonical end-to-end coverage through `scripts/smoke-test.mjs`; optional `playbook-demo` validation now lives in manual/nightly `.github/workflows/demo-integration.yml` and never blocks merges.
+- WHY it changed: Avoids proxy/network clone failures in required CI while retaining a best-effort external integration signal.
+
 - WHAT changed: Added a reusable GitHub composite action at `actions/verify/action.yml` and documented copy/paste workflow usage in `README.md` for `uses: <OWNER>/playbook/actions/verify@v0.1.0`.
 - WHY it changed: Enables any repository to run the published Playbook CLI verification in CI without depending on repository-local scripts.
 
