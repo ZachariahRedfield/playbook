@@ -9,6 +9,16 @@ function hasPnpm() {
   }
 }
 
-const cmd = hasPnpm() ? "pnpm -r build" : "npm run build";
-console.log("[prepare] " + cmd);
+if (process.env.CI === "true") {
+  console.log("[prepare] CI detected; skipping lifecycle build.");
+  process.exit(0);
+}
+
+if (!hasPnpm()) {
+  console.log("[prepare] pnpm not found; skipping lifecycle build.");
+  process.exit(0);
+}
+
+const cmd = "pnpm --filter @fawxzzy/playbook run build";
+console.log(`[prepare] ${cmd}`);
 execSync(cmd, { stdio: "inherit" });

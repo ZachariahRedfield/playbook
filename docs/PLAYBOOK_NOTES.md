@@ -1,5 +1,14 @@
 # Playbook Notes
 
+- WHAT changed: Removed root-level pnpm Rollup alias overrides that remapped `rollup` and `@rollup/rollup-linux-x64-gnu` to `@rollup/wasm-node`.
+- WHY it changed: The alias forced CI to fetch `@rollup/wasm-node` and produced unstable install behavior (`ERR_PNPM_FETCH_403`, missing native Rollup module resolution), so dependencies now resolve through normal platform packages.
+
+- WHAT changed: Added `scripts/assert-install-env.mjs` and wired it to root `preinstall` so installs fail fast when registry or optional dependency settings drift.
+- WHY it changed: CI and local installs now emit focused diagnostics (including npm user/global config file paths) before dependency resolution when registry/optional settings would break deterministic installs.
+
+- WHAT changed: Updated `scripts/prepare.mjs` to skip lifecycle builds in CI and avoid full-workspace builds during install hooks.
+- WHY it changed: Prevents unexpected `pnpm -r build` execution during lifecycle events while preserving explicit CLI packaging builds via package-level publish scripts.
+
 - WHAT changed: Main CI remains offline-first with canonical end-to-end coverage through `scripts/smoke-test.mjs`; optional `playbook-demo` validation now lives in manual/nightly `.github/workflows/demo-integration.yml` and never blocks merges.
 - WHY it changed: Avoids proxy/network clone failures in required CI while retaining a best-effort external integration signal.
 

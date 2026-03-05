@@ -7,6 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "preinstall": "node scripts/assert-install-env.mjs",
     "build": "pnpm run sync:templates && pnpm -r build",
     "lint": "pnpm -r exec eslint .",
     "smoke": "pnpm -r build && node scripts/smoke-test.mjs",
@@ -20,10 +21,6 @@
     "pack:cli": "pnpm -C packages/cli pack --out ../../packages/cli/fawxzzy-playbook-%v.tgz"
   },
   "pnpm": {
-    "overrides": {
-      "rollup": "npm:@rollup/wasm-node@4.59.0",
-      "@rollup/rollup-linux-x64-gnu": "npm:@rollup/wasm-node@4.59.0"
-    },
     "onlyBuiltDependencies": [
       "esbuild"
     ]

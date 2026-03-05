@@ -17,8 +17,23 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Activate pnpm
+        run: corepack prepare pnpm@10.0.0 --activate
+
+      - name: Verify pnpm version
+        run: pnpm -v
+
+      - name: Force npm registry
+        run: npm config set registry https://registry.npmjs.org/
+
+      - name: Force pnpm registry
+        run: pnpm config set registry https://registry.npmjs.org/
+
+      - name: Assert install environment
+        run: node scripts/assert-install-env.mjs
 
       - name: Install
         run: pnpm install --frozen-lockfile

@@ -191,7 +191,7 @@ CI fails if governance rules are violated.
 Tooling & Distribution (Package Manager + Action + Demo Repo)
 
 - [ ] Adopt pnpm as the workspace standard; keep `pnpm-lock.yaml` committed and never gitignored.
-- [ ] Enforce a single pnpm version source via `package.json#packageManager`; CI setup must not pin a conflicting pnpm version (use aligned `pnpm/action-setup` or Corepack behavior).
+- [x] Enforce a single pnpm version source via `package.json#packageManager`; CI setup must not pin a conflicting pnpm version (use aligned `pnpm/action-setup` or Corepack behavior).
 
 Near-Term Productization Milestones
 
@@ -236,7 +236,7 @@ Progress (current)
 - [x] Initial rule `requireNotesOnChanges` implemented in engine
 - [x] Smoke test script and automated tests are present
 - [x] pnpm policy explicitly documented and enforced as the toolchain standard
-- [ ] pnpm version governance consolidated to `packageManager` as the authoritative source
+- [x] pnpm version governance consolidated to `packageManager` as the authoritative source
 - [ ] `examples/demo-repo/` ships as an onboarding path with intentional architecture/doc/governance drift and meaningful analysis output
 - [ ] GitHub Action path finalized for `uses: playbook/verify` with verify + architecture + governance checks
 - [ ] npm package distribution live with publish pipeline, versioning strategy, and installable Playbook CLI
