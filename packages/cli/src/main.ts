@@ -1,57 +1,79 @@
-import { Command } from "commander";
-import { runInit } from "./commands/init.js";
-import { runAnalyze } from "./commands/analyze.js";
-import { runVerify } from "./commands/verify.js";
-import { runDoctor } from "./commands/doctor.js";
-import { runDiagram } from "./commands/diagram.js";
+#!/usr/bin/env node
+const args = process.argv.slice(2);
 
-const program = new Command();
-program.showHelpAfterError();
+const showHelp = () => {
+  console.log(`Usage: playbook <command> [options]
 
-program.name("playbook").description("Lightweight project governance CLI").version("0.1.0");
+Lightweight project governance CLI
 
-program
-  .command("init")
-  .description("Initialize playbook docs/config")
-  .action(() => runInit(process.cwd()));
+Commands:
+  init                        Initialize playbook docs/config
+  analyze [--ci] [--json]     Analyze project stack
+  verify [--ci] [--json]      Verify governance rules
+  doctor                      Check local setup
+  diagram [options]           Generate deterministic architecture Mermaid diagrams
 
-program
-  .command("analyze")
-  .option("--ci", "CI mode output")
-  .option("--json", "Output JSON")
-  .description("Analyze project stack")
-  .action((opts) => process.exit(runAnalyze(process.cwd(), { ci: Boolean(opts.ci), json: Boolean(opts.json) })));
+Options:
+  --help                      Show help
+  --version                   Show version`);
+};
 
-program
-  .command("verify")
-  .option("--ci", "CI mode output")
-  .option("--json", "Output JSON")
-  .description("Verify governance rules")
-  .action((opts) => process.exit(runVerify(process.cwd(), { ci: Boolean(opts.ci), json: Boolean(opts.json) })));
+const parseFlag = (flag: string) => args.includes(flag);
+const parseOptionValue = (name: string, fallback: string) => {
+  const index = args.indexOf(name);
+  return index >= 0 && args[index + 1] ? String(args[index + 1]) : fallback;
+};
 
-program.command("doctor").description("Check local setup").action(() => process.exit(runDoctor(process.cwd())));
+if (args.length === 0 || parseFlag("--help") || parseFlag("-h")) {
+  showHelp();
+  process.exit(0);
+}
 
-program
-  .command("diagram")
-  .description("Generate deterministic architecture Mermaid diagrams")
-  .option("--repo <path>", "Repository to scan", ".")
-  .option("--out <path>", "Output markdown file", "docs/ARCHITECTURE_DIAGRAMS.md")
-  .option("--deps", "Generate dependency diagram")
-  .option("--structure", "Generate structure diagram")
-  .action((opts) =>
-    process.exit(
-      runDiagram(process.cwd(), {
-        repo: String(opts.repo ?? '.'),
-        out: String(opts.out ?? 'docs/ARCHITECTURE_DIAGRAMS.md'),
-        deps: Boolean(opts.deps),
-        structure: Boolean(opts.structure)
-      })
-    )
-  );
+if (parseFlag("--version") || parseFlag("-V")) {
+  console.log("0.1.0");
+  process.exit(0);
+}
 
-program.on('command:*', () => {
-  program.outputHelp();
-  process.exit(1);
-});
+const command = args[0];
 
-program.parse();
+const run = async () => {
+  switch (command) {
+    case "init": {
+      const { runInit } = await import("./commands/init.js");
+      runInit(process.cwd());
+      return;
+    }
+    case "analyze": {
+      const { runAnalyze } = await import("./commands/analyze.js");
+      process.exit(runAnalyze(process.cwd(), { ci: parseFlag("--ci"), json: parseFlag("--json") }));
+      return;
+    }
+    case "verify": {
+      const { runVerify } = await import("./commands/verify.js");
+      process.exit(runVerify(process.cwd(), { ci: parseFlag("--ci"), json: parseFlag("--json") }));
+      return;
+    }
+    case "doctor": {
+      const { runDoctor } = await import("./commands/doctor.js");
+      process.exit(runDoctor(process.cwd()));
+      return;
+    }
+    case "diagram": {
+      const { runDiagram } = await import("./commands/diagram.js");
+      process.exit(
+        runDiagram(process.cwd(), {
+          repo: parseOptionValue("--repo", "."),
+          out: parseOptionValue("--out", "docs/ARCHITECTURE_DIAGRAMS.md"),
+          deps: parseFlag("--deps"),
+          structure: parseFlag("--structure")
+        })
+      );
+      return;
+    }
+    default:
+      showHelp();
+      process.exit(1);
+  }
+};
+
+void run();

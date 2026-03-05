@@ -192,6 +192,7 @@ Tooling & Distribution (Package Manager + Action + Demo Repo)
 
 - [ ] Adopt pnpm as the workspace standard; keep `pnpm-lock.yaml` committed and never gitignored.
 - [x] Enforce a single pnpm version source via `package.json#packageManager`; CI setup must not pin a conflicting pnpm version (use aligned `pnpm/action-setup` or Corepack behavior).
+- [x] Remove CLI bundler dependency from the critical path (`packages/cli` now builds with `tsc` to `dist/main.js`) to eliminate Rollup optional native module flakiness in CI.
 
 Near-Term Productization Milestones
 

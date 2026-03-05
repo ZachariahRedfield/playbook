@@ -9,14 +9,17 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsc -p tsconfig.build.json",
     "test": "vitest run --passWithNoTests",
     "playbook": "node dist/main.js",
     "prepublishOnly": "pnpm build"
   },
-  "devDependencies": {
-    "tsup": "^8.4.0"
+  "dependencies": {
+    "@zachariahredfield/playbook-core": "workspace:*",
+    "@zachariahredfield/playbook-engine": "workspace:*",
+    "@zachariahredfield/playbook-node": "workspace:*"
   },
+  "devDependencies": {},
   "publishConfig": {
     "access": "public"
   },
