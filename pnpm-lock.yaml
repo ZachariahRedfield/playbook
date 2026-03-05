@@ -17,6 +17,29 @@ importers:
         specifier: "^3.0.8"
         version: "3.2.4"
 
+  packages/cli:
+    dependencies:
+      "@playbook/engine":
+        specifier: "workspace:*"
+        version: "link:../engine"
+      commander:
+        specifier: "^13.1.0"
+        version: "^13.1.0"
+    devDependencies:
+      tsup:
+        specifier: "^8.4.0"
+        version: "^8.4.0"
+
+  packages/engine:
+    dependencies:
+      minimatch:
+        specifier: "^9.0.5"
+        version: "^9.0.5"
+    devDependencies:
+      tsup:
+        specifier: "^8.4.0"
+        version: "^8.4.0"
+
 packages:
   "@esbuild/aix-ppc64@0.27.3":
     resolution:
