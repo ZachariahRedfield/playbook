@@ -2,7 +2,8 @@ import { analyze, formatAnalyzeCi, formatAnalyzeHuman } from '@zachariahredfield
 import { createNodeContext } from '@zachariahredfield/playbook-node';
 import { emitResult, ExitCode } from '../lib/cliContract.js';
 
-type AnalyzeRecommendation = Awaited<ReturnType<typeof analyze>>['recommendations'][number];
+export type AnalyzeReport = Awaited<ReturnType<typeof analyze>>;
+type AnalyzeRecommendation = AnalyzeReport['recommendations'][number];
 
 type AnalyzeOptions = {
   ci: boolean;
@@ -10,8 +11,10 @@ type AnalyzeOptions = {
   quiet: boolean;
 };
 
+export const collectAnalyzeReport = async (cwd: string): Promise<AnalyzeReport> => analyze(createNodeContext({ cwd }));
+
 export const runAnalyze = async (cwd: string, opts: AnalyzeOptions): Promise<number> => {
-  const result = await analyze(createNodeContext({ cwd }));
+  const result = await collectAnalyzeReport(cwd);
 
   if (opts.format === 'text' && !opts.ci) {
     console.log(formatAnalyzeHuman(result));

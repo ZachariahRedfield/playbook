@@ -2,15 +2,17 @@ import { formatHuman, verify } from '@zachariahredfield/playbook-core';
 import { createNodeContext } from '@zachariahredfield/playbook-node';
 import { emitResult, ExitCode } from '../lib/cliContract.js';
 
-type VerifyReport = Awaited<ReturnType<typeof verify>>;
+export type VerifyReport = Awaited<ReturnType<typeof verify>>;
 type VerifyFailure = VerifyReport['failures'][number];
 type VerifyWarning = VerifyReport['warnings'][number];
+
+export const collectVerifyReport = async (cwd: string): Promise<VerifyReport> => verify(createNodeContext({ cwd }));
 
 export const runVerify = async (
   cwd: string,
   options: { format: 'text' | 'json'; ci: boolean; quiet: boolean }
 ): Promise<number> => {
-  const report = await verify(createNodeContext({ cwd }));
+  const report = await collectVerifyReport(cwd);
 
   if (options.format === 'text' && !options.ci) {
     console.log(formatHuman(report));

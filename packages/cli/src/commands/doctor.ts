@@ -9,25 +9,29 @@ type DoctorOptions = {
   quiet: boolean;
 };
 
-export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<number> => {
+export type DoctorReport = {
+  ok: boolean;
+  exitCode: ExitCode;
+  summary: string;
+  findings: { id: string; level: 'info' | 'warning' | 'error'; message: string }[];
+  nextActions: string[];
+};
+
+export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> => {
   const warnings: string[] = [];
-  const findings: { id: string; level: 'info' | 'warning' | 'error'; message: string }[] = [];
+  const findings: DoctorReport['findings'] = [];
 
   try {
     execFileSync('git', ['--version'], { encoding: 'utf8' });
     findings.push({ id: 'doctor.git.installed', level: 'info', message: 'git installed' });
   } catch {
-    emitResult({
-      format: options.format,
-      quiet: options.quiet,
-      command: 'doctor',
+    return {
       ok: false,
       exitCode: ExitCode.EnvironmentPrereq,
       summary: 'Doctor checks failed: git is not installed.',
       findings: [{ id: 'doctor.git.missing', level: 'error', message: 'git is not installed' }],
       nextActions: ['Install git and rerun `playbook doctor --ci`.']
-    });
-    return ExitCode.EnvironmentPrereq;
+    };
   }
 
   try {
@@ -54,29 +58,37 @@ export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<nu
   }
 
   if (warnings.length) {
-    emitResult({
-      format: options.format,
-      quiet: options.quiet,
-      command: 'doctor',
+    return {
       ok: true,
       exitCode: ExitCode.WarningsOnly,
       summary: 'Doctor checks completed with warnings.',
       findings,
       nextActions: ['Run `playbook init` and commit governance docs.']
-    });
-    return ExitCode.WarningsOnly;
+    };
   }
 
-  emitResult({
-    format: options.format,
-    quiet: options.quiet,
-    command: 'doctor',
+  return {
     ok: true,
     exitCode: ExitCode.Success,
     summary: '✔ configuration and docs look good',
     findings,
     nextActions: []
+  };
+};
+
+export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<number> => {
+  const report = await collectDoctorReport(cwd);
+
+  emitResult({
+    format: options.format,
+    quiet: options.quiet,
+    command: 'doctor',
+    ok: report.ok,
+    exitCode: report.exitCode,
+    summary: report.summary,
+    findings: report.findings,
+    nextActions: report.nextActions
   });
 
-  return ExitCode.Success;
+  return report.exitCode;
 };

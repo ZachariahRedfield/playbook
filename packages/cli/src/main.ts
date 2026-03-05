@@ -36,6 +36,7 @@ Commands:
   analyze                     Analyze project stack
   verify                      Verify governance rules
   doctor                      Check local setup
+  status                      Show overall Playbook repository health
   diagram [options]           Generate deterministic architecture Mermaid diagrams
   session <subcommand>        Import, merge, and cleanup session snapshots
 
@@ -78,6 +79,11 @@ const run = async () => {
     case 'doctor': {
       const { runDoctor } = await import('./commands/doctor.js');
       process.exit(await runDoctor(process.cwd(), { format, quiet }));
+      return;
+    }
+    case 'status': {
+      const { runStatus } = await import('./commands/status.js');
+      process.exit(await runStatus(process.cwd(), { ci, format, quiet }));
       return;
     }
     case 'session': {

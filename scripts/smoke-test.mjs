@@ -72,6 +72,19 @@ try {
   run(nodeBin, [cliPath, 'init'], { cwd: projectDir });
   run(nodeBin, [cliPath, 'analyze'], { cwd: projectDir });
   run(nodeBin, [cliPath, 'verify'], { cwd: projectDir });
+  run(nodeBin, [cliPath, 'status'], { cwd: projectDir });
+
+
+  const statusJsonHealthy = runWithStatus(nodeBin, [cliPath, 'status', '--json'], { cwd: projectDir });
+  const statusJsonHealthyResult = JSON.parse(statusJsonHealthy.stdout);
+
+  if (statusJsonHealthyResult.schemaVersion !== '1.0') {
+    throw new Error(`smoke-test failed: expected status --json schemaVersion=1.0, got ${String(statusJsonHealthyResult.schemaVersion)}`);
+  }
+
+  if (statusJsonHealthyResult.command !== 'status') {
+    throw new Error(`smoke-test failed: expected status --json command=status, got ${String(statusJsonHealthyResult.command)}`);
+  }
 
   fs.writeFileSync(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), '', 'utf8');
   const verifyJson = runWithStatus(nodeBin, [cliPath, 'verify', '--json'], { cwd: projectDir });
@@ -86,6 +99,32 @@ try {
       `smoke-test failed: verify --json exitCode (${verifyJsonResult.exitCode}) did not match process exit status (${verifyJson.status})`
     );
   }
+
+  const statusJsonVerifyFail = runWithStatus(nodeBin, [cliPath, 'status', '--json'], { cwd: projectDir });
+  const statusJsonVerifyFailResult = JSON.parse(statusJsonVerifyFail.stdout);
+
+  if (statusJsonVerifyFail.status !== 3) {
+    throw new Error(`smoke-test failed: expected status --json exit status=3 when verify fails, got ${statusJsonVerifyFail.status}`);
+  }
+
+  if (statusJsonVerifyFailResult.verification?.ok !== false) {
+    throw new Error(`smoke-test failed: expected status --json verification.ok=false, got ${String(statusJsonVerifyFailResult.verification?.ok)}`);
+  }
+
+  const statusJsonDoctorFail = runWithStatus(nodeBin, [cliPath, 'status', '--json'], {
+    cwd: projectDir,
+    env: { PATH: '' }
+  });
+  const statusJsonDoctorFailResult = JSON.parse(statusJsonDoctorFail.stdout);
+
+  if (statusJsonDoctorFail.status !== 2) {
+    throw new Error(`smoke-test failed: expected status --json exit status=2 when doctor fails, got ${statusJsonDoctorFail.status}`);
+  }
+
+  if (statusJsonDoctorFailResult.environment?.ok !== false) {
+    throw new Error(`smoke-test failed: expected status --json environment.ok=false, got ${String(statusJsonDoctorFailResult.environment?.ok)}`);
+  }
+
 
   ensureFile(path.join(projectDir, 'playbook.config.json'), 'playbook.config.json');
   ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
