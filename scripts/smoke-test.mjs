@@ -87,7 +87,7 @@ try {
   }
 
   fs.writeFileSync(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), '', 'utf8');
-  const verifyJson = runWithStatus(nodeBin, [cliPath, 'verify', '--json'], { cwd: projectDir });
+  const verifyJson = runWithStatus(nodeBin, [cliPath, 'verify', '--json', '--explain'], { cwd: projectDir });
   const verifyJsonResult = JSON.parse(verifyJson.stdout);
 
   if (verifyJsonResult.ok !== false) {
@@ -100,6 +100,22 @@ try {
     );
   }
 
+
+  const notesEmptyFinding = Array.isArray(verifyJsonResult.findings)
+    ? verifyJsonResult.findings.find((finding) => finding.id === 'verify.failure.notes.empty')
+    : undefined;
+
+  if (!notesEmptyFinding) {
+    throw new Error('smoke-test failed: expected verify --json --explain to include verify.failure.notes.empty finding');
+  }
+
+  if (typeof notesEmptyFinding.explanation !== 'string' || notesEmptyFinding.explanation.length === 0) {
+    throw new Error('smoke-test failed: expected verify --json --explain finding to include a non-empty explanation');
+  }
+
+  if (!Array.isArray(notesEmptyFinding.remediation) || notesEmptyFinding.remediation.length === 0) {
+    throw new Error('smoke-test failed: expected verify --json --explain finding to include remediation steps');
+  }
   const statusJsonVerifyFail = runWithStatus(nodeBin, [cliPath, 'status', '--json'], { cwd: projectDir });
   const statusJsonVerifyFailResult = JSON.parse(statusJsonVerifyFail.stdout);
 

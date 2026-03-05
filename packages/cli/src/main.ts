@@ -25,6 +25,7 @@ const commandArgs = commandIndex >= 0 ? args.slice(commandIndex + 1) : [];
 const ci = parseFlag(args, '--ci');
 const format = formatFromArgs(args);
 const quiet = parseFlag(args, '--quiet') || ci;
+const explain = parseFlag(args, '--explain');
 
 const showHelp = () => {
   console.log(`Usage: playbook <command> [options]
@@ -45,6 +46,7 @@ Global options:
   --format <text|json>        Output format (default text)
   --json                      Alias for --format=json
   --quiet                     Suppress success output in text mode
+  --explain                   Show why findings matter and how to fix them (text mode)
   --help                      Show help
   --version                   Show version`);
 };
@@ -68,12 +70,12 @@ const run = async () => {
     }
     case 'analyze': {
       const { runAnalyze } = await import('./commands/analyze.js');
-      process.exit(await runAnalyze(process.cwd(), { ci, format, quiet }));
+      process.exit(await runAnalyze(process.cwd(), { ci, explain, format, quiet }));
       return;
     }
     case 'verify': {
       const { runVerify } = await import('./commands/verify.js');
-      process.exit(await runVerify(process.cwd(), { ci, format, quiet }));
+      process.exit(await runVerify(process.cwd(), { ci, explain, format, quiet }));
       return;
     }
     case 'doctor': {

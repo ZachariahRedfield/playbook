@@ -6,20 +6,32 @@ export type VerifyReport = Awaited<ReturnType<typeof verify>>;
 type VerifyFailure = VerifyReport['failures'][number];
 type VerifyWarning = VerifyReport['warnings'][number];
 
+const verifyExplanations: Record<string, string> = {
+  'notes.missing': 'Playbook tracks reusable patterns and failures in docs/PLAYBOOK_NOTES.md so future changes are easier to understand and audit.',
+  'notes.empty': 'An empty notes file does not preserve the reasoning behind recent changes, which weakens team knowledge sharing.',
+  requireNotesOnChanges: 'When source code changes, the notes log ensures architectural intent and delivery context are captured with the implementation.'
+};
+
+const verifyRemediation: Record<string, string[]> = {
+  'notes.missing': ['Create docs/PLAYBOOK_NOTES.md.', 'Add at least one entry describing what changed and why.'],
+  'notes.empty': ['Add a notes entry, for example: ## YYYY-MM-DD — Summary.', 'Describe what changed, why it changed, and any follow-up work.'],
+  requireNotesOnChanges: ['Update docs/PLAYBOOK_NOTES.md with a note that covers the changed code paths.', 'Include both WHAT changed and WHY it changed.']
+};
+
 export const collectVerifyReport = async (cwd: string): Promise<VerifyReport> => verify(createNodeContext({ cwd }));
 
 export const runVerify = async (
   cwd: string,
-  options: { format: 'text' | 'json'; ci: boolean; quiet: boolean }
+  options: { format: 'text' | 'json'; ci: boolean; quiet: boolean; explain: boolean }
 ): Promise<number> => {
   const report = await collectVerifyReport(cwd);
 
-  if (options.format === 'text' && !options.ci) {
+  if (options.format === 'text' && !options.ci && !options.explain) {
     console.log(formatHuman(report));
     return report.ok ? ExitCode.Success : ExitCode.PolicyFailure;
   }
 
-  if (options.format === 'text' && options.ci) {
+  if (options.format === 'text' && options.ci && !options.explain) {
     if (!options.quiet || !report.ok) {
       console.log(report.ok ? 'playbook verify: PASS' : 'playbook verify: FAIL');
     }
@@ -29,6 +41,7 @@ export const runVerify = async (
   emitResult({
     format: options.format,
     quiet: options.quiet,
+    explain: options.explain,
     command: 'verify',
     ok: report.ok,
     exitCode: report.ok ? ExitCode.Success : ExitCode.PolicyFailure,
@@ -37,7 +50,9 @@ export const runVerify = async (
       ...report.failures.map((failure: VerifyFailure) => ({
         id: `verify.failure.${failure.id}`,
         level: 'error' as const,
-        message: failure.message
+        message: failure.message,
+        explanation: verifyExplanations[failure.id],
+        remediation: verifyRemediation[failure.id] ?? (failure.fix ? [failure.fix] : undefined)
       })),
       ...report.warnings.map((warning: VerifyWarning) => ({
         id: `verify.warning.${warning.id}`,

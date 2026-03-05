@@ -12,6 +12,8 @@ export type CliFinding = {
   id: string;
   level: 'info' | 'warning' | 'error';
   message: string;
+  explanation?: string;
+  remediation?: string[];
 };
 
 export type CliResult = {
@@ -27,6 +29,7 @@ export type CliResult = {
 type EmitResultOptions = Omit<CliResult, 'schemaVersion' | 'findings' | 'nextActions'> & {
   format: CliOutputFormat;
   quiet?: boolean;
+  explain?: boolean;
   findings?: CliFinding[];
   nextActions?: string[];
 };
@@ -55,7 +58,7 @@ export const buildResult = ({ findings = [], nextActions = [], ...rest }: Omit<E
   nextActions: sortNextActions(nextActions)
 });
 
-export const emitResult = ({ format, quiet = false, ...rest }: EmitResultOptions): void => {
+export const emitResult = ({ format, quiet = false, explain = false, ...rest }: EmitResultOptions): void => {
   const result = buildResult(rest);
 
   if (format === 'json') {
@@ -73,6 +76,18 @@ export const emitResult = ({ format, quiet = false, ...rest }: EmitResultOptions
     for (const finding of result.findings) {
       const prefix = finding.level === 'error' ? '✖' : finding.level === 'warning' ? '⚠' : '•';
       console.log(`${prefix} [${finding.id}] ${finding.message}`);
+      if (explain) {
+        if (finding.explanation) {
+          console.log('  Why this matters:');
+          console.log(`  ${finding.explanation}`);
+        }
+        if (finding.remediation && finding.remediation.length > 0) {
+          console.log('  How to fix:');
+          for (const step of finding.remediation) {
+            console.log(`  - ${step}`);
+          }
+        }
+      }
     }
   }
 
@@ -83,4 +98,3 @@ export const emitResult = ({ format, quiet = false, ...rest }: EmitResultOptions
     }
   }
 };
-

@@ -7,6 +7,7 @@ type AnalyzeRecommendation = AnalyzeReport['recommendations'][number];
 
 type AnalyzeOptions = {
   ci: boolean;
+  explain: boolean;
   format: 'text' | 'json';
   quiet: boolean;
 };
@@ -17,11 +18,13 @@ export const runAnalyze = async (cwd: string, opts: AnalyzeOptions): Promise<num
   const result = await collectAnalyzeReport(cwd);
 
   if (opts.format === 'text' && !opts.ci) {
-    console.log(formatAnalyzeHuman(result));
-    return ExitCode.Success;
+    if (!opts.explain) {
+      console.log(formatAnalyzeHuman(result));
+      return ExitCode.Success;
+    }
   }
 
-  if (opts.format === 'text' && opts.ci) {
+  if (opts.format === 'text' && opts.ci && !opts.explain) {
     if (!opts.quiet || !result.ok) {
       console.log(formatAnalyzeCi(result));
     }
@@ -31,6 +34,7 @@ export const runAnalyze = async (cwd: string, opts: AnalyzeOptions): Promise<num
   emitResult({
     format: opts.format,
     quiet: opts.quiet,
+    explain: opts.explain,
     command: 'analyze',
     ok: result.ok,
     exitCode: result.ok ? ExitCode.Success : ExitCode.Failure,
@@ -38,7 +42,9 @@ export const runAnalyze = async (cwd: string, opts: AnalyzeOptions): Promise<num
     findings: result.recommendations.map((rec: AnalyzeRecommendation) => ({
       id: `analyze.recommendation.${rec.id}`,
       level: rec.severity === 'WARN' ? 'warning' as const : 'info' as const,
-      message: rec.message
+      message: rec.message,
+      explanation: rec.why,
+      remediation: [rec.fix]
     })),
     nextActions: result.recommendations.map((rec: AnalyzeRecommendation) => rec.fix)
   });
