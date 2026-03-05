@@ -1,5 +1,8 @@
 # Playbook Notes
 
+- WHAT changed: Replaced `tsup` build steps in `packages/core`, `packages/engine`, and `packages/node` with `pnpm exec tsc -p tsconfig.build.json`, updating each package to emit both ESM JavaScript and declaration files directly into `dist/`.
+- WHY it changed: Removing tsup from these packages eliminates Rollup optional native module resolution (`@rollup/rollup-linux-x64-gnu`) from CI build paths while keeping stable `dist/index.js` and `dist/index.d.ts` entry artifacts.
+
 - WHAT changed: Replaced the CLI build pipeline in `packages/cli` from `tsup` to `tsc -p tsconfig.build.json`, removed `packages/cli/tsup.config.ts`, and removed `tsup` from `packages/cli/package.json` devDependencies.
 - WHY it changed: CLI bundling was pulling Rollup optional native platform modules into the critical CI path; plain TypeScript compilation emits deterministic `dist/main.js` output without Rollup optional dependency resolution failures.
 

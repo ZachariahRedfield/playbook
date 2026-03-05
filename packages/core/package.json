@@ -8,13 +8,10 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "pnpm run build:js && pnpm run build:types",
-    "build:js": "pnpm exec tsup src/index.ts --format esm",
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "build:js": "pnpm exec tsc -p tsconfig.build.json",
     "build:types": "pnpm exec tsc -p tsconfig.build.json",
     "test": "pnpm exec vitest run --passWithNoTests"
-  },
-  "devDependencies": {
-    "tsup": "^8.4.0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,10 +1,24 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src"],
+  "include": [
+    "src/**/*"
+  ],
   "compilerOptions": {
     "declaration": true,
-    "emitDeclarationOnly": true,
-    "declarationMap": false,
-    "outDir": "dist"
-  }
+    "emitDeclarationOnly": false,
+    "declarationMap": true,
+    "outDir": "dist",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "rootDir": "src",
+    "types": [
+      "node"
+    ]
+  },
+  "exclude": [
+    "test",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }
