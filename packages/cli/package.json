@@ -10,7 +10,7 @@
     "templates"
   ],
   "scripts": {
-    "build": "tsup src/main.ts --format esm --dts --banner.js '#!/usr/bin/env node'",
+    "build": "tsup",
     "test": "vitest run --passWithNoTests",
     "playbook": "node dist/main.js"
   },
