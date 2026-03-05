@@ -1,157 +1,84 @@
 # Conversation Graphs for AI-Assisted Engineering
 
-Modern AI-assisted engineering workflows frequently run in parallel reasoning threads: one thread may handle CI debugging, another CLI UX design, and another architecture review. Traditional linear chat logs make this difficult to govern over time because they often introduce:
+Playbook can ingest AI chat exports as deterministic `SessionSnapshot` JSON, then merge snapshots into a single canonical view with explicit conflict reporting.
 
-- context drift
-- buried decisions
-- fragmented reasoning across chats
+## Agent-facing imports
 
-Playbook introduces a structured **conversation graph model** that captures engineering reasoning in a deterministic, reusable format for agents and tooling.
+`playbook session import` supports ChatGPT-style markdown/text exports and applies deterministic extraction rules only (no semantic guessing):
 
-## Graph model
+- Heading mode (preferred): parse bullet items under these headings:
+  - `Decisions`
+  - `Constraints`
+  - `Open Questions`
+  - `Artifacts`
+  - `Next Steps`
+- Fallback mode (if headings are absent): extract only
+  - file paths / URLs
+  - commands (`$ ...`, `pnpm ...`, `npm ...`, `npx ...`, `playbook ...`)
+  - decision-like lines prefixed with `Decision:`, `We decided:`, `Final:`, `Chosen:`
 
-Playbook models a development session as a Directed Acyclic Graph (DAG):
+Session snapshot IDs and decision IDs are hash-based and stable for equivalent input.
 
-```text
-Main Session
-  ├── Branch: CI Debugging
-  ├── Branch: CLI UX Design
-  └── Branch: Architecture Review
-```
+## Deterministic merge model
 
-Branches can later be merged back into a shared reasoning path.
+`playbook session merge` reads multiple snapshots and produces:
 
-Core properties:
+- merged canonical snapshot JSON
+- deterministic conflict list
+- optional markdown/json merge reports
 
-- nodes represent reasoning checkpoints
-- edges represent exploration paths
-- merges reconcile decisions and constraints
+Merge rules:
 
-This model keeps reasoning auditable while preserving the speed of parallel exploration.
+- exact-match dedupe uses normalized case-insensitive trimmed text
+- decisions dedupe by normalized decision text + stable ID regeneration
+- constraints/artifacts/tags are set-unioned + stably sorted
+- when normalized decision keys match but details diverge, merge emits manual conflicts
 
-## Session snapshot schema
+Exit codes:
 
-A session snapshot is the canonical representation of reasoning state. It is deterministic and machine-readable, and it should be treated as the source of truth instead of raw chat transcripts.
+- `0`: merged cleanly (no conflicts)
+- `2`: conflicts detected
 
-```json
-{
-  "sessionId": "playbook-session-001",
-  "checkpoint": "phase2-cli-design",
-  "timestamp": "2026-03-05T00:00:00Z",
-  "decisions": [
-    {
-      "id": "cli-tsc-build",
-      "decision": "CLI builds using tsc instead of bundler",
-      "rationale": "Avoid optional native module issues in CI",
-      "alternatives": ["rollup", "esbuild"]
-    }
-  ],
-  "constraints": [
-    "CLI must run offline",
-    "CLI must run inside CI",
-    "Cloud must never be required"
-  ],
-  "openQuestions": [
-    "How should Playbook publish GitHub Actions?",
-    "Should CLI commands be namespaced?"
-  ],
-  "artifacts": [
-    "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
-    "packages/cli/src/main.ts"
-  ],
-  "nextSteps": [
-    "Implement demo repo",
-    "Finalize npm distribution"
-  ]
-}
-```
+## Retention & Cleanup Policy
 
-## Branching
+Session artifacts under `.playbook/sessions/` are **ephemeral working data**, not permanent docs.
 
-Exploration can branch from any checkpoint.
+Policy:
 
-Example:
+1. Keep local snapshots only for bounded retention.
+2. Defaults: keep snapshots within **30 days** and cap to **50 most recent** (whichever is smaller).
+3. Durable knowledge must be promoted into real docs:
+   - `docs/PLAYBOOK_NOTES.md`
+   - `docs/ARCHITECTURE.md`
+   - `docs/CHANGELOG.md`
+
+Use `playbook session cleanup` regularly (or in CI/automation) to prevent long-term repository bloat.
+
+## Example workflow
 
 ```bash
-playbook session branch ci-debug
+# 1) Import and store ephemeral snapshot
+playbook session import --in exports/chat-a.md --name ci-thread --store
+
+# 2) Import another session export
+playbook session import --in exports/chat-b.md --name cli-thread --store
+
+# 3) Merge snapshots into a canonical artifact + reports
+playbook session merge \
+  --in .playbook/sessions/ci-thread-<hash>.json \
+  --in .playbook/sessions/cli-thread-<hash>.json \
+  --out .playbook/sessions/merged.json \
+  --report .playbook/sessions/merged-report.md \
+  --json .playbook/sessions/merged-report.json
+
+# 4) Preview cleanup actions
+playbook session cleanup --dry-run
+
+# 5) Apply cleanup with defaults (30 days / 50 files)
+playbook session cleanup
 ```
 
-This creates a new reasoning path while inheriting the previous snapshot.
+## Hygiene guardrails
 
-Branches allow:
-
-- isolated experimentation
-- architectural alternatives
-- debugging investigations
-
-without polluting the main reasoning path.
-
-## Merging
-
-Playbook supports deterministic merges of reasoning branches.
-
-Example command:
-
-```bash
-playbook session merge ci-debug cli-design
-```
-
-The merge operation:
-
-- combines decisions
-- merges artifacts
-- reconciles constraints
-- surfaces conflicts
-
-Example merge report:
-
-```json
-{
-  "merged": true,
-  "conflicts": [
-    {
-      "type": "decision",
-      "ours": "pnpm workspace",
-      "theirs": "npm workspace"
-    }
-  ]
-}
-```
-
-Playbook must always produce deterministic merge reports so agents and reviewers can rely on stable outcomes.
-
-## Agent-facing workflows
-
-Playbook is designed for AI coding agents and mixed human-agent teams.
-
-Agents can:
-
-- export session summaries
-- checkpoint reasoning
-- merge parallel explorations
-- generate Playbook notes automatically
-
-This ensures engineering knowledge remains captured even when work happens across multiple chats, branches, or agents.
-
-## Relationship to Knowledge Engine
-
-Conversation graphs feed directly into Playbook's knowledge lifecycle:
-
-Playbook Notes  
-↓  
-Proposed Doctrine  
-↓  
-Promoted Doctrine
-
-This defines a governance path from structured reasoning to durable engineering knowledge:
-
-**structured reasoning → engineering knowledge**
-
-## Future capabilities
-
-Potential future features include:
-
-- visual conversation graph explorer
-- merge conflict resolution helpers
-- cross-session knowledge linking
-- automatic doctrine extraction
+- `.playbook/sessions/` should remain gitignored by default.
+- Keep this concept doc concise so policy and workflows stay actionable.

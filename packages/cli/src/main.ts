@@ -12,6 +12,7 @@ Commands:
   verify [--ci] [--json]      Verify governance rules
   doctor                      Check local setup
   diagram [options]           Generate deterministic architecture Mermaid diagrams
+  session <subcommand>        Import, merge, and cleanup session snapshots
 
 Options:
   --help                      Show help
@@ -56,6 +57,12 @@ const run = async () => {
     case "doctor": {
       const { runDoctor } = await import("./commands/doctor.js");
       process.exit(await runDoctor(process.cwd()));
+      return;
+    }
+
+    case "session": {
+      const { runSession } = await import("./commands/session.js");
+      process.exit(await runSession(process.cwd(), args.slice(1)));
       return;
     }
     case "diagram": {
