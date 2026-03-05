@@ -14,7 +14,7 @@
     "test": "pnpm -r test",
     "sync:templates": "node scripts/sync-templates.mjs",
     "verify": "pnpm lint && pnpm test && pnpm smoke:ci",
-    "playbook:diagram": "pnpm --filter playbook exec node dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md",
+    "playbook:diagram": "pnpm --filter playbook... run build && pnpm --filter playbook exec node dist/cli.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md",
     "prepare": "sh -c \"if command -v pnpm >/dev/null 2>&1; then pnpm run build; else npm run build; fi\"",
     "pack:check": "node scripts/check-pack.mjs"
   },

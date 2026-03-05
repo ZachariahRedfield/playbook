@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- WHAT: Made `pnpm playbook:diagram` self-contained by building `playbook` plus its workspace dependencies first (`--filter playbook... run build`) and invoking the packaged CLI entrypoint (`dist/cli.js`) instead of the stale `dist/main.js` path. WHY: Fixes fresh-checkout CI failures (`MODULE_NOT_FOUND`) by removing reliance on prebuilt artifacts and matching the published `bin.playbook` target.
 - WHAT: Refactored the workspace into a platform-style split with `packages/core` (pure analyze/verify engine), `packages/node` (Node context adapter), and a thinner `packages/cli` command layer wired through the adapter while preserving command behavior/output contracts. WHY: Clarifies architecture boundaries, makes the engine portable across runtimes, and prepares Playbook for future adapters without coupling policy logic to filesystem/process APIs.
 - WHAT: Updated CLI packaging to ship `bin.playbook -> dist/cli.js`, added a `prepare` build fallback (`pnpm` then `npm`), and aligned smoke/CI scripts to the new entrypoint including tarball verification. WHY: Ensures install/publish reliability and keeps CI/published artifacts consistent with the intended CLI surface.
 - WHAT: Removed any required CI dependency on cloning `ZachariahRedfield/playbook-demo` and kept `scripts/smoke-test.mjs` as the canonical offline integration path run via the reusable Playbook CI action. WHY: Keeps PR CI deterministic and fully functional in restricted proxy/offline environments while still validating real CLI init/verify behavior end-to-end.
