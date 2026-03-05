@@ -214,6 +214,17 @@ Near-Term Productization Milestones
 - [ ] GitHub Action Integration (CI-native adoption): deliver a first-class `uses: playbook/verify` path, with initial implementation via `.github/workflows/playbook-verify.yml`. Initial capabilities should include `playbook verify`, architecture contract checks, and governance rule checks.
 - [ ] NPM Package Publishing (public adoption): publish Playbook as an installable CLI with support for `npx --yes @fawxzzy/playbook analyze`, backed by an npm publishing pipeline, clear versioning strategy, and reliable scoped CLI distribution.
 
+## Phase: Developer Experience
+
+- ☑ Docs merge tooling
+- ☑ Session merge/import system
+- ⬜ Demo repository
+- ⬜ GitHub Action
+- ⬜ Canonical session outputs
+
+Developer Experience focuses on making Playbook immediately useful to developers with minimal setup.
+This phase emphasizes demoability, automation, and deterministic workflows so that developers can understand Playbook value in seconds.
+
 - [ ] Dogfood Playbook in FawxzzyFitness (internal adoption gate): run Playbook end-to-end in Zac's own repo to validate reliability before broader rollout.
   - Phase gates (acceptance criteria):
     - Playbook repo CI green (install/build/test/package).
@@ -266,6 +277,9 @@ Progress (current)
 - [x] Lockfile determinism hardened with `pnpm.supportedArchitectures` (`linux`/`darwin`/`win32`, `x64`, `glibc`) so Rollup optional native deps are captured for CI Linux installs.
 - [x] Reusable CI action now uses `setup-node` native pnpm cache and split lint/test/smoke steps for clearer, deterministic failure signals with less config drift.
 - [x] Docs hygiene tooling exercised with a deterministic `docs:merge` consolidation pass (SAFE mode, canonical pointers/stubs retained).
+- [x] Docs merge tooling completed and executed once on the Playbook repo.
+- [x] Session tooling implemented (`session import`, `session merge`, `session cleanup`).
+- [x] Repository hygiene rules established for `.playbook/`.
 - [ ] `examples/demo-repo/` ships as an onboarding path with intentional architecture/doc/governance drift and meaningful analysis output
 - [ ] GitHub Action path finalized for `uses: playbook/verify` with verify + architecture + governance checks
 - [ ] npm package distribution live with publish pipeline, versioning strategy, and installable Playbook CLI
