@@ -1,21 +1,25 @@
 {
-  "name": "playbook",
+  "name": "@zachariahredfield/playbook",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "playbook": "dist/main.js"
+    "playbook": "./dist/cli.js"
   },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run --passWithNoTests",
-    "playbook": "node dist/main.js"
+    "playbook": "node dist/cli.js"
   },
   "dependencies": {
+    "@playbook/core": "workspace:*",
     "@playbook/engine": "workspace:*",
+    "@playbook/node": "workspace:*",
     "commander": "^13.1.0"
   },
   "devDependencies": {

@@ -49,7 +49,7 @@ runs:
         pnpm lint
         pnpm build
         pnpm test
-        node packages/cli/dist/main.js --help
+        node packages/cli/dist/cli.js --help
         if [[ "${{ inputs.run-smoke }}" == "true" ]]; then
           node scripts/smoke-test.mjs
         else

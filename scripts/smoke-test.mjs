@@ -4,11 +4,11 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 const repoRoot = path.resolve('.');
-const cliPath = path.join(repoRoot, 'packages/cli/dist/main.js');
+const cliPath = path.join(repoRoot, 'packages/cli/dist/cli.js');
 
 if (!fs.existsSync(cliPath)) {
   const msg =
-    'packages/cli/dist/main.js missing. ' +
+    'packages/cli/dist/cli.js missing. ' +
     'Run "pnpm -r build" to generate CLI dist output before smoke-test.';
   if (process.env.GITHUB_ACTIONS === 'true') {
     throw new Error(`smoke-test failed: ${msg}`);

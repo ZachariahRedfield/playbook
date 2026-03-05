@@ -10,11 +10,13 @@
     "build": "pnpm run sync:templates && pnpm -r build",
     "lint": "pnpm -r exec eslint .",
     "smoke": "pnpm -r build && node scripts/smoke-test.mjs",
-    "smoke:ci": "pnpm -r build && node packages/cli/dist/main.js --help && node scripts/smoke-test.mjs",
+    "smoke:ci": "pnpm -r build && node packages/cli/dist/cli.js --help && node scripts/smoke-test.mjs",
     "test": "pnpm -r test",
     "sync:templates": "node scripts/sync-templates.mjs",
     "verify": "pnpm lint && pnpm test && pnpm smoke:ci",
-    "playbook:diagram": "pnpm --filter playbook exec node dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md"
+    "playbook:diagram": "pnpm --filter playbook exec node dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md",
+    "prepare": "sh -c \"if command -v pnpm >/dev/null 2>&1; then pnpm run build; else npm run build; fi\"",
+    "pack:check": "node scripts/check-pack.mjs"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.30.1",

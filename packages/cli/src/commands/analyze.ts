@@ -1,4 +1,5 @@
-import { analyzeRepo, formatAnalyzeCi, formatAnalyzeHuman, formatAnalyzeJson } from '@playbook/engine';
+import { analyze, formatAnalyzeCi, formatAnalyzeHuman, formatAnalyzeJson } from '@playbook/core';
+import { createNodeContext } from '@playbook/node';
 
 type AnalyzeOptions = {
   ci: boolean;
@@ -6,7 +7,7 @@ type AnalyzeOptions = {
 };
 
 export const runAnalyze = (cwd: string, opts: AnalyzeOptions): number => {
-  const result = analyzeRepo(cwd);
+  const result = analyze(createNodeContext({ cwd }));
 
   if (opts.json) {
     console.log(formatAnalyzeJson(result));

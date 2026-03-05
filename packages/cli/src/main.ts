@@ -6,6 +6,7 @@ import { runDoctor } from "./commands/doctor.js";
 import { runDiagram } from "./commands/diagram.js";
 
 const program = new Command();
+program.showHelpAfterError();
 
 program.name("playbook").description("Lightweight project governance CLI").version("0.1.0");
 
@@ -47,5 +48,10 @@ program
       })
     )
   );
+
+program.on('command:*', () => {
+  program.outputHelp();
+  process.exit(1);
+});
 
 program.parse();

@@ -1,0 +1,17 @@
+{
+  "name": "@playbook/node",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "pnpm exec tsup src/index.ts --format esm --dts",
+    "test": "pnpm exec vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0"
+  }
+}

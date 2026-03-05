@@ -1,7 +1,8 @@
-import { formatHuman, formatJson, verifyRepo } from '@playbook/engine';
+import { formatHuman, formatJson, verify } from '@playbook/core';
+import { createNodeContext } from '@playbook/node';
 
 export const runVerify = (cwd: string, options: { json: boolean; ci: boolean }): number => {
-  const report = verifyRepo(cwd);
+  const report = verify(createNodeContext({ cwd }));
 
   if (options.ci || options.json) {
     console.log(formatJson(report));
