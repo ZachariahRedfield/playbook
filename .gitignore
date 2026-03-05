@@ -2,3 +2,7 @@ node_modules
 dist
 coverage
 .tmp
+
+# allow committed CLI build output (so smoke-test can run without pnpm build)
+!packages/cli/dist/
+!packages/cli/dist/**
