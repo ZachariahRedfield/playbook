@@ -9,7 +9,7 @@
   "scripts": {
     "preinstall": "node scripts/assert-install-env.mjs",
     "build": "pnpm run sync:templates && pnpm -r build",
-    "lint": "pnpm -r exec eslint .",
+    "lint": "eslint \"{packages,tools,scripts,templates}/**/*.{ts,tsx,js,jsx}\" --max-warnings=0",
     "smoke": "pnpm -r build && node scripts/smoke-test.mjs",
     "smoke:ci": "pnpm -r build && node packages/cli/dist/main.js --help && node scripts/smoke-test.mjs",
     "test": "pnpm -r test",

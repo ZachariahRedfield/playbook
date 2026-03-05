@@ -28,7 +28,7 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
 
-    - name: Setup deterministic pnpm with Corepack
+    - name: Enable Corepack and activate pnpm
       shell: bash
       run: |
         corepack enable
@@ -36,43 +36,52 @@ runs:
         node -v
         pnpm -v
 
-    - name: Get pnpm store path
+    - name: Resolve pnpm store path
       shell: bash
-      run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
 
     - name: Cache pnpm store
       uses: actions/cache@v4
       with:
         path: ${{ env.PNPM_STORE_PATH }}
-        key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        key: pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          pnpm-store-${{ runner.os }}-
+          pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-
 
-    - name: Install and verify
+    - name: Install dependencies
+      id: install
+      continue-on-error: true
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      env:
-        NPM_CONFIG_OPTIONAL: "true"
-        PNPM_CONFIG_OPTIONAL: "true"
       run: |
-        echo "==> Running Playbook CI"
         npm config set registry https://registry.npmjs.org/
         pnpm config set registry https://registry.npmjs.org/
-        echo "npm registry: $(npm config get registry)"
-        echo "pnpm registry: $(pnpm config get registry)"
-        echo "npm userconfig: $(npm config get userconfig)"
-        echo "npm globalconfig: $(npm config get globalconfig)"
         node "$GITHUB_WORKSPACE/scripts/assert-install-env.mjs"
-        if ! pnpm install --config.optional=true ${{ inputs.install-args }}; then
-          echo "Run pnpm -w install --no-frozen-lockfile and commit pnpm-lock.yaml"
-          exit 1
-        fi
-        echo "==> Optional dependency diagnostics"
-        echo "pnpm config optional: $(pnpm config get optional)"
-        echo "npm config optional: $(npm config get optional)"
-        echo "env optional: $(node -p 'process.env.npm_config_optional || process.env.NPM_CONFIG_OPTIONAL || ""')"
-        if [[ "$(pnpm config get optional)" != "true" && "$(npm config get optional)" != "true" && "$(node -p 'process.env.npm_config_optional || process.env.NPM_CONFIG_OPTIONAL || ""')" != "true" ]]; then
-          echo "ERROR: optionalDependencies appear to be disabled in CI. This can break native optional packages (e.g. rollup/esbuild)."
-          exit 1
-        fi
-        pnpm verify
+        pnpm install ${{ inputs.install-args }}
+
+    - name: Install diagnostics (on failure)
+      if: steps.install.outcome == 'failure'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Install failed. Diagnostic snapshot:"
+        node -v
+        corepack --version
+        pnpm -v
+        pnpm config list
+        pnpm store path --silent
+        echo "npm_config_optional=${npm_config_optional:-<unset>}"
+        echo "NPM_CONFIG_OPTIONAL=${NPM_CONFIG_OPTIONAL:-<unset>}"
+        echo "PNPM_SKIP_OPTIONAL_DEPENDENCIES=${PNPM_SKIP_OPTIONAL_DEPENDENCIES:-<unset>}"
+
+    - name: Fail if install failed
+      if: steps.install.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "pnpm install failed. Review diagnostics above for optional dependency and environment configuration."
+        exit 1
+
+    - name: Verify
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: pnpm verify
