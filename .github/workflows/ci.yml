@@ -6,6 +6,12 @@ on:
       - main
   pull_request:
 
+env:
+  NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+  npm_config_registry: https://registry.npmjs.org/
+  PNPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+  pnpm_config_registry: https://registry.npmjs.org/
+
 jobs:
   ci:
     runs-on: ubuntu-latest

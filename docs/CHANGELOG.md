@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- WHAT: Removed Rollup-backed bundling from workspace package builds in favor of TypeScript compiler output (`tsc`) and added `scripts/assert-install-env.mjs` as a root `preinstall` guard for registry + optional dependency checks. WHY: Eliminates recurring platform-native optional dependency failures in CI (`@rollup/*`/esbuild class) and surfaces misconfiguration with actionable diagnostics.
+- WHAT: CI now forces optionalDependencies on during install (`pnpm install --config.optional=true`) and emits early optional-config diagnostics in the reusable CI action. WHY: Prevents missing platform-native optional packages (rollup/esbuild class) from causing opaque build failures while preserving frozen-lockfile installs.
 - WHAT: Switched package declaration generation to `tsc --emitDeclarationOnly` while keeping `tsup` for JavaScript bundling in `engine/core/node` and disabled CLI declaration bundling. WHY: Avoids Rollup native optional module resolution failures (`@rollup/rollup-linux-x64-gnu`) and keeps frozen-lockfile CI builds deterministic.
 - WHAT: Bundled the CLI into a single ESM artifact (`dist/main.js`) with internal workspace packages inlined and removed runtime package dependencies from `@fawxzzy/playbook`. WHY: Makes `npx --yes ./packages/cli/fawxzzy-playbook-<version>.tgz analyze` runnable in offline/limited-registry environments without fetching `@zachariahredfield/*` packages.
 - WHAT: Force rollup to wasm-node via pnpm override (`rollup` -> `npm:@rollup/wasm-node@4.59.0`) plus lockfile refresh. WHY: CI runners fail to install rollup's native optional binaries reliably; wasm eliminates platform module dependency.

@@ -17,13 +17,10 @@
     "playbook:diagram": "pnpm --filter playbook... run build && pnpm --filter playbook exec node dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md",
     "prepare": "node scripts/prepare.mjs",
     "pack:check": "node scripts/check-pack.mjs",
-    "pack:cli": "pnpm -C packages/cli pack --out ../../packages/cli/fawxzzy-playbook-%v.tgz"
+    "pack:cli": "pnpm -C packages/cli pack --out ../../packages/cli/fawxzzy-playbook-%v.tgz",
+    "preinstall": "node scripts/assert-install-env.mjs"
   },
   "pnpm": {
-    "overrides": {
-      "rollup": "npm:@rollup/wasm-node@4.59.0",
-      "@rollup/rollup-linux-x64-gnu": "npm:@rollup/wasm-node@4.59.0"
-    },
     "onlyBuiltDependencies": [
       "esbuild"
     ]

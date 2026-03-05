@@ -4,10 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  rollup: npm:@rollup/wasm-node@4.59.0
-  '@rollup/rollup-linux-x64-gnu': npm:@rollup/wasm-node@4.59.0
-
 importers:
 
   .:
@@ -32,32 +28,29 @@ importers:
         version: 3.2.4(@types/node@22.19.13)
 
   packages/cli:
-    devDependencies:
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(typescript@5.9.3)
+    dependencies:
+      '@zachariahredfield/playbook-core':
+        specifier: workspace:*
+        version: link:../core
+      '@zachariahredfield/playbook-engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@zachariahredfield/playbook-node':
+        specifier: workspace:*
+        version: link:../node
+      commander:
+        specifier: ^4.1.1
+        version: 4.1.1
 
   packages/core:
-    devDependencies:
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(typescript@5.9.3)
 
   packages/engine:
     dependencies:
       minimatch:
         specifier: ^9.0.5
         version: 9.0.9
-    devDependencies:
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(typescript@5.9.3)
 
   packages/node:
-    devDependencies:
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(typescript@5.9.3)
 
 packages:
 

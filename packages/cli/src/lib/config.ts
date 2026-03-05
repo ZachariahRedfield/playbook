@@ -1,3 +1,5 @@
-import { loadConfig } from '@zachariahredfield/playbook-engine';
+import { loadConfig, type PlaybookConfig } from '@zachariahredfield/playbook-engine';
 
-export const readConfig = (repoRoot: string) => loadConfig(repoRoot);
+export type LoadedPlaybookConfig = { config: PlaybookConfig; warning?: string };
+
+export const readConfig = (repoRoot: string): LoadedPlaybookConfig => loadConfig(repoRoot);
