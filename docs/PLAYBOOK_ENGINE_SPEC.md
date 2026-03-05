@@ -102,6 +102,7 @@ Example:
 
 interface StackDetector {
   id: string
+  label: string
   detect(repo: RepoContext): DetectionResult | null
 }
 
@@ -110,6 +111,11 @@ Example output:
 Framework: Next.js
 Database: Supabase
 Styling: Tailwind
+
+Detector results should include structured evidence and confidence metadata, and `playbook analyze --json` should expose:
+
+- `detectorsRun: string[]`
+- `detected: Array<{ id, label, evidence[] }>`
 
 Detectors must:
 

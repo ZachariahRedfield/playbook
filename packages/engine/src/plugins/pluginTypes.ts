@@ -12,7 +12,20 @@ export interface PlaybookRule {
 
 export interface StackDetector {
   id: string;
-  detect(repoRoot: string, pkg: Record<string, string>): boolean;
+  label: string;
+  detect(repo: RepoContext): DetectionResult | null;
+}
+
+export interface RepoContext {
+  repoRoot: string;
+  packageJsonPath: string;
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+}
+
+export interface DetectionResult {
+  confidence: number;
+  evidence: string[];
 }
 
 export interface PlaybookPlugin {

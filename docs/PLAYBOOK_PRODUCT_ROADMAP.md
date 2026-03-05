@@ -223,11 +223,11 @@ Stack Detectors
 
 Initial detectors:
 
-Next.js
-Supabase
-Tailwind
-Express
-Prisma
+- [x] Next.js detector
+- [x] Supabase detector
+- [x] Tailwind detector
+- [ ] Express detector
+- [ ] Prisma detector
 Success Criteria
 Analyze detects stack reliably
 Architecture draft generation works

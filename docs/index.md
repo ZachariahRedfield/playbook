@@ -6,6 +6,9 @@
 - [What is Playbook?](./concepts/what-is-playbook.md)
 - [Governance model](./concepts/governance-model.md)
 
+### Analyzer
+- `playbook analyze` includes built-in detectors for Next.js, Supabase, and Tailwind with machine-readable JSON output (`detectorsRun` + `detected` evidence).
+
 ### Configuration
 - [playbook.config.json](./config/playbook-config.md)
 
