@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "declaration": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@zachariahredfield/playbook-core": ["src/workspace-packages.d.ts"],
+      "@zachariahredfield/playbook-engine": ["src/workspace-packages.d.ts"],
+      "@zachariahredfield/playbook-node": ["src/workspace-packages.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"]
+}

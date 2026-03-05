@@ -24,7 +24,7 @@ export const runDoctor = (cwd: string): number => {
   const { config, warning } = readConfig(cwd);
   if (warning) warnings.push(warning);
 
-  for (const docPath of Object.values(config.docs)) {
+  for (const docPath of Object.values(config.docs) as string[]) {
     const abs = path.join(cwd, docPath);
     if (!fs.existsSync(abs)) warnings.push(`Missing doc path: ${docPath}`);
   }

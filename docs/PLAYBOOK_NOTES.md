@@ -1,5 +1,11 @@
 # Playbook Notes
 
+- WHAT changed: Replaced the CLI build pipeline in `packages/cli` from `tsup` to `tsc -p tsconfig.build.json`, removed `packages/cli/tsup.config.ts`, and removed `tsup` from `packages/cli/package.json` devDependencies.
+- WHY it changed: CLI bundling was pulling Rollup optional native platform modules into the critical CI path; plain TypeScript compilation emits deterministic `dist/main.js` output without Rollup optional dependency resolution failures.
+
+- WHAT changed: Added a shebang (`#!/usr/bin/env node`) to `packages/cli/src/main.ts` so the compiled `dist/main.js` remains directly executable as the package bin entry.
+- WHY it changed: `playbook` still resolves to `dist/main.js` via package `bin`, and the shebang preserves identical CLI execution behavior after moving away from the tsup banner.
+
 - WHAT changed: Updated `.github/actions/playbook-ci/action.yml` to run the CLI smoke invocation via `pnpm --dir "$GITHUB_WORKSPACE" --filter @fawxzzy/playbook run playbook -- --help` instead of `node packages/cli/dist/cli.js --help`.
 - WHY it changed: CI was targeting a non-existent `dist/cli.js` file; invoking the package script ensures the published entrypoint (`dist/main.js`/`bin`) is exercised correctly from any configured working directory.
 
