@@ -134,6 +134,42 @@ playbook init
 playbook analyze
 playbook verify
 playbook doctor
+
+AI-Aware Engineering Guardrails
+
+AI code generation increases the need for automated verification and architectural guardrails.
+
+Playbook is not a testing framework. It is the governance and verification layer that keeps AI-accelerated development from degrading architectural integrity.
+
+Future capabilities:
+
+AI-Safe Development
+- Detect structural risks introduced by AI-generated code.
+- Verify repository contracts remain intact after automated code generation.
+- Ensure architectural boundaries remain respected.
+
+Test Intelligence
+- Detect modules without tests.
+- Warn when critical subsystems lack integration tests.
+- Surface test coverage gaps through future integrations with coverage tools.
+
+Verification-First CI
+- Expand `playbook verify` to support stronger enforcement in CI pipelines.
+- Allow teams to fail builds on governance violations.
+- Add future GitHub Action support for running `playbook verify` in CI.
+
+Architectural Contracts
+- Define repository invariants such as forbidden import paths, layer boundaries, and module ownership.
+- Verify these contracts automatically during analysis and verification workflows.
+
+Progress (current)
+
+- [ ] AI-safe structural risk detection for generated code
+- [ ] Repository contract verification for automated code generation workflows
+- [ ] Test-intelligence signals for missing tests and integration coverage blind spots
+- [ ] CI enforcement controls for governance-based build failures
+- [ ] Built-in architectural contract definitions (imports, boundaries, ownership)
+- [ ] GitHub Action support for verification-first governance in CI
 Repository Templates
 
 playbook init generates:
