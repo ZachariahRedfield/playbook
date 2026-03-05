@@ -9,16 +9,14 @@
   },
   "scripts": {
     "build": "pnpm run build:js && pnpm run build:types",
-    "build:js": "tsup src/index.ts --format esm",
+    "build:js": "pnpm exec tsc -p tsconfig.build.json --emitDeclarationOnly false --declaration false",
     "build:types": "pnpm exec tsc -p tsconfig.build.json",
     "test": "vitest run"
   },
   "dependencies": {
     "minimatch": "^9.0.5"
   },
-  "devDependencies": {
-    "tsup": "^8.4.0"
-  },
+  "devDependencies": {},
   "publishConfig": {
     "access": "public"
   }

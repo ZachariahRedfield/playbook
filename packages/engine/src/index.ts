@@ -8,3 +8,5 @@ export type { AnalyzeResult, AnalyzeRecommendation, AnalyzeSeverity } from './an
 
 export { generateArchitectureDiagrams, scanRepoStructure, scanWorkspaceDeps, generateMermaidStructure, generateMermaidDeps } from './diagrams/index.js';
 export type { DiagramOptions, StructureModel, DependencyModel, MermaidDiagramResult, DiagramRunOptions, DiagramOutput } from './diagrams/index.js';
+
+export type { PlaybookConfig } from './config/schema.js';

@@ -1,5 +1,8 @@
 # Playbook Notes
 
+- WHAT changed: Workspace package builds now use TypeScript compiler output (`tsc`) instead of Rollup-backed bundler paths, and install guardrails run at `preinstall` via `scripts/assert-install-env.mjs` to validate npmjs registry + optional dependency settings.
+- WHY it changed: Removes recurring native optional dependency flakiness (`@rollup/*`, `esbuild` platform packages) by avoiding Rollup in the CLI build and failing early with actionable install diagnostics.
+
 - WHAT changed: Main CI remains offline-first with canonical end-to-end coverage through `scripts/smoke-test.mjs`; optional `playbook-demo` validation now lives in manual/nightly `.github/workflows/demo-integration.yml` and never blocks merges.
 - WHY it changed: Avoids proxy/network clone failures in required CI while retaining a best-effort external integration signal.
 

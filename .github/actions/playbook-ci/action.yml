@@ -23,13 +23,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Disable Corepack
-      shell: bash
-      run: corepack disable
-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -37,19 +30,40 @@ runs:
         cache: pnpm
         cache-dependency-path: pnpm-lock.yaml
 
+    - name: Enable Corepack + pinned pnpm
+      shell: bash
+      run: |
+        corepack enable
+        corepack prepare "$(node -p "require('./package.json').packageManager")" --activate
+        pnpm --version
+
     - name: Install, lint, build, test, and optional smoke
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/"
+        npm_config_registry: "https://registry.npmjs.org/"
+        PNPM_CONFIG_REGISTRY: "https://registry.npmjs.org/"
+        pnpm_config_registry: "https://registry.npmjs.org/"
+        NPM_CONFIG_OPTIONAL: "true"
+        npm_config_optional: "true"
+        PNPM_CONFIG_OPTIONAL: "true"
+        pnpm_config_optional: "true"
       run: |
         echo "==> Running Playbook CI"
-        if ! pnpm install ${{ inputs.install-args }}; then
+        node scripts/assert-install-env.mjs
+        if ! pnpm install --config.optional=true ${{ inputs.install-args }}; then
           echo "Run pnpm -w install --no-frozen-lockfile and commit pnpm-lock.yaml"
           exit 1
         fi
+        echo "==> Optional dependency diagnostics"
+        echo "pnpm config optional: $(pnpm config get optional)"
+        echo "npm config optional: $(npm config get optional)"
+        echo "env optional: $(node -p 'process.env.npm_config_optional || process.env.NPM_CONFIG_OPTIONAL || ""')"
         pnpm lint
         pnpm build
         pnpm test
-        node packages/cli/dist/cli.js --help
+        node packages/cli/dist/main.js --help
         if [[ "${{ inputs.run-smoke }}" == "true" ]]; then
           node scripts/smoke-test.mjs
         else
