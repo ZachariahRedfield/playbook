@@ -14,12 +14,6 @@
     "playbook": "node dist/main.js",
     "prepublishOnly": "pnpm build"
   },
-  "dependencies": {
-    "@zachariahredfield/playbook-core": "workspace:*",
-    "@zachariahredfield/playbook-engine": "workspace:*",
-    "@zachariahredfield/playbook-node": "workspace:*",
-    "commander": "^13.1.0"
-  },
   "devDependencies": {
     "tsup": "^8.4.0"
   },
