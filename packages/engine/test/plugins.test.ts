@@ -25,7 +25,11 @@ describe('plugin loader', () => {
       `module.exports = {
         name: 'test-plugin',
         rules: [{ id: 'plugin-rule', run: () => [] }],
-        detectors: [{ id: 'plugin-detector', detect: () => true }]
+        detectors: [{
+          id: 'plugin-detector',
+          label: 'Plugin Detector',
+          detect: () => ({ confidence: 1, evidence: ['plugin'] })
+        }]
       };`
     );
 
