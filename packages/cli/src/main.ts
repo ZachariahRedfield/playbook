@@ -15,9 +15,10 @@ program
 
 program
   .command("analyze")
+  .option("--ci", "CI mode output")
   .option("--json", "Output JSON")
   .description("Analyze project stack")
-  .action((opts) => process.exit(runAnalyze(process.cwd(), Boolean(opts.json))));
+  .action((opts) => process.exit(runAnalyze(process.cwd(), { ci: Boolean(opts.ci), json: Boolean(opts.json) })));
 
 program
   .command("verify")

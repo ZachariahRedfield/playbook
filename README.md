@@ -2,7 +2,7 @@
 
 AI-aware engineering governance for modern repositories.
 
-[![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml?query=branch%3Amain) ![Version](https://img.shields.io/badge/version-v0.1.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Node](https://img.shields.io/badge/node-%3E%3D22-339933)
+![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg) ![Version](https://img.shields.io/badge/version-v0.1.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Node](https://img.shields.io/badge/node-%3E%3D22-339933)
 
 ## Keywords
 
@@ -87,11 +87,38 @@ pnpm smoke
 
 ```text
 $ npx playbook analyze
-Detected Stack
+Playbook Analyze
+Repo: /repo
+Signals: 2 stack signal(s): Next.js, Supabase
 
-Framework: Next.js
-Database: Supabase
-Styling: Tailwind
+Recommendations (3)
+[RECOMMEND] Run governance verification  (id: analyze-run-verify)
+  Why: Analyze surfaces signals while verify enforces deterministic governance rules.
+  Fix: Run `playbook verify` before opening a pull request.
+
+[INFO] Next.js detected  (id: analyze-detected-nextjs)
+  Why: Next.js detection helps tailor architecture-aware guidance.
+  Fix: Review generated architecture suggestions and keep docs aligned with implementation.
+  Files: package.json
+
+[INFO] Supabase detected  (id: analyze-detected-supabase)
+  Why: Supabase detection helps tailor architecture-aware guidance.
+  Fix: Review generated architecture suggestions and keep docs aligned with implementation.
+  Files: package.json
+
+Next: Run `playbook verify` before opening a pull request.
+```
+
+Flags:
+- `--json` outputs stable machine-readable JSON (`ok`, `signals`, `recommendations[]`).
+- `--ci` emits low-noise CI output and exits non-zero when WARN recommendations exist.
+
+```text
+$ npx playbook analyze --ci
+playbook analyze: PASS  (warns=0 recommends=1 info=2)
+[RECOMMEND] Run governance verification  (id: analyze-run-verify)
+  Why: Analyze surfaces signals while verify enforces deterministic governance rules.
+  Fix: Run `playbook verify` before opening a pull request.
 ```
 
 ```text
