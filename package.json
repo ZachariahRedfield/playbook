@@ -46,4 +46,7 @@
     "typescript": "^5.8.2",
     "vitest": "^3.0.8"
   }
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "*"
+  }
 }
