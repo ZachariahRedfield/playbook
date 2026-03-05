@@ -7,7 +7,13 @@ const repoRoot = path.resolve('.');
 const cliPath = path.join(repoRoot, 'packages/cli/dist/main.js');
 
 if (!fs.existsSync(cliPath)) {
-  console.log('smoke-test skipped: packages/cli/dist/main.js missing (build not available in this environment).');
+  const msg =
+    'packages/cli/dist/main.js missing. ' +
+    'Run "pnpm -r build" to generate CLI dist output before smoke-test.';
+  if (process.env.GITHUB_ACTIONS === 'true') {
+    throw new Error(`smoke-test failed: ${msg}`);
+  }
+  console.log(`smoke-test skipped: ${msg}`);
   process.exit(0);
 }
 
