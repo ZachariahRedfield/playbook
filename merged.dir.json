@@ -1,0 +1,38 @@
+{
+  "sessionId": "merge-7aaab4e8ab431122",
+  "source": {
+    "kind": "merge",
+    "name": "merged-session-snapshot",
+    "hash": "18346dbbc3a85932"
+  },
+  "createdAt": "2026-03-05T22:13:56.749Z",
+  "repoHint": "playbook",
+  "decisions": [
+    {
+      "id": "decision-6bef0cd9b137",
+      "decision": "CLI should build with tsc"
+    },
+    {
+      "id": "decision-bd6d002f85ca",
+      "decision": "Use pnpm workspace"
+    }
+  ],
+  "constraints": [
+    "CLI must run in CI",
+    "CLI must run offline"
+  ],
+  "openQuestions": [
+    "Should Playbook publish a GitHub Action?"
+  ],
+  "artifacts": [],
+  "nextSteps": [
+    "Build demo repo",
+    "Finalize demo repo"
+  ],
+  "tags": [
+    "ci",
+    "cli",
+    "docs",
+    "pnpm"
+  ]
+}
