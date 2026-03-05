@@ -2,7 +2,7 @@
 
 AI-aware engineering governance for modern repositories.
 
-[![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg)](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml) ![Version](https://img.shields.io/badge/version-v0.1.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Node](https://img.shields.io/badge/node-%3E%3D22-339933)
+[![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml?query=branch%3Amain) ![Version](https://img.shields.io/badge/version-v0.1.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Node](https://img.shields.io/badge/node-%3E%3D22-339933)
 
 ## Keywords
 
