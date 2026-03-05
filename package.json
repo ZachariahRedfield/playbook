@@ -21,7 +21,8 @@
   },
   "pnpm": {
     "overrides": {
-      "rollup": "npm:@rollup/wasm-node@4.59.0"
+      "rollup": "npm:@rollup/wasm-node@4.59.0",
+      "@rollup/rollup-linux-x64-gnu": "npm:@rollup/wasm-node@4.59.0"
     },
     "onlyBuiltDependencies": [
       "esbuild"
