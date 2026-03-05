@@ -45,23 +45,23 @@ const run = async () => {
     }
     case "analyze": {
       const { runAnalyze } = await import("./commands/analyze.js");
-      process.exit(runAnalyze(process.cwd(), { ci: parseFlag("--ci"), json: parseFlag("--json") }));
+      process.exit(await runAnalyze(process.cwd(), { ci: parseFlag("--ci"), json: parseFlag("--json") }));
       return;
     }
     case "verify": {
       const { runVerify } = await import("./commands/verify.js");
-      process.exit(runVerify(process.cwd(), { ci: parseFlag("--ci"), json: parseFlag("--json") }));
+      process.exit(await runVerify(process.cwd(), { ci: parseFlag("--ci"), json: parseFlag("--json") }));
       return;
     }
     case "doctor": {
       const { runDoctor } = await import("./commands/doctor.js");
-      process.exit(runDoctor(process.cwd()));
+      process.exit(await runDoctor(process.cwd()));
       return;
     }
     case "diagram": {
       const { runDiagram } = await import("./commands/diagram.js");
       process.exit(
-        runDiagram(process.cwd(), {
+        await runDiagram(process.cwd(), {
           repo: parseOptionValue("--repo", "."),
           out: parseOptionValue("--out", "docs/ARCHITECTURE_DIAGRAMS.md"),
           deps: parseFlag("--deps"),

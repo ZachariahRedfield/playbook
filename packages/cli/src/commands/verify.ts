@@ -1,8 +1,8 @@
 import { formatHuman, formatJson, verify } from '@zachariahredfield/playbook-core';
 import { createNodeContext } from '@zachariahredfield/playbook-node';
 
-export const runVerify = (cwd: string, options: { json: boolean; ci: boolean }): number => {
-  const report = verify(createNodeContext({ cwd }));
+export const runVerify = async (cwd: string, options: { json: boolean; ci: boolean }): Promise<number> => {
+  const report = await verify(createNodeContext({ cwd }));
 
   if (options.ci || options.json) {
     console.log(formatJson(report));
