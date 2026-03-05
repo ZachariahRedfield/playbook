@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- WHAT: Switched package declaration generation to `tsc --emitDeclarationOnly` while keeping `tsup` for JavaScript bundling in `engine/core/node` and disabled CLI declaration bundling. WHY: Avoids Rollup native optional module resolution failures (`@rollup/rollup-linux-x64-gnu`) and keeps frozen-lockfile CI builds deterministic.
 - WHAT: Bundled the CLI into a single ESM artifact (`dist/main.js`) with internal workspace packages inlined and removed runtime package dependencies from `@fawxzzy/playbook`. WHY: Makes `npx --yes ./packages/cli/fawxzzy-playbook-<version>.tgz analyze` runnable in offline/limited-registry environments without fetching `@zachariahredfield/*` packages.
 - WHAT: Force rollup to wasm-node via pnpm override (`rollup` -> `npm:@rollup/wasm-node@4.59.0`) plus lockfile refresh. WHY: CI runners fail to install rollup's native optional binaries reliably; wasm eliminates platform module dependency.
 - WHAT: Added a root `pack:cli` workflow and documented tgz-based `npx` testing through `pnpm pack` from `packages/cli`. WHY: Ensures local tarball testing mirrors publish behavior and verifies packaged artifacts do not leak `workspace:*` dependency specifiers.

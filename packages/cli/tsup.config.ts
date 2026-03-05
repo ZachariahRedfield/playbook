@@ -6,7 +6,7 @@ export default defineConfig({
   format: ["esm"],
   bundle: true,
   noExternal: [/.*/],
-  dts: true,
+  dts: false,
   target: "es2022",
   clean: true,
   esbuildOptions(options) {

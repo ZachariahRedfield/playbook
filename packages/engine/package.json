@@ -8,7 +8,9 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts",
+    "build": "pnpm run build:js && pnpm run build:types",
+    "build:js": "tsup src/index.ts --format esm",
+    "build:types": "pnpm exec tsc -p tsconfig.build.json",
     "test": "vitest run"
   },
   "dependencies": {
