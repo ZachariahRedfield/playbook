@@ -9,7 +9,7 @@ repository analysis
 
 governance rule execution
 
-knowledge extraction
+stack analysis
 
 structured reporting
 
@@ -44,16 +44,17 @@ Inside:
 
 packages/engine
 
-Expected structure:
+Current structure:
 
 src/
   analyze/
     detectors/
   verify/
     rules/
-  reporting/
+  report/
   config/
-  context/
+  git/
+  util/
 Core Concepts
 Verify Context
 
@@ -149,10 +150,10 @@ engine/verify/rules/
 
 Example rules:
 
-requireNotesOnChanges
-forbidLayerCrossing
-requireArchitectureDocs
-requireADR
+requireNotesOnChanges (implemented)
+forbidLayerCrossing (planned)
+requireArchitectureDocs (planned)
+requireADR (planned)
 Rule Interface
 
 Example implementation contract:

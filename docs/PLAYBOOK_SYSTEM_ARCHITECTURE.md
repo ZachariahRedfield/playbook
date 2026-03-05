@@ -150,7 +150,7 @@ Runs all configured rules.
 
 Rule System
 
-Rules are modular and plugin-based.
+Rules are modular; the current engine ships with a built-in rule set, and plugin loading is planned for a future phase.
 
 Structure:
 
@@ -158,10 +158,10 @@ engine/verify/rules/
 
 Example rules:
 
-requireNotesOnChanges
-forbidLayerCrossing
-requireArchitectureDocs
-requireADR
+requireNotesOnChanges (implemented)
+forbidLayerCrossing (planned)
+requireArchitectureDocs (planned)
+requireADR (planned)
 
 Each rule implements:
 

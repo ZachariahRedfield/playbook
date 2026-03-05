@@ -93,9 +93,9 @@ packages/engine/src/verify/rules/
 
 Example rules:
 
-requireNotesOnChanges
-forbidLayerCrossing
-requireArchitectureDocs
+requireNotesOnChanges (implemented)
+forbidLayerCrossing (planned)
+requireArchitectureDocs (planned)
 
 Each rule implements the Playbook rule interface.
 
@@ -235,7 +235,7 @@ After validation, proposed doctrine becomes an official Playbook rule or guideli
 
 Example:
 
-Rule: forbidLayerCrossing
+Rule candidate: forbidLayerCrossing
 Contribution Workflow
 
 Typical workflow for contributors.
