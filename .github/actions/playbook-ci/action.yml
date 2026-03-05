@@ -27,40 +27,31 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
 
     - name: Enable Corepack and activate pnpm
       shell: bash
       run: |
         corepack enable
-        corepack prepare pnpm@10.0.0 --activate
+        PM=$(node -p "require('./package.json').packageManager")
+        if [[ -z "$PM" || "$PM" != pnpm@* ]]; then
+          echo "package.json#packageManager must be set to pnpm@<version>. Found: ${PM:-<unset>}"
+          exit 1
+        fi
+        corepack prepare "$PM" --activate
         node -v
         pnpm -v
 
-    - name: Resolve pnpm store path
-      shell: bash
-      run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
-
-    - name: Cache pnpm store
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.PNPM_STORE_PATH }}
-        key: pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}
-        restore-keys: |
-          pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-
-
     - name: Install dependencies
-      id: install
-      continue-on-error: true
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        npm config set registry https://registry.npmjs.org/
-        pnpm config set registry https://registry.npmjs.org/
         node "$GITHUB_WORKSPACE/scripts/assert-install-env.mjs"
         pnpm install ${{ inputs.install-args }}
 
     - name: Install diagnostics (on failure)
-      if: steps.install.outcome == 'failure'
+      if: failure()
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
@@ -68,18 +59,10 @@ runs:
         node -v
         corepack --version
         pnpm -v
-        pnpm config list
         pnpm store path --silent
         echo "npm_config_optional=${npm_config_optional:-<unset>}"
         echo "NPM_CONFIG_OPTIONAL=${NPM_CONFIG_OPTIONAL:-<unset>}"
         echo "PNPM_SKIP_OPTIONAL_DEPENDENCIES=${PNPM_SKIP_OPTIONAL_DEPENDENCIES:-<unset>}"
-
-    - name: Fail if install failed
-      if: steps.install.outcome == 'failure'
-      shell: bash
-      run: |
-        echo "pnpm install failed. Review diagnostics above for optional dependency and environment configuration."
-        exit 1
 
     - name: Verify Rollup native optional package (Linux)
       if: runner.os == 'Linux'
@@ -87,11 +70,22 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         if ! node -e "require.resolve('@rollup/rollup-linux-x64-gnu')"; then
-          echo "Rollup native optional package missing. This usually means pnpm-lock.yaml was generated without optional deps for linux. Regenerate lockfile after ensuring pnpm.supportedArchitectures includes linux/x64/glibc."
+          echo "Rollup native optional package missing. This repository pins @rollup/rollup-linux-x64-gnu via optionalDependencies, and pnpm-lock.yaml should include it. If it is missing, the lockfile is stale and must be regenerated."
           exit 1
         fi
 
-    - name: Verify
+    - name: Lint
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: pnpm verify
+      run: pnpm lint
+
+    - name: Test
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: pnpm test
+
+    - name: Smoke (CI)
+      if: inputs.run-smoke == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: pnpm smoke:ci

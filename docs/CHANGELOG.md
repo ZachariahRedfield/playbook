@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- WHAT: Simplified reusable CI caching by switching to `actions/setup-node` built-in `cache: pnpm`, and split verification logs into explicit `pnpm lint`, `pnpm test`, and optional `pnpm smoke:ci` steps. WHY: Reduces cache/config drift while making CI failures faster to triage from step-level output.
 - WHAT: CI now forces optionalDependencies on during install (`pnpm install --config.optional=true`) and emits early optional-config diagnostics in the reusable CI action. WHY: Prevents missing platform-native optional packages (rollup/esbuild class) from causing opaque build failures while preserving frozen-lockfile installs.
 - WHAT: Switched package declaration generation to `tsc --emitDeclarationOnly` while keeping `tsup` for JavaScript bundling in `engine/core/node` and disabled CLI declaration bundling. WHY: Avoids Rollup native optional module resolution failures (`@rollup/rollup-linux-x64-gnu`) and keeps frozen-lockfile CI builds deterministic.
 - WHAT: Bundled the CLI into a single ESM artifact (`dist/main.js`) with internal workspace packages inlined and removed runtime package dependencies from `@fawxzzy/playbook`. WHY: Makes `npx --yes ./packages/cli/fawxzzy-playbook-<version>.tgz analyze` runnable in offline/limited-registry environments without fetching `@zachariahredfield/*` packages.
