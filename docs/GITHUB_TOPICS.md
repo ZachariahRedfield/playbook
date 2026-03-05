@@ -4,8 +4,9 @@ Use these repository topics to improve project discoverability:
 
 - `ai-governance`
 - `developer-tooling`
+- `ai-dev-tools`
 - `repo-analysis`
 - `engineering-governance`
-- `ai-dev-tools`
 - `cli-tool`
 - `architecture-governance`
+- `code-governance`

@@ -4,6 +4,18 @@ AI-aware engineering governance for modern repositories.
 
 [![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg)](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml) ![Version](https://img.shields.io/badge/version-v0.1.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Node](https://img.shields.io/badge/node-%3E%3D22-339933)
 
+## Keywords
+
+Playbook is related to:
+
+- AI engineering governance
+- repository analysis
+- developer tooling
+- AI coding agent guardrails
+- engineering architecture contracts
+- documentation governance
+- CLI developer tools
+
 ## What Playbook Does
 
 Playbook analyzes a repository and enforces engineering governance such as architecture contracts, documentation discipline, and AI-agent guardrails.
@@ -13,6 +25,12 @@ Core commands:
 - `playbook init`
 - `playbook analyze`
 - `playbook verify`
+
+## Why Playbook Exists
+
+Modern repositories are complex and often lack enforceable engineering governance.
+
+Playbook introduces machine-readable governance rules so both humans and AI coding agents can safely modify large codebases without architectural drift.
 
 ## Quick Start
 
@@ -53,6 +71,14 @@ Playbook treats repository governance as machine-readable contracts. Rules are e
 - `/docs` — product, architecture, governance, and contributor documentation.
 - `/scripts` — development and maintenance scripts for this repository.
 - `/Playbook` — generated governance workspace in repositories initialized with Playbook templates.
+
+## Additional Docs
+
+- [`docs/USE_CASES.md`](docs/USE_CASES.md)
+- [`docs/EXAMPLES.md`](docs/EXAMPLES.md)
+- [`docs/FAQ.md`](docs/FAQ.md)
+- [`docs/GITHUB_TOPICS.md`](docs/GITHUB_TOPICS.md)
+- [`docs/GITHUB_SETUP.md`](docs/GITHUB_SETUP.md)
 
 ## Roadmap
 
