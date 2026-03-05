@@ -36,6 +36,16 @@ pnpm --filter @fawxzzy/playbook build
 node packages/cli/dist/main.js analyze
 ```
 
+From this monorepo root (Windows-friendly), use the package scripts and pass Playbook args after `--`:
+
+```bash
+pnpm playbook -- --help
+pnpm playbook -- doctor
+pnpm playbook -- analyze --repo .
+pnpm playbook -- verify --repo .
+pnpm playbook -- session import --in test-chat.md --store
+```
+
 ## How it works
 
 ```text

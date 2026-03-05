@@ -16,6 +16,8 @@
     "test": "pnpm -r test",
     "sync:templates": "node scripts/sync-templates.mjs",
     "verify": "pnpm lint && pnpm test && pnpm smoke:ci",
+    "playbook": "pnpm --filter @fawxzzy/playbook exec playbook",
+    "playbook:help": "pnpm --filter @fawxzzy/playbook exec playbook --help",
     "playbook:diagram": "pnpm --filter playbook... run build && pnpm --filter playbook exec node dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md",
     "prepare": "node scripts/prepare.mjs",
     "pack:check": "node scripts/check-pack.mjs",
