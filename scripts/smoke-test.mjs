@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { PNPM_BIN, run } from './exec-runner.mjs';
 
 const repoRoot = path.resolve('.');
@@ -39,6 +40,24 @@ if (!fs.existsSync(bundledTemplatePath)) {
 
 run(nodeBin, [cliPath, '--help']);
 
+const runWithStatus = (command, args, options = {}) => {
+  const result = spawnSync(command, args, {
+    encoding: 'utf8',
+    ...options,
+    env: { ...process.env, ...(options.env ?? {}) }
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  return {
+    status: typeof result.status === 'number' ? result.status : 1,
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? ''
+  };
+};
+
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-smoke-'));
 const projectDir = path.join(tempRoot, 'project');
 fs.mkdirSync(projectDir, { recursive: true });
@@ -53,6 +72,20 @@ try {
   run(nodeBin, [cliPath, 'init'], { cwd: projectDir });
   run(nodeBin, [cliPath, 'analyze'], { cwd: projectDir });
   run(nodeBin, [cliPath, 'verify'], { cwd: projectDir });
+
+  fs.writeFileSync(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), '', 'utf8');
+  const verifyJson = runWithStatus(nodeBin, [cliPath, 'verify', '--json'], { cwd: projectDir });
+  const verifyJsonResult = JSON.parse(verifyJson.stdout);
+
+  if (verifyJsonResult.ok !== false) {
+    throw new Error(`smoke-test failed: expected verify --json ok=false, got ${String(verifyJsonResult.ok)}`);
+  }
+
+  if (verifyJsonResult.exitCode !== verifyJson.status) {
+    throw new Error(
+      `smoke-test failed: verify --json exitCode (${verifyJsonResult.exitCode}) did not match process exit status (${verifyJson.status})`
+    );
+  }
 
   ensureFile(path.join(projectDir, 'playbook.config.json'), 'playbook.config.json');
   ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
