@@ -6,8 +6,8 @@ type AnalyzeOptions = {
   json: boolean;
 };
 
-export const runAnalyze = (cwd: string, opts: AnalyzeOptions): number => {
-  const result = analyze(createNodeContext({ cwd }));
+export const runAnalyze = async (cwd: string, opts: AnalyzeOptions): Promise<number> => {
+  const result = await analyze(createNodeContext({ cwd }));
 
   if (opts.json) {
     console.log(formatAnalyzeJson(result));

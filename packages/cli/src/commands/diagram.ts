@@ -9,14 +9,14 @@ type DiagramOptions = {
   structure: boolean;
 };
 
-export const runDiagram = (cwd: string, opts: DiagramOptions): number => {
+export const runDiagram = async (cwd: string, opts: DiagramOptions): Promise<number> => {
   const repo = path.resolve(cwd, opts.repo);
   const outFile = path.resolve(cwd, opts.out);
 
   const includeDeps = opts.deps || (!opts.deps && !opts.structure);
   const includeStructure = opts.structure || (!opts.deps && !opts.structure);
 
-  const result = generateArchitectureDiagrams(repo, {
+  const result = await generateArchitectureDiagrams(repo, {
     includeDeps,
     includeStructure,
     command: `playbook diagram --repo ${opts.repo} --out ${opts.out}${opts.deps ? ' --deps' : ''}${opts.structure ? ' --structure' : ''}`

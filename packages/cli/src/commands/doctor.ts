@@ -3,7 +3,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { readConfig } from '../lib/config.js';
 
-export const runDoctor = (cwd: string): number => {
+export const runDoctor = async (cwd: string): Promise<number> => {
   const warnings: string[] = [];
 
   try {
@@ -21,7 +21,7 @@ export const runDoctor = (cwd: string): number => {
     warnings.push('Not inside a git repo.');
   }
 
-  const { config, warning } = readConfig(cwd);
+  const { config, warning } = await readConfig(cwd);
   if (warning) warnings.push(warning);
 
   for (const docPath of Object.values(config.docs) as string[]) {
