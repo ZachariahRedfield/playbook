@@ -44,6 +44,38 @@ npx playbook verify
 - `playbook analyze` detects repository stack signals and produces architecture guidance.
 - `playbook verify` runs deterministic governance checks for CI and local development.
 
+## Development
+
+Install:
+
+```bash
+pnpm install
+```
+
+Build:
+
+```bash
+pnpm -r build
+```
+
+Test:
+
+```bash
+pnpm -r test
+```
+
+Smoke (recommended):
+
+```bash
+pnpm smoke
+```
+
+## CI
+
+- CI runs the Playbook composite action at `.github/actions/playbook-ci`.
+- CI is strict: missing CLI dist output fails smoke checks, and install must pass with a frozen lockfile.
+- If `pnpm install` fails due to proxy/network runner constraints, reproduce locally or fix runner networking rather than weakening CI guarantees.
+
 ## Example Output
 
 ```text
