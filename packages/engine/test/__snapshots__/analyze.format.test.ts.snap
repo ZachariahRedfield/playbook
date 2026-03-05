@@ -1,0 +1,74 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`analyze formatter > formats stable CI output 1`] = `
+"playbook analyze: FAIL  (warns=1 recommends=1 info=1)
+[WARN] Architecture docs missing marker  (id: warn-missing-arch)
+  Why: Without a marker, analyze cannot inject architecture suggestions automatically.
+  Fix: Add <!-- PLAYBOOK:ANALYZE_SUGGESTIONS --> to docs/ARCHITECTURE.md.
+  Files: docs/ARCHITECTURE.md
+[RECOMMEND] Run verify before opening a PR  (id: recommend-run-verify)
+  Why: Analyze surfaces signals while verify enforces governance contracts.
+  Fix: Run \`playbook verify\`."
+`;
+
+exports[`analyze formatter > formats stable JSON output 1`] = `
+"{
+  "ok": false,
+  "signals": "2 stack signal(s): Next.js, Supabase",
+  "recommendations": [
+    {
+      "id": "warn-missing-arch",
+      "title": "Architecture docs missing marker",
+      "severity": "WARN",
+      "message": "Architecture marker was not found.",
+      "why": "Without a marker, analyze cannot inject architecture suggestions automatically.",
+      "fix": "Add <!-- PLAYBOOK:ANALYZE_SUGGESTIONS --> to docs/ARCHITECTURE.md.",
+      "files": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "recommend-run-verify",
+      "title": "Run verify before opening a PR",
+      "severity": "RECOMMEND",
+      "message": "Verify enforces governance checks.",
+      "why": "Analyze surfaces signals while verify enforces governance contracts.",
+      "fix": "Run \`playbook verify\`."
+    },
+    {
+      "id": "info-next",
+      "title": "Next.js detected",
+      "severity": "INFO",
+      "message": "Detected Next.js.",
+      "why": "Next.js detection improves architecture recommendations.",
+      "fix": "Review generated architecture suggestions.",
+      "files": [
+        "package.json"
+      ]
+    }
+  ]
+}"
+`;
+
+exports[`analyze formatter > formats stable human output 1`] = `
+"Playbook Analyze
+Repo: /repo
+Signals: 2 stack signal(s): Next.js, Supabase
+
+Recommendations (3)
+[WARN] Architecture docs missing marker  (id: warn-missing-arch)
+  Why: Without a marker, analyze cannot inject architecture suggestions automatically.
+  Fix: Add <!-- PLAYBOOK:ANALYZE_SUGGESTIONS --> to docs/ARCHITECTURE.md.
+  Files: docs/ARCHITECTURE.md
+
+[RECOMMEND] Run verify before opening a PR  (id: recommend-run-verify)
+  Why: Analyze surfaces signals while verify enforces governance contracts.
+  Fix: Run \`playbook verify\`.
+
+[INFO] Next.js detected  (id: info-next)
+  Why: Next.js detection improves architecture recommendations.
+  Fix: Review generated architecture suggestions.
+  Files: package.json
+
+Next: Add <!-- PLAYBOOK:ANALYZE_SUGGESTIONS --> to docs/ARCHITECTURE.md."
+`;

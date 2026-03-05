@@ -1,11 +1,23 @@
-import { analyzeRepo } from '@playbook/engine';
+import { analyzeRepo, formatAnalyzeCi, formatAnalyzeHuman, formatAnalyzeJson } from '@playbook/engine';
 
-export const runAnalyze = (cwd: string, asJson: boolean): number => {
+type AnalyzeOptions = {
+  ci: boolean;
+  json: boolean;
+};
+
+export const runAnalyze = (cwd: string, opts: AnalyzeOptions): number => {
   const result = analyzeRepo(cwd);
-  if (asJson) {
-    console.log(JSON.stringify(result, null, 2));
-  } else {
-    console.log(result.summary);
+
+  if (opts.json) {
+    console.log(formatAnalyzeJson(result));
+    return 0;
   }
+
+  if (opts.ci) {
+    console.log(formatAnalyzeCi(result));
+    return result.ok ? 0 : 1;
+  }
+
+  console.log(formatAnalyzeHuman(result));
   return 0;
 };

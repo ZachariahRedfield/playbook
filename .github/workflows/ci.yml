@@ -2,19 +2,34 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-      - name: Playbook CI
-        uses: ./.github/actions/playbook-ci
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          node-version: "22"
-          working-directory: "."
-          run-smoke: "true"
+          version: 10
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace
+        run: pnpm -w build
+
+      - name: Verify workspace
+        run: pnpm -w verify

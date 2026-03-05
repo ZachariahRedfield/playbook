@@ -12,7 +12,8 @@
     "smoke": "pnpm -r build && node scripts/smoke-test.mjs",
     "smoke:ci": "pnpm -r build && node packages/cli/dist/main.js --help && node scripts/smoke-test.mjs",
     "test": "pnpm -r test",
-    "sync:templates": "node scripts/sync-templates.mjs"
+    "sync:templates": "node scripts/sync-templates.mjs",
+    "verify": "pnpm lint && pnpm test && pnpm smoke:ci"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.30.1",
