@@ -31,8 +31,20 @@ runs:
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
       with:
-        cache: true
-        cache_dependency_path: pnpm-lock.yaml
+        run_install: false
+
+    - name: Resolve pnpm store path
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+    - name: Cache pnpm store
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.PNPM_STORE_PATH }}
+        key: pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: |
+          pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-
 
     - name: Runtime versions
       shell: bash
@@ -54,7 +66,6 @@ runs:
       run: |
         echo "Install failed. Diagnostic snapshot:"
         node -v
-        corepack --version
         pnpm -v
         pnpm store path --silent
         echo "npm_config_optional=${npm_config_optional:-<unset>}"
@@ -67,7 +78,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         if ! node -e "require.resolve('@rollup/rollup-linux-x64-gnu')"; then
-          echo "Rollup native optional package missing. This repository pins @rollup/rollup-linux-x64-gnu via optionalDependencies, and pnpm-lock.yaml should include it. If it is missing, the lockfile is stale and must be regenerated."
+          echo "Rollup native optional package missing. Lockfile should include it because we pin it in optionalDependencies; if missing, pnpm-lock.yaml is stale or install skipped optional deps."
           exit 1
         fi
 

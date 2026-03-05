@@ -4,6 +4,7 @@
 
 ### WHAT
 
+- Installed pnpm via `pnpm/action-setup@v4` (without unsupported cache inputs) and added manual pnpm store caching via `actions/cache@v4`.
 - Removed legacy `.eslintignore` and rely on flat-config `ignores` in `eslint.config.cjs`.
 - Added `pnpm.supportedArchitectures` in the root `package.json` to lock Linux x64 glibc Rollup optional native packages deterministically.
 - Added a Linux-only Rollup native resolution sanity check in `.github/actions/playbook-ci/action.yml` before `pnpm verify`.
