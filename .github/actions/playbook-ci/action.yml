@@ -43,7 +43,7 @@ runs:
       run: |
         echo "==> Running Playbook CI"
         if ! pnpm install ${{ inputs.install-args }}; then
-          echo "Lockfile out of date. Run: pnpm install --no-frozen-lockfile, commit pnpm-lock.yaml."
+          echo "Run pnpm -w install --no-frozen-lockfile and commit pnpm-lock.yaml"
           exit 1
         fi
         pnpm lint
