@@ -1,5 +1,3 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { runInit } from "./commands/init.js";
 import { runAnalyze } from "./commands/analyze.js";
@@ -9,18 +7,6 @@ import { runDoctor } from "./commands/doctor.js";
 const program = new Command();
 
 program.name("playbook").description("Lightweight project governance CLI").version("0.1.0");
-
-function resolveTemplatesRepoDir(): string {
-  // Allow override for power users / unusual packaging
-  if (process.env.PLAYBOOK_TEMPLATES_DIR) return process.env.PLAYBOOK_TEMPLATES_DIR;
-
-  // ESM-safe __dirname for dist/main.js
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-
-  // dist/main.js -> ../templates/repo
-  return path.resolve(__dirname, "../templates/repo");
-}
 
 program
   .command("init")

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- WHAT: Removed an unused `resolveTemplatesRepoDir()` helper and its related `node:path`/`node:url` imports from the CLI entrypoint. WHY: Fixes CI lint failure from `@typescript-eslint/no-unused-vars` while keeping lint rules strict.
 - WHAT: CI now runs through the reusable `.github/actions/playbook-ci` composite action (`setup -> install -> build -> test -> smoke`). WHY: Keeps CI behavior consistent and reusable across repositories that adopt Playbook.
 - WHAT: CI disables Corepack and provisions pnpm with `pnpm/action-setup`. WHY: Avoids pnpm download failures caused by Corepack behavior in constrained proxy/network environments.
 - WHAT: CI installs dependencies with `pnpm install --frozen-lockfile`. WHY: Enforces deterministic installs and prevents lockfile drift.
