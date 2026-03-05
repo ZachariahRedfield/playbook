@@ -1,26 +1,12 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { PNPM_BIN, run, runLogged } from './exec-runner.mjs';
 
 const repoRoot = path.resolve('.');
 const nodeBin = process.execPath;
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-pack-smoke-'));
 const tarballDir = path.join(tempRoot, 'tarballs');
-
-const run = (command, args, options = {}) =>
-  execFileSync(command, args, {
-    stdio: 'pipe',
-    encoding: 'utf8',
-    ...options
-  });
-
-const runLogged = (command, args, options = {}) =>
-  execFileSync(command, args, {
-    stdio: 'inherit',
-    ...options
-  });
-
 const ensureFile = (filePath, label) => {
   if (!fs.existsSync(filePath)) {
     throw new Error(`pack-smoke failed: missing ${label} at ${filePath}`);
@@ -60,13 +46,13 @@ const ensureBuilt = () => {
   for (const target of buildTargets) {
     if (!fs.existsSync(target.expected)) {
       console.log(`[pack-smoke] building ${target.packageDir} (missing ${target.expected})`);
-      runLogged('pnpm', ['-C', target.packageDir, 'build'], { cwd: repoRoot });
+      runLogged(PNPM_BIN, ['-C', target.packageDir, 'build'], { cwd: repoRoot });
     }
   }
 };
 
 const packPackage = (packageDir) => {
-  const output = run('pnpm', ['-C', packageDir, 'pack', '--pack-destination', tarballDir], {
+  const output = run(PNPM_BIN, ['-C', packageDir, 'pack', '--pack-destination', tarballDir], {
     cwd: repoRoot
   });
 
@@ -117,7 +103,7 @@ fs.mkdirSync(tarballDir, { recursive: true });
 let smokePassed = false;
 try {
   const nodeVersion = run(nodeBin, ['-v']).trim();
-  const pnpmVersion = run('pnpm', ['-v']).trim();
+  const pnpmVersion = run(PNPM_BIN, ['-v']).trim();
   console.log(`[pack-smoke] node=${nodeVersion} pnpm=${pnpmVersion}`);
   ensureBuilt();
 

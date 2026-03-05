@@ -1,22 +1,14 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { PNPM_BIN, run } from './exec-runner.mjs';
 
 const repoRoot = path.resolve('.');
 const nodeBin = process.execPath;
 const cliPath = path.resolve(repoRoot, 'packages/cli/dist/main.js');
 const bundledTemplatePath = path.resolve(repoRoot, 'packages/cli/dist/templates/repo');
-
-const run = (command, args, options = {}) =>
-  execFileSync(command, args, {
-    stdio: 'pipe',
-    encoding: 'utf8',
-    ...options
-  });
-
 const nodeVersion = run(nodeBin, ['-v']).trim();
-const pnpmVersion = run('pnpm', ['-v']).trim();
+const pnpmVersion = run(PNPM_BIN, ['-v']).trim();
 
 console.log(`[smoke] node=${nodeVersion} pnpm=${pnpmVersion}`);
 console.log(`[smoke] cli=${cliPath}`);
