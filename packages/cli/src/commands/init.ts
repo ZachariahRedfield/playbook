@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureDir, listFilesRecursive } from "../lib/fs.js";
-import { info } from "../lib/output.js";
+import { emitResult, ExitCode } from "../lib/cliContract.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,26 +46,66 @@ const resolveTemplateRoot = (): string => {
 
 const templateRoot = resolveTemplateRoot();
 
-export const runInit = (cwd: string): void => {
+type InitOptions = {
+  format: 'text' | 'json';
+  quiet: boolean;
+  ci: boolean;
+};
+
+export const runInit = (cwd: string, options: InitOptions): number => {
   if (!fs.existsSync(templateRoot)) {
-    throw new Error(
-      `Templates directory not found: ${templateRoot}\n` +
-        `Set PLAYBOOK_TEMPLATES_DIR to a valid templates/repo directory.`
-    );
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'init',
+      ok: false,
+      exitCode: ExitCode.EnvironmentPrereq,
+      summary: `Templates directory not found: ${templateRoot}`,
+      findings: [
+        {
+          id: 'init.templates.missing',
+          level: 'error',
+          message: 'Templates directory not found.'
+        }
+      ],
+      nextActions: ['Set PLAYBOOK_TEMPLATES_DIR to a valid templates/repo directory.']
+    });
+    return ExitCode.EnvironmentPrereq;
   }
 
   const files = listFilesRecursive(templateRoot);
+  const created: string[] = [];
+  const skipped: string[] = [];
+
   for (const srcFile of files) {
     const rel = path.relative(templateRoot, srcFile);
     const dest = path.join(cwd, rel);
     ensureDir(path.dirname(dest));
 
     if (fs.existsSync(dest)) {
-      info(`skipped ${rel}`);
+      skipped.push(rel);
       continue;
     }
 
     fs.copyFileSync(srcFile, dest);
-    info(`created ${rel}`);
+    created.push(rel);
   }
+
+  const findings = [
+    ...created.map((entry) => ({ id: `init.created.${entry.replace(/[^a-zA-Z0-9]+/g, '-')}`, level: 'info' as const, message: `created ${entry}` })),
+    ...skipped.map((entry) => ({ id: `init.skipped.${entry.replace(/[^a-zA-Z0-9]+/g, '-')}`, level: 'info' as const, message: `skipped ${entry}` }))
+  ];
+
+  emitResult({
+    format: options.format,
+    quiet: options.quiet || options.ci,
+    command: 'init',
+    ok: true,
+    exitCode: ExitCode.Success,
+    summary: `Initialized playbook templates: ${created.length} created, ${skipped.length} skipped.`,
+    findings,
+    nextActions: []
+  });
+
+  return ExitCode.Success;
 };

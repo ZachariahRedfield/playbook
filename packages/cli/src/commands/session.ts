@@ -8,6 +8,7 @@ import {
   validateSessionSnapshot
 } from '@zachariahredfield/playbook-engine';
 import { resolveSessionMergeInputs } from './sessionMergeInputs.js';
+import { emitResult, ExitCode } from '../lib/cliContract.js';
 
 const requireOption = (value: string | undefined, flag: string): string => {
   if (!value) {
@@ -34,13 +35,27 @@ const parseListOption = (args: string[], name: string): string[] => {
   return values;
 };
 
-export const runSession = async (cwd: string, args: string[]): Promise<number> => {
+type SessionOptions = {
+  format: 'text' | 'json';
+  quiet: boolean;
+};
+
+export const runSession = async (cwd: string, args: string[], options: SessionOptions): Promise<number> => {
   const subcommand = args[0];
   const rest = args.slice(1);
 
   if (!subcommand) {
-    console.log('Usage: playbook session <import|merge|cleanup> [options]');
-    return 1;
+    emitResult({
+      format: options.format,
+      quiet: false,
+      command: 'session',
+      ok: false,
+      exitCode: ExitCode.Failure,
+      summary: 'Usage: playbook session <import|merge|cleanup> [options]',
+      findings: [{ id: 'session.subcommand.missing', level: 'error', message: 'Missing session subcommand.' }],
+      nextActions: ['Provide one of: import, merge, cleanup.']
+    });
+    return ExitCode.Failure;
   }
 
   if (subcommand === 'import') {
@@ -69,8 +84,18 @@ export const runSession = async (cwd: string, args: string[]): Promise<number> =
 
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
-    console.log(`Wrote session snapshot: ${path.relative(cwd, outPath)}`);
-    return 0;
+
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'session.import',
+      ok: true,
+      exitCode: ExitCode.Success,
+      summary: `Wrote session snapshot: ${path.relative(cwd, outPath)}`,
+      findings: [{ id: 'session.import.output.written', level: 'info', message: path.relative(cwd, outPath) }],
+      nextActions: []
+    });
+    return ExitCode.Success;
   }
 
   if (subcommand === 'merge') {
@@ -81,7 +106,7 @@ export const runSession = async (cwd: string, args: string[]): Promise<number> =
 
     const outPath = resolvePath(cwd, requireOption(parseOption(rest, '--out'), '--out'));
     const reportPath = parseOption(rest, '--report');
-    const reportJsonPath = parseOption(rest, '--json');
+    const reportJsonPath = parseOption(rest, '--json-report');
 
     const snapshots = inPaths.map((entry) => {
       const loaded = JSON.parse(fs.readFileSync(entry, 'utf8')) as unknown;
@@ -105,8 +130,27 @@ export const runSession = async (cwd: string, args: string[]): Promise<number> =
       fs.writeFileSync(resolved, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
     }
 
-    console.log(`Wrote merged snapshot: ${path.relative(cwd, outPath)}`);
-    return result.conflicts.length > 0 ? 2 : 0;
+    const conflictExitCode = result.conflicts.length > 0 ? ExitCode.PolicyFailure : ExitCode.Success;
+
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'session.merge',
+      ok: result.conflicts.length === 0,
+      exitCode: conflictExitCode,
+      summary: `Wrote merged snapshot: ${path.relative(cwd, outPath)}`,
+      findings: [
+        { id: 'session.merge.inputs.count', level: 'info', message: `Merged ${inPaths.length} snapshots.` },
+        ...result.conflicts.map((conflict: any, index: number) => ({
+          id: `session.merge.conflict.${index + 1}`,
+          level: 'warning' as const,
+          message: `${conflict.type} conflict on ${conflict.key}`
+        }))
+      ],
+      nextActions: result.conflicts.length > 0 ? ['Review merge conflicts and rerun merge.'] : []
+    });
+
+    return conflictExitCode;
   }
 
   if (subcommand === 'cleanup') {
@@ -122,26 +166,37 @@ export const runSession = async (cwd: string, args: string[]): Promise<number> =
       dryRun
     });
 
-    for (const filePath of result.deleted) {
-      console.log(`${dryRun ? 'Would delete' : 'Deleted'}: ${path.relative(cwd, filePath)}`);
-    }
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'session.cleanup',
+      ok: true,
+      exitCode: ExitCode.Success,
+      summary: `${dryRun ? 'Dry run complete' : 'Cleanup complete'} for ${path.relative(cwd, sessionsDir) || '.'}`,
+      findings: [
+        ...result.deleted.map((filePath: string) => ({
+          id: `session.cleanup.deleted.${path.basename(filePath).replace(/[^a-zA-Z0-9]+/g, '-')}`,
+          level: 'info' as const,
+          message: `${dryRun ? 'Would delete' : 'Deleted'}: ${path.relative(cwd, filePath)}`
+        })),
+        { id: 'session.cleanup.count.deleted', level: 'info', message: `deletedCount=${result.deletedCount}` },
+        { id: 'session.cleanup.count.kept', level: 'info', message: `keptCount=${result.keptCount}` }
+      ],
+      nextActions: []
+    });
 
-    console.log(
-      JSON.stringify(
-        {
-          sessionsDir: path.relative(cwd, sessionsDir) || '.',
-          dryRun,
-          deletedCount: result.deletedCount,
-          keptCount: result.keptCount
-        },
-        null,
-        2
-      )
-    );
-
-    return 0;
+    return ExitCode.Success;
   }
 
-  console.log('Usage: playbook session <import|merge|cleanup> [options]');
-  return 1;
+  emitResult({
+    format: options.format,
+    quiet: false,
+    command: 'session',
+    ok: false,
+    exitCode: ExitCode.Failure,
+    summary: 'Usage: playbook session <import|merge|cleanup> [options]',
+    findings: [{ id: 'session.subcommand.invalid', level: 'error', message: `Unknown subcommand: ${subcommand}` }],
+    nextActions: ['Provide one of: import, merge, cleanup.']
+  });
+  return ExitCode.Failure;
 };
