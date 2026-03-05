@@ -200,6 +200,17 @@ Near-Term Productization Milestones
 - [ ] GitHub Action Integration (CI-native adoption): deliver a first-class `uses: playbook/verify` path, with initial implementation via `.github/workflows/playbook-verify.yml`. Initial capabilities should include `playbook verify`, architecture contract checks, and governance rule checks.
 - [ ] NPM Package Publishing (public adoption): publish Playbook as an installable CLI with support for `npx playbook analyze` and `npm install playbook-cli`, backed by an npm publishing pipeline, clear versioning strategy, and reliable CLI distribution.
 
+- [ ] Dogfood Playbook in FawxzzyFitness (internal adoption gate): run Playbook end-to-end in Zac's own repo to validate reliability before broader rollout.
+  - Phase gates (acceptance criteria):
+    - Playbook repo CI green (install/build/test/package).
+    - Stable install path for consumers validated (`npx` OR `npm pack` tarball OR git-based install).
+    - CLI commands run reliably on a real repo (`init`, `analyze`, `verify`, `doctor`).
+  - Safe migration plan:
+    - Run new and old Playbook in parallel via separate npm scripts.
+    - Flip default scripts to the new Playbook once stable in day-to-day use.
+    - Keep a legacy alias for one release cycle, then remove it.
+  - Dogfooding findings feed CLI/engine improvements and roadmap checkbox updates.
+
 Initial Rule
 
 v0.1 rule:
