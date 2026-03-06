@@ -41,7 +41,7 @@ const parseOptionValues = (allArgs: string[], name: string): string[] | undefine
 export const commandRegistry: RegisteredCommand[] = [
   {
     name: 'demo',
-    description: 'Show the official Playbook demo repository and guided first-run workflow',
+    description: 'Show the official Playbook demo repository and onboarding workflow',
     run: async ({ cwd, format, quiet }) => {
       const { runDemo } = await import('./demo.js');
       return runDemo(cwd, { format, quiet });

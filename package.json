@@ -24,7 +24,8 @@
     "prepare": "node scripts/prepare.mjs",
     "pack:check": "node scripts/check-pack.mjs",
     "pack:cli": "pnpm -C packages/cli pack --out ../../packages/cli/fawxzzy-playbook-%v.tgz",
-    "docs:merge": "node scripts/docs-merge.mjs"
+    "docs:merge": "node scripts/docs-merge.mjs",
+    "demo:update": "bash scripts/update-demo.sh"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
