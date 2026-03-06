@@ -8,6 +8,16 @@ Runs deterministic governance rule checks and reports policy findings.
 - `playbook verify --ci`
 - `playbook verify --json`
 - `playbook verify --json --explain`
+- `playbook verify --policy --json`
+
+## Policy mode
+
+`--policy` evaluates verify findings against `verify.policy.rules` in `playbook.config.json`.
+
+- Configured policy rules are treated as enforcement gates.
+- Violations return exit code `3`.
+- Non-policy verify failures remain informational in policy output.
+- JSON responses include a `policyViolations` array.
 
 ## Contract notes
 - JSON output uses a stable response envelope (`schemaVersion`, `command`, `ok`, `exitCode`).

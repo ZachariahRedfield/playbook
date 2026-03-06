@@ -10,6 +10,10 @@ inputs:
     description: Additional arguments to pass to `playbook verify`.
     required: false
     default: "--ci"
+  mode:
+    description: Verification mode: standard or policy.
+    required: false
+    default: "standard"
   node_version:
     description: Node.js version to use.
     required: false
@@ -25,4 +29,11 @@ runs:
 
     - name: Run Playbook verify
       shell: bash
-      run: npx --yes @fawxzzy/playbook@${{ inputs.playbook_version }} verify ${{ inputs.args }}
+      run: |
+        mode="${{ inputs.mode }}"
+        policy_flag=""
+        if [ "$mode" = "policy" ]; then
+          policy_flag="--policy"
+        fi
+
+        npx --yes @fawxzzy/playbook@${{ inputs.playbook_version }} verify ${{ inputs.args }} $policy_flag

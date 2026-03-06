@@ -14,6 +14,10 @@ export type VerifyRule = {
   id: string;
   description: string;
   check: (ctx: { failure: VerifyFailure }) => boolean;
+  policy?: {
+    id: string;
+    description?: string;
+  };
   fix?: FixHandler;
   explanation?: string;
   remediation?: string[];
@@ -23,6 +27,10 @@ type PluginVerifyRule = {
   id: string;
   description: string;
   verify: (ctx: { failure: VerifyFailure }) => boolean;
+  policy?: {
+    id: string;
+    description?: string;
+  };
   fix?: FixHandler;
   explanation?: string;
   remediation?: string[];
@@ -67,6 +75,7 @@ const toVerifyRule = (rule: PluginVerifyRule): VerifyRule | undefined => {
     id: rule.id,
     description: rule.description,
     check: rule.verify,
+    policy: rule.policy,
     fix: rule.fix,
     explanation: rule.explanation,
     remediation: rule.remediation

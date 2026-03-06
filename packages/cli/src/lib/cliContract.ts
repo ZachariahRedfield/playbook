@@ -24,6 +24,12 @@ export type CliResult = {
   summary: string;
   findings: CliFinding[];
   nextActions: string[];
+  policyViolations?: Array<{
+    policyId: string;
+    ruleId: string;
+    message: string;
+    remediation?: string[];
+  }>;
 };
 
 type EmitResultOptions = Omit<CliResult, 'schemaVersion' | 'findings' | 'nextActions'> & {

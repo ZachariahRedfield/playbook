@@ -11,6 +11,9 @@ export type PlaybookConfig = {
   };
   plugins: string[];
   verify: {
+    policy: {
+      rules: string[];
+    };
     rules: {
       requireNotesOnChanges: Array<{
         whenChanged: string[];
@@ -33,6 +36,9 @@ export const defaultConfig: PlaybookConfig = {
   },
   plugins: [],
   verify: {
+    policy: {
+      rules: []
+    },
     rules: {
       requireNotesOnChanges: [
         {

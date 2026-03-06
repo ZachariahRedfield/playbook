@@ -4,6 +4,10 @@ export const requireNotesOnChangesRule: VerifyRule = {
   id: 'requireNotesOnChanges',
   description: 'Require notes updates whenever source files change.',
   check: ({ failure }) => failure.id === 'requireNotesOnChanges',
+  policy: {
+    id: 'requireNotesOnChanges',
+    description: 'Require notes updates for configured source changes.'
+  },
   explanation:
     'When source code changes, the notes log ensures architectural intent and delivery context are captured with the implementation.',
   remediation: [

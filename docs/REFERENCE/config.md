@@ -27,6 +27,9 @@ If `playbook.config.json` is missing, Playbook loads defaults and emits a warnin
   },
   "plugins": ["string"],
   "verify": {
+    "policy": {
+      "rules": ["rule-id"]
+    },
     "rules": {
       "requireNotesOnChanges": [
         {
@@ -55,6 +58,9 @@ If `playbook.config.json` is missing, Playbook loads defaults and emits a warnin
   },
   "plugins": [],
   "verify": {
+    "policy": {
+      "rules": ["requireNotesOnChanges"]
+    },
     "rules": {
       "requireNotesOnChanges": [
         {

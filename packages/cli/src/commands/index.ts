@@ -72,9 +72,9 @@ export const commandRegistry: RegisteredCommand[] = [
   {
     name: 'verify',
     description: 'Verify governance rules',
-    run: async ({ cwd, ci, explain, format, quiet }) => {
+    run: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {
       const { runVerify } = await import('./verify.js');
-      return runVerify(cwd, { ci, explain, format, quiet });
+      return runVerify(cwd, { ci, explain, format, quiet, policy: parseFlag(commandArgs, '--policy') });
     }
   },
   {

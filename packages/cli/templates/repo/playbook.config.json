@@ -10,6 +10,9 @@
     "detectors": ["nextjs", "supabase", "tailwind"]
   },
   "verify": {
+    "policy": {
+      "rules": []
+    },
     "rules": {
       "requireNotesOnChanges": [
         {

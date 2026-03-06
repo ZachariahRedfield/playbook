@@ -44,6 +44,7 @@ Global options:
   --json                      Alias for --format=json
   --quiet                     Suppress success output in text mode
   --explain                   Show why findings matter and how to fix them (text mode)
+  --policy                    Enable policy enforcement mode for verify
   --help                      Show help
   --version                   Show version`);
 };
