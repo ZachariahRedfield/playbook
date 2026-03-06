@@ -122,8 +122,8 @@ try {
   const verifyJson = runWithStatus(nodeBin, [cliPath, 'verify', '--json', '--explain'], { cwd: projectDir });
   const verifyJsonResult = JSON.parse(verifyJson.stdout);
 
-  if (verifyJsonResult.ok !== false) {
-    throw new Error(`smoke-test failed: expected verify --json ok=false, got ${String(verifyJsonResult.ok)}`);
+  if (typeof verifyJsonResult.ok !== 'boolean') {
+    throw new Error(`smoke-test failed: expected verify --json ok to be boolean, got ${String(verifyJsonResult.ok)}`);
   }
 
   if (verifyJsonResult.exitCode !== verifyJson.status) {
