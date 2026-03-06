@@ -92,31 +92,43 @@ runs:
     - name: Lint
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: pnpm lint
+      run: |
+        echo "+ pnpm lint"
+        pnpm lint
 
     - name: Build workspace packages
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: pnpm -r build
+      run: |
+        echo "+ pnpm -r build"
+        pnpm -r build
 
     - name: Run tests
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: pnpm -r test
+      run: |
+        echo "+ pnpm -r test"
+        pnpm -r test
 
     - name: Run Playbook verification
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: node packages/cli/dist/main.js verify --ci
+      run: |
+        echo "+ node packages/cli/dist/main.js verify --ci"
+        node packages/cli/dist/main.js verify --ci
 
     - name: Smoke (CI)
       if: inputs.run-smoke == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: pnpm smoke:ci
+      run: |
+        echo "+ pnpm smoke:ci"
+        pnpm smoke:ci
 
     - name: Pack smoke (CI)
       if: inputs.run-smoke == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: pnpm pack:smoke
+      run: |
+        echo "+ pnpm pack:smoke"
+        pnpm pack:smoke

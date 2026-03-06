@@ -13,6 +13,17 @@ const ensureFile = (filePath, label) => {
   }
 };
 
+const ensurePlaybookConfig = (projectDir) => {
+  const legacyConfigPath = path.join(projectDir, 'playbook.config.json');
+  const modernConfigPath = path.join(projectDir, '.playbook', 'config.json');
+
+  if (!fs.existsSync(legacyConfigPath) && !fs.existsSync(modernConfigPath)) {
+    throw new Error(
+      'pack-smoke failed: missing Playbook config (expected playbook.config.json or .playbook/config.json)'
+    );
+  }
+};
+
 const readPackedPackageJson = (tarballPath) => {
   const raw = run('tar', ['-xOf', tarballPath, 'package/package.json']);
   return JSON.parse(raw);
@@ -135,14 +146,7 @@ try {
   runLogged(nodeBin, [binPath, 'analyze'], { cwd: projectDir });
   runLogged(nodeBin, [binPath, 'verify'], { cwd: projectDir });
 
-  const legacy = path.join(projectDir, 'playbook.config.json');
-  const modern = path.join(projectDir, '.playbook', 'config.json');
-
-  if (!fs.existsSync(legacy) && !fs.existsSync(modern)) {
-    throw new Error(
-      'pack-smoke failed: missing Playbook config (expected playbook.config.json or .playbook/config.json)'
-    );
-  }
+  ensurePlaybookConfig(projectDir);
   ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
   ensureFile(path.join(projectDir, 'docs', 'PROJECT_GOVERNANCE.md'), 'docs/PROJECT_GOVERNANCE.md');
 
