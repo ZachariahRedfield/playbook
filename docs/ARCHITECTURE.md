@@ -31,9 +31,11 @@ Playbook governance execution follows a staged flow:
 1. **`analyze`** detects repository structure and stack signals.
 2. **`verify`** executes deterministic governance rules and returns findings.
 3. **`plan`** converts verify failures into ordered, machine-safe tasks.
-4. **Apply stage** executes fix tasks (currently surfaced through `playbook fix`).
+4. **`apply`** executes deterministic auto-fixable tasks from a generated plan.
 
-`plan` and `fix` are the machine-safe planning/execution path for remediation.
+`fix` remains available as a convenience command for direct local remediation flows, but the canonical machine-safe execution path is `plan -> apply`.
+
+`plan` and `apply` are the machine-safe planning/execution path for remediation.
 
 ## Deterministic task and output contracts
 
