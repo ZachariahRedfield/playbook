@@ -22,7 +22,7 @@ pnpm test
 1. Create a branch for your change.
 2. Keep changes focused and aligned with Playbook governance.
 3. Run `pnpm build` and `pnpm test` before opening a pull request.
-4. Include documentation updates when behavior or developer workflow changes.
+4. Do not update README for new rules or commands; rely on CLI discovery (`playbook --help`, `playbook rules`, `playbook explain <id>`).
 
 ## Project Areas
 
