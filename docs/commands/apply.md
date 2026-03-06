@@ -22,3 +22,39 @@ Serializable execution contract:
 - Plan payload must declare `schemaVersion: "1.0"` and `command: "plan"`.
 - Every task must include `id`, `ruleId`, `file`, `action`, `autoFix`.
 - Handler results must explicitly report changed files and a non-empty summary; vague handler responses fail the task.
+
+
+## Workflow role
+`apply` is the execution step in the canonical remediation loop: `verify -> plan -> apply -> verify`.
+
+Use `--from-plan` when you need automation-safe execution from a reviewed artifact, so execution does not recompute intent at apply time.
+
+## JSON example
+```bash
+playbook apply --from-plan .playbook/plan.json --json
+```
+
+```json
+{
+  "schemaVersion": "1.0",
+  "command": "apply",
+  "ok": true,
+  "exitCode": 0,
+  "results": [
+    {
+      "id": "<stable-task-id>",
+      "ruleId": "requireNotesOnChanges",
+      "file": "docs/PLAYBOOK_NOTES.md",
+      "action": "append notes entry",
+      "autoFix": true,
+      "status": "applied"
+    }
+  ],
+  "summary": {
+    "applied": 1,
+    "skipped": 0,
+    "unsupported": 0,
+    "failed": 0
+  }
+}
+```

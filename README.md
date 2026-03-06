@@ -6,17 +6,36 @@ AI-aware engineering governance for modern repositories.
 
 Playbook is a governance CLI for repositories that keeps checks deterministic for both humans and AI agents. It helps teams inspect current policy status, understand active rules, and apply safe fixes with confidence.
 
+## Canonical remediation workflow
+
+Playbook's canonical remediation loop is:
+
+`verify -> plan -> apply -> verify`
+
+- `verify` detects deterministic policy findings.
+- `plan` generates a reviewable remediation artifact (including JSON output for automation).
+- `apply` executes deterministic auto-fixable tasks from a fresh plan or a serialized plan artifact.
+- the final `verify` confirms the repository returns to policy-compliant state.
+
+`fix` remains available as a convenience direct-remediation path (for example `--dry-run`, `--yes`, `--only`) when you want a single-command local workflow instead of explicit plan/apply steps.
+
 ## Quickstart
 
 ```bash
 npx playbook status
 npx playbook rules
 npx playbook explain <ruleId>
-# optional:
+# canonical remediation flow:
+npx playbook verify
+npx playbook plan --json > .playbook/plan.json
+# optional review/edit gate on .playbook/plan.json
+npx playbook apply --from-plan .playbook/plan.json
+npx playbook verify
+# optional convenience path:
+npx playbook fix --yes
+# other commands:
 npx playbook plan
 npx playbook apply
-npx playbook apply --from-plan .playbook/plan.json
-npx playbook fix --yes
 npx playbook upgrade
 npx playbook --help
 ```
