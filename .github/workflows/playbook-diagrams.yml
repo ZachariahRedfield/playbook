@@ -37,8 +37,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build workspace packages
+        run: pnpm -r build
+
       - name: Generate Playbook diagrams
-        run: npx playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
+        run: pnpm --filter playbook exec node dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
 
       - name: Commit diagram updates
         uses: stefanzweifel/git-auto-commit-action@v5
