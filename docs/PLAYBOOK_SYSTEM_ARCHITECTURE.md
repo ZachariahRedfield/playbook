@@ -242,12 +242,12 @@ Used by:
 
 playbook init
 
-Generated files include:
+Baseline scaffold outputs include:
 
-docs/ARCHITECTURE.md
-docs/PROJECT_GOVERNANCE.md
 docs/PLAYBOOK_NOTES.md
-docs/PLAYBOOK_CHECKLIST.md
+playbook.config.json (legacy) or .playbook/config.json (modern)
+
+Additional repository docs (for example `docs/PROJECT_GOVERNANCE.md`, `docs/ARCHITECTURE.md`, and `docs/PLAYBOOK_CHECKLIST.md`) are optional and can be managed per repository policy.
 
 <!-- docs-merge:duplicate-block -->
 > See also canonical block: [docs/PLAYBOOK_CONTRIBUTION_MODEL.md:188](PLAYBOOK_CONTRIBUTION_MODEL.md#block-188).

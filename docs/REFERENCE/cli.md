@@ -11,7 +11,14 @@ Current Playbook CLI commands:
 
 ## `playbook init [--ci] [--json] [--quiet]`
 
-Initialize Playbook docs and configuration for a repository.
+Initialize Playbook baseline docs and configuration for a repository.
+
+Baseline scaffold contract:
+
+- Playbook configuration (`playbook.config.json` or `.playbook/config.json`)
+- `docs/PLAYBOOK_NOTES.md`
+
+Repository-specific governance docs (for example `docs/PROJECT_GOVERNANCE.md`) are optional and may be added by individual repositories.
 
 ## `playbook analyze [--ci] [--json] [--quiet]`
 
