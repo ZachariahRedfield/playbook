@@ -599,6 +599,23 @@ Planned feature: `playbook index`
 - Product purpose: enable AI agents to safely understand repository structure and constraints before making code changes.
 - Scope note: this roadmap phase documents intent only; index generation is not part of the current implementation scope.
 
+## Phase: Serializable Apply Contracts
+
+Focus this phase on making plan execution portable and bounded:
+
+- `playbook apply --from-plan` executes a previously exported plan payload.
+- plan tasks carry stable task IDs suitable for CI, approvals, and cross-step automation.
+- JSON schema/version expectations are explicit (`schemaVersion: "1.0"`, `command: "plan"`).
+- handler contracts are strict: handlers must report concrete file changes and summaries.
+
+Pattern: **Serializable Execution Contract**
+
+A plan should be exportable, reviewable, and executable later without recomputing intent.
+
+Failure mode to avoid: **Plugin fix ambiguity**
+
+If plugin handlers are vague about what they changed, apply is no longer a trustworthy bounded executor.
+
 ## Phase: AI-Operable Repository Platform
 
 Feature: playbook plan

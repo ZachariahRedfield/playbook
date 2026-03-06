@@ -17,6 +17,7 @@ describe('verify -> plan -> apply -> verify workflow', () => {
     expect(contract.verify.failures.map((failure) => failure.id)).toEqual(['notes.missing']);
     expect(contract.tasks).toEqual([
       {
+        id: expect.any(String),
         ruleId: 'notes.missing',
         file: null,
         action: 'create playbook notes file',
@@ -71,6 +72,7 @@ describe('verify -> plan -> apply -> verify workflow', () => {
     const plan = generateExecutionPlan(root);
     expect(plan.tasks).toEqual([
       {
+        id: expect.any(String),
         ruleId: 'plugin.failure',
         file: 'docs/PLUGIN.md',
         action: 'create plugin doc',

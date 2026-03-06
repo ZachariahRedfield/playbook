@@ -29,6 +29,7 @@ describe('execution pipeline units', () => {
 
     expect(plan.tasks).toEqual([
       {
+        id: expect.any(String),
         ruleId: 'PB001',
         file: 'docs/ARCHITECTURE.md',
         action: 'update architecture docs',
@@ -45,8 +46,8 @@ describe('execution pipeline units', () => {
     ]);
 
     expect(plan.tasks).toEqual([
-      { ruleId: 'A', file: null, action: 'first', autoFix: false },
-      { ruleId: 'B', file: null, action: 'second', autoFix: false }
+      { id: expect.any(String), ruleId: 'A', file: null, action: 'first', autoFix: false },
+      { id: expect.any(String), ruleId: 'B', file: null, action: 'second', autoFix: false }
     ]);
   });
 
@@ -60,10 +61,10 @@ describe('execution pipeline units', () => {
 
     const result = await executor.apply(
       [
-        { ruleId: 'known', file: 'docs/PLAYBOOK_NOTES.md', action: 'apply known fix', autoFix: true },
-        { ruleId: 'manual', file: null, action: 'manual action', autoFix: false },
-        { ruleId: 'unknown', file: null, action: 'unknown action', autoFix: true },
-        { ruleId: 'broken', file: null, action: 'broken action', autoFix: true }
+        { id: 'task-known', ruleId: 'known', file: 'docs/PLAYBOOK_NOTES.md', action: 'apply known fix', autoFix: true },
+        { id: 'task-manual', ruleId: 'manual', file: null, action: 'manual action', autoFix: false },
+        { id: 'task-unknown', ruleId: 'unknown', file: null, action: 'unknown action', autoFix: true },
+        { id: 'task-broken', ruleId: 'broken', file: null, action: 'broken action', autoFix: true }
       ],
       { repoRoot: '.', dryRun: false }
     );

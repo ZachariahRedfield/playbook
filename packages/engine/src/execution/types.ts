@@ -12,6 +12,7 @@ export type Rule = {
 };
 
 export type PlanTask = {
+  id: string;
   ruleId: string;
   file: string | null;
   action: string;

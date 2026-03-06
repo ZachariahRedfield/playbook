@@ -15,6 +15,7 @@ npx playbook explain <ruleId>
 # optional:
 npx playbook plan
 npx playbook apply
+npx playbook apply --from-plan .playbook/plan.json
 npx playbook fix --yes
 npx playbook upgrade
 npx playbook --help

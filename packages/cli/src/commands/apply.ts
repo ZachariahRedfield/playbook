@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { applyExecutionPlan, generatePlanContract } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
@@ -6,9 +8,11 @@ type ApplyOptions = {
   format: 'text' | 'json';
   ci: boolean;
   quiet: boolean;
+  fromPlan?: string;
 };
 
 type ApplyResult = {
+  id: string;
   ruleId: string;
   file: string | null;
   action: string;
@@ -31,6 +35,50 @@ type ApplyJsonResult = {
   };
 };
 
+type SerializedPlanTask = {
+  id: string;
+  ruleId: string;
+  file: string | null;
+  action: string;
+  autoFix: boolean;
+};
+
+type SerializedPlanPayload = {
+  schemaVersion?: string;
+  command?: string;
+  tasks?: SerializedPlanTask[];
+};
+
+const loadPlanFromFile = (cwd: string, fromPlan: string): { tasks: SerializedPlanTask[] } => {
+  const resolvedPath = path.resolve(cwd, fromPlan);
+  const rawPayload = fs.readFileSync(resolvedPath, 'utf8');
+  const payload = JSON.parse(rawPayload) as SerializedPlanPayload;
+
+  if (payload.schemaVersion !== '1.0') {
+    throw new Error(`Unsupported plan schemaVersion: ${String(payload.schemaVersion ?? 'undefined')}.`);
+  }
+
+  if (payload.command !== 'plan') {
+    throw new Error('Invalid plan payload: command must be "plan".');
+  }
+
+  if (!Array.isArray(payload.tasks)) {
+    throw new Error('Invalid plan payload: tasks must be an array.');
+  }
+
+  for (const task of payload.tasks) {
+    if (!task || typeof task.id !== 'string' || typeof task.ruleId !== 'string' || typeof task.action !== 'string' || typeof task.autoFix !== 'boolean') {
+      throw new Error('Invalid plan payload: each task must include id, ruleId, action, and autoFix.');
+    }
+
+    if (task.file !== null && typeof task.file !== 'string') {
+      throw new Error('Invalid plan payload: task.file must be a string or null.');
+    }
+  }
+
+  return { tasks: payload.tasks };
+};
+
 const renderTextApply = (result: ApplyJsonResult): void => {
   console.log('Apply');
   console.log('────────');
@@ -48,12 +96,12 @@ const renderTextApply = (result: ApplyJsonResult): void => {
 
   for (const entry of result.results) {
     const target = entry.file ?? '(no file)';
-    console.log(`${entry.ruleId} ${entry.status} ${target}`);
+    console.log(`${entry.id} ${entry.ruleId} ${entry.status} ${target}`);
   }
 };
 
 export const runApply = async (cwd: string, options: ApplyOptions): Promise<number> => {
-  const plan = generatePlanContract(cwd);
+  const plan = options.fromPlan ? loadPlanFromFile(cwd, options.fromPlan) : generatePlanContract(cwd);
   const verifyRules = await loadVerifyRules(cwd);
 
   const handlers = Object.fromEntries(

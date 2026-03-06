@@ -17,8 +17,8 @@ describe('runPlan', () => {
     generatePlanContract.mockReturnValue({
       verify: { ok: false, summary: { failures: 2, warnings: 0 }, failures: [], warnings: [] },
       tasks: [
-        { ruleId: 'PB001', file: 'docs/ARCHITECTURE.md', action: 'update architecture docs', autoFix: true },
-        { ruleId: 'plugin.custom', file: null, action: 'add plugin docs', autoFix: false }
+        { id: 'task-1', ruleId: 'PB001', file: 'docs/ARCHITECTURE.md', action: 'update architecture docs', autoFix: true },
+        { id: 'task-2', ruleId: 'plugin.custom', file: null, action: 'add plugin docs', autoFix: false }
       ]
     });
 
@@ -59,7 +59,7 @@ describe('runPlan', () => {
 
     generatePlanContract.mockReturnValue({
       verify: { ok: false, summary: { failures: 1, warnings: 0 }, failures: [], warnings: [] },
-      tasks: [{ ruleId: 'plugin.custom', file: null, action: 'fix plugin contract', autoFix: true }]
+      tasks: [{ id: 'task-3', ruleId: 'plugin.custom', file: null, action: 'fix plugin contract', autoFix: true }]
     });
 
     const exitCode = await runPlan('/repo', { format: 'json', ci: false, quiet: false });
@@ -72,7 +72,7 @@ describe('runPlan', () => {
       ok: true,
       exitCode: ExitCode.Success,
       verify: { ok: false, summary: { failures: 1, warnings: 0 }, failures: [], warnings: [] },
-      tasks: [{ ruleId: 'plugin.custom', file: null, action: 'fix plugin contract', autoFix: true }]
+      tasks: [{ id: 'task-3', ruleId: 'plugin.custom', file: null, action: 'fix plugin contract', autoFix: true }]
     });
 
     logSpy.mockRestore();

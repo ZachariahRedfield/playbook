@@ -64,9 +64,9 @@ export const commandRegistry: RegisteredCommand[] = [
   {
     name: 'apply',
     description: 'Execute deterministic auto-fixable plan tasks',
-    run: async ({ cwd, ci, format, quiet }) => {
+    run: async ({ cwd, commandArgs, ci, format, quiet }) => {
       const { runApply } = await import('./apply.js');
-      return runApply(cwd, { ci, format, quiet });
+      return runApply(cwd, { ci, format, quiet, fromPlan: parseOptionValue(commandArgs, '--from-plan') });
     }
   },
   {
