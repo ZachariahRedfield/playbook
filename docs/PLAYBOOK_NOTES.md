@@ -101,3 +101,17 @@ Developer workflows should be executable commands rather than only written docum
 
 - WHAT changed: Hardened remediation execution by formalizing handler contract semantics (`applied`, `skipped`, `unsupported`, `failed`) and centralizing handler resolution precedence (plugin handlers override built-ins when defined; undefined plugin handlers do not shadow built-ins).
 - WHY it changed: Apply is now critical product surface area, so deterministic execution and explicit unsupported/failure signaling reduce ambiguity for CI and AI automation.
+
+## Next Steps
+
+- Merge this PR.
+- Tag release `v0.1.2`.
+- Push demo repository improvements.
+- Add Playbook `verify` GitHub Action later.
+
+## What to Capture in Docs
+
+- Pattern: Developer tool repositories should visibly demonstrate their own capabilities.
+- Rule: Automatically generated architecture diagrams should be linked from the README.
+- Pattern: CI should regenerate documentation artifacts derived from repository structure.
+- Failure Mode: Registry configuration issues may cause npm 403 errors in restricted environments.
