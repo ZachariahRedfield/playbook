@@ -15,6 +15,7 @@ Current product-facing surface (see authoritative index: [../commands/README.md]
 - `apply`
 - `index`
 - `query`
+- `ask`
 - `playbook-demo` onboarding artifact (discoverable via `playbook demo`)
 
 Current canonical remediation workflow:
@@ -98,6 +99,23 @@ playbook query modules
 playbook query architecture
 playbook query modules --json
 ```
+
+
+## `playbook ask <question> [--json] [--quiet]`
+
+Answer repository guidance questions from machine-readable repository intelligence.
+
+- Uses the engine reasoning layer and `queryRepositoryIndex` signals.
+- Reads `.playbook/repo-index.json` via the query engine (no direct repository scanning).
+- Deterministic response patterns exist for architecture, modules, and feature placement questions.
+
+JSON output includes:
+
+- `command`
+- `question`
+- `answer`
+- `reason`
+- `context` (`architecture`, `framework`, `modules`)
 
 ## `playbook verify [--ci] [--json] [--quiet]`
 

@@ -199,6 +199,16 @@ export const commandRegistry: RegisteredCommand[] = [
 
 
   {
+    name: 'ask',
+    description: 'Answer repository questions from machine-readable intelligence context',
+    run: async ({ cwd, commandArgs, format, quiet }) => {
+      const { runAsk } = await import('./ask.js');
+      return runAsk(cwd, commandArgs, { format, quiet });
+    }
+  },
+
+
+  {
     name: 'query',
     description: 'Query machine-readable repository intelligence from .playbook/repo-index.json',
     run: async ({ cwd, commandArgs, format, quiet }) => {

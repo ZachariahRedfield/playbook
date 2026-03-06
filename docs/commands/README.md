@@ -16,6 +16,7 @@ This is the authoritative command-state snapshot for Playbook product docs.
 | `playbook-demo` (artifact) | Official onboarding repository, discoverable via `playbook demo`. | Current (artifact + CLI discovery) | `playbook demo` |
 | `index` | Emit machine-readable repository index context for AI workflows. | Current (implemented) | `playbook index --json` |
 | `query` | Query machine-readable repository intelligence fields from `.playbook/repo-index.json`. | Current (implemented) | `playbook query modules --json` |
+| `ask` | Answer repository guidance questions from machine-readable repository intelligence context. | Current (implemented) | `playbook ask "where should a new feature live?" --json` |
 
 ## Additional implemented CLI utility commands
 

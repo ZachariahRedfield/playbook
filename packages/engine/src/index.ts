@@ -21,3 +21,5 @@ export type { RepositoryIndex } from './indexer/repoIndexer.js';
 
 export { queryRepositoryIndex, SUPPORTED_QUERY_FIELDS } from './query/repoQuery.js';
 export type { RepositoryQueryField, RepositoryQueryResult } from './query/repoQuery.js';
+export { answerRepositoryQuestion } from './ask/askEngine.js';
+export type { AskEngineResult } from './ask/askEngine.js';

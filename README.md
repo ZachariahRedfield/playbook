@@ -66,6 +66,7 @@ npx playbook verify
 
 - `index`
 - `query`
+- `ask`
 
 Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifact at `.playbook/repo-index.json`.
 
@@ -77,7 +78,8 @@ Use `playbook query` to read structured architecture metadata directly from `.pl
 playbook index
 playbook query modules
 playbook query architecture
-playbook query modules --json
+playbook ask "where should a new feature live?"
+playbook ask "what modules exist?" --json
 ```
 
 Authoritative command status lives in [docs/commands/README.md](docs/commands/README.md).
