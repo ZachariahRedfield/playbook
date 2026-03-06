@@ -17,6 +17,19 @@ const ensureFile = (filePath, label) => {
   }
 };
 
+const ensurePlaybookConfig = (projectRoot) => {
+  const configCandidates = [
+    path.join(projectRoot, 'playbook.config.json'),
+    path.join(projectRoot, '.playbook', 'config.json')
+  ];
+
+  if (!configCandidates.some((configPath) => fs.existsSync(configPath))) {
+    throw new Error(
+      'smoke-test failed: expected init to create playbook config file (playbook.config.json or .playbook/config.json)'
+    );
+  }
+};
+
 console.log(`[smoke] node=${nodeVersion} pnpm=${pnpmVersion}`);
 console.log(`[smoke] cli=${cliPath}`);
 
@@ -247,12 +260,7 @@ try {
     throw new Error(`smoke-test failed: expected fix --json reverify exitCode to not be 3 when verify fails, got ${String(fixJsonResult.reverify?.exitCode)}`);
   }
 
-  const legacyConfigPath = path.join(projectDir, 'playbook.config.json');
-  const indexedConfigPath = path.join(projectDir, '.playbook', 'config.json');
-
-  if (!fs.existsSync(legacyConfigPath) && !fs.existsSync(indexedConfigPath)) {
-    throw new Error('smoke-test failed: expected init to create playbook config file');
-  }
+  ensurePlaybookConfig(projectDir);
 
   ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
 
