@@ -18,9 +18,15 @@ type AnalyzeOptions = {
 
 type RepoIndex = {
   framework: string;
+  language: string;
   modules: string[];
+  shared_modules: string[];
   docs: string[];
   rules: string[];
+  architecture: {
+    features: string[];
+    shared: string[];
+  };
 };
 
 const analyzeRules = loadAnalyzeRules();
@@ -60,12 +66,78 @@ const detectFramework = (repoRoot: string): string => {
   return 'unknown';
 };
 
+const repoHasFileExtension = (root: string, extensions: Set<string>, current = ''): boolean => {
+  const full = path.join(root, current);
+  if (!fs.existsSync(full)) {
+    return false;
+  }
+
+  const entries = fs.readdirSync(full, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) {
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      if (['node_modules', 'dist', 'coverage', 'build', 'target', '.git', '.playbook'].includes(entry.name)) {
+        continue;
+      }
+      const relative = current ? path.posix.join(current, entry.name) : entry.name;
+      if (repoHasFileExtension(root, extensions, relative)) {
+        return true;
+      }
+      continue;
+    }
+
+    const extension = path.extname(entry.name).toLowerCase();
+    if (extensions.has(extension)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const detectLanguage = (repoRoot: string, framework: string): string => {
+  if (framework === 'python') return 'python';
+  if (framework === 'rust') return 'rust';
+  if (framework === 'go') return 'go';
+  if (framework === 'ruby') return 'ruby';
+
+  if (framework === 'node') {
+    if (fs.existsSync(path.join(repoRoot, 'tsconfig.json')) || repoHasFileExtension(repoRoot, new Set(['.ts', '.tsx']))) {
+      return 'typescript';
+    }
+    return 'javascript';
+  }
+
+  if (repoHasFileExtension(repoRoot, new Set(['.ts', '.tsx']))) return 'typescript';
+  if (repoHasFileExtension(repoRoot, new Set(['.js', '.jsx', '.mjs', '.cjs']))) return 'javascript';
+  if (repoHasFileExtension(repoRoot, new Set(['.py']))) return 'python';
+  if (repoHasFileExtension(repoRoot, new Set(['.rs']))) return 'rust';
+  if (repoHasFileExtension(repoRoot, new Set(['.go']))) return 'go';
+
+  return 'unknown';
+};
+
 export const buildRepoIndex = (repoRoot: string): RepoIndex => {
   const dirs = scanDirectories(repoRoot);
+  const framework = detectFramework(repoRoot);
+  const language = detectLanguage(repoRoot, framework);
+
   const modules = dirs
     .filter((dir) => dir === 'src/features' || dir.startsWith('src/features/') || dir.endsWith('/src/features') || dir.includes('/src/features/'))
     .filter((dir) => dir !== 'src/features')
     .sort();
+
+  const sharedModules = dirs
+    .filter((dir) => dir === 'src/shared' || dir.startsWith('src/shared/') || dir.endsWith('/src/shared') || dir.includes('/src/shared/'))
+    .sort();
+
+  const architecture = {
+    features: [...new Set(modules.map((modulePath) => modulePath.split('/').at(2)).filter((feature): feature is string => Boolean(feature)))].sort(),
+    shared: [...new Set(sharedModules.map((modulePath) => path.posix.basename(modulePath)).filter((segment) => segment.length > 0))].sort()
+  };
 
   const docs = fs
     .readdirSync(repoRoot, { withFileTypes: true })
@@ -76,10 +148,13 @@ export const buildRepoIndex = (repoRoot: string): RepoIndex => {
   const rules = [...new Set([...verifyRules.map((rule) => rule.id), ...analyzeRules.map((rule) => rule.id)])].sort();
 
   return {
-    framework: detectFramework(repoRoot),
+    framework,
+    language,
     modules,
+    shared_modules: sharedModules,
     docs,
-    rules
+    rules,
+    architecture
   };
 };
 
