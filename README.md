@@ -6,6 +6,16 @@ AI-aware engineering governance for modern repositories.
 
 Playbook is a governance CLI for repositories that keeps checks deterministic for both humans and AI agents. It helps teams inspect current policy status, understand active rules, and apply safe fixes with confidence.
 
+## Try Playbook in 30 seconds
+
+The fastest way to experience Playbook is the demo repository.
+
+git clone https://github.com/ZachariahRedfield/playbook-demo
+cd playbook-demo
+
+npm install
+npx playbook verify
+
 ## Canonical remediation workflow
 
 Playbook's canonical remediation loop is:
