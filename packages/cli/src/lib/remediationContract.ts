@@ -25,31 +25,43 @@ export type PlanJsonResult = {
   tasks: unknown[];
 };
 
+export type RemediationDerivationInput = {
+  findingCount: number;
+  stepCount: number;
+  unresolvedFindingCount?: number;
+  unavailableReason?: string;
+};
+
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
-export const buildPlanRemediation = (failureCount: number, totalSteps: number): PlanRemediation => {
-  if (failureCount === 0) {
+export const buildPlanRemediation = ({
+  findingCount,
+  stepCount,
+  unresolvedFindingCount,
+  unavailableReason
+}: RemediationDerivationInput): PlanRemediation => {
+  if (findingCount === 0) {
     return {
       status: 'not_needed',
-      totalSteps,
+      totalSteps: stepCount,
       unresolvedFailures: 0,
       reason: 'No verify failures were detected.'
     };
   }
 
-  if (totalSteps === 0) {
+  if (stepCount === 0) {
     return {
       status: 'unavailable',
-      totalSteps,
-      unresolvedFailures: failureCount,
-      reason: 'Verify failures were detected but no remediation tasks are currently available.'
+      totalSteps: stepCount,
+      unresolvedFailures: unresolvedFindingCount ?? findingCount,
+      reason: unavailableReason ?? 'Verify failures were detected but no remediation tasks are currently available.'
     };
   }
 
   return {
     status: 'ready',
-    totalSteps,
-    unresolvedFailures: Math.max(0, failureCount - totalSteps)
+    totalSteps: stepCount,
+    unresolvedFailures: unresolvedFindingCount ?? Math.max(0, findingCount - stepCount)
   };
 };
 

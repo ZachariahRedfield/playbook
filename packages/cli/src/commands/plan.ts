@@ -25,7 +25,11 @@ export const runPlan = async (
   options: { format: 'text' | 'json'; ci: boolean; quiet: boolean }
 ): Promise<number> => {
   const plan = generatePlanContract(cwd);
-  const remediation = buildPlanRemediation(plan.verify.summary.failures, plan.tasks.length);
+  const structuredFindingCount =
+    (Array.isArray(plan.verify.failures) ? plan.verify.failures.length : 0) +
+    (Array.isArray(plan.verify.warnings) ? plan.verify.warnings.length : 0);
+  const findingCount = structuredFindingCount > 0 ? structuredFindingCount : plan.verify.summary.failures + plan.verify.summary.warnings;
+  const remediation = buildPlanRemediation({ findingCount, stepCount: plan.tasks.length });
 
   if (options.format === 'json') {
     console.log(

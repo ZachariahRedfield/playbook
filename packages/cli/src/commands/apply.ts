@@ -143,9 +143,16 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     ? loadPlanFromFile(cwd, options.fromPlan)
     : (() => {
         const generatedPlan = generatePlanContract(cwd);
+        const structuredFindingCount =
+          (Array.isArray(generatedPlan.verify.failures) ? generatedPlan.verify.failures.length : 0) +
+          (Array.isArray(generatedPlan.verify.warnings) ? generatedPlan.verify.warnings.length : 0);
+        const findingCount =
+          structuredFindingCount > 0
+            ? structuredFindingCount
+            : generatedPlan.verify.summary.failures + generatedPlan.verify.summary.warnings;
         return {
           tasks: generatedPlan.tasks,
-          remediation: buildPlanRemediation(generatedPlan.verify.summary.failures, generatedPlan.tasks.length)
+          remediation: buildPlanRemediation({ findingCount, stepCount: generatedPlan.tasks.length })
         };
       })();
   const applyPrecondition = remediationToApplyPrecondition(plan.remediation);
