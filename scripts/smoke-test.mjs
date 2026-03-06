@@ -60,13 +60,20 @@ const runWithStatus = (command, args, options = {}) => {
 
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-smoke-'));
 const projectDir = path.join(tempRoot, 'project');
+const doctorFixProjectDir = path.join(tempRoot, 'doctor-fix-project');
 fs.mkdirSync(projectDir, { recursive: true });
+fs.mkdirSync(doctorFixProjectDir, { recursive: true });
 
 let smokePassed = false;
 try {
   fs.writeFileSync(
     path.join(projectDir, 'package.json'),
     JSON.stringify({ name: 'playbook-smoke', private: true, version: '1.0.0' }, null, 2)
+  );
+
+  fs.writeFileSync(
+    path.join(doctorFixProjectDir, 'package.json'),
+    JSON.stringify({ name: 'playbook-smoke-doctor-fix', private: true, version: '1.0.0' }, null, 2)
   );
 
   run(nodeBin, [cliPath, 'init'], { cwd: projectDir });
@@ -188,6 +195,19 @@ try {
   const notesContent = fs.readFileSync(notesPath, 'utf8');
   if (notesContent.trim().length === 0) {
     throw new Error('smoke-test failed: expected docs/PLAYBOOK_NOTES.md to be non-empty after fix');
+  }
+
+  const doctorFixJson = runWithStatus(nodeBin, [cliPath, 'doctor', '--fix', '--yes', '--json'], {
+    cwd: doctorFixProjectDir
+  });
+  const doctorFixJsonResult = JSON.parse(doctorFixJson.stdout);
+
+  if (!Array.isArray(doctorFixJsonResult.applied)) {
+    throw new Error('smoke-test failed: expected doctor --fix --json to include an applied array');
+  }
+
+  if (!fs.existsSync(path.join(doctorFixProjectDir, 'docs'))) {
+    throw new Error('smoke-test failed: expected doctor --fix to create docs directory');
   }
 
   if (typeof fixJsonResult.reverify?.exitCode !== 'number' || fixJsonResult.reverify.exitCode === 3) {

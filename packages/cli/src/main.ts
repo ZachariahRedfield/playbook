@@ -37,7 +37,7 @@ Commands:
   analyze                     Analyze project stack
   verify                      Verify governance rules
   fix                         Apply safe, deterministic autofixes for verify findings
-  doctor                      Check local setup
+  doctor                      Check local setup (optionally apply safe fixes)
   status                      Show overall Playbook repository health
   upgrade [options]           Plan safe upgrades and local deterministic migrations
   diagram [options]           Generate deterministic architecture Mermaid diagrams
@@ -97,7 +97,15 @@ const run = async () => {
     }
     case 'doctor': {
       const { runDoctor } = await import('./commands/doctor.js');
-      process.exit(await runDoctor(process.cwd(), { format, quiet }));
+      process.exit(
+        await runDoctor(process.cwd(), {
+          format,
+          quiet,
+          fix: parseFlag(commandArgs, '--fix'),
+          dryRun: parseFlag(commandArgs, '--dry-run'),
+          yes: parseFlag(commandArgs, '--yes')
+        })
+      );
       return;
     }
     case 'status': {
