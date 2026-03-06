@@ -13,8 +13,8 @@ The fastest way to experience Playbook is the demo repository.
 git clone https://github.com/ZachariahRedfield/playbook-demo
 cd playbook-demo
 
-npm install
-npx playbook verify
+- npm install
+- npx playbook verify
 
 ## Canonical remediation workflow
 
