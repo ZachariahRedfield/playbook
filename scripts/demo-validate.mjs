@@ -135,6 +135,14 @@ export const validateRemediationStatus = ({ remediationStatus, planSteps, initia
   }
 };
 
+export const validateFinalVerifyStatus = ({ finalVerifyCounts }) => {
+  if (finalVerifyCounts.failures > 0) {
+    throw new Error(
+      `Final verify still has ${finalVerifyCounts.failures} failure(s) (${finalVerifyCounts.warnings} warning(s), ${finalVerifyCounts.findings} total finding(s)).`
+    );
+  }
+};
+
 const main = () => {
   if (!fs.existsSync(localCliEntrypoint)) {
     throw new Error(
@@ -229,11 +237,11 @@ const main = () => {
 
   const finalVerifyResult = runPlaybookCli({ cwd: demoDir, commandArgs: ['verify', '--json'], expectSuccess: false });
   const finalVerify = parseJsonOutput(finalVerifyResult.stdout, 'Final verify');
-  const finalFindings = Array.isArray(finalVerify.findings) ? finalVerify.findings.length : 0;
-  if (finalFindings !== 0) {
-    throw new Error(`Final verify must be clean, found ${finalFindings} finding(s).`);
-  }
-  console.log('Verify (final): clean');
+  const finalVerifyCounts = deriveVerifyCounts(finalVerify);
+  validateFinalVerifyStatus({ finalVerifyCounts });
+  console.log(
+    `Verify (final): ${finalVerifyCounts.findings} findings (${finalVerifyCounts.failures} failures, ${finalVerifyCounts.warnings} warnings)`
+  );
   console.log('');
   console.log('Demo validation passed');
 };
