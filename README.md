@@ -80,6 +80,9 @@ playbook query modules
 playbook query architecture
 playbook ask "where should a new feature live?"
 playbook ask "what modules exist?" --json
+playbook explain workouts
+playbook explain PB001
+playbook explain architecture
 ```
 
 Authoritative command status lives in [docs/commands/README.md](docs/commands/README.md).
@@ -116,7 +119,7 @@ npx playbook doctor
 The CLI help output is the authoritative source for supported commands and flags.
 
 - Use `playbook rules` to list available rules.
-- Use `playbook explain <id>` to see what a rule checks and how to remediate findings.
+- Use `playbook explain <target>` to deterministically explain rules, modules, and architecture from `.playbook/repo-index.json` and the rule registry.
 
 ## Init Scaffold Contract
 

@@ -1,100 +1,136 @@
+import { explainTarget, type ExplainTargetResult } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
-import { loadAnalyzeRules } from '../lib/loadAnalyzeRules.js';
-import { loadVerifyRules } from '../lib/loadVerifyRules.js';
 
-type ExplainRule = {
-  kind: 'verify' | 'analyze';
-  id: string;
-  description: string;
-  explanation?: string;
-  remediation?: string[];
+type ExplainOptions = {
+  format: 'text' | 'json';
+  quiet: boolean;
 };
 
-type ExplainResult = {
-  schemaVersion: '1.0';
+type ExplainOutput = {
   command: 'explain';
-  rule: ExplainRule;
-};
-
-const findRule = async (cwd: string, ruleId: string): Promise<ExplainRule | undefined> => {
-  const verifyRule = (await loadVerifyRules(cwd)).find((rule) => rule.id === ruleId);
-  if (verifyRule) {
-    return {
-      kind: 'verify',
-      id: verifyRule.id,
-      description: verifyRule.description,
-      explanation: verifyRule.explanation,
-      remediation: verifyRule.remediation
-    };
-  }
-
-  const analyzeRule = (await loadAnalyzeRules()).find((rule) => rule.id === ruleId);
-  if (analyzeRule) {
-    return {
-      kind: 'analyze',
-      id: analyzeRule.id,
-      description: analyzeRule.description,
-      explanation: analyzeRule.explanation,
-      remediation: analyzeRule.remediation
-    };
-  }
-
-  return undefined;
+  target: string;
+  type: ExplainTargetResult['type'];
+  explanation: Record<string, unknown>;
 };
 
 const firstPositionalArg = (args: string[]): string | undefined => args.find((arg) => !arg.startsWith('-'));
 
-const printText = (rule: ExplainRule): void => {
-  console.log(`Rule: ${rule.id}`);
-  console.log('');
-  console.log('Description');
-  console.log(rule.description);
-  console.log('');
-  console.log('Why this exists');
-  console.log(rule.explanation ?? 'No explanation provided for this rule.');
-  console.log('');
-  console.log('How to fix');
-  if (rule.remediation && rule.remediation.length > 0) {
-    for (const step of rule.remediation) {
+const toOutput = (target: string, explanation: ExplainTargetResult): ExplainOutput => {
+  if (explanation.type === 'unknown') {
+    return {
+      command: 'explain',
+      target,
+      type: 'unknown',
+      explanation: {
+        message: explanation.message
+      }
+    };
+  }
+
+  const payload = { ...explanation };
+  delete (payload as { type?: string }).type;
+  return {
+    command: 'explain',
+    target,
+    type: explanation.type,
+    explanation: payload
+  };
+};
+
+const printText = (target: string, explanation: ExplainTargetResult): void => {
+  if (explanation.type === 'rule') {
+    console.log(`Rule: ${explanation.id}`);
+    console.log('');
+    console.log('Purpose');
+    console.log(explanation.purpose);
+    console.log('');
+    console.log('Reason');
+    console.log(explanation.reason);
+    console.log('');
+    console.log('How to fix');
+    for (const step of explanation.fix) {
       console.log(`- ${step}`);
     }
     return;
   }
 
-  console.log('- No remediation steps provided for this rule.');
+  if (explanation.type === 'module') {
+    console.log(`Module: ${explanation.name}`);
+    console.log('');
+    console.log(`Architecture: ${explanation.architecture}`);
+    console.log('');
+    console.log('Responsibilities');
+    for (const item of explanation.responsibilities) {
+      console.log(`- ${item}`);
+    }
+    console.log('');
+    console.log('Dependencies');
+    if (explanation.dependencies.length === 0) {
+      console.log('- none (not yet inferred)');
+      return;
+    }
+
+    for (const item of explanation.dependencies) {
+      console.log(`- ${item}`);
+    }
+    return;
+  }
+
+  if (explanation.type === 'architecture') {
+    console.log(`Architecture: ${explanation.architecture}`);
+    console.log('');
+    console.log('Structure');
+    console.log(explanation.structure);
+    console.log('');
+    console.log('Reasoning');
+    console.log(explanation.reasoning);
+    return;
+  }
+
+  console.log(`Target: ${target}`);
+  console.log('');
+  console.log(explanation.message);
 };
 
-export const runExplain = async (
-  cwd: string,
-  commandArgs: string[],
-  options: { format: 'text' | 'json'; quiet: boolean }
-): Promise<number> => {
-  const ruleId = firstPositionalArg(commandArgs);
-  if (!ruleId) {
-    console.error('playbook explain: missing required <ruleId> argument');
+export const runExplain = async (cwd: string, commandArgs: string[], options: ExplainOptions): Promise<number> => {
+  const target = firstPositionalArg(commandArgs);
+  if (!target) {
+    console.error('playbook explain: missing required <target> argument');
     return ExitCode.Failure;
   }
 
-  const rule = await findRule(cwd, ruleId);
-  if (!rule) {
-    console.error(`playbook explain: rule not found: ${ruleId}`);
+  try {
+    const explanation = explainTarget(cwd, target);
+    const output = toOutput(target, explanation);
+
+    if (options.format === 'json') {
+      console.log(JSON.stringify(output, null, 2));
+      return explanation.type === 'unknown' ? ExitCode.Failure : ExitCode.Success;
+    }
+
+    if (!options.quiet) {
+      printText(target, explanation);
+    }
+
+    return explanation.type === 'unknown' ? ExitCode.Failure : ExitCode.Success;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (options.format === 'json') {
+      console.log(
+        JSON.stringify(
+          {
+            command: 'explain',
+            target,
+            error: message
+          },
+          null,
+          2
+        )
+      );
+    } else {
+      console.error(message);
+    }
+
     return ExitCode.Failure;
   }
-
-  const result: ExplainResult = {
-    schemaVersion: '1.0',
-    command: 'explain',
-    rule
-  };
-
-  if (options.format === 'json') {
-    console.log(JSON.stringify(result, null, 2));
-    return ExitCode.Success;
-  }
-
-  if (!options.quiet) {
-    printText(result.rule);
-  }
-
-  return ExitCode.Success;
 };

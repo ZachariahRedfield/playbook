@@ -153,9 +153,18 @@ Show overall repository governance health by combining environment and verificat
 
 List loaded verify and analyze rules.
 
-## `playbook explain <rule-id> [--json] [--quiet]`
+## `playbook explain <target> [--json] [--quiet]`
 
-Show detailed rule metadata by ID.
+Explain a rule, module, or architecture element from repository intelligence (no repository scan).
+
+Examples:
+
+```bash
+playbook explain PB001
+playbook explain workouts
+playbook explain architecture
+playbook explain workouts --json
+```
 
 ## `playbook diagram [--repo] [--out] [--deps] [--structure] [--ci] [--json] [--quiet]`
 

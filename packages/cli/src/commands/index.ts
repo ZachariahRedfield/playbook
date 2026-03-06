@@ -173,7 +173,7 @@ export const commandRegistry: RegisteredCommand[] = [
   },
   {
     name: 'explain',
-    description: 'Show detailed rule metadata by id',
+    description: 'Explain rules, modules, or architecture from repository intelligence',
     run: async ({ cwd, commandArgs, format, quiet }) => {
       const { runExplain } = await import('./explain.js');
       return runExplain(cwd, commandArgs, { format, quiet });

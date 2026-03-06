@@ -159,8 +159,8 @@ try {
   const explainJson = runWithStatus(nodeBin, [cliPath, 'explain', 'notes.missing', '--json'], { cwd: projectDir });
   const explainJsonResult = JSON.parse(explainJson.stdout);
 
-  if (explainJsonResult.rule?.id !== 'notes.missing') {
-    throw new Error('smoke-test failed: expected explain notes.missing --json to include rule.id=notes.missing');
+  if (explainJsonResult.type !== 'rule' || explainJsonResult.explanation?.id !== 'notes.missing') {
+    throw new Error('smoke-test failed: expected explain notes.missing --json to include type=rule and explanation.id=notes.missing');
   }
 
   const statusJsonHealthy = runWithStatus(nodeBin, [cliPath, 'status', '--json'], { cwd: projectDir });
