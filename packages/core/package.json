@@ -8,7 +8,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "build:js": "pnpm exec tsc -p tsconfig.build.json",
     "build:types": "pnpm exec tsc -p tsconfig.build.json",
     "test": "pnpm exec vitest run --passWithNoTests"
