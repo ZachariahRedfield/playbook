@@ -39,6 +39,7 @@ Commands:
   fix                         Apply safe, deterministic autofixes for verify findings
   doctor                      Check local setup
   status                      Show overall Playbook repository health
+  upgrade [options]           Plan safe upgrades and local deterministic migrations
   diagram [options]           Generate deterministic architecture Mermaid diagrams
   session <subcommand>        Import, merge, and cleanup session snapshots
 
@@ -102,6 +103,24 @@ const run = async () => {
     case 'status': {
       const { runStatus } = await import('./commands/status.js');
       process.exit(await runStatus(process.cwd(), { ci, format, quiet }));
+      return;
+    }
+    case 'upgrade': {
+      const { runUpgrade } = await import('./commands/upgrade.js');
+      process.exit(
+        await runUpgrade(process.cwd(), {
+          check: parseFlag(commandArgs, '--check'),
+          apply: parseFlag(commandArgs, '--apply'),
+          dryRun: parseFlag(commandArgs, '--dry-run'),
+          offline: parseFlag(commandArgs, '--offline'),
+          from: parseOptionValue(commandArgs, '--from'),
+          to: parseOptionValue(commandArgs, '--to'),
+          ci,
+          explain,
+          format,
+          quiet
+        })
+      );
       return;
     }
     case 'session': {

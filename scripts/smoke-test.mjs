@@ -143,6 +143,31 @@ try {
   }
 
 
+  const upgradePlanJson = runWithStatus(nodeBin, [cliPath, 'upgrade', '--json'], { cwd: projectDir });
+  const upgradePlanResult = JSON.parse(upgradePlanJson.stdout);
+
+  if (upgradePlanResult.schemaVersion !== '1.0' || upgradePlanResult.command !== 'upgrade') {
+    throw new Error('smoke-test failed: expected upgrade --json to return schemaVersion=1.0 and command=upgrade');
+  }
+
+  const upgradeCheckJson = runWithStatus(nodeBin, [cliPath, 'upgrade', '--check', '--from', '0.1.0', '--json'], { cwd: projectDir });
+  const upgradeCheckResult = JSON.parse(upgradeCheckJson.stdout);
+
+  if (!Array.isArray(upgradeCheckResult.migrationsNeeded)) {
+    throw new Error('smoke-test failed: expected upgrade --check --json to include migrationsNeeded array');
+  }
+
+  const upgradeApplyDryRunJson = runWithStatus(
+    nodeBin,
+    [cliPath, 'upgrade', '--apply', '--dry-run', '--from', '0.1.0', '--json'],
+    { cwd: projectDir }
+  );
+  const upgradeApplyDryRunResult = JSON.parse(upgradeApplyDryRunJson.stdout);
+
+  if (upgradeApplyDryRunResult.dryRun !== true) {
+    throw new Error('smoke-test failed: expected upgrade --apply --dry-run --json to return dryRun=true');
+  }
+
   const fixJson = runWithStatus(nodeBin, [cliPath, 'fix', '--json', '--yes'], { cwd: projectDir });
   const fixJsonResult = JSON.parse(fixJson.stdout);
 
