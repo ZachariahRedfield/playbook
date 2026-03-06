@@ -599,63 +599,35 @@ Planned feature: `playbook index`
 - Product purpose: enable AI agents to safely understand repository structure and constraints before making code changes.
 - Scope note: this roadmap phase documents intent only; index generation is not part of the current implementation scope.
 
-## Phase: Serializable Apply Contracts
+## Phase: AI-Operable Repository Platform (Loop 1 Complete)
 
-Focus this phase on making plan execution portable and bounded:
+Status: the first remediation interface loop is now implemented via `verify`, `plan`, and `apply`.
 
-- `playbook apply --from-plan` executes a previously exported plan payload.
-- plan tasks carry stable task IDs suitable for CI, approvals, and cross-step automation.
-- JSON schema/version expectations are explicit (`schemaVersion: "1.0"`, `command: "plan"`).
-- handler contracts are strict: handlers must report concrete file changes and summaries.
+Canonical flow:
 
-Pattern: **Serializable Execution Contract**
+`verify -> plan -> apply -> verify`
 
-A plan should be exportable, reviewable, and executable later without recomputing intent.
+- `verify` detects deterministic governance findings.
+- `plan` emits deterministic remediation intent (`tasks`) in both human and machine-readable forms.
+- `apply` executes deterministic auto-fixable tasks from fresh planning or a serialized `--from-plan` artifact.
+- `fix` remains as a convenience/direct remediation path, while `plan` + `apply` is the primary automation contract.
 
-Failure mode to avoid: **Plugin fix ambiguity**
+Pattern: **Reviewed Intent Before Execution**
 
-If plugin handlers are vague about what they changed, apply is no longer a trustworthy bounded executor.
+The safest automation model is to generate a machine-readable plan, review it, then execute that exact artifact.
 
-## Phase: AI-Operable Repository Platform
+## Phase: Serialized Execution Contracts & Automation Hardening (Next)
 
-Feature: playbook plan
+Focus this subphase on contract durability for CI and agent integrations:
 
-Generate machine-readable tasks from verify/analyze findings.
+- [ ] `apply --from-plan` parity hardening across text/json modes and failure reporting.
+- [ ] Stable task IDs and schema hardening for long-lived artifact compatibility.
+- [ ] Handler registry hardening so unsupported/failed handlers are explicit and auditable.
+- [ ] CI/GitHub Action artifact workflows for exporting, reviewing, and applying plan artifacts across steps/jobs.
 
-Example:
+Failure mode to avoid: **Apply recomputes intent during artifact execution**
 
-npx playbook plan --json
-
-Output:
-
-```json
-{
-  "tasks": [
-    {
-      "ruleId": "PB001",
-      "file": "docs/ARCHITECTURE.md",
-      "action": "update architecture docs",
-      "autoFix": true
-    }
-  ]
-}
-```
-
-Purpose:
-
-Allow AI agents and automation to determine what actions should be taken.
-
-Feature: playbook fix (current apply-stage command)
-
-Execute deterministic eligible autofixes from governance findings.
-
-Example:
-
-npx playbook fix --yes
-
-Purpose:
-
-Allow tools and agents to apply changes safely without editing files directly through the current command surface.
+If `apply --from-plan` silently re-runs planning logic and diverges from the reviewed artifact, the execution contract is no longer trustworthy.
 
 Feature: Plugin Ecosystem
 
@@ -682,7 +654,8 @@ Expose machine-readable interfaces:
 - playbook analyze --json
 - playbook status --json
 - playbook plan --json
-- playbook fix --json
+- playbook apply --json
+- playbook fix --json (convenience path)
 - playbook verify --json
 
 Purpose:

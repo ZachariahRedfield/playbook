@@ -4,6 +4,14 @@ See also: [Command Contract Overview](../commands/overview.md).
 
 Current Playbook CLI commands:
 
+Current canonical remediation workflow:
+
+`verify -> plan -> apply -> verify`
+
+Automation-safe variant:
+
+`playbook verify` → `playbook plan --json > .playbook/plan.json` → review artifact → `playbook apply --from-plan .playbook/plan.json` → `playbook verify`
+
 ## Global options (all top-level commands)
 
 - `--ci`: deterministic CI mode with minimized output (quiet unless errors).
@@ -46,6 +54,8 @@ Execute deterministic `plan` tasks using bounded auto-fix handlers.
 ## `playbook fix [--dry-run] [--yes] [--only <ruleId>] [--ci] [--json] [--quiet]`
 
 Apply safe deterministic fixes (or preview with `--dry-run`).
+
+`fix` overlaps with `apply` for deterministic remediation intent, but is retained as a convenience/direct path for local workflows. For artifact-driven CI/agent execution, prefer `plan` + `apply`.
 
 ## `playbook doctor [--ci] [--json] [--quiet] [--fix] [--dry-run] [--yes]`
 

@@ -30,14 +30,19 @@ JSON output is a **public automation contract** and must remain stable and deter
 
 ## Remediation flow conventions
 
-Current remediation flow is:
+Canonical remediation flow is:
 
-`analyze -> verify -> plan -> review artifact -> apply --from-plan -> verify`
+`verify -> plan -> apply -> verify`
 
 Canonical automation-safe execution sequence:
 
 `verify -> plan --json > plan.json -> review plan.json -> apply --from-plan plan.json -> verify`
 
-`apply` is the bounded executor for deterministic, auto-fixable plan tasks and can execute either a freshly generated plan or an explicit serialized plan artifact.
+Command roles:
 
-`fix` remains available for opt-in/manual fix workflows (`--dry-run`, `--yes`, `--only`).
+- `verify`: detect deterministic governance findings.
+- `plan`: produce remediation intent as a deterministic, machine-readable task artifact.
+- `apply`: bounded executor for deterministic auto-fixable plan tasks (from a fresh plan or `--from-plan`).
+- `fix`: convenience/direct remediation path for local/manual workflows (`--dry-run`, `--yes`, `--only`).
+
+Pattern: reviewed intent before execution. In automation, generate plan output first, review the artifact, then execute that exact artifact.

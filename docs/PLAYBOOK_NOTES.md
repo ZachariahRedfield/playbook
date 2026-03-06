@@ -1,5 +1,14 @@
 # Playbook Notes
 
+• Pattern: Verify-Plan-Apply-Verify
+The canonical remediation workflow is `verify -> plan -> apply -> verify`. This keeps detection, intent generation, execution, and post-execution validation explicit for humans, CI, and AI agents.
+
+• Rule: Machine-readable command output is a product contract
+JSON output is not incidental formatting. Stable envelopes and task fields are a compatibility commitment for automation and GitHub Action workflows.
+
+• Failure Mode: Command overlap confusion (`fix` vs `apply`)
+If docs do not clearly separate `fix` (convenience direct remediation) from `apply` (bounded plan-task execution), users and agents can choose the wrong interface and build brittle automation.
+
 • Pattern: AI-operable repository interface
 Playbook commands expose repository structure, health, and architecture so AI agents can reason about a codebase without reading the entire source tree.
 
