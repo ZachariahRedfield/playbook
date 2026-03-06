@@ -32,3 +32,4 @@ The command always overwrites `.playbook/repo-index.json` with the latest determ
   "modules": ["..."]
 }
 ```
+

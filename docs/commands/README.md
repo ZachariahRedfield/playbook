@@ -18,6 +18,7 @@ This is the authoritative command-state snapshot for Playbook product docs.
 | `query` | Query machine-readable repository intelligence fields from `.playbook/repo-index.json`. | Current (implemented) | `playbook query modules --json` |
 | `ask` | Answer repository guidance questions from machine-readable repository intelligence context. | Current (implemented) | `playbook ask "where should a new feature live?" --json` |
 | `explain` | Deterministically explain rule/module/architecture targets from engine + repo index context. | Current (implemented) | `playbook explain architecture --json` |
+| `schema` | Emit JSON Schema contracts for Playbook JSON command outputs. | Current (implemented) | `playbook schema verify --json` |
 
 ## Additional implemented CLI utility commands
 

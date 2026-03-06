@@ -180,6 +180,15 @@ export const commandRegistry: RegisteredCommand[] = [
     }
   },
   {
+    name: 'schema',
+    description: 'Print JSON Schemas for Playbook CLI command outputs',
+    run: async ({ cwd, commandArgs, format, quiet }) => {
+      const { runSchema } = await import('./schema.js');
+      return runSchema(cwd, commandArgs, { format, quiet });
+    }
+  },
+
+  {
     name: 'rules',
     description: 'List loaded verify and analyze rules',
     run: async ({ cwd, explain, format, quiet }) => {

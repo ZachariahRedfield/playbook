@@ -30,6 +30,10 @@ declare module "@zachariahredfield/playbook-engine" {
   export const generatePlanContract: (...args: any[]) => any;
   export const applyExecutionPlan: (...args: any[]) => Promise<any>;
   export const parsePlanArtifact: (...args: any[]) => any;
+  export const getCliSchemas: (...args: any[]) => any;
+  export const getCliSchema: (...args: any[]) => any;
+  export const isCliSchemaCommand: (...args: any[]) => boolean;
+  export const CLI_SCHEMA_COMMANDS: readonly string[];
   export const cleanupSessionSnapshots: (...args: any[]) => any;
   export const formatMergeReportMarkdown: (...args: any[]) => string;
   export const importChatTextSnapshot: (...args: any[]) => any;

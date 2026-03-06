@@ -9,6 +9,7 @@ Current product-facing surface (see authoritative index: [../commands/README.md]
 - `analyze`
 - `verify`
 - `rules`
+- `schema`
 - `doctor`
 - `diagram`
 - `plan`
@@ -153,6 +154,15 @@ Show overall repository governance health by combining environment and verificat
 ## `playbook rules [--json] [--quiet] [--explain]`
 
 List loaded verify and analyze rules.
+
+
+## `playbook schema [command] [--json] [--quiet]`
+
+Print JSON Schema contracts for Playbook CLI JSON outputs.
+
+- `playbook schema` returns all supported command schemas.
+- `playbook schema rules` (or `explain`, `index`, `verify`, `plan`) returns a single schema.
+- Use these schemas to validate `--json` outputs in CI, demo repos, and agent automation.
 
 ## `playbook explain <target> [--json] [--quiet]`
 

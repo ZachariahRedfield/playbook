@@ -61,6 +61,7 @@ npx playbook verify
 - `doctor`
 - `diagram`
 - `rules`
+- `schema`
 
 ### Repository Intelligence
 
@@ -70,6 +71,8 @@ npx playbook verify
 - `explain`
 
 Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifact at `.playbook/repo-index.json`.
+
+Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `verify`, `plan`) so CI and agents can validate payloads.
 
 ### Querying Repository Intelligence
 

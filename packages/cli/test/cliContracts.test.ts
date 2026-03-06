@@ -9,13 +9,19 @@ const cliEntry = path.join(repoRoot, 'packages', 'cli', 'dist', 'main.js');
 const snapshotDir = path.join(repoRoot, 'tests', 'contracts');
 const shouldUpdateSnapshots = process.env.UPDATE_CONTRACT_SNAPSHOTS === '1';
 
-const commandContracts = [
-  { file: 'rules.snapshot.json', args: ['rules', '--json'] },
-  { file: 'index.snapshot.json', args: ['index', '--json'] },
-  { file: 'explain-PB001.snapshot.json', args: ['explain', 'PB001', '--json'] },
-  { file: 'explain-architecture.snapshot.json', args: ['explain', 'architecture', '--json'] },
-  { file: 'verify.snapshot.json', args: ['verify', '--json'] },
-  { file: 'plan.snapshot.json', args: ['plan', '--json'] }
+type CommandContract = {
+  file: string;
+  args: readonly string[];
+  schemaCommand: 'rules' | 'explain' | 'index' | 'verify' | 'plan';
+};
+
+const commandContracts: readonly CommandContract[] = [
+  { file: 'rules.snapshot.json', args: ['rules', '--json'], schemaCommand: 'rules' },
+  { file: 'index.snapshot.json', args: ['index', '--json'], schemaCommand: 'index' },
+  { file: 'explain-PB001.snapshot.json', args: ['explain', 'PB001', '--json'], schemaCommand: 'explain' },
+  { file: 'explain-architecture.snapshot.json', args: ['explain', 'architecture', '--json'], schemaCommand: 'explain' },
+  { file: 'verify.snapshot.json', args: ['verify', '--json'], schemaCommand: 'verify' },
+  { file: 'plan.snapshot.json', args: ['plan', '--json'], schemaCommand: 'plan' }
 ] as const;
 
 function createContractFixtureRepo(): string {
@@ -79,6 +85,98 @@ function runCliJsonContract(args: readonly string[], fixtureRepo: string): unkno
   return normalizeContractPayload(JSON.parse(payload), fixtureRepo);
 }
 
+function toTypeName(value: unknown): string {
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (value === null) {
+    return 'null';
+  }
+  if (typeof value === 'number' && Number.isInteger(value)) {
+    return 'integer';
+  }
+  return typeof value;
+}
+
+function typeMatches(schemaType: unknown, value: unknown): boolean {
+  const typeName = toTypeName(value);
+  if (Array.isArray(schemaType)) {
+    return schemaType.includes(typeName) || (schemaType.includes('number') && typeName === 'integer');
+  }
+  return schemaType === typeName || (schemaType === 'number' && typeName === 'integer');
+}
+
+function validateAgainstSchema(value: unknown, schema: unknown): boolean {
+  if (!schema || typeof schema !== 'object') {
+    return true;
+  }
+
+  const schemaObject = schema as Record<string, unknown>;
+
+  if (Array.isArray(schemaObject.oneOf)) {
+    return schemaObject.oneOf.some((candidate) => validateAgainstSchema(value, candidate));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(schemaObject, 'const')) {
+    return value === schemaObject.const;
+  }
+
+  if (Array.isArray(schemaObject.enum) && !schemaObject.enum.includes(value)) {
+    return false;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(schemaObject, 'type') && !typeMatches(schemaObject.type, value)) {
+    return false;
+  }
+
+  if (typeof schemaObject.minProperties === 'number') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return false;
+    }
+    if (Object.keys(value as Record<string, unknown>).length < schemaObject.minProperties) {
+      return false;
+    }
+  }
+
+  if (Array.isArray(schemaObject.required)) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return false;
+    }
+
+    const recordValue = value as Record<string, unknown>;
+    for (const key of schemaObject.required) {
+      if (typeof key !== 'string' || !Object.prototype.hasOwnProperty.call(recordValue, key)) {
+        return false;
+      }
+    }
+  }
+
+  if (value && typeof value === 'object' && !Array.isArray(value) && schemaObject.properties && typeof schemaObject.properties === 'object') {
+    const properties = schemaObject.properties as Record<string, unknown>;
+    const valueRecord = value as Record<string, unknown>;
+
+    for (const [key, propertySchema] of Object.entries(properties)) {
+      if (Object.prototype.hasOwnProperty.call(valueRecord, key) && !validateAgainstSchema(valueRecord[key], propertySchema)) {
+        return false;
+      }
+    }
+
+    if (schemaObject.additionalProperties === false) {
+      for (const key of Object.keys(valueRecord)) {
+        if (!Object.prototype.hasOwnProperty.call(properties, key)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  if (Array.isArray(value) && schemaObject.items) {
+    return value.every((entry) => validateAgainstSchema(entry, schemaObject.items));
+  }
+
+  return true;
+}
+
 describe('CLI JSON contract snapshots', () => {
   it('matches committed snapshots for stable automation contracts', () => {
     fs.mkdirSync(snapshotDir, { recursive: true });
@@ -89,6 +187,12 @@ describe('CLI JSON contract snapshots', () => {
         const snapshotPath = path.join(snapshotDir, contract.file);
         const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
         const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
+
+        const schema = runCliJsonContract(['schema', contract.schemaCommand, '--json'], fixtureRepo);
+        expect(
+          validateAgainstSchema(actualPayload, schema),
+          `Schema validation failed for ${contract.args.join(' ')}`
+        ).toBe(true);
 
         if (shouldUpdateSnapshots || !fs.existsSync(snapshotPath)) {
           fs.writeFileSync(snapshotPath, actualJson, 'utf8');

@@ -26,3 +26,6 @@ export type { AskEngineResult } from './ask/askEngine.js';
 
 export { explainTarget } from './explain/explainEngine.js';
 export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, UnknownExplanation } from './explain/explainEngine.js';
+
+export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } from './schema/cliSchemas.js';
+export type { CliSchemaCommand, JsonSchema } from './schema/cliSchemas.js';
