@@ -36,6 +36,7 @@ Commands:
   init                        Initialize playbook docs/config
   analyze                     Analyze project stack
   verify                      Verify governance rules
+  fix                         Apply safe, deterministic autofixes for verify findings
   doctor                      Check local setup
   status                      Show overall Playbook repository health
   diagram [options]           Generate deterministic architecture Mermaid diagrams
@@ -76,6 +77,21 @@ const run = async () => {
     case 'verify': {
       const { runVerify } = await import('./commands/verify.js');
       process.exit(await runVerify(process.cwd(), { ci, explain, format, quiet }));
+      return;
+    }
+    case 'fix': {
+      const { runFix } = await import('./commands/fix.js');
+      process.exit(
+        await runFix(process.cwd(), {
+          dryRun: parseFlag(commandArgs, '--dry-run'),
+          yes: parseFlag(commandArgs, '--yes'),
+          only: parseOptionValue(commandArgs, '--only'),
+          ci,
+          explain,
+          format,
+          quiet
+        })
+      );
       return;
     }
     case 'doctor': {

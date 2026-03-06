@@ -116,6 +116,7 @@ try {
   if (!Array.isArray(notesEmptyFinding.remediation) || notesEmptyFinding.remediation.length === 0) {
     throw new Error('smoke-test failed: expected verify --json --explain finding to include remediation steps');
   }
+
   const statusJsonVerifyFail = runWithStatus(nodeBin, [cliPath, 'status', '--json'], { cwd: projectDir });
   const statusJsonVerifyFailResult = JSON.parse(statusJsonVerifyFail.stdout);
 
@@ -141,6 +142,32 @@ try {
     throw new Error(`smoke-test failed: expected status --json environment.ok=false, got ${String(statusJsonDoctorFailResult.environment?.ok)}`);
   }
 
+
+  const fixJson = runWithStatus(nodeBin, [cliPath, 'fix', '--json', '--yes'], { cwd: projectDir });
+  const fixJsonResult = JSON.parse(fixJson.stdout);
+
+  if (!Array.isArray(fixJsonResult.applied)) {
+    throw new Error('smoke-test failed: expected fix --json to include applied array');
+  }
+
+  const appliedFindingIds = fixJsonResult.applied.map((entry) => entry.findingId);
+  if (!appliedFindingIds.includes('notes.empty') && !appliedFindingIds.includes('notes.missing')) {
+    throw new Error('smoke-test failed: expected fix --json to apply notes.empty or notes.missing');
+  }
+
+  const notesPath = path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md');
+  if (!fs.existsSync(notesPath)) {
+    throw new Error('smoke-test failed: expected fix to create docs/PLAYBOOK_NOTES.md');
+  }
+
+  const notesContent = fs.readFileSync(notesPath, 'utf8');
+  if (notesContent.trim().length === 0) {
+    throw new Error('smoke-test failed: expected docs/PLAYBOOK_NOTES.md to be non-empty after fix');
+  }
+
+  if (typeof fixJsonResult.reverify?.exitCode !== 'number' || fixJsonResult.reverify.exitCode === 3) {
+    throw new Error(`smoke-test failed: expected fix --json reverify exitCode to not be 3, got ${String(fixJsonResult.reverify?.exitCode)}`);
+  }
 
   ensureFile(path.join(projectDir, 'playbook.config.json'), 'playbook.config.json');
   ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
