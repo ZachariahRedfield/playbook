@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { applyExecutionPlan, generateExecutionPlan, generatePlanContract, verifyRepo } from '../src/index.js';
 
 describe('verify -> plan -> apply -> verify workflow', () => {
-
   it('returns verify findings and plan tasks as an engine-backed contract', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-contract-'));
     fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
@@ -20,12 +19,13 @@ describe('verify -> plan -> apply -> verify workflow', () => {
       {
         ruleId: 'notes.missing',
         file: null,
-        action: 'docs/PLAYBOOK_NOTES.md is required when docs/PROJECT_GOVERNANCE.md exists.',
-        autoFix: false
+        action: 'create playbook notes file',
+        autoFix: true
       }
     ]);
   });
-  it('resolves notes.missing with a fix handler', async () => {
+
+  it('resolves notes.missing with engine default handlers', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-'));
     fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
     fs.writeFileSync(path.join(root, 'docs', 'PROJECT_GOVERNANCE.md'), '# Governance\n');
@@ -37,30 +37,16 @@ describe('verify -> plan -> apply -> verify workflow', () => {
     const plan = generateExecutionPlan(root);
     expect(plan.tasks.map((task) => task.ruleId)).toContain('notes.missing');
 
-    const execution = await applyExecutionPlan(
-      root,
-      plan.tasks,
-      {
-        'notes.missing': async ({ repoRoot, dryRun }) => {
-          if (!dryRun) {
-            fs.writeFileSync(path.join(repoRoot, 'docs', 'PLAYBOOK_NOTES.md'), '# Playbook Notes\n\n- added\n');
-          }
-          return {
-            filesChanged: ['docs/PLAYBOOK_NOTES.md'],
-            summary: 'Created notes file'
-          };
-        }
-      },
-      { dryRun: false }
-    );
+    const execution = await applyExecutionPlan(root, plan.tasks, { dryRun: false });
 
-    expect(execution.applied.map((item) => item.ruleId)).toContain('notes.missing');
+    expect(execution.summary.applied).toBe(1);
+    expect(execution.summary.failed).toBe(0);
 
     const finalVerify = verifyRepo(root);
     expect(finalVerify.ok).toBe(true);
   });
 
-  it('includes plugin findings in generated plan tasks', () => {
+  it('supports plugin-derived auto-fixable tasks when handler is provided', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-plugin-'));
     fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'fixture' }));
     fs.writeFileSync(
@@ -77,7 +63,7 @@ describe('verify -> plan -> apply -> verify workflow', () => {
         rules: [{
           id: 'plugin-rule',
           description: 'plugin rule',
-          check: () => ({ failures: [{ id: 'plugin.failure', message: 'plugin finding', evidence: 'docs/PLUGIN.md' }] })
+          check: () => ({ failures: [{ id: 'plugin.failure', message: 'plugin finding', evidence: 'docs/PLUGIN.md', fix: 'create plugin doc' }] })
         }]
       };`
     );
@@ -87,9 +73,29 @@ describe('verify -> plan -> apply -> verify workflow', () => {
       {
         ruleId: 'plugin.failure',
         file: 'docs/PLUGIN.md',
-        action: 'plugin finding',
-        autoFix: false
+        action: 'create plugin doc',
+        autoFix: true
       }
     ]);
+
+    const execution = await applyExecutionPlan(root, plan.tasks, {
+      dryRun: false,
+      handlers: {
+        'plugin.failure': async ({ repoRoot }) => {
+          fs.mkdirSync(path.join(repoRoot, 'docs'), { recursive: true });
+          fs.writeFileSync(path.join(repoRoot, 'docs', 'PLUGIN.md'), '# Plugin\n');
+          return { filesChanged: ['docs/PLUGIN.md'], summary: 'Created plugin doc.' };
+        }
+      }
+    });
+
+    expect(execution.summary.applied).toBe(1);
+    expect(fs.existsSync(path.join(root, 'docs', 'PLUGIN.md'))).toBe(true);
+  });
+
+  it('returns no-op result for empty plans', async () => {
+    const execution = await applyExecutionPlan('.', [], { dryRun: false });
+    expect(execution.results).toEqual([]);
+    expect(execution.summary).toEqual({ applied: 0, skipped: 0, unsupported: 0, failed: 0 });
   });
 });

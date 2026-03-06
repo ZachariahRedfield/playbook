@@ -32,6 +32,8 @@ JSON output is a **public automation contract** and must remain stable and deter
 
 Current remediation flow is:
 
-`analyze -> verify -> plan -> fix`
+`analyze -> verify -> plan -> apply -> verify`
 
-The `fix` command is the apply step for plan-like remediation tasks.
+`apply` is the bounded executor for deterministic, auto-fixable plan tasks.
+
+`fix` remains available for opt-in/manual fix workflows (`--dry-run`, `--yes`, `--only`).

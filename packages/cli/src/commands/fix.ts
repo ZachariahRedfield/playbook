@@ -1,7 +1,6 @@
 import { applyExecutionPlan, generateExecutionPlan } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { collectVerifyReport } from './verify.js';
-import { fixRegistry } from '../lib/fixes.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
 
 type FixOptions = {
@@ -118,7 +117,7 @@ export const runFix = async (cwd: string, options: FixOptions): Promise<number> 
     const handlers = Object.fromEntries(
       tasks.map((task: { ruleId: string }) => {
         const pluginRule = verifyRules.find((rule) => rule.id === task.ruleId);
-        return [task.ruleId, pluginRule?.fix ?? fixRegistry[task.ruleId]];
+        return [task.ruleId, pluginRule?.fix];
       })
     );
 
@@ -148,15 +147,23 @@ export const runFix = async (cwd: string, options: FixOptions): Promise<number> 
       return ExitCode.Failure;
     }
 
-    const execution = await applyExecutionPlan(cwd, tasks, handlers, { dryRun: options.dryRun });
-    applied.push(
-      ...execution.applied.map((item: { ruleId: string; filesChanged: string[]; summary: string }) => ({
-        findingId: item.ruleId,
-        filesChanged: item.filesChanged,
-        summary: item.summary
-      }))
-    );
-    skipped.push(...execution.skipped.map((item: { ruleId: string; reason: string }) => ({ findingId: item.ruleId, reason: item.reason })));
+    const execution = await applyExecutionPlan(cwd, tasks, { dryRun: options.dryRun, handlers });
+
+    for (const resultItem of execution.results) {
+      if (resultItem.status === 'applied') {
+        applied.push({
+          findingId: resultItem.ruleId,
+          filesChanged: resultItem.file ? [resultItem.file] : [],
+          summary: resultItem.action
+        });
+        continue;
+      }
+
+      skipped.push({
+        findingId: resultItem.ruleId,
+        reason: resultItem.message ?? `Task ${resultItem.status}.`
+      });
+    }
 
     const reverify = options.dryRun
       ? undefined

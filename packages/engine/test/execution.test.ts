@@ -50,22 +50,30 @@ describe('execution pipeline units', () => {
     ]);
   });
 
-  it('FixExecutor applies known handlers and skips unknown tasks', async () => {
+  it('FixExecutor only applies auto-fix tasks and reports statuses deterministically', async () => {
     const executor = new FixExecutor({
-      known: async () => ({ filesChanged: ['docs/PLAYBOOK_NOTES.md'], summary: 'updated notes' })
+      known: async () => ({ filesChanged: ['docs/PLAYBOOK_NOTES.md'], summary: 'updated notes' }),
+      broken: async () => {
+        throw new Error('boom');
+      }
     });
 
     const result = await executor.apply(
       [
-        { ruleId: 'known', file: null, action: 'apply known fix', autoFix: true },
-        { ruleId: 'unknown', file: null, action: 'apply unknown fix', autoFix: false }
+        { ruleId: 'known', file: 'docs/PLAYBOOK_NOTES.md', action: 'apply known fix', autoFix: true },
+        { ruleId: 'manual', file: null, action: 'manual action', autoFix: false },
+        { ruleId: 'unknown', file: null, action: 'unknown action', autoFix: true },
+        { ruleId: 'broken', file: null, action: 'broken action', autoFix: true }
       ],
       { repoRoot: '.', dryRun: false }
     );
 
-    expect(result.applied).toHaveLength(1);
-    expect(result.applied[0]?.ruleId).toBe('known');
-    expect(result.skipped).toHaveLength(1);
-    expect(result.skipped[0]?.ruleId).toBe('unknown');
+    expect(result.results.map((entry) => [entry.ruleId, entry.status])).toEqual([
+      ['known', 'applied'],
+      ['manual', 'skipped'],
+      ['unknown', 'unsupported'],
+      ['broken', 'failed']
+    ]);
+    expect(result.summary).toEqual({ applied: 1, skipped: 1, unsupported: 1, failed: 1 });
   });
 });

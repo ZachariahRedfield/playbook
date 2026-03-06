@@ -105,7 +105,16 @@ try {
 
   run(nodeBin, [cliPath, 'verify'], { cwd: projectDir });
   run(nodeBin, [cliPath, 'plan'], { cwd: projectDir });
+  run(nodeBin, [cliPath, 'apply'], { cwd: projectDir });
   run(nodeBin, [cliPath, 'status'], { cwd: projectDir });
+
+
+  const applyJson = runWithStatus(nodeBin, [cliPath, 'apply', '--json'], { cwd: projectDir });
+  const applyJsonResult = JSON.parse(applyJson.stdout);
+
+  if (applyJsonResult.schemaVersion !== '1.0' || applyJsonResult.command !== 'apply' || !Array.isArray(applyJsonResult.results)) {
+    throw new Error('smoke-test failed: expected apply --json to return schemaVersion=1.0, command=apply, and results array');
+  }
 
   const planJson = runWithStatus(nodeBin, [cliPath, 'plan', '--json'], { cwd: projectDir });
   const planJsonResult = JSON.parse(planJson.stdout);

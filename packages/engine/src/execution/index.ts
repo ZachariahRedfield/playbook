@@ -5,6 +5,7 @@ import { resolveDiffBase } from '../git/base.js';
 import { loadPlugins } from '../plugins/loadPlugins.js';
 import { getRegisteredRules, registerRule, resetPluginRegistry } from '../plugins/pluginRegistry.js';
 import { getCoreRules } from '../rules/coreRules.js';
+import { defaultFixHandlers } from './defaultFixHandlers.js';
 import { FixExecutor } from './fixExecutor.js';
 import { PlanGenerator } from './planGenerator.js';
 import { RuleRunner } from './ruleRunner.js';
@@ -68,14 +69,14 @@ export const generatePlanContract = (repoRoot: string): PlanContract => {
 export const applyExecutionPlan = async (
   repoRoot: string,
   tasks: PlanTask[],
-  handlers: Record<string, FixHandler | undefined>,
-  options: { dryRun: boolean }
+  options: { dryRun: boolean; handlers?: Record<string, FixHandler | undefined> }
 ) => {
-  const executor = new FixExecutor(handlers);
+  const executor = new FixExecutor({ ...defaultFixHandlers, ...(options.handlers ?? {}) });
   return executor.apply(tasks, { repoRoot, dryRun: options.dryRun });
 };
 
 export { RuleRunner } from './ruleRunner.js';
 export { PlanGenerator } from './planGenerator.js';
 export { FixExecutor } from './fixExecutor.js';
+export { defaultFixHandlers } from './defaultFixHandlers.js';
 export type { PlanTask, RuleFailure, Rule, FixHandler } from './types.js';
