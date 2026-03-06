@@ -16,6 +16,7 @@
     "pack:smoke": "node scripts/pack-smoke.mjs",
     "test": "pnpm -r test",
     "sync:templates": "node scripts/sync-templates.mjs",
+    "verify:repo": "pnpm -r build && pnpm -r test",
     "verify": "pnpm lint && pnpm check:tests && pnpm test && pnpm smoke:ci",
     "playbook": "node scripts/run-playbook.mjs",
     "playbook:help": "node scripts/run-playbook.mjs --help",
