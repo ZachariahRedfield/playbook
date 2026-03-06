@@ -12,12 +12,28 @@ export const PLAYBOOK_NOTES_STARTER = `# Playbook Notes
 export type FixHandlerContext = {
   repoRoot: string;
   dryRun: boolean;
+  task: {
+    id: string;
+    ruleId: string;
+    file: string | null;
+    action: string;
+    autoFix: boolean;
+  };
 };
 
-export type FixResult = {
-  filesChanged: string[];
-  summary: string;
-};
+export type FixResult =
+  | {
+      status: 'applied';
+      filesChanged: string[];
+      summary: string;
+      message?: string;
+    }
+  | {
+      status: 'skipped' | 'unsupported';
+      message: string;
+      filesChanged?: never;
+      summary?: never;
+    };
 
 export type FixHandler = (context: FixHandlerContext) => Promise<FixResult>;
 
@@ -32,6 +48,7 @@ const fixNotesMissing: FixHandler = async ({ repoRoot, dryRun }) => {
   }
 
   return {
+    status: 'applied',
     filesChanged: ['docs/PLAYBOOK_NOTES.md'],
     summary: 'Created docs/PLAYBOOK_NOTES.md with a minimal starter template.'
   };
@@ -45,6 +62,7 @@ const fixNotesEmpty: FixHandler = async ({ repoRoot, dryRun }) => {
   }
 
   return {
+    status: 'applied',
     filesChanged: ['docs/PLAYBOOK_NOTES.md'],
     summary: 'Wrote a minimal starter template to docs/PLAYBOOK_NOTES.md.'
   };

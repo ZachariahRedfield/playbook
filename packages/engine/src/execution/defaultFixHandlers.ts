@@ -21,6 +21,7 @@ const fixNotesMissing: FixHandler = async ({ repoRoot, dryRun }) => {
   }
 
   return {
+    status: 'applied',
     filesChanged: ['docs/PLAYBOOK_NOTES.md'],
     summary: 'Created docs/PLAYBOOK_NOTES.md with a minimal starter template.'
   };
@@ -34,6 +35,7 @@ const fixNotesEmpty: FixHandler = async ({ repoRoot, dryRun }) => {
   }
 
   return {
+    status: 'applied',
     filesChanged: ['docs/PLAYBOOK_NOTES.md'],
     summary: 'Wrote a minimal starter template to docs/PLAYBOOK_NOTES.md.'
   };

@@ -19,4 +19,28 @@ export type PlanTask = {
   autoFix: boolean;
 };
 
-export type FixHandler = (context: { repoRoot: string; dryRun: boolean }) => Promise<{ filesChanged: string[]; summary: string }>;
+export type FixHandlerContext = {
+  repoRoot: string;
+  dryRun: boolean;
+  task: Readonly<PlanTask>;
+};
+
+export type FixHandlerStatus = 'applied' | 'skipped' | 'unsupported';
+
+export type FixHandlerResult = {
+  status: FixHandlerStatus;
+  filesChanged?: string[];
+  summary?: string;
+  message?: string;
+};
+
+/**
+ * Deterministic execution contract for apply handlers.
+ *
+ * Handler boundary:
+ * - Accept only repoRoot/dryRun/task input.
+ * - Return an explicit status result (applied/skipped/unsupported).
+ * - Throw to signal failed execution.
+ * - Keep mutations bounded to deterministic file edits that correspond to the task.
+ */
+export type FixHandler = (context: FixHandlerContext) => Promise<FixHandlerResult>;

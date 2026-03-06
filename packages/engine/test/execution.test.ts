@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Rule } from '../src/execution/types.js';
-import { FixExecutor } from '../src/execution/fixExecutor.js';
+import { FixExecutor, HandlerResolver } from '../src/execution/fixExecutor.js';
 import { PlanGenerator } from '../src/execution/planGenerator.js';
 import { RuleRunner } from '../src/execution/ruleRunner.js';
 import { parsePlanArtifact } from '../src/execution/index.js';
@@ -88,12 +88,12 @@ describe('execution pipeline units', () => {
   });
 
   it('FixExecutor only applies auto-fix tasks and reports statuses deterministically', async () => {
-    const executor = new FixExecutor({
-      known: async () => ({ filesChanged: ['docs/PLAYBOOK_NOTES.md'], summary: 'updated notes' }),
+    const executor = new FixExecutor(new HandlerResolver({ builtIn: {
+      known: async () => ({ status: 'applied', filesChanged: ['docs/PLAYBOOK_NOTES.md'], summary: 'updated notes' }),
       broken: async () => {
         throw new Error('boom');
       }
-    });
+    } }));
 
     const result = await executor.apply(
       [
@@ -112,5 +112,84 @@ describe('execution pipeline units', () => {
       ['broken', 'failed']
     ]);
     expect(result.summary).toEqual({ applied: 1, skipped: 1, unsupported: 1, failed: 1 });
+  });
+
+  it('HandlerResolver gives precedence to plugin handlers', () => {
+    const resolver = new HandlerResolver({
+      builtIn: {
+        'notes.missing': async () => ({ status: 'applied', filesChanged: ['docs/PLAYBOOK_NOTES.md'], summary: 'builtin' })
+      },
+      plugin: {
+        'notes.missing': async () => ({ status: 'applied', filesChanged: ['docs/PLAYBOOK_NOTES.md'], summary: 'plugin' })
+      }
+    });
+
+    const resolved = resolver.resolve({ id: '1', ruleId: 'notes.missing', file: 'docs/PLAYBOOK_NOTES.md', action: 'create notes', autoFix: true });
+    expect(resolved?.source).toBe('plugin');
+  });
+
+  it('undefined plugin handler does not shadow built-in handler', () => {
+    const resolver = new HandlerResolver({
+      builtIn: {
+        'notes.missing': async () => ({ status: 'applied', filesChanged: ['docs/PLAYBOOK_NOTES.md'], summary: 'builtin' })
+      },
+      plugin: {
+        'notes.missing': undefined
+      }
+    });
+
+    const resolved = resolver.resolve({ id: '1', ruleId: 'notes.missing', file: 'docs/PLAYBOOK_NOTES.md', action: 'create notes', autoFix: true });
+    expect(resolved?.source).toBe('builtin');
+  });
+
+  it('surfaces explicit skipped and unsupported handler results', async () => {
+    const executor = new FixExecutor(
+      new HandlerResolver({
+        builtIn: {
+          skipped: async () => ({ status: 'skipped', message: 'No edit needed.' }),
+          unsupported: async () => ({ status: 'unsupported', message: 'Handler supports only markdown files.' })
+        }
+      })
+    );
+
+    const result = await executor.apply(
+      [
+        { id: 'task-skipped', ruleId: 'skipped', file: null, action: 'skip action', autoFix: true },
+        { id: 'task-unsupported', ruleId: 'unsupported', file: null, action: 'unsupported action', autoFix: true }
+      ],
+      { repoRoot: '.', dryRun: false }
+    );
+
+    expect(result.results.map((entry) => [entry.ruleId, entry.status, entry.message])).toEqual([
+      ['skipped', 'skipped', 'No edit needed.'],
+      ['unsupported', 'unsupported', 'Handler supports only markdown files.']
+    ]);
+  });
+
+  it('fails deterministically on handler contract violations', async () => {
+    const executor = new FixExecutor(
+      new HandlerResolver({
+        builtIn: {
+          bad: async () => ({ status: 'applied', summary: 'Missing filesChanged.' })
+        }
+      })
+    );
+
+    const result = await executor.apply(
+      [{ id: 'task-bad', ruleId: 'bad', file: null, action: 'bad action', autoFix: true }],
+      { repoRoot: '.', dryRun: false }
+    );
+
+    expect(result.results).toEqual([
+      {
+        id: 'task-bad',
+        ruleId: 'bad',
+        file: null,
+        action: 'bad action',
+        autoFix: true,
+        status: 'failed',
+        message: 'Fix handler contract violation: filesChanged must be an array.'
+      }
+    ]);
   });
 });
