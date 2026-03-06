@@ -17,7 +17,7 @@ Playbook analyzes a repository and enforces deterministic governance checks, inc
 Current CLI commands:
 
 - `playbook init`
-- `playbook analyze`
+- `playbook analyze` (also writes `.playbook/repo-index.json` for machine-readable architecture indexing)
 - `playbook verify`
 - `playbook doctor`
 - `playbook diagram`
