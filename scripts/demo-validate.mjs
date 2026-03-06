@@ -70,6 +70,71 @@ const runPlaybookCli = ({ cwd, commandArgs, expectSuccess = true }) =>
     allowFailure: !expectSuccess
   });
 
+const getFailureLevel = (finding) => {
+  if (!finding || typeof finding !== 'object') {
+    return false;
+  }
+
+  const level = typeof finding.level === 'string' ? finding.level.toLowerCase() : '';
+  return level === 'failure' || level === 'error';
+};
+
+export const deriveVerifyCounts = (verifyPayload) => {
+  if (!verifyPayload || typeof verifyPayload !== 'object') {
+    return { findings: 0, failures: 0, warnings: 0 };
+  }
+
+  const findingsArray = Array.isArray(verifyPayload.findings) ? verifyPayload.findings : [];
+  const failuresArray = Array.isArray(verifyPayload.failures) ? verifyPayload.failures : [];
+  const warningsArray = Array.isArray(verifyPayload.warnings) ? verifyPayload.warnings : [];
+  const summary = verifyPayload.summary && typeof verifyPayload.summary === 'object' ? verifyPayload.summary : {};
+
+  const findingCountCandidates = [findingsArray.length, failuresArray.length + warningsArray.length];
+  const summaryWarnings = Number.isInteger(summary.warnings) && summary.warnings >= 0 ? summary.warnings : undefined;
+  const summaryFailures = Number.isInteger(summary.failures) && summary.failures >= 0 ? summary.failures : undefined;
+  if (summaryWarnings !== undefined || summaryFailures !== undefined) {
+    findingCountCandidates.push((summaryWarnings ?? 0) + (summaryFailures ?? 0));
+  }
+
+  const failureCountCandidates = [failuresArray.length, findingsArray.filter(getFailureLevel).length];
+  if (summaryFailures !== undefined) {
+    failureCountCandidates.push(summaryFailures);
+  }
+
+  const warningCountCandidates = [warningsArray.length, findingsArray.length - findingsArray.filter(getFailureLevel).length];
+  if (summaryWarnings !== undefined) {
+    warningCountCandidates.push(summaryWarnings);
+  }
+
+  return {
+    findings: Math.max(...findingCountCandidates),
+    failures: Math.max(...failureCountCandidates),
+    warnings: Math.max(...warningCountCandidates)
+  };
+};
+
+export const validateRemediationStatus = ({ remediationStatus, planSteps, initialFailures }) => {
+  if (remediationStatus === 'ready' && planSteps <= 0) {
+    throw new Error('Plan reported ready remediation but did not include any steps.');
+  }
+
+  if (remediationStatus === 'not_needed' && initialFailures > 0) {
+    throw new Error('Plan reported not_needed remediation despite initial verify failures.');
+  }
+
+  if (remediationStatus === 'unavailable' && initialFailures <= 0) {
+    throw new Error('Plan reported unavailable remediation despite no initial verify failures.');
+  }
+
+  if (remediationStatus === 'ready' && initialFailures <= 0) {
+    throw new Error('Plan reported ready remediation despite no initial verify failures.');
+  }
+
+  if (remediationStatus === 'unavailable' && planSteps > 0) {
+    throw new Error('Plan reported unavailable remediation despite including remediation steps.');
+  }
+};
+
 const main = () => {
   if (!fs.existsSync(localCliEntrypoint)) {
     throw new Error(
@@ -99,11 +164,15 @@ const main = () => {
     console.log('Initial verify payload:');
     console.log(JSON.stringify(initialVerify, null, 2));
   }
-  const initialFindings = Array.isArray(initialVerify.findings) ? initialVerify.findings.length : 0;
+  const initialVerifyCounts = deriveVerifyCounts(initialVerify);
+  const initialFindings = initialVerifyCounts.findings;
+  const initialFailures = initialVerifyCounts.failures;
   if (initialFindings <= 0) {
     throw new Error('Initial verify must report at least one finding.');
   }
-  console.log(`Verify (initial): ${initialFindings} findings`);
+  console.log(
+    `Verify (initial): ${initialFindings} findings (${initialFailures} failures, ${initialVerifyCounts.warnings} warnings)`
+  );
 
   const planResult = runPlaybookCli({ cwd: demoDir, commandArgs: ['plan', '--json'] });
   const plan = parseJsonOutput(planResult.stdout, 'Plan');
@@ -137,12 +206,8 @@ const main = () => {
     throw new Error(`Plan reported unavailable remediation: ${reason}`);
   }
 
-  if (remediationStatus === 'ready' && planSteps <= 0) {
-    throw new Error('Plan reported ready remediation but did not include any steps.');
-  }
-
-  if (remediationStatus === 'not_needed' && initialFindings > 0) {
-    console.error('Demo validate debug payloads (not_needed with verify findings):');
+  if (remediationStatus === 'not_needed' && initialFailures > 0) {
+    console.error('Demo validate debug payloads (not_needed with verify failures):');
     console.error(
       JSON.stringify(
         {
@@ -153,8 +218,9 @@ const main = () => {
         2
       )
     );
-    throw new Error('Plan reported not_needed remediation despite initial verify findings.');
   }
+
+  validateRemediationStatus({ remediationStatus, planSteps, initialFailures });
 
   console.log(`Plan: ${planSteps} fixes (${remediationStatus})`);
 
@@ -172,4 +238,6 @@ const main = () => {
   console.log('Demo validation passed');
 };
 
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}
