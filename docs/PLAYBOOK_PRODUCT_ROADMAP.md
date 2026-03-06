@@ -577,3 +577,87 @@ Planned feature: `playbook index`
   - architecture contracts
 - Product purpose: enable AI agents to safely understand repository structure and constraints before making code changes.
 - Scope note: this roadmap phase documents intent only; index generation is not part of the current implementation scope.
+
+## Phase: AI-Operable Repository Platform
+
+Feature: playbook plan
+
+Generate machine-readable tasks from verify/analyze findings.
+
+Example:
+
+npx playbook plan --json
+
+Output:
+
+```json
+{
+  "tasks": [
+    {
+      "rule": "PB001",
+      "file": "docs/ARCHITECTURE.md",
+      "action": "update architecture docs",
+      "autoFix": true
+    }
+  ]
+}
+```
+
+Purpose:
+
+Allow AI agents and automation to determine what actions should be taken.
+
+Feature: playbook apply
+
+Execute a planned fix deterministically.
+
+Example:
+
+npx playbook apply PB001
+
+Purpose:
+
+Allow tools and agents to apply changes safely without editing files directly.
+
+Feature: Plugin Ecosystem
+
+Support external packages:
+
+- playbook-plugin-react
+- playbook-plugin-next
+- playbook-plugin-supabase
+
+Plugins provide:
+
+- verify rules
+- analyze rules
+- fix handlers
+
+Purpose:
+
+Enable a community ecosystem similar to ESLint plugins.
+
+Feature: Agent Interface
+
+Expose machine-readable interfaces:
+
+- playbook analyze --json
+- playbook status --json
+- playbook plan --json
+- playbook apply
+- playbook verify --json
+
+Purpose:
+
+Allow AI coding tools to safely interact with repositories through Playbook.
+
+Feature: GitHub Action
+
+Allow repositories to add:
+
+uses: playbook/verify
+
+Purpose:
+
+Automate governance checks in CI.
+
