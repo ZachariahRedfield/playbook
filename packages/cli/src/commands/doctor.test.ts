@@ -90,7 +90,7 @@ describe('runDoctor', () => {
     });
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(exitCode).toBe(ExitCode.WarningsOnly);
+    expect(exitCode).toBe(ExitCode.Success);
     expect(payload).toEqual({
       command: 'doctor',
       framework: 'Next.js',
@@ -129,7 +129,7 @@ describe('runDoctor', () => {
     });
 
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(exitCode).toBe(ExitCode.WarningsOnly);
+    expect(exitCode).toBe(ExitCode.Success);
     expect(output).toContain('Framework: Unknown');
     expect(output).toContain('⚠ Repo index missing');
     expect(output).toContain('playbook analyze');
@@ -157,7 +157,7 @@ describe('runDoctor', () => {
     });
 
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(exitCode).toBe(ExitCode.PolicyFailure);
+    expect(exitCode).toBe(ExitCode.Success);
     expect(output).toContain('Run:');
     expect(output).toContain('playbook plan');
 

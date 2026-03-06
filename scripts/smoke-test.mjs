@@ -192,18 +192,30 @@ try {
     }
   }
 
-  const statusJsonDoctorFail = runWithStatus(nodeBin, [cliPath, 'status', '--json'], {
+  const doctorJsonReport = runWithStatus(nodeBin, [cliPath, 'doctor', '--json'], {
     cwd: projectDir,
     env: { PATH: '' }
   });
-  const statusJsonDoctorFailResult = JSON.parse(statusJsonDoctorFail.stdout);
+  const doctorJsonReportResult = JSON.parse(doctorJsonReport.stdout);
 
-  if (statusJsonDoctorFail.status !== 2) {
-    throw new Error(`smoke-test failed: expected status --json exit status=2 when doctor fails, got ${statusJsonDoctorFail.status}`);
+  if (doctorJsonReport.status !== 0) {
+    throw new Error(`smoke-test failed: expected doctor --json exit status=0 when doctor reports issues, got ${doctorJsonReport.status}`);
   }
 
-  if (statusJsonDoctorFailResult.environment?.ok !== false) {
-    throw new Error(`smoke-test failed: expected status --json environment.ok=false, got ${String(statusJsonDoctorFailResult.environment?.ok)}`);
+  if (doctorJsonReportResult.command !== 'doctor') {
+    throw new Error(`smoke-test failed: expected doctor --json command=doctor, got ${String(doctorJsonReportResult.command)}`);
+  }
+
+  if (typeof doctorJsonReportResult.framework !== 'string' || typeof doctorJsonReportResult.architecture !== 'string') {
+    throw new Error('smoke-test failed: expected doctor --json to include framework and architecture strings');
+  }
+
+  if (!Array.isArray(doctorJsonReportResult.issues) || !Array.isArray(doctorJsonReportResult.suggestedActions)) {
+    throw new Error('smoke-test failed: expected doctor --json to include issues and suggestedActions arrays');
+  }
+
+  if (doctorJsonReportResult.issues.length === 0) {
+    throw new Error('smoke-test failed: expected doctor --json to report issues for incomplete repository state');
   }
 
 

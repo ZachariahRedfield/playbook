@@ -23,13 +23,7 @@ type DoctorFixSkipped = {
   reason: string;
 };
 
-const toExitCode = (report: DoctorReport): ExitCode => {
-  if (report.verifySummary.failures > 0) {
-    return ExitCode.PolicyFailure;
-  }
-
-  return report.issues.length > 0 ? ExitCode.WarningsOnly : ExitCode.Success;
-};
+const toExitCode = (): ExitCode => ExitCode.Success;
 
 export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> => generateRepositoryHealth(cwd);
 
@@ -106,7 +100,7 @@ export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<nu
       printHealthReport(report, safeFixCount);
     }
 
-    return toExitCode(report);
+    return toExitCode();
   }
 
   const plan: Array<{ id: string; description: string; safeToAutoApply: boolean }> = [];
@@ -165,7 +159,7 @@ export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<nu
         2
       )
     );
-    return toExitCode(environment);
+    return toExitCode();
   }
 
   console.log('Doctor fix plan:');
@@ -198,5 +192,5 @@ export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<nu
     }
   }
 
-  return toExitCode(environment);
+  return toExitCode();
 };
