@@ -72,7 +72,39 @@ describe('runPlan', () => {
       ok: true,
       exitCode: ExitCode.Success,
       verify: { ok: false, summary: { failures: 1, warnings: 0 }, failures: [], warnings: [] },
+      remediation: { status: 'ready', totalSteps: 1, unresolvedFailures: 0 },
       tasks: [{ id: 'task-3', ruleId: 'plugin.custom', file: null, action: 'fix plugin contract', autoFix: true }]
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('reports explicit unavailable remediation state when failures have no tasks', async () => {
+    const { runPlan } = await import('./plan.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    generatePlanContract.mockReturnValue({
+      verify: {
+        ok: false,
+        summary: { failures: 2, warnings: 0 },
+        failures: [
+          { id: 'verify.one', message: 'one' },
+          { id: 'verify.two', message: 'two' }
+        ],
+        warnings: []
+      },
+      tasks: []
+    });
+
+    const exitCode = await runPlan('/repo', { format: 'json', ci: false, quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.remediation).toEqual({
+      status: 'unavailable',
+      totalSteps: 0,
+      unresolvedFailures: 2,
+      reason: 'Verify failures were detected but no remediation tasks are currently available.'
     });
 
     logSpy.mockRestore();

@@ -97,10 +97,23 @@ const main = () => {
 
   const planResult = runPlaybookCli({ cwd: demoDir, commandArgs: ['plan', '--json'] });
   const plan = parseJsonOutput(planResult.stdout, 'Plan');
-  const planSteps = Array.isArray(plan.tasks) ? plan.tasks.length : 0;
-  if (planSteps <= 0) {
+  const remediation = plan.remediation;
+  const planSteps = remediation && typeof remediation.totalSteps === 'number' ? remediation.totalSteps : -1;
+  const remediationStatus = remediation && typeof remediation.status === 'string' ? remediation.status : 'unknown';
+
+  if (planSteps < 0) {
+    throw new Error('Plan JSON contract is missing remediation.totalSteps.');
+  }
+
+  if (initialFindings > 0 && remediationStatus === 'unavailable') {
+    const reason = remediation && typeof remediation.reason === 'string' ? remediation.reason : 'No reason provided.';
+    throw new Error(`Plan reported unavailable remediation: ${reason}`);
+  }
+
+  if (initialFindings > 0 && planSteps <= 0) {
     throw new Error('Plan must report at least one remediation step.');
   }
+
   console.log(`Plan: ${planSteps} fixes`);
 
   runPlaybookCli({ cwd: demoDir, commandArgs: ['apply'] });
