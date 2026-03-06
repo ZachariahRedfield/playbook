@@ -80,7 +80,7 @@ const resolveTopIssue = async (
     return null;
   }
 
-  const matchingRule = (await loadAnalyzeRules(cwd)).find((rule) => rule.check({ recommendation: warningRecommendation }));
+  const matchingRule = (await loadAnalyzeRules()).find((rule) => rule.check({ recommendation: warningRecommendation }));
   if (matchingRule) {
     return { id: matchingRule.id, description: matchingRule.description };
   }

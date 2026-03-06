@@ -15,7 +15,7 @@ describe('rule loaders', () => {
   });
 
   it('loads analyze rules with unique ids', async () => {
-    const rules = await loadAnalyzeRules(process.cwd());
+    const rules = await loadAnalyzeRules();
     const ids = rules.map((rule) => rule.id);
 
     expect(ids).toEqual(['analyze-no-signals', 'analyze-run-init', 'analyze-run-verify']);

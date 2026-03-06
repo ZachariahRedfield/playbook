@@ -143,7 +143,7 @@ export const buildRepoIndex = async (repoRoot: string): Promise<RepoIndex> => {
     .map((entry) => entry.name)
     .sort();
 
-  const analyzeRules = await loadAnalyzeRules(repoRoot);
+  const analyzeRules = await loadAnalyzeRules();
   const verifyRules = await loadVerifyRules(repoRoot);
   const rules = [...new Set([...verifyRules.map((rule) => rule.id), ...analyzeRules.map((rule) => rule.id)])].sort();
 
@@ -193,7 +193,7 @@ export const collectAnalyzeReport = async (cwd: string): Promise<AnalyzeReport> 
 export const runAnalyze = async (cwd: string, opts: AnalyzeOptions): Promise<number> => {
   const ctx = await createNodeContext({ cwd });
   const result = await analyze(ctx);
-  const analyzeRules = await loadAnalyzeRules(ctx.repoRoot);
+  const analyzeRules = await loadAnalyzeRules();
   const repoIndexPath = await writeRepoIndex(ctx.repoRoot);
 
   if (opts.format === 'text' && !opts.ci) {

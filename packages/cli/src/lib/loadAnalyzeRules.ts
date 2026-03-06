@@ -15,4 +15,4 @@ export type AnalyzeRule = {
 
 export const coreAnalyzeRules: AnalyzeRule[] = [noSignalsRule, runInitRule, runVerifyRule];
 
-export const loadAnalyzeRules = async (_cwd: string): Promise<AnalyzeRule[]> => coreAnalyzeRules;
+export const loadAnalyzeRules = async (): Promise<AnalyzeRule[]> => coreAnalyzeRules;

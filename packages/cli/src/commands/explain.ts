@@ -28,7 +28,7 @@ const findRule = async (cwd: string, ruleId: string): Promise<ExplainRule | unde
     };
   }
 
-  const analyzeRule = (await loadAnalyzeRules(cwd)).find((rule) => rule.id === ruleId);
+  const analyzeRule = (await loadAnalyzeRules()).find((rule) => rule.id === ruleId);
   if (analyzeRule) {
     return {
       kind: 'analyze',
