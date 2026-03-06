@@ -2,9 +2,29 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { applyExecutionPlan, generateExecutionPlan, verifyRepo } from '../src/index.js';
+import { applyExecutionPlan, generateExecutionPlan, generatePlanContract, verifyRepo } from '../src/index.js';
 
 describe('verify -> plan -> apply -> verify workflow', () => {
+
+  it('returns verify findings and plan tasks as an engine-backed contract', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-contract-'));
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'PROJECT_GOVERNANCE.md'), '# Governance\n');
+
+    const contract = generatePlanContract(root);
+
+    expect(contract.verify.ok).toBe(false);
+    expect(contract.verify.summary.failures).toBe(1);
+    expect(contract.verify.failures.map((failure) => failure.id)).toEqual(['notes.missing']);
+    expect(contract.tasks).toEqual([
+      {
+        ruleId: 'notes.missing',
+        file: null,
+        action: 'docs/PLAYBOOK_NOTES.md is required when docs/PROJECT_GOVERNANCE.md exists.',
+        autoFix: false
+      }
+    ]);
+  });
   it('resolves notes.missing with a fix handler', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-'));
     fs.mkdirSync(path.join(root, 'docs'), { recursive: true });

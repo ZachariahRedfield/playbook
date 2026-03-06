@@ -18,6 +18,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const verifyRepo: (...args: any[]) => any;
   export const formatHuman: (...args: any[]) => string;
   export const generateExecutionPlan: (...args: any[]) => any;
+  export const generatePlanContract: (...args: any[]) => any;
   export const applyExecutionPlan: (...args: any[]) => Promise<any>;
   export const cleanupSessionSnapshots: (...args: any[]) => any;
   export const formatMergeReportMarkdown: (...args: any[]) => string;

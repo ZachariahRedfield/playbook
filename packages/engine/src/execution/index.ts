@@ -8,6 +8,17 @@ import { getCoreRules } from '../rules/coreRules.js';
 import { FixExecutor } from './fixExecutor.js';
 import { PlanGenerator } from './planGenerator.js';
 import { RuleRunner } from './ruleRunner.js';
+import type { VerifyReport } from '../report/types.js';
+
+export type PlanContract = {
+  verify: {
+    ok: VerifyReport['ok'];
+    summary: VerifyReport['summary'];
+    failures: VerifyReport['failures'];
+    warnings: VerifyReport['warnings'];
+  };
+  tasks: PlanTask[];
+};
 
 const collectExecutionInputs = (repoRoot: string): { changedFiles: string[] } => {
   const base = resolveDiffBase(repoRoot);
@@ -33,6 +44,25 @@ export const generateExecutionPlan = (repoRoot: string): { tasks: PlanTask[] } =
   const findings = runRuleExecution(repoRoot);
   const planner = new PlanGenerator();
   return planner.generate(findings.failures);
+};
+
+export const generatePlanContract = (repoRoot: string): PlanContract => {
+  const findings = runRuleExecution(repoRoot);
+  const planner = new PlanGenerator();
+  const plan = planner.generate(findings.failures);
+
+  return {
+    verify: {
+      ok: findings.failures.length === 0,
+      summary: {
+        failures: findings.failures.length,
+        warnings: 0
+      },
+      failures: findings.failures,
+      warnings: []
+    },
+    tasks: plan.tasks
+  };
 };
 
 export const applyExecutionPlan = async (

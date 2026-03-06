@@ -1,20 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 
-const generateExecutionPlan = vi.fn();
+const generatePlanContract = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generateExecutionPlan }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract }));
 
 describe('runPlan', () => {
   beforeEach(() => {
-    generateExecutionPlan.mockReset();
+    generatePlanContract.mockReset();
   });
 
   it('renders deterministic text output with task count and entries', async () => {
     const { runPlan } = await import('./plan.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    generateExecutionPlan.mockReturnValue({
+    generatePlanContract.mockReturnValue({
+      verify: { ok: false, summary: { failures: 2, warnings: 0 }, failures: [], warnings: [] },
       tasks: [
         { ruleId: 'PB001', file: 'docs/ARCHITECTURE.md', action: 'update architecture docs', autoFix: true },
         { ruleId: 'plugin.custom', file: null, action: 'add plugin docs', autoFix: false }
@@ -37,7 +38,10 @@ describe('runPlan', () => {
     const { runPlan } = await import('./plan.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    generateExecutionPlan.mockReturnValue({ tasks: [] });
+    generatePlanContract.mockReturnValue({
+      verify: { ok: true, summary: { failures: 0, warnings: 0 }, failures: [], warnings: [] },
+      tasks: []
+    });
 
     const exitCode = await runPlan('/repo', { format: 'text', ci: false, quiet: false });
 
@@ -53,7 +57,8 @@ describe('runPlan', () => {
     const { runPlan } = await import('./plan.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    generateExecutionPlan.mockReturnValue({
+    generatePlanContract.mockReturnValue({
+      verify: { ok: false, summary: { failures: 1, warnings: 0 }, failures: [], warnings: [] },
       tasks: [{ ruleId: 'plugin.custom', file: null, action: 'fix plugin contract', autoFix: true }]
     });
 
@@ -66,6 +71,7 @@ describe('runPlan', () => {
       command: 'plan',
       ok: true,
       exitCode: ExitCode.Success,
+      verify: { ok: false, summary: { failures: 1, warnings: 0 }, failures: [], warnings: [] },
       tasks: [{ ruleId: 'plugin.custom', file: null, action: 'fix plugin contract', autoFix: true }]
     });
 

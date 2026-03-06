@@ -11,4 +11,4 @@ export type { DiagramOptions, StructureModel, DependencyModel, MermaidDiagramRes
 
 export * from './sessions/index.js';
 
-export { runRuleExecution, generateExecutionPlan, applyExecutionPlan, RuleRunner, PlanGenerator, FixExecutor } from './execution/index.js';
+export { runRuleExecution, generateExecutionPlan, generatePlanContract, applyExecutionPlan, RuleRunner, PlanGenerator, FixExecutor } from './execution/index.js';

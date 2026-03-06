@@ -1,4 +1,4 @@
-import { generateExecutionPlan } from '@zachariahredfield/playbook-engine';
+import { generatePlanContract } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
 const renderTextPlan = (tasks: Array<{ ruleId: string; action: string }>): void => {
@@ -23,7 +23,7 @@ export const runPlan = async (
   cwd: string,
   options: { format: 'text' | 'json'; ci: boolean; quiet: boolean }
 ): Promise<number> => {
-  const plan = generateExecutionPlan(cwd);
+  const plan = generatePlanContract(cwd);
 
   if (options.format === 'json') {
     console.log(
@@ -33,6 +33,7 @@ export const runPlan = async (
           command: 'plan',
           ok: true,
           exitCode: ExitCode.Success,
+          verify: plan.verify,
           tasks: plan.tasks
         },
         null,
