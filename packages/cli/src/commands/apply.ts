@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { applyExecutionPlan, generatePlanContract } from '@zachariahredfield/playbook-engine';
+import { applyExecutionPlan, generatePlanContract, parsePlanArtifact } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
 
@@ -35,7 +35,7 @@ type ApplyJsonResult = {
   };
 };
 
-type SerializedPlanTask = {
+type PlanTask = {
   id: string;
   ruleId: string;
   file: string | null;
@@ -43,40 +43,26 @@ type SerializedPlanTask = {
   autoFix: boolean;
 };
 
-type SerializedPlanPayload = {
-  schemaVersion?: string;
-  command?: string;
-  tasks?: SerializedPlanTask[];
-};
-
-const loadPlanFromFile = (cwd: string, fromPlan: string): { tasks: SerializedPlanTask[] } => {
+const loadPlanFromFile = (cwd: string, fromPlan: string): { tasks: PlanTask[] } => {
   const resolvedPath = path.resolve(cwd, fromPlan);
-  const rawPayload = fs.readFileSync(resolvedPath, 'utf8');
-  const payload = JSON.parse(rawPayload) as SerializedPlanPayload;
 
-  if (payload.schemaVersion !== '1.0') {
-    throw new Error(`Unsupported plan schemaVersion: ${String(payload.schemaVersion ?? 'undefined')}.`);
+  let rawPayload = '';
+  try {
+    rawPayload = fs.readFileSync(resolvedPath, 'utf8');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to read plan file at ${resolvedPath}: ${message}`);
   }
 
-  if (payload.command !== 'plan') {
-    throw new Error('Invalid plan payload: command must be "plan".');
+  let payload: unknown;
+  try {
+    payload = JSON.parse(rawPayload);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid plan JSON in ${resolvedPath}: ${message}`);
   }
 
-  if (!Array.isArray(payload.tasks)) {
-    throw new Error('Invalid plan payload: tasks must be an array.');
-  }
-
-  for (const task of payload.tasks) {
-    if (!task || typeof task.id !== 'string' || typeof task.ruleId !== 'string' || typeof task.action !== 'string' || typeof task.autoFix !== 'boolean') {
-      throw new Error('Invalid plan payload: each task must include id, ruleId, action, and autoFix.');
-    }
-
-    if (task.file !== null && typeof task.file !== 'string') {
-      throw new Error('Invalid plan payload: task.file must be a string or null.');
-    }
-  }
-
-  return { tasks: payload.tasks };
+  return parsePlanArtifact(payload);
 };
 
 const renderTextApply = (result: ApplyJsonResult): void => {
@@ -104,12 +90,13 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   const plan = options.fromPlan ? loadPlanFromFile(cwd, options.fromPlan) : generatePlanContract(cwd);
   const verifyRules = await loadVerifyRules(cwd);
 
-  const handlers = Object.fromEntries(
-    plan.tasks.map((task: { ruleId: string }) => {
-      const pluginRule = verifyRules.find((rule) => rule.id === task.ruleId);
-      return [task.ruleId, pluginRule?.fix];
-    })
-  );
+  const handlers: Record<string, NonNullable<(typeof verifyRules)[number]['fix']>> = {};
+  for (const task of plan.tasks) {
+    const pluginRule = verifyRules.find((rule) => rule.id === task.ruleId);
+    if (pluginRule?.fix) {
+      handlers[task.ruleId] = pluginRule.fix;
+    }
+  }
 
   const execution = await applyExecutionPlan(cwd, plan.tasks, { dryRun: false, handlers });
 

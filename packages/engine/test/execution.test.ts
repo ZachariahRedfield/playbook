@@ -3,6 +3,7 @@ import type { Rule } from '../src/execution/types.js';
 import { FixExecutor } from '../src/execution/fixExecutor.js';
 import { PlanGenerator } from '../src/execution/planGenerator.js';
 import { RuleRunner } from '../src/execution/ruleRunner.js';
+import { parsePlanArtifact } from '../src/execution/index.js';
 
 describe('execution pipeline units', () => {
   it('RuleRunner aggregates findings from all rules', () => {
@@ -49,6 +50,41 @@ describe('execution pipeline units', () => {
       { id: expect.any(String), ruleId: 'A', file: null, action: 'first', autoFix: false },
       { id: expect.any(String), ruleId: 'B', file: null, action: 'second', autoFix: false }
     ]);
+  });
+
+
+
+  it('PlanGenerator task ids are deterministic for equivalent findings', () => {
+    const planner = new PlanGenerator();
+    const findings = [{ id: 'PB001', message: 'missing docs', evidence: 'docs/ARCHITECTURE.md', fix: 'update architecture docs' }];
+
+    const first = planner.generate(findings);
+    const second = planner.generate(findings);
+
+    expect(first.tasks[0]?.id).toBe(second.tasks[0]?.id);
+  });
+
+  it('parsePlanArtifact validates envelope and returns tasks in source order', () => {
+    const parsed = parsePlanArtifact({
+      schemaVersion: '1.0',
+      command: 'plan',
+      tasks: [
+        { id: 'task-2', ruleId: 'B', file: null, action: 'second', autoFix: false },
+        { id: 'task-1', ruleId: 'A', file: 'docs/PLAYBOOK_NOTES.md', action: 'first', autoFix: true }
+      ]
+    });
+
+    expect(parsed.tasks).toEqual([
+      { id: 'task-2', ruleId: 'B', file: null, action: 'second', autoFix: false },
+      { id: 'task-1', ruleId: 'A', file: 'docs/PLAYBOOK_NOTES.md', action: 'first', autoFix: true }
+    ]);
+  });
+
+  it('parsePlanArtifact fails on invalid envelopes', () => {
+    expect(() => parsePlanArtifact(null)).toThrow('Invalid plan payload: expected an object envelope.');
+    expect(() => parsePlanArtifact({ schemaVersion: '2.0', command: 'plan', tasks: [] })).toThrow('Unsupported plan schemaVersion: 2.0.');
+    expect(() => parsePlanArtifact({ schemaVersion: '1.0', command: 'verify', tasks: [] })).toThrow('Invalid plan payload: command must be "plan".');
+    expect(() => parsePlanArtifact({ schemaVersion: '1.0', command: 'plan', tasks: 'bad' })).toThrow('Invalid plan payload: tasks must be an array.');
   });
 
   it('FixExecutor only applies auto-fix tasks and reports statuses deterministically', async () => {

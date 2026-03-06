@@ -37,9 +37,11 @@ Run deterministic governance checks.
 
 Generate deterministic remediation tasks from verify findings.
 
-## `playbook apply [--ci] [--json] [--quiet]`
+## `playbook apply [--ci] [--json] [--quiet] [--from-plan <path>]`
 
 Execute deterministic `plan` tasks using bounded auto-fix handlers.
+
+- `--from-plan <path>` executes a previously generated `playbook plan --json` artifact directly (without recomputing plan intent).
 
 ## `playbook fix [--dry-run] [--yes] [--only <ruleId>] [--ci] [--json] [--quiet]`
 

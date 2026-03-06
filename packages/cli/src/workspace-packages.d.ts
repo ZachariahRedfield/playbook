@@ -20,6 +20,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const generateExecutionPlan: (...args: any[]) => any;
   export const generatePlanContract: (...args: any[]) => any;
   export const applyExecutionPlan: (...args: any[]) => Promise<any>;
+  export const parsePlanArtifact: (...args: any[]) => any;
   export const cleanupSessionSnapshots: (...args: any[]) => any;
   export const formatMergeReportMarkdown: (...args: any[]) => string;
   export const importChatTextSnapshot: (...args: any[]) => any;

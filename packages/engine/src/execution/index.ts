@@ -21,6 +21,12 @@ export type PlanContract = {
   tasks: PlanTask[];
 };
 
+type SerializedPlanEnvelope = {
+  schemaVersion?: string;
+  command?: string;
+  tasks?: unknown;
+};
+
 const collectExecutionInputs = (repoRoot: string): { changedFiles: string[] } => {
   const base = resolveDiffBase(repoRoot);
   const changedFiles = base.baseSha ? getChangedFiles(repoRoot, base.baseSha) : [];
@@ -73,6 +79,56 @@ export const applyExecutionPlan = async (
 ) => {
   const executor = new FixExecutor({ ...defaultFixHandlers, ...(options.handlers ?? {}) });
   return executor.apply(tasks, { repoRoot, dryRun: options.dryRun });
+};
+
+export const parsePlanArtifact = (payload: unknown): { tasks: PlanTask[] } => {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid plan payload: expected an object envelope.');
+  }
+
+  const envelope = payload as SerializedPlanEnvelope;
+
+  if (envelope.schemaVersion !== '1.0') {
+    throw new Error(`Unsupported plan schemaVersion: ${String(envelope.schemaVersion ?? 'undefined')}.`);
+  }
+
+  if (envelope.command !== 'plan') {
+    throw new Error('Invalid plan payload: command must be "plan".');
+  }
+
+  if (!Array.isArray(envelope.tasks)) {
+    throw new Error('Invalid plan payload: tasks must be an array.');
+  }
+
+  const tasks = envelope.tasks.map((task) => {
+    if (!task || typeof task !== 'object') {
+      throw new Error('Invalid plan payload: each task must be an object.');
+    }
+
+    const typedTask = task as Record<string, unknown>;
+    if (
+      typeof typedTask.id !== 'string' ||
+      typeof typedTask.ruleId !== 'string' ||
+      typeof typedTask.action !== 'string' ||
+      typeof typedTask.autoFix !== 'boolean'
+    ) {
+      throw new Error('Invalid plan payload: each task must include id, ruleId, action, and autoFix.');
+    }
+
+    if (typedTask.file !== null && typeof typedTask.file !== 'string') {
+      throw new Error('Invalid plan payload: task.file must be a string or null.');
+    }
+
+    return {
+      id: typedTask.id,
+      ruleId: typedTask.ruleId,
+      file: typedTask.file ?? null,
+      action: typedTask.action,
+      autoFix: typedTask.autoFix
+    } as PlanTask;
+  });
+
+  return { tasks };
 };
 
 export { RuleRunner } from './ruleRunner.js';

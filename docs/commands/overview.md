@@ -32,8 +32,12 @@ JSON output is a **public automation contract** and must remain stable and deter
 
 Current remediation flow is:
 
-`analyze -> verify -> plan -> apply -> verify`
+`analyze -> verify -> plan -> review artifact -> apply --from-plan -> verify`
 
-`apply` is the bounded executor for deterministic, auto-fixable plan tasks.
+Canonical automation-safe execution sequence:
+
+`verify -> plan --json > plan.json -> review plan.json -> apply --from-plan plan.json -> verify`
+
+`apply` is the bounded executor for deterministic, auto-fixable plan tasks and can execute either a freshly generated plan or an explicit serialized plan artifact.
 
 `fix` remains available for opt-in/manual fix workflows (`--dry-run`, `--yes`, `--only`).
