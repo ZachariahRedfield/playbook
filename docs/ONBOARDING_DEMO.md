@@ -17,3 +17,15 @@ The demo repo is part of product adoption strategy:
 ## Current status
 
 This is roadmap work (future-state). Use this repository's local quickstart/docs for current onboarding until `playbook-demo` is published as a maintained first-class demo surface.
+
+## Demo revalidation rule
+
+Every time the main Playbook product adds or changes a major command concept, re-check the demo for terminology drift.
+
+The demo README, scenario docs, and command names should not lag behind the core product narrative.
+
+## Pattern: demo as narrative surface
+
+The demo repository is not just a testbed.
+
+It is the fastest explanation of what Playbook is.
