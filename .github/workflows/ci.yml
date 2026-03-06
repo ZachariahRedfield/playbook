@@ -20,3 +20,18 @@ jobs:
         with:
           node-version: "22"
           working-directory: "."
+
+  demo-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Playbook CI composite action
+        uses: ./.github/actions/playbook-ci
+        with:
+          node-version: "22"
+          working-directory: "."
+
+      - name: Validate playbook-demo compatibility
+        run: node scripts/demo-validate.mjs

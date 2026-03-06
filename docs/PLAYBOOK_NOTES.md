@@ -122,3 +122,23 @@ Developer workflows should be executable commands rather than only written docum
 - Rule: Automatically generated architecture diagrams should be linked from the README.
 - Pattern: CI should regenerate documentation artifacts derived from repository structure.
 - Failure Mode: Registry configuration issues may cause npm 403 errors in restricted environments.
+
+- Pattern: Self-Validating Demo
+  Playbook maintains a dedicated demo repository that is automatically validated.
+
+- Purpose:
+  Ensure the demo repository always demonstrates the correct CLI behavior.
+
+- Validation flow:
+  analyze -> verify -> plan -> apply -> verify
+
+- If any step fails, CI fails.
+
+- Pattern: Repository Intelligence Layer
+  `.playbook/repo-index.json`
+
+- Rule:
+  All architecture visualization and AI integrations must read from the repository index.
+
+- Failure Mode:
+  Multiple commands independently analyzing the repo instead of sharing the index.
