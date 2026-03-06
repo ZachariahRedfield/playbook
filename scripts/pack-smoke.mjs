@@ -24,6 +24,14 @@ const ensurePlaybookConfig = (projectDir) => {
   }
 };
 
+const ensureInitScaffoldContract = (projectDir) => {
+  ensurePlaybookConfig(projectDir);
+  ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
+
+  // `init` guarantees notes + config. Governance docs are supported when a
+  // project opts into them, but they are not required baseline scaffold output.
+};
+
 const readPackedPackageJson = (tarballPath) => {
   const raw = run('tar', ['-xOf', tarballPath, 'package/package.json']);
   return JSON.parse(raw);
@@ -146,11 +154,7 @@ try {
   runLogged(nodeBin, [binPath, 'analyze'], { cwd: projectDir });
   runLogged(nodeBin, [binPath, 'verify'], { cwd: projectDir });
 
-  ensurePlaybookConfig(projectDir);
-  // `init` currently scaffolds a minimal governance baseline (notes + config).
-  // `docs/PROJECT_GOVERNANCE.md` remains a supported optional path via config,
-  // but it is not part of the required generated scaffold contract.
-  ensureFile(path.join(projectDir, 'docs', 'PLAYBOOK_NOTES.md'), 'docs/PLAYBOOK_NOTES.md');
+  ensureInitScaffoldContract(projectDir);
 
   smokePassed = true;
   console.log('[pack-smoke] passed');
