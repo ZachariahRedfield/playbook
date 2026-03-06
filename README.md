@@ -25,6 +25,21 @@ The CLI help output is the authoritative source for supported commands and flags
 - Use `playbook rules` to list available rules.
 - Use `playbook explain <id>` to see what a rule checks and how to remediate findings.
 
+## Init Scaffold Contract
+
+Running:
+
+```bash
+npx playbook init
+```
+
+guarantees the following baseline project artifacts:
+
+- Playbook configuration (`playbook.config.json` or `.playbook/config.json`)
+- `docs/PLAYBOOK_NOTES.md`
+
+Other documentation such as `docs/PROJECT_GOVERNANCE.md` may be present depending on repository governance policies, but it is not required by the default scaffold.
+
 ## Trust and community
 
 - [CHANGELOG.md](CHANGELOG.md)

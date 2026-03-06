@@ -177,14 +177,12 @@ Progress (current)
 - [ ] GitHub Action support for verification-first governance in CI
 Repository Templates
 
-playbook init generates:
+playbook init baseline scaffold guarantees:
 
-docs/ARCHITECTURE.md
-docs/PROJECT_GOVERNANCE.md
 docs/PLAYBOOK_NOTES.md
-docs/PLAYBOOK_CHECKLIST.md
-playbook.config.json
-.github/workflows/playbook-verify.yml
+playbook.config.json (legacy) or .playbook/config.json (modern)
+
+Repository-specific governance docs and workflow files (for example `docs/PROJECT_GOVERNANCE.md`, `docs/ARCHITECTURE.md`, `docs/PLAYBOOK_CHECKLIST.md`, and `.github/workflows/playbook-verify.yml`) are optional and may be created or managed by individual repositories.
 CI Integration
 
 Example:
