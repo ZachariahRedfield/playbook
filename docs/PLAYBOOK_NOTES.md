@@ -96,3 +96,8 @@ Developer workflows should be executable commands rather than only written docum
 - WHAT changed: Updated roadmap planning to include near-term CLI/docs cleanup milestones and a future AI Repository Intelligence phase centered on planned `playbook index` output at `.playbook/repo-index.json`.
 - WHY it changed: Keeps foundation-phase delivery focused while documenting the intended machine-readable repository index direction without prematurely implementing it.
 
+
+## 2026-03-06
+
+- WHAT changed: Hardened remediation execution by formalizing handler contract semantics (`applied`, `skipped`, `unsupported`, `failed`) and centralizing handler resolution precedence (plugin handlers override built-ins when defined; undefined plugin handlers do not shadow built-ins).
+- WHY it changed: Apply is now critical product surface area, so deterministic execution and explicit unsupported/failure signaling reduce ambiguity for CI and AI automation.

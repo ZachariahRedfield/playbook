@@ -21,7 +21,8 @@ Serializable execution contract:
 - `--from-plan` executes a previously exported `playbook plan --json` payload without recomputing intent.
 - Plan payload must declare `schemaVersion: "1.0"` and `command: "plan"`.
 - Every task must include `id`, `ruleId`, `file`, `action`, `autoFix`.
-- Handler results must explicitly report changed files and a non-empty summary; vague handler responses fail the task.
+- Handler contract is explicit: handlers must return `applied`, `skipped`, or `unsupported`; thrown errors are reported as `failed` and contract violations are treated as failures.
+- `applied` handler results must include changed files and a non-empty summary; `skipped`/`unsupported` handler results must include a non-empty message.
 
 
 ## Workflow role

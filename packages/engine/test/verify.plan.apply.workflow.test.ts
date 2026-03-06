@@ -86,7 +86,7 @@ describe('verify -> plan -> apply -> verify workflow', () => {
         'plugin.failure': async ({ repoRoot }) => {
           fs.mkdirSync(path.join(repoRoot, 'docs'), { recursive: true });
           fs.writeFileSync(path.join(repoRoot, 'docs', 'PLUGIN.md'), '# Plugin\n');
-          return { filesChanged: ['docs/PLUGIN.md'], summary: 'Created plugin doc.' };
+          return { status: 'applied', filesChanged: ['docs/PLUGIN.md'], summary: 'Created plugin doc.' };
         }
       }
     });
@@ -99,5 +99,22 @@ describe('verify -> plan -> apply -> verify workflow', () => {
     const execution = await applyExecutionPlan('.', [], { dryRun: false });
     expect(execution.results).toEqual([]);
     expect(execution.summary).toEqual({ applied: 0, skipped: 0, unsupported: 0, failed: 0 });
+  });
+
+  it('keeps built-in handlers when plugin handler map includes undefined', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-undefined-handler-'));
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'PROJECT_GOVERNANCE.md'), '# Governance\n');
+
+    const plan = generateExecutionPlan(root);
+    const execution = await applyExecutionPlan(root, plan.tasks, {
+      dryRun: false,
+      handlers: {
+        'notes.missing': undefined
+      }
+    });
+
+    expect(execution.summary).toEqual({ applied: 1, skipped: 0, unsupported: 0, failed: 0 });
+    expect(fs.existsSync(path.join(root, 'docs', 'PLAYBOOK_NOTES.md'))).toBe(true);
   });
 });

@@ -6,7 +6,7 @@ import { loadPlugins } from '../plugins/loadPlugins.js';
 import { getRegisteredRules, registerRule, resetPluginRegistry } from '../plugins/pluginRegistry.js';
 import { getCoreRules } from '../rules/coreRules.js';
 import { defaultFixHandlers } from './defaultFixHandlers.js';
-import { FixExecutor } from './fixExecutor.js';
+import { FixExecutor, HandlerResolver } from './fixExecutor.js';
 import { PlanGenerator } from './planGenerator.js';
 import { RuleRunner } from './ruleRunner.js';
 import type { VerifyReport } from '../report/types.js';
@@ -77,7 +77,8 @@ export const applyExecutionPlan = async (
   tasks: PlanTask[],
   options: { dryRun: boolean; handlers?: Record<string, FixHandler | undefined> }
 ) => {
-  const executor = new FixExecutor({ ...defaultFixHandlers, ...(options.handlers ?? {}) });
+  const resolver = new HandlerResolver({ builtIn: defaultFixHandlers, plugin: options.handlers });
+  const executor = new FixExecutor(resolver);
   return executor.apply(tasks, { repoRoot, dryRun: options.dryRun });
 };
 
@@ -133,6 +134,6 @@ export const parsePlanArtifact = (payload: unknown): { tasks: PlanTask[] } => {
 
 export { RuleRunner } from './ruleRunner.js';
 export { PlanGenerator } from './planGenerator.js';
-export { FixExecutor } from './fixExecutor.js';
+export { FixExecutor, HandlerResolver } from './fixExecutor.js';
 export { defaultFixHandlers } from './defaultFixHandlers.js';
 export type { PlanTask, RuleFailure, Rule, FixHandler } from './types.js';
