@@ -10,7 +10,7 @@ Playbook is a governance CLI for repositories that keeps checks deterministic fo
 
 ## Try Playbook in 30 seconds
 
-The canonical way to discover the official demo flow is:
+The fastest way to see Playbook in action:
 
 ```bash
 npx playbook demo
