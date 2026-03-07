@@ -304,6 +304,120 @@ Revenue is not the priority during Year 1.
 
 Adoption is.
 
+## Roadmap Compounding Audit (Planning Baseline)
+
+This section records a structural planning audit to keep roadmap phases compounding, non-overlapping, and AI-runtime ready.
+
+### Executive Summary
+
+Strengths:
+- CLI-first and deterministic-governance principles are explicit and consistent with the product mission.
+- Repository intelligence is already positioned as a machine-readable substrate and is connected to AI/CI workflows.
+- The canonical remediation flow (`verify -> plan -> apply -> verify`) is repeatedly reinforced.
+
+Weaknesses:
+- Read-runtime capabilities (`ask`, `query`, `explain`, PR analysis) and change-runtime capabilities (`verify`, `plan`, `apply`) are interleaved across phases, which blurs sequencing.
+- Context-compression mechanisms are present but not modeled as a dedicated architectural layer.
+- Several phases overlap in scope (`query`, dependency graph, impact, risk) rather than compounding as a single intelligence maturation track.
+- AI execution runtime planning appears before all mutation-safety and deterministic patch-scope prerequisites are clearly gated.
+
+### Roadmap Structural Issues
+
+Overlapping phase concerns:
+- Query, dependency graph, impact analysis, and risk analysis are spread across separate phases with shared substrate dependencies.
+- Context compression appears as a standalone subsection between phases rather than a formal phase with explicit contracts.
+- PR intelligence is implemented but documented outside the core phase ladder, despite being a read-runtime capability.
+
+Unclear boundaries:
+- The roadmap mixes capability introduction (new layer) and capability enhancement (quality expansion) inside the same phase descriptions.
+- AI execution runtime planning overlaps with autonomous maintenance and security-program mutation controls.
+
+Sequencing issues:
+- Repository intelligence formalization should complete before read/change runtime specialization.
+- Deterministic mutation scope, path boundaries, and policy gates should be marked as explicit prerequisites before broad agent runtime expansion.
+
+### Recommended Phase Structure
+
+Use a layered phase model so each phase compounds directly on the previous one:
+
+1. **Phase 1 — CLI Foundations**  
+   Deterministic command contracts, distribution reliability, and baseline verification UX.
+2. **Phase 2 — Repository Intelligence Substrate**  
+   Formalize index contracts for modules, dependencies, test relationships, docs mapping, ownership, and architecture metadata.
+3. **Phase 3 — Context Compression Layer**  
+   Context bundles, module digests, cached snapshots, and deterministic change-scope assembly.
+4. **Phase 4 — Read Runtime (Query / Explain / Ask / Analyze-PR)**  
+   Deterministic architecture reasoning and read-only repository understanding flows.
+5. **Phase 5 — Change Runtime (Verify / Plan / Apply)**  
+   Deterministic remediation orchestration with explicit plan contracts and mutation boundaries.
+6. **Phase 6 — Risk-Aware Execution**  
+   Risk signals, impact-aware sequencing, and risk-shaped remediation prioritization.
+7. **Phase 7 — AI Repository Contract**  
+   Machine-readable AI-operability contract and enforcement rules.
+8. **Phase 8 — AI Execution Runtime**  
+   Agent orchestration that consumes repository intelligence + AI contract and obeys deterministic mutation workflow.
+9. **Phase 9 — Autonomous Maintenance (Policy-Gated)**  
+   Recurring maintenance execution modes with approval and policy controls.
+10. **Phase 10 — Repository Learning Loop (Human-Reviewed)**  
+   Pattern detection and candidate improvements from repeated findings/remediations/query usage.
+
+Reasoning for reordering:
+- Separates repository understanding (read runtime) from repository mutation (change runtime).
+- Makes intelligence and context efficiency foundational before AI runtime expansion.
+- Ensures advanced automation is gated by deterministic contracts and mutation safety.
+
+### Missing Capabilities to Formalize
+
+The roadmap should make these explicit as first-class contracts:
+- module digests for compact architecture context transfer
+- minimal change-scope bundles for patch targeting
+- deterministic mutation scope declaration (`allowedFiles`, patch-size constraints, boundary checks)
+- risk-aware context shaping (high-risk modules get richer context; low-risk modules stay concise)
+- cache lifecycle policy for `.playbook/context/*` intelligence snapshots
+
+### Token Efficiency Opportunities
+
+To reduce scan cost and AI tokens:
+- make `index` + cached intelligence artifacts the default source for read runtime operations
+- require context bundles for agent workflows instead of broad repository scans
+- add deterministic module digests as lightweight context payloads for `ask`/`explain`
+- persist change-scope bundles that include files/tests/dependencies/docs/rules/risk in one contract
+- enforce patch-scope narrowing before generation to reduce reasoning breadth
+
+### Architecture Patterns
+
+- Pattern: One intelligence substrate powering multiple task runtimes.
+- Pattern: Read runtime and change runtime are distinct execution modes with shared contracts.
+- Pattern: Context compression is a product layer, not an ad-hoc optimization.
+- Pattern: Contract-driven AI execution with deterministic mutation boundaries.
+- Pattern: Risk-aware context shaping to balance safety and token efficiency.
+
+### Failure Modes
+
+- Failure Mode: Feature accumulation without layer boundaries.
+- Failure Mode: Treating read and mutation tasks as the same runtime path.
+- Failure Mode: Context bloat from repeated full-repo scans.
+- Failure Mode: Agent/runtime expansion before mutation-safety prerequisites are complete.
+- Failure Mode: Intelligence drift when index/schema ownership is distributed across unrelated phases.
+
+### Recommended Documentation Reorganization (this file)
+
+Rewrite/reorganize these sections in `docs/PLAYBOOK_PRODUCT_ROADMAP.md`:
+- Consolidate **PHASE 2**, **PHASE 4**, **PHASE 5**, and **PHASE 6** into a clear progression: substrate -> read runtime -> change runtime -> risk-aware execution.
+- Promote **AI Efficiency & Context Compression** into an explicit numbered phase (current implicit Phase 3).
+- Move **PR Intelligence (Implemented)** under the read-runtime phase grouping.
+- Add an explicit "Phase 8 prerequisites" block requiring deterministic mutation scope, policy gates, and contract validation before `playbook agent` expansion.
+- Add a future **Repository Learning Loop** phase scoped to human-reviewed suggestions only (no autonomous mutation).
+
+### Documentation Capture Rules (Post-Audit)
+
+Roadmap documentation must preserve these architectural statements:
+- Read workflows and change workflows are separate runtimes sharing one repository-intelligence substrate.
+- Persistent repository intelligence is the default mechanism for reducing AI token usage.
+- Context compression and deterministic mutation scope are core AI-efficiency and safety mechanisms.
+- Future phases should prioritize intelligence quality and contract durability over command-surface growth.
+- A repository learning loop can propose rule/context improvements from observed patterns, with human review required.
+
 PHASE 1 — CLI FOUNDATIONS
 
 Goal:
