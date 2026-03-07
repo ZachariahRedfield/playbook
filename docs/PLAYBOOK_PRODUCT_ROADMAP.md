@@ -145,425 +145,152 @@ Revenue is not the priority during Year 1.
 
 Adoption is.
 
-PHASE 1 — FOUNDATION
-
-Months 1–2
+PHASE 1 — CLI FOUNDATIONS
 
 Goal:
-Transform Playbook from a personal workflow into a clean open-source developer tool.
+Ship a reliable local-first CLI with deterministic contracts for human and machine workflows.
 
-Deliverables
-Repository Architecture
-playbook
-├ packages
-│ ├ cli
-│ └ engine
-├ templates
-│ └ repo
-├ docs
-│ ├ concepts
-│ ├ config
-│ └ rules
-├ scripts
-└ README.md
-CLI Commands
+Core outcomes:
+- Build and distribution reliability (`pnpm -r build`, npm packaging, CI install paths).
+- Stable command registry and deterministic JSON outputs.
+- Verification-first baseline (`verify`, `plan`, `apply`) for governance enforcement.
 
-Current product-facing commands/artifacts:
-
-playbook analyze
-playbook verify
-playbook rules
-playbook doctor
-playbook diagram
-playbook plan
-playbook apply
-playbook-demo (discoverable via `playbook demo`)
-
-Next enhancement focus:
-
-Harden and extend repository-intelligence contracts (`index`, `query`, `deps`, `ask`, `explain`) for long-lived automation and CI portability.
-
-AI-Aware Engineering Guardrails
-
-AI code generation increases the need for automated verification and architectural guardrails.
-
-Playbook is not a testing framework. It is the governance and verification layer that keeps AI-accelerated development from degrading architectural integrity.
-
-Future capabilities:
-
-AI-Safe Development
-- Detect structural risks introduced by AI-generated code.
-- Verify repository contracts remain intact after automated code generation.
-- Ensure architectural boundaries remain respected.
-
-Test Intelligence
-- Detect modules without tests.
-- Warn when critical subsystems lack integration tests.
-- Surface test coverage gaps through future integrations with coverage tools.
-
-Verification-First CI
-- Expand `playbook verify` to support stronger enforcement in CI pipelines.
-- Allow teams to fail builds on governance violations.
-- Add future GitHub Action support for running `playbook verify` in CI.
-
-Architectural Contracts
-- Define repository invariants such as forbidden import paths, layer boundaries, and module ownership.
-- Verify these contracts automatically during analysis and verification workflows.
-
-Progress (current)
-
-- [ ] AI-safe structural risk detection for generated code
-- [ ] Repository contract verification for automated code generation workflows
-- [ ] Test-intelligence signals for missing tests and integration coverage blind spots
-- [ ] CI enforcement controls for governance-based build failures
-- [ ] Built-in architectural contract definitions (imports, boundaries, ownership)
-- [ ] GitHub Action support for verification-first governance in CI
-Repository Templates
-
-playbook init baseline scaffold guarantees:
-
-docs/PLAYBOOK_NOTES.md
-playbook.config.json (legacy) or .playbook/config.json (modern)
-
-Repository-specific governance docs and workflow files (for example `docs/PROJECT_GOVERNANCE.md`, `docs/ARCHITECTURE.md`, `docs/PLAYBOOK_CHECKLIST.md`, and `.github/workflows/playbook-verify.yml`) are optional and may be created or managed by individual repositories.
-CI Integration
-
-Example:
-
-run: playbook verify
-
-CI fails if governance rules are violated.
-
-Tooling & Distribution (Package Manager + Action + Demo Repo)
-
-- [x] Adopt pnpm as the workspace standard; keep `pnpm-lock.yaml` committed and never gitignored.
-- [x] Enforce a single pnpm version source via `package.json#packageManager`; CI setup must not pin a conflicting pnpm version (use aligned `pnpm/action-setup` or Corepack behavior).
-- [x] Fix CI pnpm cache reliability by installing pnpm via `pnpm/action-setup` and caching the pnpm store with `actions/cache`, while keeping lint/test/smoke as separate visible phases.
-- [x] Remove CLI bundler dependency from the critical path (`packages/cli` now builds with `tsc` to `dist/main.js`) to eliminate Rollup optional native module flakiness in CI.
-- [x] Remove core/engine/node bundler dependency from the critical path (`packages/core`, `packages/engine`, and `packages/node` now build with `tsc` to `dist/index.js`) to eliminate Rollup optional native module flakiness in CI.
-- [x] Bundle CLI templates into `packages/cli/dist/templates/repo` during `packages/cli` build so smoke tests and published tarballs run `playbook init` without extra environment variables.
-- [x] Validate packaged CLI artifact correctness in CI by packing local tarballs and smoke-testing local install + `playbook init`/`analyze`/`verify`.
-- [ ] Publish CLI to npm as `@fawxzzy/playbook` (scoped org package).
-- [ ] Ensure scoped npm publish uses public access (`npm publish --access public`).
-- [ ] Ensure Windows compatibility by avoiding `sh`/`bash` lifecycle scripts in published install paths.
-- [ ] Define and document 30-second onboarding demo commands using the `npx` path.
-- [ ] Provide a first-class GitHub Action distribution path via a composite action that runs `npx @fawxzzy/playbook verify`.
-
-Near-Term Productization Milestones
-
-Progress (current): AI bootstrap and repository intelligence commands (`ai-context`, `index`, `query`, `deps`, `ask`, `explain`) are implemented with deterministic JSON-oriented contracts for AI-operable workflows.
-
-### AI Repository Intelligence milestone (implemented baseline, enhancement track)
-
-- [x] Add `playbook index` command to emit `.playbook/repo-index.json`.
-- [x] Include deterministic repository metadata: module boundaries, internal dependencies, detected framework/runtime signals, and documented architecture contracts.
-- [x] Treat index output as machine-readable context for safe AI-assisted repository changes.
-
-- [x] CLI command architecture cleanup: standardize all CLI commands under `packages/cli/src/commands/`, wire `packages/cli/src/commands/index.ts` as the single command registry, and keep shared helpers under `packages/cli/src/lib/`.
-- [x] Command documentation baseline: maintain `docs/commands/` with short per-command docs for current command surface so contributors and AI agents can quickly discover supported behavior.
-- [ ] Docs merge and roadmap cleanup: keep roadmap/checklist/docs language aligned so near-term CLI structure and distribution priorities remain explicit.
-- [x] Playbook Demo Repo milestone (`playbook-demo`): first-class onboarding repository and deterministic CLI discovery via `playbook demo`.
-- [ ] GitHub Action Integration (CI-native adoption): deliver a first-class `uses: playbook/verify` path, with initial implementation via `.github/workflows/playbook-verify.yml`. Initial capabilities should include `playbook verify`, architecture contract checks, and governance rule checks.
-- [ ] NPM Package Publishing (public adoption): publish Playbook as an installable CLI with support for `npx --yes @fawxzzy/playbook analyze`, backed by an npm publishing pipeline, clear versioning strategy, and reliable scoped CLI distribution.
-
-## Phase: Developer Experience
-
-- ☑ Docs merge tooling
-- ☑ Session merge/import system
-- ☑ CLI command registry as single source of truth
-- ☑ `docs/commands/` baseline documentation
-- ☑ Playbook demo repository (`playbook-demo`)
-- ⬜ GitHub Action
-- ⬜ Canonical session outputs
-
-Developer Experience focuses on making Playbook immediately useful to developers with minimal setup.
-This phase emphasizes demoability, automation, and deterministic workflows so that developers can understand Playbook value in seconds.
-
-- [ ] Dogfood Playbook in FawxzzyFitness (internal adoption gate): run Playbook end-to-end in Zac's own repo to validate reliability before broader rollout.
-  - Phase gates (acceptance criteria):
-    - Playbook repo CI green (install/build/test/package).
-    - Stable install path for consumers validated (`npx` OR `npm pack` tarball OR git-based install).
-    - CLI commands run reliably on a real repo (`init`, `analyze`, `verify`, `doctor`).
-  - Safe migration plan:
-    - Run new and old Playbook in parallel via separate npm scripts.
-    - Flip default scripts to the new Playbook once stable in day-to-day use.
-    - Keep a legacy alias for one release cycle, then remove it.
-  - Dogfooding findings feed CLI/engine improvements and roadmap checkbox updates.
-
-Initial Rule
-
-v0.1 rule:
-
-requireNotesOnChanges
-
-Meaning:
-
-If code changes in:
-
-src/**
-app/**
-server/**
-supabase/**
-
-then:
-
-docs/PLAYBOOK_NOTES.md
-
-must also change.
-
-Success Criteria
-CLI works locally
-CI integration works
-Smoke tests pass
-Repo polished and documented
-
-Progress (current)
-
-- [x] Repository architecture established (`packages/cli`, `packages/engine`, `templates/repo`, `docs`, `scripts`)
-- [x] Platform architecture (core + adapters + CLI)
-- [x] CLI scaffold implemented (`init`, `analyze`, `verify`, `doctor`)
-- [x] Repository templates generated by `playbook init`
-- [x] CI workflow included for verification
-- [x] Initial rule `requireNotesOnChanges` implemented in engine
-- [x] Smoke test script and automated tests are present
-- [x] pnpm policy explicitly documented and enforced as the toolchain standard
-- [x] pnpm version governance consolidated to `packageManager` as the authoritative source
-- [x] Lockfile determinism hardened with `pnpm.supportedArchitectures` (`linux`/`darwin`/`win32`, `x64`, `glibc`) so Rollup optional native deps are captured for CI Linux installs.
-- [x] Reusable CI action now uses `setup-node` native pnpm cache and split lint/test/smoke steps for clearer, deterministic failure signals with less config drift.
-- [x] Docs hygiene tooling exercised with a deterministic `docs:merge` consolidation pass (SAFE mode, canonical pointers/stubs retained).
-- [x] Docs merge tooling completed and executed once on the Playbook repo.
-- [x] Session tooling implemented (`session import`, `session merge`, `session cleanup`).
-- [x] Documentation automation foundation added (`pnpm docs:update`, `pnpm docs:check`, `pnpm agents:update`, `pnpm agents:check`) with shared command metadata as source of truth.
-- [x] Deterministic session knowledge hygiene pipeline added to `session cleanup` with explicit normalize/deduplicate/truncate/prune/report stages and machine-readable JSON report output.
-
-Pattern: Drift-prone command documentation should be generated or validated from shared metadata.
-Rule: Knowledge hygiene must be deterministic and report exactly what was truncated, deduplicated, deleted, or preserved.
-Pattern: Session/knowledge cleanup should reduce junk data without hiding meaningful engineering context.
-Rule: Usage telemetry, if present, must be opt-in, local-first, and deletable.
-Failure Mode: Documentation Drift occurs when command/product state changes without structured doc regeneration or validation.
-Failure Mode: Knowledge Junk Accretion occurs when repeated summaries, duplicate artifacts, and placeholder data accumulate without deterministic cleanup rules.
-- [x] Repository hygiene rules established for `.playbook/`.
-- [ ] `examples/demo-repo/` ships as an onboarding path with intentional architecture/doc/governance drift and meaningful analysis output
-- [ ] GitHub Action path finalized for `uses: playbook/verify` with verify + architecture + governance checks
-- [ ] npm package distribution live with publish pipeline, versioning strategy, and installable Playbook CLI
 PHASE 2 — REPOSITORY INTELLIGENCE
 
-Months 3–4
-
 Goal:
-Enable Playbook to understand repository architecture automatically.
+Build deterministic repository intelligence artifacts that AI systems and developers can trust.
 
-New Command
-playbook analyze
+Primary capability:
+- `playbook index` generates `.playbook/repo-index.json` as machine-readable repository context.
 
-Detect:
+Expected artifact shape (example):
 
-framework
-database
-UI architecture
-styling system
-Example Output
-Detected Stack
-
-Framework: Next.js
-Database: Supabase
-Styling: Tailwind
-Architecture: React Server Components
-Architecture Draft Generation
-
-Playbook can insert suggestions into:
-
-docs/ARCHITECTURE.md
-
-using marker:
-
-<!-- PLAYBOOK:ANALYZE_SUGGESTIONS -->
-Stack Detectors
-
-Initial detectors:
-
-- [x] Next.js detector
-- [x] Supabase detector
-- [x] Tailwind detector
-- [ ] Express detector
-- [ ] Prisma detector
-Success Criteria
-Analyze detects stack reliably
-Architecture draft generation works
-Developers see value immediately
-
-Progress (current)
-
-- [x] `playbook analyze` command implemented
-- [x] Stack detection for Next.js, Supabase, and Tailwind
-- [x] Architecture suggestion marker support in `docs/ARCHITECTURE.md`
-- [ ] Stack detector coverage expanded to Express and Prisma
-- [ ] Analyze output expanded beyond current detector set
-PHASE 3 — GOVERNANCE ENGINE
-
-Months 5–6
-
-Goal:
-Transform Playbook into a policy engine for architecture governance.
-
-Rule Engine
-
-Rules become plugin-based.
-
-verify/
-  rules/
-    requireNotesOnChanges
-    forbidLayerCrossing
-    requireArchitectureDocs
-Example Rule
-forbidLayerCrossing
-UI cannot import DB directly
-UI → Server → DB
-Rule Interface
-export interface PlaybookRule {
-  id: string
-  run(context: VerifyContext): VerifyResult[]
-}
-JSON Output
-playbook verify --json
-
-Example:
-
+```json
 {
-  "ok": false,
-  "failures": [
+  "modules": [
     {
-      "rule": "forbidLayerCrossing",
-      "file": "src/components/user.ts",
-      "message": "UI imported DB layer"
+      "name": "workouts",
+      "dependencies": ["auth", "db"]
     }
   ]
 }
-CI Integration
+```
 
-Playbook must work with:
+Intelligence artifacts should include:
+- modules
+- dependencies
+- dependents
+- architecture metadata
 
-GitHub Actions
-GitLab CI
-CircleCI
-Buildkite
-Success Criteria
-Rule engine stable
-Multiple governance rules implemented
-JSON output supported
-
-Progress (current)
-
-- [x] Engine-backed `playbook verify` command implemented
-- [x] Deterministic `requireNotesOnChanges` rule is active
-- [x] Structured JSON output for verify reports
-- [ ] Additional governance rules (for example `forbidLayerCrossing`, `requireArchitectureDocs`) implemented
-- [x] Plugin-based rule and detector loading model skeleton implemented
-PHASE 4 — KNOWLEDGE ENGINE
-
-Months 7–9
+PHASE 3 — QUERY SYSTEM
 
 Goal:
-Turn Playbook into an engineering knowledge system.
+Enable deterministic repository reasoning through command-surface intelligence queries.
 
-New Command
-playbook learn
+Primary capability:
+- `playbook query`
 
-This command analyzes:
+Representative queries:
+- `playbook query architecture`
+- `playbook query dependencies <module>`
+- `playbook query impact <module>`
+- `playbook query risk <module>`
+- `playbook query docs-coverage`
+- `playbook query rule-owners`
 
-commits
-notes
-code patterns
-architecture decisions
-Knowledge Pipeline
-Playbook Notes
-      ↓
-Proposed Doctrine
-      ↓
-Promoted Doctrine
+This phase establishes contract-driven repository reasoning so AI systems can avoid ad-hoc inference.
 
-Example doctrine:
-
-Server loaders should shape view models
-Engineering Knowledge Graph
-
-Playbook tracks:
-
-patterns
-decisions
-architecture boundaries
-recurring solutions
-
-Conversation Graph & Session Memory (Branch / Merge)
-
-Playbook will define a deterministic session format and CLI workflow for conversation graphs so teams can branch and merge engineering reasoning with the same governance discipline applied to code. This is a Playbook format + tools capability, not a chat UI change.
-
-The session model will support:
-
-- checkpoints (context snapshots)
-- branches (topic explorations)
-- merges (reconciliation of parallel work)
-- conflict reporting/resolution for decisions and constraints
-
-Deliverables
-
-- [ ] Define a Session Snapshot schema (Decisions, Constraints, Open Questions, Artifacts, Next Steps)
-- [ ] Add CLI commands (or equivalent namespace aligned to Playbook conventions):
-  - [ ] `playbook session checkpoint`
-  - [ ] `playbook session branch`
-  - [ ] `playbook session merge`
-- [ ] Implement deterministic merge logic for snapshots, including conflict detection
-- [ ] Emit merge reports in both human-readable and JSON format
-- [ ] Add `docs/concepts` documentation describing Conversation Graph workflows
-
-Why this matters
-
-Conversation-graph workflows prevent drift, enable parallel exploration, and convert chat history into structured engineering knowledge that can be governed, reviewed, and reused.
-
-Success Criteria
-Doctrine system implemented
-Notes pipeline stable
-Knowledge extraction working
-PHASE 5 — ORGANIZATION PLAYBOOK
-
-Months 10–12
+PHASE 4 — DEPENDENCY GRAPH + IMPACT ANALYSIS
 
 Goal:
-Enable governance across multiple repositories.
+Use repository dependency edges to make change impact deterministic.
 
-Organization Structure
-Company Playbook
-      ↓
-Repo Playbook A
-Repo Playbook B
-Repo Playbook C
+Primary capabilities:
+- dependency graph in index artifacts
+- impact analysis via `playbook query impact <module>`
 
-Company defines:
+Expected outcomes:
+- identify downstream dependents before edits
+- expose architectural blast radius for proposed changes
+- prioritize low-impact remediation paths first
 
-architecture principles
-security rules
-engineering doctrine
+PHASE 5 — RISK ANALYSIS
 
-Repositories inherit these rules.
+Goal:
+Add deterministic module-level risk scoring for safer AI and human remediation planning.
 
-Example Organization Rule
-All DB access must go through service layer
-Enterprise Features
+Primary capability:
+- `playbook query risk <module>`
 
-Optional Playbook Cloud:
+Risk model signals should include:
+- fan-in
+- fan-out
+- verification failures
+- dependency-hub status
 
-playbook.dev
+Expected outcome:
+- safer prioritization of change sequencing and rollout planning.
 
-Provides:
+PHASE 6 — AI EXECUTION LAYER (PLAYBOOK AGENT RUNTIME)
 
-multi-repo dashboards
-governance metrics
-architecture health
-doctrine graph
-Success Criteria
-Multi-repo governance supported
-Enterprise interest begins
-Early design partners
+Goal:
+Introduce **Playbook Agent** as an AI execution runtime for repositories.
+
+New command:
+- `playbook agent`
+
+Vision:
+Instead of AI systems directly editing code without guardrails, Playbook Agent orchestrates deterministic repository workflows so every proposal runs through repository intelligence and remediation contracts.
+
+Example:
+- `playbook agent "add pagination to workouts API"`
+
+Deterministic AI execution loop:
+1. `playbook index`
+2. `playbook query architecture`
+3. `playbook query dependencies <module>`
+4. `playbook query risk <module>`
+5. `playbook plan`
+6. `playbook apply`
+7. `playbook verify`
+8. Repeat remediation cycle until verify is clean.
+
+This phase defines Playbook as an AI governance and execution runtime, not only a repository rule checker.
+
+PHASE 7 — AUTONOMOUS REPOSITORY MAINTENANCE
+
+Goal:
+Extend Playbook Agent into recurring and CI-driven repository maintenance modes.
+
+Planned operating modes:
+- CI self-healing: `playbook agent --fix-ci`
+- maintenance mode: `playbook agent --mode maintain`
+
+Example autonomous tasks:
+- documentation drift fixes
+- architecture corrections
+- rule remediation
+- dependency cleanup
+- targeted coupling reduction/refactoring flows
+
+Documentation patterns to enforce in this phase:
+
+- Pattern: Contract-Driven AI Execution
+  - AI systems must operate through deterministic repository workflows instead of directly modifying code.
+- Pattern: AI Execution Loop
+  - AI change proposals pass through `plan -> apply -> verify` cycles until repository verification succeeds.
+- Pattern: Repository Intelligence Layer
+  - Structured repository artifacts (index, dependency graph, risk graph) allow AI tools to reason about codebases deterministically.
+
+Updated product direction:
+Playbook evolves from a repository rule checker into an AI-aware repository governance and execution runtime.
+
+Key product pillars:
+- Repository intelligence
+- Deterministic remediation
+- AI-safe execution
+- Architecture enforcement
+
 FUTURE DIRECTION — PLAYBOOK PLATFORM VISION
 
 Playbook starts as a CLI-first developer tool, but the platform is intentionally architected so the same analysis engine can power multiple product surfaces.
