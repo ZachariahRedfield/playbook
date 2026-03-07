@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Hardened Cosign keyless verification by adding `--certificate-identity-regexp "https://github.com/.+"` and `--certificate-oidc-issuer https://token.actions.githubusercontent.com` to SBOM verify step. WHY: Cosign keyless verification requires explicit trusted identity and issuer, otherwise verification fails even with a valid bundle.
+
 - WHAT: Migrated SBOM signing/verification to Cosign v3 bundle flow (`cosign sign-blob --bundle` and `cosign verify-blob --bundle`) and updated security policy gating to require `artifacts/sbom.sigstore.json`. WHY: `--output-signature` is deprecated in Cosign v3 bundle mode and can fail CI despite valid artifacts.
 
 - WHAT: Pinned Cosign installer to `sigstore/cosign-installer@v4.0.0` (with explicit `cosign-release`) and added an in-pipeline `cosign verify-blob` step after signing SBOM artifacts. WHY: Avoids mutable action tag drift and fails CI if signature generation/verification breaks or artifact integrity is compromised.

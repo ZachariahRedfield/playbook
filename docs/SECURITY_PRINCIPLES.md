@@ -67,6 +67,13 @@ Note: gitleaks partial-scan/no-leaks output does not mean the job passed; git-hi
 
 ## Cosign Signing Requirements in CI
 
+- Playbook CI uses Sigstore keyless signing for SBOM artifacts.
+- Verification requires `--certificate-identity` or `--certificate-identity-regexp`.
+- GitHub OIDC issuer for Cosign verification is `https://token.actions.githubusercontent.com`.
+- CI verifies SBOM bundles using `cosign verify-blob`.
+- Playbook uses identity-based verification:
+  - `--certificate-identity-regexp "https://github.com/.+"`
+  - `--certificate-oidc-issuer https://token.actions.githubusercontent.com`
 
 - Cosign GitHub Action references should use full version tags (for example, `sigstore/cosign-installer@v4.0.0`) rather than floating `@v4`.
 - Playbook CI installs Cosign using `sigstore/cosign-installer@v4.0.0`.
