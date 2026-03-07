@@ -21,6 +21,20 @@ Pattern: **private-first by default**. Standard Playbook usage does not imply au
 
 Pattern: **config/plugins/rule packs over forks** for project-specific customization.
 
+## Runtime artifacts and storage
+
+Playbook uses `.playbook/` as the default home for local runtime artifacts (for example repository intelligence indexes, plans, and machine-readable reports).
+
+- Generated runtime artifacts should generally be gitignored unless intentionally committed as stable contracts/examples.
+- Committed demo artifacts under `.playbook/demo-artifacts/` are product-facing snapshot contracts and examples, not general-purpose runtime logs.
+- Playbook remains local/private-first by default: local scanning and artifact generation do not imply automatic cloud sync or upstream export.
+
+Pattern: Runtime Artifacts Live Under `.playbook/`.
+Pattern: Demo Artifacts Are Snapshot Contracts, Not General Runtime State.
+Rule: Generated runtime artifacts should be gitignored unless intentionally committed as stable contracts/examples.
+Rule: Playbook remains local/private-first by default.
+Failure Mode: Recommitting regenerated runtime artifacts on every run causes unnecessary repository-history growth and review noise.
+
 
 ## Quick Start
 

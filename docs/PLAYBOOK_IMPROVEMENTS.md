@@ -76,6 +76,33 @@ The loop should remain the core execution model independent of interface surface
   - If new interfaces (UI, chat, agent surfaces) bypass the deterministic command workflow, Playbook loses consistency and trust.
   - All execution surfaces should route through the canonical Playbook reasoning loop.
 
+
+---
+
+## Staged Improvement: Storage and Runtime Artifact Hygiene
+
+### Stage 1 — Artifact taxonomy and docs alignment
+
+- Define a single artifact taxonomy across docs: runtime local artifacts, reviewed automation artifacts, and committed demo/contract snapshots.
+- Clarify that `.playbook/` is the default runtime artifact home and that local artifacts are gitignored by default unless intentionally promoted.
+- Preserve the distinction that `.playbook/demo-artifacts/` contains stable product-facing snapshot contracts/examples.
+
+### Stage 2 — Scan and cache hygiene direction
+
+- Roadmap `.playbookignore` as a focused scan-exclusion mechanism for high-churn/non-source directories (e.g. `node_modules`, `dist`, `coverage`, `.next`, build outputs, non-source artifact folders).
+- Define local cache policy guidance for cacheable intelligence artifacts under `.playbook/`, including regeneration expectations and commit guidance.
+
+### Stage 3 — Lifecycle and maintenance ergonomics
+
+- Define retention classes for runtime local state, CI artifacts, and committed contract/demo artifacts so lifecycle rules are explicit.
+- Explore optional cleanup/doctor visibility for oversized local Playbook state to surface repository hygiene risks early.
+
+Pattern: Runtime Artifacts Live Under `.playbook/`.
+Pattern: Demo Artifacts Are Snapshot Contracts, Not General Runtime State.
+Rule: Generated runtime artifacts should be gitignored unless intentionally committed as stable contracts/examples.
+Rule: Playbook remains local/private-first by default.
+Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary repo-history growth and review churn.
+
 ---
 
 ## Query System Ideas
