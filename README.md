@@ -104,6 +104,8 @@ playbook explain architecture
 
 Authoritative command status lives in [docs/commands/README.md](docs/commands/README.md).
 
+AI operating contract for this repository lives in [AGENTS.md](AGENTS.md). Managed command inventory/examples are generated from shared CLI command metadata via `pnpm agents:update` and validated with `pnpm agents:check`.
+
 ## Demo
 
 See [`playbook-demo`](https://github.com/ZachariahRedfield/playbook-demo), also discoverable via `playbook demo`.
