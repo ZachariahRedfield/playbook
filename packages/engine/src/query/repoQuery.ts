@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { RepositoryIndex, RepositoryModule } from '../indexer/repoIndexer.js';
+import { readRepositoryGraph, summarizeGraphNeighborhood, type GraphNeighborhoodSummary } from '../graph/repoGraph.js';
 
 export const SUPPORTED_QUERY_FIELDS = ['architecture', 'framework', 'language', 'modules', 'database', 'rules'] as const;
 
@@ -9,6 +10,7 @@ export type RepositoryQueryField = (typeof SUPPORTED_QUERY_FIELDS)[number];
 export type RepositoryQueryResult = {
   field: RepositoryQueryField;
   result: string | string[] | RepositoryModule[];
+  graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
 const INDEX_RELATIVE_PATH = '.playbook/repo-index.json' as const;
@@ -53,6 +55,15 @@ const readRepositoryIndex = (projectRoot: string): RepositoryIndex => {
   return parsed as RepositoryIndex;
 };
 
+const readGraphNeighborhood = (projectRoot: string, nodeId: string): GraphNeighborhoodSummary | undefined => {
+  try {
+    const graph = readRepositoryGraph(projectRoot);
+    return summarizeGraphNeighborhood(graph, nodeId) ?? undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export const queryRepositoryIndex = (projectRoot: string, field: string): RepositoryQueryResult => {
   const resolvedField = normalizeRepositoryQueryField(field);
   if (!resolvedField) {
@@ -60,9 +71,14 @@ export const queryRepositoryIndex = (projectRoot: string, field: string): Reposi
   }
 
   const index = readRepositoryIndex(projectRoot);
-
-  return {
+  const queryResult: RepositoryQueryResult = {
     field: resolvedField,
     result: index[resolvedField]
   };
+
+  if (resolvedField === 'architecture') {
+    queryResult.graphNeighborhood = readGraphNeighborhood(projectRoot, 'repository:root');
+  }
+
+  return queryResult;
 };

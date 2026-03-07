@@ -57,6 +57,14 @@ CI-friendly
 
 Avoid "AI guessing" for core enforcement.
 
+CI contract stance:
+
+- `playbook verify --json` is the canonical repository validation gate in CI.
+- CI should enforce product correctness, not automation maintenance.
+- Maintenance automation (for example `agents:update`, `agents:check`, docs audit) should run in dedicated scheduled/on-demand maintenance workflows.
+
+Failure Mode: If CI mixes product validation with maintenance tasks, pipelines become slow and fragile.
+
 3️⃣ Knowledge Capture
 
 Every meaningful engineering change must produce knowledge.
@@ -118,11 +126,14 @@ Current implemented product-facing command/artifact set:
 - `playbook-demo` artifact (exposed through `playbook demo`)
 - `ai-context`
 - `ai-contract` (`.playbook/ai-contract.json` handshake contract)
+- `doctor --ai` AI-contract readiness gate (deterministic validation of contract + intelligence + remediation surfaces)
 - repository intelligence (`index`, `query`, `deps`, `ask`, `explain`)
 - deterministic architectural risk intelligence (`playbook query risk <module>`)
 - deterministic documentation coverage intelligence (`playbook query docs-coverage [module]`)
 - deterministic rule ownership intelligence (`playbook query rule-owners [rule-id]`)
 - deterministic module ownership intelligence (`playbook query module-owners [module]`)
+- deterministic test hotspot intelligence (`playbook query test-hotspots`) for candidate-only optimization discovery in validation workflows
+- deterministic architecture guardrail audits (`playbook audit architecture`) for platform hardening coverage
 
 ## Roadmap framing (current baseline + future enhancements)
 
@@ -170,8 +181,46 @@ Archived items preserve historical product intelligence without cluttering the a
 Current baseline:
 
 - **AI Repository Intelligence (`playbook ai-context`, `playbook ai-contract`, `index`, `query`, `deps`, `ask`, `explain`)** is implemented and available for deterministic AI bootstrap and repository intelligence workflows.
+- `playbook ask` now supports deterministic response modes (`--mode normal|concise|ultra`) to match explanation depth to developer workflow speed.
+- `playbook ask --repo-context` now hydrates ask prompts from trusted Playbook artifacts (`.playbook/repo-index.json` + AI contract metadata) instead of broad ad-hoc repository inference.
 
 Future roadmap work should focus on enhancement quality (schema hardening, richer index coverage, CI artifact workflows, and contract durability), not on introducing these commands.
+
+## Platform Hardening
+
+Playbook’s long-term reliability depends on deterministic repository artifacts powering higher-level intelligence commands.
+
+Priority hardening tracks:
+
+1. **Artifact schema versioning + evolution governance**
+   - enforce and test schemaVersion coverage for persisted artifacts
+   - formalize compatibility and migration policy in contract docs
+   - require CI mismatch behavior to remain deterministic and actionable
+
+2. **SCM context abstraction**
+   - introduce shared SCM normalization module (`packages/core/src/scm/context.ts`)
+   - align merge-base, detached HEAD, shallow clone, dirty tree, and rename behavior across command surfaces
+   - add edge-case contract tests for PR vs push contexts
+
+3. **Remediation trust model enforcement**
+   - encode Level 0-3 change-scope boundaries into plan/apply contracts
+   - keep Level 3 cross-module/security-sensitive changes human-reviewed by default
+   - expand remediation safety telemetry for CI auditing
+
+4. **Ecosystem adapter boundaries**
+   - isolate external tooling integrations behind deterministic adapter interfaces
+   - prevent tool-specific behavior from leaking into engine-level command logic
+   - harden adapter error normalization and version-compatibility checks
+
+5. **Context efficiency strategy**
+   - strengthen index-once/query-many behavior with incremental indexing direction
+   - prioritize module/diff scoped responses and concise deterministic outputs
+   - track token/latency budgets for high-frequency command paths
+
+6. **Repeatable architecture guardrail audits**
+   - run `playbook audit architecture` as a deterministic hardening diagnostic
+   - keep audit checks aligned with docs/contracts/roadmap surfaces
+   - enforce stable JSON contract coverage for architecture audit automation
 
 ## Product Direction: Architecture Intelligence
 
@@ -188,7 +237,72 @@ Key capabilities in this direction include:
 - Durable engineering memory direction (`.playbook/memory/*`) to preserve decisions, rationale, and investigation history as queryable repository intelligence for richer AI reasoning.
 - Playbook command surfaces already implement a reusable deterministic engineering reasoning loop (`observe -> understand -> diagnose -> plan -> act -> verify -> learn`) that should remain the core execution model across CLI, CI, and future interface layers.
 
+## Product Direction: Knowledge Distillation Engine
+
+Playbook is evolving from repository verification/intelligence into a **Knowledge Distillation Engine** for software engineering.
+
+This architectural direction unifies repository intelligence, context compression, read/change runtime behavior, and the repository learning loop under a recursive intelligence model while preserving the canonical execution model (`observe -> understand -> diagnose -> plan -> act -> verify -> learn`).
+
+Recursive intelligence cycle:
+
+`observe -> detect repetition -> extract candidate patterns -> generalize into rules/invariants -> compress into reusable artifacts -> reuse during repository reasoning and remediation -> learn from outcomes`
+
+Repository evidence sources for distillation:
+
+- source code
+- repository structure
+- dependency graphs
+- documentation
+- pull request diffs
+- verify findings
+- plan/apply histories
+- CI failures
+- rule violations
+- ownership metadata
+- architecture metadata
+
+Architecture principle:
+
+Atomic knowledge is **layer-relative** rather than globally fixed.
+
+Layer-relative knowledge units:
+
+- **syntax layer**: tokens, symbols, AST nodes
+- **structure layer**: files, modules, dependencies, ownership edges
+- **behavior layer**: findings, failures, fixes, remediation actions
+- **semantic layer**: rules, doctrines, invariants, constraints
+- **compressed runtime layer**: digests, bundles, graph summaries, reusable intelligence artifacts
+
+Pattern: Intelligence via Recursive Compression.
+- Playbook should continuously transform repository evidence into increasingly reusable and compact knowledge representations.
+
+Pattern: Layer-Relative Knowledge Units.
+- The unit of knowledge depends on the active reasoning layer rather than being globally fixed.
+
+Rule: Compression Must Preserve Explanatory Power.
+- A compressed representation is only valid if it still explains repository behavior, boundaries, and architecture meaningfully.
+
+Pattern: Human-Reviewed Knowledge Promotion.
+- Repeated patterns may generate candidate rules, doctrines, or invariants, but promotion into enforced governance requires explicit review.
+
+Failure Mode: Premature Canonicalization.
+- Forcing one universal knowledge atom too early destroys useful intermediate representations.
+
+Failure Mode: Compression Without Semantics.
+- Token reduction without preserved meaning produces weak and unsafe repository intelligence.
+
 ## Integration Architecture Direction: shared core, local intelligence
+
+### Consumer Integration Contract
+
+`docs/CONSUMER_INTEGRATION_CONTRACT.md` defines the formal downstream integration model for installing Playbook in external repositories.
+
+Goals:
+
+- define shared core vs project-local intelligence
+- prevent forks
+- enable safe downstream adoption
+- support future embedded runtime/API integrations
 
 Canonical model for downstream adoption:
 
@@ -201,6 +315,24 @@ Canonical model for downstream adoption:
 - scanning/indexing/artifacts remain local by default
 - no automatic upstream code/content sharing
 - any export/sync/cloud/telemetry behavior is future work and must be explicit + opt-in
+
+### Runtime artifact boundaries and storage hygiene direction
+
+Playbook should maintain explicit boundaries between local runtime state, reviewed automation outputs, and intentionally committed contracts/examples.
+
+- Runtime artifacts should live under `.playbook/` and be treated as local working state by default.
+- Regenerated runtime artifacts should not be recommitted on every run unless intentionally promoted to stable contracts/examples.
+- Demo artifacts committed under `.playbook/demo-artifacts/` remain product-facing snapshot contracts, not general runtime state.
+- Future repository intelligence scanning should exclude irrelevant and high-churn directories to keep indexing deterministic and focused on source-of-truth content.
+
+Pattern: Runtime Artifacts Live Under `.playbook/`.
+Pattern: Demo Artifacts Are Snapshot Contracts, Not General Runtime State.
+Rule: Generated runtime artifacts should be gitignored unless intentionally committed as stable contracts/examples.
+Rule: Playbook remains local/private-first by default.
+Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary repo-history growth and noisy diffs.
+
+Roadmap direction: introduce a scoped `.playbookignore` mechanism (future work) to exclude irrelevant/high-churn directories such as `node_modules`, `dist`, `coverage`, `.next`, build outputs, and non-source artifact folders from repository intelligence scans when appropriate.
+
 
 ### Intentional upstream promotion workflow
 
@@ -224,10 +356,26 @@ For app-integrated actions (internal dashboards, CI control planes, admin/dev pa
 
 ### Follow-up implementation checklist (roadmap slices)
 
-- [ ] publish a consumer-repo integration contract doc that defines project-local Playbook state boundaries
+- [x] publish a consumer-repo integration contract doc that defines project-local Playbook state boundaries
 - [ ] add a lightweight config/plugin/rule-pack architecture note with extension examples
 - [ ] draft first server-side library/API design stub for embedded `ask`/`query`/`explain` workflows
+- [x] add `ask --module <name>` scoped repo-context hydration
+- [x] add `ask --diff-context` for change-scoped intelligence prompts
+- [x] expose ask context-source provenance contract in JSON for app/agent integrations
 - [ ] define explicit opt-in export/sync/telemetry policy language before any cloud-backed intelligence behavior
+
+### Storage/runtime hygiene follow-up checklist
+
+Implemented baseline:
+
+- `doctor` emits Playbook Artifact Hygiene diagnostics and structured suggestions (`PB012`, `PB013`, `PB014`).
+- `index` and repository scans honor `.playbookignore` for scan exclusions.
+- `plan`/`apply` integrate artifact hygiene remediation tasks for deterministic storage governance.
+
+- [x] define `.playbookignore` semantics for repository intelligence scanning and document default exclusion guidance.
+- [x] publish artifact lifecycle/retention policy language across runtime artifacts, CI outputs, and committed demo/contract snapshots.
+- [x] classify cacheable local intelligence artifacts under `.playbook/` and define safe regeneration expectations.
+- [x] document CI artifact workflow guidance so generated artifacts are reviewable without creating long-term repository-history bloat.
 
 Rule: **Playbook analyzes but does not author.**
 
@@ -247,6 +395,122 @@ Revenue is not the priority during Year 1.
 
 Adoption is.
 
+## Roadmap Compounding Audit (Planning Baseline)
+
+This section records a structural planning audit to keep roadmap phases compounding, non-overlapping, and AI-runtime ready.
+
+### Executive Summary
+
+Strengths:
+- CLI-first and deterministic-governance principles are explicit and consistent with the product mission.
+- Repository intelligence is already positioned as a machine-readable substrate and is connected to AI/CI workflows.
+- The canonical remediation flow (`verify -> plan -> apply -> verify`) is repeatedly reinforced.
+
+Weaknesses:
+- Read-runtime capabilities (`ask`, `query`, `explain`, PR analysis) and change-runtime capabilities (`verify`, `plan`, `apply`) are interleaved across phases, which blurs sequencing.
+- Context-compression mechanisms are present but not modeled as a dedicated architectural layer.
+- Several phases overlap in scope (`query`, dependency graph, impact, risk) rather than compounding as a single intelligence maturation track.
+- AI execution runtime planning appears before all mutation-safety and deterministic patch-scope prerequisites are clearly gated.
+
+### Roadmap Structural Issues
+
+Overlapping phase concerns:
+- Query, dependency graph, impact analysis, and risk analysis are spread across separate phases with shared substrate dependencies.
+- Context compression appears as a standalone subsection between phases rather than a formal phase with explicit contracts.
+- PR intelligence is implemented but documented outside the core phase ladder, despite being a read-runtime capability.
+
+Unclear boundaries:
+- The roadmap mixes capability introduction (new layer) and capability enhancement (quality expansion) inside the same phase descriptions.
+- AI execution runtime planning overlaps with autonomous maintenance and security-program mutation controls.
+
+Sequencing issues:
+- Repository intelligence formalization should complete before read/change runtime specialization.
+- Deterministic mutation scope, path boundaries, and policy gates should be marked as explicit prerequisites before broad agent runtime expansion.
+
+### Recommended Phase Structure
+
+Use a layered phase model so each phase compounds directly on the previous one:
+
+1. **Phase 1 — CLI Foundations**  
+   Deterministic command contracts, distribution reliability, and baseline verification UX.
+2. **Phase 2 — Repository Intelligence Substrate**  
+   Formalize index contracts for modules, dependencies, test relationships, docs mapping, ownership, and architecture metadata.
+3. **Phase 3 — Repository Knowledge Graph**  
+   Deterministic local graph substrate generated from repository intelligence artifacts.
+4. **Phase 4 — Context Compression Layer**  
+   Context bundles, module digests, cached snapshots, and deterministic change-scope assembly.
+5. **Phase 5 — Read Runtime (Query / Explain / Ask / Analyze-PR)**  
+   Deterministic architecture reasoning and read-only repository understanding flows.
+6. **Phase 6 — Change Runtime (Verify / Plan / Apply)**  
+   Deterministic remediation orchestration with explicit plan contracts and mutation boundaries.
+7. **Phase 7 — Risk-Aware Execution**  
+   Risk signals, impact-aware sequencing, and risk-shaped remediation prioritization.
+8. **Phase 8 — AI Repository Contract**  
+   Machine-readable AI-operability contract and enforcement rules.
+9. **Phase 9 — AI Execution Runtime**  
+   Agent orchestration that consumes repository intelligence + AI contract and obeys deterministic mutation workflow.
+10. **Phase 10 — Autonomous Maintenance (Policy-Gated)**  
+   Recurring maintenance execution modes with approval and policy controls.
+11. **Phase 11 — Repository Learning Loop (Human-Reviewed)**  
+   Pattern detection and candidate improvements from repeated findings/remediations/query usage, including pattern mining from repeated findings, remediation clustering, candidate rule synthesis, invariant discovery, doctrine promotion candidates, memory compaction, and graph-informed learning artifacts. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
+
+Reasoning for reordering:
+- Separates repository understanding (read runtime) from repository mutation (change runtime).
+- Makes intelligence and context efficiency foundational before AI runtime expansion.
+- Ensures advanced automation is gated by deterministic contracts and mutation safety.
+
+### Missing Capabilities to Formalize
+
+The roadmap should make these explicit as first-class contracts:
+- module digests for compact architecture context transfer
+- minimal change-scope bundles for patch targeting
+- deterministic mutation scope declaration (`allowedFiles`, patch-size constraints, boundary checks)
+- risk-aware context shaping (high-risk modules get richer context; low-risk modules stay concise)
+- cache lifecycle policy for `.playbook/context/*` intelligence snapshots
+
+### Token Efficiency Opportunities
+
+To reduce scan cost and AI tokens:
+- make `index` + cached intelligence artifacts the default source for read runtime operations
+- require context bundles for agent workflows instead of broad repository scans
+- add deterministic module digests as lightweight context payloads for `ask`/`explain`
+- persist change-scope bundles that include files/tests/dependencies/docs/rules/risk in one contract
+- enforce patch-scope narrowing before generation to reduce reasoning breadth
+
+### Architecture Patterns
+
+- Pattern: One intelligence substrate powering multiple task runtimes.
+- Pattern: Read runtime and change runtime are distinct execution modes with shared contracts.
+- Pattern: Context compression is a product layer, not an ad-hoc optimization.
+- Pattern: Contract-driven AI execution with deterministic mutation boundaries.
+- Pattern: Risk-aware context shaping to balance safety and token efficiency.
+
+### Failure Modes
+
+- Failure Mode: Feature accumulation without layer boundaries.
+- Failure Mode: Treating read and mutation tasks as the same runtime path.
+- Failure Mode: Context bloat from repeated full-repo scans.
+- Failure Mode: Agent/runtime expansion before mutation-safety prerequisites are complete.
+- Failure Mode: Intelligence drift when index/schema ownership is distributed across unrelated phases.
+
+### Recommended Documentation Reorganization (this file)
+
+Rewrite/reorganize these sections in `docs/PLAYBOOK_PRODUCT_ROADMAP.md`:
+- Consolidate **PHASE 2**, **PHASE 3**, **PHASE 4**, **PHASE 5**, **PHASE 6**, and **PHASE 7** into a clear progression: substrate -> knowledge graph -> context compression -> read runtime -> change runtime -> risk-aware execution.
+- Keep **AI Efficiency & Context Compression** as an explicit numbered phase.
+- Move **PR Intelligence (Implemented)** under the read-runtime phase grouping.
+- Add an explicit "Phase 9 prerequisites" block requiring deterministic mutation scope, policy gates, and contract validation before `playbook agent` expansion.
+- Add a future **Repository Learning Loop** phase scoped to human-reviewed suggestions only (no autonomous mutation).
+
+### Documentation Capture Rules (Post-Audit)
+
+Roadmap documentation must preserve these architectural statements:
+- Read workflows and change workflows are separate runtimes sharing one repository-intelligence substrate.
+- Persistent repository intelligence is the default mechanism for reducing AI token usage.
+- Context compression and deterministic mutation scope are core AI-efficiency and safety mechanisms.
+- Future phases should prioritize intelligence quality and contract durability over command-surface growth.
+- A repository learning loop can propose rule/context improvements from observed patterns, with human review required.
+
 PHASE 1 — CLI FOUNDATIONS
 
 Goal:
@@ -265,26 +529,88 @@ Build deterministic repository intelligence artifacts that AI systems and develo
 Primary capability:
 - `playbook index` generates `.playbook/repo-index.json` as machine-readable repository context.
 
-Expected artifact shape (example):
-
-```json
-{
-  "modules": [
-    {
-      "name": "workouts",
-      "dependencies": ["auth", "db"]
-    }
-  ]
-}
-```
-
 Intelligence artifacts should include:
 - modules
 - dependencies
 - dependents
 - architecture metadata
 
-PHASE 3 — QUERY SYSTEM
+PHASE 3 — REPOSITORY KNOWLEDGE GRAPH
+
+Goal:
+Build a deterministic local Repository Knowledge Graph artifact from repository intelligence.
+
+Primary capability:
+- `playbook index` emits `.playbook/repo-graph.json` as a local, deterministic, CLI-first graph artifact generated from repository evidence.
+- Graph artifact evolution is versioned by explicit contract policy with additive-vs-breaking guidance for downstream CI/AI consumers.
+
+Graph architecture stance:
+- local
+- deterministic
+- CLI-first
+- generated from repository evidence
+- canonical context source for reasoning/runtime flows
+
+Initial graph concepts:
+
+Nodes:
+- repository
+- module
+- file
+- function
+- test
+- rule
+- doc
+- owner
+- finding
+- plan task
+- risk signal
+
+Edges:
+- depends_on
+- contained_in
+- defines
+- calls
+- verified_by
+- governed_by
+- owned_by
+- violates
+- remediates
+- impacts
+
+Repository Knowledge Graph should power:
+- context compression
+- impact analysis
+- risk-aware reasoning
+- future pattern mining / repository learning loops
+- higher-signal `ask` / `query` / `explain` inputs
+
+Current stabilization direction:
+- favor additive read-runtime enrichment (query/explain graph neighborhood summaries)
+- avoid broad new graph command families when existing command surfaces can absorb deterministic summaries
+- add only low-cost deterministic relationships derivable from indexed repository truth (`contains`, `depends_on`, `governed_by`)
+
+PHASE 4 — AI EFFICIENCY & CONTEXT COMPRESSION
+
+Goal:
+Reduce AI cost/latency while increasing knowledge reuse quality for repository reasoning and remediation.
+
+Compression in this phase is both token-efficiency and representation compaction for reusable repository knowledge.
+
+Examples of compressed artifacts:
+- module digests
+- change-scope bundles
+- graph neighborhood summaries
+- repeated remediation clusters
+- candidate invariant summaries
+
+Key mechanisms:
+- repository intelligence graph summaries
+- context bundles
+- cached context snapshots
+- deterministic patch scope
+
+PHASE 5 — QUERY SYSTEM
 
 Goal:
 Enable deterministic repository reasoning through command-surface intelligence queries.
@@ -299,6 +625,7 @@ Representative queries:
 - `playbook query risk <module>`
 - `playbook query docs-coverage`
 - `playbook query rule-owners`
+- `playbook query test-hotspots`
 
 This phase establishes contract-driven repository reasoning so AI systems can avoid ad-hoc inference.
 
@@ -320,7 +647,7 @@ Output:
 - affected rules
 - architecture boundaries touched
 
-PHASE 4 — DEPENDENCY GRAPH + IMPACT ANALYSIS
+PHASE 6 — DEPENDENCY GRAPH + IMPACT ANALYSIS
 
 Goal:
 Use repository dependency edges to make change impact deterministic.
@@ -334,7 +661,7 @@ Expected outcomes:
 - expose architectural blast radius for proposed changes
 - prioritize low-impact remediation paths first
 
-PHASE 5 — RISK ANALYSIS
+PHASE 7 — RISK ANALYSIS
 
 Goal:
 Add deterministic module-level risk scoring for safer AI and human remediation planning.
@@ -351,7 +678,7 @@ Risk model signals should include:
 Expected outcome:
 - safer prioritization of change sequencing and rollout planning.
 
-PHASE 6 — AI REPOSITORY CONTRACT
+PHASE 8 — AI REPOSITORY CONTRACT
 
 Status: **Baseline implemented** via `playbook ai-contract` and `.playbook/ai-contract.json`.
 
@@ -403,7 +730,7 @@ This phase formalizes Playbook's repository-to-AI protocol, ensuring AI behavior
 Future standardization direction:
 - Publish `docs/AI_CONTRACT_SPEC.md` as a public AI Contract specification for AI-operable repositories.
 
-PHASE 7 — AI EXECUTION RUNTIME (PLAYBOOK AGENT)
+PHASE 9 — AI EXECUTION RUNTIME (PLAYBOOK AGENT)
 
 Goal:
 Introduce **Playbook Agent** as an AI execution runtime for repositories.
@@ -438,27 +765,36 @@ Deterministic AI execution loop:
 
 This phase defines Playbook as an AI governance and execution runtime, not only a repository rule checker.
 
-## Future Capability: PR Intelligence
+## PR Intelligence (Implemented)
 
-Playbook will provide structured analysis of pull requests to help developers understand architectural impact and risk.
+Playbook provides structured deterministic analysis of pull requests/branch diffs to help developers understand architectural impact and risk.
 
-Example command:
+Primary command:
 
-`playbook analyze-pr`
+`playbook analyze-pr --json`
+`playbook analyze-pr --format github-comment`
+`playbook analyze-pr --format github-review`
 
-Expected capabilities:
+Current capabilities:
 
-- Detect modules affected by the change
-- Calculate change risk level
-- Identify missing tests or documentation
-- Detect architecture rule violations
-- Generate structured PR analysis output
+- Detect changed files and affected indexed modules from local git diff
+- Derive downstream module impact and architecture boundaries touched
+- Aggregate risk signals from existing module-risk intelligence
+- Surface docs review candidates and ownership-aware context
+- Emit stable machine-readable PR analysis output for automation
+- Export deterministic GitHub-ready PR summary markdown via formatter mode (`--format github-comment`) without introducing new analysis logic
+- Export deterministic GitHub inline review diagnostics via formatter mode (`--format github-review`) from canonical analysis findings
+- Standardize analyze-pr output selection through a single formatter layer (`--format text|json|github-comment|github-review`) so new presentation paths replace superseded ad-hoc branches
+- Wire GitHub Actions PR transport to post/update one sticky Playbook summary comment using the canonical `--format github-comment` formatter output (marker: `<!-- playbook:analyze-pr-comment -->`)
+- Wire GitHub Actions PR transport to synchronize inline review diagnostics using canonical `--format github-review` output (marker: `<!-- playbook:analyze-pr-inline -->`) so resolved diagnostics disappear
+- Treat index generation as an explicit prerequisite in CI (`playbook index` producer before `analyze-pr` consumer) to avoid artifact-readiness drift
+- Treat PR diff base as an explicit CI contract (`--base origin/${{ github.base_ref }}` + `fetch-depth: 0`) instead of implicit environment inference
 
 Playbook should analyze PRs but not author them.
 
 Rule: **Playbook analyzes changes rather than rewriting developer intent.**
 
-PHASE 8 — AUTONOMOUS REPOSITORY MAINTENANCE
+PHASE 10 — AUTONOMOUS REPOSITORY MAINTENANCE
 
 Goal:
 Extend Playbook Agent into recurring and CI-driven repository maintenance modes.
@@ -686,6 +1022,45 @@ Focus this subphase on contract durability for CI and agent integrations:
 Failure mode to avoid: **Apply recomputes intent during artifact execution**
 
 If `apply --from-plan` silently re-runs planning logic and diverges from the reviewed artifact, the execution contract is no longer trustworthy.
+
+## Future Capability Track: Automation Synthesis / Playbook Agent
+
+Detailed product direction: see `docs/AUTOMATION_SYNTHESIS_VISION.md`.
+
+Goal:
+Extend Playbook from deterministic remediation into a future **Automation Synthesis** platform that can propose and safely operationalize recurring engineering automations without bypassing governance.
+
+Why this matters:
+- Teams repeatedly perform the same operational and repository maintenance work.
+- Capturing these repeats as reviewed automations reduces toil while preserving policy, explainability, and repository safety.
+- Playbook can reuse its existing contract-first execution model so synthesized automation remains reviewable and deterministic rather than opaque agent behavior.
+
+Core concept:
+- detect recurring work signals (for example from verify/plan/apply history and approved remediation patterns)
+- classify work into known automation patterns/templates
+- synthesize candidate automation logic and runbooks
+- treat generated automations as untrusted until verified in isolated sandboxes
+- route verified candidates through explicit approval gates before deployment to orchestration backends
+- monitor runtime behavior with rollback-ready controls
+
+Foundational requirements:
+- deterministic contracts for automation definitions, approvals, and execution states
+- reusable template and policy packs tied to docs-backed governance behavior
+- sandboxed verification before any production orchestration action
+- human-reviewable outputs (diffs, risk summaries, and execution intent)
+- security-first approval and deployment boundaries aligned with existing apply safety model
+
+Likely phased implementation sequence:
+1. **Signal + Pattern Layer**: capture recurring work telemetry and map it to stable Automation Synthesis patterns.
+2. **Synthesis + Verification Layer**: generate candidate automations and validate them in deterministic sandboxes.
+3. **Approval + Deployment Layer**: add policy/owner approval flows and controlled promotion into orchestration targets.
+4. **Runtime Intelligence Layer**: add observability, anomaly detection, and rollback workflows for deployed automations.
+
+Explicit out-of-scope boundaries for initial versions:
+- not a replacement for core repository intelligence and remediation priorities
+- no autonomous direct repository writes outside `verify -> plan -> apply` policy controls
+- no vendor-locked orchestration dependency as a required default
+- no fully hands-off self-modifying automation runtime without human approval
 
 Feature: Plugin Ecosystem
 

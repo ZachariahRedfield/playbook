@@ -39,6 +39,24 @@ const parseOptionValues = (allArgs: string[], name: string): string[] | undefine
   return values.length > 0 ? values : undefined;
 };
 
+
+const parseAnalyzePrFormat = (allArgs: string[], globalFormat: 'text' | 'json'): 'text' | 'json' | 'github-comment' | 'github-review' => {
+  if (globalFormat === 'json') {
+    return 'json';
+  }
+
+  const format = parseOptionValue(allArgs, '--format');
+  if (format === 'github-comment') {
+    return 'github-comment';
+  }
+
+  if (format === 'github-review') {
+    return 'github-review';
+  }
+
+  return format === 'json' ? 'json' : 'text';
+};
+
 const commandRunners: Record<string, (context: CommandContext) => Promise<number>> = {
   demo: async ({ cwd, format, quiet }) => {
     const { runDemo } = await import('./demo.js');
@@ -57,6 +75,14 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
   analyze: async ({ cwd, ci, explain, format, quiet }) => {
     const { runAnalyze } = await import('./analyze.js');
     return runAnalyze(cwd, { ci, explain, format, quiet });
+  },
+  'analyze-pr': async ({ cwd, commandArgs, format, quiet }) => {
+    const { runAnalyzePr } = await import('./analyzePr.js');
+    return runAnalyzePr(cwd, commandArgs, {
+      format: parseAnalyzePrFormat(commandArgs, format),
+      quiet,
+      baseRef: parseOptionValue(commandArgs, '--base')
+    });
   },
   verify: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {
     const { runVerify } = await import('./verify.js');
@@ -88,15 +114,11 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
       quiet
     });
   },
-  doctor: async ({ cwd, commandArgs, format, quiet }) => {
+  doctor: async ({ cwd, format, quiet }) => {
     const { runDoctor } = await import('./doctor.js');
     return runDoctor(cwd, {
       format,
-      quiet,
-      fix: parseFlag(commandArgs, '--fix'),
-      dryRun: parseFlag(commandArgs, '--dry-run'),
-      yes: parseFlag(commandArgs, '--yes'),
-      ai: parseFlag(commandArgs, '--ai')
+      quiet
     });
   },
   status: async ({ cwd, ci, format, quiet }) => {
@@ -121,6 +143,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
   docs: async ({ cwd, commandArgs, ci, format, quiet }) => {
     const { runDocs } = await import('./docs.js');
     return runDocs(cwd, commandArgs, { ci, format, quiet });
+  },
+  audit: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runAuditArchitecture } = await import('./auditArchitecture.js');
+    return runAuditArchitecture(cwd, commandArgs, { format, quiet });
   },
   diagram: async ({ cwd, commandArgs, format, quiet }) => {
     const { runDiagram } = await import('./diagram.js');
@@ -161,9 +187,21 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
     const { runIndex } = await import('./repoIndex.js');
     return runIndex(cwd, { format, quiet });
   },
+  graph: async ({ cwd, format, quiet }) => {
+    const { runGraph } = await import('./graph.js');
+    return runGraph(cwd, { format, quiet });
+  },
   ask: async ({ cwd, commandArgs, format, quiet }) => {
     const { runAsk } = await import('./ask.js');
-    return runAsk(cwd, commandArgs, { format, quiet });
+    return runAsk(cwd, commandArgs, {
+      format,
+      quiet,
+      mode: parseOptionValue(commandArgs, '--mode'),
+      repoContext: parseFlag(commandArgs, '--repo-context'),
+      module: parseOptionValue(commandArgs, '--module'),
+      diffContext: parseFlag(commandArgs, '--diff-context'),
+      base: parseOptionValue(commandArgs, '--base')
+    });
   },
   deps: async ({ cwd, commandArgs, format, quiet }) => {
     const { runDeps } = await import('./deps.js');
@@ -183,6 +221,7 @@ const commandOrder = [
   'demo',
   'init',
   'analyze',
+  'analyze-pr',
   'verify',
   'plan',
   'apply',
@@ -196,9 +235,11 @@ const commandOrder = [
   'ai-context',
   'ai-contract',
   'docs',
+  'audit',
   'schema',
   'rules',
   'index',
+  'graph',
   'ask',
   'deps',
   'query',

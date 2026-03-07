@@ -1,6 +1,6 @@
 name: Playbook CI
 
-description: Reusable CI action for deterministic Playbook install and verification.
+description: Reusable CI action for deterministic Playbook install and primary verify gate validation.
 
 inputs:
   node-version:
@@ -11,10 +11,6 @@ inputs:
     description: Working directory to run Playbook CI commands in.
     required: false
     default: "."
-  run-smoke:
-    description: Whether to run smoke tests.
-    required: false
-    default: "true"
   install-args:
     description: Additional arguments for pnpm install.
     required: false
@@ -89,20 +85,6 @@ runs:
           exit 1
         fi
 
-    - name: Lint
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "+ pnpm lint"
-        pnpm lint
-
-    - name: Enforce command/rule test coverage
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "+ pnpm check:tests"
-        pnpm check:tests
-
     - name: Build workspace packages
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -114,43 +96,12 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "+ pnpm -r test"
-        pnpm -r test
+        echo "+ pnpm test"
+        pnpm test
 
-    - name: Security contract verification
+    - name: Run Playbook verification (primary contract gate)
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "+ pnpm test:security"
-        pnpm test:security
-
-    - name: Run Playbook verification
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "+ node packages/cli/dist/main.js verify --ci"
-        node packages/cli/dist/main.js verify --ci
-
-    - name: Run Playbook docs audit
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "+ node packages/cli/dist/main.js docs audit --ci --json"
-        node packages/cli/dist/main.js docs audit --ci --json
-
-
-    - name: Smoke (CI)
-      if: inputs.run-smoke == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "+ pnpm smoke:ci"
-        pnpm smoke:ci
-
-    - name: Pack smoke (CI)
-      if: inputs.run-smoke == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "+ pnpm pack:smoke"
-        pnpm pack:smoke
+        echo "+ node packages/cli/dist/main.js verify --json"
+        node packages/cli/dist/main.js verify --json

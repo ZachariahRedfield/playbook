@@ -97,12 +97,12 @@ const toStatusResult = async (cwd: string): Promise<{ result: StatusResult; exit
   const warnings = analyze.recommendations.filter((rec: { severity: string }) => rec.severity === 'WARN').length;
   const errors = 0;
 
-  const environmentOk = doctor.governanceStatus.some((item: { id: string; ok: boolean }) => item.id === 'playbook-config' && item.ok);
+  const environmentOk = doctor.status !== 'error';
 
   const result: StatusResult = {
     schemaVersion: '1.0',
     command: 'status',
-    ok: doctor.verifySummary.failures === 0 && verify.ok,
+    ok: doctor.status !== 'error' && verify.ok,
     environment: { ok: environmentOk },
     analysis: { warnings, errors },
     verification: { ok: verify.ok },

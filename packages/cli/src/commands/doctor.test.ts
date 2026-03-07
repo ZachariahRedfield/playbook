@@ -2,30 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 
 const generateRepositoryHealth = vi.fn();
-const runSchema = vi.fn();
-const hasRegisteredCommand = vi.fn();
-const loadVerifyRules = vi.fn();
+const queryRepositoryIndex = vi.fn();
+const queryRisk = vi.fn();
+const runDocsAudit = vi.fn();
 const existsSync = vi.fn();
-
-const doctorFixes = [
-  {
-    id: 'doctor.fix.docs.directory',
-    description: 'Ensure docs/ directory exists.',
-    safeToAutoApply: true,
-    check: vi.fn(async () => ({ applicable: true })),
-    fix: vi.fn(async () => ({ changes: ['docs/'] }))
-  },
-  {
-    id: 'doctor.fix.config.file',
-    description: 'Repair missing playbook.config.json using Playbook defaults.',
-    safeToAutoApply: true,
-    check: vi.fn(async () => ({ applicable: false })),
-    fix: vi.fn(async () => ({ changes: ['playbook.config.json'] }))
-  }
-];
+const collectVerifyReport = vi.fn();
 
 vi.mock('@zachariahredfield/playbook-engine', () => ({
-  generateRepositoryHealth
+  generateRepositoryHealth,
+  queryRepositoryIndex,
+  queryRisk,
+  runDocsAudit
 }));
 
 vi.mock('node:fs', () => ({
@@ -33,218 +20,142 @@ vi.mock('node:fs', () => ({
   existsSync
 }));
 
-vi.mock('./schema.js', () => ({
-  runSchema
+vi.mock('./verify.js', () => ({
+  collectVerifyReport
 }));
-
-vi.mock('./index.js', async () => {
-  const actual = await vi.importActual('./index.js');
-  return {
-    ...(actual as object),
-    hasRegisteredCommand
-  };
-});
-
-vi.mock('../lib/loadVerifyRules.js', () => ({
-  loadVerifyRules
-}));
-
-vi.mock('../lib/doctorFixes.js', () => ({
-  doctorFixes
-}));
-
-const healthyReport = {
-  framework: 'Next.js',
-  language: 'TypeScript',
-  architecture: 'Modular Monolith',
-  governanceStatus: [
-    { id: 'playbook-config', ok: true, message: 'Playbook config detected' },
-    { id: 'architecture-docs', ok: true, message: 'Architecture docs present' },
-    { id: 'checklist-verify-step', ok: true, message: 'PLAYBOOK_CHECKLIST includes verify step' },
-    { id: 'repo-index', ok: true, message: 'Repo index up to date' }
-  ],
-  verifySummary: { ok: true, failures: 0, warnings: 0 },
-  suggestedActions: [],
-  issues: []
-};
 
 describe('runDoctor', () => {
   beforeEach(() => {
     generateRepositoryHealth.mockReset();
-    runSchema.mockReset();
-    hasRegisteredCommand.mockReset();
-    loadVerifyRules.mockReset();
+    queryRepositoryIndex.mockReset();
+    queryRisk.mockReset();
+    runDocsAudit.mockReset();
     existsSync.mockReset();
-    doctorFixes[0].check.mockClear();
-    doctorFixes[1].check.mockClear();
-  });
+    collectVerifyReport.mockReset();
 
-  it('prints repository health text output', async () => {
-    const { runDoctor } = await import('./doctor.js');
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    generateRepositoryHealth.mockReturnValue(healthyReport);
-
-    const exitCode = await runDoctor(process.cwd(), {
-      format: 'text',
-      quiet: false,
-      fix: false,
-      dryRun: false,
-      yes: false,
-      ai: false
-    });
-
-    const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(exitCode).toBe(ExitCode.Success);
-    expect(output).toContain('Repository Health');
-    expect(output).toContain('Framework: Next.js');
-    expect(output).toContain('Automation');
-    expect(output).toContain('1 safe fixes available');
-
-    logSpy.mockRestore();
-  });
-
-  it('prints doctor json contract output', async () => {
-    const { runDoctor } = await import('./doctor.js');
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    generateRepositoryHealth.mockReturnValue({
-      ...healthyReport,
-      issues: ['Repo index outdated'],
-      suggestedActions: ['playbook analyze']
-    });
-
-    const exitCode = await runDoctor(process.cwd(), {
-      format: 'json',
-      quiet: false,
-      fix: false,
-      dryRun: false,
-      yes: false,
-      ai: false
-    });
-
-    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(exitCode).toBe(ExitCode.Success);
-    expect(payload).toEqual({
-      command: 'doctor',
-      framework: 'Next.js',
-      architecture: 'Modular Monolith',
-      issues: ['Repo index outdated'],
-      suggestedActions: ['playbook analyze']
-    });
-
-    logSpy.mockRestore();
-  });
-
-  it('prints doctor --ai text output when repo index exists', async () => {
-    const { runDoctor } = await import('./doctor.js');
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-
-    runSchema.mockResolvedValue(ExitCode.Success);
-    hasRegisteredCommand.mockReturnValue(true);
     existsSync.mockReturnValue(true);
-    loadVerifyRules.mockResolvedValue([{ id: 'rule-1' }]);
-
-    const exitCode = await runDoctor(process.cwd(), {
-      format: 'text',
-      quiet: false,
-      fix: false,
-      dryRun: false,
-      yes: false,
-      ai: true
+    generateRepositoryHealth.mockReturnValue({
+      artifactHygiene: {
+        classification: { runtime: [], automation: [], contract: [] },
+        findings: [],
+        suggestions: []
+      }
     });
+    collectVerifyReport.mockResolvedValue({
+      ok: true,
+      summary: { failures: 0, warnings: 0 },
+      failures: [],
+      warnings: []
+    });
+    runDocsAudit.mockReturnValue({ ok: true, status: 'pass', summary: { errors: 0, warnings: 0, checksRun: 1 }, findings: [] });
+    queryRepositoryIndex.mockReturnValue({
+      command: 'query',
+      field: 'modules',
+      result: [{ name: 'auth', dependencies: [], path: 'src/auth' }]
+    });
+    queryRisk.mockReturnValue({
+      schemaVersion: '1.0',
+      command: 'query',
+      type: 'risk',
+      module: 'auth',
+      riskScore: 0.21,
+      riskLevel: 'low',
+      signals: {
+        directDependencies: 0,
+        dependents: 1,
+        transitiveImpact: 1,
+        verifyFailures: 0,
+        isArchitecturalHub: false
+      },
+      contributions: { fanIn: 0, impact: 0.1, verifyFailures: 0, hub: 0 },
+      reasons: ['Stable module']
+    });
+  });
+
+  it('prints text diagnosis sections', async () => {
+    const { runDoctor } = await import('./doctor.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDoctor(process.cwd(), { format: 'text', quiet: false });
 
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
     expect(exitCode).toBe(ExitCode.Success);
-    expect(output).toContain('AI Environment Check');
-    expect(output).toContain('✓ Playbook schema available');
-    expect(output).toContain('✓ Playbook context command available');
-    expect(output).toContain('✓ Repository intelligence generated');
-    expect(output).toContain('✓ Verify rules loaded');
+    expect(output).toContain('Playbook Repository Diagnosis');
+    expect(output).toContain('Architecture');
+    expect(output).toContain('Docs');
+    expect(output).toContain('Testing');
+    expect(output).toContain('Risk');
 
     logSpy.mockRestore();
   });
 
-  it('prints doctor --ai --json output when repo index is missing', async () => {
+  it('prints json diagnosis contract', async () => {
     const { runDoctor } = await import('./doctor.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    runSchema.mockResolvedValue(ExitCode.Success);
-    hasRegisteredCommand.mockReturnValue(true);
-    existsSync.mockReturnValue(false);
-    loadVerifyRules.mockResolvedValue([{ id: 'rule-1' }]);
-
-    const exitCode = await runDoctor(process.cwd(), {
-      format: 'json',
-      quiet: false,
-      fix: false,
-      dryRun: false,
-      yes: false,
-      ai: true
-    });
+    const exitCode = await runDoctor(process.cwd(), { format: 'json', quiet: false });
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(exitCode).toBe(ExitCode.Success);
-    expect(payload).toEqual({
+    expect(payload).toMatchObject({
       schemaVersion: '1.0',
       command: 'doctor',
-      mode: 'ai',
-      checks: [
-        { name: 'schema', status: 'pass' },
-        { name: 'context', status: 'pass' },
-        { name: 'repoIndex', status: 'warn' },
-        { name: 'verifyRules', status: 'pass' }
-      ]
+      status: 'ok',
+      summary: { errors: 0, warnings: 0 }
+    });
+    expect(Array.isArray(payload.findings)).toBe(true);
+    expect(payload.artifactHygiene).toMatchObject({
+      classification: { runtime: [], automation: [], contract: [] },
+      findings: [],
+      suggestions: []
     });
 
     logSpy.mockRestore();
   });
 
-  it('fails verify rules check when registry is empty', async () => {
+
+  it('includes deterministic artifact hygiene suggestion IDs in json output', async () => {
     const { runDoctor } = await import('./doctor.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    runSchema.mockResolvedValue(ExitCode.Success);
-    hasRegisteredCommand.mockReturnValue(true);
-    existsSync.mockReturnValue(true);
-    loadVerifyRules.mockResolvedValue([]);
-
-    const exitCode = await runDoctor(process.cwd(), {
-      format: 'json',
-      quiet: false,
-      fix: false,
-      dryRun: false,
-      yes: false,
-      ai: true
+    generateRepositoryHealth.mockReturnValue({
+      artifactHygiene: {
+        classification: { runtime: [], automation: [], contract: [] },
+        findings: [
+          {
+            type: 'missing-playbookignore',
+            message: 'Missing .playbookignore in a large repository.',
+            recommendation: 'Create .playbookignore.'
+          }
+        ],
+        suggestions: [
+          { id: 'PB012', title: 'Add .playbookignore', entries: ['dist/'] },
+          { id: 'PB013', title: 'Update .gitignore for runtime artifacts', entries: ['.playbook/repo-index.json'] },
+          { id: 'PB014', title: 'Move generated artifacts to .playbook runtime storage' }
+        ]
+      }
     });
+
+    const exitCode = await runDoctor(process.cwd(), { format: 'json', quiet: false });
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(exitCode).toBe(ExitCode.Success);
-    expect(payload.checks).toContainEqual({ name: 'verifyRules', status: 'fail' });
+    expect(payload.artifactHygiene.suggestions.map((entry: { id: string }) => entry.id)).toEqual(['PB012', 'PB013', 'PB014']);
 
     logSpy.mockRestore();
   });
 
-  it('fails context check when context command is missing', async () => {
+  it('returns failure when error findings are present', async () => {
     const { runDoctor } = await import('./doctor.js');
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    runSchema.mockResolvedValue(ExitCode.Success);
-    hasRegisteredCommand.mockReturnValue(false);
-    existsSync.mockReturnValue(true);
-    loadVerifyRules.mockResolvedValue([{ id: 'rule-1' }]);
-
-    const exitCode = await runDoctor(process.cwd(), {
-      format: 'json',
-      quiet: false,
-      fix: false,
-      dryRun: false,
-      yes: false,
-      ai: true
+    collectVerifyReport.mockResolvedValue({
+      ok: false,
+      summary: { failures: 1, warnings: 0 },
+      failures: [{ id: 'PB001', message: 'Missing architecture docs' }],
+      warnings: []
     });
 
-    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(exitCode).toBe(ExitCode.Success);
-    expect(payload.checks).toContainEqual({ name: 'context', status: 'fail' });
-
-    logSpy.mockRestore();
+    const exitCode = await runDoctor(process.cwd(), { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
   });
 });

@@ -20,10 +20,12 @@
   "operatingLadder": {
     "preferredCommandOrder": [
       "ai-context",
+      "ai-contract",
       "context",
+      "index",
       "query",
-      "ask",
       "explain",
+      "ask --repo-context",
       "rules",
       "verify",
       "direct-file-inspection-if-needed"
@@ -67,12 +69,16 @@
       "example": "playbook ai-context --json"
     },
     {
+      "name": "ai-contract",
+      "example": "playbook ai-contract"
+    },
+    {
       "name": "index",
       "example": "playbook index --json"
     },
     {
       "name": "ask",
-      "example": "playbook ask \"where should a new feature live?\" --json"
+      "example": "playbook ask \"where should a new feature live?\" --repo-context --json"
     },
     {
       "name": "query",

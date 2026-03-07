@@ -12,6 +12,8 @@ Use Playbook as the primary repository intelligence layer for this task.
 
 AI agents should prefer Playbook commands over direct repository inspection whenever command coverage exists.
 
+For repository-shape or architecture questions, prefer `playbook query`, `playbook explain`, or `playbook ask "<question>" --repo-context` over ad-hoc file inspection.
+
 ### Recommended bootstrap
 
 Before making non-trivial changes:
@@ -43,7 +45,7 @@ Examples:
 ```
 playbook query modules
 playbook query architecture
-playbook ask "where should a new feature live?"
+playbook ask "where should a new feature live?" --repo-context
 playbook explain <target>
 ```
 
@@ -81,12 +83,13 @@ Recommended authority order:
 1. `ai-context`
 2. `ai-contract`
 3. `context`
-4. `query`
-5. `ask`
+4. `index`
+5. `query`
 6. `explain`
-7. `rules`
-8. `verify`
-9. Direct file inspection only when command coverage is insufficient
+7. `ask --repo-context` for repository-shape questions
+8. `rules`
+9. `verify`
+10. Direct file inspection only when command coverage is insufficient
 
 ## Canonical remediation workflow
 
@@ -102,7 +105,7 @@ Diagnostic augmentation: add `explain <rule-id>` between `verify` and `plan` whe
 
 - Generate or refresh machine-readable intelligence with `index`.
 - Inspect structured fields with `query`.
-- Ask repository-shape questions with `ask`.
+- Ask repository-shape questions with `ask --repo-context` after `index` when repo context is required.
 - Explain rules/modules/architecture targets with `explain`.
 - Use `schema` to validate JSON contracts when integrating with automation.
 
@@ -150,7 +153,7 @@ Copy-pastable governance bullets:
 - Rule: AI agents should prefer Playbook commands over broad repository inference when command coverage exists.
 - Rule: Inside the Playbook repo, use local built CLI entrypoints to reflect current branch behavior.
 - Pattern: `.playbook/ai-contract.json` is the canonical AI-operability handshake artifact for Playbook-enabled repositories.
-- Pattern: `ai-context -> ai-contract -> context -> query/ask/explain -> verify/plan/apply` is the preferred AI operating ladder.
+- Pattern: `ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify/plan/apply` is the preferred AI operating ladder.
 - Failure Mode: Agent drift occurs when AI tools bypass Playbook command outputs and reason directly from stale or incomplete file inspection.
 - Pattern: AI working inside the Playbook repo should run docs audit alongside other branch-accurate local CLI validations.
 
@@ -174,12 +177,16 @@ Do not hand-edit entries inside the managed markers.
 
 ### Repository tools
 
-- `doctor`: Repository health entry point for architecture, governance, and issues
+- `analyze-pr`: Analyze local branch/worktree changes with deterministic PR intelligence
+  - Example: `playbook analyze-pr --json`
+- `doctor`: Diagnose repository health by aggregating verify, risk, docs, and index analyzers
   - Example: `playbook doctor --fix --dry-run`
 - `diagram`: Generate deterministic architecture Mermaid diagrams
   - Example: `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md`
 - `docs`: Audit documentation governance surfaces and contracts
   - Example: `playbook docs audit --json`
+- `audit`: Audit deterministic architecture guardrails and platform hardening controls
+  - Example: `playbook audit architecture --json`
 - `rules`: List loaded verify and analyze rules
   - Example: `playbook rules --json`
 - `schema`: Print JSON Schemas for Playbook CLI command outputs
@@ -195,12 +202,14 @@ Do not hand-edit entries inside the managed markers.
 
 - `index`: Generate machine-readable repository intelligence index
   - Example: `playbook index --json`
+- `graph`: Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json
+  - Example: `playbook graph --json`
 - `query`: Query machine-readable repository intelligence from .playbook/repo-index.json
   - Example: `playbook query modules --json`
 - `deps`: Print module dependency graph from .playbook/repo-index.json
   - Example: `playbook deps workouts --json`
 - `ask`: Answer repository questions from machine-readable intelligence context
-  - Example: `playbook ask "where should a new feature live?" --json`
+  - Example: `playbook ask "where should a new feature live?" --repo-context --json`
 - `explain`: Explain rules, modules, or architecture from repository intelligence
   - Example: `playbook explain architecture --json`
 
@@ -227,17 +236,20 @@ Do not hand-edit entries inside the managed markers.
 | `verify` | `playbook verify --ci --json` |
 | `plan` | `playbook plan --json` |
 | `apply` | `playbook apply --from-plan .playbook/plan.json` |
+| `analyze-pr` | `playbook analyze-pr --json` |
 | `doctor` | `playbook doctor --fix --dry-run` |
 | `diagram` | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
 | `docs` | `playbook docs audit --json` |
+| `audit` | `playbook audit architecture --json` |
 | `rules` | `playbook rules --json` |
 | `schema` | `playbook schema verify --json` |
 | `context` | `playbook context --json` |
 | `ai-context` | `playbook ai-context --json` |
 | `ai-contract` | `playbook ai-contract --json` |
 | `index` | `playbook index --json` |
+| `graph` | `playbook graph --json` |
 | `query` | `playbook query modules --json` |
 | `deps` | `playbook deps workouts --json` |
-| `ask` | `playbook ask "where should a new feature live?" --json` |
+| `ask` | `playbook ask "where should a new feature live?" --repo-context --json` |
 | `explain` | `playbook explain architecture --json` |
 <!-- PLAYBOOK:EXAMPLES_END -->

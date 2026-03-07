@@ -73,9 +73,7 @@ const runWithStatus = (command, args, options = {}) => {
 
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-smoke-'));
 const projectDir = path.join(tempRoot, 'project');
-const doctorFixProjectDir = path.join(tempRoot, 'doctor-fix-project');
 fs.mkdirSync(projectDir, { recursive: true });
-fs.mkdirSync(doctorFixProjectDir, { recursive: true });
 
 let smokePassed = false;
 try {
@@ -84,10 +82,6 @@ try {
     JSON.stringify({ name: 'playbook-smoke', private: true, version: '1.0.0' }, null, 2)
   );
 
-  fs.writeFileSync(
-    path.join(doctorFixProjectDir, 'package.json'),
-    JSON.stringify({ name: 'playbook-smoke-doctor-fix', private: true, version: '1.0.0' }, null, 2)
-  );
 
   run(nodeBin, [cliPath, 'init'], { cwd: projectDir });
   run(nodeBin, [cliPath, 'analyze'], { cwd: projectDir });
@@ -264,26 +258,33 @@ try {
   });
   const doctorJsonReportResult = JSON.parse(doctorJsonReport.stdout);
 
-  if (doctorJsonReport.status !== 0) {
-    throw new Error(`smoke-test failed: expected doctor --json exit status=0 when doctor reports issues, got ${doctorJsonReport.status}`);
+  if (doctorJsonReportResult.command !== 'doctor' || doctorJsonReportResult.schemaVersion !== '1.0') {
+    throw new Error('smoke-test failed: expected doctor --json to include schemaVersion=1.0 and command=doctor');
   }
 
-  if (doctorJsonReportResult.command !== 'doctor') {
-    throw new Error(`smoke-test failed: expected doctor --json command=doctor, got ${String(doctorJsonReportResult.command)}`);
+  if (!['ok', 'warning', 'error'].includes(doctorJsonReportResult.status)) {
+    throw new Error(`smoke-test failed: expected doctor --json status in ok|warning|error, got ${String(doctorJsonReportResult.status)}`);
   }
 
-  if (typeof doctorJsonReportResult.framework !== 'string' || typeof doctorJsonReportResult.architecture !== 'string') {
-    throw new Error('smoke-test failed: expected doctor --json to include framework and architecture strings');
+  if (!doctorJsonReportResult.summary || typeof doctorJsonReportResult.summary !== 'object') {
+    throw new Error('smoke-test failed: expected doctor --json to include a summary object');
   }
 
-  if (!Array.isArray(doctorJsonReportResult.issues) || !Array.isArray(doctorJsonReportResult.suggestedActions)) {
-    throw new Error('smoke-test failed: expected doctor --json to include issues and suggestedActions arrays');
+  const { errors, warnings, info } = doctorJsonReportResult.summary;
+  if (typeof errors !== 'number' || typeof warnings !== 'number' || typeof info !== 'number') {
+    throw new Error('smoke-test failed: expected doctor --json summary.errors|warnings|info to be numbers');
   }
 
-  if (doctorJsonReportResult.issues.length === 0) {
-    throw new Error('smoke-test failed: expected doctor --json to report issues for incomplete repository state');
+  if (!Array.isArray(doctorJsonReportResult.findings)) {
+    throw new Error('smoke-test failed: expected doctor --json to include findings array');
   }
 
+  const expectedDoctorExit = errors > 0 ? 1 : 0;
+  if (doctorJsonReport.status !== expectedDoctorExit) {
+    throw new Error(
+      `smoke-test failed: expected doctor --json exit status=${expectedDoctorExit} from summary.errors=${errors}, got ${doctorJsonReport.status}`
+    );
+  }
 
   const upgradePlanJson = runWithStatus(nodeBin, [cliPath, 'upgrade', '--json'], { cwd: projectDir });
   const upgradePlanResult = JSON.parse(upgradePlanJson.stdout);
@@ -332,19 +333,6 @@ try {
     if (notesContent.trim().length === 0) {
       throw new Error('smoke-test failed: expected docs/PLAYBOOK_NOTES.md to be non-empty after fix when verify fails');
     }
-  }
-
-  const doctorFixJson = runWithStatus(nodeBin, [cliPath, 'doctor', '--fix', '--yes', '--json'], {
-    cwd: doctorFixProjectDir
-  });
-  const doctorFixJsonResult = JSON.parse(doctorFixJson.stdout);
-
-  if (!Array.isArray(doctorFixJsonResult.applied)) {
-    throw new Error('smoke-test failed: expected doctor --fix --json to include an applied array');
-  }
-
-  if (!fs.existsSync(path.join(doctorFixProjectDir, 'docs'))) {
-    throw new Error('smoke-test failed: expected doctor --fix to create docs directory');
   }
 
   if (typeof fixJsonResult.reverify?.exitCode !== 'number') {

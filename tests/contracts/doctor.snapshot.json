@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "1.0",
+  "command": "doctor",
+  "status": "error",
+  "summary": {
+    "errors": 6,
+    "warnings": 2,
+    "info": 2
+  },
+  "findings": [
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/ARCHITECTURE.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/archive/)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/index.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/PLAYBOOK_DEV_WORKFLOW.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/PLAYBOOK_IMPROVEMENTS.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/PLAYBOOK_PRODUCT_ROADMAP.md)"
+    },
+    {
+      "category": "Testing",
+      "severity": "warning",
+      "id": "doctor.testing.verify.warning.base-selection",
+      "message": "Repository is not a git work tree; skipping diff-based verification checks."
+    },
+    {
+      "category": "Testing",
+      "severity": "warning",
+      "id": "doctor.testing.verify.warning.config-missing",
+      "message": "playbook.config.json not found; using defaults."
+    },
+    {
+      "category": "Architecture",
+      "severity": "info",
+      "id": "doctor.architecture.repo-index.present",
+      "message": "Repository intelligence index is present."
+    },
+    {
+      "category": "Risk",
+      "severity": "info",
+      "id": "doctor.risk.module.features",
+      "message": "features risk is low (0.00)."
+    }
+  ],
+  "artifactHygiene": {
+    "classification": {
+      "runtime": [
+        ".playbook/repo-index.json",
+        ".playbook/plan.json",
+        ".playbook/verify.json",
+        ".playbook/session-cleanup*.json",
+        ".playbook/cache/**"
+      ],
+      "automation": [
+        ".playbook/ci-plan*.json",
+        ".playbook/ci-verify*.json",
+        ".github/artifacts/**"
+      ],
+      "contract": [
+        "tests/contracts/*.snapshot.json",
+        ".playbook/demo-artifacts/**",
+        "docs/*diagram*.md"
+      ]
+    },
+    "findings": [],
+    "suggestions": []
+  }
+}

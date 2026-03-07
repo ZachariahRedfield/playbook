@@ -15,18 +15,21 @@ Do not hand-edit entries inside the managed markers.
 | `verify` | Verify governance rules | Current (implemented) | `playbook verify --ci --json` |
 | `plan` | Generate a structured fix plan from rule findings | Current (implemented) | `playbook plan --json` |
 | `apply` | Execute deterministic auto-fixable plan tasks | Current (implemented) | `playbook apply --from-plan .playbook/plan.json` |
-| `doctor` | Repository health entry point for architecture, governance, and issues | Current (implemented) | `playbook doctor --fix --dry-run` |
+| `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | Current (implemented) | `playbook analyze-pr --json` |
+| `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | Current (implemented) | `playbook doctor --fix --dry-run` |
 | `diagram` | Generate deterministic architecture Mermaid diagrams | Current (implemented) | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
 | `docs` | Audit documentation governance surfaces and contracts | Current (implemented) | `playbook docs audit --json` |
+| `audit` | Audit deterministic architecture guardrails and platform hardening controls | Current (implemented) | `playbook audit architecture --json` |
 | `rules` | List loaded verify and analyze rules | Current (implemented) | `playbook rules --json` |
 | `schema` | Print JSON Schemas for Playbook CLI command outputs | Current (implemented) | `playbook schema verify --json` |
 | `context` | Print deterministic CLI and architecture context for tools and agents | Current (implemented) | `playbook context --json` |
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | Current (implemented) | `playbook ai-context --json` |
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | Current (implemented) | `playbook ai-contract --json` |
 | `index` | Generate machine-readable repository intelligence index | Current (implemented) | `playbook index --json` |
+| `graph` | Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json | Current (implemented) | `playbook graph --json` |
 | `query` | Query machine-readable repository intelligence from .playbook/repo-index.json | Current (implemented) | `playbook query modules --json` |
 | `deps` | Print module dependency graph from .playbook/repo-index.json | Current (implemented) | `playbook deps workouts --json` |
-| `ask` | Answer repository questions from machine-readable intelligence context | Current (implemented) | `playbook ask "where should a new feature live?" --json` |
+| `ask` | Answer repository questions from machine-readable intelligence context | Current (implemented) | `playbook ask "where should a new feature live?" --repo-context --json` |
 | `explain` | Explain rules, modules, or architecture from repository intelligence | Current (implemented) | `playbook explain architecture --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
@@ -64,6 +67,173 @@ If docs and implementation disagree, treat implementation as source of truth and
 Command reference: [`playbook docs audit`](docs.md).
 
 
+## Repo-aware ask (`playbook ask --repo-context`)
+
+`playbook ask` supports `--repo-context` to inject trusted Playbook-managed repository intelligence into ask context.
+
+- Uses deterministic artifacts (`.playbook/repo-index.json`) and AI contract metadata for context hydration.
+- Does **not** trigger broad ad-hoc repository crawling.
+- Requires `playbook index` when `.playbook/repo-index.json` is missing.
+
+Deterministic missing-index guidance:
+
+```text
+Repository context is not available yet.
+Run `playbook index` to generate .playbook/repo-index.json and retry.
+```
+
+Examples:
+
+```bash
+playbook ask "where should a new feature live?" --repo-context
+playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this module work?" --module workouts --repo-context
+playbook ask "what modules are affected by this?" --repo-context --json
+```
+
+
+## Structured PR intelligence (`playbook analyze-pr`)
+
+`playbook analyze-pr` provides deterministic pull-request/change analysis as machine-readable output.
+
+- Uses trusted local git diff + `.playbook/repo-index.json`.
+- Reuses indexed impact/risk/docs/ownership intelligence instead of duplicating logic.
+- Reports changed files, affected modules, downstream impact, architecture boundaries touched, docs review suggestions, and merge guidance.
+- Keeps `--json` as the canonical analysis contract and applies a single formatter pipeline for `--format text|json|github-comment|github-review`.
+- Supports formatter exports, including `--format github-comment` for sticky PR summaries and `--format github-review` for inline review diagnostics on specific files/lines without adding new analysis inference.
+- GitHub Actions transport posts the summary formatter output as one sticky Playbook PR comment (`<!-- playbook:analyze-pr-comment -->`) and synchronizes inline diagnostics (`<!-- playbook:analyze-pr-inline -->`) so new findings are added, unchanged findings are not duplicated, and resolved findings are removed.
+- Artifact contract: `analyze-pr` consumes `.playbook/repo-index.json`, so CI runs `playbook index` before PR analysis; creating `.playbook/` alone is insufficient.
+- Diff contract: CI should pass explicit base refs (for example `--base origin/${{ github.base_ref }}`) and use `fetch-depth: 0` checkout for deterministic PR diff analysis.
+
+Examples:
+
+```bash
+playbook analyze-pr
+playbook analyze-pr --format text
+playbook analyze-pr --json
+playbook analyze-pr --base main --json
+playbook analyze-pr --format github-comment
+playbook analyze-pr --format github-review
+```
+
+Pattern: `playbook analyze-pr` composes local diff context with indexed repository intelligence to produce deterministic pull request analysis.
+
+Rule: Pull request intelligence must rely on trusted local git + Playbook-managed artifacts, not cloud-only or fuzzy repository inference.
+
+Pattern: `ask --diff-context` is conversational change reasoning; `analyze-pr` is the structured review/report surface.
+
+Failure Mode: PR analysis becomes untrustworthy when implementation duplicates diff/impact/risk logic instead of composing shared intelligence helpers.
+
+## Change-scoped ask (`playbook ask --diff-context`)
+
+`playbook ask` supports `--diff-context` to narrow repository reasoning to the active local change set.
+
+- Uses deterministic local git diff + `.playbook/repo-index.json` intelligence mapping.
+- Hydrates ask context with changed files, affected modules, impact/dependents, changed docs, and indexed risk signals.
+- Does **not** silently broaden to full-repo reasoning when diff context cannot be resolved.
+- `--module` and `--diff-context` are intentionally incompatible for deterministic scope selection.
+
+Examples:
+
+```bash
+playbook index
+playbook ask "what modules are affected by this change?" --diff-context
+playbook ask "what should I verify before merge?" --diff-context --mode concise
+playbook ask "summarize the architectural risk of this diff" --diff-context --json
+playbook ask "what modules are affected?" --diff-context --base main
+```
+
+Pattern: `playbook ask --diff-context` narrows repository reasoning to the active change set using trusted local diff + index intelligence.
+
+Rule: Change-scoped ask must derive context from Playbook-managed intelligence and explicit diff inputs, not broad ad-hoc repository inference.
+
+Pattern: Module-scoped and diff-scoped reasoning should share the same underlying repository intelligence layer.
+
+Pattern: Change review workflows become much more trustworthy when blast radius is derived from indexed structure and actual changed files together.
+
+Failure Mode: Diff-aware reasoning becomes misleading when the tool silently expands from “changed files” into full-repo inference without telling the user.
+
+In JSON mode, ask keeps the existing answer payload and includes deterministic provenance metadata in `context.sources` (for example `repo-index`, `module`, `diff`, `docs`, `rule-registry`, and `ai-contract`) plus `repoContext` hydration metadata. Provenance descriptors include only source metadata (paths/names/files), never raw repository file content.
+
+## AI Response Modes for `playbook ask`
+
+`playbook ask` supports `--mode <mode>` to control output verbosity.
+
+- `normal` (default): Full explanation with context
+- `concise`: Compressed but informative
+- `ultra`: Maximum compression
+
+Examples:
+
+```bash
+playbook ask "how does auth work?"
+playbook ask "how does auth work?" --mode concise
+playbook ask "how does this work?" --module workouts
+playbook ask "how do I fix this rule violation?" --mode ultra
+```
+
+
 ## Security contract verification
 
 Run `pnpm test:security` to execute security contract tests and regression tests that validate runtime guards.
+
+## Runtime artifact intent by command
+
+Use the following intent model when deciding whether command outputs stay local, are reviewed in automation, or are committed as stable contracts/docs:
+
+- `index`
+  - Default intent: **local runtime artifact** (`.playbook/repo-index.json`) regenerated as repository intelligence changes.
+  - Commit guidance: usually gitignored; commit only when intentionally maintaining a deterministic contract/example snapshot.
+- `plan`
+  - Default intent: **reviewed automation artifact** (for example `.playbook/plan.json`) used for deterministic remediation workflows and CI/agent handoff.
+  - Commit guidance: typically ephemeral; commit only when a repository explicitly treats plan artifacts as stable review contracts.
+- `query` / `deps` / `ask` / `explain`
+  - Default intent: **runtime reads and derived outputs** from `.playbook/repo-index.json`; results are usually ephemeral unless exported intentionally for docs/contracts.
+- `session` cleanup/reporting flows
+  - Default intent: **local hygiene/runtime maintenance artifacts** (for example cleanup reports under `.playbook/`).
+  - Commit guidance: keep local unless intentionally preserving an audit example or contract fixture.
+- `diagram` and docs-facing flows
+  - Default intent: **committed docs/contracts** when repositories choose generated architecture/docs outputs as source-controlled documentation surfaces.
+
+Pattern: Runtime Artifacts Live Under `.playbook/`.
+Pattern: Demo Artifacts Are Snapshot Contracts, Not General Runtime State.
+Rule: Generated runtime artifacts should be gitignored unless intentionally committed as stable contracts/examples.
+Rule: Playbook remains local/private-first by default.
+Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary repo-history growth and noisy diffs.
+
+`.playbookignore` support is available for repository intelligence scans (`playbook index` and related repository scans). The file uses `.gitignore`-style syntax and should be used to exclude high-churn directories (for example `node_modules`, `dist`, `build`, `coverage`, `.next`, and `.playbook/cache`).
+
+
+## Playbook artifact hygiene diagnostics (`doctor`)
+
+`playbook doctor` includes a **Playbook Artifact Hygiene** section that reports:
+
+- committed runtime artifacts
+- very large generated JSON artifacts
+- frequently modified generated artifacts
+- missing `.playbookignore` in large repositories
+
+In JSON mode, `doctor --json` includes a structured `artifactHygiene` payload with `classification`, `findings`, and `suggestions` arrays for deterministic automation handling.
+
+Suggested remediation IDs:
+
+- `PB012`: add `.playbookignore`
+- `PB013`: update `.gitignore` for runtime artifacts
+- `PB014`: move runtime artifacts to `.playbook/`
+
+
+
+
+### Deterministic test hotspot discovery
+
+`playbook query test-hotspots` reports likely test inefficiency candidates from test files using deterministic heuristics only.
+
+- Detects candidate patterns such as broad retrieval followed by narrow filtering, repeated fixture setup, repeated CLI runner plumbing, and manual JSON contract plumbing.
+- Emits stable text + JSON output for repository intelligence and validation automation workflows.
+- Reports findings only (no codemod/apply behavior in MVP).
+
+### Deterministic module impact
+
+`playbook query impact <module>` converts indexed module/dependency data from `.playbook/repo-index.json` into deterministic module blast-radius analysis, including dependencies, reverse dependencies, and risk signals.
+
+Rule: Module impact and module-scoped ask rely on Playbook-managed index artifacts, not ad-hoc rescans.

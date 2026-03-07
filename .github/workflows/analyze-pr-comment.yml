@@ -1,0 +1,182 @@
+name: analyze-pr-comment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  post-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read pnpm version from packageManager
+        shell: bash
+        run: |
+          PM=$(node -e "console.log(require(process.env.GITHUB_WORKSPACE + '/package.json').packageManager)")
+          if [[ -z "$PM" || "$PM" != pnpm@* ]]; then
+            echo "Invalid or missing packageManager in package.json (expected pnpm@...). Got: '$PM'"
+            exit 1
+          fi
+          PM_VERSION=${PM#pnpm@}
+          echo "PM_VERSION=$PM_VERSION" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm -r build
+
+      - name: Generate Playbook analyze-pr outputs
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        shell: bash
+        run: |
+          node packages/cli/dist/main.js index --json
+          node packages/cli/dist/main.js analyze-pr --base "origin/${{ github.base_ref }}" --format github-comment > .playbook/analyze-pr-comment.md
+          node packages/cli/dist/main.js analyze-pr --base "origin/${{ github.base_ref }}" --format github-review > .playbook/analyze-pr-review.json
+
+      - name: Post sticky Playbook PR comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        env:
+          PLAYBOOK_COMMENT_MARKER: "<!-- playbook:analyze-pr-comment -->"
+          PLAYBOOK_COMMENT_FILE: ".playbook/analyze-pr-comment.md"
+        with:
+          script: |
+            const fs = require('node:fs');
+            const marker = process.env.PLAYBOOK_COMMENT_MARKER;
+            const commentPath = process.env.PLAYBOOK_COMMENT_FILE;
+            const formattedComment = fs.readFileSync(commentPath, 'utf8').trimEnd();
+            const body = `${marker}\n${formattedComment}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) =>
+              comment.body && comment.body.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated Playbook PR comment: ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+              core.info(`Created Playbook PR comment: ${created.data.id}`);
+            }
+
+      - name: Sync inline Playbook diagnostics
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        env:
+          PLAYBOOK_REVIEW_FILE: ".playbook/analyze-pr-review.json"
+          PLAYBOOK_REVIEW_MARKER: "<!-- playbook:analyze-pr-inline -->"
+        with:
+          script: |
+            const fs = require('node:fs');
+            const reviewPath = process.env.PLAYBOOK_REVIEW_FILE;
+            const marker = process.env.PLAYBOOK_REVIEW_MARKER;
+            const diagnostics = JSON.parse(fs.readFileSync(reviewPath, 'utf8'));
+
+            const { owner, repo } = context.repo;
+            const pull_number = context.issue.number;
+            const headSha = context.payload.pull_request?.head?.sha;
+            if (!headSha) {
+              core.setFailed('Missing pull request head SHA for review diagnostics transport.');
+              return;
+            }
+
+            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            const playbookComments = reviewComments.filter((comment) =>
+              comment.user?.type === 'Bot' && typeof comment.body === 'string' && comment.body.includes(marker),
+            );
+
+            const normalizeBody = (body) => body.replace(marker, '').trim();
+            const keyForExisting = (comment) => `${comment.path}:${comment.line}:${normalizeBody(comment.body || '')}`;
+            const keyForDesired = (annotation) => `${annotation.path}:${annotation.line}:${annotation.body.trim()}`;
+
+            const existingByKey = new Map(playbookComments.map((comment) => [keyForExisting(comment), comment]));
+            const desiredByKey = new Map();
+            for (const annotation of diagnostics) {
+              if (!annotation.path || typeof annotation.line !== 'number' || !annotation.body) {
+                continue;
+              }
+              desiredByKey.set(keyForDesired(annotation), annotation);
+            }
+
+            for (const [existingKey, comment] of existingByKey.entries()) {
+              if (desiredByKey.has(existingKey)) {
+                continue;
+              }
+
+              await github.rest.pulls.deleteReviewComment({
+                owner,
+                repo,
+                comment_id: comment.id,
+              });
+            }
+
+            for (const [desiredKey, annotation] of desiredByKey.entries()) {
+              if (existingByKey.has(desiredKey)) {
+                continue;
+              }
+
+              await github.rest.pulls.createReviewComment({
+                owner,
+                repo,
+                pull_number,
+                commit_id: headSha,
+                path: annotation.path,
+                line: annotation.line,
+                side: 'RIGHT',
+                body: `${annotation.body.trim()}\n\n${marker}`,
+              });
+            }
+
+      - name: Skip sticky comment for fork pull requests
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "Skipping analyze-pr sticky comment: pull_request originates from a fork and may not have pull-requests:write permission."

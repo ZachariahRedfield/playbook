@@ -1,5 +1,17 @@
 export type Severity = 'WARN' | 'RECOMMEND' | 'INFO';
 
+export { runArchitectureAudit } from './audit/architecture.js';
+export type {
+  ArchitectureAuditCheck,
+  ArchitectureAuditCheckContext,
+  ArchitectureAuditReport,
+  ArchitectureAuditResult,
+  ArchitectureAuditSeverity,
+  ArchitectureAuditStatus,
+  ArchitectureAuditSummary,
+  ArchitectureAuditSummaryStatus
+} from './audit/types.js';
+
 export type { FixHandler, FixResult, PlanTask, Rule, RuleContext, RuleFailure, RuleResult, Task } from './rules.js';
 
 export type Finding = {

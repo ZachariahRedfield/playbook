@@ -63,3 +63,61 @@ Playbook normalizes and orders machine output to reduce drift across runs:
 - `fix`: convenience/direct remediation command for local/manual workflows; overlaps with `apply` intent but keeps operator-friendly flags like `--dry-run`, `--yes`, and `--only`.
 
 For CI and agent workflows, prefer `verify -> plan -> apply -> verify` because the plan artifact is reviewable before execution.
+
+
+## 7) Repository diagnosis (`doctor`)
+
+`doctor` is a high-level repository health entry point that aggregates existing analyzers instead of re-implementing their logic.
+
+Current diagnosis sources:
+
+- `verify` findings
+- `query risk` (per indexed module)
+- `docs audit` findings
+- repository index presence (`.playbook/repo-index.json`)
+
+`playbook doctor --json` emits a deterministic contract:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "command": "doctor",
+  "status": "ok",
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "info": 0
+  },
+  "findings": [],
+  "artifactHygiene": {
+    "classification": { "runtime": [], "automation": [], "contract": [] },
+    "findings": [],
+    "suggestions": []
+  }
+}
+```
+
+Default text output prints diagnosis sections for:
+
+- Architecture
+- Docs
+- Testing
+- Risk
+
+Exit-code semantics for `doctor`:
+
+- `0` when no `error`-severity findings are present (`ok` or `warning` status)
+- `1` when one or more `error`-severity findings are present (`error` status)
+
+This is diagnostic signaling, not a command-crash indicator.
+
+
+## 8) PR/change intelligence (`analyze-pr`)
+
+`analyze-pr` is the structured PR analysis/reporting command.
+
+- Local-first: uses git diff and `.playbook/repo-index.json`.
+- Deterministic: emits stable machine-readable output for automation (`--json`).
+- Reuses shared intelligence layers (impact/risk/docs/ownership) instead of duplicating logic.
+
+Use `ask --diff-context` for conversational answers and `analyze-pr` for structured review artifacts.

@@ -6,6 +6,7 @@ import {
   queryRepositoryIndex,
   queryRuleOwners,
   queryModuleOwners,
+  queryTestHotspots,
   SUPPORTED_QUERY_FIELDS,
   type DependenciesQueryResult,
   type ImpactQueryResult,
@@ -15,7 +16,9 @@ import {
   type RepositoryModule,
   type RepositoryQueryField,
   type RuleOwnersQueryResult,
-  type ModuleOwnersQueryResult
+  type ModuleOwnersQueryResult,
+  type TestHotspotsQueryResult,
+  type GraphNeighborhoodSummary
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
@@ -28,6 +31,7 @@ type QueryResult = {
   command: 'query';
   field: RepositoryQueryField;
   result: string | string[] | RepositoryModule[];
+  graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
 const firstPositionalArg = (args: string[]): string | undefined => args.find((arg) => !arg.startsWith('-'));
@@ -85,19 +89,17 @@ const printImpactText = (payload: ImpactQueryResult): void => {
   console.log('Impact Analysis');
   console.log('───────────────');
   console.log('');
-  console.log(`Changing module: ${payload.module}`);
+  console.log(`Target module: ${payload.module.name}`);
+  console.log(`Module path: ${payload.module.path}`);
   console.log('');
-  console.log('Affected modules:');
-  console.log('');
-
-  if (payload.affectedModules.length === 0) {
-    console.log('none');
-    return;
-  }
-
-  for (const moduleName of payload.affectedModules) {
-    console.log(moduleName);
-  }
+  console.log(`Dependencies: ${payload.impact.dependencies.length > 0 ? payload.impact.dependencies.join(', ') : 'none'}`);
+  console.log(
+    `Direct dependents: ${payload.impact.directDependents.length > 0 ? payload.impact.directDependents.join(', ') : 'none'}`
+  );
+  console.log(
+    `Transitive dependents: ${payload.impact.dependents.length > 0 ? payload.impact.dependents.join(', ') : 'none'}`
+  );
+  console.log(`Risk: ${payload.impact.risk.level} (${payload.impact.risk.score.toFixed(2)})`);
 };
 
 const printDocsCoverageText = (payload: DocsCoverageQueryResult): void => {
@@ -192,6 +194,34 @@ const printModuleOwnersText = (payload: ModuleOwnersQueryResult): void => {
   }
 };
 
+
+const printTestHotspotsText = (payload: TestHotspotsQueryResult): void => {
+  console.log('Test Hotspots');
+  console.log('─────────────');
+
+  if (payload.hotspots.length === 0) {
+    console.log('none');
+    return;
+  }
+
+  for (const hotspot of payload.hotspots) {
+    console.log('');
+    console.log(`${hotspot.file}:${hotspot.line}`);
+    console.log(`  Type: ${hotspot.type}`);
+    console.log(`  Confidence: ${hotspot.confidence}`);
+    console.log(`  Current pattern: ${hotspot.currentPattern}`);
+    console.log(`  Suggested helper: ${hotspot.suggestedReplacementHelper}`);
+    console.log(`  Automation safety: ${hotspot.automationSafety}`);
+  }
+
+  console.log('');
+  console.log('Summary');
+  console.log(`  Total hotspots: ${payload.summary.totalHotspots}`);
+  for (const entry of payload.summary.byType) {
+    console.log(`  ${entry.type}: ${entry.count}`);
+  }
+};
+
 const printRiskText = (payload: RiskQueryResult): void => {
   console.log('Risk Analysis');
   console.log('─────────────');
@@ -280,8 +310,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             {
               schemaVersion: '1.0',
               command: 'query',
-              type: 'impact',
-              module: null,
+              query: 'impact',
+              target: null,
               error: message
             },
             null,
@@ -316,8 +346,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             {
               schemaVersion: '1.0',
               command: 'query',
-              type: 'impact',
-              module: moduleArg,
+              query: 'impact',
+              target: moduleArg,
               error: message
             },
             null,
@@ -454,6 +484,44 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     }
   }
 
+
+  if (fieldArg === 'test-hotspots') {
+    try {
+      const payload = queryTestHotspots(cwd);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(payload, null, 2));
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        printTestHotspotsText(payload);
+      }
+
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (options.format === 'json') {
+        console.log(
+          JSON.stringify(
+            {
+              schemaVersion: '1.0',
+              command: 'query',
+              type: 'test-hotspots',
+              error: message
+            },
+            null,
+            2
+          )
+        );
+      } else {
+        console.error(message);
+      }
+
+      return ExitCode.Failure;
+    }
+  }
+
   if (fieldArg === 'risk') {
     const moduleArg = commandArgs.find((arg, index) => index > commandArgs.indexOf(fieldArg) && !arg.startsWith('-'));
 
@@ -522,7 +590,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     const result: QueryResult = {
       command: 'query',
       field: query.field,
-      result: query.result
+      result: query.result,
+      graphNeighborhood: query.graphNeighborhood
     };
 
     if (options.format === 'json') {
@@ -545,7 +614,7 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             command: 'query',
             field: fieldArg,
             error: message,
-            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners']
+            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners', 'test-hotspots']
           },
           null,
           2

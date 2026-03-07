@@ -24,17 +24,23 @@ describe('runIndex', () => {
       command: 'index',
       ok: true,
       indexFile: '.playbook/repo-index.json',
+      graphFile: '.playbook/repo-graph.json',
       framework: 'node',
       architecture: 'modular-monolith',
       modules: ['features']
     });
 
     const indexFile = path.join(repo, '.playbook', 'repo-index.json');
+    const graphFile = path.join(repo, '.playbook', 'repo-graph.json');
     expect(fs.existsSync(indexFile)).toBe(true);
+    expect(fs.existsSync(graphFile)).toBe(true);
 
     const indexPayload = JSON.parse(fs.readFileSync(indexFile, 'utf8'));
+    const graphPayload = JSON.parse(fs.readFileSync(graphFile, 'utf8'));
     expect(indexPayload.schemaVersion).toBe('1.0');
     expect(indexPayload.modules).toEqual([{ name: 'features', dependencies: [] }]);
+    expect(graphPayload.kind).toBe('playbook-repo-graph');
+    expect(graphPayload.stats.nodeCount).toBeGreaterThan(0);
 
     logSpy.mockRestore();
   });

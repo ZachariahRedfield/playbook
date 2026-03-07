@@ -19,7 +19,10 @@ const writeRepoIndex = (repo: string): void => {
         framework: 'nextjs',
         language: 'typescript',
         architecture: 'modular-monolith',
-        modules: ['users', 'workouts'],
+        modules: [
+          { name: 'users', dependencies: [] },
+          { name: 'workouts', dependencies: ['users'] }
+        ],
         database: 'supabase',
         rules: ['requireNotesOnChanges']
       },
@@ -62,14 +65,53 @@ describe('runAsk', () => {
     expect(payload).toEqual({
       command: 'ask',
       question: 'what architecture does this repo use?',
+      mode: 'normal',
+      modeInstruction: 'Respond with complete explanations, contextual details, and clear reasoning.',
       answer: 'Architecture: modular-monolith',
       reason: 'Derived from repository index architecture signal. Rule registry signals in the index: requireNotesOnChanges.',
+      repoContext: {
+        enabled: false,
+        sources: []
+      },
+      scope: {
+        module: undefined,
+        diffContext: {
+          enabled: false,
+          baseRef: undefined
+        }
+      },
       context: {
         architecture: 'modular-monolith',
         framework: 'nextjs',
-        modules: ['users', 'workouts']
+        modules: ['users', 'workouts'],
+        sources: [
+          { type: 'repo-index', path: '.playbook/repo-index.json' },
+          { type: 'architecture-metadata', path: '.playbook/repo-index.json' },
+          { type: 'rule-registry', path: '.playbook/repo-index.json' }
+        ]
       }
     });
+
+    logSpy.mockRestore();
+  });
+
+
+  it('supports module-scoped ask context via --module', async () => {
+    const repo = createRepo('playbook-cli-ask-module');
+    writeRepoIndex(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runAsk(repo, ['how', 'does', 'this', 'module', 'work?', '--module', 'workouts'], {
+      format: 'json',
+      quiet: false,
+      module: 'workouts'
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.context.module.module.name).toBe('workouts');
+    expect(payload.context.module.impact.dependencies).toEqual(['users']);
+    expect(payload.context.sources).toContainEqual({ type: 'module', name: 'workouts' });
 
     logSpy.mockRestore();
   });

@@ -14,15 +14,17 @@ type AiContextResult = {
   repositoryIntelligence: {
     artifact: '.playbook/repo-index.json';
     available: boolean;
-    commands: ['index', 'query', 'deps', 'ask', 'explain'];
+    commands: string[];
   };
   operatingLadder: {
     preferredCommandOrder: [
       'ai-context',
+      'ai-contract',
       'context',
+      'index',
       'query',
-      'ask',
       'explain',
+      'ask --repo-context',
       'rules',
       'verify',
       'direct-file-inspection-if-needed'
@@ -65,10 +67,12 @@ const buildAiContextResult = (cwd: string): AiContextResult => {
     operatingLadder: {
       preferredCommandOrder: [
         'ai-context',
+        'ai-contract',
         'context',
+        'index',
         'query',
-        'ask',
         'explain',
+        'ask --repo-context',
         'rules',
         'verify',
         'direct-file-inspection-if-needed'
@@ -81,13 +85,13 @@ const buildAiContextResult = (cwd: string): AiContextResult => {
       remediationWorkflow: ['verify', 'explain', 'plan', 'apply', 'verify']
     },
     productCommands: listRegisteredCommands()
-      .filter((entry) => ['ai-context', 'context', 'index', 'query', 'ask', 'explain', 'verify', 'plan', 'apply'].includes(entry.name))
+      .filter((entry) => ['ai-context', 'ai-contract', 'context', 'index', 'query', 'ask', 'explain', 'verify', 'plan', 'apply'].includes(entry.name))
       .map((entry) => {
         const example =
           entry.name === 'query'
             ? 'playbook query modules --json'
             : entry.name === 'ask'
-              ? 'playbook ask "where should a new feature live?" --json'
+              ? 'playbook ask \"where should a new feature live?\" --repo-context --json'
               : entry.name === 'explain'
                 ? 'playbook explain architecture --json'
                 : entry.name === 'apply'

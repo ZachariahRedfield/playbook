@@ -43,8 +43,16 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'analyze-pr',
+    description: 'Analyze local branch/worktree changes with deterministic PR intelligence',
+    category: 'Repository tools',
+    productFacing: true,
+    example: 'playbook analyze-pr --json',
+    machineReadable: true
+  },
+  {
     name: 'doctor',
-    description: 'Repository health entry point for architecture, governance, and issues',
+    description: 'Diagnose repository health by aggregating verify, risk, docs, and index analyzers',
     category: 'Repository tools',
     productFacing: true,
     example: 'playbook doctor --fix --dry-run',
@@ -64,6 +72,14 @@ export const commandMetadata: CommandMetadata[] = [
     category: 'Repository tools',
     productFacing: true,
     example: 'playbook docs audit --json',
+    machineReadable: true
+  },
+  {
+    name: 'audit',
+    description: 'Audit deterministic architecture guardrails and platform hardening controls',
+    category: 'Repository tools',
+    productFacing: true,
+    example: 'playbook audit architecture --json',
     machineReadable: true
   },
   {
@@ -116,6 +132,14 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'graph',
+    description: 'Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json',
+    category: 'Repository intelligence',
+    productFacing: true,
+    example: 'playbook graph --json',
+    machineReadable: true
+  },
+  {
     name: 'query',
     description: 'Query machine-readable repository intelligence from .playbook/repo-index.json',
     category: 'Repository intelligence',
@@ -136,7 +160,7 @@ export const commandMetadata: CommandMetadata[] = [
     description: 'Answer repository questions from machine-readable intelligence context',
     category: 'Repository intelligence',
     productFacing: true,
-    example: 'playbook ask "where should a new feature live?" --json',
+    example: 'playbook ask "where should a new feature live?" --repo-context --json',
     machineReadable: true
   },
   {

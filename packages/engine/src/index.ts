@@ -14,15 +14,23 @@ export * from './sessions/index.js';
 export { runRuleExecution, generateExecutionPlan, generatePlanContract, applyExecutionPlan, parsePlanArtifact, selectPlanTasks, RuleRunner, PlanGenerator, FixExecutor } from './execution/index.js';
 
 export { generateRepositoryHealth } from './doctor/index.js';
-export type { RepositoryHealth, GovernanceStatusItem } from './doctor/index.js';
+export type { RepositoryHealth, GovernanceStatusItem, ArtifactHygieneReport } from './doctor/index.js';
 
 export { generateRepositoryIndex } from './indexer/repoIndexer.js';
 export type { RepositoryIndex, RepositoryModule } from './indexer/repoIndexer.js';
+export { generateRepositoryGraph, readRepositoryGraph, summarizeRepositoryGraph, summarizeGraphNeighborhood, REPOSITORY_GRAPH_RELATIVE_PATH, REPOSITORY_GRAPH_SCHEMA_VERSION } from './graph/repoGraph.js';
+export type { RepositoryGraph, RepositoryGraphNode, RepositoryGraphEdge, RepositoryGraphSummary, GraphNeighborhoodSummary } from './graph/repoGraph.js';
 
 export { queryRepositoryIndex, SUPPORTED_QUERY_FIELDS } from './query/repoQuery.js';
 export type { RepositoryQueryField, RepositoryQueryResult } from './query/repoQuery.js';
 export { answerRepositoryQuestion } from './ask/askEngine.js';
 export type { AskEngineResult } from './ask/askEngine.js';
+export { resolveDiffAskContext } from './ask/diffContext.js';
+export type { DiffAskContext } from './ask/diffContext.js';
+export { analyzePullRequest } from './pr/analyzePr.js';
+export type { AnalyzePullRequestResult } from './pr/analyzePr.js';
+export { formatAnalyzePrOutput, formatAnalyzePrText, formatAnalyzePrJson, formatAnalyzePrGithubComment, formatAnalyzePrGithubReview } from './formatters/analyzePrFormatter.js';
+export type { AnalyzePrOutputFormat } from './formatters/analyzePrFormatter.js';
 
 export { explainTarget } from './explain/explainEngine.js';
 export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, UnknownExplanation } from './explain/explainEngine.js';
@@ -38,6 +46,9 @@ export type { DependenciesQueryResult } from './query/dependencies.js';
 export { queryImpact } from './query/impact.js';
 export type { ImpactQueryResult } from './query/impact.js';
 
+export { resolveIndexedModuleContext, buildModuleAskContext } from './query/moduleIntelligence.js';
+export type { IndexedModuleContext, IndexedModuleIdentity, ModuleImpact } from './query/moduleIntelligence.js';
+
 export { queryRisk } from './query/risk.js';
 export type { RiskQueryResult, RiskLevel, RiskSignals, RiskContributions } from './query/risk.js';
 
@@ -49,6 +60,15 @@ export type { RuleOwnersQueryResult, RuleOwnershipEntry } from './query/ruleOwne
 
 export { queryModuleOwners } from './query/moduleOwners.js';
 export type { ModuleOwnersQueryResult, ModuleOwnershipEntry } from './query/moduleOwners.js';
+
+export { queryTestHotspots, TEST_HOTSPOT_TYPES } from './query/testHotspots.js';
+export type {
+  TestHotspot,
+  TestHotspotType,
+  TestHotspotConfidence,
+  TestHotspotAutomationSafety,
+  TestHotspotsQueryResult
+} from './query/testHotspots.js';
 
 export { runDocsAudit } from './docs/audit.js';
 export type { DocsAuditResult, DocsAuditFinding, DocsAuditStatus, DocsAuditLevel } from './docs/audit.js';

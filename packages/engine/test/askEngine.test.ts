@@ -71,6 +71,46 @@ describe('answerRepositoryQuestion', () => {
     expect(result.answer).toBe('Modules: users, workouts');
   });
 
+
+  it('returns module-scoped context when ask is scoped to a module', () => {
+    const repo = createRepo('playbook-ask-engine-module-scope');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] }
+      ],
+      database: 'postgres',
+      rules: []
+    });
+
+    const result = answerRepositoryQuestion(repo, 'how does this module work?', { module: 'workouts' });
+
+    expect(result.answer).toContain('Module scope: workouts');
+    expect(result.context.module?.module.name).toBe('workouts');
+    expect(result.context.module?.impact.dependencies).toEqual(['auth']);
+  });
+
+  it('fails deterministically when module scope is unknown', () => {
+    const repo = createRepo('playbook-ask-engine-module-missing');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [{ name: 'auth', dependencies: [] }],
+      database: 'postgres',
+      rules: []
+    });
+
+    expect(() => answerRepositoryQuestion(repo, 'how does this module work?', { module: 'missing' })).toThrow(
+      'playbook ask --module: unknown module "missing".'
+    );
+  });
+
   it('throws deterministic index errors when repository intelligence is missing', () => {
     const repo = createRepo('playbook-ask-engine-missing-index');
 

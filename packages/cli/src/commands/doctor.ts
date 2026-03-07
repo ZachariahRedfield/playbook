@@ -1,289 +1,271 @@
-import { generateRepositoryHealth } from '@zachariahredfield/playbook-engine';
+import {
+  generateRepositoryHealth,
+  queryRepositoryIndex,
+  queryRisk,
+  runDocsAudit,
+  type ArtifactHygieneReport,
+  type RepositoryModule
+} from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ExitCode } from '../lib/cliContract.js';
-import { hasRegisteredCommand } from './index.js';
-import { runSchema } from './schema.js';
-import { doctorFixes } from '../lib/doctorFixes.js';
-import { loadVerifyRules } from '../lib/loadVerifyRules.js';
+import { collectVerifyReport } from './verify.js';
 
 type DoctorOptions = {
   format: 'text' | 'json';
   quiet: boolean;
-  fix: boolean;
-  dryRun: boolean;
-  yes: boolean;
-  ai: boolean;
 };
 
-export type DoctorReport = ReturnType<typeof generateRepositoryHealth>;
-
-type DoctorFixApplied = {
+export type DoctorFinding = {
+  category: 'Architecture' | 'Docs' | 'Testing' | 'Risk';
+  severity: 'error' | 'warning' | 'info';
   id: string;
-  description: string;
-  changes: string[];
-};
-
-type DoctorFixSkipped = {
-  id: string;
-  reason: string;
-};
-
-type AiDoctorCheck = {
-  name: 'schema' | 'context' | 'repoIndex' | 'verifyRules';
-  status: 'pass' | 'warn' | 'fail';
   message: string;
 };
 
-const toExitCode = (): ExitCode => ExitCode.Success;
-
-export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> => generateRepositoryHealth(cwd);
-
-const printHealthReport = (report: DoctorReport, safeFixCount: number): void => {
-  const statusIcon = (ok: boolean): string => (ok ? '✔' : '⚠');
-
-  console.log('Repository Health');
-  console.log('─────────────────');
-  console.log('');
-  console.log(`Framework: ${report.framework}`);
-  console.log(`Language: ${report.language}`);
-  console.log(`Architecture: ${report.architecture}`);
-  console.log('');
-  console.log('Governance');
-  console.log('──────────');
-  console.log('');
-
-  for (const item of report.governanceStatus) {
-    console.log(`${statusIcon(item.ok)} ${item.message}`);
-  }
-
-  console.log('');
-  console.log('Automation');
-  console.log('──────────');
-  console.log('');
-  console.log(`${safeFixCount} safe fixes available`);
-
-  if (report.suggestedActions.length > 0) {
-    console.log('');
-    console.log('Run:');
-    for (const action of report.suggestedActions) {
-      console.log(action);
-    }
-  }
+export type DoctorReport = {
+  schemaVersion: '1.0';
+  command: 'doctor';
+  status: 'ok' | 'warning' | 'error';
+  summary: {
+    errors: number;
+    warnings: number;
+    info: number;
+  };
+  findings: DoctorFinding[];
+  artifactHygiene: ArtifactHygieneReport;
 };
 
-const printJsonReport = (report: DoctorReport): void => {
-  console.log(
-    JSON.stringify(
-      {
-        command: 'doctor',
-        framework: report.framework,
-        architecture: report.architecture,
-        issues: report.issues,
-        suggestedActions: report.suggestedActions
-      },
-      null,
-      2
-    )
-  );
+const severityRank: Record<DoctorFinding['severity'], number> = {
+  error: 0,
+  warning: 1,
+  info: 2
 };
 
-const getSafeFixCount = async (cwd: string, dryRun: boolean): Promise<number> => {
-  let count = 0;
-
-  for (const fix of doctorFixes) {
-    const result = await fix.check({ cwd, dryRun });
-    if (result.applicable && fix.safeToAutoApply) {
-      count += 1;
-    }
+const toReportStatus = (summary: DoctorReport['summary']): DoctorReport['status'] => {
+  if (summary.errors > 0) {
+    return 'error';
   }
 
-  return count;
+  if (summary.warnings > 0) {
+    return 'warning';
+  }
+
+  return 'ok';
 };
 
-const runAiChecks = async (cwd: string): Promise<AiDoctorCheck[]> => {
-  const checks: AiDoctorCheck[] = [];
+const summarizeFindings = (findings: DoctorFinding[]): DoctorReport['summary'] => ({
+  errors: findings.filter((finding) => finding.severity === 'error').length,
+  warnings: findings.filter((finding) => finding.severity === 'warning').length,
+  info: findings.filter((finding) => finding.severity === 'info').length
+});
 
-  const schemaExitCode = await runSchema(cwd, [], { format: 'text', quiet: true });
-  checks.push({
-    name: 'schema',
-    status: schemaExitCode === ExitCode.Success ? 'pass' : 'fail',
-    message: 'Playbook schema available'
-  });
+const compareFindings = (left: DoctorFinding, right: DoctorFinding): number => {
+  const severityDiff = severityRank[left.severity] - severityRank[right.severity];
+  if (severityDiff !== 0) {
+    return severityDiff;
+  }
 
-  checks.push({
-    name: 'context',
-    status: hasRegisteredCommand('context') ? 'pass' : 'fail',
-    message: 'Playbook context command available'
-  });
+  const categoryDiff = left.category.localeCompare(right.category);
+  if (categoryDiff !== 0) {
+    return categoryDiff;
+  }
 
+  const idDiff = left.id.localeCompare(right.id);
+  if (idDiff !== 0) {
+    return idDiff;
+  }
+
+  return left.message.localeCompare(right.message);
+};
+
+const getRiskSeverity = (riskLevel: 'high' | 'medium' | 'low'): DoctorFinding['severity'] => {
+  if (riskLevel === 'high') {
+    return 'error';
+  }
+
+  if (riskLevel === 'medium') {
+    return 'warning';
+  }
+
+  return 'info';
+};
+
+export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> => {
+  const findings: DoctorFinding[] = [];
   const repoIndexPath = path.join(cwd, '.playbook', 'repo-index.json');
-  checks.push({
-    name: 'repoIndex',
-    status: fs.existsSync(repoIndexPath) ? 'pass' : 'warn',
-    message: fs.existsSync(repoIndexPath) ? 'Repository intelligence generated' : 'Repository intelligence not generated'
-  });
+  const hasRepoIndex = fs.existsSync(repoIndexPath);
+  const repositoryHealth = generateRepositoryHealth(cwd);
 
-  const verifyRules = await loadVerifyRules(cwd);
-  checks.push({
-    name: 'verifyRules',
-    status: verifyRules.length > 0 ? 'pass' : 'fail',
-    message: verifyRules.length > 0 ? 'Verify rules loaded' : 'Verify rules unavailable'
-  });
+  if (hasRepoIndex) {
+    findings.push({
+      category: 'Architecture',
+      severity: 'info',
+      id: 'doctor.architecture.repo-index.present',
+      message: 'Repository intelligence index is present.'
+    });
+  } else {
+    findings.push({
+      category: 'Architecture',
+      severity: 'warning',
+      id: 'doctor.architecture.repo-index.missing',
+      message: 'Repository intelligence index is missing. Run `playbook index`.'
+    });
+  }
 
-  return checks;
+  const verifyReport = await collectVerifyReport(cwd);
+  for (const failure of verifyReport.failures) {
+    findings.push({
+      category: 'Testing',
+      severity: 'error',
+      id: `doctor.testing.verify.failure.${failure.id}`,
+      message: failure.message
+    });
+  }
+
+  for (const warning of verifyReport.warnings) {
+    findings.push({
+      category: 'Testing',
+      severity: 'warning',
+      id: `doctor.testing.verify.warning.${warning.id}`,
+      message: warning.message
+    });
+  }
+
+  if (verifyReport.failures.length === 0 && verifyReport.warnings.length === 0) {
+    findings.push({
+      category: 'Testing',
+      severity: 'info',
+      id: 'doctor.testing.verify.clean',
+      message: 'No verify findings detected.'
+    });
+  }
+
+  const docsReport = runDocsAudit(cwd);
+  for (const finding of docsReport.findings) {
+    findings.push({
+      category: 'Docs',
+      severity: finding.level === 'error' ? 'error' : 'warning',
+      id: `doctor.docs.${finding.ruleId}`,
+      message: `${finding.message} (${finding.path})`
+    });
+  }
+
+  if (docsReport.findings.length === 0) {
+    findings.push({
+      category: 'Docs',
+      severity: 'info',
+      id: 'doctor.docs.audit.clean',
+      message: 'Documentation audit has no findings.'
+    });
+  }
+
+
+  for (const finding of repositoryHealth.artifactHygiene.findings) {
+    findings.push({
+      category: 'Architecture',
+      severity: 'warning',
+      id: `doctor.artifact-hygiene.${finding.type}`,
+      message: finding.path ? `${finding.message} (${finding.path})` : finding.message
+    });
+  }
+
+  if (!hasRepoIndex) {
+    findings.push({
+      category: 'Risk',
+      severity: 'warning',
+      id: 'doctor.risk.skipped.repo-index-missing',
+      message: 'Risk analysis skipped because repository index is missing.'
+    });
+  } else {
+    try {
+      const modulesResult = queryRepositoryIndex(cwd, 'modules');
+      const modules = (modulesResult.result as RepositoryModule[])
+        .map((moduleEntry) => moduleEntry.name)
+        .sort((left, right) => left.localeCompare(right));
+
+      if (modules.length === 0) {
+        findings.push({
+          category: 'Risk',
+          severity: 'info',
+          id: 'doctor.risk.no-modules',
+          message: 'No modules available for risk analysis.'
+        });
+      }
+
+      for (const moduleName of modules) {
+        const riskResult = queryRisk(cwd, moduleName);
+        findings.push({
+          category: 'Risk',
+          severity: getRiskSeverity(riskResult.riskLevel),
+          id: `doctor.risk.module.${moduleName}`,
+          message: `${moduleName} risk is ${riskResult.riskLevel} (${riskResult.riskScore.toFixed(2)}).`
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      findings.push({
+        category: 'Risk',
+        severity: 'warning',
+        id: 'doctor.risk.analysis.failed',
+        message: `Risk analysis could not complete: ${message}`
+      });
+    }
+  }
+
+  const orderedFindings = [...findings].sort(compareFindings);
+  const summary = summarizeFindings(orderedFindings);
+
+  return {
+    schemaVersion: '1.0',
+    command: 'doctor',
+    status: toReportStatus(summary),
+    summary,
+    findings: orderedFindings,
+    artifactHygiene: repositoryHealth.artifactHygiene
+  };
 };
 
-const printAiTextReport = (checks: AiDoctorCheck[]): void => {
-  const iconByStatus = {
-    pass: '✓',
-    warn: '⚠',
-    fail: '✗'
-  } as const;
+const printCategory = (title: DoctorFinding['category'], findings: DoctorFinding[]): void => {
+  console.log(title);
 
-  console.log('AI Environment Check');
-  console.log('────────────────────');
+  const categoryFindings = findings.filter((finding) => finding.category === title);
+  if (categoryFindings.length === 0) {
+    console.log('  - [info] no findings');
+    console.log('');
+    return;
+  }
+
+  for (const finding of categoryFindings) {
+    console.log(`  - [${finding.severity}] ${finding.message}`);
+  }
+  console.log('');
+};
+
+const printHumanReport = (report: DoctorReport): void => {
+  console.log('Playbook Repository Diagnosis');
   console.log('');
 
-  for (const check of checks) {
-    console.log(`${iconByStatus[check.status]} ${check.message}`);
-  }
+  printCategory('Architecture', report.findings);
+  printCategory('Docs', report.findings);
+  printCategory('Testing', report.findings);
+  printCategory('Risk', report.findings);
 
-  if (checks.some((check) => check.name === 'repoIndex' && check.status === 'warn')) {
-    console.log('');
-    console.log('Suggested action:');
-    console.log('Run `playbook index` to generate repository intelligence.');
-  }
+  console.log(`Status: ${report.status.toUpperCase()}`);
+  console.log(`Summary: errors=${report.summary.errors}, warnings=${report.summary.warnings}, info=${report.summary.info}`);
 };
 
 export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<number> => {
-  if (options.ai) {
-    const checks = await runAiChecks(cwd);
-
-    if (options.format === 'json') {
-      console.log(
-        JSON.stringify(
-          {
-            schemaVersion: '1.0',
-            command: 'doctor',
-            mode: 'ai',
-            checks: checks.map((check) => ({ name: check.name, status: check.status }))
-          },
-          null,
-          2
-        )
-      );
-      return toExitCode();
-    }
-
-    if (!options.quiet) {
-      printAiTextReport(checks);
-    }
-
-    return toExitCode();
-  }
-
   const report = await collectDoctorReport(cwd);
 
-  if (!options.fix) {
-    if (options.format === 'json') {
-      printJsonReport(report);
-    } else if (!(options.quiet && report.issues.length === 0 && report.verifySummary.failures === 0)) {
-      const safeFixCount = await getSafeFixCount(cwd, options.dryRun);
-      printHealthReport(report, safeFixCount);
-    }
-
-    return toExitCode();
-  }
-
-  const plan: Array<{ id: string; description: string; safeToAutoApply: boolean }> = [];
-
-  for (const fix of doctorFixes) {
-    const result = await fix.check({ cwd, dryRun: options.dryRun });
-    if (result.applicable) {
-      plan.push({ id: fix.id, description: fix.description, safeToAutoApply: fix.safeToAutoApply });
-    }
-  }
-
-  const shouldApply = !options.dryRun && options.yes;
-  const applied: DoctorFixApplied[] = [];
-  const skipped: DoctorFixSkipped[] = [];
-
-  for (const entry of plan) {
-    const fix = doctorFixes.find((candidate) => candidate.id === entry.id);
-    if (!fix) {
-      skipped.push({ id: entry.id, reason: 'Fix handler not found.' });
-      continue;
-    }
-
-    if (!entry.safeToAutoApply) {
-      skipped.push({ id: entry.id, reason: 'Fix is not marked safe for auto-apply.' });
-      continue;
-    }
-
-    if (!shouldApply) {
-      skipped.push({
-        id: entry.id,
-        reason: options.dryRun ? 'Dry-run mode: fix preview only.' : 'Use --yes to apply fixes.'
-      });
-      continue;
-    }
-
-    const result = await fix.fix({ cwd, dryRun: options.dryRun });
-    applied.push({ id: fix.id, description: fix.description, changes: result.changes });
-  }
-
-  const environment = shouldApply ? await collectDoctorReport(cwd) : report;
-
   if (options.format === 'json') {
-    console.log(
-      JSON.stringify(
-        {
-          schemaVersion: '1.0',
-          command: 'doctor',
-          summary: shouldApply
-            ? `Doctor --fix completed: ${applied.length} applied, ${skipped.length} skipped.`
-            : `Doctor --fix preview: ${plan.length} fix(es) available.`,
-          applied,
-          skipped,
-          environment
-        },
-        null,
-        2
-      )
-    );
-    return toExitCode();
+    console.log(JSON.stringify(report, null, 2));
+    return report.status === 'error' ? ExitCode.Failure : ExitCode.Success;
   }
 
-  console.log('Doctor fix plan:');
-  if (plan.length === 0) {
-    console.log('  (no safe deterministic fixes available)');
-  } else {
-    for (const entry of plan) {
-      console.log(`  - ${entry.id}: ${entry.description}`);
-    }
+  if (!(options.quiet && report.status === 'ok')) {
+    printHumanReport(report);
   }
 
-  console.log(options.dryRun ? 'Planned changes:' : 'Applied fixes:');
-  if (applied.length === 0) {
-    console.log('  (none)');
-  } else {
-    for (const entry of applied) {
-      console.log(`  - ${entry.id}: ${entry.description}`);
-      for (const change of entry.changes) {
-        console.log(`    ${change}`);
-      }
-    }
-  }
-
-  console.log('Skipped fixes:');
-  if (skipped.length === 0) {
-    console.log('  (none)');
-  } else {
-    for (const entry of skipped) {
-      console.log(`  - ${entry.id}: ${entry.reason}`);
-    }
-  }
-
-  return toExitCode();
+  return report.status === 'error' ? ExitCode.Failure : ExitCode.Success;
 };

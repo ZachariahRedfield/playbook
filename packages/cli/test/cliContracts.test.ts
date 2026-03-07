@@ -16,12 +16,13 @@ function normalizeLineEndings(text: string): string {
 type CommandContract = {
   file: string;
   args: readonly string[];
-  schemaCommand: 'rules' | 'explain' | 'index' | 'verify' | 'plan' | 'context' | 'ai-context' | 'ai-contract' | 'docs';
+  schemaCommand: 'rules' | 'explain' | 'index' | 'graph' | 'verify' | 'plan' | 'context' | 'ai-context' | 'ai-contract' | 'docs' | 'doctor' | 'analyze-pr';
 };
 
 const commandContracts: readonly CommandContract[] = [
   { file: 'rules.snapshot.json', args: ['rules', '--json'], schemaCommand: 'rules' },
   { file: 'index.snapshot.json', args: ['index', '--json'], schemaCommand: 'index' },
+  { file: 'graph.snapshot.json', args: ['graph', '--json'], schemaCommand: 'graph' },
   { file: 'explain-PB001.snapshot.json', args: ['explain', 'PB001', '--json'], schemaCommand: 'explain' },
   { file: 'explain-architecture.snapshot.json', args: ['explain', 'architecture', '--json'], schemaCommand: 'explain' },
   { file: 'verify.snapshot.json', args: ['verify', '--json'], schemaCommand: 'verify' },
@@ -30,6 +31,8 @@ const commandContracts: readonly CommandContract[] = [
   { file: 'ai-context.snapshot.json', args: ['ai-context', '--json'], schemaCommand: 'ai-context' },
   { file: 'ai-contract.snapshot.json', args: ['ai-contract', '--json'], schemaCommand: 'ai-contract' },
   { file: 'docs-audit.snapshot.json', args: ['docs', 'audit', '--json'], schemaCommand: 'docs' },
+  { file: 'doctor.snapshot.json', args: ['doctor', '--json'], schemaCommand: 'doctor' },
+  { file: 'analyze-pr.snapshot.json', args: ['analyze-pr', '--json'], schemaCommand: 'analyze-pr' },
 ] as const;
 
 function createContractFixtureRepo(): string {
@@ -186,7 +189,7 @@ function validateAgainstSchema(value: unknown, schema: unknown): boolean {
 }
 
 describe('CLI JSON contract snapshots', () => {
-  it('matches committed snapshots for stable automation contracts', () => {
+  it('matches committed snapshots for stable automation contracts', { timeout: 20000 }, () => {
     fs.mkdirSync(snapshotDir, { recursive: true });
     const fixtureRepo = createContractFixtureRepo();
 

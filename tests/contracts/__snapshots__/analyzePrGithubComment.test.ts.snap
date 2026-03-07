@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`analyze-pr github-comment formatter > formats deterministic GitHub comment markdown output 1`] = `
+"## 🧠 Playbook PR Analysis
+
+- **Base Ref:** \`origin/main...HEAD\`
+- **Risk Level:** MEDIUM
+- **Changed Files:** 2
+- **Affected Modules:** 1
+
+### Affected Modules
+- @fawxzzy/playbook
+
+### Governance Findings
+- PB001: related
+- docs.review: README.md
+- docs.review: docs/commands/README.md
+
+### Architecture Impact
+- Boundaries touched: docs, packages
+
+### Reviewer Checklist
+- [ ] Confirm snapshot updates intentional
+- [ ] Validate new command docs
+- [ ] Verify CLI contract stability
+
+### Review Guidance
+- Run \`playbook verify --json\` before merge.
+
+### Automation Status
+- verify: recommended
+- plan: run when verify reports findings
+- apply: run from generated plan when required"
+`;

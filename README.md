@@ -21,6 +21,43 @@ Pattern: **private-first by default**. Standard Playbook usage does not imply au
 
 Pattern: **config/plugins/rule packs over forks** for project-specific customization.
 
+## Runtime artifacts and storage
+
+Playbook uses `.playbook/` as the default home for local runtime artifacts (for example repository intelligence indexes, plans, and machine-readable reports).
+
+- Generated runtime artifacts should generally be gitignored unless intentionally committed as stable contracts/examples.
+- Committed demo artifacts under `.playbook/demo-artifacts/` are product-facing snapshot contracts and examples, not general-purpose runtime logs.
+- Playbook remains local/private-first by default: local scanning and artifact generation do not imply automatic cloud sync or upstream export.
+
+Pattern: Runtime Artifacts Live Under `.playbook/`.
+Pattern: Demo Artifacts Are Snapshot Contracts, Not General Runtime State.
+Rule: Generated runtime artifacts should be gitignored unless intentionally committed as stable contracts/examples.
+Rule: Playbook remains local/private-first by default.
+Failure Mode: Recommitting regenerated runtime artifacts on every run causes unnecessary repository-history growth and review noise.
+
+## Playbook artifact lifecycle
+
+Playbook classifies repository artifacts into deterministic storage classes:
+
+- **Runtime artifacts**: local outputs like `.playbook/repo-index.json`, `.playbook/plan.json`, `.playbook/verify.json`, session cleanup reports, and cache files.
+- **Automation artifacts**: CI handoff outputs such as CI plan and verification artifacts.
+- **Contract artifacts**: committed snapshots and docs contracts like `tests/contracts/*.snapshot.json`, `.playbook/demo-artifacts/*`, and generated diagram documentation.
+
+Use `.playbookignore` to control repository intelligence scan scope for `playbook index` and other repository scans. The syntax mirrors `.gitignore`.
+
+Recommended starter entries:
+
+```
+node_modules
+dist
+build
+coverage
+.next
+.playbook/cache
+```
+
+`playbook doctor` now includes a **Playbook Artifact Hygiene** section to detect artifact misuse and suggest deterministic fixes.
+
 
 ## Quick Start
 
@@ -84,6 +121,7 @@ npx playbook verify
 ### Repository Intelligence
 
 - `index`
+- `graph`
 - `query`
 - `deps`
 - `ask`
@@ -91,9 +129,9 @@ npx playbook verify
 
 For the complete command inventory (including utility commands), see [docs/commands/README.md](docs/commands/README.md).
 
-Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifact at `.playbook/repo-index.json`.
+Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
 
-Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
+Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `graph`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
 
 ## Playbook Context
 
@@ -123,8 +161,13 @@ Example AI-first flow:
 ```bash
 playbook ai-context
 playbook context
+playbook index
 playbook query modules
-playbook ask "where should a new feature live?"
+playbook ask "where should a new feature live?" --repo-context
+playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
+playbook ask "what modules are affected by this change?" --diff-context
+playbook ask "how do I fix this rule violation?" --mode ultra
 playbook explain architecture
 playbook verify
 playbook plan
@@ -142,7 +185,7 @@ node packages/cli/dist/main.js context --json
 node packages/cli/dist/main.js docs audit --json
 ```
 
-Preferred AI operating ladder: `ai-context -> context -> query/ask/explain -> verify/plan/apply`.
+Preferred AI operating ladder: `ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify/plan/apply`.
 
 Future app-integration direction: app or dashboard actions should use a trusted **server-side Playbook API/runtime or library layer** for validated operations instead of executing arbitrary browser-side CLI commands directly.
 
@@ -150,7 +193,7 @@ Pattern: `playbook ai-context` is the preferred agent bootstrap command for Play
 Pattern: `.playbook/ai-contract.json` is the canonical AI-operability handshake artifact for Playbook-enabled repositories.
 Rule: AI agents should prefer Playbook commands over broad repository inference when command coverage exists.
 Rule: Inside the Playbook repo, use local built CLI entrypoints to reflect current branch behavior.
-Pattern: `ai-context -> context -> query/ask/explain -> verify/plan/apply` is the preferred AI operating ladder.
+Pattern: `ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify/plan/apply` is the preferred AI operating ladder.
 Failure Mode: Agent drift occurs when AI tools bypass Playbook command outputs and reason directly from stale or incomplete file inspection.
 
 ### Querying Repository Intelligence
@@ -162,13 +205,99 @@ playbook index
 playbook query modules
 playbook query architecture
 playbook query risk workouts
+playbook query impact workouts
 playbook query docs-coverage
 playbook query rule-owners
+playbook query test-hotspots
 playbook ask "where should a new feature live?"
 playbook ask "what modules exist?" --json
+playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
+playbook ask "what modules are affected by this change?" --diff-context
+playbook ask "how do I fix this rule violation?" --mode ultra
 playbook explain workouts
 playbook explain PB001
 playbook explain architecture
+```
+
+### Repo-aware ask (`playbook ask --repo-context`, `--module`)
+
+Use `--repo-context` when asking repository-shape or architecture questions.
+
+- It injects trusted Playbook-managed artifacts (for example `.playbook/repo-index.json` and AI contract metadata) into ask context.
+- It avoids broad ad-hoc repository file inference.
+- It requires repository intelligence from `playbook index` first.
+- `--module <name>` narrows ask reasoning to trusted indexed context for that module.
+
+Examples:
+
+```bash
+playbook index
+playbook ask "where should a new feature live?" --repo-context
+playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
+playbook ask "what modules are affected by this?" --repo-context --json
+```
+
+If `.playbook/repo-index.json` is missing, ask returns deterministic remediation guidance to run `playbook index` and retry.
+
+
+### Structured PR intelligence (`playbook analyze-pr`)
+
+Use `playbook analyze-pr` for deterministic, machine-readable change analysis from local git diff + `.playbook/repo-index.json`.
+
+- `playbook ask --diff-context` is conversational change reasoning.
+- `playbook analyze-pr` is the structured review/report surface for automation and pre-merge checks.
+- `playbook analyze-pr --json` remains the canonical deterministic analysis contract for automation.
+- `playbook analyze-pr --format <text|json|github-comment|github-review>` selects presentation only over that contract.
+- `playbook analyze-pr --format github-comment` renders the same deterministic analysis contract as a GitHub-ready PR summary markdown export.
+- `playbook analyze-pr --format github-review` renders deterministic inline review annotations (`path`/`line`/`body`) derived from canonical findings in the analysis contract.
+- GitHub Actions transport now posts summary formatter output as one sticky Playbook summary comment (`<!-- playbook:analyze-pr-comment -->`) and synchronizes inline diagnostics (`<!-- playbook:analyze-pr-inline -->`) so new diagnostics are added, existing ones are not duplicated, and resolved diagnostics are removed.
+- The workflow layer is transport-only: it does not rebuild analysis or formatting outside `analyze-pr --format github-comment` and `analyze-pr --format github-review`.
+- The workflow runs `playbook index` before `analyze-pr` because `.playbook/` directory creation alone is not sufficient; `analyze-pr` consumes `.playbook/repo-index.json`.
+- In CI pull_request workflows, pass an explicit diff base (for example `--base origin/${{ github.base_ref }}`) and use full-history checkout (`fetch-depth: 0`) for deterministic diff resolution.
+
+```bash
+npx playbook index
+npx playbook analyze-pr --format text
+npx playbook analyze-pr --json
+npx playbook analyze-pr --format github-comment
+npx playbook analyze-pr --format github-review
+```
+
+### Change-scoped ask (`playbook ask --diff-context`)
+
+Use `--diff-context` to answer branch/working-tree questions using trusted local diff + indexed intelligence.
+
+- Requires `.playbook/repo-index.json` and local git diff availability.
+- Produces deterministic changed-file, affected-module, impact, docs, and risk context.
+- Never silently broadens into full-repo inference when diff context is unavailable.
+- Optional `--base <ref>` narrows diff comparison against an explicit base (for example `main`).
+- In `--json` mode, ask includes deterministic provenance metadata in `context.sources` so agents/CI can audit which indexed intelligence sources informed an answer (without exposing raw file contents).
+
+```bash
+playbook index
+playbook ask "what modules are affected by this change?" --diff-context
+playbook ask "what should I verify before merge?" --diff-context --mode concise
+playbook ask "summarize the architectural risk of this diff" --diff-context --json
+```
+
+### AI Response Modes (`playbook ask --mode`)
+
+`playbook ask` supports response modes to control answer density.
+
+- `normal` (default): full explanation with context
+- `concise`: compressed but still informative output
+- `ultra`: maximum compression optimized for quick decisions
+
+Examples:
+
+```bash
+playbook ask "how does auth work?"
+playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
+playbook ask "what modules are affected by this change?" --diff-context
+playbook ask "how do I fix this rule violation?" --mode ultra
 ```
 
 Authoritative command status lives in [docs/commands/README.md](docs/commands/README.md).
@@ -223,7 +352,7 @@ Run:
 npx playbook doctor --ai
 ```
 
-This command verifies that the repository is correctly configured for AI-assisted Playbook workflows.
+This command verifies that the repository is correctly configured for AI-assisted Playbook workflows, including deterministic AI contract readiness validation (contract availability/validity, intelligence sources, required command/query surface, and remediation workflow readiness). It is the readiness gate before future Playbook agent execution.
 
 ## How to discover capabilities
 
@@ -285,6 +414,12 @@ Playbook includes an official composite action that supports deterministic CI au
 
 `verify -> plan -> review -> apply -> verify`
 
+For repository CI validation, the canonical contract gate is now `playbook verify --json` (preceded by `pnpm -r build` and `pnpm test`).
+
+Rule: CI should enforce product correctness, not automation maintenance.
+
+Failure Mode: If CI mixes product validation with maintenance tasks, pipelines become slow and fragile.
+
 The action runs from checked-out repository source (it installs with the workspace lockfile, builds the CLI, and invokes `node packages/cli/dist/main.js`). It does **not** require `npm install -g` or a published npm package.
 
 The action lives at `./.github/action.yml` in this repository and accepts:
@@ -294,6 +429,16 @@ The action lives at `./.github/action.yml` in this repository and accepts:
 - `repo-path`: optional, defaults to `.`
 - `node-version`: optional, defaults to `22`
 - `verify-args`: optional, defaults to `--ci`
+
+### Optional maintenance workflow
+
+Automation maintenance checks (managed docs regeneration/validation and docs audit) can run outside the primary CI gate in a scheduled or manually triggered workflow:
+
+- `pnpm agents:update`
+- `pnpm agents:check`
+- `node packages/cli/dist/main.js docs audit --json`
+
+See `.github/workflows/maintenance.yml`.
 
 ### Verify on pull requests
 

@@ -22,10 +22,12 @@ describe('runAiContext', () => {
     const operatingLadder = payload.operatingLadder as Record<string, unknown>;
     expect(operatingLadder.preferredCommandOrder).toEqual([
       'ai-context',
+      'ai-contract',
       'context',
+      'index',
       'query',
-      'ask',
       'explain',
+      'ask --repo-context',
       'rules',
       'verify',
       'direct-file-inspection-if-needed'

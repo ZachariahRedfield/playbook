@@ -13,6 +13,7 @@
 
 - [Command status index (authoritative)](./commands/README.md)
 - [analyze](./commands/analyze.md)
+- [analyze-pr](./commands/analyze-pr.md)
 - [verify](./commands/verify.md)
 - [rules](./commands/rules.md)
 - [doctor](./commands/doctor.md)
@@ -22,6 +23,7 @@
 
 ## Concepts
 
+- [Automation Synthesis vision (future direction)](./AUTOMATION_SYNTHESIS_VISION.md)
 - [What is Playbook?](./concepts/what-is-playbook.md)
 - [Governance model](./concepts/governance-model.md)
 - [Conversation graphs](./concepts/conversation-graphs.md)

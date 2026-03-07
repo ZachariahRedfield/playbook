@@ -228,10 +228,13 @@ Apply safe deterministic fixes (or preview with `--dry-run`).
 
 `fix` overlaps with `apply` for deterministic remediation intent, but is retained as a convenience/direct path for local workflows. For artifact-driven CI/agent execution, prefer `plan` + `apply`.
 
-## `playbook doctor [--ci] [--json] [--quiet] [--fix] [--dry-run] [--yes]`
+## `playbook doctor [--ci] [--json] [--quiet] [--fix] [--dry-run] [--yes] [--ai]`
 
 Check local setup (git availability, repo context, config/docs health warnings), with optional fix mode.
 
+- `--ai` runs deterministic AI readiness checks, including AI contract availability/validity, intelligence source references, required command/query surface, and remediation workflow readiness.
+- `doctor --ai` is the readiness gate before future Playbook agent execution.
+- Repositories can be AI-capable but not AI-contract ready if required contract dependencies are missing.
 - Missing prerequisites return environment/prereq exit code `2`.
 
 ## `playbook status [--ci] [--json] [--quiet]`

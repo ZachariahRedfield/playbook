@@ -21,7 +21,6 @@ jobs:
         with:
           node-version: "22"
           working-directory: "."
-          run-smoke: "true"
           install-args: "--frozen-lockfile"
 
       - name: Best-effort playbook-demo integration check

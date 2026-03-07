@@ -4,6 +4,58 @@
 
 ### Added
 
+- WHAT: Added deterministic `playbook audit architecture` with reusable architecture-audit checks and stable `audit-architecture` JSON contract output, plus command/docs coverage updates. WHY: Prevents structural drift by continuously auditing platform hardening guardrails (artifact evolution/versioning, SCM context normalization, remediation trust boundaries, AI/determinism boundaries, ecosystem adapter isolation, context efficiency, and roadmap coverage).
+
+- WHAT: Completed a platform architecture guardrail audit and added explicit architecture/contracts docs for artifact evolution, SCM context normalization, remediation trust boundaries, AI determinism boundaries, ecosystem adapter isolation, and context efficiency strategy. WHY: Keeps foundational reliability constraints explicit and enforceable as Playbook command surface and AI-assisted workflows evolve.
+
+- Added explicit versioned evolution policy for `.playbook/repo-graph.json` to keep graph growth contract-safe for CI and AI consumers.
+- Extended existing `query`/`explain` read flows with additive graph neighborhood summaries instead of introducing a broad new graph command surface.
+- Enriched repository graph generation with deterministic, low-cost derived relationships (`contains`, `governed_by`) based only on existing index/rule metadata.
+- Added/updated contract and snapshot coverage for graph artifact stability and graph-backed read outputs.
+
+- WHAT: Added deterministic Repository Knowledge Graph scaffold artifact `.playbook/repo-graph.json` generated during `playbook index` and introduced `playbook graph --json` stable summary output with deterministic missing-artifact guidance. WHY: Establishes the first durable graph substrate for context compression, impact reasoning, and future knowledge distillation features.
+
+- WHAT: Added Repository Knowledge Graph architecture layer to the product roadmap and clarified layer-relative knowledge units plus compression-as-knowledge-reuse principles. WHY: Unifies repository intelligence, context compression, and the repository learning loop under one compounding architecture direction while preserving deterministic execution contracts.
+
+- WHAT: Added Knowledge Distillation Engine direction to the roadmap. WHY: Positions Playbook to store and reuse higher-signal repository knowledge instead of relying on repeated broad scans.
+
+- WHAT: Added Knowledge Distillation Engine architecture direction to roadmap. WHY: Clarifies how repository intelligence, context compression, and the repository learning loop combine into a recursive knowledge compression system for engineering governance.
+
+- Simplified primary CI validation by consolidating repository contract checks to `pnpm -r build`, `pnpm test`, and `node packages/cli/dist/main.js verify --json`, making `playbook verify` the canonical CI gate for product correctness.
+- Added `.github/workflows/maintenance.yml` as an optional scheduled/manual automation-maintenance workflow for `pnpm agents:update`, `pnpm agents:check`, and `node packages/cli/dist/main.js docs audit --json`.
+
+- Added deterministic inline PR diagnostics to `playbook analyze-pr` contracts via structured `findings` (including optional `file`/`line`, `ruleId`, `severity`, `message`, and `recommendation`) so formatter transports can target changed files without inference drift.
+- Added `playbook analyze-pr --format github-review` to export machine-readable GitHub review annotations (`path`, `line`, `body`) derived directly from canonical analyze-pr findings.
+- Extended `.github/workflows/analyze-pr-comment.yml` to transport both sticky summary markdown and synchronized inline review comments (add new diagnostics, skip duplicates, and remove resolved diagnostics) while keeping workflow logic transport-only.
+- Fixed PR-comment workflow diff-base resolution by checking out full history (`fetch-depth: 0`) and passing explicit PR base ref (`--base origin/${{ github.base_ref }}`) to `analyze-pr --format github-comment`.
+- Fixed PR-comment workflow artifact ordering by running `node packages/cli/dist/main.js index --json` before `analyze-pr --format github-comment`, enforcing producer→consumer contract readiness for `.playbook/repo-index.json`.
+- Hardened `.github/workflows/analyze-pr-comment.yml` shell setup by replacing fragile escaped `node -p` quoting with `node -e` packageManager extraction plus `${PM#pnpm@}` version split for `pnpm/action-setup`, preventing bash parse failures in GitHub Actions `run:` blocks.
+- Added a dedicated GitHub Actions workflow (`.github/workflows/analyze-pr-comment.yml`) that runs on pull requests, generates canonical PR-summary markdown via `node packages/cli/dist/main.js analyze-pr --format github-comment`, and posts/updates a single sticky Playbook comment using marker `<!-- playbook:analyze-pr-comment -->` (transport-only, no duplicate formatter logic).
+- Added deterministic `playbook query test-hotspots` repository-intelligence output to detect test inefficiency candidates (including broad retrieval followed by narrow filtering) with stable hotspot contracts and safety classifications; MVP reports findings only and does not auto-refactor.
+- Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
+- Added `playbook analyze-pr --format github-comment` as a deterministic export formatter that converts existing analyze-pr JSON contracts into GitHub-ready PR review summary markdown for CI/automation posting, without adding new inference logic.
+- Consolidated `analyze-pr` output selection behind a single formatter pipeline (`--format text|json|github-comment`), removed superseded inline PR-summary rendering branches, and added deterministic format-selection coverage.
+- Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
+- Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
+- Added deterministic module intelligence surfaces: `playbook query impact <module>` now returns structured module/dependency/dependent/risk context from `.playbook/repo-index.json`, and `playbook ask --module <name>` scopes ask reasoning to indexed module context with deterministic missing-index/missing-module guidance.
+- WHAT: Added `playbook ask --repo-context` to inject trusted repository intelligence into ask prompts using Playbook-managed artifacts (`.playbook/repo-index.json` and AI contract metadata), with deterministic missing-index remediation guidance. WHY: Grounds AI repository answers in deterministic Playbook artifacts instead of broad ad-hoc repository inference.
+
+- WHAT: Updated AGENTS/README/command docs to position repo-aware ask in the preferred AI ladder (`ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify/plan/apply`). WHY: Keeps AI operating-contract guidance aligned with command behavior and reduces agent drift.
+
+- WHAT: Added `playbook ask --mode <normal|concise|ultra>` with deterministic mode contracts and CLI/test/doc updates, including mode-aware output shaping and mode instruction metadata in JSON responses. WHY: Improves AI-assisted developer ergonomics by letting users tune answer density for onboarding (`normal`) or fast decisions (`concise`/`ultra`).
+
+- WHAT: Added deterministic ask context-source provenance in `playbook ask --json` via `context.sources` so responses expose machine-readable source descriptors (repo index, module scope, diff files, docs references, rule registry, and AI contract hydration metadata) without leaking raw repository content. WHY: Makes ask reasoning auditable for AI agents, CI reporting, governance workflows, and dashboard/runtime integrations.
+- Pattern: Ask Context Provenance — Playbook ask should expose deterministic metadata describing which repository intelligence sources informed an answer.
+- Rule: Provenance metadata must include only source descriptors, not raw repository content.
+- Pattern: Auditable AI Reasoning — governance tools should expose evidence sources so automation can validate reasoning.
+- Failure Mode: Opaque AI reasoning prevents CI and agent integrations from trusting governance outputs.
+
+- Docs: added a future-facing Automation Synthesis capability track to the product roadmap, documented long-term architecture alignment for synthesis stages (triggering through rollback), and introduced `docs/AUTOMATION_SYNTHESIS_VISION.md` as the product-aligned design reference.
+
+- WHAT: Added a cross-document storage/runtime artifact contract clarifying `.playbook/` local runtime boundaries, commit guidance for generated artifacts, demo snapshot-contract positioning, and private-first/local-first behavior (plus roadmap/improvement direction for `.playbookignore`, retention policy, scan exclusions, and history-bloat prevention). WHY: Makes artifact lifecycle expectations explicit so teams avoid recommitting regenerated runtime state, keep repository history healthy, and preserve deterministic docs/contracts intent.
+
+- Added deterministic AI contract readiness validation to `playbook doctor --ai`, including contract availability/validity checks, intelligence source validation, required command/query surface checks, remediation workflow readiness, and expanded JSON contract fields for readiness details.
+
 - Added a security contract system under `docs/contracts/security/` with machine-readable definitions for repository boundary, apply scope, plan determinism, secret redaction, and policy gate guarantees.
 - Added deterministic security contract tests under `test/contracts/security/` and expanded `pnpm test:security` to run contract + regression suites.
 - Integrated security contract verification into CI via the reusable Playbook CI composite action.
@@ -88,6 +140,22 @@
 
 ### Added
 
+- Added explicit versioned evolution policy for `.playbook/repo-graph.json` to keep graph growth contract-safe for CI and AI consumers.
+- Extended existing `query`/`explain` read flows with additive graph neighborhood summaries instead of introducing a broad new graph command surface.
+- Enriched repository graph generation with deterministic, low-cost derived relationships (`contains`, `governed_by`) based only on existing index/rule metadata.
+- Added/updated contract and snapshot coverage for graph artifact stability and graph-backed read outputs.
+
+- Added deterministic inline PR diagnostics to `playbook analyze-pr` contracts via structured `findings` (including optional `file`/`line`, `ruleId`, `severity`, `message`, and `recommendation`) so formatter transports can target changed files without inference drift.
+- Added `playbook analyze-pr --format github-review` to export machine-readable GitHub review annotations (`path`, `line`, `body`) derived directly from canonical analyze-pr findings.
+- Extended `.github/workflows/analyze-pr-comment.yml` to transport both sticky summary markdown and synchronized inline review comments (add new diagnostics, skip duplicates, and remove resolved diagnostics) while keeping workflow logic transport-only.
+- Fixed PR-comment workflow diff-base resolution by checking out full history (`fetch-depth: 0`) and passing explicit PR base ref (`--base origin/${{ github.base_ref }}`) to `analyze-pr --format github-comment`.
+- Fixed PR-comment workflow artifact ordering by running `node packages/cli/dist/main.js index --json` before `analyze-pr --format github-comment`, enforcing producer→consumer contract readiness for `.playbook/repo-index.json`.
+- Hardened `.github/workflows/analyze-pr-comment.yml` shell setup by replacing fragile escaped `node -p` quoting with `node -e` packageManager extraction plus `${PM#pnpm@}` version split for `pnpm/action-setup`, preventing bash parse failures in GitHub Actions `run:` blocks.
+- Added deterministic `playbook query test-hotspots` repository-intelligence output to detect test inefficiency candidates (including broad retrieval followed by narrow filtering) with stable hotspot contracts and safety classifications; MVP reports findings only and does not auto-refactor.
+- Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
+- Added `playbook analyze-pr --format github-comment` as a deterministic export formatter that converts existing analyze-pr JSON contracts into GitHub-ready PR review summary markdown for CI/automation posting, without adding new inference logic.
+- Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
+- Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
 - Added a security contract system under `docs/contracts/security/` with machine-readable definitions for repository boundary, apply scope, plan determinism, secret redaction, and policy gate guarantees.
 - Added deterministic security contract tests under `test/contracts/security/` and expanded `pnpm test:security` to run contract + regression suites.
 - Integrated security contract verification into CI via the reusable Playbook CI composite action.
