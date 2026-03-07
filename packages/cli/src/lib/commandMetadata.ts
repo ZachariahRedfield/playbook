@@ -92,6 +92,14 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'ai-contract',
+    description: 'Print deterministic AI repository contract for Playbook-aware agents',
+    category: 'Repository tools',
+    productFacing: true,
+    example: 'playbook ai-contract --json',
+    machineReadable: true
+  },
+  {
     name: 'index',
     description: 'Generate machine-readable repository intelligence index',
     category: 'Repository intelligence',

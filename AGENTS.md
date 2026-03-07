@@ -66,6 +66,7 @@ When operating inside this repository, start from local source:
 ```bash
 pnpm -r build
 node packages/cli/dist/main.js ai-context --json
+node packages/cli/dist/main.js ai-contract --json
 node packages/cli/dist/main.js context --json
 ```
 
@@ -78,13 +79,14 @@ When command coverage exists, prefer Playbook command outputs over ad-hoc reposi
 Recommended authority order:
 
 1. `ai-context`
-2. `context`
-3. `query`
-4. `ask`
-5. `explain`
-6. `rules`
-7. `verify`
-8. Direct file inspection only when command coverage is insufficient
+2. `ai-contract`
+3. `context`
+4. `query`
+5. `ask`
+6. `explain`
+7. `rules`
+8. `verify`
+9. Direct file inspection only when command coverage is insufficient
 
 ## Canonical remediation workflow
 
@@ -143,7 +145,8 @@ Copy-pastable governance bullets:
 - Pattern: `playbook ai-context` is the preferred agent bootstrap command for Playbook-aware AI workflows.
 - Rule: AI agents should prefer Playbook commands over broad repository inference when command coverage exists.
 - Rule: Inside the Playbook repo, use local built CLI entrypoints to reflect current branch behavior.
-- Pattern: `ai-context -> context -> query/ask/explain -> verify/plan/apply` is the preferred AI operating ladder.
+- Pattern: `.playbook/ai-contract.json` is the canonical AI-operability handshake artifact for Playbook-enabled repositories.
+- Pattern: `ai-context -> ai-contract -> context -> query/ask/explain -> verify/plan/apply` is the preferred AI operating ladder.
 - Failure Mode: Agent drift occurs when AI tools bypass Playbook command outputs and reason directly from stale or incomplete file inspection.
 
 ## Managed command surface
@@ -178,6 +181,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `playbook context --json`
 - `ai-context`: Print deterministic AI bootstrap context for Playbook-aware agents
   - Example: `playbook ai-context --json`
+- `ai-contract`: Print deterministic AI repository contract for Playbook-aware agents
+  - Example: `playbook ai-contract --json`
 
 ### Repository intelligence
 
@@ -221,6 +226,7 @@ Do not hand-edit entries inside the managed markers.
 | `schema` | `playbook schema verify --json` |
 | `context` | `playbook context --json` |
 | `ai-context` | `playbook ai-context --json` |
+| `ai-contract` | `playbook ai-contract --json` |
 | `index` | `playbook index --json` |
 | `query` | `playbook query modules --json` |
 | `deps` | `playbook deps workouts --json` |

@@ -21,6 +21,7 @@ Do not hand-edit entries inside the managed markers.
 | `schema` | Print JSON Schemas for Playbook CLI command outputs | Current (implemented) | `playbook schema verify --json` |
 | `context` | Print deterministic CLI and architecture context for tools and agents | Current (implemented) | `playbook context --json` |
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | Current (implemented) | `playbook ai-context --json` |
+| `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | Current (implemented) | `playbook ai-contract --json` |
 | `index` | Generate machine-readable repository intelligence index | Current (implemented) | `playbook index --json` |
 | `query` | Query machine-readable repository intelligence from .playbook/repo-index.json | Current (implemented) | `playbook query modules --json` |
 | `deps` | Print module dependency graph from .playbook/repo-index.json | Current (implemented) | `playbook deps workouts --json` |

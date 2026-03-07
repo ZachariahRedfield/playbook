@@ -25,6 +25,8 @@ Current product-facing surface (see authoritative index: [../commands/README.md]
 - `deps`
 - `ask`
 - `explain`
+- `ai-context`
+- `ai-contract`
 - `playbook-demo` onboarding artifact (discoverable via `playbook demo`)
 
 Current canonical remediation workflow:
@@ -80,6 +82,15 @@ JSON output includes:
 - `architecture`
 - `modules`
 
+
+
+## `playbook ai-contract [--json] [--quiet]`
+
+Print the repository AI interaction contract.
+
+- Reads `.playbook/ai-contract.json` when present.
+- Emits a deterministic generated default contract when the file is absent.
+- JSON output includes `{ schemaVersion, command, source, contract }` where `source` is `file` or `generated`.
 
 ## `playbook query <field> [module] [--json] [--quiet]`
 

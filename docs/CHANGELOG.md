@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added deterministic AI repository contract support via `playbook ai-contract` with `.playbook/ai-contract.json` as the canonical AI-operability artifact, including generated fallback behavior, schema support (`playbook schema ai-contract`), and command-level tests.
+
 - Standardized workspace command execution across Playbook by replacing pnpm workspace filters with deterministic directory targeting (`pnpm -C packages/<workspace>`), preventing automation and agent failures caused by incorrect workspace package name resolution.
 
 - Added deterministic architectural risk analysis via `playbook query risk <module>` with explainable weighted signals (`fanIn`, `impact`, `verifyFailures`, `hub`) and stable JSON/text output.

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "command": "ai-contract",
+  "source": "generated",
+  "contract": {
+    "schemaVersion": "1.0",
+    "kind": "playbook-ai-contract",
+    "ai_runtime": "playbook-agent",
+    "workflow": [
+      "index",
+      "query",
+      "plan",
+      "apply",
+      "verify"
+    ],
+    "intelligence_sources": {
+      "repoIndex": ".playbook/repo-index.json",
+      "moduleOwners": ".playbook/module-owners.json"
+    },
+    "queries": [
+      "architecture",
+      "dependencies",
+      "impact",
+      "risk",
+      "docs-coverage",
+      "rule-owners",
+      "module-owners"
+    ],
+    "remediation": {
+      "canonicalFlow": [
+        "verify",
+        "plan",
+        "apply",
+        "verify"
+      ],
+      "diagnosticAugmentation": [
+        "explain"
+      ]
+    },
+    "rules": {
+      "requireIndexBeforeQuery": true,
+      "preferPlaybookCommandsOverAdHocInspection": true,
+      "allowDirectEditsWithoutPlan": false
+    },
+    "ownership": {
+      "ruleOwnersQuery": "query rule-owners",
+      "moduleOwnersQuery": "query module-owners"
+    }
+  }
+}

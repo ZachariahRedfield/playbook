@@ -1,6 +1,6 @@
 const JSON_SCHEMA_DRAFT = 'https://json-schema.org/draft/2020-12/schema' as const;
 
-export type CliSchemaCommand = 'rules' | 'explain' | 'index' | 'verify' | 'plan' | 'context' | 'ai-context' | 'query';
+export type CliSchemaCommand = 'rules' | 'explain' | 'index' | 'verify' | 'plan' | 'context' | 'ai-context' | 'ai-contract' | 'query';
 
 export type JsonSchema = {
   [key: string]: unknown;
@@ -223,6 +223,81 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
             type: 'array',
             items: { type: 'string' },
             minItems: 1
+          }
+        }
+      }
+    }
+  },
+
+  'ai-contract': {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookAiContractOutput',
+    type: 'object',
+    additionalProperties: false,
+    required: ['schemaVersion', 'command', 'source', 'contract'],
+    properties: {
+      schemaVersion: { const: '1.0' },
+      command: { const: 'ai-contract' },
+      source: { enum: ['file', 'generated'] },
+      contract: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'schemaVersion',
+          'kind',
+          'ai_runtime',
+          'workflow',
+          'intelligence_sources',
+          'queries',
+          'remediation',
+          'rules'
+        ],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          kind: { const: 'playbook-ai-contract' },
+          ai_runtime: { const: 'playbook-agent' },
+          workflow: { type: 'array', items: { type: 'string' }, minItems: 5, maxItems: 5 },
+          intelligence_sources: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['repoIndex', 'moduleOwners'],
+            properties: {
+              repoIndex: { const: '.playbook/repo-index.json' },
+              moduleOwners: { const: '.playbook/module-owners.json' }
+            }
+          },
+          queries: { type: 'array', items: { type: 'string' }, minItems: 7, maxItems: 7 },
+          remediation: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['canonicalFlow', 'diagnosticAugmentation'],
+            properties: {
+              canonicalFlow: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
+              diagnosticAugmentation: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 1 }
+            }
+          },
+          rules: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+              'requireIndexBeforeQuery',
+              'preferPlaybookCommandsOverAdHocInspection',
+              'allowDirectEditsWithoutPlan'
+            ],
+            properties: {
+              requireIndexBeforeQuery: { type: 'boolean' },
+              preferPlaybookCommandsOverAdHocInspection: { type: 'boolean' },
+              allowDirectEditsWithoutPlan: { type: 'boolean' }
+            }
+          },
+          ownership: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['ruleOwnersQuery', 'moduleOwnersQuery'],
+            properties: {
+              ruleOwnersQuery: { type: 'string' },
+              moduleOwnersQuery: { type: 'string' }
+            }
           }
         }
       }
@@ -547,6 +622,7 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   plan: cliSchemas.plan,
   context: cliSchemas.context,
   'ai-context': cliSchemas['ai-context'],
+  'ai-contract': cliSchemas['ai-contract'],
   query: cliSchemas.query
 });
 

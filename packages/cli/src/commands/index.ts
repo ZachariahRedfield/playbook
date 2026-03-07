@@ -141,6 +141,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
     const { runAiContext } = await import('./aiContext.js');
     return runAiContext(cwd, { format, quiet });
   },
+  'ai-contract': async ({ cwd, format, quiet }) => {
+    const { runAiContract } = await import('./aiContract.js');
+    return runAiContract(cwd, { format, quiet });
+  },
   schema: async ({ cwd, commandArgs, format, quiet }) => {
     const { runSchema } = await import('./schema.js');
     return runSchema(cwd, commandArgs, { format, quiet });
@@ -186,6 +190,7 @@ const commandOrder = [
   'explain',
   'context',
   'ai-context',
+  'ai-contract',
   'schema',
   'rules',
   'index',

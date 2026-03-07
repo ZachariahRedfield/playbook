@@ -64,6 +64,7 @@ npx playbook verify
 - `schema`
 - `context`
 - `ai-context`
+- `ai-contract`
 
 ### Repository Intelligence
 
@@ -77,7 +78,7 @@ For the complete command inventory (including utility commands), see [docs/comma
 
 Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifact at `.playbook/repo-index.json`.
 
-Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `verify`, `plan`, `context`, `ai-context`) so CI and agents can validate payloads.
+Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`) so CI and agents can validate payloads.
 
 ## Playbook Context
 
@@ -85,6 +86,7 @@ Playbook provides deterministic machine-readable context for both humans and aut
 
 - `playbook context --json` returns broader CLI and architecture context.
 - `playbook ai-context --json` returns a compact AI bootstrap payload.
+- `playbook ai-contract --json` returns the repository AI-operability contract from `.playbook/ai-contract.json` (or deterministic generated defaults when missing).
 
 ## AI Bootstrap
 
@@ -92,6 +94,7 @@ AI tools can bootstrap repository understanding with:
 
 ```bash
 playbook ai-context --json
+playbook ai-contract --json
 ```
 
 The payload is designed for:
@@ -126,6 +129,7 @@ node packages/cli/dist/main.js context --json
 Preferred AI operating ladder: `ai-context -> context -> query/ask/explain -> verify/plan/apply`.
 
 Pattern: `playbook ai-context` is the preferred agent bootstrap command for Playbook-aware AI workflows.
+Pattern: `.playbook/ai-contract.json` is the canonical AI-operability handshake artifact for Playbook-enabled repositories.
 Rule: AI agents should prefer Playbook commands over broad repository inference when command coverage exists.
 Rule: Inside the Playbook repo, use local built CLI entrypoints to reflect current branch behavior.
 Pattern: `ai-context -> context -> query/ask/explain -> verify/plan/apply` is the preferred AI operating ladder.

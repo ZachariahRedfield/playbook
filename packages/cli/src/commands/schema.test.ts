@@ -17,6 +17,7 @@ describe('runSchema', () => {
     expect(payload).toHaveProperty('plan');
     expect(payload).toHaveProperty('context');
     expect(payload).toHaveProperty('ai-context');
+    expect(payload).toHaveProperty('ai-contract');
     expect(payload).toHaveProperty('query');
 
     logSpy.mockRestore();
@@ -74,6 +75,19 @@ describe('runSchema', () => {
   });
 
 
+
+
+  it('prints the ai-contract schema', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runSchema('/repo', ['ai-contract'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+    expect(payload.title).toBe('PlaybookAiContractOutput');
+
+    logSpy.mockRestore();
+  });
 
   it('prints the query schema', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

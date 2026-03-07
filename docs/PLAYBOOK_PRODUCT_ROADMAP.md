@@ -117,6 +117,7 @@ Current implemented product-facing command/artifact set:
 - `apply`
 - `playbook-demo` artifact (exposed through `playbook demo`)
 - `ai-context`
+- `ai-contract` (`.playbook/ai-contract.json` handshake contract)
 - repository intelligence (`index`, `query`, `deps`, `ask`, `explain`)
 - deterministic architectural risk intelligence (`playbook query risk <module>`)
 - deterministic documentation coverage intelligence (`playbook query docs-coverage [module]`)
@@ -127,7 +128,7 @@ Current implemented product-facing command/artifact set:
 
 Current baseline:
 
-- **AI Repository Intelligence (`playbook ai-context`, `index`, `query`, `deps`, `ask`, `explain`)** is implemented and available for deterministic AI bootstrap and repository intelligence workflows.
+- **AI Repository Intelligence (`playbook ai-context`, `playbook ai-contract`, `index`, `query`, `deps`, `ask`, `explain`)** is implemented and available for deterministic AI bootstrap and repository intelligence workflows.
 
 Future roadmap work should focus on enhancement quality (schema hardening, richer index coverage, CI artifact workflows, and contract durability), not on introducing these commands.
 
@@ -233,11 +234,14 @@ Expected outcome:
 
 PHASE 6 — AI REPOSITORY CONTRACT
 
+Status: **Baseline implemented** via `playbook ai-contract` and `.playbook/ai-contract.json`.
+
 Goal:
 Define a deterministic, machine-readable AI interaction contract that repositories expose before agent runtime execution is introduced.
 
 Primary capability:
 - `.playbook/ai-contract.json`
+- `playbook ai-contract` / `playbook ai-contract --json`
 
 The AI Contract specifies how AI systems should interact with a Playbook-governed repository.
 
@@ -251,21 +255,22 @@ Example contract:
 
 ```json
 {
-  "ai_runtime": "playbook",
-  "workflow": [
-    "playbook index",
-    "playbook query",
-    "playbook plan",
-    "playbook apply",
-    "playbook verify"
-  ],
-  "intelligence_sources": [
-    ".playbook/repo-index.json",
-    "docs/ARCHITECTURE.md"
-  ],
+  "schemaVersion": "1.0",
+  "kind": "playbook-ai-contract",
+  "ai_runtime": "playbook-agent",
+  "workflow": ["index", "query", "plan", "apply", "verify"],
+  "intelligence_sources": {
+    "repoIndex": ".playbook/repo-index.json",
+    "moduleOwners": ".playbook/module-owners.json"
+  },
+  "remediation": {
+    "canonicalFlow": ["verify", "plan", "apply", "verify"],
+    "diagnosticAugmentation": ["explain"]
+  },
   "rules": {
-    "no_direct_code_edits": true,
-    "use_remediation_workflow": true
+    "requireIndexBeforeQuery": true,
+    "preferPlaybookCommandsOverAdHocInspection": true,
+    "allowDirectEditsWithoutPlan": false
   }
 }
 ```

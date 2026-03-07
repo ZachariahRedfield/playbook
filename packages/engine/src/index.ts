@@ -27,6 +27,9 @@ export type { AskEngineResult } from './ask/askEngine.js';
 export { explainTarget } from './explain/explainEngine.js';
 export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, UnknownExplanation } from './explain/explainEngine.js';
 
+export { loadAiContract, validateAiContract, getDefaultAiContract, AI_CONTRACT_FILE, AI_CONTRACT_SCHEMA_VERSION } from './ai/aiContract.js';
+export type { AiContract, LoadedAiContract, AiContractSource } from './ai/aiContract.js';
+
 export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } from './schema/cliSchemas.js';
 export type { CliSchemaCommand, JsonSchema } from './schema/cliSchemas.js';
 
