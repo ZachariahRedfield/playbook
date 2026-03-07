@@ -154,6 +154,35 @@ const printHealthReport = (report: DoctorReport, safeFixCount: number): void => 
   }
 
   console.log('');
+  console.log('Playbook Artifact Hygiene');
+  console.log('─────────────────────────');
+  console.log('');
+
+  if (report.artifactHygiene.findings.length === 0) {
+    console.log('✔ No artifact hygiene issues detected');
+  } else {
+    for (const finding of report.artifactHygiene.findings) {
+      const scope = finding.path ? `: ${finding.path}` : '';
+      console.log(`⚠ ${finding.type}${scope}`);
+      console.log(`  Recommendation: ${finding.recommendation}`);
+    }
+
+    if (report.artifactHygiene.suggestions.length > 0) {
+      console.log('');
+      console.log('Suggested fixes:');
+      for (const suggestion of report.artifactHygiene.suggestions) {
+        console.log(`- ${suggestion.id} ${suggestion.title}`);
+        if (suggestion.entries && suggestion.entries.length > 0) {
+          console.log('  Suggested entries:');
+          for (const entry of suggestion.entries) {
+            console.log(`  - ${entry}`);
+          }
+        }
+      }
+    }
+  }
+
+  console.log('');
   console.log('Automation');
   console.log('──────────');
   console.log('');
@@ -176,7 +205,8 @@ const printJsonReport = (report: DoctorReport): void => {
         framework: report.framework,
         architecture: report.architecture,
         issues: report.issues,
-        suggestedActions: report.suggestedActions
+        suggestedActions: report.suggestedActions,
+        artifactHygiene: report.artifactHygiene
       },
       null,
       2

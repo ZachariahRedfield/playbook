@@ -35,6 +35,29 @@ Rule: Generated runtime artifacts should be gitignored unless intentionally comm
 Rule: Playbook remains local/private-first by default.
 Failure Mode: Recommitting regenerated runtime artifacts on every run causes unnecessary repository-history growth and review noise.
 
+## Playbook artifact lifecycle
+
+Playbook classifies repository artifacts into deterministic storage classes:
+
+- **Runtime artifacts**: local outputs like `.playbook/repo-index.json`, `.playbook/plan.json`, `.playbook/verify.json`, session cleanup reports, and cache files.
+- **Automation artifacts**: CI handoff outputs such as CI plan and verification artifacts.
+- **Contract artifacts**: committed snapshots and docs contracts like `tests/contracts/*.snapshot.json`, `.playbook/demo-artifacts/*`, and generated diagram documentation.
+
+Use `.playbookignore` to control repository intelligence scan scope for `playbook index` and other repository scans. The syntax mirrors `.gitignore`.
+
+Recommended starter entries:
+
+```
+node_modules
+dist
+build
+coverage
+.next
+.playbook/cache
+```
+
+`playbook doctor` now includes a **Playbook Artifact Hygiene** section to detect artifact misuse and suggest deterministic fixes.
+
 
 ## Quick Start
 

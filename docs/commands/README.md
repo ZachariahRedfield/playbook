@@ -92,4 +92,22 @@ Rule: Generated runtime artifacts should be gitignored unless intentionally comm
 Rule: Playbook remains local/private-first by default.
 Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary repo-history growth and noisy diffs.
 
-Future direction: document `.playbookignore`-based scan exclusions for high-churn directories (e.g. `node_modules`, `dist`, `coverage`, `.next`, build outputs, non-source artifact folders) once command support is implemented.
+`.playbookignore` support is available for repository intelligence scans (`playbook index` and related repository scans). The file uses `.gitignore`-style syntax and should be used to exclude high-churn directories (for example `node_modules`, `dist`, `build`, `coverage`, `.next`, and `.playbook/cache`).
+
+
+## Playbook artifact hygiene diagnostics (`doctor`)
+
+`playbook doctor` includes a **Playbook Artifact Hygiene** section that reports:
+
+- committed runtime artifacts
+- very large generated JSON artifacts
+- frequently modified generated artifacts
+- missing `.playbookignore` in large repositories
+
+In JSON mode, `doctor --json` includes a structured `artifactHygiene` payload with `classification`, `findings`, and `suggestions` arrays for deterministic automation handling.
+
+Suggested remediation IDs:
+
+- `PB012`: add `.playbookignore`
+- `PB013`: update `.gitignore` for runtime artifacts
+- `PB014`: move runtime artifacts to `.playbook/`

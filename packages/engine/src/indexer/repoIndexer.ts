@@ -3,6 +3,7 @@ import path from 'node:path';
 import { loadConfig } from '../config/load.js';
 import { getCoreRules } from '../rules/coreRules.js';
 import { scanWorkspaceDeps } from '../diagrams/scanWorkspaceDeps.js';
+import { isPlaybookIgnored, parsePlaybookIgnore } from './playbookIgnore.js';
 
 export type RepositoryModule = {
   name: string;
@@ -75,6 +76,7 @@ const detectArchitecture = (projectRoot: string): string => {
 
 const detectModuleNames = (projectRoot: string): string[] => {
   const srcPath = path.join(projectRoot, 'src');
+  const ignoreRules = parsePlaybookIgnore(projectRoot);
   if (!fs.existsSync(srcPath)) {
     return [];
   }
@@ -82,11 +84,13 @@ const detectModuleNames = (projectRoot: string): string[] => {
   return fs
     .readdirSync(srcPath, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
+    .filter((entry) => !isPlaybookIgnored(path.posix.join('src', entry.name), ignoreRules))
     .map((entry) => entry.name)
     .sort();
 };
 
-const listModuleFiles = (moduleRoot: string): string[] => {
+const listModuleFiles = (projectRoot: string, moduleRoot: string): string[] => {
+  const ignoreRules = parsePlaybookIgnore(projectRoot);
   if (!fs.existsSync(moduleRoot)) {
     return [];
   }
@@ -101,6 +105,11 @@ const listModuleFiles = (moduleRoot: string): string[] => {
 
     for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
       const child = path.join(current, entry.name);
+      const relativeChild = path.relative(projectRoot, child);
+      if (isPlaybookIgnored(relativeChild, ignoreRules)) {
+        continue;
+      }
+
       if (entry.isDirectory()) {
         stack.push(child);
         continue;
@@ -121,7 +130,7 @@ const detectModuleDependenciesFromSrc = (projectRoot: string, moduleNames: strin
 
   return moduleNames.map((moduleName) => {
     const dependencies = new Set<string>();
-    const moduleFiles = listModuleFiles(path.join(srcPath, moduleName));
+    const moduleFiles = listModuleFiles(projectRoot, path.join(srcPath, moduleName));
 
     for (const filePath of moduleFiles) {
       const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -163,7 +172,10 @@ const detectModuleDependenciesFromSrc = (projectRoot: string, moduleNames: strin
 };
 
 const detectModules = (projectRoot: string): RepositoryModule[] => {
-  const workspaceGraph = scanWorkspaceDeps(projectRoot);
+  const workspaceIgnoreRules = parsePlaybookIgnore(projectRoot).filter((rule) => !rule.negated).map((rule) => rule.pattern);
+  const workspaceGraph = scanWorkspaceDeps(projectRoot, {
+    excludeGlobs: workspaceIgnoreRules
+  });
   if (workspaceGraph.workspaces.length > 0) {
     const depMap = new Map(workspaceGraph.workspaces.map((workspace) => [workspace.name, new Set<string>()]));
     for (const edge of workspaceGraph.edges) {

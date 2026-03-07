@@ -91,6 +91,11 @@ const healthyReport = {
     { id: 'repo-index', ok: true, message: 'Repo index up to date' }
   ],
   verifySummary: { ok: true, failures: 0, warnings: 0 },
+  artifactHygiene: {
+    classification: { runtime: [], automation: [], contract: [] },
+    findings: [],
+    suggestions: []
+  },
   suggestedActions: [],
   issues: []
 };
@@ -151,7 +156,12 @@ describe('runDoctor', () => {
     generateRepositoryHealth.mockReturnValue({
       ...healthyReport,
       issues: ['Repo index outdated'],
-      suggestedActions: ['playbook analyze']
+      suggestedActions: ['playbook analyze'],
+      artifactHygiene: {
+        classification: { runtime: [], automation: [], contract: [] },
+        findings: [],
+        suggestions: []
+      }
     });
 
     const exitCode = await runDoctor(process.cwd(), {
@@ -170,7 +180,12 @@ describe('runDoctor', () => {
       framework: 'Next.js',
       architecture: 'Modular Monolith',
       issues: ['Repo index outdated'],
-      suggestedActions: ['playbook analyze']
+      suggestedActions: ['playbook analyze'],
+      artifactHygiene: {
+        classification: { runtime: [], automation: [], contract: [] },
+        findings: [],
+        suggestions: []
+      }
     });
 
     logSpy.mockRestore();

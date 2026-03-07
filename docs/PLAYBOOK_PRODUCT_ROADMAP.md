@@ -250,10 +250,16 @@ For app-integrated actions (internal dashboards, CI control planes, admin/dev pa
 
 ### Storage/runtime hygiene follow-up checklist
 
-- [ ] define `.playbookignore` semantics for repository intelligence scanning and document default exclusion guidance.
-- [ ] publish artifact lifecycle/retention policy language across runtime artifacts, CI outputs, and committed demo/contract snapshots.
-- [ ] classify cacheable local intelligence artifacts under `.playbook/` and define safe regeneration expectations.
-- [ ] document CI artifact workflow guidance so generated artifacts are reviewable without creating long-term repository-history bloat.
+Implemented baseline:
+
+- `doctor` emits Playbook Artifact Hygiene diagnostics and structured suggestions (`PB012`, `PB013`, `PB014`).
+- `index` and repository scans honor `.playbookignore` for scan exclusions.
+- `plan`/`apply` integrate artifact hygiene remediation tasks for deterministic storage governance.
+
+- [x] define `.playbookignore` semantics for repository intelligence scanning and document default exclusion guidance.
+- [x] publish artifact lifecycle/retention policy language across runtime artifacts, CI outputs, and committed demo/contract snapshots.
+- [x] classify cacheable local intelligence artifacts under `.playbook/` and define safe regeneration expectations.
+- [x] document CI artifact workflow guidance so generated artifacts are reviewable without creating long-term repository-history bloat.
 
 Rule: **Playbook analyzes but does not author.**
 

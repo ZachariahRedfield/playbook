@@ -11,6 +11,7 @@ import { PlanGenerator } from './planGenerator.js';
 import { RuleRunner } from './ruleRunner.js';
 import type { VerifyReport } from '../report/types.js';
 import { verifyRepo } from '../verify/index.js';
+import { generateRepositoryHealth } from '../doctor/index.js';
 
 export type PlanContract = {
   verify: {
@@ -26,6 +27,18 @@ type SerializedPlanEnvelope = {
   schemaVersion?: string;
   command?: string;
   tasks?: unknown;
+};
+
+
+const buildArtifactHygieneTasks = (repoRoot: string): PlanTask[] => {
+  const hygiene = generateRepositoryHealth(repoRoot).artifactHygiene;
+  return hygiene.suggestions.map((suggestion) => ({
+    id: `task-artifact-${suggestion.id.toLowerCase()}`,
+    ruleId: suggestion.id,
+    file: suggestion.id === 'PB013' ? '.gitignore' : suggestion.id === 'PB012' ? '.playbookignore' : null,
+    action: suggestion.title,
+    autoFix: true
+  }));
 };
 
 const collectExecutionInputs = (repoRoot: string): { changedFiles: string[] } => {
@@ -66,7 +79,7 @@ export const generatePlanContract = (repoRoot: string): PlanContract => {
       failures: verify.failures,
       warnings: verify.warnings
     },
-    tasks: plan.tasks
+    tasks: [...plan.tasks, ...buildArtifactHygieneTasks(repoRoot)]
   };
 };
 

@@ -215,3 +215,13 @@ This keeps conversational UX grounded in the same deterministic governance/runti
   - Playbook may introduce structured memory artifacts to capture decisions, patterns, and investigations across repository evolution.
 - Failure Mode: Chat Without Memory
   - Conversational interfaces become shallow if decisions and investigations are not preserved as structured repository knowledge.
+
+
+## Implemented recently: artifact hygiene and storage governance
+
+The following improvements are now implemented in the command surface:
+
+- Artifact classification model for runtime, automation, and contract artifacts.
+- `.playbookignore` scan controls for repository intelligence generation.
+- `doctor` artifact hygiene diagnostics and structured suggested fixes.
+- `plan`/`apply` remediation IDs for artifact governance workflows (`PB012`, `PB013`, `PB014`).
