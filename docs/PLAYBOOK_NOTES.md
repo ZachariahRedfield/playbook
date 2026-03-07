@@ -182,3 +182,21 @@ pnpm --filter <package-name> <command>
 
 Reason:
 Workspace filters rely on package names that may change or be incorrectly guessed by automation. Directory targeting is stable and deterministic.
+
+- Pattern: Two-tier backlog system
+  Keep emerging ideas in `docs/PLAYBOOK_IMPROVEMENTS.md` and move only prioritized, committed capabilities into `docs/PLAYBOOK_PRODUCT_ROADMAP.md`.
+
+- Pattern: Improvement backlog rotation
+  Keep the active improvement backlog concise and rotate completed or stale items into timestamped archive files under `docs/archive/`.
+
+- Rule: Playbook analyzes but does not author
+  Playbook provides architecture intelligence, diagnostics, and recommendations, but does not automatically author pull requests or rewrite developer intent.
+
+- Lifecycle: Idea → Improvement → Roadmap → Archive
+  Product opportunities should progress through explicit lifecycle stages so the roadmap remains focused while historical intelligence is preserved.
+
+- Future feature: `playbook analyze-pr`
+  Add pull-request intelligence that reports affected modules, risk, boundary violations, and missing tests/docs.
+
+- Future feature: `playbook query impact`
+  Add deterministic change blast-radius analysis for a target module.

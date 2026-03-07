@@ -126,11 +126,41 @@ Current implemented product-facing command/artifact set:
 
 ## Roadmap framing (current baseline + future enhancements)
 
-Roadmap planning workflow:
-
-Idea → Improvement Backlog → Roadmap
-
 Use `docs/PLAYBOOK_IMPROVEMENTS.md` as the staging area for emerging ideas, and keep this roadmap focused on prioritized product capabilities.
+
+## Product Development Lifecycle
+
+Playbook features follow a structured lifecycle:
+
+Idea
+↓
+Improvement Backlog
+↓
+Roadmap
+↓
+Implemented
+↓
+Archived
+
+This keeps the roadmap focused on active commitments while preserving product intelligence discovered during development.
+
+## Backlog Rotation Strategy
+
+The improvement backlog should remain manageable.
+
+When the backlog grows large, completed items should be archived.
+
+Example structure:
+
+```text
+docs/
+  PLAYBOOK_PRODUCT_ROADMAP.md
+  PLAYBOOK_IMPROVEMENTS.md
+  archive/
+    PLAYBOOK_IMPROVEMENTS_2026.md
+```
+
+Archived items preserve historical product intelligence without cluttering the active backlog.
 
 Current baseline:
 

@@ -2,39 +2,62 @@
 
 Purpose
 -------
-This document captures potential Playbook capabilities and architectural improvements discovered during development or analysis.
+This document captures feature ideas, architectural opportunities, and workflow improvements discovered during Playbook development.
 
-Items here are not yet committed roadmap work. They are promoted to the roadmap once they become prioritized product capabilities.
+Items here are **not yet committed roadmap work**.
+
+They are promoted to the roadmap once they become prioritized product capabilities.
 
 Lifecycle
 ---------
-Idea → Improvement Backlog → Roadmap
+Idea → Improvement Backlog → Roadmap → Implemented → Archive
 
-## Query System
+This prevents roadmap bloat while preserving product intelligence discovered during development.
 
-- [ ] Dependency graph query
-  Command: `playbook query dependencies`
-  Purpose: show module relationships and dependency structure.
+---
 
-- [ ] Impact analysis query
-  Command: `playbook query impact <module>`
-  Purpose: determine the blast radius of code changes.
+## Query System Expansion
+
+- [ ] Dependency graph query  
+  Command: `playbook query dependencies`  
+  Purpose: visualize module relationships and dependency structure.
+
+- [ ] Impact analysis query  
+  Command: `playbook query impact <module>`  
+  Purpose: determine the blast radius of changes to a module.
+
+Example:
+
+```bash
+playbook query impact auth
+```
+
+Output should include:
+- dependent modules
+- affected architecture boundaries
+- impacted rules
+
+---
 
 ## Risk Intelligence
 
-- [ ] Hotspot ranking
-  Command: `playbook query risk --top`
-  Purpose: rank highest-risk modules by fan-in and impact.
+- [ ] Hotspot ranking  
+  Command: `playbook query risk --top`  
+  Purpose: rank the highest-risk modules based on fan-in, impact, and verification failures.
 
-## Developer Workflow
+---
 
-- [ ] PR analysis command
+## Developer Workflow Intelligence
+
+- [ ] Pull request analysis  
   Command: `playbook analyze-pr`
-  Purpose: produce structured intelligence about a pull request.
 
-  Example output:
-  - modules touched
-  - architecture boundary violations
-  - missing tests
-  - missing docs
-  - risk level
+Purpose:
+Provide structured architecture intelligence about a pull request.
+
+Example output:
+- modules touched
+- risk level
+- architecture boundary violations
+- missing tests
+- missing documentation

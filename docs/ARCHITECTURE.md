@@ -47,3 +47,11 @@ The plan/execution pipeline is deterministic by contract:
 - JSON responses are structured for automation, not best-effort prose parsing.
 
 Deterministic JSON output is treated as a public interface for CI, tooling, and agents.
+
+## Rule: Playbook Analyzes but Does Not Author
+
+Playbook provides structured analysis, diagnostics, and recommendations about repository state and development workflows.
+
+Playbook does **not rewrite developer intent or author pull requests automatically**.
+
+Its role is to provide architecture intelligence that informs developers rather than replacing developer judgment.
