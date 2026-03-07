@@ -11,6 +11,7 @@ Current product-facing surface (see authoritative index: [../commands/README.md]
 - `rules`
 - `dependencies`
 - `impact`
+- `risk`
 - `schema`
 - `doctor`
 - `diagram`
@@ -91,6 +92,7 @@ Supported fields:
 - `rules`
 - `dependencies`
 - `impact`
+- `risk`
 
 JSON output includes:
 
@@ -107,15 +109,28 @@ playbook query dependencies
 playbook query dependencies workouts
 playbook query dependencies workouts --json
 playbook query impact workouts
+playbook query risk workouts
 ```
 
 ### Impact Analysis
 
 ```bash
 playbook query impact workouts
+playbook query risk workouts
 ```
 
 This command returns all modules that depend on the specified module (including transitive dependents) to help estimate change blast radius.
+
+### Risk Analysis
+
+```bash
+playbook query risk workouts
+playbook query risk workouts --json
+```
+
+This command combines deterministic dependency fan-in, transitive impact radius, architectural hub status, and verify failure signals (when available) to estimate how dangerous a module is to modify.
+
+Use `impact` for blast radius (“what breaks?”) and `risk` for change danger (“how risky is this change target?”).
 
 ## `playbook deps [module] [--json] [--quiet]`
 

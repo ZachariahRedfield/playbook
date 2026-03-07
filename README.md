@@ -139,6 +139,7 @@ Use `playbook query` to read structured architecture metadata directly from `.pl
 playbook index
 playbook query modules
 playbook query architecture
+playbook query risk workouts
 playbook ask "where should a new feature live?"
 playbook ask "what modules exist?" --json
 playbook explain workouts

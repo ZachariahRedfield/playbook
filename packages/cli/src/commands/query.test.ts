@@ -32,6 +32,19 @@ const writeRepoIndex = (repo: string): void => {
   );
 };
 
+const writeVerifyReport = (repo: string): void => {
+  const verifyPath = path.join(repo, '.playbook', 'verify-report.json');
+  fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
+  fs.writeFileSync(
+    verifyPath,
+    JSON.stringify({
+      schemaVersion: '1.0',
+      command: 'verify',
+      failures: [{ id: 'verify.failure.auth.config', message: 'auth module has policy gaps' }]
+    })
+  );
+};
+
 describe('runQuery', () => {
   it('prints text output for list fields', async () => {
     const repo = createRepo('playbook-cli-query-text');
@@ -152,6 +165,76 @@ describe('runQuery', () => {
 
     expect(exitCode).toBe(ExitCode.Failure);
     expect(errorSpy).toHaveBeenCalledWith('playbook query impact: missing required <module> argument');
+
+    errorSpy.mockRestore();
+  });
+
+
+
+  it('prints risk query JSON output', async () => {
+    const repo = createRepo('playbook-cli-query-risk');
+    writeRepoIndex(repo);
+    writeVerifyReport(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['risk', 'auth'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toMatchObject({
+      schemaVersion: '1.0',
+      command: 'query',
+      type: 'risk',
+      module: 'auth',
+      riskLevel: 'high',
+      signals: {
+        directDependencies: 0,
+        dependents: 1,
+        transitiveImpact: 1,
+        verifyFailures: 1,
+        isArchitecturalHub: false
+      }
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('prints risk query text output', async () => {
+    const repo = createRepo('playbook-cli-query-risk-text');
+    writeRepoIndex(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['risk', 'auth'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(logSpy.mock.calls.map((call) => String(call[0]))).toContain('Risk Analysis');
+    expect(logSpy.mock.calls.map((call) => String(call[0]))).toContain('Module: auth');
+
+    logSpy.mockRestore();
+  });
+
+  it('fails risk query for unknown module', async () => {
+    const repo = createRepo('playbook-cli-query-risk-missing');
+    writeRepoIndex(repo);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['risk', 'missing'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(errorSpy).toHaveBeenCalledWith('playbook query risk: unknown module "missing".');
+
+    errorSpy.mockRestore();
+  });
+
+  it('fails risk query when module argument is missing', async () => {
+    const repo = createRepo('playbook-cli-query-risk-args');
+    writeRepoIndex(repo);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['risk'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(errorSpy).toHaveBeenCalledWith('playbook query risk: missing required <module> argument');
 
     errorSpy.mockRestore();
   });

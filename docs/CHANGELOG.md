@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added deterministic architectural risk analysis via `playbook query risk <module>` with explainable weighted signals (`fanIn`, `impact`, `verifyFailures`, `hub`) and stable JSON/text output.
+- Added query schema contract coverage for risk payloads via `playbook schema query`.
+
 - `playbook ai-context` command providing a concise AI bootstrap interface for repository intelligence.
 - Documentation updates aligning Playbook with an AI-first repository workflow.
 

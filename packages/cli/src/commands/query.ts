@@ -1,10 +1,12 @@
 import {
   queryDependencies,
   queryImpact,
+  queryRisk,
   queryRepositoryIndex,
   SUPPORTED_QUERY_FIELDS,
   type DependenciesQueryResult,
   type ImpactQueryResult,
+  type RiskQueryResult,
   type RepositoryModule,
   type RepositoryQueryField
 } from '@zachariahredfield/playbook-engine';
@@ -88,6 +90,36 @@ const printImpactText = (payload: ImpactQueryResult): void => {
 
   for (const moduleName of payload.affectedModules) {
     console.log(moduleName);
+  }
+};
+
+const printRiskText = (payload: RiskQueryResult): void => {
+  console.log('Risk Analysis');
+  console.log('─────────────');
+  console.log('');
+  console.log(`Module: ${payload.module}`);
+  console.log(`Risk score: ${payload.riskScore.toFixed(2)}`);
+  console.log(`Risk level: ${payload.riskLevel}`);
+  console.log('');
+  console.log('Signals');
+  console.log(`  Direct dependencies: ${payload.signals.directDependencies}`);
+  console.log(`  Dependents: ${payload.signals.dependents}`);
+  console.log(`  Transitive impact: ${payload.signals.transitiveImpact}`);
+  console.log(`  Verify failures: ${payload.signals.verifyFailures}`);
+  console.log(`  Architectural hub: ${payload.signals.isArchitecturalHub ? 'yes' : 'no'}`);
+  console.log('');
+  console.log('Reasons');
+
+  for (const reason of payload.reasons) {
+    console.log(`  - ${reason}`);
+  }
+
+  if (payload.warnings && payload.warnings.length > 0) {
+    console.log('');
+    console.log('Warnings');
+    for (const warning of payload.warnings) {
+      console.log(`  - ${warning}`);
+    }
   }
 };
 
@@ -201,6 +233,69 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     }
   }
 
+  if (fieldArg === 'risk') {
+    const moduleArg = commandArgs.find((arg, index) => index > commandArgs.indexOf(fieldArg) && !arg.startsWith('-'));
+
+    if (!moduleArg) {
+      const message = 'playbook query risk: missing required <module> argument';
+      if (options.format === 'json') {
+        console.log(
+          JSON.stringify(
+            {
+              schemaVersion: '1.0',
+              command: 'query',
+              type: 'risk',
+              module: null,
+              error: message
+            },
+            null,
+            2
+          )
+        );
+      } else {
+        console.error(message);
+      }
+
+      return ExitCode.Failure;
+    }
+
+    try {
+      const payload = queryRisk(cwd, moduleArg);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(payload, null, 2));
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        printRiskText(payload);
+      }
+
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (options.format === 'json') {
+        console.log(
+          JSON.stringify(
+            {
+              schemaVersion: '1.0',
+              command: 'query',
+              type: 'risk',
+              module: moduleArg,
+              error: message
+            },
+            null,
+            2
+          )
+        );
+      } else {
+        console.error(message);
+      }
+
+      return ExitCode.Failure;
+    }
+  }
+
   try {
     const query = queryRepositoryIndex(cwd, fieldArg);
     const result: QueryResult = {
@@ -229,7 +324,7 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             command: 'query',
             field: fieldArg,
             error: message,
-            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact']
+            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk']
           },
           null,
           2

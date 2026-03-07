@@ -13,6 +13,8 @@ Query structured repository intelligence from `.playbook/repo-index.json`.
 - `playbook query rules`
 - `playbook query dependencies workouts --json`
 - `playbook query impact workouts`
+- `playbook query risk workouts`
+- `playbook query risk workouts --json`
 
 ## Behavior
 
@@ -34,10 +36,13 @@ Supported fields:
 - `rules`
 - `dependencies`
 - `impact`
+- `risk`
 
 For `dependencies`, the command can return either the full module dependency graph (`playbook query dependencies`) or one module's direct dependencies (`playbook query dependencies <module>`).
 
 For `impact`, the command returns modules that depend on a target module, including transitive dependents (`playbook query impact <module>`).
+
+For `risk`, the command returns a deterministic architectural risk estimate for changing a module (`playbook query risk <module>`). `impact` answers “what breaks if this changes?” while `risk` answers “how dangerous is this module to modify?”
 
 `playbook query` never modifies repository files and never reruns repository analysis.
 
@@ -49,6 +54,7 @@ playbook query modules
 playbook query dependencies
 playbook query dependencies workouts --json
 playbook query impact workouts
+playbook query risk workouts
 ```
 
 ## JSON contracts
@@ -90,3 +96,50 @@ Impact query:
   "affectedModules": ["analytics", "users"]
 }
 ```
+
+
+Risk query:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "command": "query",
+  "type": "risk",
+  "module": "auth",
+  "riskScore": 0.82,
+  "riskLevel": "high",
+  "signals": {
+    "directDependencies": 3,
+    "dependents": 7,
+    "transitiveImpact": 9,
+    "verifyFailures": 1,
+    "isArchitecturalHub": true
+  },
+  "contributions": {
+    "fanIn": 0.35,
+    "impact": 0.32,
+    "verifyFailures": 0.07,
+    "hub": 0.1
+  },
+  "reasons": [
+    "High reverse dependency fan-in",
+    "Large transitive impact radius",
+    "Active verify failures associated with this module"
+  ]
+}
+```
+
+### Deterministic risk scoring model
+
+`playbook query risk` computes a stable score in `[0, 1]` from explicit weights:
+
+- fan-in weight: `0.35` (`dependents / (moduleCount - 1)`)
+- transitive impact weight: `0.35` (`transitiveImpact / (moduleCount - 1)`)
+- verify failures weight: `0.20` (`min(verifyFailures / 3, 1)`)
+- architectural hub weight: `0.10` (`1` when dependents `>= 3`, else `0`)
+
+Risk level thresholds:
+
+- `low`: `< 0.40`
+- `medium`: `>= 0.40` and `< 0.70`
+- `high`: `>= 0.70`

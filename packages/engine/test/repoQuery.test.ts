@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { queryRepositoryIndex } from '../src/query/repoQuery.js';
 import { queryDependencies } from '../src/query/dependencies.js';
 import { queryImpact } from '../src/query/impact.js';
+import { queryRisk } from '../src/query/risk.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
 
@@ -133,6 +134,77 @@ describe('queryRepositoryIndex', () => {
     });
   });
 
+
+
+  it('returns low risk payloads for isolated modules', () => {
+    const repo = createRepo('playbook-repo-query-risk-low');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] },
+        { name: 'billing', dependencies: [] }
+      ],
+      database: 'none',
+      rules: []
+    });
+
+    const result = queryRisk(repo, 'billing');
+
+    expect(result.module).toBe('billing');
+    expect(result.riskLevel).toBe('low');
+    expect(result.signals.dependents).toBe(0);
+    expect(result.signals.transitiveImpact).toBe(0);
+    expect(result.signals.verifyFailures).toBe(0);
+    expect(result.warnings).toEqual([
+      'Verify failure signal unavailable; no .playbook/verify-report.json, .playbook/verify.json, or .playbook/plan.json verify payload found.'
+    ]);
+  });
+
+  it('returns high risk payloads for architectural hubs with verify failures', () => {
+    const repo = createRepo('playbook-repo-query-risk-high');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] },
+        { name: 'analytics', dependencies: ['auth'] },
+        { name: 'billing', dependencies: ['auth'] },
+        { name: 'notifications', dependencies: ['workouts'] }
+      ],
+      database: 'none',
+      rules: []
+    });
+
+    const verifyPath = path.join(repo, '.playbook', 'verify-report.json');
+    fs.writeFileSync(
+      verifyPath,
+      JSON.stringify({
+        schemaVersion: '1.0',
+        command: 'verify',
+        failures: [
+          { id: 'verify.failure.auth.config', message: 'auth module has policy gaps' },
+          { id: 'verify.failure.auth.routes', message: 'auth routes are missing notes' }
+        ]
+      })
+    );
+
+    const result = queryRisk(repo, 'auth');
+
+    expect(result.riskLevel).toBe('high');
+    expect(result.signals.isArchitecturalHub).toBe(true);
+    expect(result.signals.verifyFailures).toBe(2);
+    expect(result.reasons).toContain('High reverse dependency fan-in');
+    expect(result.reasons).toContain('Large transitive impact radius');
+    expect(result.reasons).toContain('Active verify failures associated with this module');
+  });
+
   it('throws deterministic errors for unsupported fields', () => {
     const repo = createRepo('playbook-repo-query-unsupported-field');
     writeRepoIndex(repo, {
@@ -164,6 +236,7 @@ describe('queryRepositoryIndex', () => {
 
     expect(() => queryDependencies(repo, 'worker')).toThrow('playbook query dependencies: unknown module "worker".');
     expect(() => queryImpact(repo, 'worker')).toThrow('playbook query impact: unknown module "worker".');
+    expect(() => queryRisk(repo, 'worker')).toThrow('playbook query risk: unknown module "worker".');
   });
 
   it('throws deterministic errors when index file is missing', () => {
