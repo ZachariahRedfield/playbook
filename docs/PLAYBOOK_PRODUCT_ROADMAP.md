@@ -713,6 +713,45 @@ Failure mode to avoid: **Apply recomputes intent during artifact execution**
 
 If `apply --from-plan` silently re-runs planning logic and diverges from the reviewed artifact, the execution contract is no longer trustworthy.
 
+## Future Capability Track: Automation Synthesis / Playbook Agent
+
+Detailed product direction: see `docs/AUTOMATION_SYNTHESIS_VISION.md`.
+
+Goal:
+Extend Playbook from deterministic remediation into a future **Automation Synthesis** platform that can propose and safely operationalize recurring engineering automations without bypassing governance.
+
+Why this matters:
+- Teams repeatedly perform the same operational and repository maintenance work.
+- Capturing these repeats as reviewed automations reduces toil while preserving policy, explainability, and repository safety.
+- Playbook can reuse its existing contract-first execution model so synthesized automation remains reviewable and deterministic rather than opaque agent behavior.
+
+Core concept:
+- detect recurring work signals (for example from verify/plan/apply history and approved remediation patterns)
+- classify work into known automation patterns/templates
+- synthesize candidate automation logic and runbooks
+- treat generated automations as untrusted until verified in isolated sandboxes
+- route verified candidates through explicit approval gates before deployment to orchestration backends
+- monitor runtime behavior with rollback-ready controls
+
+Foundational requirements:
+- deterministic contracts for automation definitions, approvals, and execution states
+- reusable template and policy packs tied to docs-backed governance behavior
+- sandboxed verification before any production orchestration action
+- human-reviewable outputs (diffs, risk summaries, and execution intent)
+- security-first approval and deployment boundaries aligned with existing apply safety model
+
+Likely phased implementation sequence:
+1. **Signal + Pattern Layer**: capture recurring work telemetry and map it to stable Automation Synthesis patterns.
+2. **Synthesis + Verification Layer**: generate candidate automations and validate them in deterministic sandboxes.
+3. **Approval + Deployment Layer**: add policy/owner approval flows and controlled promotion into orchestration targets.
+4. **Runtime Intelligence Layer**: add observability, anomaly detection, and rollback workflows for deployed automations.
+
+Explicit out-of-scope boundaries for initial versions:
+- not a replacement for core repository intelligence and remediation priorities
+- no autonomous direct repository writes outside `verify -> plan -> apply` policy controls
+- no vendor-locked orchestration dependency as a required default
+- no fully hands-off self-modifying automation runtime without human approval
+
 Feature: Plugin Ecosystem
 
 Support external packages:

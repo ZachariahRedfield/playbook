@@ -4,6 +4,8 @@
 
 ### Added
 
+- Docs: added a future-facing Automation Synthesis capability track to the product roadmap, documented long-term architecture alignment for synthesis stages (triggering through rollback), and introduced `docs/AUTOMATION_SYNTHESIS_VISION.md` as the product-aligned design reference.
+
 - WHAT: Added a cross-document storage/runtime artifact contract clarifying `.playbook/` local runtime boundaries, commit guidance for generated artifacts, demo snapshot-contract positioning, and private-first/local-first behavior (plus roadmap/improvement direction for `.playbookignore`, retention policy, scan exclusions, and history-bloat prevention). WHY: Makes artifact lifecycle expectations explicit so teams avoid recommitting regenerated runtime state, keep repository history healthy, and preserve deterministic docs/contracts intent.
 
 - Added deterministic AI contract readiness validation to `playbook doctor --ai`, including contract availability/validity checks, intelligence source validation, required command/query surface checks, remediation workflow readiness, and expanded JSON contract fields for readiness details.

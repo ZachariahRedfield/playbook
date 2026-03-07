@@ -123,6 +123,23 @@ This contract layer maps each guarantee to a concrete runtime guard and test exp
 - Rule: **Secret Redaction** — sensitive values must never appear in logs.
 - Failure Mode: **Boundary Escape** — path traversal or symlink attacks attempting to escape repo root.
 
+## Long-Term Direction: Automation Synthesis
+
+Automation Synthesis is a future platform direction that extends Playbook's `verify -> plan -> apply` philosophy into recurring-work automation, while preserving deterministic governance.
+
+Separation of concerns should remain explicit:
+
+1. **Trigger ingestion**: collect recurring-work signals from repository workflows and approved remediation history.
+2. **Pattern classification/template selection**: map signals to known, policy-backed automation templates.
+3. **Prompt generation**: build bounded synthesis prompts from deterministic contracts and template context.
+4. **LLM output generation**: produce candidate automation artifacts as draft outputs.
+5. **Sandbox verification**: execute and test candidates in isolated environments against deterministic checks.
+6. **Approval gates**: require explicit human/policy approval before promotion.
+7. **Deployment/orchestration**: publish approved automations to selected orchestration backends through controlled interfaces.
+8. **Runtime monitoring/rollback**: track behavior, alert on drift/failures, and support deterministic rollback.
+
+Rule: generated automations are **untrusted by default** and must not execute in trusted environments until verification and approval gates pass.
+
 ## Future Direction: Playbook Agents
 
 Playbook's `verify -> plan -> apply` architecture is intentionally designed to enable safe integration with automated agents over time.

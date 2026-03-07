@@ -22,6 +22,7 @@
 
 ## Concepts
 
+- [Automation Synthesis vision (future direction)](./AUTOMATION_SYNTHESIS_VISION.md)
 - [What is Playbook?](./concepts/what-is-playbook.md)
 - [Governance model](./concepts/governance-model.md)
 - [Conversation graphs](./concepts/conversation-graphs.md)
