@@ -13,6 +13,7 @@
 
 - [Command status index (authoritative)](./commands/README.md)
 - [analyze](./commands/analyze.md)
+- [analyze-pr](./commands/analyze-pr.md)
 - [verify](./commands/verify.md)
 - [rules](./commands/rules.md)
 - [doctor](./commands/doctor.md)

@@ -10,6 +10,7 @@ export type CliSchemaCommand =
   | 'ai-context'
   | 'ai-contract'
   | 'doctor'
+  | 'analyze-pr'
   | 'query'
   | 'docs';
 
@@ -316,12 +317,165 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
   },
 
 
+  'analyze-pr': {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookAnalyzePrOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'error'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'analyze-pr' },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'schemaVersion',
+          'command',
+          'baseRef',
+          'changedFiles',
+          'summary',
+          'affectedModules',
+          'impact',
+          'architecture',
+          'risk',
+          'docs',
+          'rules',
+          'moduleOwners',
+          'reviewGuidance',
+          'context'
+        ],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'analyze-pr' },
+          baseRef: { type: 'string' },
+          changedFiles: { type: 'array', items: { type: 'string' } },
+          summary: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['changedFileCount', 'affectedModuleCount', 'riskLevel'],
+            properties: {
+              changedFileCount: { type: 'integer' },
+              affectedModuleCount: { type: 'integer' },
+              riskLevel: { enum: ['low', 'medium', 'high'] }
+            }
+          },
+          affectedModules: { type: 'array', items: { type: 'string' } },
+          impact: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['module', 'dependencies', 'directDependents', 'dependents'],
+              properties: {
+                module: { type: 'string' },
+                dependencies: { type: 'array', items: { type: 'string' } },
+                directDependents: { type: 'array', items: { type: 'string' } },
+                dependents: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          },
+          architecture: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['boundariesTouched'],
+            properties: {
+              boundariesTouched: { type: 'array', items: { type: 'string' } }
+            }
+          },
+          risk: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['level', 'signals', 'moduleRisk'],
+            properties: {
+              level: { enum: ['low', 'medium', 'high'] },
+              signals: { type: 'array', items: { type: 'string' } },
+              moduleRisk: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['module', 'level', 'score', 'signals'],
+                  properties: {
+                    module: { type: 'string' },
+                    level: { enum: ['low', 'medium', 'high'] },
+                    score: { type: 'number' },
+                    signals: { type: 'array', items: { type: 'string' } }
+                  }
+                }
+              }
+            }
+          },
+          docs: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['changed', 'recommendedReview'],
+            properties: {
+              changed: { type: 'array', items: { type: 'string' } },
+              recommendedReview: { type: 'array', items: { type: 'string' } }
+            }
+          },
+          rules: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['related', 'owners'],
+            properties: {
+              related: { type: 'array', items: { type: 'string' } },
+              owners: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['ruleId', 'area', 'owners', 'remediationType'],
+                  properties: {
+                    ruleId: { type: 'string' },
+                    area: { type: 'string' },
+                    owners: { type: 'array', items: { type: 'string' } },
+                    remediationType: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          moduleOwners: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['module', 'owners', 'area'],
+              properties: {
+                module: { type: 'string' },
+                owners: { type: 'array', items: { type: 'string' } },
+                area: { type: 'string' }
+              }
+            }
+          },
+          reviewGuidance: { type: 'array', items: { type: 'string' } },
+          context: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['sources'],
+            properties: {
+              sources: { type: 'array', items: { type: 'object', minProperties: 1, additionalProperties: true } }
+            }
+          }
+        }
+      }
+    ]
+  },
+
+
   doctor: {
     $schema: JSON_SCHEMA_DRAFT,
     title: 'PlaybookDoctorOutput',
     type: 'object',
     additionalProperties: false,
-    required: ['schemaVersion', 'command', 'status', 'summary', 'findings'],
+    required: ['schemaVersion', 'command', 'status', 'summary', 'findings', 'artifactHygiene'],
     properties: {
       schemaVersion: { const: '1.0' },
       command: { const: 'doctor' },
@@ -349,7 +503,54 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
             message: { type: 'string' }
           }
         }
+      },
+      artifactHygiene: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['classification', 'findings', 'suggestions'],
+        properties: {
+          classification: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['runtime', 'automation', 'contract'],
+            properties: {
+              runtime: { type: 'array', items: { type: 'string' } },
+              automation: { type: 'array', items: { type: 'string' } },
+              contract: { type: 'array', items: { type: 'string' } }
+            }
+          },
+          findings: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['type', 'message', 'recommendation'],
+              properties: {
+                type: {
+                  enum: ['runtime-artifact-committed', 'large-generated-json', 'frequently-modified-generated-artifact', 'missing-playbookignore']
+                },
+                path: { type: 'string' },
+                message: { type: 'string' },
+                recommendation: { type: 'string' }
+              }
+            }
+          },
+          suggestions: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['id', 'title'],
+              properties: {
+                id: { enum: ['PB012', 'PB013', 'PB014'] },
+                title: { type: 'string' },
+                entries: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          }
+        }
       }
+
     }
   },
 
@@ -711,6 +912,7 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   'ai-context': cliSchemas['ai-context'],
   'ai-contract': cliSchemas['ai-contract'],
   doctor: cliSchemas.doctor,
+  'analyze-pr': cliSchemas['analyze-pr'],
   docs: cliSchemas.docs,
   query: cliSchemas.query
 });

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 
+const generateRepositoryHealth = vi.fn();
 const queryRepositoryIndex = vi.fn();
 const queryRisk = vi.fn();
 const runDocsAudit = vi.fn();
@@ -8,6 +9,7 @@ const existsSync = vi.fn();
 const collectVerifyReport = vi.fn();
 
 vi.mock('@zachariahredfield/playbook-engine', () => ({
+  generateRepositoryHealth,
   queryRepositoryIndex,
   queryRisk,
   runDocsAudit
@@ -24,6 +26,7 @@ vi.mock('./verify.js', () => ({
 
 describe('runDoctor', () => {
   beforeEach(() => {
+    generateRepositoryHealth.mockReset();
     queryRepositoryIndex.mockReset();
     queryRisk.mockReset();
     runDocsAudit.mockReset();
@@ -31,6 +34,13 @@ describe('runDoctor', () => {
     collectVerifyReport.mockReset();
 
     existsSync.mockReturnValue(true);
+    generateRepositoryHealth.mockReturnValue({
+      artifactHygiene: {
+        classification: { runtime: [], automation: [], contract: [] },
+        findings: [],
+        suggestions: []
+      }
+    });
     collectVerifyReport.mockResolvedValue({
       ok: true,
       summary: { failures: 0, warnings: 0 },
@@ -94,6 +104,43 @@ describe('runDoctor', () => {
       summary: { errors: 0, warnings: 0 }
     });
     expect(Array.isArray(payload.findings)).toBe(true);
+    expect(payload.artifactHygiene).toMatchObject({
+      classification: { runtime: [], automation: [], contract: [] },
+      findings: [],
+      suggestions: []
+    });
+
+    logSpy.mockRestore();
+  });
+
+
+  it('includes deterministic artifact hygiene suggestion IDs in json output', async () => {
+    const { runDoctor } = await import('./doctor.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    generateRepositoryHealth.mockReturnValue({
+      artifactHygiene: {
+        classification: { runtime: [], automation: [], contract: [] },
+        findings: [
+          {
+            type: 'missing-playbookignore',
+            message: 'Missing .playbookignore in a large repository.',
+            recommendation: 'Create .playbookignore.'
+          }
+        ],
+        suggestions: [
+          { id: 'PB012', title: 'Add .playbookignore', entries: ['dist/'] },
+          { id: 'PB013', title: 'Update .gitignore for runtime artifacts', entries: ['.playbook/repo-index.json'] },
+          { id: 'PB014', title: 'Move generated artifacts to .playbook runtime storage' }
+        ]
+      }
+    });
+
+    const exitCode = await runDoctor(process.cwd(), { format: 'json', quiet: false });
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(payload.artifactHygiene.suggestions.map((entry: { id: string }) => entry.id)).toEqual(['PB012', 'PB013', 'PB014']);
 
     logSpy.mockRestore();
   });

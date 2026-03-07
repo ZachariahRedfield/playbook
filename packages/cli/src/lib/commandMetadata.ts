@@ -43,6 +43,14 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'analyze-pr',
+    description: 'Analyze local branch/worktree changes with deterministic PR intelligence',
+    category: 'Repository tools',
+    productFacing: true,
+    example: 'playbook analyze-pr --json',
+    machineReadable: true
+  },
+  {
     name: 'doctor',
     description: 'Diagnose repository health by aggregating verify, risk, docs, and index analyzers',
     category: 'Repository tools',

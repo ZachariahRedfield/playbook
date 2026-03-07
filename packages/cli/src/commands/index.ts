@@ -58,6 +58,14 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
     const { runAnalyze } = await import('./analyze.js');
     return runAnalyze(cwd, { ci, explain, format, quiet });
   },
+  'analyze-pr': async ({ cwd, commandArgs, format, quiet }) => {
+    const { runAnalyzePr } = await import('./analyzePr.js');
+    return runAnalyzePr(cwd, commandArgs, {
+      format,
+      quiet,
+      baseRef: parseOptionValue(commandArgs, '--base')
+    });
+  },
   verify: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {
     const { runVerify } = await import('./verify.js');
     return runVerify(cwd, { ci, explain, format, quiet, policy: parseFlag(commandArgs, '--policy') });
@@ -187,6 +195,7 @@ const commandOrder = [
   'demo',
   'init',
   'analyze',
+  'analyze-pr',
   'verify',
   'plan',
   'apply',

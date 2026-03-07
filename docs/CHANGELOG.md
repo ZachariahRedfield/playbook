@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
+- Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
 - Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
 - Added deterministic module intelligence surfaces: `playbook query impact <module>` now returns structured module/dependency/dependent/risk context from `.playbook/repo-index.json`, and `playbook ask --module <name>` scopes ask reasoning to indexed module context with deterministic missing-index/missing-module guidance.
 - WHAT: Added `playbook ask --repo-context` to inject trusted repository intelligence into ask prompts using Playbook-managed artifacts (`.playbook/repo-index.json` and AI contract metadata), with deterministic missing-index remediation guidance. WHY: Grounds AI repository answers in deterministic Playbook artifacts instead of broad ad-hoc repository inference.
@@ -108,6 +110,8 @@
 
 ### Added
 
+- Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
+- Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
 - Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
 - Added a security contract system under `docs/contracts/security/` with machine-readable definitions for repository boundary, apply scope, plan determinism, secret redaction, and policy gate guarantees.
 - Added deterministic security contract tests under `test/contracts/security/` and expanded `pnpm test:security` to run contract + regression suites.

@@ -88,7 +88,12 @@ Current diagnosis sources:
     "warnings": 0,
     "info": 0
   },
-  "findings": []
+  "findings": [],
+  "artifactHygiene": {
+    "classification": { "runtime": [], "automation": [], "contract": [] },
+    "findings": [],
+    "suggestions": []
+  }
 }
 ```
 
@@ -105,3 +110,14 @@ Exit-code semantics for `doctor`:
 - `1` when one or more `error`-severity findings are present (`error` status)
 
 This is diagnostic signaling, not a command-crash indicator.
+
+
+## 8) PR/change intelligence (`analyze-pr`)
+
+`analyze-pr` is the structured PR analysis/reporting command.
+
+- Local-first: uses git diff and `.playbook/repo-index.json`.
+- Deterministic: emits stable machine-readable output for automation (`--json`).
+- Reuses shared intelligence layers (impact/risk/docs/ownership) instead of duplicating logic.
+
+Use `ask --diff-context` for conversational answers and `analyze-pr` for structured review artifacts.

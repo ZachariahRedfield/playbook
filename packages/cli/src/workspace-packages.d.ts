@@ -15,6 +15,8 @@ declare module "@zachariahredfield/playbook-node" {
 declare module "@zachariahredfield/playbook-engine" {
   export const loadConfig: (...args: any[]) => Promise<any>;
   export const generateRepositoryHealth: (...args: any[]) => any;
+  export type ArtifactHygieneReport = any;
+  export const analyzePullRequest: (...args: any[]) => any;
   export const generateRepositoryIndex: (...args: any[]) => any;
   export const loadAiContract: (...args: any[]) => any;
 

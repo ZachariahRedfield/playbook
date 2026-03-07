@@ -15,6 +15,7 @@ Do not hand-edit entries inside the managed markers.
 | `verify` | Verify governance rules | Current (implemented) | `playbook verify --ci --json` |
 | `plan` | Generate a structured fix plan from rule findings | Current (implemented) | `playbook plan --json` |
 | `apply` | Execute deterministic auto-fixable plan tasks | Current (implemented) | `playbook apply --from-plan .playbook/plan.json` |
+| `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | Current (implemented) | `playbook analyze-pr --json` |
 | `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | Current (implemented) | `playbook doctor --fix --dry-run` |
 | `diagram` | Generate deterministic architecture Mermaid diagrams | Current (implemented) | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
 | `docs` | Audit documentation governance surfaces and contracts | Current (implemented) | `playbook docs audit --json` |
@@ -87,6 +88,31 @@ playbook ask "how does auth work?" --repo-context --mode concise
 playbook ask "how does this module work?" --module workouts --repo-context
 playbook ask "what modules are affected by this?" --repo-context --json
 ```
+
+
+## Structured PR intelligence (`playbook analyze-pr`)
+
+`playbook analyze-pr` provides deterministic pull-request/change analysis as machine-readable output.
+
+- Uses trusted local git diff + `.playbook/repo-index.json`.
+- Reuses indexed impact/risk/docs/ownership intelligence instead of duplicating logic.
+- Reports changed files, affected modules, downstream impact, architecture boundaries touched, docs review suggestions, and merge guidance.
+
+Examples:
+
+```bash
+playbook analyze-pr
+playbook analyze-pr --json
+playbook analyze-pr --base main --json
+```
+
+Pattern: `playbook analyze-pr` composes local diff context with indexed repository intelligence to produce deterministic pull request analysis.
+
+Rule: Pull request intelligence must rely on trusted local git + Playbook-managed artifacts, not cloud-only or fuzzy repository inference.
+
+Pattern: `ask --diff-context` is conversational change reasoning; `analyze-pr` is the structured review/report surface.
+
+Failure Mode: PR analysis becomes untrustworthy when implementation duplicates diff/impact/risk logic instead of composing shared intelligence helpers.
 
 ## Change-scoped ask (`playbook ask --diff-context`)
 

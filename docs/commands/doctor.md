@@ -29,3 +29,16 @@ Checks include:
 - Remediation workflow readiness (`verify -> plan -> apply -> verify`).
 
 A repository can be AI-capable while still not AI-contract ready when required contract surfaces are missing.
+
+## JSON contract stability
+
+`playbook doctor --json` is a stable machine-readable automation contract.
+
+The output includes:
+
+- top-level diagnosis status, summary, and findings
+- `artifactHygiene.classification`
+- `artifactHygiene.findings`
+- `artifactHygiene.suggestions` (with deterministic IDs `PB012`, `PB013`, `PB014` when applicable)
+
+Rule: `doctor --json` must remain a stable machine-readable contract for automation and repository health diagnostics.

@@ -1,4 +1,11 @@
-import { queryRepositoryIndex, queryRisk, runDocsAudit, type RepositoryModule } from '@zachariahredfield/playbook-engine';
+import {
+  generateRepositoryHealth,
+  queryRepositoryIndex,
+  queryRisk,
+  runDocsAudit,
+  type ArtifactHygieneReport,
+  type RepositoryModule
+} from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ExitCode } from '../lib/cliContract.js';
@@ -26,6 +33,7 @@ export type DoctorReport = {
     info: number;
   };
   findings: DoctorFinding[];
+  artifactHygiene: ArtifactHygieneReport;
 };
 
 const severityRank: Record<DoctorFinding['severity'], number> = {
@@ -87,6 +95,7 @@ export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> =>
   const findings: DoctorFinding[] = [];
   const repoIndexPath = path.join(cwd, '.playbook', 'repo-index.json');
   const hasRepoIndex = fs.existsSync(repoIndexPath);
+  const repositoryHealth = generateRepositoryHealth(cwd);
 
   if (hasRepoIndex) {
     findings.push({
@@ -151,6 +160,16 @@ export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> =>
     });
   }
 
+
+  for (const finding of repositoryHealth.artifactHygiene.findings) {
+    findings.push({
+      category: 'Architecture',
+      severity: 'warning',
+      id: `doctor.artifact-hygiene.${finding.type}`,
+      message: finding.path ? `${finding.message} (${finding.path})` : finding.message
+    });
+  }
+
   if (!hasRepoIndex) {
     findings.push({
       category: 'Risk',
@@ -202,7 +221,8 @@ export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> =>
     command: 'doctor',
     status: toReportStatus(summary),
     summary,
-    findings: orderedFindings
+    findings: orderedFindings,
+    artifactHygiene: repositoryHealth.artifactHygiene
   };
 };
 

@@ -177,6 +177,8 @@ Do not hand-edit entries inside the managed markers.
 
 ### Repository tools
 
+- `analyze-pr`: Analyze local branch/worktree changes with deterministic PR intelligence
+  - Example: `playbook analyze-pr --json`
 - `doctor`: Diagnose repository health by aggregating verify, risk, docs, and index analyzers
   - Example: `playbook doctor --fix --dry-run`
 - `diagram`: Generate deterministic architecture Mermaid diagrams
@@ -230,6 +232,7 @@ Do not hand-edit entries inside the managed markers.
 | `verify` | `playbook verify --ci --json` |
 | `plan` | `playbook plan --json` |
 | `apply` | `playbook apply --from-plan .playbook/plan.json` |
+| `analyze-pr` | `playbook analyze-pr --json` |
 | `doctor` | `playbook doctor --fix --dry-run` |
 | `diagram` | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
 | `docs` | `playbook docs audit --json` |

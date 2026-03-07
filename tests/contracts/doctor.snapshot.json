@@ -68,5 +68,28 @@
       "id": "doctor.risk.module.features",
       "message": "features risk is low (0.00)."
     }
-  ]
+  ],
+  "artifactHygiene": {
+    "classification": {
+      "runtime": [
+        ".playbook/repo-index.json",
+        ".playbook/plan.json",
+        ".playbook/verify.json",
+        ".playbook/session-cleanup*.json",
+        ".playbook/cache/**"
+      ],
+      "automation": [
+        ".playbook/ci-plan*.json",
+        ".playbook/ci-verify*.json",
+        ".github/artifacts/**"
+      ],
+      "contract": [
+        "tests/contracts/*.snapshot.json",
+        ".playbook/demo-artifacts/**",
+        "docs/*diagram*.md"
+      ]
+    },
+    "findings": [],
+    "suggestions": []
+  }
 }

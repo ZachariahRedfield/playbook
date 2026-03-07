@@ -14,7 +14,7 @@ export * from './sessions/index.js';
 export { runRuleExecution, generateExecutionPlan, generatePlanContract, applyExecutionPlan, parsePlanArtifact, selectPlanTasks, RuleRunner, PlanGenerator, FixExecutor } from './execution/index.js';
 
 export { generateRepositoryHealth } from './doctor/index.js';
-export type { RepositoryHealth, GovernanceStatusItem } from './doctor/index.js';
+export type { RepositoryHealth, GovernanceStatusItem, ArtifactHygieneReport } from './doctor/index.js';
 
 export { generateRepositoryIndex } from './indexer/repoIndexer.js';
 export type { RepositoryIndex, RepositoryModule } from './indexer/repoIndexer.js';
@@ -25,6 +25,8 @@ export { answerRepositoryQuestion } from './ask/askEngine.js';
 export type { AskEngineResult } from './ask/askEngine.js';
 export { resolveDiffAskContext } from './ask/diffContext.js';
 export type { DiffAskContext } from './ask/diffContext.js';
+export { analyzePullRequest } from './pr/analyzePr.js';
+export type { AnalyzePullRequestResult } from './pr/analyzePr.js';
 
 export { explainTarget } from './explain/explainEngine.js';
 export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, UnknownExplanation } from './explain/explainEngine.js';

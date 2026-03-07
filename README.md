@@ -239,6 +239,19 @@ playbook ask "what modules are affected by this?" --repo-context --json
 
 If `.playbook/repo-index.json` is missing, ask returns deterministic remediation guidance to run `playbook index` and retry.
 
+
+### Structured PR intelligence (`playbook analyze-pr`)
+
+Use `playbook analyze-pr` for deterministic, machine-readable change analysis from local git diff + `.playbook/repo-index.json`.
+
+- `playbook ask --diff-context` is conversational change reasoning.
+- `playbook analyze-pr` is the structured review/report surface for automation and pre-merge checks.
+
+```bash
+npx playbook index
+npx playbook analyze-pr --json
+```
+
 ### Change-scoped ask (`playbook ask --diff-context`)
 
 Use `--diff-context` to answer branch/working-tree questions using trusted local diff + indexed intelligence.

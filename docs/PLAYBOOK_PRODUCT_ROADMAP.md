@@ -486,21 +486,21 @@ Deterministic AI execution loop:
 
 This phase defines Playbook as an AI governance and execution runtime, not only a repository rule checker.
 
-## Future Capability: PR Intelligence
+## PR Intelligence (Implemented)
 
-Playbook will provide structured analysis of pull requests to help developers understand architectural impact and risk.
+Playbook provides structured deterministic analysis of pull requests/branch diffs to help developers understand architectural impact and risk.
 
-Example command:
+Primary command:
 
-`playbook analyze-pr`
+`playbook analyze-pr --json`
 
-Expected capabilities:
+Current capabilities:
 
-- Detect modules affected by the change
-- Calculate change risk level
-- Identify missing tests or documentation
-- Detect architecture rule violations
-- Generate structured PR analysis output
+- Detect changed files and affected indexed modules from local git diff
+- Derive downstream module impact and architecture boundaries touched
+- Aggregate risk signals from existing module-risk intelligence
+- Surface docs review candidates and ownership-aware context
+- Emit stable machine-readable PR analysis output for automation
 
 Playbook should analyze PRs but not author them.
 

@@ -21,6 +21,7 @@
       "demo",
       "init",
       "analyze",
+      "analyze-pr",
       "verify",
       "plan",
       "apply",
