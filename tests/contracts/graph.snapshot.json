@@ -1,18 +1,22 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "command": "graph",
   "graph": {
-    "schemaVersion": "1.0",
+    "schemaVersion": "1.1",
     "kind": "playbook-repo-graph",
     "stats": {
-      "nodeCount": 4,
-      "edgeCount": 0
+      "nodeCount": 5,
+      "edgeCount": 7
     },
     "nodeKinds": [
       "module",
+      "repository",
       "rule"
     ],
-    "edgeKinds": [],
+    "edgeKinds": [
+      "contains",
+      "governed_by"
+    ],
     "topDependencyHubs": [
       {
         "module": "features",

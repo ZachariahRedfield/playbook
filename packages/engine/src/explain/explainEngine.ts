@@ -1,7 +1,7 @@
+import { readRepositoryGraph, summarizeGraphNeighborhood, type GraphNeighborhoodSummary } from '../graph/repoGraph.js';
 import { queryRepositoryIndex } from '../query/repoQuery.js';
 import type { RepositoryModule } from '../indexer/repoIndexer.js';
 import { getRuleMetadata } from './ruleRegistry.js';
-
 
 const toModuleNames = (modules: string[] | RepositoryModule[]): string[] => {
   if (modules.length === 0) {
@@ -31,6 +31,7 @@ export type RuleExplanation = {
   purpose: string;
   fix: string[];
   reason: string;
+  graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
 export type ModuleExplanation = {
@@ -39,6 +40,7 @@ export type ModuleExplanation = {
   responsibilities: string[];
   dependencies: string[];
   architecture: string;
+  graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
 export type ArchitectureExplanation = {
@@ -46,6 +48,7 @@ export type ArchitectureExplanation = {
   architecture: string;
   structure: string;
   reasoning: string;
+  graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
 export type UnknownExplanation = {
@@ -109,7 +112,16 @@ const determineTargetType = (target: string, context: ExplainContext): ExplainTa
   return 'unknown';
 };
 
-const explainRule = (context: ExplainContext, normalizedTarget: string): RuleExplanation | UnknownExplanation => {
+const readGraphNeighborhood = (projectRoot: string, nodeId: string): GraphNeighborhoodSummary | undefined => {
+  try {
+    const graph = readRepositoryGraph(projectRoot);
+    return summarizeGraphNeighborhood(graph, nodeId) ?? undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const explainRule = (projectRoot: string, context: ExplainContext, normalizedTarget: string): RuleExplanation | UnknownExplanation => {
   const metadata = getRuleMetadata(normalizedTarget);
 
   if (!metadata) {
@@ -125,7 +137,8 @@ const explainRule = (context: ExplainContext, normalizedTarget: string): RuleExp
     id: metadata.id,
     purpose: metadata.purpose,
     fix: metadata.fix,
-    reason: `Rule registry metadata for ${metadata.id}. Indexed rules: ${context.rules.join(', ') || 'none'}.`
+    reason: `Rule registry metadata for ${metadata.id}. Indexed rules: ${context.rules.join(', ') || 'none'}.`,
+    graphNeighborhood: readGraphNeighborhood(projectRoot, `rule:${metadata.id}`)
   };
 };
 
@@ -135,7 +148,7 @@ export const explainTarget = (projectRoot: string, target: string): ExplainTarge
   const targetType = determineTargetType(normalizedTarget, context);
 
   if (targetType === 'rule') {
-    return explainRule(context, normalizedTarget);
+    return explainRule(projectRoot, context, normalizedTarget);
   }
 
   if (targetType === 'module') {
@@ -145,7 +158,8 @@ export const explainTarget = (projectRoot: string, target: string): ExplainTarge
       name: moduleName,
       responsibilities: inferModuleResponsibilities(moduleName),
       dependencies: [],
-      architecture: context.architecture
+      architecture: context.architecture,
+      graphNeighborhood: readGraphNeighborhood(projectRoot, `module:${moduleName}`)
     };
   }
 
@@ -154,7 +168,8 @@ export const explainTarget = (projectRoot: string, target: string): ExplainTarge
       type: 'architecture',
       architecture: context.architecture,
       structure: architectureStructure(context.architecture),
-      reasoning: architectureReasoning(context.architecture, context.framework, context.modules)
+      reasoning: architectureReasoning(context.architecture, context.framework, context.modules),
+      graphNeighborhood: readGraphNeighborhood(projectRoot, 'repository:root')
     };
   }
 

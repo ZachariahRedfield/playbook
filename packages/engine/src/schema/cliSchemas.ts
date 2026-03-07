@@ -113,7 +113,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
         additionalProperties: false,
         required: ['schemaVersion', 'command', 'error'],
         properties: {
-          schemaVersion: { const: '1.0' },
+          schemaVersion: { const: '1.1' },
           command: { const: 'graph' },
           error: { type: 'string' }
         }
@@ -123,14 +123,14 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
         additionalProperties: false,
         required: ['schemaVersion', 'command', 'graph'],
         properties: {
-          schemaVersion: { const: '1.0' },
+          schemaVersion: { const: '1.1' },
           command: { const: 'graph' },
           graph: {
             type: 'object',
             additionalProperties: false,
             required: ['schemaVersion', 'kind', 'stats', 'nodeKinds', 'edgeKinds', 'topDependencyHubs'],
             properties: {
-              schemaVersion: { const: '1.0' },
+              schemaVersion: { const: '1.1' },
               kind: { const: 'playbook-repo-graph' },
               generatedAt: { type: 'string' },
               stats: {
@@ -144,11 +144,11 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
               },
               nodeKinds: {
                 type: 'array',
-                items: { enum: ['module', 'rule'] }
+                items: { enum: ['module', 'repository', 'rule'] }
               },
               edgeKinds: {
                 type: 'array',
-                items: { enum: ['depends_on'] }
+                items: { enum: ['contains', 'depends_on', 'governed_by'] }
               },
               topDependencyHubs: {
                 type: 'array',

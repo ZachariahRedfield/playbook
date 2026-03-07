@@ -5,6 +5,32 @@
   "explanation": {
     "architecture": "modular-monolith",
     "structure": "Feature modules are isolated and commonly organized under src/features.",
-    "reasoning": "modular-monolith architecture organizes code into isolated feature modules under src/features. Indexed framework: node. Indexed modules: features."
+    "reasoning": "modular-monolith architecture organizes code into isolated feature modules under src/features. Indexed framework: node. Indexed modules: features.",
+    "graphNeighborhood": {
+      "node": {
+        "id": "repository:root",
+        "kind": "repository",
+        "name": "root"
+      },
+      "outgoing": [
+        {
+          "kind": "contains",
+          "target": "module:features"
+        },
+        {
+          "kind": "contains",
+          "target": "rule:requireNotesFileWhenGovernanceExists"
+        },
+        {
+          "kind": "contains",
+          "target": "rule:requireNotesOnChanges"
+        },
+        {
+          "kind": "contains",
+          "target": "rule:verify.rule.tests.required"
+        }
+      ],
+      "incoming": []
+    }
   }
 }

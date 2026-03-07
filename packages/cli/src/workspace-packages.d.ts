@@ -73,6 +73,12 @@ declare module "@zachariahredfield/playbook-engine" {
     hotspots: TestHotspot[];
     summary: { totalHotspots: number; byType: Array<{ type: TestHotspotType; count: number }> };
   };
+
+  export type GraphNeighborhoodSummary = {
+    node: { id: string; kind: 'module' | 'repository' | 'rule'; name: string };
+    outgoing: Array<{ kind: 'contains' | 'depends_on' | 'governed_by'; target: string }>;
+    incoming: Array<{ kind: 'contains' | 'depends_on' | 'governed_by'; source: string }>;
+  };
   export type RepositoryModule = any;
   export const answerRepositoryQuestion: (...args: any[]) => any;
   export const explainTarget: (...args: any[]) => any;

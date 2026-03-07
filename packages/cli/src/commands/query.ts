@@ -17,7 +17,8 @@ import {
   type RepositoryQueryField,
   type RuleOwnersQueryResult,
   type ModuleOwnersQueryResult,
-  type TestHotspotsQueryResult
+  type TestHotspotsQueryResult,
+  type GraphNeighborhoodSummary
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
@@ -30,6 +31,7 @@ type QueryResult = {
   command: 'query';
   field: RepositoryQueryField;
   result: string | string[] | RepositoryModule[];
+  graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
 const firstPositionalArg = (args: string[]): string | undefined => args.find((arg) => !arg.startsWith('-'));
@@ -588,7 +590,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     const result: QueryResult = {
       command: 'query',
       field: query.field,
-      result: query.result
+      result: query.result,
+      graphNeighborhood: query.graphNeighborhood
     };
 
     if (options.format === 'json') {

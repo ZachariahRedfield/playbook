@@ -16,16 +16,24 @@ describe('runGraph', () => {
       path.join(repo, '.playbook', 'repo-graph.json'),
       `${JSON.stringify(
         {
-          schemaVersion: '1.0',
+          schemaVersion: '1.1',
           kind: 'playbook-repo-graph',
           generatedAt: '2026-01-01T00:00:00.000Z',
           nodes: [
+            { id: 'repository:root', kind: 'repository', name: 'root' },
             { id: 'module:auth', kind: 'module', name: 'auth' },
             { id: 'module:workouts', kind: 'module', name: 'workouts' },
             { id: 'rule:PB001', kind: 'rule', name: 'PB001' }
           ],
-          edges: [{ kind: 'depends_on', from: 'module:workouts', to: 'module:auth' }],
-          stats: { nodeCount: 3, edgeCount: 1 }
+          edges: [
+            { kind: 'contains', from: 'repository:root', to: 'module:auth' },
+            { kind: 'contains', from: 'repository:root', to: 'module:workouts' },
+            { kind: 'contains', from: 'repository:root', to: 'rule:PB001' },
+            { kind: 'depends_on', from: 'module:workouts', to: 'module:auth' },
+            { kind: 'governed_by', from: 'module:auth', to: 'rule:PB001' },
+            { kind: 'governed_by', from: 'module:workouts', to: 'rule:PB001' }
+          ],
+          stats: { nodeCount: 4, edgeCount: 6 }
         },
         null,
         2
@@ -41,15 +49,15 @@ describe('runGraph', () => {
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload).toEqual({
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
       command: 'graph',
       graph: {
-        schemaVersion: '1.0',
+        schemaVersion: '1.1',
         kind: 'playbook-repo-graph',
         generatedAt: '2026-01-01T00:00:00.000Z',
-        stats: { nodeCount: 3, edgeCount: 1 },
-        nodeKinds: ['module', 'rule'],
-        edgeKinds: ['depends_on'],
+        stats: { nodeCount: 4, edgeCount: 6 },
+        nodeKinds: ['module', 'repository', 'rule'],
+        edgeKinds: ['contains', 'depends_on', 'governed_by'],
         topDependencyHubs: [
           { module: 'auth', incomingDependencies: 1 },
           { module: 'workouts', incomingDependencies: 0 }
@@ -69,7 +77,7 @@ describe('runGraph', () => {
     expect(exitCode).toBe(ExitCode.Failure);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload).toEqual({
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
       command: 'graph',
       error: 'playbook graph: missing repository graph at .playbook/repo-graph.json. Run "playbook index" first.'
     });

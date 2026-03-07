@@ -505,6 +505,7 @@ Build a deterministic local Repository Knowledge Graph artifact from repository 
 
 Primary capability:
 - `playbook index` emits `.playbook/repo-graph.json` as a local, deterministic, CLI-first graph artifact generated from repository evidence.
+- Graph artifact evolution is versioned by explicit contract policy with additive-vs-breaking guidance for downstream CI/AI consumers.
 
 Graph architecture stance:
 - local
@@ -546,6 +547,11 @@ Repository Knowledge Graph should power:
 - risk-aware reasoning
 - future pattern mining / repository learning loops
 - higher-signal `ask` / `query` / `explain` inputs
+
+Current stabilization direction:
+- favor additive read-runtime enrichment (query/explain graph neighborhood summaries)
+- avoid broad new graph command families when existing command surfaces can absorb deterministic summaries
+- add only low-cost deterministic relationships derivable from indexed repository truth (`contains`, `depends_on`, `governed_by`)
 
 PHASE 4 — AI EFFICIENCY & CONTEXT COMPRESSION
 

@@ -2,7 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { generateRepositoryGraph, readRepositoryGraph, summarizeRepositoryGraph } from '../src/graph/repoGraph.js';
+import {
+  generateRepositoryGraph,
+  readRepositoryGraph,
+  summarizeGraphNeighborhood,
+  summarizeRepositoryGraph
+} from '../src/graph/repoGraph.js';
 import type { RepositoryIndex } from '../src/indexer/repoIndexer.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
@@ -25,20 +30,26 @@ describe('repository graph', () => {
     const graph = generateRepositoryGraph(sampleIndex, new Date('2026-01-01T00:00:00.000Z'));
 
     expect(graph).toEqual({
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
       kind: 'playbook-repo-graph',
       generatedAt: '2026-01-01T00:00:00.000Z',
       nodes: [
         { id: 'module:auth', kind: 'module', name: 'auth' },
         { id: 'module:workouts', kind: 'module', name: 'workouts' },
+        { id: 'repository:root', kind: 'repository', name: 'root' },
         { id: 'rule:PB001', kind: 'rule', name: 'PB001' }
       ],
       edges: [
-        { kind: 'depends_on', from: 'module:workouts', to: 'module:auth' }
+        { kind: 'contains', from: 'repository:root', to: 'module:auth' },
+        { kind: 'contains', from: 'repository:root', to: 'module:workouts' },
+        { kind: 'contains', from: 'repository:root', to: 'rule:PB001' },
+        { kind: 'depends_on', from: 'module:workouts', to: 'module:auth' },
+        { kind: 'governed_by', from: 'module:auth', to: 'rule:PB001' },
+        { kind: 'governed_by', from: 'module:workouts', to: 'rule:PB001' }
       ],
       stats: {
-        nodeCount: 3,
-        edgeCount: 1
+        nodeCount: 4,
+        edgeCount: 6
       }
     });
   });
@@ -47,16 +58,33 @@ describe('repository graph', () => {
     const graph = generateRepositoryGraph(sampleIndex, new Date('2026-01-01T00:00:00.000Z'));
 
     expect(summarizeRepositoryGraph(graph)).toEqual({
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
       kind: 'playbook-repo-graph',
       generatedAt: '2026-01-01T00:00:00.000Z',
-      stats: { nodeCount: 3, edgeCount: 1 },
-      nodeKinds: ['module', 'rule'],
-      edgeKinds: ['depends_on'],
+      stats: { nodeCount: 4, edgeCount: 6 },
+      nodeKinds: ['module', 'repository', 'rule'],
+      edgeKinds: ['contains', 'depends_on', 'governed_by'],
       topDependencyHubs: [
         { module: 'auth', incomingDependencies: 1 },
         { module: 'workouts', incomingDependencies: 0 }
       ]
+    });
+  });
+
+  it('returns deterministic neighborhood summaries for module nodes', () => {
+    const graph = generateRepositoryGraph(sampleIndex, new Date('2026-01-01T00:00:00.000Z'));
+
+    expect(summarizeGraphNeighborhood(graph, 'module:workouts')).toEqual({
+      node: {
+        id: 'module:workouts',
+        kind: 'module',
+        name: 'workouts'
+      },
+      outgoing: [
+        { kind: 'depends_on', target: 'module:auth' },
+        { kind: 'governed_by', target: 'rule:PB001' }
+      ],
+      incoming: [{ kind: 'contains', source: 'repository:root' }]
     });
   });
 

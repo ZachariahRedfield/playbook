@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { RepositoryIndex } from '../indexer/repoIndexer.js';
 
-export type RepositoryGraphNodeKind = 'module' | 'rule';
-export type RepositoryGraphEdgeKind = 'depends_on';
+export type RepositoryGraphNodeKind = 'module' | 'repository' | 'rule';
+export type RepositoryGraphEdgeKind = 'contains' | 'depends_on' | 'governed_by';
 
 export type RepositoryGraphNode = {
   id: string;
@@ -17,8 +17,10 @@ export type RepositoryGraphEdge = {
   to: string;
 };
 
+export const REPOSITORY_GRAPH_SCHEMA_VERSION = '1.1' as const;
+
 export type RepositoryGraph = {
-  schemaVersion: '1.0';
+  schemaVersion: typeof REPOSITORY_GRAPH_SCHEMA_VERSION;
   kind: 'playbook-repo-graph';
   generatedAt: string;
   nodes: RepositoryGraphNode[];
@@ -30,7 +32,7 @@ export type RepositoryGraph = {
 };
 
 export type RepositoryGraphSummary = {
-  schemaVersion: '1.0';
+  schemaVersion: typeof REPOSITORY_GRAPH_SCHEMA_VERSION;
   kind: 'playbook-repo-graph';
   generatedAt: string;
   stats: {
@@ -46,6 +48,17 @@ export type RepositoryGraphSummary = {
 };
 
 const GRAPH_RELATIVE_PATH = '.playbook/repo-graph.json' as const;
+const REPOSITORY_NODE_ID = 'repository:root' as const;
+
+export type GraphNeighborhoodSummary = {
+  node: {
+    id: string;
+    kind: RepositoryGraphNodeKind;
+    name: string;
+  };
+  outgoing: Array<{ kind: RepositoryGraphEdgeKind; target: string }>;
+  incoming: Array<{ kind: RepositoryGraphEdgeKind; source: string }>;
+};
 
 const toSortedUnique = <T extends string>(values: T[]): T[] => Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 
@@ -61,6 +74,12 @@ const toRuleNode = (name: string): RepositoryGraphNode => ({
   name
 });
 
+const toRepositoryNode = (): RepositoryGraphNode => ({
+  id: REPOSITORY_NODE_ID,
+  kind: 'repository',
+  name: 'root'
+});
+
 const sortNodes = (nodes: RepositoryGraphNode[]): RepositoryGraphNode[] =>
   [...nodes].sort((left, right) =>
     left.kind.localeCompare(right.kind) || left.name.localeCompare(right.name) || left.id.localeCompare(right.id)
@@ -74,6 +93,7 @@ const sortEdges = (edges: RepositoryGraphEdge[]): RepositoryGraphEdge[] =>
 export const generateRepositoryGraph = (index: RepositoryIndex, generatedAt: Date = new Date()): RepositoryGraph => {
   const moduleNodes = index.modules.map((moduleEntry) => toModuleNode(moduleEntry.name));
   const ruleNodes = index.rules.map((ruleId) => toRuleNode(ruleId));
+  const repositoryNode = toRepositoryNode();
 
   const dependencyEdges = index.modules.flatMap((moduleEntry) =>
     moduleEntry.dependencies.map((dependency) => ({
@@ -83,11 +103,24 @@ export const generateRepositoryGraph = (index: RepositoryIndex, generatedAt: Dat
     }))
   );
 
-  const nodes = sortNodes([...moduleNodes, ...ruleNodes]);
-  const edges = sortEdges(dependencyEdges);
+  const containmentEdges = [
+    ...moduleNodes.map((node) => ({ kind: 'contains' as const, from: repositoryNode.id, to: node.id })),
+    ...ruleNodes.map((node) => ({ kind: 'contains' as const, from: repositoryNode.id, to: node.id }))
+  ];
+
+  const governanceEdges = index.modules.flatMap((moduleEntry) =>
+    index.rules.map((ruleId) => ({
+      kind: 'governed_by' as const,
+      from: `module:${moduleEntry.name}`,
+      to: `rule:${ruleId}`
+    }))
+  );
+
+  const nodes = sortNodes([repositoryNode, ...moduleNodes, ...ruleNodes]);
+  const edges = sortEdges([...containmentEdges, ...dependencyEdges, ...governanceEdges]);
 
   return {
-    schemaVersion: '1.0',
+    schemaVersion: REPOSITORY_GRAPH_SCHEMA_VERSION,
     kind: 'playbook-repo-graph',
     generatedAt: generatedAt.toISOString(),
     nodes,
@@ -108,6 +141,12 @@ export const readRepositoryGraph = (projectRoot: string): RepositoryGraph => {
   const parsed = JSON.parse(fs.readFileSync(graphPath, 'utf8')) as Partial<RepositoryGraph>;
   if (parsed.kind !== 'playbook-repo-graph') {
     throw new Error('playbook graph: invalid graph artifact kind in .playbook/repo-graph.json. Run "playbook index" to regenerate.');
+  }
+
+  if (parsed.schemaVersion !== REPOSITORY_GRAPH_SCHEMA_VERSION) {
+    throw new Error(
+      `playbook graph: unsupported repository graph schemaVersion "${String(parsed.schemaVersion)}". Expected "${REPOSITORY_GRAPH_SCHEMA_VERSION}". Run "playbook index" to regenerate.`
+    );
   }
 
   return parsed as RepositoryGraph;
@@ -144,6 +183,41 @@ export const summarizeRepositoryGraph = (graph: RepositoryGraph): RepositoryGrap
     nodeKinds: toSortedUnique(graph.nodes.map((node) => node.kind)),
     edgeKinds: toSortedUnique(graph.edges.map((edge) => edge.kind)),
     topDependencyHubs
+  };
+};
+
+const findNodeById = (graph: RepositoryGraph, nodeId: string): RepositoryGraphNode | null =>
+  graph.nodes.find((node) => node.id === nodeId) ?? null;
+
+export const summarizeGraphNeighborhood = (graph: RepositoryGraph, nodeId: string): GraphNeighborhoodSummary | null => {
+  const node = findNodeById(graph, nodeId);
+  if (!node) {
+    return null;
+  }
+
+  const toLabel = (id: string): string => {
+    const resolved = findNodeById(graph, id);
+    return resolved ? `${resolved.kind}:${resolved.name}` : id;
+  };
+
+  const outgoing = graph.edges
+    .filter((edge) => edge.from === node.id)
+    .map((edge) => ({ kind: edge.kind, target: toLabel(edge.to) }))
+    .sort((left, right) => left.kind.localeCompare(right.kind) || left.target.localeCompare(right.target));
+
+  const incoming = graph.edges
+    .filter((edge) => edge.to === node.id)
+    .map((edge) => ({ kind: edge.kind, source: toLabel(edge.from) }))
+    .sort((left, right) => left.kind.localeCompare(right.kind) || left.source.localeCompare(right.source));
+
+  return {
+    node: {
+      id: node.id,
+      kind: node.kind,
+      name: node.name
+    },
+    outgoing,
+    incoming
   };
 };
 

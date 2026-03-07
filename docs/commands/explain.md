@@ -1,6 +1,6 @@
 # `playbook explain`
 
-Explain deterministic repository intelligence targets from `.playbook/repo-index.json` and the rule registry.
+Explain deterministic repository intelligence targets from `.playbook/repo-index.json`, `.playbook/repo-graph.json`, and the rule registry.
 
 ## Usage
 
@@ -30,7 +30,12 @@ Explain deterministic repository intelligence targets from `.playbook/repo-index
       "Encapsulates workouts domain logic and module-level policies."
     ],
     "dependencies": [],
-    "architecture": "modular-monolith"
+    "architecture": "modular-monolith",
+    "graphNeighborhood": {
+      "node": { "id": "module:workouts", "kind": "module", "name": "workouts" },
+      "outgoing": [],
+      "incoming": [{ "kind": "contains", "source": "repository:root" }]
+    }
   }
 }
 ```

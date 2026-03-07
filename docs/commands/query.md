@@ -1,6 +1,6 @@
 # `playbook query`
 
-Query structured repository intelligence from `.playbook/repo-index.json`.
+Query structured repository intelligence from `.playbook/repo-index.json` with additive graph-backed neighborhood summaries from `.playbook/repo-graph.json` where available.
 
 ## Usage
 
@@ -33,6 +33,7 @@ The command:
 1. Reads `.playbook/repo-index.json`
 2. Validates `schemaVersion`
 3. Returns only the requested field payload
+4. Optionally enriches read output with deterministic graph neighborhood summaries when the graph artifact is available
 
 Supported fields:
 
@@ -108,11 +109,16 @@ Standard field query:
 ```json
 {
   "command": "query",
-  "field": "modules",
-  "result": [
-    { "name": "users", "dependencies": [] },
-    { "name": "workouts", "dependencies": ["users"] }
-  ]
+  "field": "architecture",
+  "result": "modular-monolith",
+  "graphNeighborhood": {
+    "node": { "id": "repository:root", "kind": "repository", "name": "root" },
+    "outgoing": [
+      { "kind": "contains", "target": "module:users" },
+      { "kind": "contains", "target": "module:workouts" }
+    ],
+    "incoming": []
+  }
 }
 ```
 

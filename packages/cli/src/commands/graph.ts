@@ -7,7 +7,7 @@ type GraphOptions = {
 };
 
 type GraphSummaryResult = {
-  schemaVersion: '1.0';
+  schemaVersion: '1.1';
   command: 'graph';
   graph: ReturnType<typeof summarizeRepositoryGraph>;
 };
@@ -35,7 +35,7 @@ export const runGraph = async (cwd: string, options: GraphOptions): Promise<numb
   try {
     const graph = readRepositoryGraph(cwd);
     const result: GraphSummaryResult = {
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
       command: 'graph',
       graph: summarizeRepositoryGraph(graph)
     };
@@ -57,7 +57,7 @@ export const runGraph = async (cwd: string, options: GraphOptions): Promise<numb
       console.log(
         JSON.stringify(
           {
-            schemaVersion: '1.0',
+            schemaVersion: '1.1',
             command: 'graph',
             error: message
           },

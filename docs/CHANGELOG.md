@@ -4,6 +4,11 @@
 
 ### Added
 
+- Added explicit versioned evolution policy for `.playbook/repo-graph.json` to keep graph growth contract-safe for CI and AI consumers.
+- Extended existing `query`/`explain` read flows with additive graph neighborhood summaries instead of introducing a broad new graph command surface.
+- Enriched repository graph generation with deterministic, low-cost derived relationships (`contains`, `governed_by`) based only on existing index/rule metadata.
+- Added/updated contract and snapshot coverage for graph artifact stability and graph-backed read outputs.
+
 - WHAT: Added deterministic Repository Knowledge Graph scaffold artifact `.playbook/repo-graph.json` generated during `playbook index` and introduced `playbook graph --json` stable summary output with deterministic missing-artifact guidance. WHY: Establishes the first durable graph substrate for context compression, impact reasoning, and future knowledge distillation features.
 
 - WHAT: Added Repository Knowledge Graph architecture layer to the product roadmap and clarified layer-relative knowledge units plus compression-as-knowledge-reuse principles. WHY: Unifies repository intelligence, context compression, and the repository learning loop under one compounding architecture direction while preserving deterministic execution contracts.
@@ -130,6 +135,11 @@
 ## Unreleased
 
 ### Added
+
+- Added explicit versioned evolution policy for `.playbook/repo-graph.json` to keep graph growth contract-safe for CI and AI consumers.
+- Extended existing `query`/`explain` read flows with additive graph neighborhood summaries instead of introducing a broad new graph command surface.
+- Enriched repository graph generation with deterministic, low-cost derived relationships (`contains`, `governed_by`) based only on existing index/rule metadata.
+- Added/updated contract and snapshot coverage for graph artifact stability and graph-backed read outputs.
 
 - Added deterministic inline PR diagnostics to `playbook analyze-pr` contracts via structured `findings` (including optional `file`/`line`, `ruleId`, `severity`, `message`, and `recommendation`) so formatter transports can target changed files without inference drift.
 - Added `playbook analyze-pr --format github-review` to export machine-readable GitHub review annotations (`path`, `line`, `body`) derived directly from canonical analyze-pr findings.
