@@ -31,6 +31,9 @@ const runCli = (cwd: string, args: string[]): ReturnType<typeof spawnSync> =>
   });
 
 const createFixtureRepo = (withDocsError: boolean): string => {
+  // Fixture intent:
+  // - withDocsError=false: indexed baseline fixture (may still contain deterministic findings).
+  // - withDocsError=true: intentionally produces doctor error findings via docs audit violations.
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-doctor-contract-'));
 
   fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({ name: 'playbook-doctor-contract' }, null, 2));
@@ -50,7 +53,7 @@ const createFixtureRepo = (withDocsError: boolean): string => {
 
 const parseDoctorPayload = (stdout: string): DoctorPayload => {
   const trimmed = stdout.trim();
-  expect(trimmed).not.toBe('');
+  expect(trimmed, 'doctor --json should emit a JSON payload even when signaling non-clean repo health').not.toBe('');
   return JSON.parse(trimmed) as DoctorPayload;
 };
 
@@ -58,7 +61,10 @@ const assertDoctorExitSemantics = (payload: DoctorPayload, exitCode: number | nu
   // doctor uses process exit code as diagnostic signaling, not only runtime failure signaling.
   // Execution can be successful while still returning exit=1 when error-severity findings exist.
   const expectedExitCode = payload.summary.errors > 0 ? 1 : 0;
-  expect(exitCode).toBe(expectedExitCode);
+  expect(
+    exitCode,
+    `doctor process exit mismatch: expected ${expectedExitCode} from summary.errors=${payload.summary.errors} (status=${payload.status}), received ${String(exitCode)}`
+  ).toBe(expectedExitCode);
 
   const expectedStatus = payload.summary.errors > 0 ? 'error' : payload.summary.warnings > 0 ? 'warning' : 'ok';
   expect(payload.status).toBe(expectedStatus);
