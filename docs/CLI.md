@@ -98,3 +98,10 @@ Default text output prints diagnosis sections for:
 - Docs
 - Testing
 - Risk
+
+Exit-code semantics for `doctor`:
+
+- `0` when no `error`-severity findings are present (`ok` or `warning` status)
+- `1` when one or more `error`-severity findings are present (`error` status)
+
+This is diagnostic signaling, not a command-crash indicator.
