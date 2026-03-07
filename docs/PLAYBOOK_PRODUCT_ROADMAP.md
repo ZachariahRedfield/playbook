@@ -185,6 +185,37 @@ Current baseline:
 
 Future roadmap work should focus on enhancement quality (schema hardening, richer index coverage, CI artifact workflows, and contract durability), not on introducing these commands.
 
+## Platform Hardening
+
+Playbook’s long-term reliability depends on deterministic repository artifacts powering higher-level intelligence commands.
+
+Priority hardening tracks:
+
+1. **Artifact schema versioning + evolution governance**
+   - enforce and test schemaVersion coverage for persisted artifacts
+   - formalize compatibility and migration policy in contract docs
+   - require CI mismatch behavior to remain deterministic and actionable
+
+2. **SCM context abstraction**
+   - introduce shared SCM normalization module (`packages/core/src/scm/context.ts`)
+   - align merge-base, detached HEAD, shallow clone, dirty tree, and rename behavior across command surfaces
+   - add edge-case contract tests for PR vs push contexts
+
+3. **Remediation trust model enforcement**
+   - encode Level 0-3 change-scope boundaries into plan/apply contracts
+   - keep Level 3 cross-module/security-sensitive changes human-reviewed by default
+   - expand remediation safety telemetry for CI auditing
+
+4. **Ecosystem adapter boundaries**
+   - isolate external tooling integrations behind deterministic adapter interfaces
+   - prevent tool-specific behavior from leaking into engine-level command logic
+   - harden adapter error normalization and version-compatibility checks
+
+5. **Context efficiency strategy**
+   - strengthen index-once/query-many behavior with incremental indexing direction
+   - prioritize module/diff scoped responses and concise deterministic outputs
+   - track token/latency budgets for high-frequency command paths
+
 ## Product Direction: Architecture Intelligence
 
 Playbook is evolving from a verification tool into an architecture intelligence engine.

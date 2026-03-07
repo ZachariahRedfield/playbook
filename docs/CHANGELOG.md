@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Completed a platform architecture guardrail audit and added explicit architecture/contracts docs for artifact evolution, SCM context normalization, remediation trust boundaries, AI determinism boundaries, ecosystem adapter isolation, and context efficiency strategy. WHY: Keeps foundational reliability constraints explicit and enforceable as Playbook command surface and AI-assisted workflows evolve.
+
 - Added explicit versioned evolution policy for `.playbook/repo-graph.json` to keep graph growth contract-safe for CI and AI consumers.
 - Extended existing `query`/`explain` read flows with additive graph neighborhood summaries instead of introducing a broad new graph command surface.
 - Enriched repository graph generation with deterministic, low-cost derived relationships (`contains`, `governed_by`) based only on existing index/rule metadata.
