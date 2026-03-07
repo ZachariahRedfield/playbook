@@ -193,6 +193,17 @@ Key capabilities in this direction include:
 
 ## Integration Architecture Direction: shared core, local intelligence
 
+### Consumer Integration Contract
+
+`docs/CONSUMER_INTEGRATION_CONTRACT.md` defines the formal downstream integration model for installing Playbook in external repositories.
+
+Goals:
+
+- define shared core vs project-local intelligence
+- prevent forks
+- enable safe downstream adoption
+- support future embedded runtime/API integrations
+
 Canonical model for downstream adoption:
 
 - **Shared core product/engine:** Playbook CLI/engine/contracts remain the reusable upstream product surface.
@@ -245,7 +256,7 @@ For app-integrated actions (internal dashboards, CI control planes, admin/dev pa
 
 ### Follow-up implementation checklist (roadmap slices)
 
-- [ ] publish a consumer-repo integration contract doc that defines project-local Playbook state boundaries
+- [x] publish a consumer-repo integration contract doc that defines project-local Playbook state boundaries
 - [ ] add a lightweight config/plugin/rule-pack architecture note with extension examples
 - [ ] draft first server-side library/API design stub for embedded `ask`/`query`/`explain` workflows
 - [ ] add `ask --module <name>` scoped repo-context hydration
