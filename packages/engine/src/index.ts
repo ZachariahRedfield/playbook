@@ -27,6 +27,7 @@ export { resolveDiffAskContext } from './ask/diffContext.js';
 export type { DiffAskContext } from './ask/diffContext.js';
 export { analyzePullRequest } from './pr/analyzePr.js';
 export type { AnalyzePullRequestResult } from './pr/analyzePr.js';
+export { formatAnalyzePrGithubComment } from './formatters/githubCommentFormatter.js';
 
 export { explainTarget } from './explain/explainEngine.js';
 export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, UnknownExplanation } from './explain/explainEngine.js';

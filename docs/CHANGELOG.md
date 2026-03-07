@@ -6,6 +6,7 @@
 
 - Added deterministic `playbook query test-hotspots` repository-intelligence output to detect test inefficiency candidates (including broad retrieval followed by narrow filtering) with stable hotspot contracts and safety classifications; MVP reports findings only and does not auto-refactor.
 - Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
+- Added `playbook analyze-pr --format github-comment` as a deterministic export formatter that converts existing analyze-pr JSON contracts into GitHub-ready PR review summary markdown for CI/automation posting, without adding new inference logic.
 - Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
 - Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
 - Added deterministic module intelligence surfaces: `playbook query impact <module>` now returns structured module/dependency/dependent/risk context from `.playbook/repo-index.json`, and `playbook ask --module <name>` scopes ask reasoning to indexed module context with deterministic missing-index/missing-module guidance.
@@ -113,6 +114,7 @@
 
 - Added deterministic `playbook query test-hotspots` repository-intelligence output to detect test inefficiency candidates (including broad retrieval followed by narrow filtering) with stable hotspot contracts and safety classifications; MVP reports findings only and does not auto-refactor.
 - Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
+- Added `playbook analyze-pr --format github-comment` as a deterministic export formatter that converts existing analyze-pr JSON contracts into GitHub-ready PR review summary markdown for CI/automation posting, without adding new inference logic.
 - Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
 - Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
 - Added a security contract system under `docs/contracts/security/` with machine-readable definitions for repository boundary, apply scope, plan determinism, secret redaction, and policy gate guarantees.

@@ -7,6 +7,7 @@ Structured pull request intelligence using local diff + indexed repository intel
 - `playbook analyze-pr`
 - `playbook analyze-pr --json`
 - `playbook analyze-pr --base main --json`
+- `playbook analyze-pr --format github-comment`
 
 ## Behavior
 
@@ -19,6 +20,8 @@ Structured pull request intelligence using local diff + indexed repository intel
 - docs coverage + changed docs context
 
 It returns deterministic review/report data for automation, including changed files, affected modules, downstream impact, architecture boundaries touched, risk summary, docs review recommendations, rule/module ownership, and pre-merge guidance.
+
+`--format github-comment` is an export/formatter mode over the same deterministic analysis contract and is designed for posting GitHub PR review summary comments in CI workflows.
 
 ## Scope contract
 

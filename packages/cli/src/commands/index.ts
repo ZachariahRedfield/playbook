@@ -39,6 +39,20 @@ const parseOptionValues = (allArgs: string[], name: string): string[] | undefine
   return values.length > 0 ? values : undefined;
 };
 
+
+const parseAnalyzePrFormat = (allArgs: string[], globalFormat: 'text' | 'json'): 'text' | 'json' | 'github-comment' => {
+  if (globalFormat === 'json') {
+    return 'json';
+  }
+
+  const format = parseOptionValue(allArgs, '--format');
+  if (format === 'github-comment') {
+    return 'github-comment';
+  }
+
+  return format === 'json' ? 'json' : 'text';
+};
+
 const commandRunners: Record<string, (context: CommandContext) => Promise<number>> = {
   demo: async ({ cwd, format, quiet }) => {
     const { runDemo } = await import('./demo.js');
@@ -61,7 +75,7 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
   'analyze-pr': async ({ cwd, commandArgs, format, quiet }) => {
     const { runAnalyzePr } = await import('./analyzePr.js');
     return runAnalyzePr(cwd, commandArgs, {
-      format,
+      format: parseAnalyzePrFormat(commandArgs, format),
       quiet,
       baseRef: parseOptionValue(commandArgs, '--base')
     });

@@ -70,6 +70,32 @@ describe('analyze-pr', () => {
     logSpy.mockRestore();
   });
 
+
+  it('renders GitHub comment markdown when --format github-comment is provided', async () => {
+    const repo = createRepo('playbook-cli-analyze-pr-github-comment');
+    initGitRepo(repo);
+    writeRepoIndex(repo);
+
+    fs.mkdirSync(path.join(repo, 'src', 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'src', 'auth', 'index.ts'), 'export const auth = 1;\n');
+    runGit(repo, ['add', '.']);
+    runGit(repo, ['commit', '-m', 'initial']);
+
+    fs.mkdirSync(path.join(repo, 'src', 'workouts'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'src', 'workouts', 'index.ts'), 'export const workouts = 2;\n');
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runAnalyzePr(repo, ['--format', 'github-comment'], { format: 'github-comment', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const output = String(logSpy.mock.calls[0]?.[0]);
+    expect(output).toContain('## 🧠 Playbook PR Analysis');
+    expect(output).toContain('### Affected Modules');
+    expect(output).toContain('### Governance Findings');
+
+    logSpy.mockRestore();
+  });
+
   it('fails deterministically when repo index is missing', async () => {
     const repo = createRepo('playbook-cli-analyze-pr-missing-index');
     initGitRepo(repo);

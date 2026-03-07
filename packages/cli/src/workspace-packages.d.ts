@@ -17,6 +17,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const generateRepositoryHealth: (...args: any[]) => any;
   export type ArtifactHygieneReport = any;
   export const analyzePullRequest: (...args: any[]) => any;
+  export const formatAnalyzePrGithubComment: (...args: any[]) => string;
   export const generateRepositoryIndex: (...args: any[]) => any;
   export const loadAiContract: (...args: any[]) => any;
 

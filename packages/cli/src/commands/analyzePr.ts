@@ -1,8 +1,8 @@
-import { analyzePullRequest } from '@zachariahredfield/playbook-engine';
+import { analyzePullRequest, formatAnalyzePrGithubComment } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
 type AnalyzePrOptions = {
-  format: 'text' | 'json';
+  format: 'text' | 'json' | 'github-comment';
   quiet: boolean;
   baseRef?: string;
 };
@@ -15,7 +15,13 @@ Analyze current branch/worktree changes as deterministic PR intelligence using l
 Options:
   --base <ref>   Optional git base ref used for diff resolution
   --json         Print machine-readable JSON output
+  --format <type> Output format (text|json|github-comment)
   --help         Show help`);
+};
+
+
+const printGithubComment = (payload: ReturnType<typeof analyzePullRequest>): void => {
+  console.log(formatAnalyzePrGithubComment(payload));
 };
 
 const printHuman = (payload: ReturnType<typeof analyzePullRequest>): void => {
@@ -64,6 +70,11 @@ export const runAnalyzePr = async (cwd: string, commandArgs: string[], options: 
 
     if (options.format === 'json') {
       console.log(JSON.stringify(payload, null, 2));
+      return ExitCode.Success;
+    }
+
+    if (options.format === 'github-comment') {
+      printGithubComment(payload);
       return ExitCode.Success;
     }
 

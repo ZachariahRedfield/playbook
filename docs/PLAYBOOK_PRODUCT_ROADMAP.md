@@ -590,6 +590,7 @@ Playbook provides structured deterministic analysis of pull requests/branch diff
 Primary command:
 
 `playbook analyze-pr --json`
+`playbook analyze-pr --format github-comment`
 
 Current capabilities:
 
@@ -598,6 +599,7 @@ Current capabilities:
 - Aggregate risk signals from existing module-risk intelligence
 - Surface docs review candidates and ownership-aware context
 - Emit stable machine-readable PR analysis output for automation
+- Export deterministic GitHub-ready PR review comment markdown via formatter mode (`--format github-comment`) without introducing new analysis logic
 
 Playbook should analyze PRs but not author them.
 
