@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Added deterministic `playbook audit architecture` with reusable architecture-audit checks and stable `audit-architecture` JSON contract output, plus command/docs coverage updates. WHY: Prevents structural drift by continuously auditing platform hardening guardrails (artifact evolution/versioning, SCM context normalization, remediation trust boundaries, AI/determinism boundaries, ecosystem adapter isolation, context efficiency, and roadmap coverage).
+
 - WHAT: Completed a platform architecture guardrail audit and added explicit architecture/contracts docs for artifact evolution, SCM context normalization, remediation trust boundaries, AI determinism boundaries, ecosystem adapter isolation, and context efficiency strategy. WHY: Keeps foundational reliability constraints explicit and enforceable as Playbook command surface and AI-assisted workflows evolve.
 
 - Added explicit versioned evolution policy for `.playbook/repo-graph.json` to keep graph growth contract-safe for CI and AI consumers.

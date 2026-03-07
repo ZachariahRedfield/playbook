@@ -6,6 +6,7 @@ declare module "@zachariahredfield/playbook-core" {
   export const verify: (...args: any[]) => Promise<any>;
   export const formatHuman: (...args: any[]) => Promise<any>;
   export const formatJson: (...args: any[]) => Promise<any>;
+  export const runArchitectureAudit: (...args: any[]) => any;
 }
 
 declare module "@zachariahredfield/playbook-node" {

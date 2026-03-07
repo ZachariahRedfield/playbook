@@ -133,6 +133,7 @@ Current implemented product-facing command/artifact set:
 - deterministic rule ownership intelligence (`playbook query rule-owners [rule-id]`)
 - deterministic module ownership intelligence (`playbook query module-owners [module]`)
 - deterministic test hotspot intelligence (`playbook query test-hotspots`) for candidate-only optimization discovery in validation workflows
+- deterministic architecture guardrail audits (`playbook audit architecture`) for platform hardening coverage
 
 ## Roadmap framing (current baseline + future enhancements)
 
@@ -215,6 +216,11 @@ Priority hardening tracks:
    - strengthen index-once/query-many behavior with incremental indexing direction
    - prioritize module/diff scoped responses and concise deterministic outputs
    - track token/latency budgets for high-frequency command paths
+
+6. **Repeatable architecture guardrail audits**
+   - run `playbook audit architecture` as a deterministic hardening diagnostic
+   - keep audit checks aligned with docs/contracts/roadmap surfaces
+   - enforce stable JSON contract coverage for architecture audit automation
 
 ## Product Direction: Architecture Intelligence
 

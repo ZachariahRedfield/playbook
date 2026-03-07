@@ -75,6 +75,14 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'audit',
+    description: 'Audit deterministic architecture guardrails and platform hardening controls',
+    category: 'Repository tools',
+    productFacing: true,
+    example: 'playbook audit architecture --json',
+    machineReadable: true
+  },
+  {
     name: 'rules',
     description: 'List loaded verify and analyze rules',
     category: 'Repository tools',

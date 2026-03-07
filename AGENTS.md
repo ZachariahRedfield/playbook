@@ -185,6 +185,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md`
 - `docs`: Audit documentation governance surfaces and contracts
   - Example: `playbook docs audit --json`
+- `audit`: Audit deterministic architecture guardrails and platform hardening controls
+  - Example: `playbook audit architecture --json`
 - `rules`: List loaded verify and analyze rules
   - Example: `playbook rules --json`
 - `schema`: Print JSON Schemas for Playbook CLI command outputs
@@ -238,6 +240,7 @@ Do not hand-edit entries inside the managed markers.
 | `doctor` | `playbook doctor --fix --dry-run` |
 | `diagram` | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
 | `docs` | `playbook docs audit --json` |
+| `audit` | `playbook audit architecture --json` |
 | `rules` | `playbook rules --json` |
 | `schema` | `playbook schema verify --json` |
 | `context` | `playbook context --json` |
