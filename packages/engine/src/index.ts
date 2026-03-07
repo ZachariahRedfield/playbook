@@ -37,3 +37,6 @@ export type { ImpactQueryResult } from './query/impact.js';
 
 export { queryRisk } from './query/risk.js';
 export type { RiskQueryResult, RiskLevel, RiskSignals, RiskContributions } from './query/risk.js';
+
+export { queryDocsCoverage } from './query/docsCoverage.js';
+export type { DocsCoverageQueryResult, DocsCoverageModuleResult, DocsCoverageSummary } from './query/docsCoverage.js';

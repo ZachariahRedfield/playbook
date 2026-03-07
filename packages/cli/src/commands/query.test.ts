@@ -21,7 +21,8 @@ const writeRepoIndex = (repo: string): void => {
         architecture: 'modular-monolith',
         modules: [
           { name: 'auth', dependencies: [] },
-          { name: 'workouts', dependencies: ['auth'] }
+          { name: 'workouts', dependencies: ['auth'] },
+          { name: 'analytics', dependencies: ['workouts'] }
         ],
         database: 'supabase',
         rules: ['requireNotesOnChanges']
@@ -30,6 +31,13 @@ const writeRepoIndex = (repo: string): void => {
       2
     )
   );
+};
+
+
+const writeDocsCoverageFixtures = (repo: string): void => {
+  fs.mkdirSync(path.join(repo, 'docs', 'modules'), { recursive: true });
+  fs.writeFileSync(path.join(repo, 'docs', 'ARCHITECTURE.md'), '# Architecture\n\n## Auth\nAuth module details\n');
+  fs.writeFileSync(path.join(repo, 'docs', 'modules', 'workouts.md'), '# Workouts\nDetails\n');
 };
 
 const writeVerifyReport = (repo: string): void => {
@@ -54,7 +62,7 @@ describe('runQuery', () => {
     const exitCode = await runQuery(repo, ['modules'], { format: 'text', quiet: false });
 
     expect(exitCode).toBe(ExitCode.Success);
-    expect(logSpy.mock.calls.map((call) => String(call[0]))).toEqual(['Modules', '───────', 'auth: none', 'workouts: auth']);
+    expect(logSpy.mock.calls.map((call) => String(call[0]))).toEqual(['Modules', '───────', 'auth: none', 'workouts: auth', 'analytics: workouts']);
 
     logSpy.mockRestore();
   });
@@ -73,7 +81,8 @@ describe('runQuery', () => {
       field: 'modules',
       result: [
         { name: 'auth', dependencies: [] },
-        { name: 'workouts', dependencies: ['auth'] }
+        { name: 'workouts', dependencies: ['auth'] },
+        { name: 'analytics', dependencies: ['workouts'] }
       ]
     });
 
@@ -115,7 +124,7 @@ describe('runQuery', () => {
       command: 'query',
       type: 'impact',
       module: 'auth',
-      affectedModules: ['workouts']
+      affectedModules: ['workouts', 'analytics']
     });
 
     logSpy.mockRestore();
@@ -137,7 +146,8 @@ describe('runQuery', () => {
       '',
       'Affected modules:',
       '',
-      'workouts'
+      'workouts',
+      'analytics'
     ]);
 
     logSpy.mockRestore();
@@ -186,11 +196,11 @@ describe('runQuery', () => {
       command: 'query',
       type: 'risk',
       module: 'auth',
-      riskLevel: 'high',
+      riskLevel: 'medium',
       signals: {
         directDependencies: 0,
         dependents: 1,
-        transitiveImpact: 1,
+        transitiveImpact: 2,
         verifyFailures: 1,
         isArchitecturalHub: false
       }
@@ -222,6 +232,75 @@ describe('runQuery', () => {
 
     expect(exitCode).toBe(ExitCode.Failure);
     expect(errorSpy).toHaveBeenCalledWith('playbook query risk: unknown module "missing".');
+
+    errorSpy.mockRestore();
+  });
+
+  it('prints docs-coverage query JSON output', async () => {
+    const repo = createRepo('playbook-cli-query-docs-coverage-json');
+    writeRepoIndex(repo);
+    writeDocsCoverageFixtures(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['docs-coverage'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      schemaVersion: '1.0',
+      command: 'query',
+      type: 'docs-coverage',
+      modules: [
+        { module: 'analytics', documented: false, sources: [] },
+        { module: 'auth', documented: true, sources: ['docs/ARCHITECTURE.md'] },
+        { module: 'workouts', documented: true, sources: ['docs/modules/workouts.md'] }
+      ],
+      summary: {
+        totalModules: 3,
+        documentedModules: 2,
+        undocumentedModules: 1
+      }
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('prints docs-coverage query text output', async () => {
+    const repo = createRepo('playbook-cli-query-docs-coverage-text');
+    writeRepoIndex(repo);
+    writeDocsCoverageFixtures(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['docs-coverage'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(logSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+      'Documentation Coverage',
+      '──────────────────────',
+      '',
+      'Documented modules',
+      '  auth',
+      '  workouts',
+      '',
+      'Undocumented modules',
+      '  analytics',
+      '',
+      'Summary',
+      '  2 / 3 modules documented'
+    ]);
+
+    logSpy.mockRestore();
+  });
+
+  it('fails docs-coverage query for unknown module', async () => {
+    const repo = createRepo('playbook-cli-query-docs-coverage-missing');
+    writeRepoIndex(repo);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['docs-coverage', 'missing'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(errorSpy).toHaveBeenCalledWith('playbook query docs-coverage: unknown module "missing".');
 
     errorSpy.mockRestore();
   });

@@ -12,6 +12,7 @@ Current product-facing surface (see authoritative index: [../commands/README.md]
 - `dependencies`
 - `impact`
 - `risk`
+- `docs-coverage`
 - `schema`
 - `doctor`
 - `diagram`
@@ -93,6 +94,7 @@ Supported fields:
 - `dependencies`
 - `impact`
 - `risk`
+- `docs-coverage`
 
 JSON output includes:
 
@@ -126,6 +128,8 @@ This command returns all modules that depend on the specified module (including 
 ```bash
 playbook query risk workouts
 playbook query risk workouts --json
+playbook query docs-coverage
+playbook query docs-coverage workouts --json
 ```
 
 This command combines deterministic dependency fan-in, transitive impact radius, architectural hub status, and verify failure signals (when available) to estimate how dangerous a module is to modify.

@@ -285,11 +285,44 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
+        required: ['schemaVersion', 'command', 'type', 'modules', 'summary'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'query' },
+          type: { const: 'docs-coverage' },
+          modules: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['module', 'documented', 'sources'],
+              properties: {
+                module: { type: 'string' },
+                documented: { type: 'boolean' },
+                sources: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          },
+          summary: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['totalModules', 'documentedModules', 'undocumentedModules'],
+            properties: {
+              totalModules: { type: 'integer', minimum: 0 },
+              documentedModules: { type: 'integer', minimum: 0 },
+              undocumentedModules: { type: 'integer', minimum: 0 }
+            }
+          }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
         required: ['schemaVersion', 'command', 'type', 'module', 'error'],
         properties: {
           schemaVersion: { const: '1.0' },
           command: { const: 'query' },
-          type: { enum: ['dependencies', 'impact', 'risk'] },
+          type: { enum: ['dependencies', 'impact', 'risk', 'docs-coverage'] },
           module: { type: ['string', 'null'] },
           error: { type: 'string' }
         }

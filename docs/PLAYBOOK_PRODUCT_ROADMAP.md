@@ -119,6 +119,7 @@ Current implemented product-facing command/artifact set:
 - `ai-context`
 - repository intelligence (`index`, `query`, `deps`, `ask`, `explain`)
 - deterministic architectural risk intelligence (`playbook query risk <module>`)
+- deterministic documentation coverage intelligence (`playbook query docs-coverage [module]`)
 
 ## Roadmap framing (current baseline + future enhancements)
 

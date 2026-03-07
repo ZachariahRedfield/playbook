@@ -2,11 +2,14 @@ import {
   queryDependencies,
   queryImpact,
   queryRisk,
+  queryDocsCoverage,
   queryRepositoryIndex,
   SUPPORTED_QUERY_FIELDS,
   type DependenciesQueryResult,
   type ImpactQueryResult,
   type RiskQueryResult,
+  type DocsCoverageQueryResult,
+  type DocsCoverageModuleResult,
   type RepositoryModule,
   type RepositoryQueryField
 } from '@zachariahredfield/playbook-engine';
@@ -91,6 +94,38 @@ const printImpactText = (payload: ImpactQueryResult): void => {
   for (const moduleName of payload.affectedModules) {
     console.log(moduleName);
   }
+};
+
+const printDocsCoverageText = (payload: DocsCoverageQueryResult): void => {
+  console.log('Documentation Coverage');
+  console.log('──────────────────────');
+  console.log('');
+  console.log('Documented modules');
+
+  const documented = payload.modules.filter((entry: DocsCoverageModuleResult) => entry.documented);
+  if (documented.length === 0) {
+    console.log('  none');
+  } else {
+    for (const moduleEntry of documented) {
+      console.log(`  ${moduleEntry.module}`);
+    }
+  }
+
+  console.log('');
+  console.log('Undocumented modules');
+
+  const undocumented = payload.modules.filter((entry: DocsCoverageModuleResult) => !entry.documented);
+  if (undocumented.length === 0) {
+    console.log('  none');
+  } else {
+    for (const moduleEntry of undocumented) {
+      console.log(`  ${moduleEntry.module}`);
+    }
+  }
+
+  console.log('');
+  console.log('Summary');
+  console.log(`  ${payload.summary.documentedModules} / ${payload.summary.totalModules} modules documented`);
 };
 
 const printRiskText = (payload: RiskQueryResult): void => {
@@ -233,6 +268,46 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     }
   }
 
+  if (fieldArg === 'docs-coverage') {
+    const moduleArg = commandArgs.find((arg, index) => index > commandArgs.indexOf(fieldArg) && !arg.startsWith('-'));
+
+    try {
+      const payload = queryDocsCoverage(cwd, moduleArg);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(payload, null, 2));
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        printDocsCoverageText(payload);
+      }
+
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (options.format === 'json') {
+        console.log(
+          JSON.stringify(
+            {
+              schemaVersion: '1.0',
+              command: 'query',
+              type: 'docs-coverage',
+              module: moduleArg ?? null,
+              error: message
+            },
+            null,
+            2
+          )
+        );
+      } else {
+        console.error(message);
+      }
+
+      return ExitCode.Failure;
+    }
+  }
+
   if (fieldArg === 'risk') {
     const moduleArg = commandArgs.find((arg, index) => index > commandArgs.indexOf(fieldArg) && !arg.startsWith('-'));
 
@@ -324,7 +399,7 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             command: 'query',
             field: fieldArg,
             error: message,
-            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk']
+            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage']
           },
           null,
           2

@@ -15,6 +15,8 @@ Query structured repository intelligence from `.playbook/repo-index.json`.
 - `playbook query impact workouts`
 - `playbook query risk workouts`
 - `playbook query risk workouts --json`
+- `playbook query docs-coverage`
+- `playbook query docs-coverage workouts --json`
 
 ## Behavior
 
@@ -37,6 +39,7 @@ Supported fields:
 - `dependencies`
 - `impact`
 - `risk`
+- `docs-coverage`
 
 For `dependencies`, the command can return either the full module dependency graph (`playbook query dependencies`) or one module's direct dependencies (`playbook query dependencies <module>`).
 
@@ -45,6 +48,14 @@ For `impact`, the command returns modules that depend on a target module, includ
 For `risk`, the command returns a deterministic architectural risk estimate for changing a module (`playbook query risk <module>`). `impact` answers “what breaks if this changes?” while `risk` answers “how dangerous is this module to modify?”.
 
 Like all query subcommands, `risk` requires a generated index (`playbook index`) and returns deterministic failures for non-indexed modules.
+
+For `docs-coverage`, the command returns deterministic documentation coverage signals per module using repository intelligence plus doc mapping heuristics (`playbook query docs-coverage` or `playbook query docs-coverage <module>`).
+
+Heuristics are intentionally deterministic and include:
+
+- explicit mapped docs in known paths (for example `docs/modules/<module>.md`)
+- module-name headings in markdown docs
+- module references inside architecture docs (`docs/ARCHITECTURE.md`, `docs/ARCHITECTURE_DIAGRAMS.md`)
 
 `playbook query` never modifies repository files and never reruns repository analysis.
 
@@ -57,6 +68,8 @@ playbook query dependencies
 playbook query dependencies workouts --json
 playbook query impact workouts
 playbook query risk workouts
+playbook query docs-coverage
+playbook query docs-coverage workouts --json
 ```
 
 ## JSON contracts
@@ -145,3 +158,31 @@ Risk level thresholds:
 - `low`: `< 0.40`
 - `medium`: `>= 0.40` and `< 0.70`
 - `high`: `>= 0.70`
+
+
+Docs coverage query:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "command": "query",
+  "type": "docs-coverage",
+  "modules": [
+    {
+      "module": "workouts",
+      "documented": true,
+      "sources": ["docs/ARCHITECTURE.md"]
+    },
+    {
+      "module": "analytics",
+      "documented": false,
+      "sources": []
+    }
+  ],
+  "summary": {
+    "totalModules": 2,
+    "documentedModules": 1,
+    "undocumentedModules": 1
+  }
+}
+```

@@ -21,9 +21,19 @@ declare module "@zachariahredfield/playbook-engine" {
   export const queryDependencies: (...args: any[]) => any;
   export const queryImpact: (...args: any[]) => any;
   export const queryRisk: (...args: any[]) => any;
+  export const queryDocsCoverage: (...args: any[]) => any;
   export type DependenciesQueryResult = any;
   export type ImpactQueryResult = any;
   export type RiskQueryResult = any;
+  export type DocsCoverageModuleResult = { module: string; documented: boolean; sources: string[] };
+  export type DocsCoverageSummary = { totalModules: number; documentedModules: number; undocumentedModules: number };
+  export type DocsCoverageQueryResult = {
+    schemaVersion: '1.0';
+    command: 'query';
+    type: 'docs-coverage';
+    modules: DocsCoverageModuleResult[];
+    summary: DocsCoverageSummary;
+  };
   export type RepositoryModule = any;
   export const answerRepositoryQuestion: (...args: any[]) => any;
   export const explainTarget: (...args: any[]) => any;

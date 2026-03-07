@@ -6,6 +6,7 @@ import { queryRepositoryIndex } from '../src/query/repoQuery.js';
 import { queryDependencies } from '../src/query/dependencies.js';
 import { queryImpact } from '../src/query/impact.js';
 import { queryRisk } from '../src/query/risk.js';
+import { queryDocsCoverage } from '../src/query/docsCoverage.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
 
@@ -205,6 +206,75 @@ describe('queryRepositoryIndex', () => {
     expect(result.reasons).toContain('Active verify failures associated with this module');
   });
 
+
+  it('returns docs coverage for mixed documentation states', () => {
+    const repo = createRepo('playbook-repo-query-docs-coverage');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] },
+        { name: 'analytics', dependencies: ['workouts'] }
+      ],
+      database: 'none',
+      rules: []
+    });
+
+    fs.mkdirSync(path.join(repo, 'docs', 'modules'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'docs', 'ARCHITECTURE.md'), '# Architecture\n\n## Auth\nAuth module owns access control.\n');
+    fs.writeFileSync(path.join(repo, 'docs', 'modules', 'workouts.md'), '# Workouts\nDetails\n');
+
+    expect(queryDocsCoverage(repo)).toEqual({
+      schemaVersion: '1.0',
+      command: 'query',
+      type: 'docs-coverage',
+      modules: [
+        { module: 'analytics', documented: false, sources: [] },
+        { module: 'auth', documented: true, sources: ['docs/ARCHITECTURE.md'] },
+        { module: 'workouts', documented: true, sources: ['docs/modules/workouts.md'] }
+      ],
+      summary: {
+        totalModules: 3,
+        documentedModules: 2,
+        undocumentedModules: 1
+      }
+    });
+  });
+
+  it('returns docs coverage for a specific module', () => {
+    const repo = createRepo('playbook-repo-query-docs-coverage-single');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] }
+      ],
+      database: 'none',
+      rules: []
+    });
+
+    fs.mkdirSync(path.join(repo, 'docs', 'modules'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'docs', 'modules', 'workouts.md'), '# Workouts\nDetails\n');
+
+    expect(queryDocsCoverage(repo, 'workouts')).toEqual({
+      schemaVersion: '1.0',
+      command: 'query',
+      type: 'docs-coverage',
+      modules: [{ module: 'workouts', documented: true, sources: ['docs/modules/workouts.md'] }],
+      summary: {
+        totalModules: 1,
+        documentedModules: 1,
+        undocumentedModules: 0
+      }
+    });
+  });
+
   it('throws deterministic errors for unsupported fields', () => {
     const repo = createRepo('playbook-repo-query-unsupported-field');
     writeRepoIndex(repo, {
@@ -237,6 +307,7 @@ describe('queryRepositoryIndex', () => {
     expect(() => queryDependencies(repo, 'worker')).toThrow('playbook query dependencies: unknown module "worker".');
     expect(() => queryImpact(repo, 'worker')).toThrow('playbook query impact: unknown module "worker".');
     expect(() => queryRisk(repo, 'worker')).toThrow('playbook query risk: unknown module "worker".');
+    expect(() => queryDocsCoverage(repo, 'worker')).toThrow('playbook query docs-coverage: unknown module "worker".');
   });
 
   it('throws deterministic errors when index file is missing', () => {

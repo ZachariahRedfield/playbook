@@ -5,6 +5,7 @@
 ### Added
 
 - Added deterministic architectural risk analysis via `playbook query risk <module>` with explainable weighted signals (`fanIn`, `impact`, `verifyFailures`, `hub`) and stable JSON/text output.
+- Added deterministic documentation coverage analysis via `playbook query docs-coverage [module]` to identify documented and under-documented modules from repository intelligence and docs heuristics.
 - Added query schema contract coverage for risk payloads via `playbook schema query`.
 
 - `playbook ai-context` command providing a concise AI bootstrap interface for repository intelligence.
