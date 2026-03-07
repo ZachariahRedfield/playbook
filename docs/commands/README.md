@@ -63,6 +63,22 @@ If docs and implementation disagree, treat implementation as source of truth and
 
 Command reference: [`playbook docs audit`](docs.md).
 
+## AI Response Modes for `playbook ask`
+
+`playbook ask` supports `--mode <mode>` to control output verbosity.
+
+- `normal` (default): Full explanation with context
+- `concise`: Compressed but informative
+- `ultra`: Maximum compression
+
+Examples:
+
+```bash
+playbook ask "how does auth work?"
+playbook ask "how does auth work?" --mode concise
+playbook ask "how do I fix this rule violation?" --mode ultra
+```
+
 
 ## Security contract verification
 

@@ -62,6 +62,8 @@ describe('runAsk', () => {
     expect(payload).toEqual({
       command: 'ask',
       question: 'what architecture does this repo use?',
+      mode: 'normal',
+      modeInstruction: 'Respond with complete explanations, contextual details, and clear reasoning.',
       answer: 'Architecture: modular-monolith',
       reason: 'Derived from repository index architecture signal. Rule registry signals in the index: requireNotesOnChanges.',
       context: {

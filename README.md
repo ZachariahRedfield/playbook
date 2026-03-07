@@ -162,6 +162,8 @@ playbook ai-context
 playbook context
 playbook query modules
 playbook ask "where should a new feature live?"
+playbook ask "how does auth work?" --mode concise
+playbook ask "how do I fix this rule violation?" --mode ultra
 playbook explain architecture
 playbook verify
 playbook plan
@@ -203,9 +205,27 @@ playbook query docs-coverage
 playbook query rule-owners
 playbook ask "where should a new feature live?"
 playbook ask "what modules exist?" --json
+playbook ask "how does auth work?" --mode concise
+playbook ask "how do I fix this rule violation?" --mode ultra
 playbook explain workouts
 playbook explain PB001
 playbook explain architecture
+```
+
+### AI Response Modes (`playbook ask --mode`)
+
+`playbook ask` supports response modes to control answer density.
+
+- `normal` (default): full explanation with context
+- `concise`: compressed but still informative output
+- `ultra`: maximum compression optimized for quick decisions
+
+Examples:
+
+```bash
+playbook ask "how does auth work?"
+playbook ask "how does auth work?" --mode concise
+playbook ask "how do I fix this rule violation?" --mode ultra
 ```
 
 Authoritative command status lives in [docs/commands/README.md](docs/commands/README.md).

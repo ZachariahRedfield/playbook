@@ -171,6 +171,7 @@ Archived items preserve historical product intelligence without cluttering the a
 Current baseline:
 
 - **AI Repository Intelligence (`playbook ai-context`, `playbook ai-contract`, `index`, `query`, `deps`, `ask`, `explain`)** is implemented and available for deterministic AI bootstrap and repository intelligence workflows.
+- `playbook ask` now supports deterministic response modes (`--mode normal|concise|ultra`) to match explanation depth to developer workflow speed.
 
 Future roadmap work should focus on enhancement quality (schema hardening, richer index coverage, CI artifact workflows, and contract durability), not on introducing these commands.
 

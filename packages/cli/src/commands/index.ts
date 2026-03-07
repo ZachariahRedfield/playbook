@@ -163,7 +163,7 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
   },
   ask: async ({ cwd, commandArgs, format, quiet }) => {
     const { runAsk } = await import('./ask.js');
-    return runAsk(cwd, commandArgs, { format, quiet });
+    return runAsk(cwd, commandArgs, { format, quiet, mode: parseOptionValue(commandArgs, '--mode') });
   },
   deps: async ({ cwd, commandArgs, format, quiet }) => {
     const { runDeps } = await import('./deps.js');
