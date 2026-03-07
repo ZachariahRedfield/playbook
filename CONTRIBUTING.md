@@ -24,6 +24,16 @@ pnpm test
 3. Run `pnpm build` and `pnpm test` before opening a pull request.
 4. Do not update README for new rules or commands; rely on CLI discovery (`playbook --help`, `playbook rules`, `playbook explain <id>`).
 
+## Governance Audit Habit (post-merge follow-up)
+
+After landing architecture/governance-adjacent changes, run these non-blocking checks to keep governance visible and healthy without immediately widening CI enforcement:
+
+- `playbook audit architecture` — run when architecture contracts, deterministic boundaries, or guardrail checks are touched.
+- `playbook doctor` — run before handoff/review to surface a lightweight cross-signal health summary.
+- `playbook docs audit` — run when docs, governance workflows, or roadmap-linked expectations are updated.
+
+These checks are intentionally habit-forming workflow guidance first; broaden enforcement only for low-false-positive deterministic checks.
+
 ## Project Areas
 
 - `packages/cli` — command surface and template scaffolding.

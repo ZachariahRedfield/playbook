@@ -4,6 +4,7 @@
 
 ### Added
 
+- WHAT: Added contributor/developer workflow guidance for when to run `playbook audit architecture`, `playbook doctor`, and `playbook docs audit` after merge. WHY: Turns governance commands from merely available into a repeatable team habit before adding heavier CI enforcement.
 - WHAT: Hardened `playbook audit architecture` (v1.1) with standardized `pass|warn|fail` semantics, deterministic ordering guarantees (checks, audit IDs, evidence, and next actions), and richer source-referenced evidence. WHY: Improves operator trust, CI snapshot stability, and actionable diagnostics across environments.
 - WHAT: Upgraded architecture checks from presence-only to minimum-quality deterministic validation (artifact schemaVersion, remediation trust boundaries, AI/determinism boundary clarity, adapter isolation, context-efficiency concepts, and tolerant roadmap concept coverage) and integrated architecture-audit findings into `playbook doctor`. WHY: Raises governance signal quality while keeping command surface stable and non-brittle.
 
