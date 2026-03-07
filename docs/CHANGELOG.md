@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- `playbook ai-context` command providing a concise AI bootstrap interface for repository intelligence.
+- Documentation updates aligning Playbook with an AI-first repository workflow.
+
 - WHAT: Synced product-state docs to the current command surface by adding an authoritative command index (`docs/commands/README.md`), aligning README/CLI reference/demo docs/roadmap language around `analyze`, `verify`, `rules`, `doctor`, `diagram`, `plan`, `apply`, and the `playbook-demo` artifact, and marking `playbook index` as next planned (not implemented). WHY: Prevents AI/human command-surface drift and keeps roadmap + onboarding + command docs consistent with implemented behavior.
 - WHAT: Added a `playbook-diagrams` GitHub Actions workflow that regenerates `docs/ARCHITECTURE_DIAGRAMS.md` on `main` pushes for architecture-relevant paths and auto-commits only that file, plus README architecture automation guidance. WHY: Keeps architecture docs deterministic and continuously synced to repository state without manual updates.
 - WHAT: Added a first-class `playbook demo` command with deterministic text and JSON onboarding contracts, registered it in CLI help/command registry, added command tests, and documented the CLI-first demo discovery path. WHY: Makes the demo repository discoverable from the product surface and gives humans/agents a stable side-effect-free onboarding workflow without environment-dependent behavior.

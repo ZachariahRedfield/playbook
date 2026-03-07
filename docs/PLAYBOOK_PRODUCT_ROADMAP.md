@@ -116,12 +116,14 @@ Current implemented product-facing command/artifact set:
 - `plan`
 - `apply`
 - `playbook-demo` artifact (exposed through `playbook demo`)
+- `ai-context`
+- repository intelligence (`index`, `query`, `deps`, `ask`, `explain`)
 
 ## Roadmap framing (future-state)
 
 The following items are planned and should be treated as future-state roadmap work:
 
-- **AI Repository Intelligence (`playbook index`)**: implemented command that generates `.playbook/repo-index.json` with deterministic architecture/module/framework signals for automation-safe repository understanding.
+- **AI Repository Intelligence (`playbook ai-context`, `index`, `query`, `deps`, `ask`, `explain`)**: implemented command surface for deterministic AI bootstrap and repository intelligence workflows.
 
 
 Establish Playbook as a trusted governance tool in the developer ecosystem.
@@ -243,7 +245,7 @@ Tooling & Distribution (Package Manager + Action + Demo Repo)
 
 Near-Term Productization Milestones
 
-Progress (current): repository intelligence commands (`index`, `query`, `ask`, `explain`) are implemented with deterministic JSON-oriented contracts for AI-operable workflows.
+Progress (current): AI bootstrap and repository intelligence commands (`ai-context`, `index`, `query`, `deps`, `ask`, `explain`) are implemented with deterministic JSON-oriented contracts for AI-operable workflows.
 
 ### Future milestone: AI Repository Intelligence (planned)
 

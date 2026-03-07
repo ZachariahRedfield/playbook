@@ -76,10 +76,39 @@ Run `npx playbook index` to generate a deterministic machine-readable repository
 
 Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `verify`, `plan`, `context`, `ai-context`) so CI and agents can validate payloads.
 
+## Playbook Context
 
-## Playbook AI Bootstrap
+Playbook provides deterministic machine-readable context for both humans and automation:
 
-Use `playbook ai-context` as the preferred agent bootstrap payload, then use `playbook context` for broader CLI/architecture context.
+- `playbook context --json` returns broader CLI and architecture context.
+- `playbook ai-context --json` returns a compact AI bootstrap payload.
+
+## AI Bootstrap
+
+AI tools can bootstrap repository understanding with:
+
+```bash
+playbook ai-context --json
+```
+
+The payload is designed for:
+
+- AI agents
+- IDE assistants
+- CI automation
+
+Example AI-first flow:
+
+```bash
+playbook ai-context
+playbook query modules
+playbook ask "where should a new feature live?"
+playbook verify
+playbook plan
+playbook apply
+```
+
+Inside this repository, use the local built CLI entrypoint for branch-accurate validation:
 
 ```bash
 pnpm -r build
