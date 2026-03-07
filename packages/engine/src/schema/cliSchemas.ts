@@ -323,13 +323,64 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['command', 'framework', 'architecture', 'issues', 'suggestedActions'],
+        required: ['command', 'framework', 'architecture', 'issues', 'suggestedActions', 'artifactHygiene'],
         properties: {
           command: { const: 'doctor' },
           framework: { type: 'string' },
           architecture: { type: 'string' },
           issues: { type: 'array', items: { type: 'string' } },
-          suggestedActions: { type: 'array', items: { type: 'string' } }
+          suggestedActions: { type: 'array', items: { type: 'string' } },
+          artifactHygiene: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['classification', 'findings', 'suggestions'],
+            properties: {
+              classification: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['runtime', 'automation', 'contract'],
+                properties: {
+                  runtime: { type: 'array', items: { type: 'string' } },
+                  automation: { type: 'array', items: { type: 'string' } },
+                  contract: { type: 'array', items: { type: 'string' } }
+                }
+              },
+              findings: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['type', 'message', 'recommendation'],
+                  properties: {
+                    type: {
+                      enum: [
+                        'runtime-artifact-committed',
+                        'large-generated-json',
+                        'frequently-modified-generated-artifact',
+                        'missing-playbookignore'
+                      ]
+                    },
+                    path: { type: 'string' },
+                    message: { type: 'string' },
+                    recommendation: { type: 'string' }
+                  }
+                }
+              },
+              suggestions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['id', 'title'],
+                  properties: {
+                    id: { enum: ['PB012', 'PB013', 'PB014'] },
+                    title: { type: 'string' },
+                    entries: { type: 'array', items: { type: 'string' } }
+                  }
+                }
+              }
+            }
+          }
         }
       },
       {

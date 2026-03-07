@@ -40,4 +40,19 @@ describe('generateRepositoryIndex', () => {
 
     expect(index.architecture).toBe('microservices');
   });
+
+  it('respects .playbookignore when scanning source modules', () => {
+    const repo = createRepo('playbook-repo-index-ignore');
+    fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({}, null, 2));
+    fs.mkdirSync(path.join(repo, 'src', 'api'), { recursive: true });
+    fs.mkdirSync(path.join(repo, 'src', 'generated'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbookignore'), 'src/generated\n');
+    fs.writeFileSync(path.join(repo, 'src', 'api', 'index.ts'), "export const api = true;\n");
+    fs.writeFileSync(path.join(repo, 'src', 'generated', 'index.ts'), "export const generated = true;\n");
+
+    const index = generateRepositoryIndex(repo);
+
+    expect(index.modules).toEqual([{ name: 'api', dependencies: [] }]);
+  });
+
 });
