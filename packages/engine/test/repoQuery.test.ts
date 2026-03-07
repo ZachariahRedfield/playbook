@@ -119,29 +119,25 @@ describe('queryRepositoryIndex', () => {
       rules: []
     });
 
-    expect(queryImpact(repo, 'workouts')).toEqual({
-      schemaVersion: '1.0',
-      command: 'query',
-      type: 'impact',
-      module: 'workouts',
-      affectedModules: ['analytics']
-    });
+    const workoutsImpact = queryImpact(repo, 'workouts');
+    expect(workoutsImpact.query).toBe('impact');
+    expect(workoutsImpact.target).toBe('workouts');
+    expect(workoutsImpact.module).toEqual({ name: 'workouts', path: 'src/workouts', type: 'module' });
+    expect(workoutsImpact.impact.dependencies).toEqual(['auth', 'db']);
+    expect(workoutsImpact.impact.directDependents).toEqual(['analytics']);
+    expect(workoutsImpact.impact.dependents).toEqual(['analytics']);
+    expect(workoutsImpact.impact.docs).toEqual([]);
+    expect(workoutsImpact.impact.rules).toEqual([]);
 
-    expect(queryImpact(repo, 'db')).toEqual({
-      schemaVersion: '1.0',
-      command: 'query',
-      type: 'impact',
-      module: 'db',
-      affectedModules: ['workouts', 'analytics']
-    });
+    const dbImpact = queryImpact(repo, 'db');
+    expect(dbImpact.impact.dependencies).toEqual([]);
+    expect(dbImpact.impact.directDependents).toEqual(['workouts']);
+    expect(dbImpact.impact.dependents).toEqual(['analytics', 'workouts']);
 
-    expect(queryImpact(repo, 'analytics')).toEqual({
-      schemaVersion: '1.0',
-      command: 'query',
-      type: 'impact',
-      module: 'analytics',
-      affectedModules: []
-    });
+    const analyticsImpact = queryImpact(repo, 'analytics');
+    expect(analyticsImpact.impact.dependencies).toEqual(['workouts']);
+    expect(analyticsImpact.impact.directDependents).toEqual([]);
+    expect(analyticsImpact.impact.dependents).toEqual([]);
   });
 
 

@@ -164,6 +164,7 @@ playbook index
 playbook query modules
 playbook ask "where should a new feature live?" --repo-context
 playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
 playbook ask "how do I fix this rule violation?" --mode ultra
 playbook explain architecture
 playbook verify
@@ -202,24 +203,27 @@ playbook index
 playbook query modules
 playbook query architecture
 playbook query risk workouts
+playbook query impact workouts
 playbook query docs-coverage
 playbook query rule-owners
 playbook ask "where should a new feature live?"
 playbook ask "what modules exist?" --json
 playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
 playbook ask "how do I fix this rule violation?" --mode ultra
 playbook explain workouts
 playbook explain PB001
 playbook explain architecture
 ```
 
-### Repo-aware ask (`playbook ask --repo-context`)
+### Repo-aware ask (`playbook ask --repo-context`, `--module`)
 
 Use `--repo-context` when asking repository-shape or architecture questions.
 
 - It injects trusted Playbook-managed artifacts (for example `.playbook/repo-index.json` and AI contract metadata) into ask context.
 - It avoids broad ad-hoc repository file inference.
 - It requires repository intelligence from `playbook index` first.
+- `--module <name>` narrows ask reasoning to trusted indexed context for that module.
 
 Examples:
 
@@ -227,6 +231,7 @@ Examples:
 playbook index
 playbook ask "where should a new feature live?" --repo-context
 playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
 playbook ask "what modules are affected by this?" --repo-context --json
 ```
 
@@ -245,6 +250,7 @@ Examples:
 ```bash
 playbook ask "how does auth work?"
 playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this work?" --module workouts --repo-context
 playbook ask "how do I fix this rule violation?" --mode ultra
 ```
 

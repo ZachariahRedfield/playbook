@@ -84,6 +84,7 @@ Examples:
 ```bash
 playbook ask "where should a new feature live?" --repo-context
 playbook ask "how does auth work?" --repo-context --mode concise
+playbook ask "how does this module work?" --module workouts --repo-context
 playbook ask "what modules are affected by this?" --repo-context --json
 ```
 
@@ -102,6 +103,7 @@ Examples:
 ```bash
 playbook ask "how does auth work?"
 playbook ask "how does auth work?" --mode concise
+playbook ask "how does this work?" --module workouts
 playbook ask "how do I fix this rule violation?" --mode ultra
 ```
 
@@ -153,3 +155,10 @@ Suggested remediation IDs:
 - `PB012`: add `.playbookignore`
 - `PB013`: update `.gitignore` for runtime artifacts
 - `PB014`: move runtime artifacts to `.playbook/`
+
+
+### Deterministic module impact
+
+`playbook query impact <module>` converts indexed module/dependency data from `.playbook/repo-index.json` into deterministic module blast-radius analysis, including dependencies, reverse dependencies, and risk signals.
+
+Rule: Module impact and module-scoped ask rely on Playbook-managed index artifacts, not ad-hoc rescans.

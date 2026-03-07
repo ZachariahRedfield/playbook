@@ -50,6 +50,27 @@ describe('ask --repo-context', () => {
     errorSpy.mockRestore();
   });
 
+
+  it('composes --module with --repo-context for narrowed indexed context', async () => {
+    const repo = createRepo('playbook-cli-ask-repo-context-module');
+    writeRepoIndex(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runAsk(repo, ['how', 'does', 'this', 'module', 'work?', '--module', 'workouts'], {
+      format: 'json',
+      quiet: false,
+      repoContext: true,
+      module: 'workouts'
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.repoContext.enabled).toBe(true);
+    expect(payload.context.module.module.name).toBe('workouts');
+
+    logSpy.mockRestore();
+  });
+
   it('loads trusted context sources into JSON output metadata', async () => {
     const repo = createRepo('playbook-cli-ask-repo-context-json');
     writeRepoIndex(repo);

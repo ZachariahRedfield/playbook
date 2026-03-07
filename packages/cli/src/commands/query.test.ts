@@ -136,13 +136,12 @@ describe('runQuery', () => {
 
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload).toEqual({
-      schemaVersion: '1.0',
-      command: 'query',
-      type: 'impact',
-      module: 'auth',
-      affectedModules: ['workouts', 'analytics']
-    });
+    expect(payload.query).toBe('impact');
+    expect(payload.target).toBe('auth');
+    expect(payload.module).toEqual({ name: 'auth', path: 'src/auth', type: 'module' });
+    expect(payload.impact.dependencies).toEqual([]);
+    expect(payload.impact.directDependents).toEqual(['workouts']);
+    expect(payload.impact.dependents).toEqual(['analytics', 'workouts']);
 
     logSpy.mockRestore();
   });
@@ -159,12 +158,13 @@ describe('runQuery', () => {
       'Impact Analysis',
       '───────────────',
       '',
-      'Changing module: auth',
+      'Target module: auth',
+      'Module path: src/auth',
       '',
-      'Affected modules:',
-      '',
-      'workouts',
-      'analytics'
+      'Dependencies: none',
+      'Direct dependents: workouts',
+      'Transitive dependents: analytics, workouts',
+      'Risk: medium (0.53)'
     ]);
 
     logSpy.mockRestore();

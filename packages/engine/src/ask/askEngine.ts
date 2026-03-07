@@ -1,5 +1,6 @@
 import { queryRepositoryIndex } from '../query/repoQuery.js';
 import type { RepositoryModule } from '../indexer/repoIndexer.js';
+import { buildModuleAskContext, resolveIndexedModuleContext, type IndexedModuleContext } from '../query/moduleIntelligence.js';
 
 
 const toModuleNames = (modules: string[] | RepositoryModule[]): string[] => {
@@ -43,7 +44,12 @@ export type AskEngineResult = {
     architecture: string;
     framework: string;
     modules: string[];
+    module?: IndexedModuleContext;
   };
+};
+
+type AskEngineOptions = {
+  module?: string;
 };
 
 const normalizeQuestion = (question: string): string => extractUserQuestion(question).trim().toLowerCase();
@@ -72,10 +78,30 @@ const formatRulesHint = (rules: string[]): string => {
 
 const includesAny = (question: string, values: string[]): boolean => values.some((value) => question.includes(value));
 
-export const answerRepositoryQuestion = (projectRoot: string, question: string): AskEngineResult => {
+export const answerRepositoryQuestion = (projectRoot: string, question: string, options?: AskEngineOptions): AskEngineResult => {
   const userQuestion = extractUserQuestion(question);
   const normalizedQuestion = normalizeQuestion(userQuestion);
   const context = gatherContext(projectRoot);
+  const moduleContext = options?.module
+    ? resolveIndexedModuleContext(projectRoot, options.module, { unknownModulePrefix: 'playbook ask --module' })
+    : undefined;
+
+  if (moduleContext && includesAny(normalizedQuestion, ['how', 'work', 'works', 'module'])) {
+    const moduleSummary = buildModuleAskContext(moduleContext).split('\n').slice(0, 5).join('; ');
+
+    return {
+      question: userQuestion,
+      answer: moduleSummary,
+      reason:
+        'Derived from module-scoped repository intelligence in .playbook/repo-index.json using indexed module and dependency metadata.',
+      context: {
+        architecture: context.architecture,
+        framework: context.framework,
+        modules: context.modules,
+        module: moduleContext
+      }
+    };
+  }
 
   if (normalizedQuestion.includes('where') && includesAny(normalizedQuestion, ['feature', 'features'])) {
     if (context.architecture === 'modular-monolith') {
@@ -100,7 +126,8 @@ export const answerRepositoryQuestion = (projectRoot: string, question: string):
       context: {
         architecture: context.architecture,
         framework: context.framework,
-        modules: context.modules
+        modules: context.modules,
+        module: moduleContext
       }
     };
   }
@@ -113,7 +140,8 @@ export const answerRepositoryQuestion = (projectRoot: string, question: string):
       context: {
         architecture: context.architecture,
         framework: context.framework,
-        modules: context.modules
+        modules: context.modules,
+        module: moduleContext
       }
     };
   }
@@ -126,7 +154,8 @@ export const answerRepositoryQuestion = (projectRoot: string, question: string):
       context: {
         architecture: context.architecture,
         framework: context.framework,
-        modules: context.modules
+        modules: context.modules,
+        module: moduleContext
       }
     };
   }
@@ -138,7 +167,8 @@ export const answerRepositoryQuestion = (projectRoot: string, question: string):
     context: {
       architecture: context.architecture,
       framework: context.framework,
-      modules: context.modules
+      modules: context.modules,
+      module: moduleContext
     }
   };
 };

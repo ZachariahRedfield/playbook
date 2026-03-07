@@ -19,7 +19,10 @@ const writeRepoIndex = (repo: string): void => {
         framework: 'nextjs',
         language: 'typescript',
         architecture: 'modular-monolith',
-        modules: ['users', 'workouts'],
+        modules: [
+          { name: 'users', dependencies: [] },
+          { name: 'workouts', dependencies: ['users'] }
+        ],
         database: 'supabase',
         rules: ['requireNotesOnChanges']
       },
@@ -76,6 +79,26 @@ describe('runAsk', () => {
         modules: ['users', 'workouts']
       }
     });
+
+    logSpy.mockRestore();
+  });
+
+
+  it('supports module-scoped ask context via --module', async () => {
+    const repo = createRepo('playbook-cli-ask-module');
+    writeRepoIndex(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runAsk(repo, ['how', 'does', 'this', 'module', 'work?', '--module', 'workouts'], {
+      format: 'json',
+      quiet: false,
+      module: 'workouts'
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.context.module.module.name).toBe('workouts');
+    expect(payload.context.module.impact.dependencies).toEqual(['users']);
 
     logSpy.mockRestore();
   });

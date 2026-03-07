@@ -8,6 +8,7 @@ type AskOptions = {
   quiet: boolean;
   mode?: string;
   repoContext?: boolean;
+  module?: string;
 };
 
 type AskResult = {
@@ -25,6 +26,7 @@ type AskResult = {
     architecture: string;
     framework: string;
     modules: string[];
+    module?: unknown;
   };
 };
 
@@ -43,7 +45,7 @@ const parseAskInput = (args: string[]): ParsedAskInput => {
       return { help: true };
     }
 
-    if (arg === '--mode') {
+    if (arg === '--mode' || arg === '--module') {
       index += 1;
       continue;
     }
@@ -90,6 +92,8 @@ Options:
   --repo-context             Inject trusted repository intelligence into ask context
                              using Playbook-managed artifacts (for example
                              .playbook/repo-index.json and .playbook/ai-contract.json)
+  --module <name>            Scope ask reasoning to indexed module intelligence from
+                             .playbook/repo-index.json
   --help                     Show help`);
 };
 
@@ -110,10 +114,11 @@ export const runAsk = async (cwd: string, commandArgs: string[], options: AskOpt
   try {
     const mode = parseResponseMode(options.mode);
     const repoContext = loadAskRepoContext({ cwd, enabled: options.repoContext ?? false });
+    const moduleContextPrefix = options.module ? `Scoped module context: ${options.module}` : '';
     const enrichedQuestion = repoContext.enabled
-      ? `${repoContext.promptContext}\n\nUser question: ${questionArg}`
+      ? `${moduleContextPrefix}${moduleContextPrefix.length > 0 ? '\n' : ''}${repoContext.promptContext}\n\nUser question: ${questionArg}`
       : questionArg;
-    const answer = answerRepositoryQuestion(cwd, enrichedQuestion);
+    const answer = answerRepositoryQuestion(cwd, enrichedQuestion, { module: options.module });
     const modeInstruction = getResponseModeInstruction(mode);
     const answerForMode = formatAnswerForMode(answer.answer, answer.reason, mode);
 

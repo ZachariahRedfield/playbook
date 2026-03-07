@@ -259,7 +259,7 @@ For app-integrated actions (internal dashboards, CI control planes, admin/dev pa
 - [x] publish a consumer-repo integration contract doc that defines project-local Playbook state boundaries
 - [ ] add a lightweight config/plugin/rule-pack architecture note with extension examples
 - [ ] draft first server-side library/API design stub for embedded `ask`/`query`/`explain` workflows
-- [ ] add `ask --module <name>` scoped repo-context hydration
+- [x] add `ask --module <name>` scoped repo-context hydration
 - [ ] add `ask --diff-context` for change-scoped intelligence prompts
 - [ ] expose ask context-source provenance contract in JSON for app/agent integrations
 - [ ] define explicit opt-in export/sync/telemetry policy language before any cloud-backed intelligence behavior

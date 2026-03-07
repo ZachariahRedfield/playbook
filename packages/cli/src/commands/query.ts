@@ -85,19 +85,17 @@ const printImpactText = (payload: ImpactQueryResult): void => {
   console.log('Impact Analysis');
   console.log('───────────────');
   console.log('');
-  console.log(`Changing module: ${payload.module}`);
+  console.log(`Target module: ${payload.module.name}`);
+  console.log(`Module path: ${payload.module.path}`);
   console.log('');
-  console.log('Affected modules:');
-  console.log('');
-
-  if (payload.affectedModules.length === 0) {
-    console.log('none');
-    return;
-  }
-
-  for (const moduleName of payload.affectedModules) {
-    console.log(moduleName);
-  }
+  console.log(`Dependencies: ${payload.impact.dependencies.length > 0 ? payload.impact.dependencies.join(', ') : 'none'}`);
+  console.log(
+    `Direct dependents: ${payload.impact.directDependents.length > 0 ? payload.impact.directDependents.join(', ') : 'none'}`
+  );
+  console.log(
+    `Transitive dependents: ${payload.impact.dependents.length > 0 ? payload.impact.dependents.join(', ') : 'none'}`
+  );
+  console.log(`Risk: ${payload.impact.risk.level} (${payload.impact.risk.score.toFixed(2)})`);
 };
 
 const printDocsCoverageText = (payload: DocsCoverageQueryResult): void => {
@@ -280,8 +278,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             {
               schemaVersion: '1.0',
               command: 'query',
-              type: 'impact',
-              module: null,
+              query: 'impact',
+              target: null,
               error: message
             },
             null,
@@ -316,8 +314,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             {
               schemaVersion: '1.0',
               command: 'query',
-              type: 'impact',
-              module: moduleArg,
+              query: 'impact',
+              target: moduleArg,
               error: message
             },
             null,

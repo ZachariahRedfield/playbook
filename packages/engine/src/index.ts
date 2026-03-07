@@ -38,6 +38,9 @@ export type { DependenciesQueryResult } from './query/dependencies.js';
 export { queryImpact } from './query/impact.js';
 export type { ImpactQueryResult } from './query/impact.js';
 
+export { resolveIndexedModuleContext, buildModuleAskContext } from './query/moduleIntelligence.js';
+export type { IndexedModuleContext, IndexedModuleIdentity, ModuleImpact } from './query/moduleIntelligence.js';
+
 export { queryRisk } from './query/risk.js';
 export type { RiskQueryResult, RiskLevel, RiskSignals, RiskContributions } from './query/risk.js';
 

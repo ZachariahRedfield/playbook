@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added deterministic module intelligence surfaces: `playbook query impact <module>` now returns structured module/dependency/dependent/risk context from `.playbook/repo-index.json`, and `playbook ask --module <name>` scopes ask reasoning to indexed module context with deterministic missing-index/missing-module guidance.
 - WHAT: Added `playbook ask --repo-context` to inject trusted repository intelligence into ask prompts using Playbook-managed artifacts (`.playbook/repo-index.json` and AI contract metadata), with deterministic missing-index remediation guidance. WHY: Grounds AI repository answers in deterministic Playbook artifacts instead of broad ad-hoc repository inference.
 
 - WHAT: Updated AGENTS/README/command docs to position repo-aware ask in the preferred AI ladder (`ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify/plan/apply`). WHY: Keeps AI operating-contract guidance aligned with command behavior and reduces agent drift.
