@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Added a cross-document storage/runtime artifact contract clarifying `.playbook/` local runtime boundaries, commit guidance for generated artifacts, demo snapshot-contract positioning, and private-first/local-first behavior (plus roadmap/improvement direction for `.playbookignore`, retention policy, scan exclusions, and history-bloat prevention). WHY: Makes artifact lifecycle expectations explicit so teams avoid recommitting regenerated runtime state, keep repository history healthy, and preserve deterministic docs/contracts intent.
+
 - Added deterministic AI contract readiness validation to `playbook doctor --ai`, including contract availability/validity checks, intelligence source validation, required command/query surface checks, remediation workflow readiness, and expanded JSON contract fields for readiness details.
 
 - Added a security contract system under `docs/contracts/security/` with machine-readable definitions for repository boundary, apply scope, plan determinism, secret redaction, and policy gate guarantees.

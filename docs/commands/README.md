@@ -67,3 +67,29 @@ Command reference: [`playbook docs audit`](docs.md).
 ## Security contract verification
 
 Run `pnpm test:security` to execute security contract tests and regression tests that validate runtime guards.
+
+## Runtime artifact intent by command
+
+Use the following intent model when deciding whether command outputs stay local, are reviewed in automation, or are committed as stable contracts/docs:
+
+- `index`
+  - Default intent: **local runtime artifact** (`.playbook/repo-index.json`) regenerated as repository intelligence changes.
+  - Commit guidance: usually gitignored; commit only when intentionally maintaining a deterministic contract/example snapshot.
+- `plan`
+  - Default intent: **reviewed automation artifact** (for example `.playbook/plan.json`) used for deterministic remediation workflows and CI/agent handoff.
+  - Commit guidance: typically ephemeral; commit only when a repository explicitly treats plan artifacts as stable review contracts.
+- `query` / `deps` / `ask` / `explain`
+  - Default intent: **runtime reads and derived outputs** from `.playbook/repo-index.json`; results are usually ephemeral unless exported intentionally for docs/contracts.
+- `session` cleanup/reporting flows
+  - Default intent: **local hygiene/runtime maintenance artifacts** (for example cleanup reports under `.playbook/`).
+  - Commit guidance: keep local unless intentionally preserving an audit example or contract fixture.
+- `diagram` and docs-facing flows
+  - Default intent: **committed docs/contracts** when repositories choose generated architecture/docs outputs as source-controlled documentation surfaces.
+
+Pattern: Runtime Artifacts Live Under `.playbook/`.
+Pattern: Demo Artifacts Are Snapshot Contracts, Not General Runtime State.
+Rule: Generated runtime artifacts should be gitignored unless intentionally committed as stable contracts/examples.
+Rule: Playbook remains local/private-first by default.
+Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary repo-history growth and noisy diffs.
+
+Future direction: document `.playbookignore`-based scan exclusions for high-churn directories (e.g. `node_modules`, `dist`, `coverage`, `.next`, build outputs, non-source artifact folders) once command support is implemented.

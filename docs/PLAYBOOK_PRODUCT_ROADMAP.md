@@ -203,6 +203,24 @@ Canonical model for downstream adoption:
 - no automatic upstream code/content sharing
 - any export/sync/cloud/telemetry behavior is future work and must be explicit + opt-in
 
+### Runtime artifact boundaries and storage hygiene direction
+
+Playbook should maintain explicit boundaries between local runtime state, reviewed automation outputs, and intentionally committed contracts/examples.
+
+- Runtime artifacts should live under `.playbook/` and be treated as local working state by default.
+- Regenerated runtime artifacts should not be recommitted on every run unless intentionally promoted to stable contracts/examples.
+- Demo artifacts committed under `.playbook/demo-artifacts/` remain product-facing snapshot contracts, not general runtime state.
+- Future repository intelligence scanning should exclude irrelevant and high-churn directories to keep indexing deterministic and focused on source-of-truth content.
+
+Pattern: Runtime Artifacts Live Under `.playbook/`.
+Pattern: Demo Artifacts Are Snapshot Contracts, Not General Runtime State.
+Rule: Generated runtime artifacts should be gitignored unless intentionally committed as stable contracts/examples.
+Rule: Playbook remains local/private-first by default.
+Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary repo-history growth and noisy diffs.
+
+Roadmap direction: introduce a scoped `.playbookignore` mechanism (future work) to exclude irrelevant/high-churn directories such as `node_modules`, `dist`, `coverage`, `.next`, build outputs, and non-source artifact folders from repository intelligence scans when appropriate.
+
+
 ### Intentional upstream promotion workflow
 
 - repository-specific observations stay local to the consuming repo
@@ -229,6 +247,13 @@ For app-integrated actions (internal dashboards, CI control planes, admin/dev pa
 - [ ] add a lightweight config/plugin/rule-pack architecture note with extension examples
 - [ ] draft first server-side library/API design stub for embedded `ask`/`query`/`explain` workflows
 - [ ] define explicit opt-in export/sync/telemetry policy language before any cloud-backed intelligence behavior
+
+### Storage/runtime hygiene follow-up checklist
+
+- [ ] define `.playbookignore` semantics for repository intelligence scanning and document default exclusion guidance.
+- [ ] publish artifact lifecycle/retention policy language across runtime artifacts, CI outputs, and committed demo/contract snapshots.
+- [ ] classify cacheable local intelligence artifacts under `.playbook/` and define safe regeneration expectations.
+- [ ] document CI artifact workflow guidance so generated artifacts are reviewable without creating long-term repository-history bloat.
 
 Rule: **Playbook analyzes but does not author.**
 
