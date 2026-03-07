@@ -4,6 +4,7 @@ export type CliSchemaCommand =
   | 'rules'
   | 'explain'
   | 'index'
+  | 'graph'
   | 'verify'
   | 'plan'
   | 'context'
@@ -92,15 +93,80 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     title: 'PlaybookIndexOutput',
     type: 'object',
     additionalProperties: false,
-    required: ['command', 'ok', 'indexFile', 'framework', 'architecture', 'modules'],
+    required: ['command', 'ok', 'indexFile', 'graphFile', 'framework', 'architecture', 'modules'],
     properties: {
       command: { const: 'index' },
       ok: { const: true },
       indexFile: { const: '.playbook/repo-index.json' },
+      graphFile: { const: '.playbook/repo-graph.json' },
       framework: { type: 'string' },
       architecture: { type: 'string' },
       modules: { type: 'array', items: { type: 'string' } }
     }
+  },
+  graph: {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookGraphOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'error'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'graph' },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'graph'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'graph' },
+          graph: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['schemaVersion', 'kind', 'stats', 'nodeKinds', 'edgeKinds', 'topDependencyHubs'],
+            properties: {
+              schemaVersion: { const: '1.0' },
+              kind: { const: 'playbook-repo-graph' },
+              generatedAt: { type: 'string' },
+              stats: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['nodeCount', 'edgeCount'],
+                properties: {
+                  nodeCount: { type: 'integer' },
+                  edgeCount: { type: 'integer' }
+                }
+              },
+              nodeKinds: {
+                type: 'array',
+                items: { enum: ['module', 'rule'] }
+              },
+              edgeKinds: {
+                type: 'array',
+                items: { enum: ['depends_on'] }
+              },
+              topDependencyHubs: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['module', 'incomingDependencies'],
+                  properties: {
+                    module: { type: 'string' },
+                    incomingDependencies: { type: 'integer' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
   },
   verify: {
     $schema: JSON_SCHEMA_DRAFT,
@@ -923,6 +989,7 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   rules: cliSchemas.rules,
   explain: cliSchemas.explain,
   index: cliSchemas.index,
+  graph: cliSchemas.graph,
   verify: cliSchemas.verify,
   plan: cliSchemas.plan,
   context: cliSchemas.context,

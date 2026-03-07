@@ -200,6 +200,8 @@ Do not hand-edit entries inside the managed markers.
 
 - `index`: Generate machine-readable repository intelligence index
   - Example: `playbook index --json`
+- `graph`: Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json
+  - Example: `playbook graph --json`
 - `query`: Query machine-readable repository intelligence from .playbook/repo-index.json
   - Example: `playbook query modules --json`
 - `deps`: Print module dependency graph from .playbook/repo-index.json
@@ -242,6 +244,7 @@ Do not hand-edit entries inside the managed markers.
 | `ai-context` | `playbook ai-context --json` |
 | `ai-contract` | `playbook ai-contract --json` |
 | `index` | `playbook index --json` |
+| `graph` | `playbook graph --json` |
 | `query` | `playbook query modules --json` |
 | `deps` | `playbook deps workouts --json` |
 | `ask` | `playbook ask "where should a new feature live?" --repo-context --json` |

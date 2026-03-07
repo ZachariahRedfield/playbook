@@ -14,7 +14,7 @@ type AiContextResult = {
   repositoryIntelligence: {
     artifact: '.playbook/repo-index.json';
     available: boolean;
-    commands: ['index', 'query', 'deps', 'ask', 'explain'];
+    commands: string[];
   };
   operatingLadder: {
     preferredCommandOrder: [

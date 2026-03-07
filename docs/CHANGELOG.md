@@ -4,6 +4,12 @@
 
 ### Added
 
+- WHAT: Added deterministic Repository Knowledge Graph scaffold artifact `.playbook/repo-graph.json` generated during `playbook index` and introduced `playbook graph --json` stable summary output with deterministic missing-artifact guidance. WHY: Establishes the first durable graph substrate for context compression, impact reasoning, and future knowledge distillation features.
+
+- WHAT: Added Repository Knowledge Graph architecture layer to the product roadmap and clarified layer-relative knowledge units plus compression-as-knowledge-reuse principles. WHY: Unifies repository intelligence, context compression, and the repository learning loop under one compounding architecture direction while preserving deterministic execution contracts.
+
+- WHAT: Added Knowledge Distillation Engine direction to the roadmap. WHY: Positions Playbook to store and reuse higher-signal repository knowledge instead of relying on repeated broad scans.
+
 - WHAT: Added Knowledge Distillation Engine architecture direction to roadmap. WHY: Clarifies how repository intelligence, context compression, and the repository learning loop combine into a recursive knowledge compression system for engineering governance.
 
 - Simplified primary CI validation by consolidating repository contract checks to `pnpm -r build`, `pnpm test`, and `node packages/cli/dist/main.js verify --json`, making `playbook verify` the canonical CI gate for product correctness.

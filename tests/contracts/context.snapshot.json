@@ -38,6 +38,7 @@
       "schema",
       "rules",
       "index",
+      "graph",
       "ask",
       "deps",
       "query",

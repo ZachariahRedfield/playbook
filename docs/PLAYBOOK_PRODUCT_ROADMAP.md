@@ -202,45 +202,57 @@ Key capabilities in this direction include:
 
 ## Product Direction: Knowledge Distillation Engine
 
-Playbook is also evolving toward a **Knowledge Distillation Engine** for software engineering.
+Playbook is evolving from repository verification/intelligence into a **Knowledge Distillation Engine** for software engineering.
 
-This direction unifies repository intelligence, context compression, and the repository learning loop under one recursive pattern-recognition and compression model. The intent is to extract reusable engineering knowledge from repeated repository signals while preserving Playbook's core execution loop (`observe -> understand -> diagnose -> plan -> act -> verify -> learn`).
+This architectural direction unifies repository intelligence, context compression, read/change runtime behavior, and the repository learning loop under a recursive intelligence model while preserving the canonical execution model (`observe -> understand -> diagnose -> plan -> act -> verify -> learn`).
 
-Recursive knowledge cycle:
+Recursive intelligence cycle:
 
-`observe -> detect repetition -> extract patterns -> generalize rules -> compress knowledge -> reuse knowledge`
+`observe -> detect repetition -> extract candidate patterns -> generalize into rules/invariants -> compress into reusable artifacts -> reuse during repository reasoning and remediation -> learn from outcomes`
 
-Repository evidence used for distillation includes:
+Repository evidence sources for distillation:
 
 - source code
 - repository structure
 - dependency graphs
 - documentation
 - pull request diffs
-- verification findings
-- remediation plans
-- apply history
+- verify findings
+- plan/apply histories
 - CI failures
 - rule violations
+- ownership metadata
+- architecture metadata
 
 Architecture principle:
 
-Atomic knowledge units are **layer-relative** rather than globally fixed.
+Atomic knowledge is **layer-relative** rather than globally fixed.
 
-Intelligence layers:
+Layer-relative knowledge units:
 
-- **syntax layer** -> tokens, AST nodes
-- **structure layer** -> modules, dependencies, ownership
-- **behavior layer** -> failures, fixes, remediation actions
-- **semantic layer** -> rules, doctrines, invariants
-- **compressed layer** -> minimal representations that explain many signals
+- **syntax layer**: tokens, symbols, AST nodes
+- **structure layer**: files, modules, dependencies, ownership edges
+- **behavior layer**: findings, failures, fixes, remediation actions
+- **semantic layer**: rules, doctrines, invariants, constraints
+- **compressed runtime layer**: digests, bundles, graph summaries, reusable intelligence artifacts
 
 Pattern: Intelligence via Recursive Compression.
+- Playbook should continuously transform repository evidence into increasingly reusable and compact knowledge representations.
+
 Pattern: Layer-Relative Knowledge Units.
-Pattern: Human-Reviewed Knowledge Promotion.
+- The unit of knowledge depends on the active reasoning layer rather than being globally fixed.
+
 Rule: Compression Must Preserve Explanatory Power.
+- A compressed representation is only valid if it still explains repository behavior, boundaries, and architecture meaningfully.
+
+Pattern: Human-Reviewed Knowledge Promotion.
+- Repeated patterns may generate candidate rules, doctrines, or invariants, but promotion into enforced governance requires explicit review.
+
 Failure Mode: Premature Canonicalization.
+- Forcing one universal knowledge atom too early destroys useful intermediate representations.
+
 Failure Mode: Compression Without Semantics.
+- Token reduction without preserved meaning produces weak and unsafe repository intelligence.
 
 ## Integration Architecture Direction: shared core, local intelligence
 
@@ -386,22 +398,24 @@ Use a layered phase model so each phase compounds directly on the previous one:
    Deterministic command contracts, distribution reliability, and baseline verification UX.
 2. **Phase 2 — Repository Intelligence Substrate**  
    Formalize index contracts for modules, dependencies, test relationships, docs mapping, ownership, and architecture metadata.
-3. **Phase 3 — Context Compression Layer**  
+3. **Phase 3 — Repository Knowledge Graph**  
+   Deterministic local graph substrate generated from repository intelligence artifacts.
+4. **Phase 4 — Context Compression Layer**  
    Context bundles, module digests, cached snapshots, and deterministic change-scope assembly.
-4. **Phase 4 — Read Runtime (Query / Explain / Ask / Analyze-PR)**  
+5. **Phase 5 — Read Runtime (Query / Explain / Ask / Analyze-PR)**  
    Deterministic architecture reasoning and read-only repository understanding flows.
-5. **Phase 5 — Change Runtime (Verify / Plan / Apply)**  
+6. **Phase 6 — Change Runtime (Verify / Plan / Apply)**  
    Deterministic remediation orchestration with explicit plan contracts and mutation boundaries.
-6. **Phase 6 — Risk-Aware Execution**  
+7. **Phase 7 — Risk-Aware Execution**  
    Risk signals, impact-aware sequencing, and risk-shaped remediation prioritization.
-7. **Phase 7 — AI Repository Contract**  
+8. **Phase 8 — AI Repository Contract**  
    Machine-readable AI-operability contract and enforcement rules.
-8. **Phase 8 — AI Execution Runtime**  
+9. **Phase 9 — AI Execution Runtime**  
    Agent orchestration that consumes repository intelligence + AI contract and obeys deterministic mutation workflow.
-9. **Phase 9 — Autonomous Maintenance (Policy-Gated)**  
+10. **Phase 10 — Autonomous Maintenance (Policy-Gated)**  
    Recurring maintenance execution modes with approval and policy controls.
-10. **Phase 10 — Repository Learning Loop (Human-Reviewed)**  
-   Pattern detection and candidate improvements from repeated findings/remediations/query usage, including pattern mining from repeated findings, remediation clustering, candidate rule synthesis, invariant discovery, engineering doctrine promotion, and memory compaction. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
+11. **Phase 11 — Repository Learning Loop (Human-Reviewed)**  
+   Pattern detection and candidate improvements from repeated findings/remediations/query usage, including pattern mining from repeated findings, remediation clustering, candidate rule synthesis, invariant discovery, doctrine promotion candidates, memory compaction, and graph-informed learning artifacts. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
 
 Reasoning for reordering:
 - Separates repository understanding (read runtime) from repository mutation (change runtime).
@@ -445,10 +459,10 @@ To reduce scan cost and AI tokens:
 ### Recommended Documentation Reorganization (this file)
 
 Rewrite/reorganize these sections in `docs/PLAYBOOK_PRODUCT_ROADMAP.md`:
-- Consolidate **PHASE 2**, **PHASE 4**, **PHASE 5**, and **PHASE 6** into a clear progression: substrate -> read runtime -> change runtime -> risk-aware execution.
-- Promote **AI Efficiency & Context Compression** into an explicit numbered phase (current implicit Phase 3).
+- Consolidate **PHASE 2**, **PHASE 3**, **PHASE 4**, **PHASE 5**, **PHASE 6**, and **PHASE 7** into a clear progression: substrate -> knowledge graph -> context compression -> read runtime -> change runtime -> risk-aware execution.
+- Keep **AI Efficiency & Context Compression** as an explicit numbered phase.
 - Move **PR Intelligence (Implemented)** under the read-runtime phase grouping.
-- Add an explicit "Phase 8 prerequisites" block requiring deterministic mutation scope, policy gates, and contract validation before `playbook agent` expansion.
+- Add an explicit "Phase 9 prerequisites" block requiring deterministic mutation scope, policy gates, and contract validation before `playbook agent` expansion.
 - Add a future **Repository Learning Loop** phase scoped to human-reviewed suggestions only (no autonomous mutation).
 
 ### Documentation Capture Rules (Post-Audit)
@@ -478,131 +492,82 @@ Build deterministic repository intelligence artifacts that AI systems and develo
 Primary capability:
 - `playbook index` generates `.playbook/repo-index.json` as machine-readable repository context.
 
-Expected artifact shape (example):
-
-```json
-{
-  "modules": [
-    {
-      "name": "workouts",
-      "dependencies": ["auth", "db"]
-    }
-  ]
-}
-```
-
 Intelligence artifacts should include:
 - modules
 - dependencies
 - dependents
 - architecture metadata
 
-AI Efficiency & Context Compression
+PHASE 3 — REPOSITORY KNOWLEDGE GRAPH
 
 Goal:
+Build a deterministic local Repository Knowledge Graph artifact from repository intelligence.
 
-Reduce AI token usage and latency when performing repository changes.
+Primary capability:
+- `playbook index` emits `.playbook/repo-graph.json` as a local, deterministic, CLI-first graph artifact generated from repository evidence.
 
-Compression in this phase is not only token-efficiency work; it is also the transformation of repository signals into reusable knowledge artifacts that improve repeated reasoning quality.
+Graph architecture stance:
+- local
+- deterministic
+- CLI-first
+- generated from repository evidence
+- canonical context source for reasoning/runtime flows
+
+Initial graph concepts:
+
+Nodes:
+- repository
+- module
+- file
+- function
+- test
+- rule
+- doc
+- owner
+- finding
+- plan task
+- risk signal
+
+Edges:
+- depends_on
+- contained_in
+- defines
+- calls
+- verified_by
+- governed_by
+- owned_by
+- violates
+- remediates
+- impacts
+
+Repository Knowledge Graph should power:
+- context compression
+- impact analysis
+- risk-aware reasoning
+- future pattern mining / repository learning loops
+- higher-signal `ask` / `query` / `explain` inputs
+
+PHASE 4 — AI EFFICIENCY & CONTEXT COMPRESSION
+
+Goal:
+Reduce AI cost/latency while increasing knowledge reuse quality for repository reasoning and remediation.
+
+Compression in this phase is both token-efficiency and representation compaction for reusable repository knowledge.
 
 Examples of compressed artifacts:
-
 - module digests
-- rule clusters
-- repeated remediation patterns
-- architecture invariants
-- repository knowledge graph nodes
+- change-scope bundles
+- graph neighborhood summaries
+- repeated remediation clusters
+- candidate invariant summaries
 
 Key mechanisms:
+- repository intelligence graph summaries
+- context bundles
+- cached context snapshots
+- deterministic patch scope
 
-Repository Intelligence Graph
-
-Persistent structured knowledge of repository architecture.
-
-.playbook/intelligence.json
-
-Contains:
-
-modules
-dependencies
-tests
-rules
-risk
-docs
-owners
-Context Bundles
-
-Commands produce minimal change scope bundles.
-
-Example:
-
-playbook context auth
-
-Output:
-
-files
-tests
-dependencies
-docs
-rules
-risk
-Cached Context Snapshots
-
-Reusable bundles stored in:
-
-.playbook/context/
-
-Examples:
-
-auth.json
-workouts.json
-payments.json
-
-These reduce repeated token usage across multiple AI requests.
-
-Deterministic Patch Scope
-
-Playbook determines:
-
-files relevant to change
-
-AI is instructed to only modify those files.
-
-This prevents agent wandering.
-
-Estimated Token Reduction
-
-Without Playbook context:
-
-repo scan ≈ 40k tokens
-reasoning ≈ 5k
-generation ≈ 1k
-
-≈ 46k tokens
-
-With Playbook context:
-
-context bundle ≈ 4k
-reasoning ≈ 3k
-generation ≈ 1k
-
-≈ 8k tokens
-
-~80% improvement.
-
-This matters a lot for:
-
-Codex
-
-GPT agents
-
-Cursor
-
-Copilot
-
-enterprise AI tooling
-
-PHASE 4 — QUERY SYSTEM
+PHASE 5 — QUERY SYSTEM
 
 Goal:
 Enable deterministic repository reasoning through command-surface intelligence queries.
@@ -639,7 +604,7 @@ Output:
 - affected rules
 - architecture boundaries touched
 
-PHASE 5 — DEPENDENCY GRAPH + IMPACT ANALYSIS
+PHASE 6 — DEPENDENCY GRAPH + IMPACT ANALYSIS
 
 Goal:
 Use repository dependency edges to make change impact deterministic.
@@ -653,7 +618,7 @@ Expected outcomes:
 - expose architectural blast radius for proposed changes
 - prioritize low-impact remediation paths first
 
-PHASE 6 — RISK ANALYSIS
+PHASE 7 — RISK ANALYSIS
 
 Goal:
 Add deterministic module-level risk scoring for safer AI and human remediation planning.
@@ -670,7 +635,7 @@ Risk model signals should include:
 Expected outcome:
 - safer prioritization of change sequencing and rollout planning.
 
-PHASE 7 — AI REPOSITORY CONTRACT
+PHASE 8 — AI REPOSITORY CONTRACT
 
 Status: **Baseline implemented** via `playbook ai-contract` and `.playbook/ai-contract.json`.
 
@@ -722,7 +687,7 @@ This phase formalizes Playbook's repository-to-AI protocol, ensuring AI behavior
 Future standardization direction:
 - Publish `docs/AI_CONTRACT_SPEC.md` as a public AI Contract specification for AI-operable repositories.
 
-PHASE 8 — AI EXECUTION RUNTIME (PLAYBOOK AGENT)
+PHASE 9 — AI EXECUTION RUNTIME (PLAYBOOK AGENT)
 
 Goal:
 Introduce **Playbook Agent** as an AI execution runtime for repositories.
@@ -786,7 +751,7 @@ Playbook should analyze PRs but not author them.
 
 Rule: **Playbook analyzes changes rather than rewriting developer intent.**
 
-PHASE 9 — AUTONOMOUS REPOSITORY MAINTENANCE
+PHASE 10 — AUTONOMOUS REPOSITORY MAINTENANCE
 
 Goal:
 Extend Playbook Agent into recurring and CI-driven repository maintenance modes.

@@ -124,6 +124,14 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'graph',
+    description: 'Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json',
+    category: 'Repository intelligence',
+    productFacing: true,
+    example: 'playbook graph --json',
+    machineReadable: true
+  },
+  {
     name: 'query',
     description: 'Query machine-readable repository intelligence from .playbook/repo-index.json',
     category: 'Repository intelligence',

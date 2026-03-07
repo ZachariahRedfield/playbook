@@ -18,6 +18,8 @@ export type { RepositoryHealth, GovernanceStatusItem, ArtifactHygieneReport } fr
 
 export { generateRepositoryIndex } from './indexer/repoIndexer.js';
 export type { RepositoryIndex, RepositoryModule } from './indexer/repoIndexer.js';
+export { generateRepositoryGraph, readRepositoryGraph, summarizeRepositoryGraph, REPOSITORY_GRAPH_RELATIVE_PATH } from './graph/repoGraph.js';
+export type { RepositoryGraph, RepositoryGraphNode, RepositoryGraphEdge, RepositoryGraphSummary } from './graph/repoGraph.js';
 
 export { queryRepositoryIndex, SUPPORTED_QUERY_FIELDS } from './query/repoQuery.js';
 export type { RepositoryQueryField, RepositoryQueryResult } from './query/repoQuery.js';

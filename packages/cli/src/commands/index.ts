@@ -183,6 +183,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
     const { runIndex } = await import('./repoIndex.js');
     return runIndex(cwd, { format, quiet });
   },
+  graph: async ({ cwd, format, quiet }) => {
+    const { runGraph } = await import('./graph.js');
+    return runGraph(cwd, { format, quiet });
+  },
   ask: async ({ cwd, commandArgs, format, quiet }) => {
     const { runAsk } = await import('./ask.js');
     return runAsk(cwd, commandArgs, {
@@ -230,6 +234,7 @@ const commandOrder = [
   'schema',
   'rules',
   'index',
+  'graph',
   'ask',
   'deps',
   'query',

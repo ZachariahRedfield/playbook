@@ -20,6 +20,10 @@ declare module "@zachariahredfield/playbook-engine" {
   export const formatAnalyzePrGithubComment: (...args: any[]) => string;
   export const formatAnalyzePrOutput: (...args: any[]) => string;
   export const generateRepositoryIndex: (...args: any[]) => any;
+  export const generateRepositoryGraph: (...args: any[]) => any;
+  export const readRepositoryGraph: (...args: any[]) => any;
+  export const summarizeRepositoryGraph: (...args: any[]) => any;
+  export const REPOSITORY_GRAPH_RELATIVE_PATH: '.playbook/repo-graph.json';
   export const loadAiContract: (...args: any[]) => any;
 
   export const queryRepositoryIndex: (...args: any[]) => any;

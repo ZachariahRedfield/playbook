@@ -121,6 +121,7 @@ npx playbook verify
 ### Repository Intelligence
 
 - `index`
+- `graph`
 - `query`
 - `deps`
 - `ask`
@@ -128,9 +129,9 @@ npx playbook verify
 
 For the complete command inventory (including utility commands), see [docs/commands/README.md](docs/commands/README.md).
 
-Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifact at `.playbook/repo-index.json`.
+Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
 
-Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
+Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `graph`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
 
 ## Playbook Context
 

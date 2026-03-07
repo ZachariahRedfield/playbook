@@ -1,0 +1,150 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import type { RepositoryIndex } from '../indexer/repoIndexer.js';
+
+export type RepositoryGraphNodeKind = 'module' | 'rule';
+export type RepositoryGraphEdgeKind = 'depends_on';
+
+export type RepositoryGraphNode = {
+  id: string;
+  kind: RepositoryGraphNodeKind;
+  name: string;
+};
+
+export type RepositoryGraphEdge = {
+  kind: RepositoryGraphEdgeKind;
+  from: string;
+  to: string;
+};
+
+export type RepositoryGraph = {
+  schemaVersion: '1.0';
+  kind: 'playbook-repo-graph';
+  generatedAt: string;
+  nodes: RepositoryGraphNode[];
+  edges: RepositoryGraphEdge[];
+  stats: {
+    nodeCount: number;
+    edgeCount: number;
+  };
+};
+
+export type RepositoryGraphSummary = {
+  schemaVersion: '1.0';
+  kind: 'playbook-repo-graph';
+  generatedAt: string;
+  stats: {
+    nodeCount: number;
+    edgeCount: number;
+  };
+  nodeKinds: RepositoryGraphNodeKind[];
+  edgeKinds: RepositoryGraphEdgeKind[];
+  topDependencyHubs: Array<{
+    module: string;
+    incomingDependencies: number;
+  }>;
+};
+
+const GRAPH_RELATIVE_PATH = '.playbook/repo-graph.json' as const;
+
+const toSortedUnique = <T extends string>(values: T[]): T[] => Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+
+const toModuleNode = (name: string): RepositoryGraphNode => ({
+  id: `module:${name}`,
+  kind: 'module',
+  name
+});
+
+const toRuleNode = (name: string): RepositoryGraphNode => ({
+  id: `rule:${name}`,
+  kind: 'rule',
+  name
+});
+
+const sortNodes = (nodes: RepositoryGraphNode[]): RepositoryGraphNode[] =>
+  [...nodes].sort((left, right) =>
+    left.kind.localeCompare(right.kind) || left.name.localeCompare(right.name) || left.id.localeCompare(right.id)
+  );
+
+const sortEdges = (edges: RepositoryGraphEdge[]): RepositoryGraphEdge[] =>
+  [...edges].sort((left, right) =>
+    left.kind.localeCompare(right.kind) || left.from.localeCompare(right.from) || left.to.localeCompare(right.to)
+  );
+
+export const generateRepositoryGraph = (index: RepositoryIndex, generatedAt: Date = new Date()): RepositoryGraph => {
+  const moduleNodes = index.modules.map((moduleEntry) => toModuleNode(moduleEntry.name));
+  const ruleNodes = index.rules.map((ruleId) => toRuleNode(ruleId));
+
+  const dependencyEdges = index.modules.flatMap((moduleEntry) =>
+    moduleEntry.dependencies.map((dependency) => ({
+      kind: 'depends_on' as const,
+      from: `module:${moduleEntry.name}`,
+      to: `module:${dependency}`
+    }))
+  );
+
+  const nodes = sortNodes([...moduleNodes, ...ruleNodes]);
+  const edges = sortEdges(dependencyEdges);
+
+  return {
+    schemaVersion: '1.0',
+    kind: 'playbook-repo-graph',
+    generatedAt: generatedAt.toISOString(),
+    nodes,
+    edges,
+    stats: {
+      nodeCount: nodes.length,
+      edgeCount: edges.length
+    }
+  };
+};
+
+export const readRepositoryGraph = (projectRoot: string): RepositoryGraph => {
+  const graphPath = path.join(projectRoot, GRAPH_RELATIVE_PATH);
+  if (!fs.existsSync(graphPath)) {
+    throw new Error('playbook graph: missing repository graph at .playbook/repo-graph.json. Run "playbook index" first.');
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(graphPath, 'utf8')) as Partial<RepositoryGraph>;
+  if (parsed.kind !== 'playbook-repo-graph') {
+    throw new Error('playbook graph: invalid graph artifact kind in .playbook/repo-graph.json. Run "playbook index" to regenerate.');
+  }
+
+  return parsed as RepositoryGraph;
+};
+
+export const summarizeRepositoryGraph = (graph: RepositoryGraph): RepositoryGraphSummary => {
+  const incomingCountByModule = new Map<string, number>();
+
+  for (const node of graph.nodes) {
+    if (node.kind === 'module') {
+      incomingCountByModule.set(node.name, 0);
+    }
+  }
+
+  for (const edge of graph.edges) {
+    if (edge.kind !== 'depends_on' || !edge.to.startsWith('module:')) {
+      continue;
+    }
+
+    const moduleName = edge.to.slice('module:'.length);
+    incomingCountByModule.set(moduleName, (incomingCountByModule.get(moduleName) ?? 0) + 1);
+  }
+
+  const topDependencyHubs = Array.from(incomingCountByModule.entries())
+    .map(([module, incomingDependencies]) => ({ module, incomingDependencies }))
+    .sort((left, right) => right.incomingDependencies - left.incomingDependencies || left.module.localeCompare(right.module))
+    .slice(0, 5);
+
+  return {
+    schemaVersion: graph.schemaVersion,
+    kind: graph.kind,
+    generatedAt: graph.generatedAt,
+    stats: graph.stats,
+    nodeKinds: toSortedUnique(graph.nodes.map((node) => node.kind)),
+    edgeKinds: toSortedUnique(graph.edges.map((edge) => edge.kind)),
+    topDependencyHubs
+  };
+};
+
+export const REPOSITORY_GRAPH_RELATIVE_PATH = GRAPH_RELATIVE_PATH;

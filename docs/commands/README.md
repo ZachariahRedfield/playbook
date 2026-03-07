@@ -25,6 +25,7 @@ Do not hand-edit entries inside the managed markers.
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | Current (implemented) | `playbook ai-context --json` |
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | Current (implemented) | `playbook ai-contract --json` |
 | `index` | Generate machine-readable repository intelligence index | Current (implemented) | `playbook index --json` |
+| `graph` | Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json | Current (implemented) | `playbook graph --json` |
 | `query` | Query machine-readable repository intelligence from .playbook/repo-index.json | Current (implemented) | `playbook query modules --json` |
 | `deps` | Print module dependency graph from .playbook/repo-index.json | Current (implemented) | `playbook deps workouts --json` |
 | `ask` | Answer repository questions from machine-readable intelligence context | Current (implemented) | `playbook ask "where should a new feature live?" --repo-context --json` |

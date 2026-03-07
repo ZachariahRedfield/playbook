@@ -2,6 +2,7 @@
   "command": "index",
   "ok": true,
   "indexFile": ".playbook/repo-index.json",
+  "graphFile": ".playbook/repo-graph.json",
   "framework": "node",
   "architecture": "modular-monolith",
   "modules": [

@@ -8,7 +8,7 @@ type ContextResult = {
   workflow: ['verify', 'plan', 'apply'];
   repositoryIntelligence: {
     artifact: '.playbook/repo-index.json';
-    commands: ['index', 'query', 'ask', 'explain'];
+    commands: string[];
   };
   cli: {
     commands: string[];
