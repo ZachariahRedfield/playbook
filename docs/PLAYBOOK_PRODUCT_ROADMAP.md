@@ -118,6 +118,7 @@ Current implemented product-facing command/artifact set:
 - `playbook-demo` artifact (exposed through `playbook demo`)
 - `ai-context`
 - repository intelligence (`index`, `query`, `deps`, `ask`, `explain`)
+- deterministic architectural risk intelligence (`playbook query risk <module>`)
 
 ## Roadmap framing (current baseline + future enhancements)
 

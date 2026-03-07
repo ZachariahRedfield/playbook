@@ -1,6 +1,6 @@
 const JSON_SCHEMA_DRAFT = 'https://json-schema.org/draft/2020-12/schema' as const;
 
-export type CliSchemaCommand = 'rules' | 'explain' | 'index' | 'verify' | 'plan' | 'context' | 'ai-context';
+export type CliSchemaCommand = 'rules' | 'explain' | 'index' | 'verify' | 'plan' | 'context' | 'ai-context' | 'query';
 
 export type JsonSchema = {
   [key: string]: unknown;
@@ -229,6 +229,85 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     }
   },
 
+
+  query: {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookQueryOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['command', 'field', 'result'],
+        properties: {
+          command: { const: 'query' },
+          field: { type: 'string' },
+          result: {}
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'type', 'module', 'riskScore', 'riskLevel', 'signals', 'contributions', 'reasons'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'query' },
+          type: { const: 'risk' },
+          module: { type: 'string' },
+          riskScore: { type: 'number' },
+          riskLevel: { enum: ['low', 'medium', 'high'] },
+          signals: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['directDependencies', 'dependents', 'transitiveImpact', 'verifyFailures', 'isArchitecturalHub'],
+            properties: {
+              directDependencies: { type: 'integer', minimum: 0 },
+              dependents: { type: 'integer', minimum: 0 },
+              transitiveImpact: { type: 'integer', minimum: 0 },
+              verifyFailures: { type: 'integer', minimum: 0 },
+              isArchitecturalHub: { type: 'boolean' }
+            }
+          },
+          contributions: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['fanIn', 'impact', 'verifyFailures', 'hub'],
+            properties: {
+              fanIn: { type: 'number' },
+              impact: { type: 'number' },
+              verifyFailures: { type: 'number' },
+              hub: { type: 'number' }
+            }
+          },
+          reasons: { type: 'array', items: { type: 'string' }, minItems: 1 },
+          warnings: { type: 'array', items: { type: 'string' } }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'type', 'module', 'error'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'query' },
+          type: { enum: ['dependencies', 'impact', 'risk'] },
+          module: { type: ['string', 'null'] },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['command', 'field', 'error', 'supportedFields'],
+        properties: {
+          command: { const: 'query' },
+          field: { type: 'string' },
+          error: { type: 'string' },
+          supportedFields: { type: 'array', items: { type: 'string' } }
+        }
+      }
+    ]
+  },
+
   'ai-context': {
     $schema: JSON_SCHEMA_DRAFT,
     title: 'PlaybookAiContextOutput',
@@ -332,7 +411,8 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   verify: cliSchemas.verify,
   plan: cliSchemas.plan,
   context: cliSchemas.context,
-  'ai-context': cliSchemas['ai-context']
+  'ai-context': cliSchemas['ai-context'],
+  query: cliSchemas.query
 });
 
 export const getCliSchema = (command: CliSchemaCommand): JsonSchema => cliSchemas[command];
