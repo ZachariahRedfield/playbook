@@ -57,6 +57,15 @@ export type { RuleOwnersQueryResult, RuleOwnershipEntry } from './query/ruleOwne
 export { queryModuleOwners } from './query/moduleOwners.js';
 export type { ModuleOwnersQueryResult, ModuleOwnershipEntry } from './query/moduleOwners.js';
 
+export { queryTestHotspots, TEST_HOTSPOT_TYPES } from './query/testHotspots.js';
+export type {
+  TestHotspot,
+  TestHotspotType,
+  TestHotspotConfidence,
+  TestHotspotAutomationSafety,
+  TestHotspotsQueryResult
+} from './query/testHotspots.js';
+
 export { runDocsAudit } from './docs/audit.js';
 export type { DocsAuditResult, DocsAuditFinding, DocsAuditStatus, DocsAuditLevel } from './docs/audit.js';
 

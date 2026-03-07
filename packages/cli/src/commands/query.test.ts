@@ -409,6 +409,98 @@ describe('runQuery', () => {
     errorSpy.mockRestore();
   });
 
+
+
+  it('prints test-hotspots query JSON output', async () => {
+    const repo = createRepo('playbook-cli-query-test-hotspots-json');
+    writeRepoIndex(repo);
+    const hotspotFixturePath = path.join(repo, 'packages', 'cli', 'src', 'commands', 'query.hotspot.test.ts');
+    fs.mkdirSync(path.dirname(hotspotFixturePath), { recursive: true });
+    fs.writeFileSync(
+      hotspotFixturePath,
+      [
+        "import { queryDependencies } from '@zachariahredfield/playbook-engine';",
+        '',
+        "it('uses broad retrieval', () => {",
+        '  const dependencies = queryDependencies(repo);',
+        "  const workouts = dependencies.dependencies.find((entry) => entry.name === 'workouts');",
+        '  expect(workouts).toBeDefined();',
+        '});'
+      ].join('\n')
+    );
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['test-hotspots'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      schemaVersion: '1.0',
+      command: 'query',
+      type: 'test-hotspots',
+      hotspots: [
+        {
+          type: 'broad-retrieval',
+          file: 'packages/cli/src/commands/query.hotspot.test.ts',
+          line: 4,
+          confidence: 'high',
+          currentPattern:
+            'const dependencies = queryDependencies(repo); followed by dependencies.dependencies.find/filter(...)',
+          suggestedReplacementHelper: 'queryDependencies(<repo>, <module>)',
+          automationSafety: 'safe-mechanical-refactor'
+        }
+      ],
+      summary: {
+        totalHotspots: 1,
+        byType: [{ type: 'broad-retrieval', count: 1 }]
+      }
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('prints test-hotspots query text output', async () => {
+    const repo = createRepo('playbook-cli-query-test-hotspots-text');
+    writeRepoIndex(repo);
+    const hotspotFixturePath = path.join(repo, 'packages', 'cli', 'src', 'commands', 'query.hotspot.test.ts');
+    fs.mkdirSync(path.dirname(hotspotFixturePath), { recursive: true });
+    fs.writeFileSync(
+      hotspotFixturePath,
+      [
+        "import { queryDependencies } from '@zachariahredfield/playbook-engine';",
+        '',
+        "it('uses broad retrieval', () => {",
+        '  const dependencies = queryDependencies(repo);',
+        "  const workouts = dependencies.dependencies.find((entry) => entry.name === 'workouts');",
+        '  expect(workouts).toBeDefined();',
+        '});'
+      ].join('\n')
+    );
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['test-hotspots'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(logSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+      'Test Hotspots',
+      '─────────────',
+      '',
+      'packages/cli/src/commands/query.hotspot.test.ts:4',
+      '  Type: broad-retrieval',
+      '  Confidence: high',
+      '  Current pattern: const dependencies = queryDependencies(repo); followed by dependencies.dependencies.find/filter(...)',
+      '  Suggested helper: queryDependencies(<repo>, <module>)',
+      '  Automation safety: safe-mechanical-refactor',
+      '',
+      'Summary',
+      '  Total hotspots: 1',
+      '  broad-retrieval: 1'
+    ]);
+
+    logSpy.mockRestore();
+  });
   it('prints risk query JSON output', async () => {
     const repo = createRepo('playbook-cli-query-risk');
     writeRepoIndex(repo);

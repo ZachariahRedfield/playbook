@@ -212,6 +212,16 @@ Suggested remediation IDs:
 - `PB014`: move runtime artifacts to `.playbook/`
 
 
+
+
+### Deterministic test hotspot discovery
+
+`playbook query test-hotspots` reports likely test inefficiency candidates from test files using deterministic heuristics only.
+
+- Detects candidate patterns such as broad retrieval followed by narrow filtering, repeated fixture setup, repeated CLI runner plumbing, and manual JSON contract plumbing.
+- Emits stable text + JSON output for repository intelligence and validation automation workflows.
+- Reports findings only (no codemod/apply behavior in MVP).
+
 ### Deterministic module impact
 
 `playbook query impact <module>` converts indexed module/dependency data from `.playbook/repo-index.json` into deterministic module blast-radius analysis, including dependencies, reverse dependencies, and risk signals.

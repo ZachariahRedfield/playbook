@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added deterministic `playbook query test-hotspots` repository-intelligence output to detect test inefficiency candidates (including broad retrieval followed by narrow filtering) with stable hotspot contracts and safety classifications; MVP reports findings only and does not auto-refactor.
 - Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
 - Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
 - Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
@@ -110,6 +111,7 @@
 
 ### Added
 
+- Added deterministic `playbook query test-hotspots` repository-intelligence output to detect test inefficiency candidates (including broad retrieval followed by narrow filtering) with stable hotspot contracts and safety classifications; MVP reports findings only and does not auto-refactor.
 - Added `playbook analyze-pr` as deterministic, local-first pull request intelligence that composes local git diff context with `.playbook/repo-index.json`, indexed impact/risk/docs/ownership intelligence, and structured review guidance output (`--json`).
 - Hardened `playbook doctor --json` as a stable automation contract by explicitly including `artifactHygiene` (`classification`, `findings`, `suggestions`) in command output and schema/contract coverage.
 - Added deterministic change-scoped ask reasoning via `playbook ask --diff-context` (with optional `--base <ref>`) to derive changed files, affected modules, dependent impact, docs touchpoints, and risk signals from local git diff + `.playbook/repo-index.json` without silent full-repo fallback.
