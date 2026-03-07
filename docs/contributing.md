@@ -47,3 +47,20 @@ Contributions should preserve Playbook's core model:
 - Machine-readable outputs.
 - Thin CLI layer.
 - Reusable engine logic.
+
+
+## 6) Security requirements for new commands
+
+Every new command or remediation workflow change must pass the security baseline:
+
+- repo boundary tests (path traversal + out-of-root write rejection)
+- remediation contract tests (deterministic plan/apply compatibility)
+- security CI checks (`.github/workflows/security.yml`)
+- deterministic outputs and snapshot coverage
+
+Security checklist for command additions:
+
+- path boundary protection is enforced
+- outputs are deterministic and machine-readable
+- `verify -> plan -> validate -> policy -> apply -> verify` compatibility is preserved
+- snapshot and regression tests cover security-sensitive behavior
