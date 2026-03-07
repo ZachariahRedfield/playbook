@@ -307,7 +307,7 @@ export const cleanupSessionSnapshots = (options: CleanupOptions): CleanupResult 
           duplicateGroupsFound: counters.duplicateGroups,
           changed
         });
-      } catch (error) {
+      } catch {
         hygieneReport.warnings.push(`Skipped unparseable snapshot: ${path.basename(filePath)}`);
         hygieneReport.files.push({
           filePath,
