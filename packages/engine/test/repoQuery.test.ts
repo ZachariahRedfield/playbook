@@ -9,6 +9,7 @@ import { queryRisk } from '../src/query/risk.js';
 import { queryDocsCoverage } from '../src/query/docsCoverage.js';
 import { queryRuleOwners } from '../src/query/ruleOwners.js';
 import { queryModuleOwners } from '../src/query/moduleOwners.js';
+import { queryTestHotspots } from '../src/query/testHotspots.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
 
@@ -280,6 +281,60 @@ describe('queryRepositoryIndex', () => {
     });
   });
 
+
+
+  it('returns deterministic test hotspot findings for broad retrieval patterns', () => {
+    const repo = createRepo('playbook-repo-query-test-hotspots');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] }
+      ],
+      database: 'none',
+      rules: []
+    });
+
+    const testFilePath = path.join(repo, 'packages', 'cli', 'src', 'commands', 'query.hotspot.test.ts');
+    fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+    fs.writeFileSync(
+      testFilePath,
+      [
+        "import { queryDependencies } from '@zachariahredfield/playbook-engine';",
+        '',
+        "it('detects broad retrieval', () => {",
+        '  const dependencies = queryDependencies(repo);',
+        "  const workouts = dependencies.dependencies.find((entry) => entry.name === 'workouts');",
+        '  expect(workouts).toBeDefined();',
+        '});'
+      ].join('\n')
+    );
+
+    expect(queryTestHotspots(repo)).toEqual({
+      schemaVersion: '1.0',
+      command: 'query',
+      type: 'test-hotspots',
+      hotspots: [
+        {
+          type: 'broad-retrieval',
+          file: 'packages/cli/src/commands/query.hotspot.test.ts',
+          line: 4,
+          confidence: 'high',
+          currentPattern:
+            'const dependencies = queryDependencies(repo); followed by dependencies.dependencies.find/filter(...)',
+          suggestedReplacementHelper: 'queryDependencies(<repo>, <module>)',
+          automationSafety: 'safe-mechanical-refactor'
+        }
+      ],
+      summary: {
+        totalHotspots: 1,
+        byType: [{ type: 'broad-retrieval', count: 1 }]
+      }
+    });
+  });
   it('throws deterministic errors for unsupported fields', () => {
     const repo = createRepo('playbook-repo-query-unsupported-field');
     writeRepoIndex(repo, {

@@ -207,6 +207,7 @@ playbook query risk workouts
 playbook query impact workouts
 playbook query docs-coverage
 playbook query rule-owners
+playbook query test-hotspots
 playbook ask "where should a new feature live?"
 playbook ask "what modules exist?" --json
 playbook ask "how does auth work?" --repo-context --mode concise

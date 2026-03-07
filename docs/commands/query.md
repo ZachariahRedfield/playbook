@@ -21,6 +21,8 @@ Query structured repository intelligence from `.playbook/repo-index.json`.
 - `playbook query rule-owners PB001 --json`
 - `playbook query module-owners`
 - `playbook query module-owners workouts --json`
+- `playbook query test-hotspots`
+- `playbook query test-hotspots --json`
 
 ## Behavior
 
@@ -46,6 +48,7 @@ Supported fields:
 - `docs-coverage`
 - `rule-owners`
 - `module-owners`
+- `test-hotspots`
 
 For `dependencies`, the command can return either the full module dependency graph (`playbook query dependencies`) or one module's direct dependencies (`playbook query dependencies <module>`).
 
@@ -73,6 +76,12 @@ For `module-owners`, the command returns deterministic ownership metadata for in
 
 When a module exists in the index but has no ownership mapping, the output remains deterministic with fallback values: `owners: []` and `area: "unassigned"`.
 
+For `test-hotspots`, the command scans test files deterministically and reports likely inefficiency candidates only (no refactors are applied).
+
+The MVP focuses on broad retrieval followed by narrow filtering and also classifies repeated setup/plumbing patterns into deterministic categories (`broad-retrieval`, `repeated-fixture-setup`, `repeated-cli-runner`, `manual-json-contract-plumbing`).
+
+Each hotspot includes a stable contract with `type`, `file`, `line`, `confidence`, `currentPattern`, `suggestedReplacementHelper`, and `automationSafety`.
+
 ## Querying Repository Intelligence
 
 ```bash
@@ -88,6 +97,8 @@ playbook query rule-owners
 playbook query rule-owners PB001 --json
 playbook query module-owners
 playbook query module-owners workouts --json
+playbook query test-hotspots
+playbook query test-hotspots --json
 ```
 
 ## JSON contracts
@@ -252,6 +263,34 @@ Module owners query (single module):
     "name": "workouts",
     "owners": ["fitness"],
     "area": "product"
+  }
+}
+```
+
+
+Test hotspots query:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "command": "query",
+  "type": "test-hotspots",
+  "hotspots": [
+    {
+      "type": "broad-retrieval",
+      "file": "packages/cli/src/commands/query.test.ts",
+      "line": 123,
+      "confidence": "high",
+      "currentPattern": "const dependencies = queryDependencies(repo); followed by dependencies.dependencies.find/filter(...)",
+      "suggestedReplacementHelper": "queryDependencies(<repo>, <module>)",
+      "automationSafety": "safe-mechanical-refactor"
+    }
+  ],
+  "summary": {
+    "totalHotspots": 1,
+    "byType": [
+      { "type": "broad-retrieval", "count": 1 }
+    ]
   }
 }
 ```

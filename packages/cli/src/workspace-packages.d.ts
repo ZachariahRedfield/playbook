@@ -27,6 +27,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const queryDocsCoverage: (...args: any[]) => any;
   export const queryRuleOwners: (...args: any[]) => any;
   export const queryModuleOwners: (...args: any[]) => any;
+  export const queryTestHotspots: (...args: any[]) => any;
   export const runDocsAudit: (...args: any[]) => any;
   export type DependenciesQueryResult = any;
   export type ImpactQueryResult = any;
@@ -48,6 +49,24 @@ declare module "@zachariahredfield/playbook-engine" {
   export type ModuleOwnersQueryResult =
     | { schemaVersion: '1.0'; command: 'query'; type: 'module-owners'; modules: ModuleOwnershipEntry[] }
     | { schemaVersion: '1.0'; command: 'query'; type: 'module-owners'; module: ModuleOwnershipEntry };
+
+  export type TestHotspotType = 'broad-retrieval' | 'repeated-fixture-setup' | 'repeated-cli-runner' | 'manual-json-contract-plumbing';
+  export type TestHotspot = {
+    type: TestHotspotType;
+    file: string;
+    line: number;
+    confidence: 'high' | 'medium';
+    currentPattern: string;
+    suggestedReplacementHelper: string;
+    automationSafety: 'safe-mechanical-refactor' | 'review-required';
+  };
+  export type TestHotspotsQueryResult = {
+    schemaVersion: '1.0';
+    command: 'query';
+    type: 'test-hotspots';
+    hotspots: TestHotspot[];
+    summary: { totalHotspots: number; byType: Array<{ type: TestHotspotType; count: number }> };
+  };
   export type RepositoryModule = any;
   export const answerRepositoryQuestion: (...args: any[]) => any;
   export const explainTarget: (...args: any[]) => any;

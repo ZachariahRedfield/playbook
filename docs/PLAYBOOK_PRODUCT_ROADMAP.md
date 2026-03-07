@@ -124,6 +124,7 @@ Current implemented product-facing command/artifact set:
 - deterministic documentation coverage intelligence (`playbook query docs-coverage [module]`)
 - deterministic rule ownership intelligence (`playbook query rule-owners [rule-id]`)
 - deterministic module ownership intelligence (`playbook query module-owners [module]`)
+- deterministic test hotspot intelligence (`playbook query test-hotspots`) for candidate-only optimization discovery in validation workflows
 
 ## Roadmap framing (current baseline + future enhancements)
 
@@ -442,6 +443,7 @@ Representative queries:
 - `playbook query risk <module>`
 - `playbook query docs-coverage`
 - `playbook query rule-owners`
+- `playbook query test-hotspots`
 
 This phase establishes contract-driven repository reasoning so AI systems can avoid ad-hoc inference.
 
