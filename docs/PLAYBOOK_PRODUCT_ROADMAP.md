@@ -126,11 +126,34 @@ Current implemented product-facing command/artifact set:
 
 ## Roadmap framing (current baseline + future enhancements)
 
+Roadmap planning workflow:
+
+Idea → Improvement Backlog → Roadmap
+
+Use `docs/PLAYBOOK_IMPROVEMENTS.md` as the staging area for emerging ideas, and keep this roadmap focused on prioritized product capabilities.
+
 Current baseline:
 
 - **AI Repository Intelligence (`playbook ai-context`, `playbook ai-contract`, `index`, `query`, `deps`, `ask`, `explain`)** is implemented and available for deterministic AI bootstrap and repository intelligence workflows.
 
 Future roadmap work should focus on enhancement quality (schema hardening, richer index coverage, CI artifact workflows, and contract durability), not on introducing these commands.
+
+## Product Direction: Architecture Intelligence
+
+Playbook is evolving from a verification tool into an architecture intelligence engine.
+
+In addition to enforcing rules and generating remediation plans, Playbook will analyze repositories and development workflows to produce structured insights about system architecture, risk, and change impact.
+
+Key capabilities in this direction include:
+
+- Repository indexing and query system
+- Architecture-aware impact analysis
+- Risk hotspot detection
+- Pull request intelligence and analysis
+
+Rule: **Playbook analyzes but does not author.**
+
+Playbook provides structured analysis, diagnostics, and recommendations but does not automatically rewrite pull requests or developer intent. Its role is to provide architectural intelligence rather than replace the developer.
 
 
 Establish Playbook as a trusted governance tool in the developer ecosystem.
@@ -200,6 +223,24 @@ Representative queries:
 - `playbook query rule-owners`
 
 This phase establishes contract-driven repository reasoning so AI systems can avoid ad-hoc inference.
+
+### Impact Analysis Query
+
+Command:
+`playbook query impact <module>`
+
+Purpose:
+Identify all modules, packages, and files affected by changes to a specific module.
+
+Example:
+
+`playbook query impact auth`
+
+Output:
+
+- dependent modules
+- affected rules
+- architecture boundaries touched
 
 PHASE 4 — DEPENDENCY GRAPH + IMPACT ANALYSIS
 
@@ -318,6 +359,26 @@ Deterministic AI execution loop:
 8. Repeat remediation cycle until verify is clean.
 
 This phase defines Playbook as an AI governance and execution runtime, not only a repository rule checker.
+
+## Future Capability: PR Intelligence
+
+Playbook will provide structured analysis of pull requests to help developers understand architectural impact and risk.
+
+Example command:
+
+`playbook analyze-pr`
+
+Expected capabilities:
+
+- Detect modules affected by the change
+- Calculate change risk level
+- Identify missing tests or documentation
+- Detect architecture rule violations
+- Generate structured PR analysis output
+
+Playbook should analyze PRs but not author them.
+
+Rule: **Playbook analyzes changes rather than rewriting developer intent.**
 
 PHASE 8 — AUTONOMOUS REPOSITORY MAINTENANCE
 
@@ -441,6 +502,10 @@ Canonical flow:
 Pattern: **Reviewed Intent Before Execution**
 
 The safest automation model is to generate a machine-readable plan, review it, then execute that exact artifact.
+
+Pattern: **Two-tier backlog (Improvement Backlog → Roadmap)**.
+
+Use `docs/PLAYBOOK_IMPROVEMENTS.md` to capture emerging ideas; promote only prioritized capabilities into this roadmap.
 
 ## Phase: Serialized Execution Contracts & Automation Hardening (Next)
 
