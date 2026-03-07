@@ -55,3 +55,11 @@ Failure Mode: `fatal: ambiguous argument '<sha>^..<sha>'` in CI usually means th
 Pattern: security workflows that scan commit ranges should standardize checkout first, scanner second.
 
 Note: gitleaks partial-scan/no-leaks output does not mean the job passed; git-history resolution errors still fail the action.
+
+
+## SBOM Generation Reliability (pnpm Workspaces)
+
+- CycloneDX SBOM generation requires `--ignore-npm-errors` when running in pnpm workspaces.
+- `npm ls` may report `ELSPROBLEMS` for devDependency trees that are not actual install issues.
+- Playbook CI uses CycloneDX spec `v1.5` for SBOM artifacts.
+- SBOM artifacts are written to `artifacts/sbom.json` during CI.

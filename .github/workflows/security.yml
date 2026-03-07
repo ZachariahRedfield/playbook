@@ -46,7 +46,15 @@ jobs:
       - name: Step 3 — SBOM Generation
         run: |
           mkdir -p artifacts
-          pnpm dlx @cyclonedx/cyclonedx-npm --output-file artifacts/sbom.json --spec-version 1.5
+          pnpm dlx @cyclonedx/cyclonedx-npm \
+            --ignore-npm-errors \
+            --spec-version 1.5 \
+            --output-file artifacts/sbom.json
+
+      - name: Step 3.1 — SBOM Vulnerability Scan
+        uses: anchore/scan-action@v3
+        with:
+          sbom: artifacts/sbom.json
 
       - name: Step 4 — Artifact Signing (Cosign)
         env:
