@@ -319,159 +319,38 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
   doctor: {
     $schema: JSON_SCHEMA_DRAFT,
     title: 'PlaybookDoctorOutput',
-    oneOf: [
-      {
+    type: 'object',
+    additionalProperties: false,
+    required: ['schemaVersion', 'command', 'status', 'summary', 'findings'],
+    properties: {
+      schemaVersion: { const: '1.0' },
+      command: { const: 'doctor' },
+      status: { enum: ['ok', 'warning', 'error'] },
+      summary: {
         type: 'object',
         additionalProperties: false,
-        required: ['command', 'framework', 'architecture', 'issues', 'suggestedActions', 'artifactHygiene'],
+        required: ['errors', 'warnings', 'info'],
         properties: {
-          command: { const: 'doctor' },
-          framework: { type: 'string' },
-          architecture: { type: 'string' },
-          issues: { type: 'array', items: { type: 'string' } },
-          suggestedActions: { type: 'array', items: { type: 'string' } },
-          artifactHygiene: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['classification', 'findings', 'suggestions'],
-            properties: {
-              classification: {
-                type: 'object',
-                additionalProperties: false,
-                required: ['runtime', 'automation', 'contract'],
-                properties: {
-                  runtime: { type: 'array', items: { type: 'string' } },
-                  automation: { type: 'array', items: { type: 'string' } },
-                  contract: { type: 'array', items: { type: 'string' } }
-                }
-              },
-              findings: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  required: ['type', 'message', 'recommendation'],
-                  properties: {
-                    type: {
-                      enum: [
-                        'runtime-artifact-committed',
-                        'large-generated-json',
-                        'frequently-modified-generated-artifact',
-                        'missing-playbookignore'
-                      ]
-                    },
-                    path: { type: 'string' },
-                    message: { type: 'string' },
-                    recommendation: { type: 'string' }
-                  }
-                }
-              },
-              suggestions: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  required: ['id', 'title'],
-                  properties: {
-                    id: { enum: ['PB012', 'PB013', 'PB014'] },
-                    title: { type: 'string' },
-                    entries: { type: 'array', items: { type: 'string' } }
-                  }
-                }
-              }
-            }
-          }
+          errors: { type: 'integer' },
+          warnings: { type: 'integer' },
+          info: { type: 'integer' }
         }
       },
-      {
-        type: 'object',
-        additionalProperties: false,
-        required: ['schemaVersion', 'command', 'mode', 'checks'],
-        properties: {
-          schemaVersion: { const: '1.0' },
-          command: { const: 'doctor' },
-          mode: { const: 'ai' },
-          checks: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['name', 'status'],
-              properties: {
-                name: {
-                  enum: [
-                    'schema',
-                    'context',
-                    'repoIndex',
-                    'verifyRules',
-                    'aiContractAvailability',
-                    'aiContractValidity',
-                    'intelligenceSources',
-                    'querySurface',
-                    'commandSurface',
-                    'remediationWorkflow'
-                  ]
-                },
-                status: { enum: ['pass', 'warn', 'fail'] },
-                source: { enum: ['file', 'generated'] },
-                reason: { type: 'string' },
-                missingCommands: { type: 'array', items: { type: 'string' } },
-                missingQueries: { type: 'array', items: { type: 'string' } },
-                details: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    additionalProperties: false,
-                    required: ['path', 'status', 'required'],
-                    properties: {
-                      path: { type: 'string' },
-                      status: { enum: ['present', 'missing'] },
-                      required: { type: 'boolean' }
-                    }
-                  }
-                }
-              }
-            }
+      findings: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['category', 'severity', 'id', 'message'],
+          properties: {
+            category: { enum: ['Architecture', 'Docs', 'Testing', 'Risk'] },
+            severity: { enum: ['error', 'warning', 'info'] },
+            id: { type: 'string' },
+            message: { type: 'string' }
           }
-        }
-      },
-      {
-        type: 'object',
-        additionalProperties: false,
-        required: ['schemaVersion', 'command', 'summary', 'applied', 'skipped', 'environment'],
-        properties: {
-          schemaVersion: { const: '1.0' },
-          command: { const: 'doctor' },
-          summary: { type: 'string' },
-          applied: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['id', 'description', 'changes'],
-              properties: {
-                id: { type: 'string' },
-                description: { type: 'string' },
-                changes: { type: 'array', items: { type: 'string' } }
-              }
-            }
-          },
-          skipped: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['id', 'reason'],
-              properties: {
-                id: { type: 'string' },
-                reason: { type: 'string' }
-              }
-            }
-          },
-          environment: { type: 'object' }
         }
       }
-    ]
+    }
   },
 
   docs: {

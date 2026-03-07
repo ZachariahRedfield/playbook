@@ -44,7 +44,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'doctor',
-    description: 'Repository health entry point for architecture, governance, and issues',
+    description: 'Diagnose repository health by aggregating verify, risk, docs, and index analyzers',
     category: 'Repository tools',
     productFacing: true,
     example: 'playbook doctor --fix --dry-run',

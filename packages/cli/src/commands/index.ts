@@ -88,15 +88,11 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
       quiet
     });
   },
-  doctor: async ({ cwd, commandArgs, format, quiet }) => {
+  doctor: async ({ cwd, format, quiet }) => {
     const { runDoctor } = await import('./doctor.js');
     return runDoctor(cwd, {
       format,
-      quiet,
-      fix: parseFlag(commandArgs, '--fix'),
-      dryRun: parseFlag(commandArgs, '--dry-run'),
-      yes: parseFlag(commandArgs, '--yes'),
-      ai: parseFlag(commandArgs, '--ai')
+      quiet
     });
   },
   status: async ({ cwd, ci, format, quiet }) => {

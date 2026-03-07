@@ -70,6 +70,19 @@ Any future export, sync, telemetry, or cloud-backed intelligence behavior must b
 
 This separation keeps command modules thin and keeps governance logic reusable/testable.
 
+## Doctor aggregation architecture
+
+`doctor` is the repository health aggregation command. It orchestrates existing command/engine analyzers and normalizes them into a shared diagnostic schema.
+
+Aggregation inputs:
+
+- verify diagnostics (`verify`)
+- module risk diagnostics (`query risk`)
+- documentation governance diagnostics (`docs audit`)
+- repository intelligence availability (`.playbook/repo-index.json`)
+
+This keeps diagnosis logic deterministic while avoiding analyzer duplication in CLI command code.
+
 ## Analyze -> verify -> plan -> apply flow
 
 Playbook governance execution follows a staged flow:

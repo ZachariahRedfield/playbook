@@ -177,7 +177,7 @@ Do not hand-edit entries inside the managed markers.
 
 ### Repository tools
 
-- `doctor`: Repository health entry point for architecture, governance, and issues
+- `doctor`: Diagnose repository health by aggregating verify, risk, docs, and index analyzers
   - Example: `playbook doctor --fix --dry-run`
 - `diagram`: Generate deterministic architecture Mermaid diagrams
   - Example: `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md`

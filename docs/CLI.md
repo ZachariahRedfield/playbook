@@ -63,3 +63,38 @@ Playbook normalizes and orders machine output to reduce drift across runs:
 - `fix`: convenience/direct remediation command for local/manual workflows; overlaps with `apply` intent but keeps operator-friendly flags like `--dry-run`, `--yes`, and `--only`.
 
 For CI and agent workflows, prefer `verify -> plan -> apply -> verify` because the plan artifact is reviewable before execution.
+
+
+## 7) Repository diagnosis (`doctor`)
+
+`doctor` is a high-level repository health entry point that aggregates existing analyzers instead of re-implementing their logic.
+
+Current diagnosis sources:
+
+- `verify` findings
+- `query risk` (per indexed module)
+- `docs audit` findings
+- repository index presence (`.playbook/repo-index.json`)
+
+`playbook doctor --json` emits a deterministic contract:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "command": "doctor",
+  "status": "ok",
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "info": 0
+  },
+  "findings": []
+}
+```
+
+Default text output prints diagnosis sections for:
+
+- Architecture
+- Docs
+- Testing
+- Risk

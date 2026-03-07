@@ -15,7 +15,7 @@ Do not hand-edit entries inside the managed markers.
 | `verify` | Verify governance rules | Current (implemented) | `playbook verify --ci --json` |
 | `plan` | Generate a structured fix plan from rule findings | Current (implemented) | `playbook plan --json` |
 | `apply` | Execute deterministic auto-fixable plan tasks | Current (implemented) | `playbook apply --from-plan .playbook/plan.json` |
-| `doctor` | Repository health entry point for architecture, governance, and issues | Current (implemented) | `playbook doctor --fix --dry-run` |
+| `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | Current (implemented) | `playbook doctor --fix --dry-run` |
 | `diagram` | Generate deterministic architecture Mermaid diagrams | Current (implemented) | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
 | `docs` | Audit documentation governance surfaces and contracts | Current (implemented) | `playbook docs audit --json` |
 | `rules` | List loaded verify and analyze rules | Current (implemented) | `playbook rules --json` |
