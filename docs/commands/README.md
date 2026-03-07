@@ -62,3 +62,8 @@ If docs and implementation disagree, treat implementation as source of truth and
 
 
 Command reference: [`playbook docs audit`](docs.md).
+
+
+## Security contract verification
+
+Run `pnpm test:security` to execute security contract tests and regression tests that validate runtime guards.

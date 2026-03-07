@@ -1,0 +1,14 @@
+{
+  "id": "policy.gate",
+  "description": "Verify policy mode must fail closed when configured policy rules are violated.",
+  "enforcedBy": "runVerify --policy",
+  "expectedBehavior": [
+    "Return non-zero exit code when a configured policy rule has a matching failure.",
+    "Emit policyViolations in deterministic order by policyId and ruleId.",
+    "Treat non-policy verify failures as informational while in policy mode."
+  ],
+  "failureModes": [
+    "policyBypass",
+    "silentPolicyViolation"
+  ]
+}

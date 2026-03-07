@@ -361,3 +361,6 @@ A full local example is available at `.github/workflows/playbook-action-example.
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+
+`pnpm test:security` runs security contract and regression tests.

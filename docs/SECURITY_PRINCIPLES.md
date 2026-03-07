@@ -92,3 +92,17 @@ Note: gitleaks partial-scan/no-leaks output does not mean the job passed; git-hi
 - Playbook CI signs SBOM artifacts with `cosign sign-blob --bundle`.
 - Playbook CI verifies SBOM artifacts with `cosign verify-blob --bundle`.
 - GitHub Actions keyless signing requires `permissions: id-token: write`.
+
+
+## Security Contracts
+
+Playbook formalizes runtime safety guarantees as machine-readable contracts in `docs/contracts/security/` and verifies them using deterministic tests in `test/contracts/security/`.
+
+Contract coverage includes repository boundary enforcement, apply scope enforcement, plan determinism, secret redaction, and policy gating.
+
+- Pattern: Security Contracts — machine-readable definitions of runtime safety guarantees.
+- Pattern: Contract-Driven Security Tests — CI verifies engine security behavior through contract definitions.
+- Rule: Apply Scope Enforcement — apply may only modify files declared in the plan.
+- Rule: Repository Boundary — file operations must resolve within repo root.
+- Rule: Secret Redaction — sensitive values must never appear in logs.
+- Failure Mode: Boundary Escape — path traversal or symlink attacks attempting to escape repo root.

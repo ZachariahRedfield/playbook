@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added a security contract system under `docs/contracts/security/` with machine-readable definitions for repository boundary, apply scope, plan determinism, secret redaction, and policy gate guarantees.
+- Added deterministic security contract tests under `test/contracts/security/` and expanded `pnpm test:security` to run contract + regression suites.
+- Integrated security contract verification into CI via the reusable Playbook CI composite action.
 - WHAT: Hardened Cosign keyless verification by adding `--certificate-identity-regexp "https://github.com/.+"` and `--certificate-oidc-issuer https://token.actions.githubusercontent.com` to SBOM verify step. WHY: Cosign keyless verification requires explicit trusted identity and issuer, otherwise verification fails even with a valid bundle.
 
 - WHAT: Migrated SBOM signing/verification to Cosign v3 bundle flow (`cosign sign-blob --bundle` and `cosign verify-blob --bundle`) and updated security policy gating to require `artifacts/sbom.sigstore.json`. WHY: `--output-signature` is deprecated in Cosign v3 bundle mode and can fail CI despite valid artifacts.
@@ -85,6 +88,9 @@
 
 ### Added
 
+- Added a security contract system under `docs/contracts/security/` with machine-readable definitions for repository boundary, apply scope, plan determinism, secret redaction, and policy gate guarantees.
+- Added deterministic security contract tests under `test/contracts/security/` and expanded `pnpm test:security` to run contract + regression suites.
+- Integrated security contract verification into CI via the reusable Playbook CI composite action.
 - Added `playbook docs audit` with deterministic checks for required doc anchors, single-roadmap policy, idea leakage, responsibility boundaries, archive hygiene, and cleanup de-duplication reporting.
 - Added JSON schema support for `playbook docs audit --json` via `playbook schema docs`.
 - Integrated docs audit into Playbook CI and agent-facing validation guidance.

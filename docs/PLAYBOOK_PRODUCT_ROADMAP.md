@@ -797,3 +797,9 @@ Future enhancement:
 - Deliver deterministic documentation governance through `playbook docs audit` for humans, CI, and AI.
 - Maintain a single strategic roadmap (`docs/PLAYBOOK_PRODUCT_ROADMAP.md`) and separate improvements backlog (`docs/PLAYBOOK_IMPROVEMENTS.md`).
 - Keep cleanup/migration guidance out of long-lived policy docs once governance is command-enforced.
+
+
+## Security Contracts
+
+- Added machine-readable security contracts to map runtime guards to deterministic enforcement tests.
+- Added contract-driven security verification stage (`pnpm test:security`) for CI regression protection.

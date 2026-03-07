@@ -1,0 +1,14 @@
+{
+  "id": "plan.determinism",
+  "description": "Plan generation must produce stable task ordering and ids for equivalent findings.",
+  "enforcedBy": "PlanGenerator.generate",
+  "expectedBehavior": [
+    "Sort findings deterministically before task projection.",
+    "Generate stable task identifiers from finding seed + occurrence.",
+    "Return identical plan output for repeated runs with identical input findings."
+  ],
+  "failureModes": [
+    "nondeterministicTaskOrdering",
+    "unstableTaskIds"
+  ]
+}

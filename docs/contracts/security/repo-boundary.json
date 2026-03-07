@@ -1,0 +1,14 @@
+{
+  "id": "repo.boundary",
+  "description": "File operations must resolve within the repository root.",
+  "enforcedBy": "validateRepoBoundary",
+  "expectedBehavior": [
+    "Reject path traversal candidates that escape repository root.",
+    "Reject symbolic link traversal that would bypass repository boundary checks.",
+    "Normalize valid paths to deterministic repository-relative POSIX paths."
+  ],
+  "failureModes": [
+    "pathTraversal",
+    "symlinkEscape"
+  ]
+}

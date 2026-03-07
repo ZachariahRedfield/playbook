@@ -110,6 +110,19 @@ Core guardrails in the mutation engine:
 
 The engine enforces policy gates before `apply`, ensuring that only approved and validated plan tasks can mutate repository state.
 
+## Security Contracts
+
+Playbook encodes runtime safety guarantees as machine-readable security contracts under `docs/contracts/security/`, and verifies those guarantees with deterministic contract tests under `test/contracts/security/`.
+
+This contract layer maps each guarantee to a concrete runtime guard and test expectation so regressions fail fast in CI.
+
+- Pattern: **Security Contracts** — machine-readable definitions of runtime safety guarantees.
+- Pattern: **Contract-Driven Security Tests** — CI verifies engine security behavior through contract definitions.
+- Rule: **Apply Scope Enforcement** — apply may only modify files declared in the plan.
+- Rule: **Repository Boundary** — file operations must resolve within repo root.
+- Rule: **Secret Redaction** — sensitive values must never appear in logs.
+- Failure Mode: **Boundary Escape** — path traversal or symlink attacks attempting to escape repo root.
+
 ## Future Direction: Playbook Agents
 
 Playbook's `verify -> plan -> apply` architecture is intentionally designed to enable safe integration with automated agents over time.

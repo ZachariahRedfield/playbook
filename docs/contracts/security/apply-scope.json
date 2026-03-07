@@ -1,0 +1,14 @@
+{
+  "id": "apply.scope",
+  "description": "Apply handlers may only report writes that stay within planned repository scope.",
+  "enforcedBy": "validateAppliedHandlerResult",
+  "expectedBehavior": [
+    "Reject handler results when filesChanged is missing or malformed.",
+    "Reject writes that fail repository boundary validation.",
+    "Require filesChanged to include task.file whenever a task targets a specific file."
+  ],
+  "failureModes": [
+    "unplannedFileMutation",
+    "outOfBoundaryWrite"
+  ]
+}
