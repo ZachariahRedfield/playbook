@@ -191,6 +191,104 @@ describe('analyze-pr contract', () => {
     }
   });
 
+  it('fails deterministically in a non-git directory', () => {
+    const nonGitDir = createRepo('playbook-analyze-pr-contract-non-git');
+
+    try {
+      writeIndex(nonGitDir);
+      fs.mkdirSync(path.join(nonGitDir, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(nonGitDir, 'docs', 'guide.md'), '# guide\n');
+
+      const result = runCli(nonGitDir, ['analyze-pr', '--json']);
+      expect(result.status).toBe(1);
+      const payload = JSON.parse(result.stdout.trim()) as { error: string };
+      expect(payload.error).toBe('playbook analyze-pr: git diff is unavailable because this directory is not a git repository.');
+    } finally {
+      fs.rmSync(nonGitDir, { recursive: true, force: true });
+    }
+  });
+
+  it('falls back to HEAD~1 when merge-base equals HEAD on main with unstaged changes', () => {
+    const repo = createRepo('playbook-analyze-pr-contract-head-fallback');
+
+    try {
+      initRepo(repo);
+      writeIndex(repo);
+      seedBaseline(repo);
+      fs.writeFileSync(path.join(repo, 'README.md'), '# committed\n');
+      runGit(repo, ['add', 'README.md']);
+      runGit(repo, ['commit', '-m', 'add readme']);
+
+      fs.writeFileSync(path.join(repo, 'README.md'), '# unstaged\n');
+
+      const result = runCli(repo, ['analyze-pr', '--json']);
+      expect(result.status).toBe(0);
+      const payload = parseJson(result.stdout);
+      expect(payload.baseRef).toBe('HEAD~1');
+      expect(payload.changedFiles).toEqual(['README.md']);
+    } finally {
+      fs.rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps explicit-base failure deterministic for shallow clone/missing base history scenarios', () => {
+    const upstream = createRepo('playbook-analyze-pr-contract-upstream');
+    const shallowClone = createRepo('playbook-analyze-pr-contract-shallow-clone');
+
+    try {
+      initRepo(upstream);
+      writeIndex(upstream);
+      seedBaseline(upstream);
+      fs.writeFileSync(path.join(upstream, 'src', 'auth', 'index.ts'), 'export const auth = 2;\n');
+      runGit(upstream, ['add', '.']);
+      runGit(upstream, ['commit', '-m', 'upstream update']);
+      runGit(upstream, ['checkout', '-b', 'feature/contract']);
+      fs.writeFileSync(path.join(upstream, 'README.md'), '# feature branch\n');
+      runGit(upstream, ['add', 'README.md']);
+      runGit(upstream, ['commit', '-m', 'feature change']);
+
+      runGit(path.dirname(shallowClone), ['clone', '--depth', '1', '--branch', 'feature/contract', `file://${upstream}`, shallowClone]);
+      runGit(shallowClone, ['config', 'user.email', 'bot@example.com']);
+      runGit(shallowClone, ['config', 'user.name', 'Playbook Bot']);
+      fs.writeFileSync(path.join(shallowClone, 'README.md'), '# shallow change\n');
+
+      const result = runCli(shallowClone, ['analyze-pr', '--json', '--base', 'origin/main']);
+      expect(result.status).toBe(1);
+      const payload = JSON.parse(result.stdout.trim()) as { error: string };
+      expect(payload.error).toContain('unable to determine git diff from base "origin/main"');
+    } finally {
+      fs.rmSync(upstream, { recursive: true, force: true });
+      fs.rmSync(shallowClone, { recursive: true, force: true });
+    }
+  });
+
+  it('handles rename-heavy diffs deterministically', () => {
+    const repo = createRepo('playbook-analyze-pr-contract-rename-heavy');
+
+    try {
+      initRepo(repo);
+      writeIndex(repo);
+      seedBaseline(repo);
+      fs.writeFileSync(path.join(repo, 'src', 'workouts', 'another.ts'), 'export const another = 1;\n');
+      runGit(repo, ['add', '.']);
+      runGit(repo, ['commit', '-m', 'add rename candidates']);
+
+      runGit(repo, ['mv', 'src/workouts/legacy.ts', 'src/workouts/legacy-renamed.ts']);
+      runGit(repo, ['mv', 'src/workouts/another.ts', 'src/workouts/another-renamed.ts']);
+
+      const result = runCli(repo, ['analyze-pr', '--json']);
+      expect(result.status).toBe(0);
+      const payload = parseJson(result.stdout);
+      expect(payload.changedFiles).toEqual([
+        'src/workouts/another-renamed.ts',
+        'src/workouts/another.ts',
+        'src/workouts/legacy-renamed.ts'
+      ]);
+    } finally {
+      fs.rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
   it('keeps json/github-comment/github-review output contracts stable', () => {
     const repo = createRepo('playbook-analyze-pr-contract-formats');
 

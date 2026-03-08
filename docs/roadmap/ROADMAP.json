@@ -122,7 +122,7 @@
       "verification_commands": [
         "node packages/cli/dist/main.js analyze-pr --json"
       ],
-      "status": "in-progress",
+      "status": "implemented-hardening",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine",
