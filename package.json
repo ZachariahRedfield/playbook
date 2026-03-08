@@ -31,7 +31,8 @@
     "agents:check": "pnpm docs:check",
     "docs:update": "pnpm -r build && node scripts/update-managed-docs.mjs",
     "docs:check": "pnpm -r build && node scripts/update-managed-docs.mjs --check",
-    "test:security": "pnpm -r build && node --test test/contracts/security/**/*.test.mjs test/security/**/*.test.mjs"
+    "test:security": "pnpm -r build && node --test test/contracts/security/**/*.test.mjs test/security/**/*.test.mjs",
+    "validate:roadmap": "node scripts/validate-roadmap-contract.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

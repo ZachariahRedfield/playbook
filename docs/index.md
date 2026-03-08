@@ -42,7 +42,8 @@
 ## Ownership boundaries
 
 - Product status ownership: [PLAYBOOK_PRODUCT_ROADMAP.md](./PLAYBOOK_PRODUCT_ROADMAP.md)
-- Improvement intake ownership: [PLAYBOOK_IMPROVEMENTS.md](./PLAYBOOK_IMPROVEMENTS.md)
+- Roadmap contract ownership: [roadmap/ROADMAP.json](./roadmap/ROADMAP.json)
+- Improvement intake ownership: [roadmap/IMPROVEMENTS_BACKLOG.md](./roadmap/IMPROVEMENTS_BACKLOG.md)
 - AI runtime context ownership: [AI_AGENT_CONTEXT.md](./AI_AGENT_CONTEXT.md)
 
 Use these owner docs directly instead of duplicating their content in this index.

@@ -105,3 +105,17 @@ runs:
       run: |
         echo "+ node packages/cli/dist/main.js verify --json"
         node packages/cli/dist/main.js verify --json
+
+    - name: Validate roadmap contract (deterministic delivery gate)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "+ node scripts/validate-roadmap-contract.mjs --ci"
+        node scripts/validate-roadmap-contract.mjs --ci
+
+    - name: Run docs audit (governance drift gate)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "+ node packages/cli/dist/main.js docs audit --json"
+        node packages/cli/dist/main.js docs audit --json

@@ -137,12 +137,16 @@ Current implemented product-facing command/artifact set:
 
 ## Roadmap framing (current baseline + future enhancements)
 
-Use `docs/PLAYBOOK_IMPROVEMENTS.md` as the staging area for emerging ideas, and keep this roadmap focused on prioritized product capabilities.
+Use `docs/roadmap/IMPROVEMENTS_BACKLOG.md` as the staging area for emerging ideas, and keep this roadmap focused on prioritized product capabilities.
 
 Pattern: Single Strategic Roadmap
 
 Only one roadmap exists in the repository: `docs/PLAYBOOK_PRODUCT_ROADMAP.md`.
-All idea-level planning belongs in `docs/PLAYBOOK_IMPROVEMENTS.md`.
+All idea-level planning belongs in `docs/roadmap/IMPROVEMENTS_BACKLOG.md`.
+
+## Roadmap-as-contract
+
+Machine-readable roadmap commitments are maintained in `docs/roadmap/ROADMAP.json`. CI validates this contract and enforces feature ID references for pull requests in CI contexts.
 
 ## Product Development Lifecycle
 
@@ -171,7 +175,8 @@ Example structure:
 ```text
 docs/
   PLAYBOOK_PRODUCT_ROADMAP.md
-  PLAYBOOK_IMPROVEMENTS.md
+  roadmap/
+    IMPROVEMENTS_BACKLOG.md
   archive/
     PLAYBOOK_IMPROVEMENTS_2026.md
 ```

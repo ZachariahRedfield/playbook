@@ -38,12 +38,27 @@ pnpm -r build
 pnpm -r test
 pnpm agents:update
 pnpm agents:check
+node scripts/validate-roadmap-contract.mjs
+```
+
+For pull request metadata validation in CI contexts, use:
+
+```bash
+node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id
 ```
 
 For documentation/governance changes, also run:
 
 ```bash
 node packages/cli/dist/main.js docs audit --ci --json
+```
+
+For remediation workflow updates, run canonical deterministic flow checks:
+
+```bash
+node packages/cli/dist/main.js verify --json
+node packages/cli/dist/main.js plan --json
+node packages/cli/dist/main.js apply --from-plan .playbook/plan.json --dry-run
 ```
 
 ## Smoke testing
@@ -114,3 +129,20 @@ PRs should remain focused and reviewable.
 ## Notes and release hygiene
 
 Record major repository decisions in `docs/PLAYBOOK_NOTES.md` and keep `docs/CHANGELOG.md` aligned with released behavior.
+
+
+## Deterministic delivery protocol (v1)
+
+- Every PR must reference at least one roadmap `feature_id` from `docs/roadmap/ROADMAP.json`.
+- Command output changes must update contract snapshots and `docs/contracts/COMMAND_CONTRACTS_V1.md`.
+- Documentation and governance changes must pass `playbook docs audit` in CI.
+
+## Suggested PR structure
+
+Use this checklist in PR descriptions:
+
+1. **Roadmap ID(s):** `PB-V...`
+2. **Command surface affected:** list commands and output modes.
+3. **Contracts updated:** schemas/docs/snapshots.
+4. **Boundary impact:** CLI/Core/Engine ownership notes.
+5. **Validation evidence:** exact commands run.
