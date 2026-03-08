@@ -7,7 +7,10 @@
       "version": "v0.3",
       "title": "Repository intelligence artifacts v1",
       "goal": "Keep index/graph artifacts deterministic and schema-versioned for index-once/query-many workflows.",
-      "commands": ["index", "graph"],
+      "commands": [
+        "index",
+        "graph"
+      ],
       "contracts": [
         "docs/contracts/ARTIFACT_EVOLUTION_POLICY.md",
         "docs/contracts/repository-graph-contract.md"
@@ -24,27 +27,51 @@
         "node packages/cli/dist/main.js index --json",
         "node packages/cli/dist/main.js graph --json"
       ],
-      "status": "implemented-hardening"
+      "status": "implemented-hardening",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
     },
     {
       "feature_id": "PB-V03-QUERY-001",
       "version": "v0.3",
       "title": "Query surface stabilization",
       "goal": "Stabilize query command outputs and deterministic failures for missing intelligence artifacts.",
-      "commands": ["query"],
-      "contracts": ["docs/contracts/COMMAND_CONTRACTS_V1.md"],
-      "tests": ["tests/contracts/cliContracts.test.ts"],
-      "docs": ["docs/commands/query.md"],
-      "dependencies": ["PB-V03-INDEX-001"],
-      "verification_commands": ["node packages/cli/dist/main.js query modules --json"],
-      "status": "implemented-hardening"
+      "commands": [
+        "query"
+      ],
+      "contracts": [
+        "docs/contracts/COMMAND_CONTRACTS_V1.md"
+      ],
+      "tests": [
+        "tests/contracts/cliContracts.test.ts"
+      ],
+      "docs": [
+        "docs/commands/query.md"
+      ],
+      "dependencies": [
+        "PB-V03-INDEX-001"
+      ],
+      "verification_commands": [
+        "node packages/cli/dist/main.js query modules --json"
+      ],
+      "status": "implemented-hardening",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
     },
     {
       "feature_id": "PB-V04-PLAN-APPLY-001",
       "version": "v0.4",
       "title": "Plan/apply trust-model hardening",
       "goal": "Strengthen apply safety boundaries and keep remediation derivation deterministic.",
-      "commands": ["verify", "plan", "apply"],
+      "commands": [
+        "verify",
+        "plan",
+        "apply"
+      ],
       "contracts": [
         "docs/contracts/verify-output.md",
         "docs/architecture/REMEDIATION_TRUST_MODEL.md"
@@ -53,64 +80,207 @@
         "test/contracts/security/planSafety.test.mjs",
         "test/security/validateRepoBoundary.test.mjs"
       ],
-      "docs": ["docs/commands/plan.md", "docs/commands/apply.md"],
-      "dependencies": ["PB-V03-INDEX-001"],
+      "docs": [
+        "docs/commands/plan.md",
+        "docs/commands/apply.md"
+      ],
+      "dependencies": [
+        "PB-V03-INDEX-001"
+      ],
       "verification_commands": [
         "node packages/cli/dist/main.js verify --json",
         "node packages/cli/dist/main.js plan --json"
       ],
-      "status": "in-progress"
+      "status": "in-progress",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-core",
+        "@zachariahredfield/playbook-engine"
+      ]
     },
     {
       "feature_id": "PB-V04-ANALYZEPR-001",
       "version": "v0.4",
       "title": "Deterministic analyze-pr output contracts",
       "goal": "Pin analyze-pr output formats and normalize SCM context behavior across CI/local runs.",
-      "commands": ["analyze-pr"],
+      "commands": [
+        "analyze-pr"
+      ],
       "contracts": [
         "docs/architecture/SCM_CONTEXT_LAYER.md",
         "docs/contracts/COMMAND_CONTRACTS_V1.md"
       ],
-      "tests": ["tests/contracts/analyze-pr.contract.test.ts"],
-      "docs": ["docs/commands/analyze-pr.md"],
-      "dependencies": ["PB-V03-INDEX-001"],
-      "verification_commands": ["node packages/cli/dist/main.js analyze-pr --json"],
-      "status": "in-progress"
+      "tests": [
+        "tests/contracts/analyze-pr.contract.test.ts"
+      ],
+      "docs": [
+        "docs/commands/analyze-pr.md"
+      ],
+      "dependencies": [
+        "PB-V03-INDEX-001"
+      ],
+      "verification_commands": [
+        "node packages/cli/dist/main.js analyze-pr --json"
+      ],
+      "status": "in-progress",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ]
     },
     {
       "feature_id": "PB-V05-PACKAGE-BOUNDARIES-001",
       "version": "v0.5",
       "title": "Canonical command ownership and plugin convergence",
       "goal": "Remove duplicated command implementations and align plugin loading across command surfaces.",
-      "commands": ["analyze", "verify", "rules"],
+      "commands": [
+        "analyze",
+        "verify",
+        "rules"
+      ],
       "contracts": [
         "docs/architecture/V1_BOUNDARY_REFACTOR_PLAN.md",
         "docs/contracts/COMMAND_CONTRACTS_V1.md"
       ],
-      "tests": ["tests/contracts/plugin-contracts.test.ts"],
-      "docs": ["docs/PLAYBOOK_PRODUCT_ROADMAP.md"],
-      "dependencies": ["PB-V04-PLAN-APPLY-001", "PB-V04-ANALYZEPR-001"],
-      "verification_commands": ["pnpm -r build", "pnpm test"],
-      "status": "planned"
+      "tests": [
+        "tests/contracts/plugin-contracts.test.ts"
+      ],
+      "docs": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md"
+      ],
+      "dependencies": [
+        "PB-V04-PLAN-APPLY-001",
+        "PB-V04-ANALYZEPR-001"
+      ],
+      "verification_commands": [
+        "pnpm -r build",
+        "pnpm test"
+      ],
+      "status": "planned",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
     },
     {
       "feature_id": "PB-V1-DELIVERY-SYSTEM-001",
       "version": "v1.0",
       "title": "Deterministic delivery system and CI gating",
       "goal": "Require roadmap IDs, roadmap contract validity, and docs/contract checks in branch validation.",
-      "commands": ["docs", "schema", "doctor"],
+      "commands": [
+        "docs",
+        "schema",
+        "doctor"
+      ],
       "contracts": [
         "docs/roadmap/ROADMAP.json",
         "docs/contracts/COMMAND_CONTRACTS_V1.md"
       ],
-      "tests": ["scripts/validate-roadmap-contract.mjs"],
-      "docs": ["docs/PLAYBOOK_DEV_WORKFLOW.md", "docs/roadmap/README.md"],
-      "dependencies": ["PB-V05-PACKAGE-BOUNDARIES-001"],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/PLAYBOOK_DEV_WORKFLOW.md",
+        "docs/roadmap/README.md"
+      ],
+      "dependencies": [
+        "PB-V05-PACKAGE-BOUNDARIES-001"
+      ],
       "verification_commands": [
         "node scripts/validate-roadmap-contract.mjs --ci",
         "node packages/cli/dist/main.js docs audit --json"
       ],
-      "status": "in-progress"
+      "status": "in-progress",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
+    },
+    {
+      "feature_id": "PB-V06-FAILURE-INTELLIGENCE-001",
+      "version": "v0.6",
+      "title": "Failure intelligence loop and prevention codification",
+      "goal": "Capture failures as structured intelligence and deterministically map them into rules, tests, docs, and remediation scaffolds.",
+      "commands": [
+        "verify",
+        "plan",
+        "apply",
+        "doctor",
+        "failure"
+      ],
+      "contracts": [
+        "docs/contracts/FAILURE_INTELLIGENCE_CONTRACT.md",
+        "docs/contracts/COMMAND_CONTRACTS_V1.md",
+        "docs/contracts/FAILURE_TAXONOMY_SCHEMA.json"
+      ],
+      "tests": [
+        "tests/contracts/failure-intelligence.contract.test.ts",
+        "tests/unit/failure-taxonomy-classifier.test.ts"
+      ],
+      "docs": [
+        "docs/commands/failure.md",
+        "docs/PLAYBOOK_DEV_WORKFLOW.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md"
+      ],
+      "dependencies": [
+        "PB-V05-PACKAGE-BOUNDARIES-001",
+        "PB-V1-DELIVERY-SYSTEM-001"
+      ],
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-core"
+      ],
+      "verification_commands": [
+        "node packages/cli/dist/main.js failure ingest --json --input .playbook/failures/sample.json",
+        "node packages/cli/dist/main.js failure suggest --json",
+        "pnpm test -- failure-intelligence"
+      ],
+      "status": "planned"
+    },
+    {
+      "feature_id": "PB-V07-ARCH-INTELLIGENCE-GRAPH-001",
+      "version": "v0.7",
+      "title": "Architecture intelligence graph v2",
+      "goal": "Evolve repository graph artifacts into a semantic architecture graph that powers explain/query/analyze-pr impact and risk reasoning.",
+      "commands": [
+        "index",
+        "graph",
+        "query",
+        "explain",
+        "analyze-pr",
+        "plan"
+      ],
+      "contracts": [
+        "docs/contracts/ARCHITECTURE_INTELLIGENCE_GRAPH_CONTRACT.md",
+        "docs/contracts/repository-graph-contract.md",
+        "docs/contracts/COMMAND_CONTRACTS_V1.md"
+      ],
+      "tests": [
+        "tests/contracts/architecture-graph.contract.test.ts",
+        "tests/integration/impact-analysis.integration.test.ts"
+      ],
+      "docs": [
+        "docs/commands/graph.md",
+        "docs/commands/index.md",
+        "docs/architecture/ARCHITECTURE_INTELLIGENCE_GRAPH.md"
+      ],
+      "dependencies": [
+        "PB-V04-ANALYZEPR-001",
+        "PB-V05-PACKAGE-BOUNDARIES-001"
+      ],
+      "package_ownership": [
+        "@zachariahredfield/playbook-engine",
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-node"
+      ],
+      "verification_commands": [
+        "node packages/cli/dist/main.js index --json",
+        "node packages/cli/dist/main.js graph --json",
+        "node packages/cli/dist/main.js analyze-pr --json"
+      ],
+      "status": "planned"
     }
   ]
 }

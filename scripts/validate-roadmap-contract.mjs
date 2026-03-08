@@ -44,6 +44,7 @@ const requiredFields = [
   'tests',
   'docs',
   'dependencies',
+  'package_ownership',
   'verification_commands',
   'status'
 ];
@@ -65,10 +66,14 @@ for (const [index, feature] of (roadmap.features ?? []).entries()) {
   }
   featureIds.add(feature.feature_id);
 
-  for (const listField of ['commands', 'contracts', 'tests', 'docs', 'dependencies', 'verification_commands']) {
+  for (const listField of ['commands', 'contracts', 'tests', 'docs', 'dependencies', 'package_ownership', 'verification_commands']) {
     if (!Array.isArray(feature[listField])) {
       fail(`features[${index}].${listField} must be an array`);
     }
+  }
+
+  if (feature.package_ownership.some((entry) => typeof entry !== 'string' || !entry.trim())) {
+    fail(`features[${index}].package_ownership must contain non-empty package names`);
   }
 }
 
