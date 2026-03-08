@@ -1,12 +1,25 @@
 # Playbook
 
-AI-aware engineering governance for modern repositories.
+Deterministic repo runtime and trust layer for humans and AI agents.
 
 ![CI](https://github.com/ZachariahRedfield/playbook/actions/workflows/ci.yml/badge.svg) [![Playbook Diagrams Check](https://github.com/ZachariahRedfield/playbook/actions/workflows/playbook-diagrams-check.yml/badge.svg)](https://github.com/ZachariahRedfield/playbook/actions/workflows/playbook-diagrams-check.yml) ![Version](https://img.shields.io/badge/version-v0.1.1-blue)
 [![Architecture](https://img.shields.io/badge/architecture-auto--generated%20by%20playbook-blueviolet?style=flat-square&logo=mermaid)](docs/ARCHITECTURE_DIAGRAMS.md)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Playbook is a governance CLI for repositories that keeps checks deterministic for both humans and AI agents. It helps teams inspect current policy status, understand active rules, and apply safe fixes with confidence.
+Playbook helps humans and AI agents understand, govern, and safely change real repositories through deterministic repo intelligence and reviewed remediation.
+
+Playbook is not positioned as a general-purpose chat assistant. It is the runtime between assistants and production codebases: explicit contracts, deterministic findings, and policy-gated change loops.
+
+## Category and product claim
+
+Playbook is best understood as **deterministic repo intelligence + governance + safe remediation runtime**:
+
+- **Read substrate**: `ai-context`, `ai-contract`, `index`, `query`, `deps`, `ask --repo-context`, `explain`
+- **Governance kernel**: `verify`
+- **Change bridge**: `plan -> apply -> verify`
+- **Delivery surfaces**: one engine used via CLI, CI, automation, and integrations
+
+This framing is the core promise: deterministic evidence over ad-hoc inference, and reviewed intent before execution.
 
 ## Shared core, project-local intelligence
 
@@ -59,28 +72,36 @@ coverage
 `playbook doctor` now includes a **Playbook Artifact Hygiene** section to detect artifact misuse and suggest deterministic fixes.
 
 
-## Quick Start
+## Quick Start (canonical ladder)
 
-Use one surface for each need:
-
-1. `playbook` → product + CLI
-2. `README` → developer interface
-3. `playbook-demo` → live demonstration repository
-
-Install and run the core CLI flow:
+Install the current public CLI package:
 
 ```bash
-npm install -g playbook
-playbook analyze
-playbook verify
-playbook plan
-playbook apply
+npm install -g @fawxzzy/playbook
 ```
 
-For a no-install preview flow, you can still run:
+Then run the canonical Playbook-first operating ladder:
 
 ```bash
-npx playbook demo
+playbook ai-context --json
+playbook ai-contract --json
+playbook context --json
+playbook index --json
+playbook query modules --json
+playbook explain architecture --json
+playbook ask "where should a new feature live?" --repo-context --json
+playbook verify --json
+playbook plan --json
+playbook apply --from-plan .playbook/plan.json
+playbook verify --json
+```
+
+`analyze` remains available for compatibility and lightweight stack inspection, but it is no longer the sole serious quick-start path.
+
+For a no-install preview flow:
+
+```bash
+npx @fawxzzy/playbook demo
 ```
 
 ## Example Output
@@ -91,11 +112,12 @@ npx playbook demo
 git clone https://github.com/ZachariahRedfield/playbook-demo
 cd playbook-demo
 npm install
-npx playbook analyze
-npx playbook verify
-npx playbook plan --json > .playbook/plan.json
-npx playbook apply --from-plan .playbook/plan.json
-npx playbook verify
+npx @fawxzzy/playbook ai-context --json
+npx @fawxzzy/playbook index --json
+npx @fawxzzy/playbook verify --json
+npx @fawxzzy/playbook plan --json > .playbook/plan.json
+npx @fawxzzy/playbook apply --from-plan .playbook/plan.json
+npx @fawxzzy/playbook verify --json
 ```
 
 ## CLI Commands
@@ -129,7 +151,7 @@ npx playbook verify
 
 For the complete command inventory (including utility commands), see [docs/commands/README.md](docs/commands/README.md).
 
-Run `npx playbook index` to generate a deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
+Run `npx @fawxzzy/playbook index` to generate a deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
 
 Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `graph`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
 
@@ -258,11 +280,11 @@ Use `playbook analyze-pr` for deterministic, machine-readable change analysis fr
 - In CI pull_request workflows, pass an explicit diff base (for example `--base origin/${{ github.base_ref }}`) and use full-history checkout (`fetch-depth: 0`) for deterministic diff resolution.
 
 ```bash
-npx playbook index
-npx playbook analyze-pr --format text
-npx playbook analyze-pr --json
-npx playbook analyze-pr --format github-comment
-npx playbook analyze-pr --format github-review
+npx @fawxzzy/playbook index
+npx @fawxzzy/playbook analyze-pr --format text
+npx @fawxzzy/playbook analyze-pr --json
+npx @fawxzzy/playbook analyze-pr --format github-comment
+npx @fawxzzy/playbook analyze-pr --format github-review
 ```
 
 ### Change-scoped ask (`playbook ask --diff-context`)
@@ -339,7 +361,7 @@ Playbook's canonical remediation loop is:
 Run:
 
 ```bash
-npx playbook doctor
+npx @fawxzzy/playbook doctor
 ```
 
 `playbook doctor` provides a high-level repository health report with framework, architecture, governance checks, and suggested next actions.
@@ -349,7 +371,7 @@ npx playbook doctor
 Run:
 
 ```bash
-npx playbook doctor --ai
+npx @fawxzzy/playbook doctor --ai
 ```
 
 This command verifies that the repository is correctly configured for AI-assisted Playbook workflows, including deterministic AI contract readiness validation (contract availability/validity, intelligence sources, required command/query surface, and remediation workflow readiness). It is the readiness gate before future Playbook agent execution.
@@ -366,7 +388,7 @@ The CLI help output is the authoritative source for supported commands and flags
 Running:
 
 ```bash
-npx playbook init
+npx @fawxzzy/playbook init
 ```
 
 guarantees the following baseline project artifacts:
