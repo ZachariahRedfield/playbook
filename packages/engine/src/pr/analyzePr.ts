@@ -4,7 +4,7 @@ import { queryModuleOwners } from '../query/moduleOwners.js';
 import { queryRuleOwners } from '../query/ruleOwners.js';
 import { resolveDiffAskContext } from '../ask/diffContext.js';
 import { execFileSync } from 'node:child_process';
-import { getMergeBase } from '../git/base.js';
+import { resolveScmDiffBase } from '../git/context.js';
 
 type RiskLevel = 'low' | 'medium' | 'high';
 
@@ -91,8 +91,11 @@ const parseAddedLineFromPatch = (patch: string): number | undefined => {
 
 const resolveChangedLineMap = (projectRoot: string, baseRef: string, changedFiles: string[]): Map<string, number> => {
   const lineMap = new Map<string, number>();
-  const baseSha = getMergeBase(projectRoot, baseRef, 'HEAD');
-  if (!baseSha) {
+
+  let baseSha: string | undefined;
+  try {
+    baseSha = resolveScmDiffBase(projectRoot, { baseRef, commandName: 'playbook analyze-pr' }).baseSha;
+  } catch {
     return lineMap;
   }
 
@@ -176,6 +179,55 @@ const deriveArchitectureBoundaries = (changedFiles: string[]): string[] => {
   return uniqueSorted([...boundaries]);
 };
 
+
+const isDocsPath = (filePath: string): boolean => filePath.startsWith('docs/') || filePath.toLowerCase().includes('readme');
+
+const deriveRelatedRules = (input: {
+  candidateRules: string[];
+  changedFiles: string[];
+  affectedModules: string[];
+  boundariesTouched: string[];
+  ownersList: Array<{
+    ruleId: string;
+    area: string;
+  }>;
+}): string[] => {
+  const docsTouched = input.changedFiles.some((filePath) => isDocsPath(filePath));
+  const sourceTouched = input.changedFiles.some((filePath) => filePath.startsWith('src/'));
+  const playbookArtifactTouched = input.changedFiles.some((filePath) => filePath.startsWith('.playbook/'));
+  const automationTouched = input.changedFiles.some((filePath) => filePath.startsWith('.github/'));
+  const docsOnlyChange = input.changedFiles.length > 0 && input.changedFiles.every((filePath) => isDocsPath(filePath));
+  const ownerAreaByRule = new Map(input.ownersList.map((entry) => [entry.ruleId, entry.area.toLowerCase()]));
+
+  return uniqueSorted(
+    input.candidateRules.filter((ruleId) => {
+      const ownerArea = ownerAreaByRule.get(ruleId);
+
+      if (docsOnlyChange) {
+        return ownerArea === 'documentation';
+      }
+
+      if (!ownerArea) {
+        return sourceTouched || input.affectedModules.length > 0 || input.boundariesTouched.length > 1;
+      }
+
+      if (ownerArea === 'documentation') {
+        return docsTouched;
+      }
+
+      if (ownerArea === 'governance') {
+        return sourceTouched || playbookArtifactTouched || input.affectedModules.length > 0;
+      }
+
+      if (ownerArea === 'quality' || ownerArea === 'testing') {
+        return sourceTouched || automationTouched || input.affectedModules.length > 0;
+      }
+
+      return sourceTouched || input.affectedModules.length > 0 || input.boundariesTouched.length > 1;
+    })
+  );
+};
+
 const deriveReviewGuidance = (analysis: {
   affectedModules: string[];
   docsChanged: string[];
@@ -251,9 +303,16 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
 
   const recommendedReview = uniqueSorted([...docsCoverage.flatMap((entry) => entry.sources), ...docsChanged]);
 
-  const relatedRules = uniqueSorted(repositoryIndex.rules);
   const allRuleOwners = queryRuleOwners();
   const ownersList = 'rules' in allRuleOwners ? allRuleOwners.rules : [];
+  const boundariesTouched = deriveArchitectureBoundaries(diffContext.changedFiles);
+  const relatedRules = deriveRelatedRules({
+    candidateRules: repositoryIndex.rules,
+    changedFiles: diffContext.changedFiles,
+    affectedModules,
+    boundariesTouched,
+    ownersList
+  });
   const relatedRuleOwners = ownersList.filter((entry) => relatedRules.includes(entry.ruleId));
 
   const moduleOwnersResult = queryModuleOwners(projectRoot);
@@ -264,7 +323,6 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
 
   const riskLevel = resolveRiskLevel(moduleRisk.map((entry) => entry.level));
   const riskSignals = uniqueSorted(moduleRisk.flatMap((entry) => entry.signals));
-  const boundariesTouched = deriveArchitectureBoundaries(diffContext.changedFiles);
 
   const reviewGuidance = deriveReviewGuidance({
     affectedModules,

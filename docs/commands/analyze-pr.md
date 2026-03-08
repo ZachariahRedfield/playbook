@@ -23,6 +23,8 @@ Structured pull request intelligence using local diff + indexed repository intel
 
 It returns deterministic review/report data for automation, including changed files, affected modules, downstream impact, architecture boundaries touched, risk summary, docs review recommendations, rule/module ownership, and pre-merge guidance.
 
+Rule relevance is scoped to the current change set: docs-only diffs emit documentation-relevant governance rules, while source/module and multi-boundary changes emit only governance rules justified by changed files, affected modules, touched boundaries, and explicit rule ownership metadata.
+
 `--format <text|json|github-comment|github-review>` is a presentation/export selector over the same deterministic analysis contract. `--json` remains canonical analysis data; `github-comment` is deterministic markdown rendering for CI workflows; `github-review` is deterministic inline review annotation JSON for GitHub pull request files/lines.
 
 GitHub Actions PR transport treats `analyze-pr --format github-comment` as the sticky summary markdown producer and `analyze-pr --format github-review` as the inline diagnostics producer. Summary comment transport updates one sticky comment marker (`<!-- playbook:analyze-pr-comment -->`) while inline diagnostics are synchronized on reruns (`<!-- playbook:analyze-pr-inline -->`) so stale diagnostics are removed and current diagnostics are posted without duplicate comment spam.

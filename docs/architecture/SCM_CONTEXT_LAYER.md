@@ -38,9 +38,11 @@ The SCM context layer should provide:
 
 ## Migration sequence
 
-1. Introduce `packages/core/src/scm/context.ts` with no behavioral change wrappers.
+1. Introduce a shared SCM normalization helper layer with no behavioral-change wrappers.
+   - Current slice: `packages/engine/src/git/context.ts` provides canonical diff-base normalization (`resolveScmDiffBase`) and deterministic command-scoped SCM errors.
 2. Migrate `packages/engine/src/git/base.ts` and `packages/engine/src/git/diff.ts` consumers to shared APIs.
-3. Migrate `analyze-pr`, `ask --diff-context`, and `verify` diff-base callsites.
+   - Current slice: `ask --diff-context` and `analyze-pr` now consume the canonical helper path for diff-base resolution.
+3. Migrate remaining callsites (including `verify`) to the same normalized SCM context surface.
 4. Add cross-command contract tests validating identical SCM behavior for key edge cases.
 
 ## Edge-case matrix (minimum)

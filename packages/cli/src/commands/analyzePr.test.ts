@@ -175,6 +175,121 @@ describe('analyze-pr', () => {
     logSpy.mockRestore();
   });
 
+
+
+  it('scopes related rules for docs-only diffs to avoid repo-wide governance noise', async () => {
+    const repo = createRepo('playbook-cli-analyze-pr-docs-only');
+    initGitRepo(repo);
+
+    const indexPath = path.join(repo, '.playbook', 'repo-index.json');
+    fs.mkdirSync(path.dirname(indexPath), { recursive: true });
+    fs.writeFileSync(
+      indexPath,
+      JSON.stringify(
+        {
+          schemaVersion: '1.0',
+          framework: 'node',
+          language: 'typescript',
+          architecture: 'modular-monolith',
+          modules: [{ name: 'workouts', dependencies: [] }],
+          database: 'postgres',
+          rules: ['PB001', 'requireNotesOnChanges', 'verify.rule.tests.required']
+        },
+        null,
+        2
+      )
+    );
+
+    fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'docs', 'guide.md'), '# guide\n');
+    runGit(repo, ['add', '.']);
+    runGit(repo, ['commit', '-m', 'initial']);
+
+    fs.writeFileSync(path.join(repo, 'docs', 'guide.md'), '# updated guide\n');
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runAnalyzePr(repo, ['--json'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.rules.related).toEqual(['PB001']);
+
+    logSpy.mockRestore();
+  });
+
+  it('handles detached HEAD deterministically', async () => {
+    const repo = createRepo('playbook-cli-analyze-pr-detached-head');
+    initGitRepo(repo);
+    writeRepoIndex(repo);
+
+    fs.mkdirSync(path.join(repo, 'src', 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'src', 'auth', 'index.ts'), 'export const auth = 1;\n');
+    runGit(repo, ['add', '.']);
+    runGit(repo, ['commit', '-m', 'initial']);
+    runGit(repo, ['checkout', '--detach']);
+
+    fs.writeFileSync(path.join(repo, 'README.md'), '# detached change\n');
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runAnalyzePr(repo, ['--json'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('analyze-pr');
+    expect(payload.summary.changedFileCount).toBeGreaterThan(0);
+
+    logSpy.mockRestore();
+  });
+
+
+
+  it('reports multi-boundary PRs with deterministic boundary summary', async () => {
+    const repo = createRepo('playbook-cli-analyze-pr-multi-boundary');
+    initGitRepo(repo);
+    writeRepoIndex(repo);
+
+    fs.mkdirSync(path.join(repo, 'src', 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'src', 'auth', 'index.ts'), 'export const auth = 1;\n');
+    fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'docs', 'guide.md'), '# guide\n');
+    runGit(repo, ['add', '.']);
+    runGit(repo, ['commit', '-m', 'initial']);
+
+    fs.writeFileSync(path.join(repo, 'src', 'auth', 'index.ts'), 'export const auth = 2;\n');
+    fs.writeFileSync(path.join(repo, 'docs', 'guide.md'), '# updated guide\n');
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runAnalyzePr(repo, ['--json'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.architecture.boundariesTouched).toEqual(['docs', 'source']);
+
+    logSpy.mockRestore();
+  });
+
+  it('fails deterministically when an explicit base ref cannot be resolved', async () => {
+    const repo = createRepo('playbook-cli-analyze-pr-missing-base');
+    initGitRepo(repo);
+    writeRepoIndex(repo);
+
+    fs.mkdirSync(path.join(repo, 'src', 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'src', 'auth', 'index.ts'), 'export const auth = 1;\n');
+    runGit(repo, ['add', '.']);
+    runGit(repo, ['commit', '-m', 'initial']);
+
+    fs.writeFileSync(path.join(repo, 'README.md'), '# shallow-like base failure\n');
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runAnalyzePr(repo, ['--json', '--base', 'origin/main'], { format: 'json', quiet: false, baseRef: 'origin/main' });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.error).toContain('unable to determine git diff from base "origin/main"');
+
+    logSpy.mockRestore();
+  });
+
   it('fails deterministically when there are no changed files', async () => {
     const repo = createRepo('playbook-cli-analyze-pr-no-diff');
     initGitRepo(repo);
