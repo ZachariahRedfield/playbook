@@ -7,6 +7,7 @@ This directory contains machine-readable roadmap artifacts used by CI and AI aut
 - `ROADMAP.json`: deterministic roadmap contract entries.
 - `IMPROVEMENTS_BACKLOG.md`: idea and enhancement staging backlog.
 - `IMPLEMENTATION_PLAN_NEXT_4_WEEKS.md`: implementation-grade 4-week operating plan aligned to accepted roadmap baseline.
+- `WEEK0_WEEK1_EXECUTION_VALIDATOR.md`: execution validator and immediate Week 0/1 build queue derived from the accepted baseline.
 
 ## Rule
 
