@@ -116,6 +116,14 @@ Pattern: Compaction is the trust-preserving bridge between extraction and promot
 Failure Mode: Unbounded pattern accumulation turns deterministic intelligence into low-trust memory sprawl.
 Failure Mode: Promoting observations directly into reusable guidance without lifecycle gates causes duplication and semantic drift.
 
+Implementation foundation (internal):
+
+- Introduced internal knowledge artifact model representing `candidate -> compacted -> promoted -> retired` lifecycle states.
+- Added deterministic artifact ID generation based on canonicalized representation.
+- Established evidence-linked knowledge artifacts to preserve traceability to source observations/rules/remediations/repo structure evidence.
+- Implemented lifecycle helpers that enforce valid transitions and support supersede relationships.
+- Positioned lifecycle infrastructure as internal-only groundwork without expanding the public CLI knowledge-management surface.
+
 4️⃣ Developer Experience Over Features
 
 Adoption depends on:
