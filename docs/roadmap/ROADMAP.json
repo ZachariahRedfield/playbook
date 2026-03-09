@@ -198,6 +198,49 @@
       ]
     },
     {
+      "feature_id": "PB-V1-PRODUCT-TRUTH-PACKAGING-001",
+      "version": "v1.0",
+      "title": "Product truth packaging and narrative sync",
+      "goal": "Package canonical Playbook workflow truth into deterministic metadata and audit surfaces so humans and AI agents can reliably discover what is canonical, live, compatibility-only, utility, planned, and question-bounded.",
+      "commands": [
+        "ai-context",
+        "ai-contract",
+        "context",
+        "ask",
+        "docs"
+      ],
+      "contracts": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/contracts/COMMAND_CONTRACTS_V1.md",
+        "AGENTS.md"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs",
+        "scripts/update-managed-docs.mjs"
+      ],
+      "docs": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "README.md",
+        "docs/commands/README.md",
+        "docs/ONBOARDING_DEMO.md",
+        "docs/roadmap/README.md"
+      ],
+      "dependencies": [
+        "PB-V1-DELIVERY-SYSTEM-001"
+      ],
+      "verification_commands": [
+        "pnpm agents:update",
+        "pnpm agents:check",
+        "node packages/cli/dist/main.js docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
+    },
+    {
       "feature_id": "PB-V06-FAILURE-INTELLIGENCE-001",
       "version": "v0.6",
       "title": "Failure intelligence loop and prevention codification",

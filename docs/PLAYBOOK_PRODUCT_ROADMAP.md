@@ -151,6 +151,51 @@ Machine-readable roadmap commitments are maintained in `docs/roadmap/ROADMAP.jso
 
 Roadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.
 
+## Product Truth Packaging and Narrative Sync
+
+The current gap is not a lack of raw deterministic analysis capability. The gap is packaging: explicit canon, priority, discoverability, and synchronization guidance that makes product truth easy to find and hard to misinterpret.
+
+This track exists so humans and AI agents do not need multiple interpretation passes to answer:
+
+- what is canonical
+- what is compatibility-only
+- what is utility
+- what is planned vs live
+- what questions `ask --repo-context` is intended to answer
+
+Planned commitments (`PB-V1-PRODUCT-TRUTH-PACKAGING-001`):
+
+1. **Canonical workflow contract**
+   - publish and validate one authoritative workflow contract for serious-user operation
+   - ensure docs/demo/help either reuse the same source or are deterministically checked against it
+2. **Command role / lifecycle / discoverability metadata**
+   - encode command role, lifecycle state, and discoverability intent in deterministic metadata
+   - support generation of a command truth table that separates canonical vs compatibility/utility framing
+3. **Narrative sync audit across runtime/help/docs/demo/roadmap**
+   - detect drift between implemented command contracts and narrative surfaces
+   - keep planned-vs-live language explicit and machine-checkable
+4. **`ask --repo-context` question-boundary contract**
+   - define intended question classes and explicit unsupported-question behavior
+   - keep deterministic repository-intelligence-first sourcing explicit in docs/contracts
+5. **Demo/onboarding sync gate**
+   - make demo/onboarding narrative drift visible in CI or maintenance validation
+   - align onboarding guidance with canonical operating ladder and live command surfaces
+
+Acceptance criteria:
+
+- one authoritative workflow contract exists and is reused by docs/demo/help or validated against them
+- command metadata expresses role/lifecycle/discoverability clearly enough to generate a command truth table
+- drift between runtime, docs, demo, and roadmap is detectable by deterministic audit
+- `ask --repo-context` scope and unsupported-question behavior are documented explicitly
+- demo/onboarding drift is visible in CI or maintenance validation
+
+Conservative non-goals for this track:
+
+- no broad autonomous mutation behavior
+- no replacement of `verify -> plan -> apply -> verify`
+- no new broad command family in this pass
+- roadmap intent must not be presented as live command availability
+
 ## Product Development Lifecycle
 
 Playbook features follow a structured lifecycle:

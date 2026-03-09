@@ -24,6 +24,17 @@ This structure prevents roadmap bloat while preserving engineering intelligence 
 
 ---
 
+## Staging candidates: Product truth packaging and narrative sync
+
+These backlog candidates feed roadmap track `PB-V1-PRODUCT-TRUTH-PACKAGING-001` without implying live command-surface changes in this pass.
+
+- Add a generated command truth table framing commands as canonical workflow, compatibility-only, or utility surfaces.
+- Add narrative drift checks that compare runtime/help/docs/demo/roadmap language for planned-vs-live consistency.
+- Add explicit `ask --repo-context` question-boundary examples (in-scope and unsupported) for deterministic operator expectations.
+- Add demo/onboarding synchronization checks so ladder guidance stays aligned with implemented contracts.
+
+---
+
 ## Architectural Insight: Deterministic Engineering Reasoning Loop
 
 Playbook commands already form a reusable deterministic reasoning loop for engineering workflows.
