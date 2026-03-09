@@ -344,6 +344,71 @@ Failure Mode: Premature Canonicalization.
 Failure Mode: Compression Without Semantics.
 - Token reduction without preserved meaning produces weak and unsafe repository intelligence.
 
+## Knowledge Compaction Phase (internal-first specification)
+
+Compaction is the formal internal phase that turns raw candidate knowledge into reusable, reviewable pattern drafts.
+
+Compaction lifecycle:
+
+`observe -> extract candidate patterns -> canonicalize -> compare against stored patterns -> decide outcome -> emit compacted review drafts -> human review/promotion -> archive or supersede replaced patterns`
+
+Compaction answers:
+
+- Is this actually new?
+- Is this another example of an existing pattern?
+- Can this be merged into a smaller reusable abstraction?
+- Is this too specific to store?
+- Does this split an existing pattern into two cleaner patterns?
+
+Decision buckets (exactly one per candidate):
+
+- `discard`
+- `attach`
+- `merge`
+- `generalize`
+- `add`
+
+Canonicalization before comparison (deterministic):
+
+- file paths -> role labels where possible
+- package/module names -> component/tool roles where possible
+- remove unstable IDs/hashes/timestamps
+- normalize exact error strings into mechanism-level summaries
+- keep concrete incidents as evidence blocks rather than primary abstractions
+
+Compressed storage direction uses pattern cards containing stable fields such as:
+
+- `id`, `title`
+- `trigger/context`
+- `mechanism`
+- `invariant`
+- `implication/response`
+- representative `examples`
+- supporting `evidence`
+- `supersedes`
+- `confidence`
+
+Scope boundary for first formal pass:
+
+- internal
+- deterministic
+- review-oriented
+- artifact-backed
+
+Automation boundaries:
+
+- safe now: exact dedupe, canonicalization, evidence attachment, over-specific rejection, simple merge suggestions
+- human-reviewed now: aggressive generalization, conflict resolution, pattern splitting, retire/supersede decisions
+
+Contract stance:
+
+- no broad new user-facing command family in this pass
+- no autonomous rule promotion
+- no replacement of canonical remediation loop (`verify -> plan -> apply -> verify`)
+- keep canonical operating ladder unchanged (`ai-context -> ai-contract -> context -> index -> query/explain/ask --repo-context -> verify -> plan -> apply -> verify`)
+
+Compaction spec details are defined in `docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md`.
+
 ## Integration Architecture Direction: shared core, local intelligence
 
 ### Consumer Integration Contract

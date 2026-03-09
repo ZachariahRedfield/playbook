@@ -355,6 +355,39 @@
       "package_ownership": [
         "@fawxzzy/playbook"
       ]
+    },
+    {
+      "feature_id": "PB-V08-KNOWLEDGE-COMPACTION-SPEC-001",
+      "version": "v0.8",
+      "title": "Knowledge Compaction Phase specification",
+      "goal": "Formalize an internal-first deterministic compaction phase contract for repository learning outputs without expanding broad end-user command surface.",
+      "commands": [],
+      "contracts": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V07-ARCH-INTELLIGENCE-GRAPH-001"
+      ],
+      "verification_commands": [
+        "pnpm agents:update",
+        "pnpm agents:check",
+        "node packages/cli/dist/main.js docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
     }
   ]
 }
