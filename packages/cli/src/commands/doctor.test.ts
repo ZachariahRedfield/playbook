@@ -127,6 +127,21 @@ describe('runDoctor', () => {
     logSpy.mockRestore();
   });
 
+  it('prints command help without running diagnosis', async () => {
+    const { runDoctor } = await import('./doctor.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDoctor(process.cwd(), { format: 'text', quiet: false, help: true });
+
+    const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(output).toContain('Usage: playbook doctor [options]');
+    expect(output).toContain('--ai');
+    expect(queryRepositoryIndex).not.toHaveBeenCalled();
+
+    logSpy.mockRestore();
+  });
+
 
   it('includes deterministic artifact hygiene suggestion IDs in json output', async () => {
     const { runDoctor } = await import('./doctor.js');

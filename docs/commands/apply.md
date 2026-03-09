@@ -5,6 +5,7 @@ Executes deterministic plan tasks from engine `verify -> plan` output.
 Examples:
 
 - `playbook apply`
+- `playbook apply --help`
 - `playbook apply --json`
 - `playbook apply --from-plan .playbook/plan.json`
 - `playbook apply --from-plan .playbook/plan.json --task <task-id>`
@@ -14,8 +15,10 @@ Contract rules:
 
 - Reads the canonical `plan.remediation` object and maps status explicitly:
   - `ready` → proceed with task execution.
-  - `not_needed` → no-op with explicit message and success exit code.
+  - `not_needed` → no verify failures require remediation; `apply` no-ops with explicit message and success exit code.
   - `unavailable` → fail clearly and deterministically before execution.
+
+- `not_needed` does not guarantee that the paired plan artifact has zero tasks. Plans may still include advisory or hygiene tasks that are not required to resolve verify failures.
 
 - Executes only tasks with `autoFix: true`.
 - Marks non-auto-fix tasks as `skipped`.

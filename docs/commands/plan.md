@@ -19,6 +19,8 @@ Generates a deterministic remediation task list from verify failures.
   - `not_needed`: no verify failures are present; `apply` should no-op with an explicit message.
   - `unavailable`: verify failures exist but no remediation tasks are available; `apply` should fail clearly and deterministically.
 
+`not_needed` is based on verify failure count. Plan output can still include advisory or hygiene tasks that are useful but not required to remediate verify failures.
+
 
 ## Workflow role
 `plan` is the intent-generation step in the canonical remediation loop: `verify -> plan -> apply -> verify`.

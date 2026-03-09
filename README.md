@@ -118,6 +118,8 @@ For a no-install preview flow:
 npx @fawxzzy/playbook demo
 ```
 
+`playbook demo` follows the same canonical serious-user ladder (`ai-context -> ai-contract -> context -> index -> query/explain -> verify -> plan -> apply -> verify`) and does not use `fix` as the primary onboarding path.
+
 ## Example Output
 
 `playbook verify` and `playbook plan` provide deterministic, reviewable output for both humans and AI agents. For complete walkthrough output, use the official demo repository:
@@ -395,6 +397,8 @@ npx @fawxzzy/playbook doctor --ai
 ```
 
 This command verifies that the repository is correctly configured for AI-assisted Playbook workflows, including deterministic AI contract readiness validation (contract availability/validity, intelligence sources, required command/query surface, and remediation workflow readiness). It is the readiness gate before future Playbook agent execution.
+
+Use `playbook doctor --help` to view doctor-specific flags, including `--ai`.
 
 ## How to discover capabilities
 

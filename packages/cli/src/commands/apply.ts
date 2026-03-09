@@ -15,6 +15,7 @@ type ApplyOptions = {
   format: 'text' | 'json';
   ci: boolean;
   quiet: boolean;
+  help?: boolean;
   fromPlan?: string;
   tasks?: string[];
 };
@@ -211,7 +212,26 @@ const renderTextApply = (result: ApplyJsonResult): void => {
   }
 };
 
+const printApplyHelp = (): void => {
+  console.log('Usage: playbook apply [options]');
+  console.log('');
+  console.log('Execute deterministic auto-fixable plan tasks from generated or saved plan artifacts.');
+  console.log('');
+  console.log('Options:');
+  console.log('  --from-plan <path>         Apply tasks from a previously saved `playbook plan --json` artifact');
+  console.log('  --task <id>                Apply only selected task ID (repeatable; requires --from-plan)');
+  console.log('  --json                     Alias for --format=json');
+  console.log('  --format <text|json>       Output format');
+  console.log('  --quiet                    Suppress success output in text mode');
+  console.log('  --help                     Show help');
+};
+
 export const runApply = async (cwd: string, options: ApplyOptions): Promise<number> => {
+  if (options.help) {
+    printApplyHelp();
+    return ExitCode.Success;
+  }
+
   if ((options.tasks?.length ?? 0) > 0 && !options.fromPlan) {
     throw new Error('The --task flag requires --from-plan so task selection is tied to a reviewed artifact.');
   }

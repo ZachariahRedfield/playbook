@@ -5,6 +5,7 @@ Checks local Playbook prerequisites and documentation/config health. Can also pr
 
 ## Common usage
 - `playbook doctor`
+- `playbook doctor --help`
 - `playbook doctor --ai`
 - `playbook doctor --ai --json`
 - `playbook doctor --fix --dry-run`
@@ -12,6 +13,7 @@ Checks local Playbook prerequisites and documentation/config health. Can also pr
 - `playbook doctor --json`
 
 ## Notable flags
+- `--help`: print doctor-specific help and options.
 - `--fix`: enable doctor fix planning/apply mode.
 - `--dry-run`: preview fixes without writing changes.
 - `--yes`: apply eligible safe fixes.

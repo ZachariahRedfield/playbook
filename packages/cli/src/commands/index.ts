@@ -98,6 +98,7 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
       ci,
       format,
       quiet,
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h'),
       fromPlan: parseOptionValue(commandArgs, '--from-plan'),
       tasks: parseOptionValues(commandArgs, '--task')
     });
@@ -114,9 +115,11 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<number
       quiet
     });
   },
-  doctor: async ({ cwd, format, quiet }) => {
+  doctor: async ({ cwd, commandArgs, format, quiet }) => {
     const { runDoctor } = await import('./doctor.js');
     return runDoctor(cwd, {
+      ai: parseFlag(commandArgs, '--ai'),
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h'),
       format,
       quiet
     });

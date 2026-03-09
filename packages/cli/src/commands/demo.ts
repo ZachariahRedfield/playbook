@@ -9,9 +9,9 @@ type DemoContract = {
   };
   workflow: string[];
   expectedInitialFindings: {
-    deterministicFindings: number;
     firstVerifyPasses: boolean;
-    fixAppliesSafeRemediations: boolean;
+    planProducesReviewedTasks: boolean;
+    applyExecutesBoundedTasks: boolean;
     finalVerifyPasses: boolean;
   };
   demonstrates: string[];
@@ -24,10 +24,15 @@ const DEMO_WORKFLOW: string[] = [
   `git clone ${DEMO_REPOSITORY_URL}`,
   'cd playbook-demo',
   'npm install',
-  'npx playbook analyze',
+  'npx playbook ai-context --json',
+  'npx playbook ai-contract --json',
+  'npx playbook context --json',
+  'npx playbook index --json',
+  'npx playbook query modules --json',
+  'npx playbook explain architecture --json',
   'npx playbook verify',
-  'npx playbook explain',
-  'npx playbook fix',
+  'npx playbook plan --json > .playbook/plan.json',
+  'npx playbook apply --from-plan .playbook/plan.json',
   'npx playbook verify'
 ];
 
@@ -47,14 +52,14 @@ const collectDemoContract = (): DemoContract => ({
   },
   workflow: DEMO_WORKFLOW,
   expectedInitialFindings: {
-    deterministicFindings: 5,
     firstVerifyPasses: false,
-    fixAppliesSafeRemediations: true,
+    planProducesReviewedTasks: true,
+    applyExecutesBoundedTasks: true,
     finalVerifyPasses: true
   },
   demonstrates: DEMONSTRATES,
   summary:
-    'Official Playbook onboarding flow: clone the demo repository, run deterministic analysis/verify, inspect findings, apply safe fixes, and confirm final verification passes.'
+    'Official Playbook onboarding flow: clone the demo repository, establish trust/bootstrap context, generate deterministic repository intelligence, verify governance findings, execute reviewed plan/apply remediation, and confirm final verification passes.'
 });
 
 const printText = (result: DemoContract): void => {
@@ -70,9 +75,9 @@ const printText = (result: DemoContract): void => {
 
   console.log('');
   console.log('Expected initial state:');
-  console.log(`- ${result.expectedInitialFindings.deterministicFindings} deterministic findings on fresh clone`);
   console.log('- first verify fails');
-  console.log('- fix applies safe remediations');
+  console.log('- plan generates reviewed remediation tasks');
+  console.log('- apply executes bounded plan tasks');
   console.log('- final verify passes');
   console.log('');
   console.log('What this demonstrates:');
