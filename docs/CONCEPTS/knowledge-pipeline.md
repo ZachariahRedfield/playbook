@@ -23,3 +23,15 @@ The roadmap describes stronger support for:
 - **Doctrine**: stable, organization-level policy baseline.
 
 These later stages are directional and should be treated as planned evolution, not complete functionality yet.
+
+## Compaction bridge (first implementation slice)
+
+Compaction is the deterministic bridge between extraction and promotion/review.
+
+The first implementation slice is intentionally internal and review-oriented:
+
+- deterministic canonicalization of candidate pattern inputs
+- deterministic bucketing decisions (`discard|attach|merge|add`)
+- stable comparison/fingerprint behavior proven before long-lived pattern-storage contracts
+
+This slice does not introduce autonomous promotion or replace Playbook's runtime remediation loop.
