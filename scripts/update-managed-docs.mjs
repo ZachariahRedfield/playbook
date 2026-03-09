@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -55,6 +54,51 @@ const loadCommandMetadata = async () => {
   }
 };
 
+const toCommandTruth = (commands) => {
+  const canonicalCommands = commands
+    .filter((command) => command.lifecycle === 'canonical')
+    .map((command) => command.name)
+    .sort();
+  const compatibilityCommands = commands
+    .filter((command) => command.lifecycle === 'compatibility')
+    .map((command) => command.name)
+    .sort();
+  const utilityCommands = commands
+    .filter((command) => command.lifecycle === 'utility')
+    .map((command) => command.name)
+    .sort();
+  const bootstrapLadder = commands
+    .filter((command) => typeof command.canonicalSequence === 'number' && command.role === 'bootstrap')
+    .sort((left, right) => left.canonicalSequence - right.canonicalSequence)
+    .map((command) => command.name);
+  const remediationLoop = ['verify', 'plan', 'apply', 'verify'];
+
+  return {
+    schemaVersion: '1.0',
+    generatedFrom: 'packages/cli/src/lib/commandMetadata.ts',
+    generatedBy: 'scripts/update-managed-docs.mjs',
+    commandTruth: commands
+      .map((command) => ({
+        name: command.name,
+        category: command.category,
+        role: command.role,
+        lifecycle: command.lifecycle,
+        discoverability: command.discoverability,
+        onboardingPriority: command.onboardingPriority,
+        canonicalSequence: command.canonicalSequence,
+        productFacing: command.productFacing,
+        machineReadable: command.machineReadable,
+        example: command.example
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name)),
+    canonicalCommands,
+    compatibilityCommands,
+    utilityCommands,
+    bootstrapLadder,
+    remediationLoop
+  };
+};
+
 const renderManagedCommands = (commands) => {
   const lines = [''];
 
@@ -108,12 +152,15 @@ const renderManagedExamples = (commands) => {
 
 const renderDocsProductCommands = (commands) => {
   const lines = [''];
-  lines.push('| Command / Artifact | Purpose | Status | Example |');
-  lines.push('| --- | --- | --- | --- |');
+  lines.push('| Command / Artifact | Purpose | Lifecycle | Role | Discoverability | Onboarding | Status | Example |');
+  lines.push('| --- | --- | --- | --- | --- | --- | --- | --- |');
 
   const productCommands = commands.filter((command) => command.productFacing);
   for (const command of productCommands) {
-    lines.push(`| ${code(command.name)} | ${command.description} | Current (implemented) | ${code(command.example)} |`);
+    const onboarding = command.onboardingPriority ?? '—';
+    lines.push(
+      `| ${code(command.name)} | ${command.description} | ${command.lifecycle} | ${command.role} | ${command.discoverability} | ${onboarding} | Current (implemented) | ${code(command.example)} |`
+    );
   }
 
   return lines.join('\n');
@@ -140,6 +187,7 @@ const updateFile = (current, updates) => {
 
 const run = async () => {
   const commands = await loadCommandMetadata();
+  const commandTruth = toCommandTruth(commands);
 
   const targets = [
     {
@@ -170,6 +218,22 @@ const run = async () => {
       if (!checkMode) {
         await fs.writeFile(filePath, next);
       }
+    }
+  }
+
+  const truthPath = path.join(repoRoot, 'docs/contracts/command-truth.json');
+  const truthJson = JSON.stringify(commandTruth, null, 2) + '\n';
+  let truthCurrent = null;
+  try {
+    truthCurrent = await fs.readFile(truthPath, 'utf8');
+  } catch {
+    truthCurrent = null;
+  }
+
+  if (truthCurrent !== truthJson) {
+    changedFiles += 1;
+    if (!checkMode) {
+      await fs.writeFile(truthPath, truthJson);
     }
   }
 

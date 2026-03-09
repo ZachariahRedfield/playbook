@@ -29,6 +29,7 @@ playbook context --json
 playbook index --json
 playbook query modules --json
 playbook explain architecture --json
+playbook ask "where should a new feature live?" --repo-context --json
 playbook verify --json
 playbook plan --json > .playbook/plan.json
 playbook apply --from-plan .playbook/plan.json
@@ -36,6 +37,26 @@ playbook verify --json
 ```
 
 `analyze` can still be used as a compatibility-friendly shortcut for lightweight stack inspection, but it is not the primary serious-user narrative.
+
+## `ask --repo-context` question boundary contract
+
+Supported question classes:
+
+- repository-shape placement questions grounded in indexed modules
+- architecture/dependency questions grounded in `.playbook/repo-index.json`
+- impact/ownership questions grounded in deterministic Playbook artifacts
+
+Unsupported/bounded question classes:
+
+- broad non-repository Q&A
+- speculative future commitments not represented in live contracts
+- ad-hoc deep file crawling outside Playbook-generated intelligence artifacts
+
+Deterministic fallback guidance:
+
+- if index context is unavailable, run `playbook index --json` first
+- if question scope is too broad, narrow to a deterministic `playbook query` or `playbook explain` target
+
 
 ## Rule: Demo Terminology Sync
 

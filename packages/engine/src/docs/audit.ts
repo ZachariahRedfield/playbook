@@ -1,6 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+type CommandTruth = {
+  canonicalCommands: string[];
+  compatibilityCommands: string[];
+  utilityCommands: string[];
+  bootstrapLadder: string[];
+  remediationLoop: string[];
+};
+
 export type DocsAuditLevel = 'error' | 'warning';
 export type DocsAuditStatus = 'pass' | 'warn' | 'fail';
 
@@ -214,8 +222,31 @@ const hasQuickStartSection = (content: string): boolean =>
     .split(/\r?\n/u)
     .some((line) => /^#{1,6}\s+/u.test(line) && /(quick\s*start|onboarding|30-second demo|get started)/iu.test(line));
 
+const hasAllMarkers = (content: string, markers: readonly string[]): boolean => {
+  const normalized = content.toLowerCase();
+  return markers.every((marker) => normalized.includes(marker.toLowerCase()));
+};
+
+const readCommandTruth = (repoRoot: string): CommandTruth | null => {
+  const truthPath = path.join(repoRoot, 'docs/contracts/command-truth.json');
+  if (!fs.existsSync(truthPath)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(truthPath, 'utf8')) as CommandTruth;
+    if (!Array.isArray(parsed.bootstrapLadder) || !Array.isArray(parsed.remediationLoop)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
 export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
   const findings: DocsAuditFinding[] = [];
+  const commandTruth = readCommandTruth(repoRoot);
 
   for (const requiredPath of REQUIRED_ANCHORS) {
     if (!fs.existsSync(path.join(repoRoot, requiredPath))) {
@@ -226,6 +257,15 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
         path: requiredPath
       });
     }
+  }
+
+  if (!commandTruth) {
+    findings.push({
+      ruleId: 'docs.command-truth.missing',
+      level: 'error',
+      message: 'Command truth contract is missing or invalid. Regenerate managed docs and contracts.',
+      path: 'docs/contracts/command-truth.json'
+    });
   }
 
   const topLevelDocs = listDocsTopLevelMarkdown(repoRoot);
@@ -326,6 +366,63 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
     }
   }
 
+  if (commandTruth) {
+    const readme = readTextIfExists(repoRoot, 'README.md');
+    const commandsReadme = readTextIfExists(repoRoot, 'docs/commands/README.md');
+    const onboarding = readTextIfExists(repoRoot, 'docs/ONBOARDING_DEMO.md');
+    const roadmap = readTextIfExists(repoRoot, 'docs/PLAYBOOK_PRODUCT_ROADMAP.md');
+
+    if (readme && !hasAllMarkers(readme, commandTruth.bootstrapLadder)) {
+      findings.push({
+        ruleId: 'docs.command-truth.bootstrap-ladder',
+        level: 'warning',
+        message: 'README.md must include the canonical bootstrap ladder commands from command truth metadata.',
+        path: 'README.md',
+        suggestedDestination: 'docs/contracts/command-truth.json'
+      });
+    }
+
+    if (onboarding && !hasAllMarkers(onboarding, commandTruth.bootstrapLadder)) {
+      findings.push({
+        ruleId: 'docs.command-truth.bootstrap-ladder',
+        level: 'warning',
+        message: 'ONBOARDING_DEMO must include the canonical bootstrap ladder commands from command truth metadata.',
+        path: 'docs/ONBOARDING_DEMO.md',
+        suggestedDestination: 'docs/contracts/command-truth.json'
+      });
+    }
+
+    if (commandsReadme && !/lifecycle|role|discoverability/iu.test(commandsReadme)) {
+      findings.push({
+        ruleId: 'docs.command-truth.classification-missing',
+        level: 'warning',
+        message: 'docs/commands/README.md should expose lifecycle, role, and discoverability fields from command metadata.',
+        path: 'docs/commands/README.md',
+        suggestedDestination: 'docs/contracts/command-truth.json'
+      });
+    }
+
+    if (onboarding && !/supported question classes|unsupported question classes|deterministic fallback/iu.test(onboarding)) {
+      findings.push({
+        ruleId: 'docs.ask-boundary.contract-missing',
+        level: 'warning',
+        message: 'ONBOARDING_DEMO should include ask --repo-context supported/unsupported question classes and deterministic fallback guidance.',
+        path: 'docs/ONBOARDING_DEMO.md',
+        suggestedDestination: 'docs/commands/README.md'
+      });
+    }
+
+    if (roadmap && !/roadmap entries describe implementation intent.*source of truth for live command availability/isu.test(roadmap)) {
+      findings.push({
+        ruleId: 'docs.command-truth.roadmap-live-boundary',
+        level: 'warning',
+        message: 'Roadmap must explicitly separate planned intent from live CLI command availability.',
+        path: 'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
+        suggestedDestination: 'docs/commands/README.md'
+      });
+    }
+  }
+
   const planningDocs = ['docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/roadmap/README.md', 'docs/roadmap/IMPROVEMENTS_BACKLOG.md'] as const;
   const headingIndex = new Map<string, string>();
   for (const planningDoc of planningDocs) {
@@ -412,7 +509,7 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
     summary: {
       errors,
       warnings,
-      checksRun: 9
+      checksRun: 10
     },
     findings
   };
