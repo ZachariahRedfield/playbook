@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCompactionCandidateArtifact, canonicalizeCandidate, createCandidateFingerprint, extractCompactionCandidates } from '../src/compaction/index.js';
 
@@ -59,6 +62,51 @@ describe('compaction candidate extraction', () => {
   it('handles missing optional artifacts without guessing', () => {
     const candidates = extractCompactionCandidates({ repoRoot: process.cwd(), artifacts: {} });
     expect(candidates).toEqual([]);
+  });
+
+
+  it('enriches plan and analyze-pr candidates with module context digests when available', () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-compaction-'));
+    const contextDir = path.join(tempRoot, '.playbook', 'context', 'modules');
+    fs.mkdirSync(contextDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(contextDir, 'engine.json'),
+      JSON.stringify({
+        module: { name: '@zachariahredfield/playbook-engine' },
+        docs: ['docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md'],
+        tests: ['packages/engine/test/compaction.candidates.test.ts'],
+        risk: { signals: ['high churn'] }
+      })
+    );
+
+    const candidates = extractCompactionCandidates({
+      repoRoot: tempRoot,
+      index: {
+        schemaVersion: '1.0',
+        framework: 'node',
+        language: 'typescript',
+        architecture: 'modular-monolith',
+        database: 'none',
+        rules: [],
+        modules: [{ name: '@zachariahredfield/playbook-engine', dependencies: [] }]
+      },
+      artifacts: {
+        plan: {
+          tasks: [{ id: 'task-1', ruleId: 'PB001', action: 'update docs', autoFix: false, file: 'packages/engine/src/index.ts' }]
+        },
+        analyzePr: {
+          affectedModules: ['@zachariahredfield/playbook-engine'],
+          risk: { signals: ['high churn'] },
+          findings: [{ ruleId: 'pr-risk', message: 'touches many files', severity: 'warning', file: 'packages/engine/src/index.ts' }]
+        }
+      }
+    });
+
+    const planCandidate = candidates.find((entry) => entry.sourceKind === 'plan');
+    const analyzeCandidate = candidates.find((entry) => entry.sourceKind === 'analyze-pr');
+    expect(planCandidate?.related.modules).toEqual(['@zachariahredfield/playbook-engine']);
+    expect(planCandidate?.related.docs).toEqual(['role:docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md']);
+    expect(analyzeCandidate?.related.tests).toEqual(['role:engine/test/compaction.candidates.test.ts']);
   });
 
   it('builds deterministic artifact summary counts', () => {

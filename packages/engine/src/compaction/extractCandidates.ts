@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { RepositoryGraph } from '../graph/repoGraph.js';
+import type { RepositoryIndex } from '../indexer/repoIndexer.js';
+import { MODULE_CONTEXT_DIR_RELATIVE_PATH } from '../context/moduleContext.js';
 import { canonicalizeCandidate } from './canonicalizeCandidate.js';
 import type { CandidateSourceKind, CompactionCandidate } from './candidateTypes.js';
 
@@ -14,8 +16,13 @@ type OptionalArtifacts = {
 
 type ExtractOptions = {
   repoRoot: string;
+  index?: RepositoryIndex;
   graph?: RepositoryGraph;
   artifacts?: OptionalArtifacts;
+};
+
+type ModuleEnrichment = {
+  byName: Map<string, { docs: string[]; tests: string[]; riskSignals: string[] }>;
 };
 
 const readJsonIfExists = (repoRoot: string, relativePath: string): unknown | undefined => {
@@ -31,9 +38,48 @@ const readJsonIfExists = (repoRoot: string, relativePath: string): unknown | und
 const asRecord = (value: unknown): Record<string, unknown> | null => (value && typeof value === 'object' ? (value as Record<string, unknown>) : null);
 const asArray = (value: unknown): Record<string, unknown>[] => (Array.isArray(value) ? value.filter((entry) => entry && typeof entry === 'object') as Record<string, unknown>[] : []);
 const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
+const asStringArray = (value: unknown): string[] => (Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : []);
+
+const boolLike = (value: unknown): boolean => value === true || (typeof value === 'string' && value.trim().toLowerCase() === 'true');
 
 const graphModuleNodes = (graph?: RepositoryGraph): string[] =>
   (graph?.nodes ?? []).filter((node) => node.kind === 'module').map((node) => node.id).sort((a, b) => a.localeCompare(b));
+
+const findModuleForPath = (filePath: string, modules: string[]): string | undefined => {
+  const normalized = filePath.replace(/\\/g, '/');
+  return modules.find((moduleName) => {
+    const pkgName = moduleName.startsWith('@') ? moduleName.split('/').pop() ?? moduleName : moduleName;
+    const token = pkgName.replace(/^playbook-/, '');
+    return normalized.includes(pkgName) || normalized.includes(`/${token}/`) || normalized.includes(`/${token}.`);
+  });
+};
+
+
+const readModuleEnrichment = (repoRoot: string): ModuleEnrichment => {
+  const byName = new Map<string, { docs: string[]; tests: string[]; riskSignals: string[] }>();
+  const contextDir = path.join(repoRoot, MODULE_CONTEXT_DIR_RELATIVE_PATH);
+  if (!fs.existsSync(contextDir) || !fs.statSync(contextDir).isDirectory()) {
+    return { byName };
+  }
+
+  const files = fs.readdirSync(contextDir).filter((entry) => entry.endsWith('.json')).sort((a, b) => a.localeCompare(b));
+  for (const file of files) {
+    try {
+      const record = asRecord(JSON.parse(fs.readFileSync(path.join(contextDir, file), 'utf8')));
+      const moduleName = asString(asRecord(record?.module)?.name);
+      if (!moduleName) continue;
+      byName.set(moduleName, {
+        docs: asStringArray(record?.docs),
+        tests: asStringArray(record?.tests),
+        riskSignals: asStringArray(asRecord(record?.risk)?.signals)
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return { byName };
+};
 
 const toCandidatesFromVerify = (artifact: unknown, graphNodes: string[]): CompactionCandidate[] => {
   const record = asRecord(artifact);
@@ -64,9 +110,11 @@ const toCandidatesFromVerify = (artifact: unknown, graphNodes: string[]): Compac
   );
 };
 
-const toCandidatesFromPlan = (artifact: unknown): CompactionCandidate[] => {
+const toCandidatesFromPlan = (artifact: unknown, modules: string[], moduleEnrichment: ModuleEnrichment): CompactionCandidate[] => {
   const record = asRecord(artifact);
   const tasks = asArray(record?.tasks);
+
+  const moduleNames = [...modules].sort((a, b) => a.localeCompare(b));
 
   return tasks.map((task, index) =>
     canonicalizeCandidate({
@@ -76,7 +124,7 @@ const toCandidatesFromPlan = (artifact: unknown): CompactionCandidate[] => {
       subjectRef: asString(task.id) || `plan-task-${index}`,
       trigger: asString(task.ruleId),
       mechanism: asString(task.action),
-      response: asString(task.autoFix) === 'true' || task.autoFix === true ? 'run apply for deterministic autofix' : 'manual remediation required',
+      response: boolLike(task.autoFix) ? 'run apply for deterministic autofix' : 'manual remediation required',
       evidence: [
         {
           sourceKind: 'plan',
@@ -86,9 +134,28 @@ const toCandidatesFromPlan = (artifact: unknown): CompactionCandidate[] => {
         }
       ],
       related: {
+        modules: (() => {
+          const file = asString(task.file);
+          const moduleName = file ? findModuleForPath(file, moduleNames) : undefined;
+          return moduleName ? [moduleName] : [];
+        })(),
         rules: asString(task.ruleId) ? [asString(task.ruleId)] : [],
-        docs: asString(task.file).startsWith('docs/') ? [asString(task.file)] : [],
-        tests: asString(task.file).includes('test') ? [asString(task.file)] : []
+        docs: (() => {
+          const file = asString(task.file);
+          if (file.startsWith('docs/')) return [file];
+          const moduleName = file ? findModuleForPath(file, moduleNames) : undefined;
+          return moduleName ? (moduleEnrichment.byName.get(moduleName)?.docs ?? []) : [];
+        })(),
+        tests: (() => {
+          const file = asString(task.file);
+          if (file.includes('test')) return [file];
+          const moduleName = file ? findModuleForPath(file, moduleNames) : undefined;
+          return moduleName ? (moduleEnrichment.byName.get(moduleName)?.tests ?? []) : [];
+        })(),
+        riskSignals: (() => {
+          const moduleName = findModuleForPath(asString(task.file), moduleNames);
+          return moduleName ? (moduleEnrichment.byName.get(moduleName)?.riskSignals ?? []) : [];
+        })()
       }
     })
   );
@@ -122,7 +189,7 @@ const toCandidatesFromDocsAudit = (artifact: unknown): CompactionCandidate[] => 
   );
 };
 
-const toCandidatesFromAnalyzePr = (artifact: unknown): CompactionCandidate[] => {
+const toCandidatesFromAnalyzePr = (artifact: unknown, modules: string[], moduleEnrichment: ModuleEnrichment): CompactionCandidate[] => {
   const record = asRecord(artifact);
   const findings = asArray(record?.findings);
   const affectedModules = Array.isArray(record?.affectedModules) ? (record?.affectedModules as string[]).filter((entry) => typeof entry === 'string') : [];
@@ -146,10 +213,16 @@ const toCandidatesFromAnalyzePr = (artifact: unknown): CompactionCandidate[] => 
           summary: `${asString(finding.severity)} ${asString(finding.message)}`
         }
       ],
-      related: {
-        modules: affectedModules,
-        riskSignals
-      }
+      related: (() => {
+        const inferredFromFile = findModuleForPath(asString(finding.file), modules);
+        const allModules = Array.from(new Set([...affectedModules, ...(inferredFromFile ? [inferredFromFile] : [])])).sort((a, b) => a.localeCompare(b));
+        return {
+          modules: allModules,
+          docs: allModules.flatMap((moduleName) => moduleEnrichment.byName.get(moduleName)?.docs ?? []),
+          tests: allModules.flatMap((moduleName) => moduleEnrichment.byName.get(moduleName)?.tests ?? []),
+          riskSignals: [...riskSignals, ...allModules.flatMap((moduleName) => moduleEnrichment.byName.get(moduleName)?.riskSignals ?? [])]
+        };
+      })()
     })
   );
 };
@@ -196,12 +269,14 @@ export const extractCompactionCandidates = (options: ExtractOptions): Compaction
   };
 
   const graphNodes = graphModuleNodes(options.graph);
+  const modules = options.index?.modules.map((entry) => entry.name) ?? [];
+  const moduleEnrichment = readModuleEnrichment(options.repoRoot);
 
   const candidates: CompactionCandidate[] = [
     ...toCandidatesFromVerify(artifactInputs.verify, graphNodes),
-    ...toCandidatesFromPlan(artifactInputs.plan),
+    ...toCandidatesFromPlan(artifactInputs.plan, modules, moduleEnrichment),
     ...toCandidatesFromApply(artifactInputs.apply),
-    ...toCandidatesFromAnalyzePr(artifactInputs['analyze-pr']),
+    ...toCandidatesFromAnalyzePr(artifactInputs['analyze-pr'], modules, moduleEnrichment),
     ...toCandidatesFromDocsAudit(artifactInputs['docs-audit'])
   ];
 
