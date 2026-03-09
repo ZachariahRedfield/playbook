@@ -29,6 +29,13 @@ const createFixtureRepo = (): string => {
     'docs/RELEASING.md': '# Releasing\n',
     'docs/archive/README.md': '# Archive\n',
     'docs/archive/PLAYBOOK_IMPROVEMENTS_2026.md': '# Archived Improvements\n',
+    'docs/contracts/command-truth.json': JSON.stringify({
+      bootstrapLadder: ['ai-context', 'ai-contract', 'context'],
+      remediationLoop: ['verify', 'plan', 'apply', 'verify'],
+      canonicalCommands: ['ai-context'],
+      compatibilityCommands: ['analyze'],
+      utilityCommands: ['demo']
+    }, null, 2),
     'packages/cli/README.md': '# Package\nai-context ai-contract context verify plan apply\n'
   };
 
@@ -110,7 +117,7 @@ describe('runDocs', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.schemaVersion).toBe('1.0');
     expect(payload.command).toBe('docs audit');
-    expect(payload.summary).toEqual(expect.objectContaining({ checksRun: 9 }));
+    expect(payload.summary).toEqual(expect.objectContaining({ checksRun: 10 }));
     expect(Array.isArray(payload.findings)).toBe(true);
   });
 

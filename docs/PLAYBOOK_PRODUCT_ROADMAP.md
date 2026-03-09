@@ -163,7 +163,7 @@ This track exists so humans and AI agents do not need multiple interpretation pa
 - what is planned vs live
 - what questions `ask --repo-context` is intended to answer
 
-Planned commitments (`PB-V1-PRODUCT-TRUTH-PACKAGING-001`):
+Current commitments (`PB-V1-PRODUCT-TRUTH-PACKAGING-001`):
 
 1. **Canonical workflow contract**
    - publish and validate one authoritative workflow contract for serious-user operation

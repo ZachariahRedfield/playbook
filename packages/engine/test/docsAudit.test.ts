@@ -22,24 +22,39 @@ const createRepo = (): string => {
     'AGENTS.md': '# AGENTS',
     'docs/index.md': '# Index\nai-context ai-contract context verify plan apply',
     'docs/ARCHITECTURE.md': '# Architecture',
-    'docs/commands/README.md': '# Commands',
+    'docs/commands/README.md': '# Commands\nLifecycle Role Discoverability',
     'docs/commands/docs.md': '# docs audit',
-    'docs/PLAYBOOK_PRODUCT_ROADMAP.md': '# Product roadmap',
+    'docs/PLAYBOOK_PRODUCT_ROADMAP.md':
+      '# Product roadmap\nRoadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.',
     'docs/PLAYBOOK_BUSINESS_STRATEGY.md': '# Business strategy',
     'docs/CONSUMER_INTEGRATION_CONTRACT.md': '# Consumer contract',
     'docs/AI_AGENT_CONTEXT.md': '# AI context\nai-context ai-contract context verify plan apply',
-    'docs/ONBOARDING_DEMO.md': '# Onboarding\nai-context ai-contract context verify plan apply',
+    'docs/ONBOARDING_DEMO.md':
+      '# Onboarding\nai-context ai-contract context verify plan apply\nSupported question classes\nUnsupported question classes\nDeterministic fallback',
     'docs/REFERENCE/cli.md': '# CLI reference',
     'docs/FAQ.md': '# FAQ\nai-context ai-contract context verify plan apply',
     'docs/GITHUB_SETUP.md': '# GitHub setup',
     'docs/roadmap/README.md': '# Roadmap readme',
     'docs/roadmap/ROADMAP.json': '{}',
+    'docs/contracts/command-truth.json': JSON.stringify(
+      {
+        bootstrapLadder: ['ai-context', 'ai-contract', 'context'],
+        remediationLoop: ['verify', 'plan', 'apply', 'verify'],
+        canonicalCommands: ['ai-context'],
+        compatibilityCommands: ['analyze'],
+        utilityCommands: ['demo']
+      },
+      null,
+      2
+    ),
     'docs/roadmap/IMPROVEMENTS_BACKLOG.md': '# Backlog',
     'docs/RELEASING.md': '# Releasing',
     'docs/archive/README.md': '# Archive',
     'packages/cli/README.md': '# CLI\nai-context ai-contract context verify plan apply',
-    'docs/PLAYBOOK_IMPROVEMENTS.md': '# Compatibility stub\nSuperseded and archived. See docs/archive/PLAYBOOK_IMPROVEMENTS_2026.md and docs/roadmap/IMPROVEMENTS_BACKLOG.md.',
-    'docs/REPORT_DOCS_MERGE.md': '# Compatibility redirect\nSuperseded and archived in docs/archive/REPORT_DOCS_MERGE_2026.md. Canonical docs are in docs/index.md.'
+    'docs/PLAYBOOK_IMPROVEMENTS.md':
+      '# Compatibility stub\nSuperseded and archived. See docs/archive/PLAYBOOK_IMPROVEMENTS_2026.md and docs/roadmap/IMPROVEMENTS_BACKLOG.md.',
+    'docs/REPORT_DOCS_MERGE.md':
+      '# Compatibility redirect\nSuperseded and archived in docs/archive/REPORT_DOCS_MERGE_2026.md. Canonical docs are in docs/index.md.'
   };
 
   Object.entries(minimalActiveDocs).forEach(([relativePath, content]) => write(root, relativePath, content));
@@ -96,5 +111,13 @@ describe('docs audit', () => {
 
     const result = runDocsAudit(root);
     expect(result.findings.find((finding) => finding.ruleId === 'docs.front-door.ladder-drift' && finding.path === 'packages/cli/README.md')).toBeDefined();
+  });
+
+  it('fails when command truth contract is missing', () => {
+    const root = createRepo();
+    fs.rmSync(path.join(root, 'docs/contracts/command-truth.json'));
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.command-truth.missing')).toBeDefined();
   });
 });

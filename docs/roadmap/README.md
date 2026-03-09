@@ -36,4 +36,6 @@ Each roadmap feature entry must include:
 
 The repository CI workflow enforces the second mode through the reusable `./.github/actions/playbook-ci` action so roadmap linkage is branch-validated, not documentation-only.
 
+Rule: roadmap entries represent planned intent; command live availability is determined by implemented CLI help/contracts and command truth artifacts (`docs/contracts/command-truth.json`).
+
 Planned CLI mirror command surface: `playbook roadmap verify` (backed by the same roadmap-contract validator).

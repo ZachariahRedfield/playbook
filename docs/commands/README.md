@@ -9,29 +9,29 @@ Do not hand-edit entries inside the managed markers.
 
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_START -->
 
-| Command / Artifact | Purpose | Status | Example |
-| --- | --- | --- | --- |
-| `analyze` | Analyze project stack | Current (implemented) | `playbook analyze --json` |
-| `verify` | Verify governance rules | Current (implemented) | `playbook verify --ci --json` |
-| `plan` | Generate a structured fix plan from rule findings | Current (implemented) | `playbook plan --json` |
-| `apply` | Execute deterministic auto-fixable plan tasks | Current (implemented) | `playbook apply --from-plan .playbook/plan.json` |
-| `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | Current (implemented) | `playbook analyze-pr --json` |
-| `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | Current (implemented) | `playbook doctor --fix --dry-run` |
-| `diagram` | Generate deterministic architecture Mermaid diagrams | Current (implemented) | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
-| `docs` | Audit documentation governance surfaces and contracts | Current (implemented) | `playbook docs audit --json` |
-| `audit` | Audit deterministic architecture guardrails and platform hardening controls | Current (implemented) | `playbook audit architecture --json` |
-| `rules` | List loaded verify and analyze rules | Current (implemented) | `playbook rules --json` |
-| `schema` | Print JSON Schemas for Playbook CLI command outputs | Current (implemented) | `playbook schema verify --json` |
-| `context` | Print deterministic CLI and architecture context for tools and agents | Current (implemented) | `playbook context --json` |
-| `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | Current (implemented) | `playbook ai-context --json` |
-| `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | Current (implemented) | `playbook ai-contract --json` |
-| `contracts` | Emit deterministic contract registry for schemas, artifacts, and roadmap status | Current (implemented) | `playbook contracts --json` |
-| `index` | Generate machine-readable repository intelligence index | Current (implemented) | `playbook index --json` |
-| `graph` | Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json | Current (implemented) | `playbook graph --json` |
-| `query` | Query machine-readable repository intelligence from .playbook/repo-index.json | Current (implemented) | `playbook query modules --json` |
-| `deps` | Print module dependency graph from .playbook/repo-index.json | Current (implemented) | `playbook deps workouts --json` |
-| `ask` | Answer repository questions from machine-readable intelligence context | Current (implemented) | `playbook ask "where should a new feature live?" --repo-context --json` |
-| `explain` | Explain rules, modules, or architecture from repository intelligence | Current (implemented) | `playbook explain architecture --json` |
+| Command / Artifact | Purpose | Lifecycle | Role | Discoverability | Onboarding | Status | Example |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `analyze` | Analyze project stack | compatibility | compatibility | hidden-compatibility | — | Current (implemented) | `playbook analyze --json` |
+| `verify` | Verify governance rules | canonical | governance | primary | 8 | Current (implemented) | `playbook verify --ci --json` |
+| `plan` | Generate a structured fix plan from rule findings | canonical | remediation | primary | 9 | Current (implemented) | `playbook plan --json` |
+| `apply` | Execute deterministic auto-fixable plan tasks | canonical | remediation | primary | 10 | Current (implemented) | `playbook apply --from-plan .playbook/plan.json` |
+| `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | canonical | repo-intelligence | secondary | — | Current (implemented) | `playbook analyze-pr --json` |
+| `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | canonical | governance | secondary | — | Current (implemented) | `playbook doctor --fix --dry-run` |
+| `diagram` | Generate deterministic architecture Mermaid diagrams | utility | utility | secondary | — | Current (implemented) | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
+| `docs` | Audit documentation governance surfaces and contracts | canonical | governance | secondary | — | Current (implemented) | `playbook docs audit --json` |
+| `audit` | Audit deterministic architecture guardrails and platform hardening controls | canonical | governance | secondary | — | Current (implemented) | `playbook audit architecture --json` |
+| `rules` | List loaded verify and analyze rules | canonical | governance | secondary | — | Current (implemented) | `playbook rules --json` |
+| `schema` | Print JSON Schemas for Playbook CLI command outputs | utility | utility | secondary | — | Current (implemented) | `playbook schema verify --json` |
+| `context` | Print deterministic CLI and architecture context for tools and agents | canonical | bootstrap | primary | 3 | Current (implemented) | `playbook context --json` |
+| `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | canonical | bootstrap | primary | 1 | Current (implemented) | `playbook ai-context --json` |
+| `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | canonical | bootstrap | primary | 2 | Current (implemented) | `playbook ai-contract --json` |
+| `contracts` | Emit deterministic contract registry for schemas, artifacts, and roadmap status | utility | utility | secondary | — | Current (implemented) | `playbook contracts --json` |
+| `index` | Generate machine-readable repository intelligence index | canonical | repo-intelligence | primary | 4 | Current (implemented) | `playbook index --json` |
+| `graph` | Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json | canonical | repo-intelligence | secondary | — | Current (implemented) | `playbook graph --json` |
+| `query` | Query machine-readable repository intelligence from .playbook/repo-index.json | canonical | repo-intelligence | primary | 5 | Current (implemented) | `playbook query modules --json` |
+| `deps` | Print module dependency graph from .playbook/repo-index.json | canonical | repo-intelligence | secondary | — | Current (implemented) | `playbook deps workouts --json` |
+| `ask` | Answer repository questions from machine-readable intelligence context | canonical | repo-intelligence | primary | 7 | Current (implemented) | `playbook ask "where should a new feature live?" --repo-context --json` |
+| `explain` | Explain rules, modules, or architecture from repository intelligence | canonical | repo-intelligence | primary | 6 | Current (implemented) | `playbook explain architecture --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
 ## Additional implemented CLI utility commands
@@ -48,7 +48,7 @@ The CLI registry currently also exposes utility commands not treated as part of 
 - `session`
 <!-- PLAYBOOK:DOCS_UTILITY_COMMANDS_END -->
 
-Source of truth: shared command metadata in `packages/cli/src/lib/commandMetadata.ts`.
+Source of truth: shared command metadata in `packages/cli/src/lib/commandMetadata.ts` and generated truth contract `docs/contracts/command-truth.json`.
 
 ## Product-state anchoring rule
 
@@ -75,6 +75,23 @@ Command reference: [`playbook docs audit`](docs.md).
 - Uses deterministic artifacts (`.playbook/repo-index.json`) and AI contract metadata for context hydration.
 - Does **not** trigger broad ad-hoc repository crawling.
 - Requires `playbook index` when `.playbook/repo-index.json` is missing.
+
+Supported question classes (deterministic repository-intelligence scope):
+
+- repository/module placement (for example: "where should a new feature live?")
+- architecture and dependency shape grounded in indexed modules
+- impact/risk and ownership questions grounded in indexed contracts
+
+Unsupported/bounded question classes:
+
+- broad internet knowledge or non-repository trivia
+- speculative future roadmap commitments not present in contracts
+- hidden file-system exploration outside indexed/local Playbook artifacts
+
+Deterministic fallback guidance:
+
+- if index context is missing, run `playbook index` and retry with `--repo-context`
+- if the question is outside repository-intelligence scope, pivot to `playbook query` / `playbook explain` targets for deterministic answers
 
 Deterministic missing-index guidance:
 

@@ -41,8 +41,22 @@ function createContractFixtureRepo(): string {
 
   fs.writeFileSync(path.join(fixtureRepo, 'package.json'), JSON.stringify({ name: 'playbook-contract-fixture' }, null, 2));
   fs.mkdirSync(path.join(fixtureRepo, 'src', 'features'), { recursive: true });
-  fs.mkdirSync(path.join(fixtureRepo, 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(fixtureRepo, 'docs', 'contracts'), { recursive: true });
   fs.writeFileSync(path.join(fixtureRepo, 'docs', 'PLAYBOOK_NOTES.md'), '# Playbook Notes\n\n- Baseline fixture notes.\n');
+  fs.writeFileSync(
+    path.join(fixtureRepo, 'docs', 'contracts', 'command-truth.json'),
+    JSON.stringify(
+      {
+        bootstrapLadder: ['ai-context', 'ai-contract', 'context'],
+        remediationLoop: ['verify', 'plan', 'apply', 'verify'],
+        canonicalCommands: ['ai-context'],
+        compatibilityCommands: ['analyze'],
+        utilityCommands: ['demo']
+      },
+      null,
+      2
+    )
+  );
 
   return fixtureRepo;
 }

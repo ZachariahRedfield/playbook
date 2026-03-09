@@ -170,6 +170,8 @@ npx @fawxzzy/playbook verify --json
 
 For the complete command inventory (including utility commands), see [docs/commands/README.md](docs/commands/README.md).
 
+Command truth packaging is metadata-driven via `packages/cli/src/lib/commandMetadata.ts` and generated as `docs/contracts/command-truth.json` (canonical vs compatibility vs utility + bootstrap/remediation sequencing).
+
 Run `npx @fawxzzy/playbook index` to generate deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json`, `.playbook/repo-graph.json`, and compressed module digests under `.playbook/context/modules/*.json`.
 
 Complexity Through Compression: Playbook reduces repository complexity by extracting small deterministic artifacts (index -> graph -> module digests) and reusing them across query/explain/ask surfaces rather than repeatedly rescanning broad repository state.
