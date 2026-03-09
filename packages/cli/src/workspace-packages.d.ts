@@ -24,6 +24,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const generateRepositoryGraph: (...args: any[]) => any;
   export const buildModuleContextDigests: (...args: any[]) => any;
   export const writeModuleContextDigests: (...args: any[]) => any;
+  export const generateCompactionCandidateArtifact: (...args: any[]) => any;
   export const readModuleContextDigest: (...args: any[]) => any;
   export const readRepositoryGraph: (...args: any[]) => any;
   export const summarizeRepositoryGraph: (...args: any[]) => any;

@@ -392,6 +392,38 @@
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine"
       ]
+    },
+    {
+      "feature_id": "PB-V08-KNOWLEDGE-CANDIDATE-EXTRACTION-001",
+      "version": "v0.8",
+      "title": "Knowledge compaction candidate extraction",
+      "goal": "Convert trusted deterministic repository evidence into canonicalized candidate patterns for future compaction, comparison, and review workflows.",
+      "commands": [
+        "index"
+      ],
+      "contracts": [
+        "docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "packages/engine/test/compaction.candidates.test.ts"
+      ],
+      "docs": [
+        "docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V08-KNOWLEDGE-COMPACTION-SPEC-001"
+      ],
+      "verification_commands": [
+        "node packages/cli/dist/main.js index --json",
+        "pnpm -C packages/engine test -- compaction.candidates.test.ts"
+      ],
+      "status": "in-progress",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
     }
   ]
 }

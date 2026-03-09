@@ -1,4 +1,4 @@
-import { buildModuleContextDigests, generateRepositoryGraph, generateRepositoryIndex, MODULE_CONTEXT_DIR_RELATIVE_PATH, REPOSITORY_GRAPH_RELATIVE_PATH, writeModuleContextDigests } from '@zachariahredfield/playbook-engine';
+import { buildModuleContextDigests, generateCompactionCandidateArtifact, generateRepositoryGraph, generateRepositoryIndex, MODULE_CONTEXT_DIR_RELATIVE_PATH, REPOSITORY_GRAPH_RELATIVE_PATH, writeModuleContextDigests } from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ExitCode } from '../lib/cliContract.js';
@@ -31,6 +31,7 @@ const writeRepositoryIndex = (cwd: string): { indexPath: string; result: IndexRe
   fs.writeFileSync(indexPath, `${JSON.stringify(index, null, 2)}\n`, 'utf8');
   fs.writeFileSync(graphPath, `${JSON.stringify(graph, null, 2)}\n`, 'utf8');
   writeModuleContextDigests(cwd, buildModuleContextDigests(cwd, index, graph));
+  generateCompactionCandidateArtifact({ repoRoot: cwd, index, graph });
 
   return {
     indexPath,

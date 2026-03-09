@@ -133,10 +133,13 @@ Output stance for v0:
 - review drafts for human promotion workflows
 - explicit supersede/archive linkages for pattern lifecycle
 
-Current implemented deterministic slice:
+Current implemented deterministic slices:
 
 - canonicalization + deterministic bucketing (`discard | attach | merge | add`) are implemented for internal candidates
 - deterministic review artifacts now sit on top of bucketing for inspection/testing
+- first extraction adapters now derive normalized internal candidates from trusted deterministic evidence surfaces (`verify`, `plan`, `apply` when present, `analyze-pr`, `docs audit`)
+- extraction canonicalization strips unstable noise and produces deterministic candidate fingerprints before future comparison/bucketing stages
+- normalized internal candidate artifact output is written to `.playbook/compaction/candidates.json` as compaction input (not promoted knowledge)
 - reason codes are canonical machine contracts; human-readable explanations are derived deterministically from reason codes
 - long-lived pattern storage and promotion workflows remain future work
 
