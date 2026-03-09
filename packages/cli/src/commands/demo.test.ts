@@ -13,9 +13,17 @@ describe('runDemo', () => {
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
     expect(output).toContain('Playbook Demo');
     expect(output).toContain('https://github.com/ZachariahRedfield/playbook-demo');
-    expect(output).toContain('npx playbook analyze');
+    expect(output).toContain('npx playbook ai-context --json');
+    expect(output).toContain('npx playbook ai-contract --json');
+    expect(output).toContain('npx playbook context --json');
+    expect(output).toContain('npx playbook index --json');
+    expect(output).toContain('npx playbook query modules --json');
+    expect(output).toContain('npx playbook explain architecture --json');
+    expect(output).toContain('npx playbook plan --json > .playbook/plan.json');
+    expect(output).toContain('npx playbook apply --from-plan .playbook/plan.json');
     expect(output).toContain('npx playbook verify');
-    expect(output).toContain('5 deterministic findings on fresh clone');
+    expect(output).toContain('plan generates reviewed remediation tasks');
+    expect(output).toContain('apply executes bounded plan tasks');
     expect(output).toContain('final verify passes');
 
     logSpy.mockRestore();
@@ -38,9 +46,9 @@ describe('runDemo', () => {
         url: 'https://github.com/ZachariahRedfield/playbook-demo'
       },
       expectedInitialFindings: {
-        deterministicFindings: 5,
         firstVerifyPasses: false,
-        fixAppliesSafeRemediations: true,
+        planProducesReviewedTasks: true,
+        applyExecutesBoundedTasks: true,
         finalVerifyPasses: true
       }
     });
@@ -49,10 +57,15 @@ describe('runDemo', () => {
       'git clone https://github.com/ZachariahRedfield/playbook-demo',
       'cd playbook-demo',
       'npm install',
-      'npx playbook analyze',
+      'npx playbook ai-context --json',
+      'npx playbook ai-contract --json',
+      'npx playbook context --json',
+      'npx playbook index --json',
+      'npx playbook query modules --json',
+      'npx playbook explain architecture --json',
       'npx playbook verify',
-      'npx playbook explain',
-      'npx playbook fix',
+      'npx playbook plan --json > .playbook/plan.json',
+      'npx playbook apply --from-plan .playbook/plan.json',
       'npx playbook verify'
     ]);
 

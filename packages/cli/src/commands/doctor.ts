@@ -15,6 +15,8 @@ import { collectVerifyReport } from './verify.js';
 type DoctorOptions = {
   format: 'text' | 'json';
   quiet: boolean;
+  ai?: boolean;
+  help?: boolean;
 };
 
 export type DoctorFinding = {
@@ -289,7 +291,28 @@ const printHumanReport = (report: DoctorReport): void => {
   console.log(`Summary: errors=${report.summary.errors}, warnings=${report.summary.warnings}, info=${report.summary.info}`);
 };
 
+const printDoctorHelp = (): void => {
+  console.log('Usage: playbook doctor [options]');
+  console.log('');
+  console.log('Diagnose repository health by aggregating verify, risk, docs, and index analyzers.');
+  console.log('');
+  console.log('Options:');
+  console.log('  --ai                       Include AI-readiness diagnostics in doctor output');
+  console.log('  --fix                      Enable deterministic doctor fix planning/apply mode');
+  console.log('  --dry-run                  Preview doctor fixes without writing changes');
+  console.log('  --yes                      Apply eligible doctor fixes without confirmation');
+  console.log('  --json                     Alias for --format=json');
+  console.log('  --format <text|json>       Output format');
+  console.log('  --quiet                    Suppress success output in text mode');
+  console.log('  --help                     Show help');
+};
+
 export const runDoctor = async (cwd: string, options: DoctorOptions): Promise<number> => {
+  if (options.help) {
+    printDoctorHelp();
+    return ExitCode.Success;
+  }
+
   const report = await collectDoctorReport(cwd);
 
   if (options.format === 'json') {

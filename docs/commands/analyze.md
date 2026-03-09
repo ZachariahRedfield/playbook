@@ -3,6 +3,8 @@
 ## What it does
 Analyzes the current repository and reports stack/governance recommendations.
 
+`analyze` is a compatibility-friendly and lightweight signal command. For the canonical serious-user flow, start with `ai-context`/`ai-contract`/`context`, then `index` + repository intelligence commands, followed by `verify -> plan -> apply -> verify`.
+
 ## Common usage
 - `playbook analyze`
 - `playbook analyze --ci`

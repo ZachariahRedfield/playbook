@@ -149,6 +149,8 @@ All idea-level planning belongs in `docs/roadmap/IMPROVEMENTS_BACKLOG.md`.
 
 Machine-readable roadmap commitments are maintained in `docs/roadmap/ROADMAP.json`. CI validates this contract and enforces feature ID references for pull requests in CI contexts.
 
+Roadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.
+
 ## Product Development Lifecycle
 
 Playbook features follow a structured lifecycle:

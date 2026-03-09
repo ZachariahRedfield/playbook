@@ -322,6 +322,21 @@ describe('runApply remediation status preconditions', () => {
     logSpy.mockRestore();
   });
 
+  it('prints command help without evaluating remediation state', async () => {
+    const { runApply } = await import('./apply.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runApply('/repo', { format: 'text', ci: false, quiet: false, help: true });
+
+    const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(output).toContain('Usage: playbook apply [options]');
+    expect(output).toContain('--from-plan <path>');
+    expect(generatePlanContract).not.toHaveBeenCalled();
+
+    logSpy.mockRestore();
+  });
+
   it('fails deterministically when remediation status is unavailable', async () => {
     const { runApply } = await import('./apply.js');
 
