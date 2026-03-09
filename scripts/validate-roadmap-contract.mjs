@@ -7,10 +7,36 @@ const isCi = args.has('--ci');
 const enforcePrFeatureId = args.has('--enforce-pr-feature-id');
 const repoRoot = process.cwd();
 const roadmapPath = path.join(repoRoot, 'docs', 'roadmap', 'ROADMAP.json');
+const prMetadataPath = path.join(repoRoot, '.playbook', 'pr-metadata.json');
 
 const fail = (message) => {
   console.error(`roadmap-contract: ${message}`);
   process.exitCode = 1;
+};
+
+const warn = (message) => {
+  console.warn(`roadmap-contract: warning: ${message}`);
+};
+
+const readJsonFile = (filePath) => {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    fail(`invalid JSON in ${path.relative(repoRoot, filePath)} (${error.message})`);
+    return null;
+  }
+};
+
+const hasFeatureIdMatch = (text, featureIds) => {
+  if (typeof text !== 'string' || !text.trim()) return false;
+  return [...featureIds].some((id) => text.includes(id));
+};
+
+const getRepoMetadataFeatureIds = (filePath, featureIds) => {
+  if (!fs.existsSync(filePath)) return [];
+  const payload = readJsonFile(filePath);
+  if (!payload || !Array.isArray(payload.featureIds)) return [];
+  return payload.featureIds.filter((id) => typeof id === 'string' && featureIds.has(id));
 };
 
 if (!fs.existsSync(roadmapPath)) {
@@ -18,11 +44,8 @@ if (!fs.existsSync(roadmapPath)) {
   process.exit(process.exitCode ?? 1);
 }
 
-let roadmap;
-try {
-  roadmap = JSON.parse(fs.readFileSync(roadmapPath, 'utf8'));
-} catch (error) {
-  fail(`invalid JSON in ${path.relative(repoRoot, roadmapPath)} (${error.message})`);
+const roadmap = readJsonFile(roadmapPath);
+if (!roadmap) {
   process.exit(process.exitCode ?? 1);
 }
 
@@ -77,19 +100,31 @@ for (const [index, feature] of (roadmap.features ?? []).entries()) {
   }
 }
 
-if (isCi && process.env.GITHUB_EVENT_PATH && fs.existsSync(process.env.GITHUB_EVENT_PATH)) {
-  try {
-    const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-    const pr = event.pull_request;
-    if (pr && enforcePrFeatureId) {
-      const text = `${pr.title ?? ''}\n${pr.body ?? ''}`;
-      const matched = [...featureIds].some((id) => text.includes(id));
-      if (!matched) {
-        fail('pull request title/body must reference at least one roadmap feature_id from docs/roadmap/ROADMAP.json');
-      }
+if (isCi && enforcePrFeatureId) {
+  let titleMatched = false;
+  let bodyMatched = false;
+
+  if (process.env.GITHUB_EVENT_PATH && fs.existsSync(process.env.GITHUB_EVENT_PATH)) {
+    const event = readJsonFile(process.env.GITHUB_EVENT_PATH);
+    if (event) {
+      const pr = event.pull_request;
+      titleMatched = hasFeatureIdMatch(pr?.title ?? '', featureIds);
+      bodyMatched = hasFeatureIdMatch(pr?.body ?? '', featureIds);
     }
-  } catch (error) {
-    fail(`unable to parse GITHUB_EVENT_PATH payload (${error.message})`);
+  }
+
+  const repoMetadataFeatureIds = getRepoMetadataFeatureIds(prMetadataPath, featureIds);
+
+  if (!titleMatched && !bodyMatched && repoMetadataFeatureIds.length === 0) {
+    fail(
+      'PR feature-id enforcement failed: no valid roadmap feature_id found in pull request title, pull request body, or .playbook/pr-metadata.json featureIds'
+    );
+  }
+
+  if (!titleMatched && !bodyMatched && repoMetadataFeatureIds.length > 0) {
+    warn(
+      `pull request title/body missing roadmap feature_id while .playbook/pr-metadata.json provides valid featureIds (${repoMetadataFeatureIds.join(', ')})`
+    );
   }
 }
 

@@ -4,6 +4,10 @@
 
 ### Added
 
+- WHAT: Added repo-owned PR metadata fallback (`.playbook/pr-metadata.json`) to roadmap feature-id enforcement and introduced optional PR metadata sync helper (`pnpm pr:sync-metadata`) with warn-only degradation on permission limits. WHY: Makes feature-id governance resilient when GitHub PR title/body cannot be edited by automation tokens while keeping PR metadata as preferred presentation.
+
+- WHAT: Aligned roadmap/docs governance for `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001` to reflect the merged internal deterministic compaction foundations (canonicalization, deterministic bucketing, and deterministic review artifacts). WHY: Keeps roadmap truth, onboarding guidance, and command-state docs synchronized with implementation while explicitly preserving the internal-first boundary (no new public CLI command, promotion/storage still future work).
+
 - WHAT: Hardened the repository-graph substrate by extending `.playbook/repo-graph.json` stats with deterministic node/edge kind breakdowns and aligned `playbook graph --json` schema coverage. WHY: Makes the graph a reusable contract artifact for automation and read-runtime reuse rather than an ornamental side output.
 - WHAT: Added compressed module context digests under `.playbook/context/modules/*.json` during `playbook index` and reused them in `query impact` / `explain <module>`. WHY: Implements the next thin slice of complexity-through-compression using deterministic local artifacts.
 - WHAT: Enriched `ask --repo-context` module-scoped responses to prefer module digest + graph-neighborhood context when available and emit `module-digest`/`repo-graph` provenance sources. WHY: Turns compressed artifacts into immediate AI/runtime reuse instead of generation-only output.

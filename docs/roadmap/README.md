@@ -32,7 +32,7 @@ Each roadmap feature entry must include:
 ## CI modes
 
 - `node scripts/validate-roadmap-contract.mjs --ci`: validates roadmap contract structure.
-- `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id`: additionally requires PR title/body to reference a roadmap `feature_id`.
+- `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id`: enforces roadmap `feature_id` linkage with precedence: PR title -> PR body -> `.playbook/pr-metadata.json` (`featureIds`).
 
 The repository CI workflow enforces the second mode through the reusable `./.github/actions/playbook-ci` action so roadmap linkage is branch-validated, not documentation-only.
 

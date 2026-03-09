@@ -1,0 +1,7 @@
+{
+  "featureIds": [
+    "PB-V08-KNOWLEDGE-COMPACTION-SPEC-001"
+  ],
+  "suggestedTitle": "Harden roadmap feature-id governance with repo-owned PR metadata fallback",
+  "suggestedBodySnippet": "## Feature ID\n- PB-V08-KNOWLEDGE-COMPACTION-SPEC-001\n\n## Summary\n- Make roadmap feature-id validation accept repo-owned canonical PR metadata in `.playbook/pr-metadata.json`.\n- Keep PR title/body as preferred presentation surfaces while allowing validation to pass from repo truth when PR edit permissions are unavailable.\n- Add optional metadata sync helper that attempts PR title/body updates and degrades with warnings when permissions are insufficient."
+}

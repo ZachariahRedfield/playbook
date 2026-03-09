@@ -407,6 +407,17 @@ Contract stance:
 - no replacement of canonical remediation loop (`verify -> plan -> apply -> verify`)
 - keep canonical operating ladder unchanged (`ai-context -> ai-contract -> context -> index -> query/explain/ask --repo-context -> verify -> plan -> apply -> verify`)
 
+Current implementation status (feature: `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001`):
+
+- Internal deterministic foundations are now live in the engine: canonicalization, deterministic bucket decisions (`discard | attach | merge | add`), and deterministic review artifacts layered on top of bucketing for inspection/testing.
+- Review artifacts keep canonical reason codes as the primary machine contract, with human-readable rationale derived deterministically from those reason codes.
+- This remains an internal bridge between extraction and promotion.
+- Long-lived pattern storage and promotion workflows remain future work and are not yet live command surfaces.
+
+Live-command boundary note:
+- The compaction slice above does **not** introduce a new public CLI command.
+- Treat `playbook --help` and `docs/commands/README.md` as the source of truth for currently available commands.
+
 Compaction spec details are defined in `docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md`.
 
 ## Integration Architecture Direction: shared core, local intelligence

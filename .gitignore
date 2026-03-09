@@ -7,3 +7,6 @@ coverage
 merged*.json
 merged*.md
 test-chat*.md
+
+!.playbook/
+!.playbook/pr-metadata.json

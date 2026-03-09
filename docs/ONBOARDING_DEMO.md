@@ -56,6 +56,7 @@ Deterministic fallback guidance:
 
 - if index context is unavailable, run `playbook index --json` first
 - if question scope is too broad, narrow to a deterministic `playbook query` or `playbook explain` target
+- if `ask --repo-context` returns unsupported-question, keep the question within supported classes and retry with explicit repo target terms
 
 
 ## Rule: Demo Terminology Sync

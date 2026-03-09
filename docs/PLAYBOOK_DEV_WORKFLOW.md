@@ -47,7 +47,9 @@ For pull request metadata validation in CI contexts, use:
 node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id
 ```
 
-The reusable Playbook CI action enforces this PR `feature_id` rule in `pull_request` workflows by reading GitHub event metadata.
+The reusable Playbook CI action enforces this PR `feature_id` rule in `pull_request` workflows using deterministic precedence: PR title, then PR body, then `.playbook/pr-metadata.json` (`featureIds`).
+
+Optional sync surface: run `pnpm pr:sync-metadata` to project `.playbook/pr-metadata.json` into GitHub PR title/body when token permissions allow. The sync helper degrades with warnings and is not required for validator success.
 
 For documentation/governance changes, also run:
 
