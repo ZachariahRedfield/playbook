@@ -475,8 +475,26 @@ Cross-repo `playbook-demo` artifact/doc refresh automation is isolated from the 
 
 - clones `ZachariahRedfield/playbook-demo`
 - injects `PLAYBOOK_CLI_PATH`
+- resolves refresh execution by package manager lockfile (`npm run <script>` for npm, `pnpm run <script>` for pnpm, `yarn run <script>` for yarn)
+- runs refresh commands without `bash -lc` (argv/spawn execution)
 - enforces an allowlist of committed generated surfaces
-- opens/updates a PR (never direct push to `main`) when `PLAYBOOK_DEMO_GH_TOKEN` is configured.
+- configures git author identity in push mode (`PLAYBOOK_GIT_AUTHOR_NAME` / `PLAYBOOK_GIT_AUTHOR_EMAIL`, with bot defaults)
+- configures explicit token auth for push via `PLAYBOOK_DEMO_GH_TOKEN` (or `GH_TOKEN`) and opens/updates a PR (never direct push to `main`).
+
+Local usage:
+
+- Safe default dry-run:
+  - `node scripts/demo-refresh.mjs --dry-run`
+- Push + PR mode:
+  - `PLAYBOOK_DEMO_GH_TOKEN=<token> node scripts/demo-refresh.mjs --push --base main --feature-id PB-V1-DEMO-REFRESH-001`
+- Optional overrides:
+  - `PLAYBOOK_DEMO_REFRESH_CMD` (explicit refresh command override)
+  - `PLAYBOOK_GIT_AUTHOR_NAME` / `PLAYBOOK_GIT_AUTHOR_EMAIL` (commit identity)
+
+Workflow requirements for PR mode:
+
+- secret: `PLAYBOOK_DEMO_GH_TOKEN`
+- permissions: `contents: write`, `pull-requests: write`
 
 Companion assumptions for demo-side script support are documented in `docs/integration/PLAYBOOK_DEMO_COMPANION_CHANGES.md`.
 

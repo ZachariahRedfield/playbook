@@ -15,6 +15,8 @@ const DEFAULT_REPO_URL = 'https://github.com/ZachariahRedfield/playbook-demo.git
 const DEFAULT_BASE_BRANCH = 'main';
 const DEFAULT_FEATURE_ID = 'PB-V1-DEMO-REFRESH-001';
 const REQUIRED_ALLOWED_PATHS = ['.playbook/demo-artifacts/', '.playbook/repo-index.json', 'docs/ARCHITECTURE_DIAGRAMS.md'];
+const DEFAULT_GIT_AUTHOR_NAME = 'playbook-demo-refresh[bot]';
+const DEFAULT_GIT_AUTHOR_EMAIL = 'playbook-demo-refresh[bot]@users.noreply.github.com';
 
 const parseArgs = (argv) => {
   const args = {
@@ -91,10 +93,71 @@ const resolveAllowedPaths = () => {
 const isAllowedFile = (filePath, allowlist) =>
   allowlist.some((allowedPath) => (allowedPath.endsWith('/') ? filePath.startsWith(allowedPath) : filePath === allowedPath));
 
+const tokenizeCommand = (command) => {
+  const tokens = [];
+  let current = '';
+  let quote = '';
+
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index];
+    if (quote) {
+      if (character === quote) {
+        quote = '';
+      } else if (character === '\\' && quote === '"' && index + 1 < command.length) {
+        current += command[index + 1];
+        index += 1;
+      } else {
+        current += character;
+      }
+      continue;
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+
+    if (/\s/.test(character)) {
+      if (current) {
+        tokens.push(current);
+        current = '';
+      }
+      continue;
+    }
+
+    if (character === '\\' && index + 1 < command.length) {
+      current += command[index + 1];
+      index += 1;
+      continue;
+    }
+
+    current += character;
+  }
+
+  if (quote) {
+    throw new Error(`Invalid PLAYBOOK_DEMO_REFRESH_CMD: unmatched ${quote} quote.`);
+  }
+
+  if (current) {
+    tokens.push(current);
+  }
+
+  if (tokens.length === 0) {
+    throw new Error('PLAYBOOK_DEMO_REFRESH_CMD was provided but empty after parsing.');
+  }
+
+  return tokens;
+};
+
 const resolveRefreshCommand = (demoDir) => {
   const configured = process.env.PLAYBOOK_DEMO_REFRESH_CMD;
   if (configured) {
-    return configured;
+    const [command, ...args] = tokenizeCommand(configured);
+    return {
+      description: configured,
+      command,
+      args
+    };
   }
 
   const packageJsonPath = path.join(demoDir, 'package.json');
@@ -105,28 +168,71 @@ const resolveRefreshCommand = (demoDir) => {
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   const scripts = packageJson.scripts && typeof packageJson.scripts === 'object' ? packageJson.scripts : {};
   const candidates = ['refresh:playbook', 'demo:refresh', 'refresh'];
+  const hasNpmLock = fs.existsSync(path.join(demoDir, 'package-lock.json'));
+  const hasPnpmLock = fs.existsSync(path.join(demoDir, 'pnpm-lock.yaml'));
+  const hasYarnLock = fs.existsSync(path.join(demoDir, 'yarn.lock'));
+
+  let packageManager = 'npm';
+  if (hasPnpmLock) {
+    packageManager = 'pnpm';
+  } else if (hasYarnLock) {
+    packageManager = 'yarn';
+  } else if (hasNpmLock) {
+    packageManager = 'npm';
+  }
 
   for (const name of candidates) {
     if (typeof scripts[name] === 'string' && scripts[name].trim()) {
-      return `pnpm ${name}`;
+      if (packageManager === 'pnpm') {
+        return { description: `pnpm run ${name}`, command: 'pnpm', args: ['run', name] };
+      }
+      if (packageManager === 'yarn') {
+        return { description: `yarn run ${name}`, command: 'yarn', args: ['run', name] };
+      }
+      return { description: `npm run ${name}`, command: 'npm', args: ['run', name] };
     }
   }
 
   throw new Error(
-    'Unable to resolve demo refresh command. Set PLAYBOOK_DEMO_REFRESH_CMD (for example "pnpm refresh:playbook").'
+    'Unable to resolve demo refresh command. Set PLAYBOOK_DEMO_REFRESH_CMD (for example "npm run demo:refresh").'
   );
 };
 
 const runRefreshCommand = ({ demoDir, refreshCommand }) => {
   run({
     cwd: demoDir,
-    command: 'bash',
-    args: ['-lc', refreshCommand],
+    command: refreshCommand.command,
+    args: refreshCommand.args,
     env: {
       ...process.env,
       PLAYBOOK_CLI_PATH: localCliEntrypoint
     }
   });
+};
+
+const configureGitIdentity = (demoDir) => {
+  const gitAuthorName = process.env.PLAYBOOK_GIT_AUTHOR_NAME ?? DEFAULT_GIT_AUTHOR_NAME;
+  const gitAuthorEmail = process.env.PLAYBOOK_GIT_AUTHOR_EMAIL ?? DEFAULT_GIT_AUTHOR_EMAIL;
+
+  run({ cwd: demoDir, command: 'git', args: ['config', 'user.name', gitAuthorName] });
+  run({ cwd: demoDir, command: 'git', args: ['config', 'user.email', gitAuthorEmail] });
+
+  return { gitAuthorName, gitAuthorEmail };
+};
+
+const configurePushAuthentication = (demoDir) => {
+  const token = process.env.PLAYBOOK_DEMO_GH_TOKEN ?? process.env.GH_TOKEN;
+  if (!token) {
+    throw new Error('Push mode requires PLAYBOOK_DEMO_GH_TOKEN or GH_TOKEN.');
+  }
+
+  const authHeader = Buffer.from(`x-access-token:${token}`).toString('base64');
+  run({
+    cwd: demoDir,
+    command: 'git',
+    args: ['config', 'http.https://github.com/.extraheader', `AUTHORIZATION: basic ${authHeader}`]
+  });
+  return token;
 };
 
 const stageAllowedChanges = ({ demoDir, changedFiles, allowlist }) => {
@@ -137,12 +243,7 @@ const stageAllowedChanges = ({ demoDir, changedFiles, allowlist }) => {
   }
 };
 
-const createOrUpdatePullRequest = ({ demoDir, featureId, branch, base }) => {
-  const token = process.env.PLAYBOOK_DEMO_GH_TOKEN ?? process.env.GH_TOKEN;
-  if (!token) {
-    throw new Error('PR mode requires GH_TOKEN or PLAYBOOK_DEMO_GH_TOKEN.');
-  }
-
+const createOrUpdatePullRequest = ({ demoDir, featureId, branch, base, token }) => {
   const title = `${featureId}: refresh committed Playbook demo artifacts`;
   const body = `## Summary\n- refresh committed demo artifacts/docs using local Playbook CLI build\n- enforce allowlisted committed surfaces only\n\n## Feature\n- ${featureId}\n`;
 
@@ -165,7 +266,7 @@ const main = () => {
   installNodeDependencies(demoDir);
 
   const refreshCommand = resolveRefreshCommand(demoDir);
-  console.log(`Using refresh command: ${refreshCommand}`);
+  console.log(`Using refresh command: ${refreshCommand.description}`);
   runRefreshCommand({ demoDir, refreshCommand });
 
   const changedFiles = parseChangedFiles(demoDir);
@@ -196,6 +297,10 @@ const main = () => {
   }
 
   const branch = args.branch || `automation/demo-refresh/${args.featureId.toLowerCase()}-${new Date().toISOString().slice(0, 10)}`;
+  const gitIdentity = configureGitIdentity(demoDir);
+  const token = configurePushAuthentication(demoDir);
+  console.log(`Configured git author identity: ${gitIdentity.gitAuthorName} <${gitIdentity.gitAuthorEmail}>`);
+  console.log('Configured explicit GitHub authentication for push via git http extraheader.');
 
   run({ cwd: demoDir, command: 'git', args: ['checkout', '-b', branch] });
   stageAllowedChanges({ demoDir, changedFiles, allowlist });
@@ -208,7 +313,7 @@ const main = () => {
 
   run({ cwd: demoDir, command: 'git', args: ['commit', '-m', `${args.featureId}: refresh Playbook demo artifacts`] });
   run({ cwd: demoDir, command: 'git', args: ['push', '-u', 'origin', branch] });
-  const prStatus = createOrUpdatePullRequest({ demoDir, featureId: args.featureId, branch, base: args.base });
+  const prStatus = createOrUpdatePullRequest({ demoDir, featureId: args.featureId, branch, base: args.base, token });
   console.log(`PR ${prStatus} for branch ${branch}.`);
 };
 

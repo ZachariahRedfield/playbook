@@ -1199,6 +1199,9 @@ Implementation surfaces:
 Contract:
 - clone `playbook-demo`
 - inject `PLAYBOOK_CLI_PATH` to force local CLI usage
+- detect target package manager from lockfiles and execute refresh with matching command runner (`npm run`, `pnpm run`, or `yarn run`)
+- avoid shell-fragile `bash -lc` execution in default paths (argv/spawn execution)
 - allowlist committed refresh outputs (`.playbook/demo-artifacts/**`, `.playbook/repo-index.json`, `docs/ARCHITECTURE_DIAGRAMS.md`)
 - fail on non-allowlisted mutations
+- configure explicit git author identity and explicit token-based push auth in `--push` mode (`PLAYBOOK_GIT_AUTHOR_*`, `PLAYBOOK_DEMO_GH_TOKEN`/`GH_TOKEN`)
 - open/update PRs only (no direct push to `main`)

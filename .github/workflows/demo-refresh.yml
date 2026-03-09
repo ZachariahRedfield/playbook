@@ -36,7 +36,8 @@ jobs:
   demo-refresh:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,9 +64,11 @@ jobs:
       - name: Refresh demo artifacts and open PR
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.push_changes == 'true' }}
         env:
-          GH_TOKEN: ${{ secrets.PLAYBOOK_DEMO_GH_TOKEN }}
+          PLAYBOOK_DEMO_GH_TOKEN: ${{ secrets.PLAYBOOK_DEMO_GH_TOKEN }}
+          PLAYBOOK_GIT_AUTHOR_NAME: playbook-demo-refresh[bot]
+          PLAYBOOK_GIT_AUTHOR_EMAIL: playbook-demo-refresh[bot]@users.noreply.github.com
         run: |
-          if [ -z "${GH_TOKEN}" ]; then
+          if [ -z "${PLAYBOOK_DEMO_GH_TOKEN}" ]; then
             echo "::warning::PLAYBOOK_DEMO_GH_TOKEN is not configured; running dry-run only."
             node scripts/demo-refresh.mjs --dry-run --feature-id "${{ github.event.inputs.feature_id || 'PB-V1-DEMO-REFRESH-001' }}"
             exit 0

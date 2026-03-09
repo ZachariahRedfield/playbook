@@ -5,6 +5,8 @@
 ### WHAT
 
 - Added PR-based `playbook-demo` refresh automation via `scripts/demo-refresh.mjs` and `.github/workflows/demo-refresh.yml`, with allowlisted artifact staging and `PLAYBOOK_CLI_PATH` injection.
+- Hardened `scripts/demo-refresh.mjs` for production use by detecting npm/pnpm/yarn refresh command runners from lockfiles, removing `bash -lc` execution in default paths, and adding explicit push-mode git identity + token-auth setup.
+- Updated `.github/workflows/demo-refresh.yml` permissions and push-mode environment setup to support reliable branch push + PR create/update in `playbook-demo` while preserving dry-run defaults for schedule/push triggers.
 - Normalized `.github/workflows/demo-integration.yml` to a dry-run integration check that reuses the new refresh orchestrator.
 - Added companion integration expectations in `docs/integration/PLAYBOOK_DEMO_COMPANION_CHANGES.md` and roadmap anchoring for `PB-V1-DEMO-REFRESH-001`.
 - Installed pnpm via `pnpm/action-setup@v4` (without unsupported cache inputs) and added manual pnpm store caching via `actions/cache@v4`.
@@ -19,6 +21,7 @@
 
 - Prevent CI/local failures caused by missing `@rollup/rollup-linux-x64-gnu` under frozen lockfile installs.
 - Eliminate ESLint v9 flat-config warnings caused by `.eslintignore`.
+- Make cross-repo demo refresh automation deterministic across local maintainer and GitHub Actions execution contexts.
 
 ## v0.1.1
 

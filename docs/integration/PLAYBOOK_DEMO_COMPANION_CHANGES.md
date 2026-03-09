@@ -17,6 +17,21 @@ This repository now contains `scripts/demo-refresh.mjs`, which refreshes committ
 
 If `playbook-demo` needs to commit additional generated docs, set `PLAYBOOK_DEMO_EXTRA_ALLOWED_PATHS` in the automation environment as a comma-separated list and document those paths in both repositories.
 
+## Maintainer execution notes
+
+- Default local safety mode:
+  - `node scripts/demo-refresh.mjs --dry-run`
+- Push/PR mode requires token auth and explicit commit identity configuration (defaults are provided for identity if unset):
+  - `PLAYBOOK_DEMO_GH_TOKEN` (or `GH_TOKEN`)
+  - optional `PLAYBOOK_GIT_AUTHOR_NAME`
+  - optional `PLAYBOOK_GIT_AUTHOR_EMAIL`
+
+`scripts/demo-refresh.mjs` selects the refresh runner from the cloned repo lockfile and invokes refresh commands directly (no `bash -lc` dependency):
+
+- npm repo (`package-lock.json`): `npm run <script>`
+- pnpm repo (`pnpm-lock.yaml`): `pnpm run <script>`
+- yarn repo (`yarn.lock`): `yarn run <script>`
+
 ## Required feature metadata
 
 Automated commits/PRs from `scripts/demo-refresh.mjs` default to feature id:
