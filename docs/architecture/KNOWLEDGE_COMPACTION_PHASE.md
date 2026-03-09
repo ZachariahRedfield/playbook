@@ -133,6 +133,13 @@ Output stance for v0:
 - review drafts for human promotion workflows
 - explicit supersede/archive linkages for pattern lifecycle
 
+Current implemented deterministic slice:
+
+- canonicalization + deterministic bucketing (`discard | attach | merge | add`) are implemented for internal candidates
+- deterministic review artifacts now sit on top of bucketing for inspection/testing
+- reason codes are canonical machine contracts; human-readable explanations are derived deterministically from reason codes
+- long-lived pattern storage and promotion workflows remain future work
+
 ## Scope boundaries for this phase
 
 In first formalization, Compaction Phase is:

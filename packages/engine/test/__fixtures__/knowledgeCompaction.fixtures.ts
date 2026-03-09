@@ -34,11 +34,13 @@ export const existingPatternsFixture: InternalCompactionPattern[] = [
 ];
 
 export const discardCandidateFixture: InternalCompactionCandidate = {
+  candidateRef: 'candidate-discard-empty-mechanism',
   title: 'Empty mechanism candidate',
   mechanism: '   '
 };
 
 export const attachCandidateFixture: InternalCompactionCandidate = {
+  candidateRef: 'candidate-attach-cli-evidence',
   title: 'Use local cli build for branch-accurate output',
   mechanism: 'Inside playbook repo, use local built CLI entrypoints before validation',
   invariant: 'branch accurate local cli behavior',
@@ -54,6 +56,7 @@ export const attachCandidateFixture: InternalCompactionCandidate = {
 };
 
 export const mergeCandidateFixture: InternalCompactionCandidate = {
+  candidateRef: 'candidate-merge-cli-wording-variant',
   title: 'branch accurate cli bootstrap',
   mechanism: 'Inside Playbook repo use local built CLI entrypoints before validation!',
   invariant: 'branch accurate local cli behavior',
@@ -69,6 +72,7 @@ export const mergeCandidateFixture: InternalCompactionCandidate = {
 };
 
 export const addCandidateFixture: InternalCompactionCandidate = {
+  candidateRef: 'candidate-add-docs-audit-pattern',
   title: 'Docs audit should be run for governance surface edits',
   mechanism: 'When docs or governance surfaces change, run docs audit to validate command and contract alignment.',
   invariant: 'docs governance edits require deterministic docs checks',
