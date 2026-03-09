@@ -61,6 +61,34 @@ describe('explainTarget', () => {
     });
   });
 
+
+  it('resolves explicit module:<name> targets for indexed modules', () => {
+    const repo = createRepo('playbook-explain-engine-module-explicit');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'nextjs',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: ['users', 'workouts'],
+      database: 'supabase',
+      rules: []
+    });
+
+    const result = explainTarget(repo, 'module:workouts');
+
+    expect(result.type).toBe('module');
+    if (result.type === 'module') {
+      expect(result.resolvedTarget).toEqual({
+        input: 'module:workouts',
+        kind: 'module',
+        selector: 'workouts',
+        canonical: 'module:workouts',
+        matched: true
+      });
+      expect(result.name).toBe('workouts');
+    }
+  });
+
   it('returns architecture explanations from repository intelligence', () => {
     const repo = createRepo('playbook-explain-engine-architecture');
     writeRepoIndex(repo, {

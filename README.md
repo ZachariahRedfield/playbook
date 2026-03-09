@@ -222,6 +222,8 @@ Failure Mode: Agent drift occurs when AI tools bypass Playbook command outputs a
 
 Use `playbook query` to read structured architecture metadata directly from `.playbook/repo-index.json` without rescanning your repository.
 
+For modular-monolith repositories, Playbook indexes `src/features/*` directories as first-class modules (falling back to immediate `src/*` module directories when `src/features/*` is absent).
+
 ```bash
 playbook index
 playbook query modules

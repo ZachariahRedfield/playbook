@@ -74,19 +74,47 @@ const detectArchitecture = (projectRoot: string): string => {
   return defaultArchitecture;
 };
 
-const detectModuleNames = (projectRoot: string): string[] => {
-  const srcPath = path.join(projectRoot, 'src');
+const listModuleDirectoryNames = (projectRoot: string, directoryPath: string): string[] => {
   const ignoreRules = parsePlaybookIgnore(projectRoot);
-  if (!fs.existsSync(srcPath)) {
+  if (!fs.existsSync(directoryPath)) {
     return [];
   }
 
   return fs
-    .readdirSync(srcPath, { withFileTypes: true })
+    .readdirSync(directoryPath, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .filter((entry) => !isPlaybookIgnored(path.posix.join('src', entry.name), ignoreRules))
+    .filter((entry) => {
+      const relativeEntryPath = path.relative(projectRoot, path.join(directoryPath, entry.name)).split(path.sep).join(path.posix.sep);
+      return !isPlaybookIgnored(relativeEntryPath, ignoreRules);
+    })
     .map((entry) => entry.name)
     .sort();
+};
+
+const detectModuleNames = (
+  projectRoot: string,
+  architecture: string
+): {
+  moduleNames: string[];
+  moduleRootPath: string;
+} => {
+  const srcPath = path.join(projectRoot, 'src');
+  const featureModulesPath = path.join(srcPath, 'features');
+
+  if (architecture === 'modular-monolith') {
+    const featureModuleNames = listModuleDirectoryNames(projectRoot, featureModulesPath);
+    if (featureModuleNames.length > 0) {
+      return {
+        moduleNames: featureModuleNames,
+        moduleRootPath: featureModulesPath
+      };
+    }
+  }
+
+  return {
+    moduleNames: listModuleDirectoryNames(projectRoot, srcPath),
+    moduleRootPath: srcPath
+  };
 };
 
 const listModuleFiles = (projectRoot: string, moduleRoot: string): string[] => {
@@ -105,7 +133,7 @@ const listModuleFiles = (projectRoot: string, moduleRoot: string): string[] => {
 
     for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
       const child = path.join(current, entry.name);
-      const relativeChild = path.relative(projectRoot, child);
+      const relativeChild = path.relative(projectRoot, child).split(path.sep).join(path.posix.sep);
       if (isPlaybookIgnored(relativeChild, ignoreRules)) {
         continue;
       }
@@ -124,13 +152,17 @@ const listModuleFiles = (projectRoot: string, moduleRoot: string): string[] => {
   return files.sort((a, b) => a.localeCompare(b));
 };
 
-const detectModuleDependenciesFromSrc = (projectRoot: string, moduleNames: string[]): RepositoryModule[] => {
+const detectModuleDependenciesFromSrc = (
+  projectRoot: string,
+  moduleNames: string[],
+  moduleRootPath: string
+): RepositoryModule[] => {
   const srcPath = path.join(projectRoot, 'src');
   const moduleSet = new Set(moduleNames);
 
   return moduleNames.map((moduleName) => {
     const dependencies = new Set<string>();
-    const moduleFiles = listModuleFiles(projectRoot, path.join(srcPath, moduleName));
+    const moduleFiles = listModuleFiles(projectRoot, path.join(moduleRootPath, moduleName));
 
     for (const filePath of moduleFiles) {
       const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -148,12 +180,18 @@ const detectModuleDependenciesFromSrc = (projectRoot: string, moduleNames: strin
           const resolvedTarget = path.resolve(path.dirname(filePath), specifier);
           const relativeToSrc = path.relative(srcPath, resolvedTarget);
           if (!relativeToSrc.startsWith('..')) {
-            candidateModule = relativeToSrc.split(path.sep)[0];
+            if (relativeToSrc.startsWith(`features${path.sep}`)) {
+              candidateModule = relativeToSrc.split(path.sep)[1];
+            } else {
+              candidateModule = relativeToSrc.split(path.sep)[0];
+            }
           }
         } else if (specifier.startsWith('@/')) {
-          candidateModule = specifier.slice(2).split('/')[0];
+          const segments = specifier.slice(2).split('/');
+          candidateModule = segments[0] === 'features' ? segments[1] : segments[0];
         } else if (specifier.startsWith('src/')) {
-          candidateModule = specifier.slice(4).split('/')[0];
+          const segments = specifier.slice(4).split('/');
+          candidateModule = segments[0] === 'features' ? segments[1] : segments[0];
         }
 
         if (!candidateModule || candidateModule === moduleName || !moduleSet.has(candidateModule)) {
@@ -171,7 +209,7 @@ const detectModuleDependenciesFromSrc = (projectRoot: string, moduleNames: strin
   });
 };
 
-const detectModules = (projectRoot: string): RepositoryModule[] => {
+const detectModules = (projectRoot: string, architecture: string): RepositoryModule[] => {
   const workspaceIgnoreRules = parsePlaybookIgnore(projectRoot).filter((rule) => !rule.negated).map((rule) => rule.pattern);
   const workspaceGraph = scanWorkspaceDeps(projectRoot, {
     excludeGlobs: workspaceIgnoreRules
@@ -190,8 +228,8 @@ const detectModules = (projectRoot: string): RepositoryModule[] => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  const moduleNames = detectModuleNames(projectRoot);
-  return detectModuleDependenciesFromSrc(projectRoot, moduleNames);
+  const { moduleNames, moduleRootPath } = detectModuleNames(projectRoot, architecture);
+  return detectModuleDependenciesFromSrc(projectRoot, moduleNames, moduleRootPath);
 };
 
 const detectDatabase = (projectRoot: string): string => {
@@ -235,12 +273,16 @@ const detectRules = (projectRoot: string): string[] => {
     .sort();
 };
 
-export const generateRepositoryIndex = (projectRoot: string): RepositoryIndex => ({
-  schemaVersion: '1.0',
-  framework: detectFramework(projectRoot),
-  language: detectLanguage(projectRoot),
-  architecture: detectArchitecture(projectRoot),
-  modules: detectModules(projectRoot),
-  database: detectDatabase(projectRoot),
-  rules: detectRules(projectRoot)
-});
+export const generateRepositoryIndex = (projectRoot: string): RepositoryIndex => {
+  const architecture = detectArchitecture(projectRoot);
+
+  return {
+    schemaVersion: '1.0',
+    framework: detectFramework(projectRoot),
+    language: detectLanguage(projectRoot),
+    architecture,
+    modules: detectModules(projectRoot, architecture),
+    database: detectDatabase(projectRoot),
+    rules: detectRules(projectRoot)
+  };
+};

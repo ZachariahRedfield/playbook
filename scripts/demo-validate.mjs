@@ -21,6 +21,25 @@ const parseJsonOutput = (rawOutput, label) => {
   }
 };
 
+
+export const ensureDemoFeatureModules = (modulesPayload) => {
+  if (!modulesPayload || typeof modulesPayload !== 'object' || !Array.isArray(modulesPayload.result)) {
+    throw new Error('Query modules JSON contract is missing result array.');
+  }
+
+  const moduleNames = modulesPayload.result
+    .map((entry) => (entry && typeof entry === 'object' ? entry.name : undefined))
+    .filter((name) => typeof name === 'string');
+
+  for (const expectedModule of ['users', 'workouts']) {
+    if (!moduleNames.includes(expectedModule)) {
+      throw new Error(
+        `Demo module contract failed: expected indexed module "${expectedModule}" in query modules output. Found: ${moduleNames.join(', ') || 'none'}.`
+      );
+    }
+  }
+};
+
 const getFailureLevel = (finding) => {
   if (!finding || typeof finding !== 'object') {
     return false;
@@ -107,6 +126,17 @@ const main = () => {
   console.log('');
 
   installNodeDependencies(demoDir);
+
+  runPlaybookCli({ cwd: demoDir, commandArgs: ['index', '--json'] });
+  console.log('Index: OK');
+
+  const queryModulesResult = runPlaybookCli({ cwd: demoDir, commandArgs: ['query', 'modules', '--json'] });
+  const modulesPayload = parseJsonOutput(queryModulesResult.stdout, 'Query modules');
+  ensureDemoFeatureModules(modulesPayload);
+  console.log('Query modules: OK (users, workouts)');
+
+  runPlaybookCli({ cwd: demoDir, commandArgs: ['explain', 'workouts', '--json'] });
+  console.log('Explain workouts: OK');
 
   runPlaybookCli({ cwd: demoDir, commandArgs: ['analyze'] });
   console.log('Analyze: OK');

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { deriveVerifyCounts, validateFinalVerifyStatus, validateRemediationStatus } from './demo-validate.mjs';
+import { deriveVerifyCounts, ensureDemoFeatureModules, validateFinalVerifyStatus, validateRemediationStatus } from './demo-validate.mjs';
 
 test('deriveVerifyCounts handles warning-only verify payloads as zero failures', () => {
   const counts = deriveVerifyCounts({
@@ -44,6 +44,27 @@ test('validateRemediationStatus requires ready when failures exist and tasks are
   );
 });
 
+
+
+test('ensureDemoFeatureModules enforces users/workouts module contract', () => {
+  assert.doesNotThrow(() => {
+    ensureDemoFeatureModules({
+      query: 'modules',
+      field: 'modules',
+      result: [
+        { name: 'users', dependencies: [] },
+        { name: 'workouts', dependencies: ['users'] }
+      ]
+    });
+  });
+
+  assert.throws(
+    () => {
+      ensureDemoFeatureModules({ query: 'modules', field: 'modules', result: [{ name: 'users', dependencies: [] }] });
+    },
+    /expected indexed module "workouts"/
+  );
+});
 
 test('validateFinalVerifyStatus allows warning-only final verify', () => {
   const finalVerifyCounts = deriveVerifyCounts({

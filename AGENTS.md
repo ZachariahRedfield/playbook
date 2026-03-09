@@ -197,6 +197,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `playbook ai-context --json`
 - `ai-contract`: Print deterministic AI repository contract for Playbook-aware agents
   - Example: `playbook ai-contract --json`
+- `contracts`: Emit deterministic contract registry for schemas, artifacts, and roadmap status
+  - Example: `playbook contracts --json`
 
 ### Repository intelligence
 
@@ -246,6 +248,7 @@ Do not hand-edit entries inside the managed markers.
 | `context` | `playbook context --json` |
 | `ai-context` | `playbook ai-context --json` |
 | `ai-contract` | `playbook ai-contract --json` |
+| `contracts` | `playbook contracts --json` |
 | `index` | `playbook index --json` |
 | `graph` | `playbook graph --json` |
 | `query` | `playbook query modules --json` |

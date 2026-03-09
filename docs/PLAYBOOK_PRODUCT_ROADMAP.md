@@ -987,7 +987,7 @@ Implemented baseline: `playbook index` (paired with `query`, `deps`, `ask`, `exp
 - Command intent: generate a machine-readable repository intelligence artifact for AI-safe repository understanding.
 - Output path: `.playbook/repo-index.json`.
 - Current index coverage:
-  - modules
+  - modules (including modular-monolith `src/features/*` modules as first-class indexed/explainable module targets)
   - dependencies
   - database schema
   - framework
