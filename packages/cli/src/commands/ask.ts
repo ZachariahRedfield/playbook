@@ -40,13 +40,14 @@ type AskResult = {
     framework: string;
     modules: string[];
     module?: unknown;
+    moduleDigest?: unknown;
     diff?: unknown;
     sources: ContextSource[];
   };
 };
 
 type ContextSource = {
-  type: 'repo-index' | 'architecture-metadata' | 'rule-registry' | 'module' | 'diff' | 'docs' | 'ai-contract';
+  type: 'repo-index' | 'repo-graph' | 'architecture-metadata' | 'rule-registry' | 'module' | 'module-digest' | 'diff' | 'docs' | 'ai-contract';
   path?: string;
   name?: string;
   files?: string[];
@@ -75,6 +76,7 @@ const toUniqueSortedStrings = (values: unknown): string[] => {
 const buildContextSources = (context: AskContextSnapshot, repoContextSources: string[], moduleName?: string): ContextSource[] => {
   const sources: ContextSource[] = [
     { type: 'repo-index', path: REPO_INDEX_PATH },
+    { type: 'repo-graph', path: '.playbook/repo-graph.json' },
     { type: 'architecture-metadata', path: REPO_INDEX_PATH },
     { type: 'rule-registry', path: REPO_INDEX_PATH }
   ];
@@ -88,6 +90,14 @@ const buildContextSources = (context: AskContextSnapshot, repoContextSources: st
 
   if (typeof moduleName === 'string' && moduleName.length > 0) {
     sources.push({ type: 'module', name: moduleName });
+  }
+
+  if (context.moduleDigest && typeof context.moduleDigest === 'object') {
+    const digestModule = (context.moduleDigest as { module?: { name?: unknown } }).module;
+    const digestName = digestModule && typeof digestModule.name === 'string' ? digestModule.name : moduleName;
+    if (typeof digestName === 'string' && digestName.length > 0) {
+      sources.push({ type: 'module-digest', path: `.playbook/context/modules/${digestName.replace(/[\/]/g, '__')}.json` });
+    }
   }
 
   if (context.diff && typeof context.diff === 'object' && !Array.isArray(context.diff)) {

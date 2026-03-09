@@ -3,6 +3,7 @@
   "ok": true,
   "indexFile": ".playbook/repo-index.json",
   "graphFile": ".playbook/repo-graph.json",
+  "contextDir": ".playbook/context/modules",
   "framework": "node",
   "architecture": "modular-monolith",
   "modules": [

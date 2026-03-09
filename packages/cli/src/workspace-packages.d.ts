@@ -22,9 +22,13 @@ declare module "@zachariahredfield/playbook-engine" {
   export const formatAnalyzePrOutput: (...args: any[]) => string;
   export const generateRepositoryIndex: (...args: any[]) => any;
   export const generateRepositoryGraph: (...args: any[]) => any;
+  export const buildModuleContextDigests: (...args: any[]) => any;
+  export const writeModuleContextDigests: (...args: any[]) => any;
+  export const readModuleContextDigest: (...args: any[]) => any;
   export const readRepositoryGraph: (...args: any[]) => any;
   export const summarizeRepositoryGraph: (...args: any[]) => any;
   export const REPOSITORY_GRAPH_RELATIVE_PATH: '.playbook/repo-graph.json';
+  export const MODULE_CONTEXT_DIR_RELATIVE_PATH: '.playbook/context/modules';
   export const loadAiContract: (...args: any[]) => any;
   export const buildContractRegistry: (...args: any[]) => any;
 
@@ -101,6 +105,7 @@ declare module "@zachariahredfield/playbook-engine" {
     summary: { totalHotspots: number; byType: Array<{ type: TestHotspotType; count: number }> };
   };
 
+  export type ModuleContextDigest = any;
   export type GraphNeighborhoodSummary = {
     node: { id: string; kind: 'module' | 'repository' | 'rule'; name: string };
     outgoing: Array<{ kind: 'contains' | 'depends_on' | 'governed_by'; target: string }>;

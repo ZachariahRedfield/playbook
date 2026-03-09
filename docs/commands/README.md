@@ -183,7 +183,8 @@ Run `pnpm test:security` to execute security contract tests and regression tests
 Use the following intent model when deciding whether command outputs stay local, are reviewed in automation, or are committed as stable contracts/docs:
 
 - `index`
-  - Default intent: **local runtime artifact** (`.playbook/repo-index.json`) regenerated as repository intelligence changes.
+  - Default intent: **local runtime artifacts** (`.playbook/repo-index.json`, `.playbook/repo-graph.json`, `.playbook/context/modules/*.json`) regenerated as repository intelligence changes.
+  - JSON contract note: `playbook index --json` exposes `contextDir` so automation can discover digest artifact location deterministically.
   - Commit guidance: usually gitignored; commit only when intentionally maintaining a deterministic contract/example snapshot.
 - `plan`
   - Default intent: **reviewed automation artifact** (for example `.playbook/plan.json`) used for deterministic remediation workflows and CI/agent handoff.
@@ -239,6 +240,6 @@ Suggested remediation IDs:
 
 ### Deterministic module impact
 
-`playbook query impact <module>` converts indexed module/dependency data from `.playbook/repo-index.json` into deterministic module blast-radius analysis, including dependencies, reverse dependencies, and risk signals.
+`playbook query impact <module>` converts indexed module/dependency data plus graph/digest context (`.playbook/repo-graph.json`, `.playbook/context/modules/*.json`) into deterministic module blast-radius analysis, including dependencies, reverse dependencies, docs/tests/rules, and risk signals when available.
 
 Rule: Module impact and module-scoped ask rely on Playbook-managed index artifacts, not ad-hoc rescans.

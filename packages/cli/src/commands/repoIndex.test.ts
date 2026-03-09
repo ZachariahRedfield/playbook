@@ -25,6 +25,7 @@ describe('runIndex', () => {
       ok: true,
       indexFile: '.playbook/repo-index.json',
       graphFile: '.playbook/repo-graph.json',
+      contextDir: '.playbook/context/modules',
       framework: 'node',
       architecture: 'modular-monolith',
       modules: ['features']
@@ -32,8 +33,10 @@ describe('runIndex', () => {
 
     const indexFile = path.join(repo, '.playbook', 'repo-index.json');
     const graphFile = path.join(repo, '.playbook', 'repo-graph.json');
+    const contextFile = path.join(repo, '.playbook', 'context', 'modules', 'features.json');
     expect(fs.existsSync(indexFile)).toBe(true);
     expect(fs.existsSync(graphFile)).toBe(true);
+    expect(fs.existsSync(contextFile)).toBe(true);
 
     const indexPayload = JSON.parse(fs.readFileSync(indexFile, 'utf8'));
     const graphPayload = JSON.parse(fs.readFileSync(graphFile, 'utf8'));

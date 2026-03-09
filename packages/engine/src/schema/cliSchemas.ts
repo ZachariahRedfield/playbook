@@ -94,12 +94,13 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     title: 'PlaybookIndexOutput',
     type: 'object',
     additionalProperties: false,
-    required: ['command', 'ok', 'indexFile', 'graphFile', 'framework', 'architecture', 'modules'],
+    required: ['command', 'ok', 'indexFile', 'graphFile', 'contextDir', 'framework', 'architecture', 'modules'],
     properties: {
       command: { const: 'index' },
       ok: { const: true },
       indexFile: { const: '.playbook/repo-index.json' },
       graphFile: { const: '.playbook/repo-graph.json' },
+      contextDir: { const: '.playbook/context/modules' },
       framework: { type: 'string' },
       architecture: { type: 'string' },
       modules: { type: 'array', items: { type: 'string' } }
@@ -137,10 +138,28 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
               stats: {
                 type: 'object',
                 additionalProperties: false,
-                required: ['nodeCount', 'edgeCount'],
+                required: ['nodeCount', 'edgeCount', 'nodeKinds', 'edgeKinds'],
                 properties: {
                   nodeCount: { type: 'integer' },
-                  edgeCount: { type: 'integer' }
+                  edgeCount: { type: 'integer' },
+                  nodeKinds: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      module: { type: 'integer' },
+                      repository: { type: 'integer' },
+                      rule: { type: 'integer' }
+                    }
+                  },
+                  edgeKinds: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      contains: { type: 'integer' },
+                      depends_on: { type: 'integer' },
+                      governed_by: { type: 'integer' }
+                    }
+                  }
                 }
               },
               nodeKinds: {

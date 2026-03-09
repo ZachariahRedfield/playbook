@@ -87,6 +87,7 @@ describe('runAsk', () => {
         modules: ['users', 'workouts'],
         sources: [
           { type: 'repo-index', path: '.playbook/repo-index.json' },
+          { type: 'repo-graph', path: '.playbook/repo-graph.json' },
           { type: 'architecture-metadata', path: '.playbook/repo-index.json' },
           { type: 'rule-registry', path: '.playbook/repo-index.json' }
         ]

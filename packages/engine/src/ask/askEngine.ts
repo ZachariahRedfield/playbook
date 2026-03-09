@@ -3,6 +3,7 @@ import path from 'node:path';
 import { queryRepositoryIndex } from '../query/repoQuery.js';
 import type { RepositoryModule } from '../indexer/repoIndexer.js';
 import { buildModuleAskContext, resolveIndexedModuleContext, type IndexedModuleContext } from '../query/moduleIntelligence.js';
+import { readModuleContextDigest, type ModuleContextDigest } from '../context/moduleContext.js';
 import { resolveDiffAskContext, type DiffAskContext } from './diffContext.js';
 
 type AskContext = {
@@ -27,6 +28,7 @@ export type AskEngineResult = {
     framework: string;
     modules: string[];
     module?: IndexedModuleContext;
+    moduleDigest?: ModuleContextDigest;
     diff?: DiffAskContext;
   };
 };
@@ -259,6 +261,37 @@ export const answerRepositoryQuestion = (projectRoot: string, question: string, 
   }
 
   if (moduleContext && includesAny(normalizedQuestion, ['how', 'work', 'works', 'module'])) {
+    const moduleDigest = readModuleContextDigest(projectRoot, moduleContext.module.name);
+
+    if (moduleDigest) {
+      const digestSummary = [
+        `Module scope: ${moduleDigest.module.name}`,
+        `Dependencies: ${moduleDigest.dependencies.length > 0 ? moduleDigest.dependencies.join(', ') : 'none'}`,
+        `Direct dependents: ${moduleDigest.directDependents.length > 0 ? moduleDigest.directDependents.join(', ') : 'none'}`,
+        `Risk: ${moduleDigest.risk.level} (${moduleDigest.risk.score.toFixed(2)})`,
+        `Graph neighborhood kinds: out[${moduleDigest.graphNeighborhood.outgoingKinds.join(', ') || 'none'}], in[${moduleDigest.graphNeighborhood.incomingKinds.join(', ') || 'none'}]`
+      ].join('; ');
+
+      return {
+        question: userQuestion,
+        answer: digestSummary,
+        reason:
+          'Derived from module-scoped compressed context in .playbook/context/modules plus graph/index intelligence artifacts.',
+        answerability: {
+          state: 'answered-from-trusted-artifact',
+          artifact: `.playbook/context/modules/${moduleDigest.module.name.replace(/[\\/]/g, '__')}.json`
+        },
+        context: {
+          architecture: context.architecture,
+          framework: context.framework,
+          modules: context.modules,
+          module: moduleContext,
+          moduleDigest,
+          diff: diffContext
+        }
+      };
+    }
+
     const moduleSummary = buildModuleAskContext(moduleContext).split('\n').slice(0, 5).join('; ');
 
     return {

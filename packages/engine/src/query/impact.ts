@@ -1,4 +1,5 @@
 import { resolveIndexedModuleContext } from './moduleIntelligence.js';
+import { readModuleContextDigest, type ModuleContextDigest } from '../context/moduleContext.js';
 import { resolveRepositoryTarget, type ResolvedTarget } from '../intelligence/targetResolver.js';
 
 export type ImpactQueryResult = {
@@ -12,6 +13,7 @@ export type ImpactQueryResult = {
     path: string;
     type: 'module';
   };
+  digest?: ModuleContextDigest;
   impact: {
     dependents: string[];
     directDependents: string[];
@@ -36,6 +38,8 @@ export const queryImpact = (projectRoot: string, moduleName: string): ImpactQuer
     unknownModulePrefix: 'playbook query impact'
   });
 
+  const digest = readModuleContextDigest(projectRoot, resolvedTarget.selector) ?? undefined;
+
   return {
     schemaVersion: '1.0',
     command: 'query',
@@ -43,6 +47,7 @@ export const queryImpact = (projectRoot: string, moduleName: string): ImpactQuer
     target: resolvedTarget.selector,
     resolvedTarget,
     module: moduleContext.module,
+    digest,
     impact: moduleContext.impact
   };
 };

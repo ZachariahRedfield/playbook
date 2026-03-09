@@ -3,6 +3,7 @@ import { queryRepositoryIndex } from '../query/repoQuery.js';
 import type { RepositoryModule } from '../indexer/repoIndexer.js';
 import { getRuleMetadata } from './ruleRegistry.js';
 import { resolveRepositoryTarget, type ResolvedTarget } from '../intelligence/targetResolver.js';
+import { readModuleContextDigest } from '../context/moduleContext.js';
 
 const toModuleNames = (modules: string[] | RepositoryModule[]): string[] => {
   if (modules.length === 0) {
@@ -141,12 +142,13 @@ export const explainTarget = (projectRoot: string, target: string): ExplainTarge
 
   if (resolvedTarget.kind === 'module') {
     const moduleName = resolvedTarget.selector;
+    const digest = readModuleContextDigest(projectRoot, moduleName);
     return {
       type: 'module',
       resolvedTarget,
       name: moduleName,
       responsibilities: inferModuleResponsibilities(moduleName),
-      dependencies: [],
+      dependencies: digest?.dependencies ?? [],
       architecture: context.architecture,
       graphNeighborhood: readGraphNeighborhood(projectRoot, `module:${moduleName}`)
     };

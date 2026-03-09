@@ -551,6 +551,7 @@ Build a deterministic local Repository Knowledge Graph artifact from repository 
 Primary capability:
 - `playbook index` emits `.playbook/repo-graph.json` as a local, deterministic, CLI-first graph artifact generated from repository evidence.
 - Graph artifact evolution is versioned by explicit contract policy with additive-vs-breaking guidance for downstream CI/AI consumers.
+- Implemented thin-slice hardening: graph stats include deterministic node/edge kind count maps and are exposed through `playbook graph --json` contracts.
 
 Graph architecture stance:
 - local
@@ -588,6 +589,10 @@ Edges:
 
 Repository Knowledge Graph should power:
 - context compression
+
+Current shipped compression slice:
+- `playbook index` also emits `.playbook/context/modules/*.json` compressed module digests derived from index + graph + deterministic risk/docs/test signals.
+- Existing read runtime (`query impact`, `explain <module>`) reuses digest/graph context additively before broader inference.
 - impact analysis
 - risk-aware reasoning
 - future pattern mining / repository learning loops

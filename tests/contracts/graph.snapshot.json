@@ -6,7 +6,16 @@
     "kind": "playbook-repo-graph",
     "stats": {
       "nodeCount": 5,
-      "edgeCount": 7
+      "edgeCount": 7,
+      "nodeKinds": {
+        "module": 1,
+        "repository": 1,
+        "rule": 3
+      },
+      "edgeKinds": {
+        "contains": 4,
+        "governed_by": 3
+      }
     },
     "nodeKinds": [
       "module",

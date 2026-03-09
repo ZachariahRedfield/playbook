@@ -4,6 +4,10 @@
 
 ### Added
 
+- WHAT: Hardened the repository-graph substrate by extending `.playbook/repo-graph.json` stats with deterministic node/edge kind breakdowns and aligned `playbook graph --json` schema coverage. WHY: Makes the graph a reusable contract artifact for automation and read-runtime reuse rather than an ornamental side output.
+- WHAT: Added compressed module context digests under `.playbook/context/modules/*.json` during `playbook index` and reused them in `query impact` / `explain <module>`. WHY: Implements the next thin slice of complexity-through-compression using deterministic local artifacts.
+- WHAT: Enriched `ask --repo-context` module-scoped responses to prefer module digest + graph-neighborhood context when available and emit `module-digest`/`repo-graph` provenance sources. WHY: Turns compressed artifacts into immediate AI/runtime reuse instead of generation-only output.
+
 - WHAT: Enforced PB-V1 delivery gates in the reusable Playbook CI action by requiring `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id` and `node packages/cli/dist/main.js docs audit --ci --json`, and aligned PR/docs workflow guidance to match. WHY: Converts roadmap-as-contract and docs governance from documentation-only guidance into deterministic branch validation.
 
 - WHAT: Added contributor/developer workflow guidance for when to run `playbook audit architecture`, `playbook doctor`, and `playbook docs audit` after merge. WHY: Turns governance commands from merely available into a repeatable team habit before adding heavier CI enforcement.
@@ -145,6 +149,10 @@
 ## Unreleased
 
 ### Added
+
+- WHAT: Hardened the repository-graph substrate by extending `.playbook/repo-graph.json` stats with deterministic node/edge kind breakdowns and aligned `playbook graph --json` schema coverage. WHY: Makes the graph a reusable contract artifact for automation and read-runtime reuse rather than an ornamental side output.
+- WHAT: Added compressed module context digests under `.playbook/context/modules/*.json` during `playbook index` and reused them in `query impact` / `explain <module>`. WHY: Implements the next thin slice of complexity-through-compression using deterministic local artifacts.
+- WHAT: Enriched `ask --repo-context` module-scoped responses to prefer module digest + graph-neighborhood context when available and emit `module-digest`/`repo-graph` provenance sources. WHY: Turns compressed artifacts into immediate AI/runtime reuse instead of generation-only output.
 
 - Added explicit versioned evolution policy for `.playbook/repo-graph.json` to keep graph growth contract-safe for CI and AI consumers.
 - Extended existing `query`/`explain` read flows with additive graph neighborhood summaries instead of introducing a broad new graph command surface.

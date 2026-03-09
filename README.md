@@ -170,7 +170,9 @@ npx @fawxzzy/playbook verify --json
 
 For the complete command inventory (including utility commands), see [docs/commands/README.md](docs/commands/README.md).
 
-Run `npx @fawxzzy/playbook index` to generate a deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
+Run `npx @fawxzzy/playbook index` to generate deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json`, `.playbook/repo-graph.json`, and compressed module digests under `.playbook/context/modules/*.json`.
+
+Complexity Through Compression: Playbook reduces repository complexity by extracting small deterministic artifacts (index -> graph -> module digests) and reusing them across query/explain/ask surfaces rather than repeatedly rescanning broad repository state.
 
 Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `graph`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
 

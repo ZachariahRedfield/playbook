@@ -49,7 +49,17 @@ describe('repository graph', () => {
       ],
       stats: {
         nodeCount: 4,
-        edgeCount: 6
+        edgeCount: 6,
+        nodeKinds: {
+          module: 2,
+          repository: 1,
+          rule: 1
+        },
+        edgeKinds: {
+          contains: 3,
+          depends_on: 1,
+          governed_by: 2
+        }
       }
     });
   });
@@ -61,7 +71,12 @@ describe('repository graph', () => {
       schemaVersion: '1.1',
       kind: 'playbook-repo-graph',
       generatedAt: '2026-01-01T00:00:00.000Z',
-      stats: { nodeCount: 4, edgeCount: 6 },
+      stats: {
+        nodeCount: 4,
+        edgeCount: 6,
+        nodeKinds: { module: 2, repository: 1, rule: 1 },
+        edgeKinds: { contains: 3, depends_on: 1, governed_by: 2 }
+      },
       nodeKinds: ['module', 'repository', 'rule'],
       edgeKinds: ['contains', 'depends_on', 'governed_by'],
       topDependencyHubs: [

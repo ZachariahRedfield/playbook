@@ -7,6 +7,35 @@ import { runAsk } from './ask.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
 
+
+const writeModuleDigest = (repo: string, moduleName: string): void => {
+  const digestPath = path.join(repo, '.playbook', 'context', 'modules', `${moduleName}.json`);
+  fs.mkdirSync(path.dirname(digestPath), { recursive: true });
+  fs.writeFileSync(
+    digestPath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'playbook-module-context-digest',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        module: { name: moduleName, path: `src/${moduleName}`, type: 'module' },
+        files: { count: 1, representative: [`src/features/${moduleName}/index.ts`] },
+        dependencies: [],
+        directDependents: [],
+        dependents: [],
+        rules: ['requireNotesOnChanges'],
+        docs: [],
+        tests: [],
+        risk: { level: 'low', score: 0, signals: ['Low fan-in and limited transitive impact'] },
+        graphNeighborhood: { nodeId: `module:${moduleName}`, outgoingKinds: ['governed_by'], incomingKinds: ['contains'] },
+        provenance: { indexArtifact: '.playbook/repo-index.json', graphArtifact: '.playbook/repo-graph.json' }
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeRepoIndex = (repo: string): void => {
   const indexPath = path.join(repo, '.playbook', 'repo-index.json');
   fs.mkdirSync(path.dirname(indexPath), { recursive: true });
@@ -54,6 +83,7 @@ describe('ask --repo-context', () => {
   it('composes --module with --repo-context for narrowed indexed context', async () => {
     const repo = createRepo('playbook-cli-ask-repo-context-module');
     writeRepoIndex(repo);
+    writeModuleDigest(repo, 'workouts');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const exitCode = await runAsk(repo, ['how', 'does', 'this', 'module', 'work?', '--module', 'workouts'], {
@@ -68,6 +98,7 @@ describe('ask --repo-context', () => {
     expect(payload.repoContext.enabled).toBe(true);
     expect(payload.context.module.module.name).toBe('workouts');
     expect(payload.context.sources).toContainEqual({ type: 'module', name: 'workouts' });
+    expect(payload.context.sources).toContainEqual({ type: 'module-digest', path: '.playbook/context/modules/workouts.json' });
     expect(payload.context.sources).toContainEqual({ type: 'ai-contract', path: 'generated-ai-contract-fallback' });
 
     logSpy.mockRestore();
@@ -101,6 +132,7 @@ describe('ask --repo-context', () => {
     });
     expect(String(payload.question)).toBe('what modules exist?');
     expect(payload.context.sources).toContainEqual({ type: 'repo-index', path: '.playbook/repo-index.json' });
+    expect(payload.context.sources).toContainEqual({ type: 'repo-graph', path: '.playbook/repo-graph.json' });
     expect(payload.context.sources).toContainEqual({ type: 'ai-contract', path: 'generated-ai-contract-fallback' });
 
     logSpy.mockRestore();

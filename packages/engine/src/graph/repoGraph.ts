@@ -28,6 +28,8 @@ export type RepositoryGraph = {
   stats: {
     nodeCount: number;
     edgeCount: number;
+    nodeKinds: Partial<Record<RepositoryGraphNodeKind, number>>;
+    edgeKinds: Partial<Record<RepositoryGraphEdgeKind, number>>;
   };
 };
 
@@ -38,6 +40,8 @@ export type RepositoryGraphSummary = {
   stats: {
     nodeCount: number;
     edgeCount: number;
+    nodeKinds: Partial<Record<RepositoryGraphNodeKind, number>>;
+    edgeKinds: Partial<Record<RepositoryGraphEdgeKind, number>>;
   };
   nodeKinds: RepositoryGraphNodeKind[];
   edgeKinds: RepositoryGraphEdgeKind[];
@@ -118,6 +122,12 @@ export const generateRepositoryGraph = (index: RepositoryIndex, generatedAt: Dat
 
   const nodes = sortNodes([repositoryNode, ...moduleNodes, ...ruleNodes]);
   const edges = sortEdges([...containmentEdges, ...dependencyEdges, ...governanceEdges]);
+  const nodeKinds = Object.fromEntries(
+    toSortedUnique(nodes.map((node) => node.kind)).map((kind) => [kind, nodes.filter((node) => node.kind === kind).length])
+  ) as Partial<Record<RepositoryGraphNodeKind, number>>;
+  const edgeKinds = Object.fromEntries(
+    toSortedUnique(edges.map((edge) => edge.kind)).map((kind) => [kind, edges.filter((edge) => edge.kind === kind).length])
+  ) as Partial<Record<RepositoryGraphEdgeKind, number>>;
 
   return {
     schemaVersion: REPOSITORY_GRAPH_SCHEMA_VERSION,
@@ -127,7 +137,9 @@ export const generateRepositoryGraph = (index: RepositoryIndex, generatedAt: Dat
     edges,
     stats: {
       nodeCount: nodes.length,
-      edgeCount: edges.length
+      edgeCount: edges.length,
+      nodeKinds,
+      edgeKinds
     }
   };
 };
