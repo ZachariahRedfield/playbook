@@ -16,7 +16,7 @@ This keeps architecture reasoning explicit and reproducible for agents working i
 ### Why `playbook` (unscoped) is not the npx target
 
 - WHAT: Treat unscoped `playbook` as unavailable for onboarding commands.
-- WHY: The unscoped npm package name is already taken, so `npx playbook ...` cannot be the reliable install-free path.
+- WHY: The unscoped npm package name is already taken, so `npx <unscoped package name> ...` cannot be the reliable install-free path.
 
 ### Preferred install-free bootstrap
 

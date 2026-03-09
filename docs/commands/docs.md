@@ -1,6 +1,6 @@
 # `playbook docs audit`
 
-`playbook docs audit` validates Playbook documentation governance using deterministic, path-based checks.
+`playbook docs audit` validates Playbook documentation governance with deterministic guardrails for the active docs canon.
 
 ## Usage
 
@@ -10,14 +10,14 @@ playbook docs audit --json
 playbook docs audit --ci --json
 ```
 
-## Checks (v1)
+## Checks
 
-1. Required documentation anchors exist.
-2. Single strategic roadmap path policy.
-3. Idea/planning language leakage outside approved planning surfaces.
-4. Documentation responsibility boundary overlap checks.
-5. Improvement backlog + archive hygiene checks.
-6. Cleanup/migration tracker de-duplication reporting.
+1. Canonical required-anchor checks for current active docs and roadmap/archive anchors.
+2. Single-roadmap and planning-surface governance (planning language stays on approved planning surfaces).
+3. Active-surface package/install consistency (`@fawxzzy/playbook` and no unscoped/legacy package examples).
+4. Active-surface legacy-link detection for superseded compatibility-stub doc paths.
+5. Front-door canonical-ladder drift checks (`ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify -> plan -> apply -> verify`) with `analyze` treated as compatibility/lightweight.
+6. Archive and compatibility-stub hygiene (general archive naming conventions, intentional redirect stubs, and cleanup-candidate reporting for ad hoc trackers).
 
 ## CI behavior
 
@@ -26,9 +26,7 @@ playbook docs audit --ci --json
 
 ## Governance patterns
 
-- Pattern: Documentation governance should be executable through Playbook commands rather than enforced only through prose.
-- Pattern: `playbook docs audit` turns documentation architecture into a deterministic repository contract.
-- Rule: Playbook repositories should have a single strategic roadmap and a separate improvement backlog.
-- Rule: Idea/planning content belongs in approved planning surfaces, not scattered across runtime or workflow docs.
-- Failure Mode: Documentation responsibility drift occurs when roadmap, backlog, workflow, and notes content begin overlapping again.
-- Failure Mode: Cleanup guidance becomes duplicated when one-off migration docs remain active after governance rules have been formalized.
+- Pattern: Documentation architecture is an executable contract enforced by Playbook commands.
+- Rule: Active docs must describe the deterministic runtime/trust-layer model and the scoped public package surface.
+- Rule: Compatibility stubs and archive/history docs are intentionally preserved but excluded from active-surface drift checks.
+- Failure Mode: Active-surface drift occurs when front-door docs regress to legacy package examples, superseded doc links, or analyze-first serious-user workflows.

@@ -3,11 +3,17 @@
   "command": "doctor",
   "status": "error",
   "summary": {
-    "errors": 6,
+    "errors": 13,
     "warnings": 9,
     "info": 2
   },
   "findings": [
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (AGENTS.md)"
+    },
     {
       "category": "Docs",
       "severity": "error",
@@ -18,7 +24,19 @@
       "category": "Docs",
       "severity": "error",
       "id": "doctor.docs.docs.required-anchor.missing",
-      "message": "Required documentation anchor is missing. (docs/archive/)"
+      "message": "Required documentation anchor is missing. (docs/archive/README.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/commands/README.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/CONSUMER_INTEGRATION_CONTRACT.md)"
     },
     {
       "category": "Docs",
@@ -30,19 +48,43 @@
       "category": "Docs",
       "severity": "error",
       "id": "doctor.docs.docs.required-anchor.missing",
-      "message": "Required documentation anchor is missing. (docs/PLAYBOOK_DEV_WORKFLOW.md)"
-    },
-    {
-      "category": "Docs",
-      "severity": "error",
-      "id": "doctor.docs.docs.required-anchor.missing",
-      "message": "Required documentation anchor is missing. (docs/PLAYBOOK_IMPROVEMENTS.md)"
+      "message": "Required documentation anchor is missing. (docs/PLAYBOOK_BUSINESS_STRATEGY.md)"
     },
     {
       "category": "Docs",
       "severity": "error",
       "id": "doctor.docs.docs.required-anchor.missing",
       "message": "Required documentation anchor is missing. (docs/PLAYBOOK_PRODUCT_ROADMAP.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/roadmap/IMPROVEMENTS_BACKLOG.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/roadmap/README.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (docs/roadmap/ROADMAP.json)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (packages/cli/README.md)"
+    },
+    {
+      "category": "Docs",
+      "severity": "error",
+      "id": "doctor.docs.docs.required-anchor.missing",
+      "message": "Required documentation anchor is missing. (README.md)"
     },
     {
       "category": "Architecture",
