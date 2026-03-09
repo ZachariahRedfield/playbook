@@ -91,12 +91,26 @@ playbook query modules --json
 playbook explain architecture --json
 playbook ask "where should a new feature live?" --repo-context --json
 playbook verify --json
-playbook plan --json
+playbook plan --json > .playbook/plan.json
 playbook apply --from-plan .playbook/plan.json
 playbook verify --json
 ```
 
 `analyze` remains available for compatibility and lightweight stack inspection, but it is no longer the sole serious quick-start path.
+
+For local branch-accurate validation inside this repository, prefer:
+
+```bash
+node packages/cli/dist/main.js plan --json > .playbook/plan.json
+node packages/cli/dist/main.js apply --from-plan .playbook/plan.json --json
+```
+
+PowerShell-safe local equivalent:
+
+```powershell
+node packages/cli/dist/main.js plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8
+node packages/cli/dist/main.js apply --from-plan .playbook/plan.json --json
+```
 
 For a no-install preview flow:
 
@@ -115,7 +129,10 @@ npm install
 npx @fawxzzy/playbook ai-context --json
 npx @fawxzzy/playbook index --json
 npx @fawxzzy/playbook verify --json
+# bash/zsh
 npx @fawxzzy/playbook plan --json > .playbook/plan.json
+# PowerShell-safe
+npx @fawxzzy/playbook plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8
 npx @fawxzzy/playbook apply --from-plan .playbook/plan.json
 npx @fawxzzy/playbook verify --json
 ```

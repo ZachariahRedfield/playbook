@@ -58,12 +58,85 @@ type PlanSelection = {
   remediation: PlanRemediation;
 };
 
+type DecodedPlanPayload = {
+  text: string;
+  likelyShellEncodingIssue: boolean;
+};
+
+const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
+const UTF16LE_BOM = Buffer.from([0xff, 0xfe]);
+const UTF16BE_BOM = Buffer.from([0xfe, 0xff]);
+
+const stripLeadingBom = (text: string): string => (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
+
+const inferUtf16WithoutBom = (buffer: Buffer): 'utf16le' | 'utf16be' | null => {
+  if (buffer.length < 4 || buffer.length % 2 !== 0) {
+    return null;
+  }
+
+  let evenNulls = 0;
+  let oddNulls = 0;
+  const pairCount = Math.floor(buffer.length / 2);
+  for (let index = 0; index < buffer.length; index += 2) {
+    if (buffer[index] === 0x00) {
+      evenNulls += 1;
+    }
+    if (buffer[index + 1] === 0x00) {
+      oddNulls += 1;
+    }
+  }
+
+  const threshold = Math.max(2, Math.floor(pairCount * 0.6));
+  if (oddNulls >= threshold && evenNulls === 0) {
+    return 'utf16le';
+  }
+
+  if (evenNulls >= threshold && oddNulls === 0) {
+    return 'utf16be';
+  }
+
+  return null;
+};
+
+const decodePlanPayload = (buffer: Buffer): DecodedPlanPayload => {
+  if (buffer.subarray(0, UTF8_BOM.length).equals(UTF8_BOM)) {
+    return { text: stripLeadingBom(buffer.toString('utf8')), likelyShellEncodingIssue: false };
+  }
+
+  if (buffer.subarray(0, UTF16LE_BOM.length).equals(UTF16LE_BOM)) {
+    return { text: stripLeadingBom(buffer.subarray(UTF16LE_BOM.length).toString('utf16le')), likelyShellEncodingIssue: true };
+  }
+
+  if (buffer.subarray(0, UTF16BE_BOM.length).equals(UTF16BE_BOM)) {
+    const littleEndianBuffer = Buffer.from(buffer.subarray(UTF16BE_BOM.length));
+    littleEndianBuffer.swap16();
+    return { text: stripLeadingBom(littleEndianBuffer.toString('utf16le')), likelyShellEncodingIssue: true };
+  }
+
+  const inferredUtf16 = inferUtf16WithoutBom(buffer);
+  if (inferredUtf16 === 'utf16le') {
+    return { text: stripLeadingBom(buffer.toString('utf16le')), likelyShellEncodingIssue: true };
+  }
+
+  if (inferredUtf16 === 'utf16be') {
+    const littleEndianBuffer = Buffer.from(buffer);
+    littleEndianBuffer.swap16();
+    return { text: stripLeadingBom(littleEndianBuffer.toString('utf16le')), likelyShellEncodingIssue: true };
+  }
+
+  return { text: stripLeadingBom(buffer.toString('utf8')), likelyShellEncodingIssue: false };
+};
+
 const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
   const resolvedPath = path.resolve(cwd, fromPlan);
 
   let rawPayload = '';
+  let likelyShellEncodingIssue = false;
   try {
-    rawPayload = fs.readFileSync(resolvedPath, 'utf8');
+    const rawBytes = fs.readFileSync(resolvedPath);
+    const decodedPayload = decodePlanPayload(rawBytes);
+    rawPayload = decodedPayload.text;
+    likelyShellEncodingIssue = decodedPayload.likelyShellEncodingIssue;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Unable to read plan file at ${resolvedPath}: ${message}`);
@@ -74,7 +147,10 @@ const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
     payload = JSON.parse(rawPayload);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid plan JSON in ${resolvedPath}: ${message}`);
+    const encodingHint = likelyShellEncodingIssue
+      ? ' The file appears to use a shell-specific encoding (for example UTF-16/BOM from PowerShell redirection). Re-write the plan file as UTF-8 and retry.'
+      : '';
+    throw new Error(`Invalid plan JSON in ${resolvedPath}: ${message}.${encodingHint}`);
   }
 
   const parsedPlan = parsePlanArtifact(payload);

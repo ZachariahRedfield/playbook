@@ -4,6 +4,9 @@
 
 ### WHAT
 
+- Strengthened `playbook apply --from-plan` plan loading to decode UTF-8 (with/without BOM) and UTF-16 (LE/BE BOM) artifacts, including conservative UTF-16 detection when shell redirection emits NUL-patterned output.
+- Improved invalid plan JSON diagnostics to preserve file path context and provide actionable shell-encoding guidance when payload bytes suggest PowerShell-style encoding artifacts.
+- Updated workflow docs with explicit PowerShell-safe plan capture examples and branch-local `node packages/cli/dist/main.js` commands for deterministic local validation.
 - Added PR-based `playbook-demo` refresh automation via `scripts/demo-refresh.mjs` and `.github/workflows/demo-refresh.yml`, with allowlisted artifact staging and `PLAYBOOK_CLI_PATH` injection.
 - Hardened `scripts/demo-refresh.mjs` for production use by detecting npm/pnpm/yarn refresh command runners from lockfiles, removing `bash -lc` execution in default paths, and adding explicit push-mode git identity + token-auth setup.
 - Updated `.github/workflows/demo-refresh.yml` permissions and push-mode environment setup to support reliable branch push + PR create/update in `playbook-demo` while preserving dry-run defaults for schedule/push triggers.
@@ -19,6 +22,7 @@
 
 ### WHY
 
+- Prevent Windows/PowerShell plan redirection encoding differences from breaking deterministic `apply --from-plan` workflows while keeping plan contract validation strict.
 - Prevent CI/local failures caused by missing `@rollup/rollup-linux-x64-gnu` under frozen lockfile installs.
 - Eliminate ESLint v9 flat-config warnings caused by `.eslintignore`.
 - Make cross-repo demo refresh automation deterministic across local maintainer and GitHub Actions execution contexts.

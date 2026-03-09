@@ -187,6 +187,10 @@ Use the following intent model when deciding whether command outputs stay local,
   - Commit guidance: usually gitignored; commit only when intentionally maintaining a deterministic contract/example snapshot.
 - `plan`
   - Default intent: **reviewed automation artifact** (for example `.playbook/plan.json`) used for deterministic remediation workflows and CI/agent handoff.
+  - Safe capture examples:
+    - bash/zsh: `playbook plan --json > .playbook/plan.json`
+    - PowerShell: `playbook plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8`
+    - local Playbook repo path: `node packages/cli/dist/main.js plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8`
   - Commit guidance: typically ephemeral; commit only when a repository explicitly treats plan artifacts as stable review contracts.
 - `query` / `deps` / `ask` / `explain`
   - Default intent: **runtime reads and derived outputs** from `.playbook/repo-index.json`; results are usually ephemeral unless exported intentionally for docs/contracts.

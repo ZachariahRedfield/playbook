@@ -13,6 +13,14 @@ const loadVerifyRules = vi.fn();
 vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
+
+const createPlanPayload = () => ({
+  schemaVersion: '1.0',
+  command: 'plan',
+  remediation: { status: 'ready', totalSteps: 1, unresolvedFailures: 0 },
+  tasks: [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }]
+});
+
 describe('runApply', () => {
   beforeEach(() => {
     generatePlanContract.mockReset();
@@ -80,15 +88,7 @@ describe('runApply', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-'));
     const planPath = path.join(tmpRoot, 'plan.json');
 
-    fs.writeFileSync(
-      planPath,
-      JSON.stringify({
-        schemaVersion: '1.0',
-        command: 'plan',
-        remediation: { status: 'ready', totalSteps: 1, unresolvedFailures: 0 },
-        tasks: [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }]
-      })
-    );
+    fs.writeFileSync(planPath, JSON.stringify(createPlanPayload()));
 
     parsePlanArtifact.mockReturnValue({ tasks: [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }] });
     loadVerifyRules.mockResolvedValue([]);
@@ -97,6 +97,46 @@ describe('runApply', () => {
     await runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'plan.json' });
 
     expect(generatePlanContract).not.toHaveBeenCalled();
+    expect(applyExecutionPlan).toHaveBeenCalledWith(
+      tmpRoot,
+      [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }],
+      { dryRun: false, handlers: {} }
+    );
+  });
+
+  it('loads UTF-8 plan payload with BOM from --from-plan input', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-utf8-bom-'));
+    const planPath = path.join(tmpRoot, 'plan.json');
+
+    fs.writeFileSync(planPath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(JSON.stringify(createPlanPayload()), 'utf8')]));
+
+    parsePlanArtifact.mockReturnValue({ tasks: [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }] });
+    loadVerifyRules.mockResolvedValue([]);
+    applyExecutionPlan.mockResolvedValue({ results: [], summary: { applied: 0, skipped: 0, unsupported: 0, failed: 0 } });
+
+    await runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'plan.json' });
+
+    expect(applyExecutionPlan).toHaveBeenCalledWith(
+      tmpRoot,
+      [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }],
+      { dryRun: false, handlers: {} }
+    );
+  });
+
+  it('loads UTF-16LE BOM plan payload from --from-plan input', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-utf16le-bom-'));
+    const planPath = path.join(tmpRoot, 'plan.json');
+
+    fs.writeFileSync(planPath, Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(JSON.stringify(createPlanPayload()), 'utf16le')]));
+
+    parsePlanArtifact.mockReturnValue({ tasks: [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }] });
+    loadVerifyRules.mockResolvedValue([]);
+    applyExecutionPlan.mockResolvedValue({ results: [], summary: { applied: 0, skipped: 0, unsupported: 0, failed: 0 } });
+
+    await runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'plan.json' });
+
     expect(applyExecutionPlan).toHaveBeenCalledWith(
       tmpRoot,
       [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }],
