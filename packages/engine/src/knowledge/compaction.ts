@@ -7,6 +7,7 @@ type CompactionEvidence = {
 };
 
 export type InternalCompactionCandidate = {
+  candidateRef?: string;
   title: string;
   trigger?: string;
   context?: string;
@@ -46,6 +47,71 @@ export type CompactionDecision =
   | { bucket: 'attach'; reason: CompactionDecisionReason; targetPatternId: string }
   | { bucket: 'merge'; reason: CompactionDecisionReason; mergeTargetPatternId: string }
   | { bucket: 'add'; reason: CompactionDecisionReason };
+
+export type CompactionReviewReasonCode =
+  | CompactionDecisionReason
+  | 'discard-insufficient-signal'
+  | 'discard-already-canonical'
+  | 'attach-evidence-to-pattern'
+  | 'merge-lexical-variance'
+  | 'add-novel-pattern';
+
+export type CompactionReviewArtifact = {
+  candidateRef: string;
+  canonicalFingerprint: string;
+  canonicalCandidate: CanonicalCompactionCandidate;
+  bucket: CompactionDecision['bucket'];
+  reasonCodes: CompactionReviewReasonCode[];
+  explanations: string[];
+  targetPatternId?: string;
+  mergeTargetPatternId?: string;
+  discardRationale?: string;
+  attachRationale?: string;
+  mergeRationale?: string;
+  noveltyRationale?: string;
+  comparison?: {
+    comparedPatternId: string;
+    matchingFields: string[];
+    differingFields: string[];
+  };
+};
+
+const REVIEW_REASON_ORDER: Record<CompactionReviewReasonCode, number> = {
+  'empty-mechanism': 10,
+  'exact-duplicate': 20,
+  'supports-existing-pattern': 30,
+  'wording-variant-same-mechanism': 40,
+  'new-pattern': 50,
+  'discard-insufficient-signal': 60,
+  'discard-already-canonical': 70,
+  'attach-evidence-to-pattern': 80,
+  'merge-lexical-variance': 90,
+  'add-novel-pattern': 100
+};
+
+const REVIEW_REASON_MESSAGES: Record<CompactionReviewReasonCode, string> = {
+  'empty-mechanism': 'Candidate mechanism is empty after canonicalization.',
+  'exact-duplicate': 'Candidate fingerprint exactly matches an existing canonical pattern.',
+  'supports-existing-pattern': 'Candidate supports an existing pattern identity and should attach evidence.',
+  'wording-variant-same-mechanism': 'Candidate uses different wording but resolves to the same mechanism fingerprint.',
+  'new-pattern': 'Candidate does not match existing identity or mechanism fingerprints.',
+  'discard-insufficient-signal': 'Discarded because canonical mechanism signal is insufficient for retention.',
+  'discard-already-canonical': 'Discarded because the content is already represented canonically.',
+  'attach-evidence-to-pattern': 'Attach decision preserves existing pattern while adding supporting evidence context.',
+  'merge-lexical-variance': 'Merge decision collapses lexical variation into an existing canonical mechanism.',
+  'add-novel-pattern': 'Add decision preserves a novel canonical mechanism for future matching.'
+};
+
+const REVIEW_COMPARISON_FIELDS: (keyof CanonicalCompactionCandidate)[] = [
+  'title',
+  'trigger',
+  'context',
+  'mechanism',
+  'invariant',
+  'response',
+  'examples',
+  'evidence'
+];
 
 const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim().toLowerCase();
 
@@ -118,6 +184,11 @@ const canonicalizePattern = (pattern: InternalCompactionPattern): CanonicalCompa
   ...canonicalizeCompactionCandidate(pattern)
 });
 
+const sortCanonicalPatterns = (patterns: InternalCompactionPattern[]): CanonicalCompactionPattern[] =>
+  patterns
+    .map(canonicalizePattern)
+    .sort((a, b) => a.id.localeCompare(b.id) || fingerprintCompactionCandidate(a).localeCompare(fingerprintCompactionCandidate(b)));
+
 const candidateIdentity = (candidate: CanonicalCompactionCandidate): Omit<CanonicalCompactionCandidate, 'examples' | 'evidence'> & {
   examples: string[];
 } => ({
@@ -137,6 +208,44 @@ const identityFingerprint = (candidate: CanonicalCompactionCandidate): string =>
 const mechanismFingerprint = (candidate: CanonicalCompactionCandidate): string =>
   stableHash(stableStringify({ mechanism: candidate.mechanism, invariant: candidate.invariant }));
 
+const reasonCodesForDecision = (decision: CompactionDecision): CompactionReviewReasonCode[] => {
+  const reasonCodes: CompactionReviewReasonCode[] = [decision.reason];
+
+  if (decision.bucket === 'discard') {
+    reasonCodes.push(decision.reason === 'empty-mechanism' ? 'discard-insufficient-signal' : 'discard-already-canonical');
+  }
+
+  if (decision.bucket === 'attach') reasonCodes.push('attach-evidence-to-pattern');
+  if (decision.bucket === 'merge') reasonCodes.push('merge-lexical-variance');
+  if (decision.bucket === 'add') reasonCodes.push('add-novel-pattern');
+
+  return reasonCodes.sort((a, b) => REVIEW_REASON_ORDER[a] - REVIEW_REASON_ORDER[b] || a.localeCompare(b));
+};
+
+const compareCanonicalCandidates = (
+  left: CanonicalCompactionCandidate,
+  right: CanonicalCompactionCandidate,
+  comparedPatternId: string
+): CompactionReviewArtifact['comparison'] => {
+  const matchingFields: string[] = [];
+  const differingFields: string[] = [];
+
+  for (const field of REVIEW_COMPARISON_FIELDS) {
+    const leftValue = stableStringify(left[field]);
+    const rightValue = stableStringify(right[field]);
+    if (leftValue === rightValue) matchingFields.push(field);
+    else differingFields.push(field);
+  }
+
+  return {
+    comparedPatternId,
+    matchingFields,
+    differingFields
+  };
+};
+
+const explainReasonCodes = (codes: CompactionReviewReasonCode[]): string[] => codes.map((code) => REVIEW_REASON_MESSAGES[code]);
+
 export const decideCompactionBucket = (
   inputCandidate: InternalCompactionCandidate,
   existingPatterns: InternalCompactionPattern[]
@@ -148,9 +257,7 @@ export const decideCompactionBucket = (
     return { decision: { bucket: 'discard', reason: 'empty-mechanism' }, canonicalCandidate, fingerprint };
   }
 
-  const sortedPatterns = existingPatterns
-    .map(canonicalizePattern)
-    .sort((a, b) => a.id.localeCompare(b.id) || fingerprintCompactionCandidate(a).localeCompare(fingerprintCompactionCandidate(b)));
+  const sortedPatterns = sortCanonicalPatterns(existingPatterns);
 
   const candidateIdentityFingerprint = identityFingerprint(canonicalCandidate);
   const candidateMechanismFingerprint = mechanismFingerprint(canonicalCandidate);
@@ -187,4 +294,48 @@ export const decideCompactionBucket = (
     canonicalCandidate,
     fingerprint
   };
+};
+
+export const buildCompactionReviewArtifact = (
+  inputCandidate: InternalCompactionCandidate,
+  existingPatterns: InternalCompactionPattern[]
+): CompactionReviewArtifact => {
+  const { decision, canonicalCandidate, fingerprint } = decideCompactionBucket(inputCandidate, existingPatterns);
+  const reasonCodes = reasonCodesForDecision(decision);
+  const explanations = explainReasonCodes(reasonCodes);
+  const candidateRef = inputCandidate.candidateRef?.trim() || fingerprint;
+  const sortedPatterns = sortCanonicalPatterns(existingPatterns);
+
+  const artifact: CompactionReviewArtifact = {
+    candidateRef,
+    canonicalFingerprint: fingerprint,
+    canonicalCandidate,
+    bucket: decision.bucket,
+    reasonCodes,
+    explanations
+  };
+
+  if (decision.bucket === 'discard') {
+    artifact.discardRationale = explanations.join(' ');
+  }
+
+  if (decision.bucket === 'attach') {
+    artifact.targetPatternId = decision.targetPatternId;
+    artifact.attachRationale = explanations.join(' ');
+    const target = sortedPatterns.find((pattern) => pattern.id === decision.targetPatternId);
+    if (target) artifact.comparison = compareCanonicalCandidates(canonicalCandidate, target, target.id);
+  }
+
+  if (decision.bucket === 'merge') {
+    artifact.mergeTargetPatternId = decision.mergeTargetPatternId;
+    artifact.mergeRationale = explanations.join(' ');
+    const target = sortedPatterns.find((pattern) => pattern.id === decision.mergeTargetPatternId);
+    if (target) artifact.comparison = compareCanonicalCandidates(canonicalCandidate, target, target.id);
+  }
+
+  if (decision.bucket === 'add') {
+    artifact.noveltyRationale = explanations.join(' ');
+  }
+
+  return artifact;
 };

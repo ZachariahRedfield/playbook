@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildCompactionReviewArtifact,
   canonicalizeCompactionCandidate,
   decideCompactionBucket,
   fingerprintCompactionCandidate,
@@ -64,5 +65,44 @@ describe('knowledge compaction (internal deterministic slice)', () => {
     const decisionA = decideCompactionBucket(variant, existingPatternsFixture);
     const decisionB = decideCompactionBucket(variant, existingPatternsFixture);
     expect(decisionA).toEqual(decisionB);
+  });
+
+  it('produces deterministic review artifacts with stable reason ordering', () => {
+    const baseline = buildCompactionReviewArtifact(mergeCandidateFixture, existingPatternsFixture);
+    const reorderedInput = {
+      ...mergeCandidateFixture,
+      evidence: [...(mergeCandidateFixture.evidence ?? [])].reverse(),
+      examples: [...(mergeCandidateFixture.examples ?? [])].reverse()
+    };
+    const reorderedPatterns: InternalCompactionPattern[] = [...existingPatternsFixture].reverse();
+    const reordered = buildCompactionReviewArtifact(reorderedInput, reorderedPatterns);
+
+    expect(reordered).toEqual(baseline);
+    expect(baseline.reasonCodes).toEqual(['wording-variant-same-mechanism', 'merge-lexical-variance']);
+    expect(baseline.explanations).toEqual([
+      'Candidate uses different wording but resolves to the same mechanism fingerprint.',
+      'Merge decision collapses lexical variation into an existing canonical mechanism.'
+    ]);
+  });
+
+  it('provides deterministic rationale for attach/discard/add buckets', () => {
+    const attachArtifact = buildCompactionReviewArtifact(attachCandidateFixture, existingPatternsFixture);
+    expect(attachArtifact).toMatchObject({
+      bucket: 'attach',
+      reasonCodes: ['supports-existing-pattern', 'attach-evidence-to-pattern'],
+      targetPatternId: 'pattern-cli-local-build'
+    });
+
+    const discardArtifact = buildCompactionReviewArtifact(discardCandidateFixture, existingPatternsFixture);
+    expect(discardArtifact).toMatchObject({
+      bucket: 'discard',
+      reasonCodes: ['empty-mechanism', 'discard-insufficient-signal']
+    });
+
+    const addArtifact = buildCompactionReviewArtifact(addCandidateFixture, existingPatternsFixture);
+    expect(addArtifact).toMatchObject({
+      bucket: 'add',
+      reasonCodes: ['new-pattern', 'add-novel-pattern']
+    });
   });
 });

@@ -67,6 +67,12 @@ If docs and implementation disagree, treat implementation as source of truth and
 
 Command reference: [`playbook docs audit`](docs.md).
 
+## Internal knowledge compaction status (no public command surface yet)
+
+- Compaction currently exists as internal deterministic engine behavior, not as a discoverable top-level CLI command.
+- The current internal slice includes canonicalization, deterministic bucketing (`discard | attach | merge | add`), and deterministic review artifacts layered on top of bucket decisions.
+- Review artifacts use canonical reason codes as the machine contract; human-readable rationale is derived deterministically from those codes.
+- Promotion workflows and long-lived pattern storage remain future roadmap work.
 
 ## Repo-aware ask (`playbook ask --repo-context`)
 
