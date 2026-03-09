@@ -9,15 +9,27 @@ const createFixtureRepo = (): string => {
   fs.mkdirSync(path.join(root, 'docs', 'archive'), { recursive: true });
 
   const files: Record<string, string> = {
+    'README.md': '# README\nai-context ai-contract context verify plan apply\n',
     'AGENTS.md': '# AGENTS\n',
-    'docs/PLAYBOOK_PRODUCT_ROADMAP.md': '# Strategic Roadmap\n',
-    'docs/PLAYBOOK_IMPROVEMENTS.md': '# Improvements Backlog\n\nSee docs/archive/ for completed items.\n',
-    'docs/PLAYBOOK_NOTES.md': '# Notes\n',
+    'docs/index.md': '# Docs Index\nai-context ai-contract context verify plan apply\n',
     'docs/ARCHITECTURE.md': '# Architecture\n',
-    'docs/PLAYBOOK_DEV_WORKFLOW.md': '# Development Workflow\n',
-    'docs/index.md': '# Docs Index\n',
-    'docs/AI_AGENT_CONTEXT.md': '# AI Context\n',
-    'docs/archive/PLAYBOOK_IMPROVEMENTS_2026.md': '# Archived Improvements\n'
+    'docs/commands/README.md': '# Commands\n',
+    'docs/commands/docs.md': '# docs audit\n',
+    'docs/PLAYBOOK_PRODUCT_ROADMAP.md': '# Strategic Roadmap\n',
+    'docs/PLAYBOOK_BUSINESS_STRATEGY.md': '# Business\n',
+    'docs/CONSUMER_INTEGRATION_CONTRACT.md': '# Contract\n',
+    'docs/AI_AGENT_CONTEXT.md': '# AI Context\nai-context ai-contract context verify plan apply\n',
+    'docs/ONBOARDING_DEMO.md': '# Demo\nai-context ai-contract context verify plan apply\n',
+    'docs/REFERENCE/cli.md': '# CLI\n',
+    'docs/FAQ.md': '# FAQ\nai-context ai-contract context verify plan apply\n',
+    'docs/GITHUB_SETUP.md': '# Setup\n',
+    'docs/roadmap/README.md': '# Roadmap\n',
+    'docs/roadmap/ROADMAP.json': '{}\n',
+    'docs/roadmap/IMPROVEMENTS_BACKLOG.md': '# Backlog\n',
+    'docs/RELEASING.md': '# Releasing\n',
+    'docs/archive/README.md': '# Archive\n',
+    'docs/archive/PLAYBOOK_IMPROVEMENTS_2026.md': '# Archived Improvements\n',
+    'packages/cli/README.md': '# Package\nai-context ai-contract context verify plan apply\n'
   };
 
   for (const [relativePath, content] of Object.entries(files)) {
@@ -36,7 +48,7 @@ describe('runDocs', () => {
 
   it('detects missing required anchors', async () => {
     const repo = createFixtureRepo();
-    fs.rmSync(path.join(repo, 'docs', 'PLAYBOOK_IMPROVEMENTS.md'));
+    fs.rmSync(path.join(repo, 'docs', 'roadmap', 'IMPROVEMENTS_BACKLOG.md'));
     const { runDocs } = await import('./docs.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -46,7 +58,7 @@ describe('runDocs', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.findings).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ ruleId: 'docs.required-anchor.missing', path: 'docs/PLAYBOOK_IMPROVEMENTS.md', level: 'error' })
+        expect.objectContaining({ ruleId: 'docs.required-anchor.missing', path: 'docs/roadmap/IMPROVEMENTS_BACKLOG.md', level: 'error' })
       ])
     );
   });
@@ -82,7 +94,7 @@ describe('runDocs', () => {
           ruleId: 'docs.idea-leakage.detected',
           path: 'docs/AI_AGENT_CONTEXT.md',
           level: 'warning',
-          suggestedDestination: 'docs/PLAYBOOK_IMPROVEMENTS.md'
+          suggestedDestination: 'docs/roadmap/IMPROVEMENTS_BACKLOG.md'
         })
       ])
     );
@@ -98,13 +110,13 @@ describe('runDocs', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.schemaVersion).toBe('1.0');
     expect(payload.command).toBe('docs audit');
-    expect(payload.summary).toEqual(expect.objectContaining({ checksRun: 6 }));
+    expect(payload.summary).toEqual(expect.objectContaining({ checksRun: 9 }));
     expect(Array.isArray(payload.findings)).toBe(true);
   });
 
   it('returns policy failure in ci mode when errors are present', async () => {
     const repo = createFixtureRepo();
-    fs.rmSync(path.join(repo, 'docs', 'PLAYBOOK_IMPROVEMENTS.md'));
+    fs.rmSync(path.join(repo, 'docs', 'roadmap', 'IMPROVEMENTS_BACKLOG.md'));
     const { runDocs } = await import('./docs.js');
 
     const exitCode = await runDocs(repo, ['audit'], { ci: true, format: 'json', quiet: true });

@@ -4,34 +4,22 @@
   "ok": false,
   "status": "fail",
   "summary": {
-    "errors": 6,
+    "errors": 13,
     "warnings": 0,
-    "checksRun": 6
+    "checksRun": 9
   },
   "findings": [
     {
       "ruleId": "docs.required-anchor.missing",
       "level": "error",
       "message": "Required documentation anchor is missing.",
-      "path": "docs/PLAYBOOK_PRODUCT_ROADMAP.md"
+      "path": "README.md"
     },
     {
       "ruleId": "docs.required-anchor.missing",
       "level": "error",
       "message": "Required documentation anchor is missing.",
-      "path": "docs/PLAYBOOK_IMPROVEMENTS.md"
-    },
-    {
-      "ruleId": "docs.required-anchor.missing",
-      "level": "error",
-      "message": "Required documentation anchor is missing.",
-      "path": "docs/ARCHITECTURE.md"
-    },
-    {
-      "ruleId": "docs.required-anchor.missing",
-      "level": "error",
-      "message": "Required documentation anchor is missing.",
-      "path": "docs/PLAYBOOK_DEV_WORKFLOW.md"
+      "path": "AGENTS.md"
     },
     {
       "ruleId": "docs.required-anchor.missing",
@@ -43,7 +31,61 @@
       "ruleId": "docs.required-anchor.missing",
       "level": "error",
       "message": "Required documentation anchor is missing.",
-      "path": "docs/archive/"
+      "path": "docs/ARCHITECTURE.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/commands/README.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/PLAYBOOK_PRODUCT_ROADMAP.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/PLAYBOOK_BUSINESS_STRATEGY.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/CONSUMER_INTEGRATION_CONTRACT.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/roadmap/README.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/roadmap/ROADMAP.json"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "docs/archive/README.md"
+    },
+    {
+      "ruleId": "docs.required-anchor.missing",
+      "level": "error",
+      "message": "Required documentation anchor is missing.",
+      "path": "packages/cli/README.md"
     }
   ]
 }

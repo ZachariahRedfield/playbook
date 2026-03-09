@@ -196,7 +196,7 @@ Reusable trigger contract for downstream pilot activation:
 
 1. `docs/roadmap/ROADMAP.json` shows `PB-V04-PLAN-APPLY-001` status as `implemented-hardening` or `implemented`.
 2. `docs/roadmap/ROADMAP.json` shows `PB-V04-ANALYZEPR-001` status as `implemented-hardening` or `implemented`.
-3. The consumer repository passes `npx playbook doctor --ai`.
+3. The consumer repository passes `npx --yes @fawxzzy/playbook doctor --ai`.
 
 When all trigger conditions are true, operator/assistant guidance must explicitly state:
 
