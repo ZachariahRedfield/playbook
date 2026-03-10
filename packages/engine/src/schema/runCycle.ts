@@ -23,8 +23,8 @@ export type RunCycleZettelkastenRefs = {
 };
 
 export type RunCycleStateSpaceRefs = {
-  projection?: 'bloch-v1';
-  bloch?: RunCycleArtifactRef;
+  projection: 'bloch-v1';
+  bloch: RunCycleArtifactRef;
 };
 
 export type RunCycleGraphMemoryRefs = {

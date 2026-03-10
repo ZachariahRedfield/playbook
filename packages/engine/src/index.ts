@@ -183,7 +183,14 @@ export type { PatternTopologySignature, PatternEquivalenceClass, PatternVariant,
 
 export { buildStateSpaceSnapshot } from './stateSpace/buildStateSpaceSnapshot.js';
 export type { BuildStateSpaceSnapshotInput } from './stateSpace/buildStateSpaceSnapshot.js';
-export type { StateSpaceSnapshot, BlochAxesV1, BlochVector, GateEvent } from './schema/stateSpace.js';
+export type {
+  StateSpaceSnapshot,
+  BlochAxesV1,
+  BlochVector,
+  GateEvent,
+  BlochProjectionMetadata,
+  BlochTelemetry
+} from './schema/stateSpaceSnapshot.js';
 
 
 export { analyzePlaybookArtifacts } from './meta/analyzePlaybookArtifacts.js';

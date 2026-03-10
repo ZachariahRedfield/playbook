@@ -8,8 +8,6 @@ const repoRoot = process.cwd();
 const runCyclesDir = path.join(repoRoot, '.playbook', 'run-cycles');
 const stateSpaceDir = path.join(repoRoot, '.playbook', 'state-space');
 
-const clamp01 = (value) => Math.min(1, Math.max(0, value));
-
 const parseArgs = () => {
   const args = process.argv.slice(2);
   const runCycleFlag = args.indexOf('--runCycle');
@@ -24,6 +22,7 @@ const parseArgs = () => {
 };
 
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'));
+const digestText = (raw) => `sha256:${createHash('sha256').update(raw).digest('hex')}`;
 
 const getRunCycleFiles = async () => {
   let entries = [];
@@ -32,159 +31,89 @@ const getRunCycleFiles = async () => {
   } catch {
     return [];
   }
+
   const files = [];
   for (const entry of entries) {
     if (!entry.isFile() || !entry.name.endsWith('.json')) {
       continue;
     }
+
     const absolutePath = path.join(runCyclesDir, entry.name);
     const fileStat = await stat(absolutePath);
     files.push({ absolutePath, mtimeMs: fileStat.mtimeMs });
   }
+
   files.sort((a, b) => a.mtimeMs - b.mtimeMs);
   return files;
 };
 
-const normalizeVector = (x, y, z) => {
-  const norm = Math.sqrt((x * x) + (y * y) + (z * z));
-  if (norm === 0) {
-    return [0, 0, 0];
+const loadPreviousSnapshot = async (runCycleFiles, selectedIndex) => {
+  if (selectedIndex <= 0) {
+    return undefined;
   }
-  return [x / norm, y / norm, z / norm];
-};
 
-const toBloch = (metrics) => {
-  const x = (2 * metrics.reuseRate) - 1;
-  const y = (2 * metrics.entropyBudget) - 1;
-  const z = (2 * metrics.loopClosureRate) - 1;
-  const direction = normalizeVector(x, y, z);
-
-  const coherence = clamp01(
-    (0.5 * (1 - metrics.driftScore)) +
-      (0.3 * metrics.compactionGain) +
-      (0.2 * metrics.loopClosureRate)
-  );
-
-  const vector = [
-    coherence * direction[0],
-    coherence * direction[1],
-    coherence * direction[2]
-  ];
-
-  const magnitude = Math.sqrt((vector[0] ** 2) + (vector[1] ** 2) + (vector[2] ** 2));
-  const purity = (1 + (magnitude ** 2)) / 2;
-
-  return {
-    axes: {
-      reuseRateX: x,
-      entropyBudgetY: y,
-      loopClosureRateZ: z
-    },
-    bloch: {
-      direction,
-      coherence,
-      vector,
-      magnitude,
-      purity
+  for (let index = selectedIndex - 1; index >= 0; index -= 1) {
+    const candidate = await readJson(runCycleFiles[index].absolutePath);
+    const stateSpacePath = candidate?.stateSpace?.bloch?.path;
+    if (!stateSpacePath) {
+      continue;
     }
-  };
+
+    const absoluteStateSpacePath = path.join(repoRoot, stateSpacePath);
+    try {
+      return await readJson(absoluteStateSpacePath);
+    } catch {
+      continue;
+    }
+  }
+
+  return undefined;
 };
-
-const angularDistance = (current, previous) => {
-  const dot =
-    (current[0] * previous[0]) +
-    (current[1] * previous[1]) +
-    (current[2] * previous[2]);
-
-  const currentNorm = Math.sqrt((current[0] ** 2) + (current[1] ** 2) + (current[2] ** 2));
-  const previousNorm = Math.sqrt((previous[0] ** 2) + (previous[1] ** 2) + (previous[2] ** 2));
-  const denom = (currentNorm * previousNorm) + 1e-9;
-  const ratio = Math.max(-1, Math.min(1, dot / denom));
-  return Math.acos(ratio);
-};
-
-const toDigest = (raw) => `sha256:${createHash('sha256').update(raw).digest('hex')}`;
 
 const { runCyclePath } = parseArgs();
 const runCycleFiles = await getRunCycleFiles();
-
 if (!runCyclePath && runCycleFiles.length === 0) {
   throw new Error('no run cycles found in .playbook/run-cycles');
 }
 
 const selectedPath = runCyclePath ?? runCycleFiles[runCycleFiles.length - 1].absolutePath;
 const selectedIndex = runCycleFiles.findIndex((file) => file.absolutePath === selectedPath);
-
-let runCycle;
-try {
-  runCycle = await readJson(selectedPath);
-} catch {
-  throw new Error(`unable to read run cycle: ${selectedPath}`);
-}
-const mapped = toBloch(runCycle.metrics);
-
-let angularDistancePrev;
-let previousRunCycle;
-if (selectedIndex > 0) {
-  previousRunCycle = await readJson(runCycleFiles[selectedIndex - 1].absolutePath);
-  const previousMapped = toBloch(previousRunCycle.metrics);
-  angularDistancePrev = angularDistance(mapped.bloch.vector, previousMapped.bloch.vector);
+if (selectedIndex === -1 && !runCyclePath) {
+  throw new Error(`unable to locate run cycle: ${selectedPath}`);
 }
 
-const now = new Date().toISOString();
+const runCycle = await readJson(selectedPath);
 const runCycleRelative = path.relative(repoRoot, selectedPath).replaceAll(path.sep, '/');
-const snapshot = {
-  schemaVersion: '1.0',
-  kind: 'playbook-state-space-snapshot',
-  runCycleId: runCycle.runCycleId,
-  projection: 'bloch-v1',
-  createdAt: now,
-  sourceRunCycle: {
-    path: runCycleRelative
-  },
-  axes: mapped.axes,
-  bloch: {
-    ...mapped.bloch,
-    ...(angularDistancePrev === undefined ? {} : { angularDistancePrev })
-  },
-  gateEvents: [
-    {
-      type: 'projection',
-      at: now,
-      label: 'bloch-v1-metrics-projection',
-      details: {
-        runCycleId: runCycle.runCycleId
-      }
-    },
-    ...(angularDistancePrev === undefined
-      ? []
-      : [
-          {
-            type: 'rotation',
-            at: now,
-            label: 'delta-from-previous-run-cycle',
-            details: {
-              fromRunCycleId: previousRunCycle.runCycleId,
-              toRunCycleId: runCycle.runCycleId,
-              angularDistance: angularDistancePrev
-            }
-          }
-        ])
-  ]
+const runCycleRaw = await readFile(selectedPath, 'utf8');
+const sourceRunCycle = {
+  path: runCycleRelative,
+  digest: digestText(runCycleRaw)
 };
 
+const previousSnapshot = await loadPreviousSnapshot(runCycleFiles, selectedIndex);
+
+const { buildStateSpaceSnapshot } = await import(path.join(repoRoot, 'packages/engine/dist/stateSpace/buildStateSpaceSnapshot.js'));
+const snapshot = buildStateSpaceSnapshot({
+  runCycle,
+  sourceRunCycle,
+  prevSnapshot: previousSnapshot
+});
+
 await mkdir(stateSpaceDir, { recursive: true });
-const outputPath = path.join(stateSpaceDir, `${runCycle.runCycleId}.json`);
-const raw = `${JSON.stringify(snapshot, null, 2)}\n`;
-await writeFile(outputPath, raw, 'utf8');
-const digest = toDigest(raw);
+const outputRelative = `.playbook/state-space/${runCycle.runCycleId}.json`;
+const outputPath = path.join(repoRoot, outputRelative);
+const snapshotRaw = `${JSON.stringify(snapshot, null, 2)}\n`;
+await writeFile(outputPath, snapshotRaw, 'utf8');
 
-console.log(`wrote ${path.relative(repoRoot, outputPath)}`);
-console.log(`digest ${digest}`);
+runCycle.stateSpace = {
+  projection: 'bloch-v1',
+  bloch: {
+    path: outputRelative,
+    digest: digestText(snapshotRaw)
+  }
+};
 
-if (!runCycle.stateSpace) {
-  console.log('RunCycle has no stateSpace field yet. To attach this artifact, set:');
-  console.log(`stateSpace.projection = "bloch-v1"`);
-  console.log(`stateSpace.bloch.path = "${path.relative(repoRoot, outputPath).replaceAll(path.sep, '/')}"`);
-  console.log(`stateSpace.bloch.digest = "${digest}"`);
-}
+await writeFile(selectedPath, `${JSON.stringify(runCycle, null, 2)}\n`, 'utf8');
+
+console.log(`wrote ${outputRelative}`);
+console.log(`updated ${runCycleRelative}`);

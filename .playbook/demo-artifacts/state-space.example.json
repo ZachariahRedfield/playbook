@@ -14,9 +14,17 @@
     "loopClosureRateZ": 0.56
   },
   "bloch": {
-    "direction": [-0.218218, 0.436436, 0.872872],
+    "direction": [
+      -0.218218,
+      0.436436,
+      0.872872
+    ],
     "coherence": 0.64,
-    "vector": [-0.139659, 0.279319, 0.558638],
+    "vector": [
+      -0.139659,
+      0.279319,
+      0.558638
+    ],
     "magnitude": 0.64,
     "purity": 0.64,
     "angularDistancePrev": 0.311
@@ -65,5 +73,28 @@
         "angularDistancePrev": 0.311
       }
     }
-  ]
+  ],
+  "projectionMeta": {
+    "version": "bloch-v1",
+    "disclaimer": "diagnostic-projection-not-quantum-computation",
+    "axisMapping": {
+      "x": "2*reuseRate-1",
+      "y": "1-2*entropyBudget",
+      "z": "2*loopClosureRate-1"
+    },
+    "vectorMapping": {
+      "direction": "normalize([x,y,z])",
+      "purity": "clamp(1-entropyBudget,0,1)",
+      "vector": "direction*purity",
+      "angularDistancePrev": "acos(dot(v_t,v_prev)/(||v_t||*||v_prev||+1e-9))"
+    }
+  },
+  "telemetry": {
+    "inputMetrics": {
+      "reuseRate": 0.43,
+      "entropyBudget": 0.36,
+      "loopClosureRate": 0.78
+    },
+    "epsilon": 1e-09
+  }
 }

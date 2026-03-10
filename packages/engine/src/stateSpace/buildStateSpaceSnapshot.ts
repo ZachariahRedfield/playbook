@@ -1,5 +1,5 @@
 import type { RunCycle, RunCycleArtifactRef, RunCycleMetrics } from '../schema/runCycle.js';
-import type { GateEvent, StateSpaceSnapshot } from '../schema/stateSpace.js';
+import type { GateEvent, StateSpaceSnapshot } from '../schema/stateSpaceSnapshot.js';
 
 type BuildStateSpaceSnapshotInput = {
   runCycle: RunCycle;
@@ -11,6 +11,7 @@ type BuildStateSpaceSnapshotInput = {
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 const round6 = (value: number): number => Math.round(value * 1_000_000) / 1_000_000;
+const EPSILON = 1e-9 as const;
 
 const normalize3 = (x: number, y: number, z: number): [number, number, number] => {
   const norm = Math.sqrt(x * x + y * y + z * z);
@@ -72,8 +73,8 @@ const toAngularDistance = (
 ): number | undefined => {
   const currentMag = Math.sqrt(current[0] ** 2 + current[1] ** 2 + current[2] ** 2);
   const previousMag = Math.sqrt(previous[0] ** 2 + previous[1] ** 2 + previous[2] ** 2);
-  const denom = currentMag * previousMag;
-  if (denom <= Number.EPSILON) {
+  const denom = currentMag * previousMag + EPSILON;
+  if (currentMag <= Number.EPSILON || previousMag <= Number.EPSILON) {
     return undefined;
   }
 
@@ -106,6 +107,29 @@ export const buildStateSpaceSnapshot = (input: BuildStateSpaceSnapshotInput): St
     kind: 'playbook-state-space-snapshot',
     runCycleId: input.runCycle.runCycleId,
     projection: 'bloch-v1',
+    projectionMeta: {
+      version: 'bloch-v1',
+      disclaimer: 'diagnostic-projection-not-quantum-computation',
+      axisMapping: {
+        x: '2*reuseRate-1',
+        y: '1-2*entropyBudget',
+        z: '2*loopClosureRate-1'
+      },
+      vectorMapping: {
+        direction: 'normalize([x,y,z])',
+        purity: 'clamp(1-entropyBudget,0,1)',
+        vector: 'direction*purity',
+        angularDistancePrev: 'acos(dot(v_t,v_prev)/(||v_t||*||v_prev||+1e-9))'
+      }
+    },
+    telemetry: {
+      inputMetrics: {
+        reuseRate: metrics.reuseRate,
+        entropyBudget: metrics.entropyBudget,
+        loopClosureRate: metrics.loopClosureRate
+      },
+      epsilon: EPSILON
+    },
     createdAt: input.createdAt ?? input.runCycle.createdAt,
     sourceRunCycle: input.sourceRunCycle,
     axes: {

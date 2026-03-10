@@ -4,9 +4,11 @@ coverage
 .tmp
 
 .playbook/
+.playbook/*
+!.playbook/
+!.playbook/pr-metadata.json
+!.playbook/demo-artifacts/
+!.playbook/demo-artifacts/*.json
 merged*.json
 merged*.md
 test-chat*.md
-
-!.playbook/
-!.playbook/pr-metadata.json
