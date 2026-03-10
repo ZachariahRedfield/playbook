@@ -110,6 +110,20 @@ export type {
   ContractProposalVerificationStatus
 } from './schema/contractProposal.js';
 
+
+export { FUNCTOR_REGISTRY, getFunctorById } from './functors/registry.js';
+export { applyFunctor } from './functors/applyFunctor.js';
+export type { ApplyFunctorInput } from './functors/applyFunctor.js';
+export type {
+  FunctorTargetDomain,
+  StructuralInvariantProjection,
+  FunctorMapping,
+  KnowledgeFunctor,
+  FunctorLineage,
+  FunctorApplication,
+  FunctorApplicationArtifact
+} from './schema/functor.js';
+
 export { validateRepoBoundary, validateRemediationPlan, redactSecretsForLogs } from './security/guards.js';
 
 export {

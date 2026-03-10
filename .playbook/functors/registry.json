@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-functor-registry",
+  "functors": [
+    {
+      "functorId": "functor.pattern.to.contract-proposal",
+      "mappingId": "mapping.pattern.contract-proposal.v1",
+      "sourceKind": "playbook-pattern-card",
+      "targetKind": "playbook-contract-proposal-template",
+      "targetDomain": "contract-proposal",
+      "transformVersion": "1.0.0"
+    },
+    {
+      "functorId": "functor.pattern.to.documentation-template",
+      "mappingId": "mapping.pattern.documentation-template.v1",
+      "sourceKind": "playbook-pattern-card",
+      "targetKind": "playbook-doc-template",
+      "targetDomain": "documentation-template",
+      "transformVersion": "1.0.0"
+    },
+    {
+      "functorId": "functor.pattern.to.ci-rule",
+      "mappingId": "mapping.pattern.ci-rule.v1",
+      "sourceKind": "playbook-pattern-card",
+      "targetKind": "playbook-ci-rule-template",
+      "targetDomain": "ci-rule",
+      "transformVersion": "1.0.0"
+    }
+  ]
+}

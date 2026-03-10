@@ -102,6 +102,10 @@ Example:
     "promotionDecisions": { "path": ".playbook/promotion/decisions/<timestamp>@<shortsha>.json", "digest": "sha256:..." },
     "promotedPatternCards": { "path": ".playbook/pattern-cards/promoted/<timestamp>@<shortsha>.json", "digest": "sha256:..." }
   },
+  "functorTransforms": {
+    "registry": { "path": ".playbook/functors/registry.json", "digest": "sha256:..." },
+    "output": { "path": ".playbook/functor-output/<timestamp>@<shortsha>.json", "digest": "sha256:..." }
+  },
   "stateSpace": {
     "projection": "bloch-v1",
     "bloch": { "path": ".playbook/state-space/<runCycleId>.json", "digest": "sha256:..." }
@@ -124,6 +128,7 @@ Example:
 - `zettelkasten`: refs to `.playbook/zettelkasten/zettels.jsonl` and `.playbook/zettelkasten/links.jsonl`.
 - `metrics`: must include `loopClosureRate`, `promotionYield`, `compactionGain`, `reuseRate`, `driftScore`, and `entropyBudget`.
 - `graphMemory` (optional): refs to graph snapshot, deterministic groups, candidate contraction previews, synthesized pattern-card drafts, promotion review queue artifacts, explicit promotion decisions, and promoted pattern-card artifacts.
+- `functorTransforms` (optional): refs to functor registry and deterministic structure-preserving transform output artifacts.
 - `stateSpace` (optional): refs to internal state-space projection artifacts (for example `bloch-v1`).
 
 Each ref is nullable. Producers should populate refs only when source artifacts exist.
@@ -236,3 +241,12 @@ Pattern promotion feeds contract proposals, not direct contract mutation.
 
 Failure Mode:
 Direct mutation of contracts breaks deterministic governance.
+
+Rule:
+Functor transforms must preserve structural invariants of the source knowledge.
+
+Pattern:
+Knowledge becomes executable when mapped across domains through structure-preserving transforms.
+
+Failure Mode:
+Transforms that break structural invariants produce invalid doctrine.

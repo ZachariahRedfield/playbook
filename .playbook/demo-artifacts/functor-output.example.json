@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-functor-output",
+  "artifactId": "functor-output:pattern.det.verify:7782cecc22f0",
+  "generatedAt": "2026-01-01T00:00:00.000Z",
+  "applications": [
+    {
+      "schemaVersion": "1.0",
+      "kind": "playbook-functor-application",
+      "applicationId": "functor-application:functor.pattern.to.ci-rule:pattern.det.verify:a4271fb1f031",
+      "functorId": "functor.pattern.to.ci-rule",
+      "mappingId": "mapping.pattern.ci-rule.v1",
+      "inputKind": "playbook-pattern-card",
+      "outputKind": "playbook-ci-rule-template",
+      "outputDomain": "ci-rule",
+      "structuralInvariantProjection": {
+        "mechanism": "Pattern promotion emits contract proposals before any mutation.",
+        "invariant": "Contracts evolve only through verified mutation proposals.",
+        "dependencies": [
+          "pattern.det.verify.previous",
+          "rule.contract.proposals"
+        ]
+      },
+      "deterministicDigest": "a4271fb1f0316a5f6f7e5dd5226ee2f3fd49eb95c1604c710a70fca84afaf95f",
+      "lineage": {
+        "sourcePatternId": "pattern.det.verify",
+        "sourceCanonicalKey": "deterministic-contract-mutation",
+        "sourceArtifactPath": ".playbook/pattern-cards/promoted/2026-01-01T00-00-00.000Z@abc1234.json",
+        "sourceEvidenceRefs": [
+          "graph:group.compatibility",
+          "verify:rule.promotions"
+        ],
+        "generatedAt": "2026-01-01T00:00:00.000Z"
+      },
+      "output": {
+        "ciRuleTemplate": {
+          "ruleId": "ci.rule.deterministic-contract-mutation",
+          "assert": "Contracts evolve only through verified mutation proposals.",
+          "rationale": "Pattern promotion emits contract proposals before any mutation.",
+          "dependencies": [
+            "pattern.det.verify.previous",
+            "rule.contract.proposals"
+          ]
+        }
+      }
+    }
+  ]
+}
