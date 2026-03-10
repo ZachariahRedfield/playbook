@@ -83,5 +83,31 @@ export type { ContractRegistryPayload } from './contracts/contractRegistry.js';
 
 export { validateRepoBoundary, validateRemediationPlan, redactSecretsForLogs } from './security/guards.js';
 
-export { generateCompactionCandidateArtifact, extractCompactionCandidates, canonicalizeCandidate, createCandidateFingerprint, compactionCandidateArtifactSchema } from './compaction/index.js';
-export type { CompactionCandidate, CompactionCandidateArtifact, CandidateSourceKind, CandidateSubjectKind } from './compaction/index.js';
+export {
+  generateCompactionCandidateArtifact,
+  extractCompactionCandidates,
+  canonicalizeCandidate,
+  createCandidateFingerprint,
+  compactionCandidateArtifactSchema,
+  bucketCompactionCandidates,
+  assessRelation,
+  assessImportance,
+  decideBucket,
+  compactionBucketArtifactSchema
+} from './compaction/index.js';
+export type {
+  CompactionCandidate,
+  CompactionCandidateArtifact,
+  CandidateSourceKind,
+  CandidateSubjectKind,
+  BucketDecision,
+  BucketTarget,
+  BucketedCandidateEntry,
+  CompactionBucketArtifact,
+  CompactionBucketKind,
+  ImportanceAssessment,
+  ImportanceLevel,
+  RecurrenceSignal,
+  RelationAssessment,
+  RelationKind
+} from './compaction/index.js';

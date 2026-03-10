@@ -40,7 +40,7 @@ These backlog candidates feed roadmap track `PB-V1-PRODUCT-TRUTH-PACKAGING-001` 
 These backlog candidates align to roadmap track `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001` and remain internal-first.
 
 - Add deterministic canonicalization helpers for candidate pattern normalization (role labels, unstable-token stripping, mechanism summaries).
-- Add candidate bucketing contract fixtures (`discard|attach|merge|generalize|add`) with deterministic replay tests.
+- Add candidate bucketing contract fixtures (`discard|attach|merge|add`) with deterministic replay tests and deferred generalization metadata only.
 - Add pattern-card artifact schema and validation guidance for candidate/reviewed/promoted lifecycle states.
 - Add compaction review artifact templates that link candidate abstraction fields to concrete evidence provenance.
 - Add docs/rules promotion workflow checks so compaction outputs never imply autonomous promotion.

@@ -37,7 +37,7 @@ Failure Mode: compression without preserved semantics creates a pile of notes ra
 
 ## Deterministic decision buckets
 
-Each candidate must end in exactly one bucket:
+Each candidate must end in exactly one deterministic v0 bucket:
 
 1. **discard**
    - Candidate is duplicate noise, too transient, or below minimum explanatory value.
@@ -45,9 +45,7 @@ Each candidate must end in exactly one bucket:
    - Candidate does not justify abstraction changes but is valid supporting evidence for an existing pattern card.
 3. **merge**
    - Candidate and an existing pattern describe the same mechanism and should be folded into one tighter card.
-4. **generalize**
-   - Candidate reveals a broader invariant/mechanism spanning multiple cards; emit a proposed generalized card for review.
-5. **add**
+4. **add**
    - Candidate is net-new reusable behavior not represented by current pattern cards.
 
 Determinism requirement: decision rules should be explicit and reproducible for identical inputs.
@@ -137,6 +135,7 @@ Current implemented deterministic slices:
 
 - canonicalization + deterministic bucketing (`discard | attach | merge | add`) are implemented for internal candidates
 - deterministic review artifacts now sit on top of bucketing for inspection/testing
+- generalization candidates are captured only as deferred metadata during bucketing (no generalize bucket implementation in this slice)
 - first extraction adapters now derive normalized internal candidates from trusted deterministic evidence surfaces (`verify`, `plan`, `apply` when present, `analyze-pr`, `docs audit`)
 - extraction canonicalization strips unstable noise and produces deterministic candidate fingerprints before future comparison/bucketing stages
 - normalized internal candidate artifact output is written to `.playbook/compaction/candidates.json` as compaction input (not promoted knowledge)
