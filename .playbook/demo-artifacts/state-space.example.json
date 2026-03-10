@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-state-space-snapshot",
+  "runCycleId": "2025-01-01T00-00-00.000Z@abc1234",
+  "projection": "bloch-v1",
+  "createdAt": "2025-01-01T00:00:10.000Z",
+  "sourceRunCycle": {
+    "path": ".playbook/run-cycles/2025-01-01T00-00-00.000Z@abc1234.json",
+    "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "axes": {
+    "reuseRateX": 0.42,
+    "entropyBudgetY": -0.18,
+    "loopClosureRateZ": 0.66
+  },
+  "bloch": {
+    "direction": [0.5244, -0.2247, 0.8212],
+    "coherence": 0.73,
+    "vector": [0.3828, -0.164, 0.5995],
+    "magnitude": 0.73,
+    "purity": 0.76645,
+    "angularDistancePrev": 0.311
+  },
+  "gateEvents": [
+    {
+      "type": "projection",
+      "at": "2025-01-01T00:00:10.000Z",
+      "label": "bloch-v1-metrics-projection",
+      "details": {
+        "axisLabels": {
+          "x": "reuseRate",
+          "y": "entropyBudget",
+          "z": "loopClosureRate"
+        }
+      }
+    },
+    {
+      "type": "rotation",
+      "at": "2025-01-01T00:00:10.000Z",
+      "label": "delta-from-previous-run-cycle",
+      "details": {
+        "fromRunCycleId": "2024-12-31T23-58-00.000Z@fff9999",
+        "toRunCycleId": "2025-01-01T00-00-00.000Z@abc1234",
+        "angularDistance": 0.311
+      }
+    },
+    {
+      "type": "measurement",
+      "at": "2025-01-01T00:00:10.000Z",
+      "label": "purity-readout",
+      "details": {
+        "metric": "purity",
+        "value": 0.76645
+      }
+    }
+  ]
+}

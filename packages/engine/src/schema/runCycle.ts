@@ -22,6 +22,11 @@ export type RunCycleZettelkastenRefs = {
   links?: RunCycleArtifactRef;
 };
 
+export type RunCycleStateSpaceRefs = {
+  projection?: 'bloch-v1';
+  bloch?: RunCycleArtifactRef;
+};
+
 export type RunCycleMetrics = {
   loopClosureRate: number;
   promotionYield: number;
@@ -46,5 +51,6 @@ export type RunCycle = {
   forwardArc: RunCycleForwardArc;
   returnArc: RunCycleReturnArc;
   zettelkasten: RunCycleZettelkastenRefs;
+  stateSpace?: RunCycleStateSpaceRefs;
   metrics: RunCycleMetrics;
 };

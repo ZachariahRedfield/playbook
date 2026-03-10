@@ -69,6 +69,10 @@ Example:
     "zettels": { "path": ".playbook/zettelkasten/zettels.jsonl", "digest": "sha256:..." },
     "links": { "path": ".playbook/zettelkasten/links.jsonl", "digest": "sha256:..." }
   },
+  "stateSpace": {
+    "projection": "bloch-v1",
+    "bloch": { "path": ".playbook/state-space/<runCycleId>.json", "digest": "sha256:..." }
+  },
   "metrics": {
     "loopClosureRate": 0.75,
     "promotionYield": 0.2,
@@ -86,6 +90,7 @@ Example:
 - `returnArc`: refs to return/remediation artifacts (`verify`, `plan`, `apply`, post-`verify`).
 - `zettelkasten`: refs to `.playbook/zettelkasten/zettels.jsonl` and `.playbook/zettelkasten/links.jsonl`.
 - `metrics`: must include `loopClosureRate`, `promotionYield`, `compactionGain`, `reuseRate`, `driftScore`, and `entropyBudget`.
+- `stateSpace` (optional): refs to internal state-space projection artifacts (for example `bloch-v1`).
 
 Each ref is nullable. Producers should populate refs only when source artifacts exist.
 
