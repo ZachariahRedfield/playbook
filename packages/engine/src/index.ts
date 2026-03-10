@@ -57,7 +57,7 @@ export type { VertexKind, EdgeKind, GraphVertexStatus, GraphVertex, GraphEdge, R
 export type { PatternCardDraftStatus, PatternCardDraftRecurrence, PatternCardDraft, PatternCardDraftArtifact } from './schema/patternCardDraft.js';
 export type { PromotionReadinessBucket, PromotionReadiness, PromotionReviewQueueItem, PromotionReviewQueue } from './schema/promotion.js';
 export type { PromotionDecisionType, PromotionDecision, PromotionDecisionArtifact, PromotionState, PromotionStateTransition, DecisionBatch, PatternCardVersionRef } from './schema/promotionDecision.js';
-export type { PatternCardDecisionType, PatternCardVersionEntry, PatternCardLineage, PatternCard as PromotionPatternCard, PatternCardCollectionArtifact } from './schema/patternCard.js';
+export type { PatternCardDecisionType, PatternCardVersionEntry, PatternCardLineage, PatternTopologyDescriptor, PatternCard as PromotionPatternCard, PatternCardCollectionArtifact } from './schema/patternCard.js';
 
 export { queryDependencies } from './query/dependencies.js';
 export type { DependenciesQueryResult } from './query/dependencies.js';
@@ -161,6 +161,11 @@ export { replayDecisionJournal } from './promotion/replayDecisionJournal.js';
 export { createStablePatternId, createPatternCard } from './patternCards/createPatternCard.js';
 export { materializePatternCardVersion } from './patternCards/materializePatternCardVersion.js';
 export { appendPatternVersion, markPatternSuperseded } from './patternCards/versioning.js';
+
+
+export { buildPatternTopologySignature, buildPatternTopologySignatures } from './topology/buildPatternTopology.js';
+export { detectPatternEquivalenceClasses, buildPatternEquivalenceArtifact, writePatternEquivalenceArtifact } from './topology/detectEquivalence.js';
+export type { PatternTopologySignature, PatternEquivalenceClass, PatternVariant, PatternTopologyTelemetry, PatternEquivalenceArtifact } from './schema/patternTopology.js';
 
 export { buildStateSpaceSnapshot } from './stateSpace/buildStateSpaceSnapshot.js';
 export type { BuildStateSpaceSnapshotInput } from './stateSpace/buildStateSpaceSnapshot.js';

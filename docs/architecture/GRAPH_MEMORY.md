@@ -190,3 +190,28 @@ Pattern promotion feeds contract proposals, not direct contract mutation.
 
 Failure Mode:
 Direct mutation of contracts breaks deterministic governance.
+
+## Pattern topology equivalence
+
+Promoted pattern cards now support deterministic topology signatures so structurally equivalent patterns can be collapsed into canonical equivalence classes without deleting historical variants.
+
+Topology signatures are computed from deterministic invariants only:
+
+- stage count
+- dependency structure
+- contract references
+- invariant type
+- mechanism type
+
+Equivalence artifacts are emitted under:
+
+- `.playbook/topology/equivalence/<timestamp>@<shortsha>.json`
+
+Rule:
+Canonical doctrine must represent each structural idea exactly once.
+
+Pattern:
+Topology compression reduces pattern-level redundancy.
+
+Failure Mode:
+Multiple canonical patterns representing the same structure create doctrine fragmentation.

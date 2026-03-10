@@ -12,6 +12,12 @@ export type PatternCardVersionEntry = {
   state: PromotionState;
 };
 
+
+export type PatternTopologyDescriptor = {
+  stageCount?: number;
+  dependencyStructure?: string[];
+};
+
 export type PatternCardLineage = {
   originCycleIds: string[];
   sourceDraftIds: string[];
@@ -35,6 +41,7 @@ export type PatternCard = {
   invariant?: string;
   linkedContractRefs: string[];
   linkedContractProposalRefs?: string[];
+  topology?: PatternTopologyDescriptor;
   state: PromotionState;
   createdAt: string;
   updatedAt: string;

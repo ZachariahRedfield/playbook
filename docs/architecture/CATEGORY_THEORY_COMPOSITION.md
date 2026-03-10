@@ -25,3 +25,13 @@ Associativity is enforced operationally: replaying the same append-only decision
 - **Rule:** Contracts evolve only through verified mutation proposals.
 - **Pattern:** Pattern promotion feeds contract proposals, not direct contract mutation.
 - **Failure Mode:** Direct mutation of contracts breaks deterministic governance.
+
+## Topology-class canonicalization morphism
+
+Pattern topology canonicalization introduces an idempotent compression morphism over promoted pattern objects:
+
+- equivalent promoted pattern cards map into one canonical representative object
+- non-canonical members remain valid objects with explicit variant lineage to the canonical object
+- canonicalization is deterministic and replayable from invariant-only topology signatures
+
+This keeps structural composition stable while preventing doctrine fragmentation from duplicate canonical structures.

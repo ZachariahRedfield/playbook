@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-pattern-equivalence",
+  "artifactId": "pattern-equivalence:demo000001",
+  "createdAt": "2026-02-01T00:00:00.000Z",
+  "equivalenceClasses": [
+    {
+      "classId": "equivalence:1f8d5ae8b411",
+      "signature": {
+        "schemaVersion": "1.0",
+        "kind": "playbook-pattern-topology-signature",
+        "patternId": "pattern.canonical",
+        "stageCount": 3,
+        "dependencyStructure": [
+          "collect->normalize",
+          "normalize->verify",
+          "verify->promote"
+        ],
+        "contractReferences": [
+          "contract.deterministic-journal"
+        ],
+        "invariantType": "append-only-journal",
+        "mechanismType": "decision-morphism",
+        "deterministicInvariantKey": "95e7ca54c6386501fdb2"
+      },
+      "canonicalPattern": {
+        "patternId": "pattern.canonical"
+      },
+      "memberPatterns": [
+        {
+          "patternId": "pattern.canonical"
+        },
+        {
+          "patternId": "pattern.variant.a"
+        }
+      ],
+      "variants": [
+        {
+          "patternId": "pattern.variant.a",
+          "canonicalPatternId": "pattern.canonical",
+          "lineagePreserved": true,
+          "transformationNotes": [
+            "Marked as topology variant of pattern.canonical.",
+            "Variant kept as-is to preserve lineage and historical promotion semantics."
+          ]
+        }
+      ],
+      "transformationNotes": [
+        "Equivalence detected from deterministic invariants only (stage count, dependencies, contracts, invariant type, mechanism type).",
+        "Canonical pattern selected by evidence count, then reuse rate, then pattern id lexical order."
+      ]
+    }
+  ],
+  "signatures": [],
+  "telemetry": {
+    "patternEquivalenceCount": 1,
+    "canonicalizationRate": 0.5,
+    "variantCollapseRate": 0.5
+  }
+}
