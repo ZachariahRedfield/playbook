@@ -1,5 +1,7 @@
 export const EVIDENCE_SCHEMA_VERSION = '1.0' as const;
 
+export type CorePrimitive = 'observe' | 'represent' | 'relate' | 'compress' | 'decide';
+
 export type Evidence = {
   schemaVersion: typeof EVIDENCE_SCHEMA_VERSION;
   kind: 'playbook-evidence';

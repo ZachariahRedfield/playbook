@@ -5,14 +5,13 @@ import { execSync } from 'node:child_process';
 import type { ContractProposal } from '../schema/contractProposal.js';
 import type { CandidatePatternPreviewArtifact, GraphGroupArtifact, GraphSnapshot } from '../schema/graphMemory.js';
 import type { MetaFindingsArtifact } from '../schema/metaFinding.js';
-import type { MetaPatternsArtifact } from '../schema/metaPattern.js';
 import type { MetaProposalsArtifact } from '../schema/metaProposal.js';
 import type { MetaTelemetryArtifact } from '../schema/metaTelemetry.js';
 import type { PatternCardCollectionArtifact } from '../schema/patternCard.js';
 import type { PatternCardDraftArtifact } from '../schema/patternCardDraft.js';
 import type { PromotionDecisionArtifact } from '../schema/promotionDecision.js';
 import type { RunCycle } from '../schema/runCycle.js';
-import { buildMetaFindings, buildMetaPatterns } from './buildMetaFindings.js';
+import { buildMetaFindings } from './buildMetaFindings.js';
 import { buildMetaProposals } from './buildMetaProposals.js';
 import { buildMetaTelemetry } from './buildMetaTelemetry.js';
 
@@ -72,11 +71,9 @@ export type AnalyzePlaybookArtifactsInput = {
 export type AnalyzePlaybookArtifactsResult = {
   metaDir: string;
   findingsPath: string;
-  patternsPath: string;
   telemetryPath: string;
   proposalsPath: string;
   findings: MetaFindingsArtifact;
-  patterns: MetaPatternsArtifact;
   telemetry: MetaTelemetryArtifact;
   proposals: MetaProposalsArtifact;
 };
@@ -143,7 +140,6 @@ export const analyzePlaybookArtifacts = (input: AnalyzePlaybookArtifactsInput): 
   };
 
   const findings = buildMetaFindings(analysisInput);
-  const patterns = buildMetaPatterns(analysisInput);
   const telemetry = buildMetaTelemetry(analysisInput);
   const proposals = buildMetaProposals(findings.findings, createdAt);
 
@@ -158,23 +154,19 @@ export const analyzePlaybookArtifacts = (input: AnalyzePlaybookArtifactsInput): 
 
   const artifactStamp = `${toStamp(createdAt)}@${resolveShortSha(root, runCycles)}`;
   const findingsPath = path.join(findingsDir, `${artifactStamp}.json`);
-  const patternsPath = path.join(findingsDir, `meta-patterns-${artifactStamp}.json`);
   const telemetryPath = path.join(telemetryDir, `${artifactStamp}.json`);
   const proposalsPath = path.join(proposalsDir, `${artifactStamp}.json`);
 
   writeArtifact(findingsPath, findings);
-  writeArtifact(patternsPath, patterns);
   writeArtifact(telemetryPath, telemetry);
   writeArtifact(proposalsPath, proposals);
 
   return {
     metaDir,
     findingsPath,
-    patternsPath,
     telemetryPath,
     proposalsPath,
     findings,
-    patterns,
     telemetry,
     proposals
   };

@@ -172,3 +172,14 @@ Pattern promotion feeds contract proposals, not direct contract mutation.
 
 Failure Mode:
 Direct mutation of contracts breaks deterministic governance.
+
+## Minimum Cognitive Core object alignment
+
+Rule:
+Zettelkasten artifacts map to domain-agnostic `Evidence`, `Zettel`, and `Edge` primitives before any domain adapter logic.
+
+Pattern:
+Deterministic linking and compaction produce reusable `Pattern` and auditable `Decision` outputs through governed promotion.
+
+Failure Mode:
+If zettelkasten promotion bypasses governed decisions, lineage from evidence to doctrine breaks.

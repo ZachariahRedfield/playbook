@@ -24,6 +24,7 @@ const shouldEmitGroups = shouldEmitGraph && !process.argv.includes('--no-groups'
 const shouldEmitCandidatePatterns = shouldEmitGroups && !process.argv.includes('--no-candidate-patterns');
 const shouldEmitPatternCardDrafts = shouldEmitCandidatePatterns && !process.argv.includes('--no-pattern-card-drafts');
 const shouldEmitPromotionQueue = shouldEmitPatternCardDrafts && !process.argv.includes('--no-promotion-review-queue');
+const shouldEmitMeta = !process.argv.includes('--no-meta');
 
 const getArgValue = (flag) => {
   const index = process.argv.indexOf(flag);
@@ -33,6 +34,7 @@ const getArgValue = (flag) => {
 
 const promotionDecisionInput = getArgValue('--promotion-decisions');
 const promotionQueueInput = getArgValue('--promotion-review-queue');
+const metaCreatedAtOverride = getArgValue('--meta-created-at');
 
 const jsonArtifacts = {
   aiContext: '.playbook/ai-context.json',
@@ -376,4 +378,13 @@ if (shouldEmitGraph) {
 
   await writeFile(runCyclePath, `${JSON.stringify(runCycle, null, 2)}\n`, 'utf8');
   console.log(`updated ${runCycleRelative}`);
+
+  if (shouldEmitMeta) {
+    const { analyzePlaybookArtifacts } = await import(path.join(repoRoot, 'packages/engine/dist/meta/analyzePlaybookArtifacts.js'));
+    const metaCreatedAt = metaCreatedAtOverride ?? now.toISOString();
+    const metaResult = analyzePlaybookArtifacts({ repoRoot, createdAt: metaCreatedAt });
+    console.log(`wrote ${path.relative(repoRoot, metaResult.findingsPath)}`);
+    console.log(`wrote ${path.relative(repoRoot, metaResult.telemetryPath)}`);
+    console.log(`wrote ${path.relative(repoRoot, metaResult.proposalsPath)}`);
+  }
 }

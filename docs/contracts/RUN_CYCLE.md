@@ -268,3 +268,28 @@ Knowledge becomes executable when mapped across domains through structure-preser
 
 Failure Mode:
 Transforms that break structural invariants produce invalid doctrine.
+
+## Meta-Playbook integration
+
+Rule:
+RunCycle may produce meta findings, telemetry, and proposals as append-only artifacts only.
+
+Pattern:
+Deterministic run snapshots feed proposal-driven process improvement while keeping doctrine mutation gated.
+
+Failure Mode:
+If RunCycle writes doctrine mutations directly during meta-analysis, deterministic governance is bypassed.
+
+Meta output paths:
+- `.playbook/meta/findings/<timestamp>@<shortsha>.json`
+- `.playbook/meta/telemetry/<timestamp>@<shortsha>.json`
+- `.playbook/meta/proposals/<timestamp>@<shortsha>.json`
+
+Rule:
+Meta-analysis outputs are append-only findings/telemetry/proposals and must not mutate doctrine.
+
+Pattern:
+Self-observation artifacts inform governance review while contracts and thresholds remain human-governed.
+
+Failure Mode:
+Automatic doctrine mutation from meta-analysis bypasses versioned governance and breaks deterministic replay.

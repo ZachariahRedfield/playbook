@@ -5,26 +5,21 @@ export const META_FINDING_TYPES = [
   'duplicate_pattern_pressure',
   'unresolved_draft_age',
   'supersede_rate',
-  'contract_mutation_frequency',
-  'entropy_trend'
+  'entropy_trend',
+  'contract_mutation_frequency'
 ] as const;
 
 export type MetaFindingType = (typeof META_FINDING_TYPES)[number];
 
-export type MetaFindingSeverity = 'low' | 'medium' | 'high';
-
 export type MetaFinding = {
   findingId: string;
-  type: MetaFindingType;
-  title: string;
-  summary: string;
-  severity: MetaFindingSeverity;
-  value: number;
-  threshold?: number;
-  trend?: 'improving' | 'stable' | 'degrading';
-  artifactRefs: string[];
-  recommendation: string;
+  findingType: MetaFindingType;
+  description: string;
+  sourceArtifactRefs: string[];
   supportingMetrics: Record<string, number>;
+  confidence: number;
+  observedCycleIds: string[];
+  createdAt: string;
 };
 
 export type MetaFindingsArtifact = {

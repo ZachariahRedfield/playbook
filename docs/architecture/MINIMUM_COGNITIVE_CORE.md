@@ -1,43 +1,54 @@
-# Playbook Minimum Cognitive Core
+# Minimum Cognitive Core
 
 ## Purpose
 
-This document defines the frozen reasoning kernel boundary for Playbook.
+The Minimum Cognitive Core is Playbook's frozen reasoning kernel.
+It is intentionally tiny, deterministic, and domain-agnostic.
 
-The kernel is domain-agnostic and must stay stable across adapters.
+## Core API
 
-## Core API (domain-agnostic)
+The kernel API is fixed to five primitives:
 
-The minimum cognitive core exposes exactly five operations:
-
-- `observe`: ingest external signals as raw evidence without interpretation coupling.
-- `represent`: normalize evidence into portable knowledge atoms.
-- `relate`: create typed links between atoms.
-- `compress`: reduce redundant structures into compact reusable patterns.
-- `decide`: emit explicit decisions with supporting evidence and confidence.
+- `observe`
+- `represent`
+- `relate`
+- `compress`
+- `decide`
 
 ```mermaid
 flowchart LR
   observe --> represent --> relate --> compress --> decide
 ```
 
-## Core objects (domain-agnostic)
+## Core objects
 
-- `Evidence`: immutable observation with provenance, timestamp, and source metadata.
-- `Zettel`: compact representation unit created from one or more evidence items.
-- `Edge`: typed relation between represented units.
-- `Pattern`: compressed reusable structure inferred from linked units.
-- `Decision`: explicit output backed by evidence and pattern context.
+The kernel object model is also domain-agnostic:
 
-The core object model must not encode repository-, CI-, or contract-specific assumptions.
+- `Evidence`: an immutable observation with provenance.
+- `Zettel`: a portable representation atom formed from evidence.
+- `Edge`: a typed relation between represented atoms.
+- `Pattern`: a compressed reusable structure derived from relations.
+- `Decision`: an explicit deterministic output with lineage.
 
-## Kernel boundary
+## What stays out of the core
 
-The kernel only defines **how reasoning works**. It does not define **which artifacts exist** in any domain.
+The following are explicitly out-of-kernel concerns:
 
-Domain semantics must be introduced by adapters that translate local artifacts into core objects.
+- repo adapters
+- CI integrations
+- contract mutation logic
+- topology compression
+- functor transforms
+- UI/dashboards
 
-## Doctrine
+These belong in adapters or extensions around the kernel.
+
+## Kernel boundary statement
+
+The core is the reasoning kernel.
+Everything else is adapter or extension behavior layered around it.
+
+## Rule / Pattern / Failure Mode
 
 Rule:
 The Playbook core must remain domain-agnostic; domain-specific behavior belongs in adapters.

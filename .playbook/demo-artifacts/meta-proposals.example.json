@@ -1,31 +1,99 @@
 {
   "schemaVersion": "1.0",
   "kind": "playbook-meta-proposals",
-  "createdAt": "2026-01-01T01:00:00.000Z",
+  "createdAt": "2026-01-01T00:00:00.000Z",
   "proposals": [
     {
-      "proposalId": "meta-proposal:promotion_latency",
-      "sourceFindingId": "meta-finding:promotion_latency",
-      "createdAt": "2026-01-01T01:00:00.000Z",
-      "kind": "playbook-meta-improvement-proposal",
-      "status": "draft",
-      "title": "Improve promotion latency",
-      "summary": "Tighten promotion-review queue SLA for high-confidence candidates.",
-      "actions": [
-        "review source finding and evidence artifacts",
-        "design deterministic remediation experiment with success criteria",
-        "submit through doctrine governance commands without automatic mutation"
+      "proposalId": "meta-proposal:contract_mutation_frequency",
+      "sourceFindingIds": [
+        "meta-finding:contract_mutation_frequency"
       ],
-      "mutationPolicy": "proposal-only",
-      "guardrail": "meta-proposals-cannot-mutate-doctrine",
-      "evidenceArtifactRefs": [
-        "promotion-decision:decision-batch:2026-01-01T00-00-00.000Z@abc1234"
-      ],
+      "proposalType": "mutation-budgeting",
+      "proposedChange": "Run governed review for contract_mutation_frequency and stage deterministic process experiment only.",
+      "reason": "Average contract mutation events per run cycle from proposals and version events.",
       "supportingMetrics": {
-        "promotedDecisionCount": 3,
-        "cycleCount": 2
+        "contractMutationFrequency": 0.5,
+        "contractEvents": 1,
+        "runCycleCount": 2
       },
-      "governedReviewRequired": true
+      "status": "draft",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "proposalId": "meta-proposal:duplicate_pattern_pressure",
+      "sourceFindingIds": [
+        "meta-finding:duplicate_pattern_pressure"
+      ],
+      "proposalType": "deduplication",
+      "proposedChange": "Run governed review for duplicate_pattern_pressure and stage deterministic process experiment only.",
+      "reason": "Duplicate topology pressure derived from promoted pattern-card topology overlap.",
+      "supportingMetrics": {
+        "duplicationRate": 0,
+        "topologySampleSize": 1
+      },
+      "status": "draft",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "proposalId": "meta-proposal:entropy_trend",
+      "sourceFindingIds": [
+        "meta-finding:entropy_trend"
+      ],
+      "proposalType": "compaction-and-reuse",
+      "proposedChange": "Run governed review for entropy_trend and stage deterministic process experiment only.",
+      "reason": "Run-cycle entropy budget trend across the observed deterministic window.",
+      "supportingMetrics": {
+        "entropyTrend": 0.64,
+        "runCycleCount": 2
+      },
+      "status": "draft",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "proposalId": "meta-proposal:promotion_latency",
+      "sourceFindingIds": [
+        "meta-finding:promotion_latency"
+      ],
+      "proposalType": "queue-optimization",
+      "proposedChange": "Run governed review for promotion_latency and stage deterministic process experiment only.",
+      "reason": "Average elapsed hours from run cycle creation to promotion decision.",
+      "supportingMetrics": {
+        "promotionLatency": 0,
+        "promotedDecisionCount": 1,
+        "runCycleCount": 2
+      },
+      "status": "draft",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "proposalId": "meta-proposal:supersede_rate",
+      "sourceFindingIds": [
+        "meta-finding:supersede_rate"
+      ],
+      "proposalType": "promotion-gate-tuning",
+      "proposedChange": "Run governed review for supersede_rate and stage deterministic process experiment only.",
+      "reason": "Share of promotion decisions that supersede already-promoted patterns.",
+      "supportingMetrics": {
+        "supersedeRate": 0,
+        "totalDecisionCount": 1
+      },
+      "status": "draft",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "proposalId": "meta-proposal:unresolved_draft_age",
+      "sourceFindingIds": [
+        "meta-finding:unresolved_draft_age"
+      ],
+      "proposalType": "draft-resolution-policy",
+      "proposedChange": "Run governed review for unresolved_draft_age and stage deterministic process experiment only.",
+      "reason": "Average age in days of unresolved draft pattern cards.",
+      "supportingMetrics": {
+        "unresolvedDraftAge": 182.5,
+        "draftCount": 2
+      },
+      "status": "draft",
+      "createdAt": "2026-01-01T00:00:00.000Z"
     }
   ]
 }

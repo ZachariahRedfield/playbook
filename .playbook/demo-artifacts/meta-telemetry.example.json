@@ -1,34 +1,19 @@
 {
   "schemaVersion": "1.0",
   "kind": "playbook-meta-telemetry",
-  "createdAt": "2026-01-01T01:00:00.000Z",
-  "totals": {
-    "runCycles": 2,
-    "graphSnapshots": 2,
-    "groups": 2,
-    "candidatePatterns": 2,
-    "patternCards": 1,
-    "promotionDecisions": 1,
-    "contractEvents": 1
+  "telemetryId": "meta-telemetry:2026-01-01T00:00:00.000Z",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "window": {
+    "runCycleCount": 2,
+    "firstRunCycleId": "2025-01-01T00-00-00.000Z@abc1234",
+    "lastRunCycleId": "2026-03-10T20-12-55.452Z@7f1bed1"
   },
-  "rates": {
-    "promotionLatencyAvgHours": 26.5,
-    "duplicatePatternPressure": 0.31,
-    "unresolvedDraftAgeDays": 8,
-    "supersedeRate": 0.2,
-    "contractMutationFrequency": 0.5,
-    "entropyTrend": 0.06
-  },
-  "homeostasis": {
-    "canonicalCoreSize": 6,
-    "unresolvedDraftAgeBudgetDays": 7,
-    "maxContractMutationsPerCycle": 1,
-    "duplicationThreshold": 0.2,
-    "entropyBudgetTrendThreshold": 0
-  },
-  "mutationPolicy": "proposal-only",
-  "artifactRefs": [
-    "run-cycle:run-cycle:2026-01-01T00-00-00.000Z@abc1234",
-    "promotion-decision:decision-batch:2026-01-01T00-00-00.000Z@abc1234"
-  ]
+  "promotionLatency": 0,
+  "duplicationRate": 0,
+  "unresolvedDraftAge": 182.5,
+  "supersedeRate": 0,
+  "entropyTrend": 0.64,
+  "contractMutationFrequency": 0.5,
+  "canonicalCoreSize": 1,
+  "provisionalFrontierSize": 8
 }

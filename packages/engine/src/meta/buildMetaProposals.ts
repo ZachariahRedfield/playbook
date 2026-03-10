@@ -1,32 +1,29 @@
 import type { MetaFinding } from '../schema/metaFinding.js';
-import type { MetaImprovementProposal, MetaProposalsArtifact } from '../schema/metaProposal.js';
+import type { MetaProposal, MetaProposalsArtifact } from '../schema/metaProposal.js';
 
-const toProposal = (finding: MetaFinding, createdAt: string): MetaImprovementProposal => ({
-  proposalId: `meta-proposal:${finding.type}`,
-  sourceFindingId: finding.findingId,
-  createdAt,
-  kind: 'playbook-meta-improvement-proposal',
+const proposalTypeByFinding: Record<MetaFinding['findingType'], string> = {
+  promotion_latency: 'queue-optimization',
+  duplicate_pattern_pressure: 'deduplication',
+  unresolved_draft_age: 'draft-resolution-policy',
+  supersede_rate: 'promotion-gate-tuning',
+  entropy_trend: 'compaction-and-reuse',
+  contract_mutation_frequency: 'mutation-budgeting'
+};
+
+const toProposal = (finding: MetaFinding, createdAt: string): MetaProposal => ({
+  proposalId: `meta-proposal:${finding.findingType}`,
+  sourceFindingIds: [finding.findingId],
+  proposalType: proposalTypeByFinding[finding.findingType],
+  proposedChange: `Run governed review for ${finding.findingType} and stage deterministic process experiment only.`,
+  reason: finding.description,
+  supportingMetrics: finding.supportingMetrics,
   status: 'draft',
-  title: `Improve ${finding.type.replaceAll('_', ' ')}`,
-  summary: finding.recommendation,
-  actions: [
-    'review source finding and evidence artifacts',
-    'design deterministic remediation experiment with success criteria',
-    'submit through doctrine governance commands without automatic mutation'
-  ],
-  governedReviewRequired: true,
-  mutationPolicy: 'proposal-only',
-  guardrail: 'meta-proposals-cannot-mutate-doctrine',
-  evidenceArtifactRefs: [...finding.artifactRefs].sort((a, b) => a.localeCompare(b)),
-  supportingMetrics: finding.supportingMetrics
+  createdAt
 });
 
 export const buildMetaProposals = (findings: MetaFinding[], createdAt: string): MetaProposalsArtifact => ({
   schemaVersion: '1.0',
   kind: 'playbook-meta-proposals',
   createdAt,
-  proposals: findings
-    .filter((finding) => finding.severity !== 'low')
-    .map((finding) => toProposal(finding, createdAt))
-    .sort((a, b) => a.proposalId.localeCompare(b.proposalId))
+  proposals: findings.map((finding) => toProposal(finding, createdAt)).sort((a, b) => a.proposalId.localeCompare(b.proposalId))
 });

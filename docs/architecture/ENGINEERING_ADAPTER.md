@@ -1,38 +1,28 @@
-# Engineering Adapter Boundary
+# Engineering Adapter
 
 ## Purpose
 
-This document defines how engineering-domain artifacts map onto the domain-agnostic Playbook core.
+The Engineering Adapter maps engineering-domain artifacts into the domain-agnostic Minimum Cognitive Core.
 
-## Boundary contract
+## Mapping contract
 
-Engineering adapters are responsible for translating engineering artifacts into core objects.
+- repo artifacts -> `Evidence`
+- verify/apply outputs -> `Evidence`
+- contracts -> doctrine/adapter output
+- CI/doc/test concerns -> engineering adapter only
 
-### Required mappings
+```mermaid
+flowchart LR
+  A[repo / verify / apply / contracts] --> B[engineering adapter]
+  B --> C[core primitives]
+```
 
-- Repository artifacts -> `Evidence`
-- `verify` / `plan` / `apply` outputs -> `Evidence`
-- Promotion and contract surfaces -> adapter outputs consumed by governance doctrine
+## Boundary
 
-The adapter may enrich evidence metadata (module, path, commit, rule id, severity) but must not change kernel semantics.
+Engineering semantics must stay in this adapter layer.
+Kernel semantics (`observe`, `represent`, `relate`, `compress`, `decide`) remain domain-agnostic.
 
-## Adapter responsibilities
-
-1. Ingest engineering artifacts deterministically.
-2. Normalize artifacts into `Evidence`.
-3. Build `Zettel` and `Edge` structures using core APIs.
-4. Feed compaction and decision phases without embedding engineering assumptions into kernel internals.
-5. Emit governance-facing outputs (for example contracts) outside the kernel boundary.
-
-## Non-responsibilities
-
-The engineering adapter must not:
-
-- rewrite kernel object definitions
-- bypass the core API stages
-- auto-mutate doctrine based on meta-analysis
-
-## Doctrine
+## Rule / Pattern / Failure Mode
 
 Rule:
 Engineering-specific semantics must stay inside adapter translation layers.
@@ -41,4 +31,4 @@ Pattern:
 Adapters localize domain complexity while preserving a stable reasoning kernel.
 
 Failure Mode:
-When adapters leak domain fields directly into kernel invariants, core portability and replayability degrade.
+When engineering logic leaks into kernel invariants, portability, determinism, and replayable governance degrade.

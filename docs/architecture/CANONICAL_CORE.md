@@ -41,3 +41,14 @@ A healthy reasoning system preserves a compact canonical core with explicit home
 
 Failure Mode:
 Without budgeted homeostasis, doctrine thrash and unresolved provisional sprawl accumulate simultaneously.
+
+## Minimum Cognitive Core alignment
+
+Rule:
+The canonical core tracks promoted doctrine outcomes, while reasoning primitives remain in the domain-agnostic kernel.
+
+Pattern:
+Homeostasis budgets monitor the adapter frontier and canonical doctrine without mutating either automatically.
+
+Failure Mode:
+If core budgets are enforced by automatic doctrine edits, governance lineage and replayability are lost.

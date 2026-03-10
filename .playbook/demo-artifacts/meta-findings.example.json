@@ -1,43 +1,119 @@
 {
   "schemaVersion": "1.0",
   "kind": "playbook-meta-findings",
-  "createdAt": "2026-01-01T01:00:00.000Z",
+  "createdAt": "2026-01-01T00:00:00.000Z",
   "findings": [
     {
       "findingId": "meta-finding:promotion_latency",
-      "type": "promotion_latency",
-      "title": "Promotion latency",
-      "summary": "Average time from cycle creation to promote decision remains above one day.",
-      "severity": "medium",
-      "value": 26.5,
-      "threshold": 24,
-      "trend": "degrading",
-      "artifactRefs": [
-        "promotion-decision:decision-batch:2026-01-01T00-00-00.000Z@abc1234"
+      "findingType": "promotion_latency",
+      "description": "Average elapsed hours from run cycle creation to promotion decision.",
+      "sourceArtifactRefs": [
+        "promotion-decision:promotion-decisions:2026-01-01T00-00-00.000Z@abc1234:demo"
       ],
-      "recommendation": "Tighten promotion-review queue SLA for high-confidence candidates.",
       "supportingMetrics": {
-        "promotedDecisionCount": 3,
-        "cycleCount": 2
-      }
+        "promotionLatency": 0,
+        "promotedDecisionCount": 1,
+        "runCycleCount": 2
+      },
+      "confidence": 0.85,
+      "observedCycleIds": [
+        "2025-01-01T00-00-00.000Z@abc1234",
+        "2026-03-10T20-12-55.452Z@7f1bed1"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z"
     },
     {
       "findingId": "meta-finding:duplicate_pattern_pressure",
-      "type": "duplicate_pattern_pressure",
-      "title": "Duplicate pattern pressure",
-      "summary": "Repeated topology shapes across pattern cards.",
-      "severity": "medium",
-      "value": 0.31,
-      "threshold": 0.2,
-      "trend": "degrading",
-      "artifactRefs": [
-        "pattern-cards:promoted-pattern-card:2026-01-01T00-00-00.000Z@abc1234"
+      "findingType": "duplicate_pattern_pressure",
+      "description": "Duplicate topology pressure derived from promoted pattern-card topology overlap.",
+      "sourceArtifactRefs": [
+        "pattern-cards:pattern-cards:2026-01-01T00-00-00.000Z@abc1234:demo"
       ],
-      "recommendation": "Consolidate duplicate topology variants before promotion review to reduce maintenance overhead.",
       "supportingMetrics": {
-        "duplicateTopologies": 3,
-        "totalTopologies": 8
-      }
+        "duplicationRate": 0,
+        "topologySampleSize": 1
+      },
+      "confidence": 0.8,
+      "observedCycleIds": [
+        "2025-01-01T00-00-00.000Z@abc1234",
+        "2026-03-10T20-12-55.452Z@7f1bed1"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "findingId": "meta-finding:unresolved_draft_age",
+      "findingType": "unresolved_draft_age",
+      "description": "Average age in days of unresolved draft pattern cards.",
+      "sourceArtifactRefs": [
+        "pattern-card-drafts:pattern-card-drafts:2025-01-01T00-00-00.000Z@abc1234:deadbeef1234",
+        "pattern-card-drafts:pattern-card-drafts:2026-03-10T20-12-55.452Z@7f1bed1:1979fbf87dbc"
+      ],
+      "supportingMetrics": {
+        "unresolvedDraftAge": 182.5,
+        "draftCount": 2
+      },
+      "confidence": 0.75,
+      "observedCycleIds": [
+        "2025-01-01T00-00-00.000Z@abc1234",
+        "2026-03-10T20-12-55.452Z@7f1bed1"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "findingId": "meta-finding:supersede_rate",
+      "findingType": "supersede_rate",
+      "description": "Share of promotion decisions that supersede already-promoted patterns.",
+      "sourceArtifactRefs": [
+        "promotion-decision:promotion-decisions:2026-01-01T00-00-00.000Z@abc1234:demo"
+      ],
+      "supportingMetrics": {
+        "supersedeRate": 0,
+        "totalDecisionCount": 1
+      },
+      "confidence": 0.85,
+      "observedCycleIds": [
+        "2025-01-01T00-00-00.000Z@abc1234",
+        "2026-03-10T20-12-55.452Z@7f1bed1"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "findingId": "meta-finding:entropy_trend",
+      "findingType": "entropy_trend",
+      "description": "Run-cycle entropy budget trend across the observed deterministic window.",
+      "sourceArtifactRefs": [
+        "run-cycle:2025-01-01T00-00-00.000Z@abc1234",
+        "run-cycle:2026-03-10T20-12-55.452Z@7f1bed1"
+      ],
+      "supportingMetrics": {
+        "entropyTrend": 0.64,
+        "runCycleCount": 2
+      },
+      "confidence": 0.8,
+      "observedCycleIds": [
+        "2025-01-01T00-00-00.000Z@abc1234",
+        "2026-03-10T20-12-55.452Z@7f1bed1"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "findingId": "meta-finding:contract_mutation_frequency",
+      "findingType": "contract_mutation_frequency",
+      "description": "Average contract mutation events per run cycle from proposals and version events.",
+      "sourceArtifactRefs": [
+        "contract-proposal:proposal:2026-01-01T00-00-00.000Z@abc1234:pattern.det.verify:2d1d723ce9d4"
+      ],
+      "supportingMetrics": {
+        "contractMutationFrequency": 0.5,
+        "contractEvents": 1,
+        "runCycleCount": 2
+      },
+      "confidence": 0.9,
+      "observedCycleIds": [
+        "2025-01-01T00-00-00.000Z@abc1234",
+        "2026-03-10T20-12-55.452Z@7f1bed1"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z"
     }
   ]
 }

@@ -32,3 +32,14 @@ A tiny stable core plus deterministic adapters and proposal-only meta analysis y
 
 Failure Mode:
 Kernel coupling to repository assumptions or automatic doctrine mutation destroys determinism and replayability.
+
+## Minimum Cognitive Core positioning update
+
+Rule:
+Reasoning kernel APIs (`observe`, `represent`, `relate`, `compress`, `decide`) must stay domain-agnostic.
+
+Pattern:
+Engineering and meta behaviors compose through adapters around a frozen kernel.
+
+Failure Mode:
+Embedding engineering-specific control logic in the kernel collapses adapter boundaries and increases drift risk.
