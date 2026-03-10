@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-zettelkasten-attractor-demo",
+  "snapshotType": "committed-example",
+  "description": "Deterministic example chain from one RunCycle through zettel convergence, pattern stabilization, and contract promotion.",
+  "runCycle": {
+    "runCycleId": "2026-02-14T10-30-00.000Z@demoa11",
+    "artifactPath": ".playbook/run-cycles/2026-02-14T10-30-00.000Z@demoa11.json",
+    "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "zettels": [
+    {
+      "zettelId": "ztt.observe.verify-drift.0001",
+      "originCycleId": "2026-02-14T10-30-00.000Z@demoa11",
+      "kind": "verify-finding",
+      "sourceArtifactPath": ".playbook/verify.json",
+      "evidenceRef": "finding:PB014:docs-contract-drift",
+      "links": [
+        {
+          "relation": "supports",
+          "targetZettelId": "ztt.plan.remediation-step.0002"
+        },
+        {
+          "relation": "elevates-to-pattern",
+          "targetPatternId": "pattern.run-cycle-memory-consolidation"
+        }
+      ],
+      "promotedPatternId": "pattern.run-cycle-memory-consolidation",
+      "status": "compacted"
+    },
+    {
+      "zettelId": "ztt.plan.remediation-step.0002",
+      "originCycleId": "2026-02-14T10-30-00.000Z@demoa11",
+      "kind": "plan-task",
+      "sourceArtifactPath": ".playbook/plan.json",
+      "evidenceRef": "task:PB014:align-run-cycle-contract-language",
+      "links": [
+        {
+          "relation": "derived-from",
+          "targetZettelId": "ztt.observe.verify-drift.0001"
+        },
+        {
+          "relation": "supports",
+          "targetZettelId": "ztt.apply.doc-update.0003"
+        }
+      ],
+      "promotedPatternId": "pattern.run-cycle-memory-consolidation",
+      "status": "converged"
+    },
+    {
+      "zettelId": "ztt.apply.doc-update.0003",
+      "originCycleId": "2026-02-14T10-30-00.000Z@demoa11",
+      "kind": "apply-result",
+      "sourceArtifactPath": ".playbook/apply.json",
+      "evidenceRef": "change:docs/contracts/RUN_CYCLE.md#memory-semantics",
+      "links": [
+        {
+          "relation": "refines",
+          "targetPatternId": "pattern.run-cycle-memory-consolidation"
+        },
+        {
+          "relation": "supports",
+          "targetContractId": "contract.run-cycle-converges-before-promotion"
+        }
+      ],
+      "promotedPatternId": "pattern.run-cycle-memory-consolidation",
+      "status": "promoted"
+    },
+    {
+      "zettelId": "ztt.observe.false-positive.0004",
+      "originCycleId": "2026-02-14T10-30-00.000Z@demoa11",
+      "kind": "diagnostic-note",
+      "sourceArtifactPath": ".playbook/post-verify.json",
+      "evidenceRef": "finding:noise:non-reproducible-path-warning",
+      "links": [
+        {
+          "relation": "contrasts",
+          "targetZettelId": "ztt.observe.verify-drift.0001"
+        }
+      ],
+      "promotedPatternId": null,
+      "status": "retired"
+    }
+  ],
+  "patternCards": [
+    {
+      "patternId": "pattern.run-cycle-memory-consolidation",
+      "status": "stabilized",
+      "attractorType": "soft",
+      "originCycleIds": [
+        "2026-02-14T10-30-00.000Z@demoa11"
+      ],
+      "absorbedZettelIds": [
+        "ztt.observe.verify-drift.0001",
+        "ztt.plan.remediation-step.0002",
+        "ztt.apply.doc-update.0003"
+      ],
+      "summary": "Cycles that extract and link evidence before promotion produce higher reuse and lower doctrine drift."
+    }
+  ],
+  "promotedContracts": [
+    {
+      "contractId": "contract.run-cycle-converges-before-promotion",
+      "status": "active",
+      "attractorType": "hard",
+      "promotedFromPatternId": "pattern.run-cycle-memory-consolidation",
+      "invariant": "No extracted zettel may mutate durable guidance unless it first converges through typed links and compaction."
+    }
+  ]
+}

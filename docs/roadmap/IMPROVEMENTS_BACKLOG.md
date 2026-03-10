@@ -241,3 +241,15 @@ The following improvements are now implemented in the command surface:
 - `.playbookignore` scan controls for repository intelligence generation.
 - `doctor` artifact hygiene diagnostics and structured suggested fixes.
 - `plan`/`apply` remediation IDs for artifact governance workflows (`PB012`, `PB013`, `PB014`).
+
+---
+
+## Staging candidates: Zettelkasten-attractor runtime convergence
+
+These are runtime implementation follow-ups for the RunCycle + zettelkasten architecture model. They are backlog-only and not roadmap expansion in this pass.
+
+- Build a deterministic zettel-to-pattern compactor that aggregates linked zettels into candidate/stabilized pattern cards.
+- Define convergence thresholds (minimum linked evidence count, recurrence windows, contradiction tolerance) for stabilization eligibility.
+- Add novelty-vs-reuse metrics to score whether new evidence should create a new attractor or reinforce an existing one.
+- Enforce entropy budgets during compaction so evidence compression does not remove required discriminators.
+- Add attractor-graph drift detection to surface over-merge, stale invariants, and contract-pattern divergence across cycles.

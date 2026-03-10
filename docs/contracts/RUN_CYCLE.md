@@ -6,7 +6,27 @@ It is intended to anchor:
 
 - forward discovery (`ai-context`/`ai-contract`/`index`/`graph`)
 - return remediation (`verify`/`plan`/`apply`/post-`verify`)
-- Zettelkasten traces (`zettels.jsonl` and `links.jsonl`)
+- zettelkasten extraction (`zettels.jsonl` and `links.jsonl`)
+- cycle-based memory consolidation (`compact` and `promote` outcomes)
+
+## RunCycle memory semantics
+
+RunCycle is a spiral learning iteration:
+
+```text
+RunCycle(n)
+-> observe
+-> verify
+-> plan
+-> apply
+-> extract
+-> zettels
+-> compact
+-> promote
+-> RunCycle(n+1)
+```
+
+RunCycle artifacts capture evidence expansion and compression signals. They should be used to connect working-memory zettels to stabilized patterns and promoted contracts over time.
 
 ## Artifact path
 
@@ -68,6 +88,12 @@ Example:
 - `metrics`: must include `loopClosureRate`, `promotionYield`, `compactionGain`, `reuseRate`, `driftScore`, and `entropyBudget`.
 
 Each ref is nullable. Producers should populate refs only when source artifacts exist.
+
+## Compatibility notes with zettelkasten lifecycle
+
+- `zettels` should contain lifecycle-state notes (`draft|observed`, `linked`, `converged`, `compacted`, `promoted`, `retired`).
+- `originCycleId` in zettels should match this artifact's `runCycleId` (or a referenced prior cycle for carried evidence).
+- `promotionYield`, `reuseRate`, and `compactionGain` are cycle-level indicators that consolidation is working.
 
 ## Runtime artifact policy
 
