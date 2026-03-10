@@ -181,3 +181,12 @@ Skipping grouping and jumping straight from notes to doctrine causes brittle, no
 - **Rule:** No knowledge state may be mutated in place; durable state changes must be explicit decision morphisms.
 - **Pattern:** Promotion decisions are graph morphisms from input pattern-state objects to resulting pattern-state objects.
 - **Failure Mode:** Without append-only morphism journals, graph memory cannot be replayed or rolled back deterministically.
+
+Rule:
+Contracts evolve only through verified mutation proposals.
+
+Pattern:
+Pattern promotion feeds contract proposals, not direct contract mutation.
+
+Failure Mode:
+Direct mutation of contracts breaks deterministic governance.

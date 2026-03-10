@@ -19,3 +19,9 @@ Associativity is enforced operationally: replaying the same append-only decision
 - **Rule:** No knowledge state may be mutated in place; all durable transitions must be explicit morphisms.
 - **Pattern:** Promotion decisions are the compositional algebra of Playbook knowledge governance.
 - **Failure Mode:** If decisions are not journaled append-only, composition cannot be replayed and rollback semantics collapse.
+
+## Contract mutation composition
+
+- **Rule:** Contracts evolve only through verified mutation proposals.
+- **Pattern:** Pattern promotion feeds contract proposals, not direct contract mutation.
+- **Failure Mode:** Direct mutation of contracts breaks deterministic governance.

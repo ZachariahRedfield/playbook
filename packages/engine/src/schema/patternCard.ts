@@ -34,6 +34,7 @@ export type PatternCard = {
   mechanism?: string;
   invariant?: string;
   linkedContractRefs: string[];
+  linkedContractProposalRefs?: string[];
   state: PromotionState;
   createdAt: string;
   updatedAt: string;

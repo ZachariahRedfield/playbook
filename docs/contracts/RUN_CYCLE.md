@@ -227,3 +227,12 @@ Unreviewed pattern promotion creates unstable doctrine and architecture drift.
 - **Rule:** No knowledge state may be mutated in place; all durable transitions must be expressed as explicit decision morphisms.
 - **Pattern:** Promotion decisions are the compositional algebra of Playbook knowledge governance.
 - **Failure Mode:** If promotion occurs without an append-only decision journal, doctrine becomes unreplayable and rollback semantics collapse.
+
+Rule:
+Contracts evolve only through verified mutation proposals.
+
+Pattern:
+Pattern promotion feeds contract proposals, not direct contract mutation.
+
+Failure Mode:
+Direct mutation of contracts breaks deterministic governance.

@@ -94,6 +94,22 @@ export type { DocsAuditResult, DocsAuditFinding, DocsAuditStatus, DocsAuditLevel
 export { buildContractRegistry } from './contracts/contractRegistry.js';
 export type { ContractRegistryPayload } from './contracts/contractRegistry.js';
 
+
+export { buildContractProposal } from './contracts/buildContractProposal.js';
+export type { BuildContractProposalInput } from './contracts/buildContractProposal.js';
+export { applyContractProposal, replayAcceptedContractProposals } from './contracts/applyContractProposal.js';
+export type { ApplyContractProposalInput, ApplyContractProposalResult, VerifyProposedContract } from './contracts/applyContractProposal.js';
+export { buildProposalArtifactPath, buildContractVersionArtifactPath, createContractVersionRef, writeProposalArtifact, writeContractVersion } from './contracts/versioning.js';
+export type { VersionedContract, ContractRule } from './contracts/versioning.js';
+export type {
+  ContractMutationType,
+  ContractProposal,
+  ContractMutation,
+  ContractVersionRef,
+  ContractProposalDecisionStatus,
+  ContractProposalVerificationStatus
+} from './schema/contractProposal.js';
+
 export { validateRepoBoundary, validateRemediationPlan, redactSecretsForLogs } from './security/guards.js';
 
 export {

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-contract-proposal",
+  "proposalId": "proposal:2026-01-01T00-00-00.000Z@abc1234:pattern.det.verify:2d1d723ce9d4",
+  "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
+  "patternId": "pattern.det.verify",
+  "mutationType": "modify_rule",
+  "ruleTarget": "rule.contract.proposals",
+  "ruleChange": {
+    "canonicalKey": "deterministic-contract-mutation",
+    "title": "Deterministic contract mutation proposals",
+    "summary": "Promoted pattern cards produce reviewable mutation proposals.",
+    "mechanism": "Pattern promotion emits contract proposals before any mutation.",
+    "invariant": "Contracts evolve only through verified mutation proposals."
+  },
+  "evidenceRefs": [
+    "verify:rule.promotions",
+    "graph:group.compatibility"
+  ],
+  "sourceZettelIds": [
+    "zettel.1",
+    "zettel.2"
+  ],
+  "sourceGroupIds": [
+    "group.1"
+  ],
+  "verificationStatus": "passed",
+  "decisionStatus": "accepted"
+}
