@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-run-cycle",
+  "runCycleId": "2025-01-01T00-00-00.000Z@abc1234",
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "repository": {
+    "root": ".",
+    "git": {
+      "commit": "abc1234def5678abc1234def5678abc1234def",
+      "shortSha": "abc1234"
+    }
+  },
+  "forwardArc": {
+    "aiContext": {
+      "path": ".playbook/ai-context.json",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "aiContract": {
+      "path": ".playbook/ai-contract.json",
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    "repoIndex": {
+      "path": ".playbook/repo-index.json",
+      "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    "repoGraph": {
+      "path": ".playbook/repo-graph.json",
+      "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    }
+  },
+  "returnArc": {
+    "verify": {
+      "path": ".playbook/verify.json",
+      "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    },
+    "plan": {
+      "path": ".playbook/plan.json",
+      "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    },
+    "apply": {
+      "path": ".playbook/apply.json",
+      "digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "postVerify": {
+      "path": ".playbook/post-verify.json",
+      "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+    }
+  },
+  "zettelkasten": {
+    "zettels": {
+      "path": ".playbook/zettelkasten/zettels.jsonl",
+      "digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+    },
+    "links": {
+      "path": ".playbook/zettelkasten/links.jsonl",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "metrics": {
+    "loopClosureRate": 0.78,
+    "promotionYield": 0.21,
+    "compactionGain": 0.17,
+    "reuseRate": 0.43,
+    "driftScore": 0.08,
+    "entropyBudget": 0.36
+  }
+}
