@@ -54,7 +54,7 @@ Prove the full loop against Playbook's own deterministic artifacts and governanc
 
 ### Phase 2: bounded pilot on Fawxzzy Fitness
 
-Run the same loop in a constrained pilot with explicit inclusion/exclusion boundaries.
+Run the same loop in a constrained pilot with explicit inclusion/exclusion boundaries using the current Playbook repository as the runtime against an external Fawxzzy Fitness repository path. Do not execute the pilot from an embedded Playbook copy inside the fitness repository.
 
 ### Phase 3: controlled cross-repo transfer
 
@@ -74,28 +74,31 @@ Minimal reasoning engine is proven when Playbook can:
 
 ## Fawxzzy Fitness pilot guidance
 
-Initial include set:
+Initial include set (bounded advisory stages):
 
-- verify outputs
+- evidence intake
 - zettels
 - graph/grouping
 - candidate patterns
 - draft pattern cards
-- review queue
+- promotion review queue
+- meta findings
 
 Initial exclusion set:
 
 - automatic contract mutation
+- automatic code edits
 - automatic doctrine tuning
-- cross-repo pattern propagation
+- cross-repo propagation
+- broad functor transforms
 
 ## Governance additions
 
 Rule:
-Prove one complete closed-loop reasoning engine before expanding scope to generalized cross-domain automation.
+Prove one complete closed-loop reasoning engine before expanding scope to generalized cross-domain automation. Initial external pilots must use the current Playbook runtime, not stale embedded copies.
 
 Pattern:
-A strong pilot repo improves both the product being built and the reasoning engine observing it.
+A bounded external pilot validates the reasoning engine without forcing repo-level Playbook synchronization first.
 
 Failure Mode:
-Using a second repo too early without bounded rollout turns a proving ground into a noise amplifier.
+Running a pilot on an outdated embedded Playbook copy produces false negatives and invalid architecture conclusions.

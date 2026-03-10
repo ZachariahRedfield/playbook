@@ -13,20 +13,21 @@ const getArg = (flag, fallback) => {
   return value && !value.startsWith('--') ? value : fallback;
 };
 
-const repoRoot = path.resolve(getArg('--repo', process.cwd()));
-const configPath = path.resolve(getArg('--config', path.join(repoRoot, 'playbook.fitness.config.json')));
+const runtimeRepoRoot = process.cwd();
+const targetRepoRoot = path.resolve(getArg('--target-repo', getArg('--repo', process.cwd())));
+const configPath = path.resolve(getArg('--config', path.join(targetRepoRoot, 'playbook.fitness.config.json')));
 const createdAt = getArg('--created-at', '2026-01-01T00:00:00.000Z');
 const runId = getArg('--run-id', 'fitness-pilot-cycle-0001');
 
 const PLAYBOOK_DIRNAME = '.playbook';
 const ARTIFACT_DIRS = {
-  runCycles: path.join(repoRoot, PLAYBOOK_DIRNAME, 'run-cycles'),
-  zettels: path.join(repoRoot, PLAYBOOK_DIRNAME, 'zettels'),
-  graph: path.join(repoRoot, PLAYBOOK_DIRNAME, 'graph'),
-  groups: path.join(repoRoot, PLAYBOOK_DIRNAME, 'groups'),
-  patternDrafts: path.join(repoRoot, PLAYBOOK_DIRNAME, 'pattern-cards', 'drafts'),
-  promotion: path.join(repoRoot, PLAYBOOK_DIRNAME, 'promotion'),
-  meta: path.join(repoRoot, PLAYBOOK_DIRNAME, 'meta')
+  runCycles: path.join(targetRepoRoot, PLAYBOOK_DIRNAME, 'run-cycles'),
+  zettels: path.join(targetRepoRoot, PLAYBOOK_DIRNAME, 'zettels'),
+  graph: path.join(targetRepoRoot, PLAYBOOK_DIRNAME, 'graph'),
+  groups: path.join(targetRepoRoot, PLAYBOOK_DIRNAME, 'groups'),
+  patternDrafts: path.join(targetRepoRoot, PLAYBOOK_DIRNAME, 'pattern-cards', 'drafts'),
+  promotion: path.join(targetRepoRoot, PLAYBOOK_DIRNAME, 'promotion'),
+  meta: path.join(targetRepoRoot, PLAYBOOK_DIRNAME, 'meta')
 };
 
 const IGNORED_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'build', PLAYBOOK_DIRNAME]);
@@ -68,7 +69,7 @@ const extractZettels = async (files) => {
   for (const [category, matcher] of Object.entries(categoryMatchers)) {
     const matches = files.filter((file) => matcher(file)).slice(0, 6);
     for (const evidencePath of matches) {
-      const absolutePath = path.join(repoRoot, evidencePath);
+      const absolutePath = path.join(targetRepoRoot, evidencePath);
       const source = await readFile(absolutePath, 'utf8');
       const checksum = createHash('sha256').update(source).digest('hex').slice(0, 16);
       zettels.push({
@@ -140,9 +141,14 @@ const ensureDirectories = async () => {
 };
 
 const main = async () => {
-  const rootStat = await stat(repoRoot);
+  const rootStat = await stat(targetRepoRoot);
   if (!rootStat.isDirectory()) {
-    throw new Error(`Repository path is not a directory: ${repoRoot}`);
+    throw new Error(`Target repository path is not a directory: ${targetRepoRoot}`);
+  }
+
+  const runtimeStat = await stat(path.join(runtimeRepoRoot, 'packages', 'cli', 'dist', 'main.js')).catch(() => null);
+  if (!runtimeStat?.isFile()) {
+    throw new Error('Run this script from the current Playbook repository root (missing packages/cli/dist/main.js).');
   }
 
   const configRaw = await readFile(configPath, 'utf8');
@@ -152,7 +158,7 @@ const main = async () => {
     throw new Error('Fitness pilot config must enable advisoryMode.enabled=true.');
   }
 
-  const files = await walkFiles(repoRoot);
+  const files = await walkFiles(targetRepoRoot);
   const zettels = await extractZettels(files);
   const relationships = buildRelationships(zettels);
   const candidatePatterns = buildCandidatePatterns(zettels);
@@ -177,8 +183,19 @@ const main = async () => {
     safeguards: {
       automaticContractMutation: false,
       automaticCodeEdits: false,
+      crossRepoPropagation: false,
+      broadFunctorTransforms: false,
       ciEnforcement: false
     },
+    boundedStages: [
+      'evidence intake',
+      'zettels',
+      'graph/grouping',
+      'candidate patterns',
+      'draft pattern cards',
+      'promotion review queue',
+      'meta findings'
+    ],
     artifactPaths: {
       runCycles: '.playbook/run-cycles',
       zettels: '.playbook/zettels',
@@ -265,7 +282,9 @@ const main = async () => {
   await writeFile(path.join(ARTIFACT_DIRS.promotion, `${runId}.json`), `${JSON.stringify(reviewQueue, null, 2)}\n`);
   await writeFile(path.join(ARTIFACT_DIRS.meta, `${runId}.json`), `${JSON.stringify(metaFindings, null, 2)}\n`);
 
-  console.log(`Generated advisory pilot artifacts for ${repoRoot}`);
+  console.log(`Playbook runtime: ${runtimeRepoRoot}`);
+  console.log(`External target repository: ${targetRepoRoot}`);
+  console.log(`Generated advisory pilot artifacts under: ${path.join(targetRepoRoot, PLAYBOOK_DIRNAME)}`);
   console.log(`Run cycle: ${runId}`);
 };
 

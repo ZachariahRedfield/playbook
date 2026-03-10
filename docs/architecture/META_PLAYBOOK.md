@@ -28,6 +28,17 @@ It must not auto-mutate contracts, pattern cards, thresholds, or schemas.
 Any self-improvement must flow through normal governance and versioning workflows.
 Meta artifacts are input to review, not direct doctrine mutation.
 
+## External pilot guardrails
+
+For bounded external pilots, Meta-Playbook outputs remain advisory and are written to the target repository `.playbook/` directory only.
+
+Disabled for pilot mode:
+
+- automatic contract mutation
+- automatic code edits
+- cross-repo propagation
+- broad functor transforms
+
 ## Homeostasis budgets
 
 Meta telemetry tracks policy budgets for governed review:
@@ -41,10 +52,10 @@ Meta telemetry tracks policy budgets for governed review:
 ## Rule / Pattern / Failure Mode
 
 Rule:
-Meta-Playbook may observe and propose improvements but cannot mutate doctrine automatically.
+Meta-Playbook may observe and propose improvements but cannot mutate doctrine automatically; initial external pilots must use the current Playbook runtime against a target repository path.
 
 Pattern:
-Proposal-driven self-observation improves process quality without violating deterministic governance replayability.
+A bounded external pilot validates the reasoning engine without forcing repository-level Playbook synchronization first.
 
 Failure Mode:
-If meta-analysis directly edits doctrine, governance becomes brittle and non-replayable.
+Running meta-analysis on an outdated embedded Playbook copy yields false negatives and invalid architecture conclusions.
