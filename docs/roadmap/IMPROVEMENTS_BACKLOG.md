@@ -42,6 +42,7 @@ These backlog candidates align to roadmap track `PB-V08-KNOWLEDGE-COMPACTION-SPE
 - Add deterministic canonicalization helpers for candidate pattern normalization (role labels, unstable-token stripping, mechanism summaries).
 - Add candidate bucketing contract fixtures (`discard|attach|merge|add`) with deterministic replay tests and deferred generalization metadata only.
 - Add pattern-card artifact schema and validation guidance for candidate/reviewed/promoted lifecycle states.
+- Track graph-ready deterministic pattern card persistence and review draft artifacts under feature `PB-V08-PATTERN-CARD-STORAGE-001`.
 - Add compaction review artifact templates that link candidate abstraction fields to concrete evidence provenance.
 - Add docs/rules promotion workflow checks so compaction outputs never imply autonomous promotion.
 

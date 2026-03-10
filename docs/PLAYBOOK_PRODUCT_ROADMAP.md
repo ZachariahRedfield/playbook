@@ -406,7 +406,6 @@ Decision buckets (exactly one per candidate):
 - `discard`
 - `attach`
 - `merge`
-- `generalize`
 - `add`
 
 Canonicalization before comparison (deterministic):
@@ -448,12 +447,13 @@ Contract stance:
 - no replacement of canonical remediation loop (`verify -> plan -> apply -> verify`)
 - keep canonical operating ladder unchanged (`ai-context -> ai-contract -> context -> index -> query/explain/ask --repo-context -> verify -> plan -> apply -> verify`)
 
-Current implementation status (feature: `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001`):
+Current implementation status (features: `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001`, `PB-V08-KNOWLEDGE-CANDIDATE-EXTRACTION-001`, `PB-V08-KNOWLEDGE-BUCKETING-001`, `PB-V08-PATTERN-CARD-STORAGE-001`):
 
 - Internal deterministic foundations are now live in the engine: canonicalization, deterministic bucket decisions (`discard | attach | merge | add`), and deterministic review artifacts layered on top of bucketing for inspection/testing.
 - Review artifacts keep canonical reason codes as the primary machine contract, with human-readable rationale derived deterministically from those reason codes.
 - This remains an internal bridge between extraction and promotion.
-- Long-lived pattern storage and promotion workflows remain future work and are not yet live command surfaces.
+- Graph-ready durable pattern card storage is now live under `.playbook/patterns/*.json` with deterministic review drafts under `.playbook/compaction/review-drafts.json`.
+- Promotion workflows, graph traversal/query, and broad autonomous generalization remain future work and are not live command surfaces.
 
 Live-command boundary note:
 - The compaction slice above does **not** introduce a new public CLI command.

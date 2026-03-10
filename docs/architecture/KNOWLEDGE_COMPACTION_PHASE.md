@@ -69,8 +69,12 @@ Compaction outputs draft pattern cards with a stable contract surface:
 
 ```json
 {
-  "id": "string",
+  "schemaVersion": "1.0",
+  "kind": "playbook-pattern-card",
+  "patternId": "pattern.cross_tool_alias_drift_ab12cd34",
   "title": "string",
+  "status": "candidate|reviewed|promoted|archived",
+  "createdFromBucket": "attach|merge|add",
   "trigger": "string",
   "context": "string",
   "mechanism": "string",
@@ -78,16 +82,23 @@ Compaction outputs draft pattern cards with a stable contract surface:
   "implication": "string",
   "response": "string",
   "examples": ["string"],
-  "evidence": [
-    {
-      "sourceType": "verify|plan-apply|repo-index|repo-graph|docs|ownership|risk|other",
-      "sourceRef": "string",
-      "summary": "string"
-    }
-  ],
+  "evidence": ["string"],
+  "sourceKinds": ["string"],
+  "sourceRefs": ["string"],
+  "relatedModules": ["string"],
+  "relatedRules": ["string"],
+  "relatedDocs": ["string"],
+  "relatedOwners": ["string"],
+  "relatedTests": ["string"],
+  "relatedRiskSignals": ["string"],
+  "relatedGraphNodes": ["string"],
+  "relatedPatterns": ["pattern-id"],
   "supersedes": ["pattern-id"],
-  "confidence": "low|medium|high",
-  "status": "candidate|reviewed|promoted|archived"
+  "supersededBy": ["pattern-id"],
+  "reviewState": "pending-review|reviewed",
+  "promotionState": "not-promoted|promoted",
+  "confidence": null,
+  "notes": "optional concise review note"
 }
 ```
 
@@ -140,7 +151,11 @@ Current implemented deterministic slices:
 - extraction canonicalization strips unstable noise and produces deterministic candidate fingerprints before future comparison/bucketing stages
 - normalized internal candidate artifact output is written to `.playbook/compaction/candidates.json` as compaction input (not promoted knowledge)
 - reason codes are canonical machine contracts; human-readable explanations are derived deterministically from reason codes
-- long-lived pattern storage and promotion workflows remain future work
+- graph-ready durable candidate pattern cards are now written under `.playbook/patterns/*.json` from `add` and `merge` bucket outcomes
+- `attach` outcomes enrich existing cards/drafts with provenance while preserving abstraction identity
+- deterministic review draft artifacts now write to `.playbook/compaction/review-drafts.json`
+- `discard` outcomes remain review-only and never produce durable pattern cards
+- promotion workflows and graph traversal/query remain future work
 
 ## Scope boundaries for this phase
 

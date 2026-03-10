@@ -93,7 +93,12 @@ export {
   assessRelation,
   assessImportance,
   decideBucket,
-  compactionBucketArtifactSchema
+  compactionBucketArtifactSchema,
+  createPatternCardId,
+  buildPatternCardsFromBuckets,
+  readPatternCards,
+  writePatternCards,
+  toExistingPatternTargets
 } from './compaction/index.js';
 export type {
   CompactionCandidate,
@@ -109,5 +114,8 @@ export type {
   ImportanceLevel,
   RecurrenceSignal,
   RelationAssessment,
-  RelationKind
+  RelationKind,
+  PatternCard,
+  PatternCardReviewDraftArtifact,
+  PatternCardReviewDraftEntry
 } from './compaction/index.js';
