@@ -65,6 +65,18 @@ Each zettel must retain `originCycleId` so memory consolidation remains traceabl
 
 RunCycle outputs should reference zettelkasten artifact digests and downstream pattern/contract promotion metrics when available.
 
+
+## State-space interpretation bridge
+
+Zettelkasten evidence quality directly affects state-space coherence:
+
+- coherent linked evidence tends toward lower-noise, higher-confidence cycle states
+- contradictory or stale zettels increase mixed-state behavior (ambiguity/noise)
+- compaction acts as projection toward lower-entropy representations while preserving required distinctions
+- promotion marks governance-approved stabilization from soft attractor patterns to hard attractor contracts
+
+Use this bridge with `docs/architecture/BLOCH_SPHERE_STATE_SPACE.md` and `docs/contracts/STATE_SPACE.md` for deterministic diagnostics framing.
+
 ## Rule / Pattern / Failure Mode
 
 Rule:

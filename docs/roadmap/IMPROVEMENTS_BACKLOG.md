@@ -253,3 +253,23 @@ These are runtime implementation follow-ups for the RunCycle + zettelkasten arch
 - Add novelty-vs-reuse metrics to score whether new evidence should create a new attractor or reinforce an existing one.
 - Enforce entropy budgets during compaction so evidence compression does not remove required discriminators.
 - Add attractor-graph drift detection to surface over-merge, stale invariants, and contract-pattern divergence across cycles.
+
+
+## Backlog candidate: Bloch-style state-space telemetry
+
+Add deterministic telemetry fields to improve cycle-level state diagnostics:
+
+- coherence score
+- ambiguity score
+- collapse frequency
+- drift after measurement
+- noise-to-signal ratio in zettels
+
+Scope notes:
+
+- This is a deterministic state-space observability enhancement, not quantum runtime behavior.
+- Metrics should be computed from existing Playbook artifacts (`verify`, RunCycle, zettels, compaction/promotion outcomes).
+
+Rule: Use quantum/state-space language only when it clarifies deterministic system behavior.
+Pattern: State can often be modeled more clearly as geometry than as raw event logs.
+Failure Mode: Overextending the Bloch-sphere analogy turns a useful state-space model into pseudo-physics.

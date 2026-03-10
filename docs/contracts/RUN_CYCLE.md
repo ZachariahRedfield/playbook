@@ -28,6 +28,17 @@ RunCycle(n)
 
 RunCycle artifacts capture evidence expansion and compression signals. They should be used to connect working-memory zettels to stabilized patterns and promoted contracts over time.
 
+## State-space analogy alignment
+
+For geometric reasoning, treat each RunCycle as a bounded state-space step:
+
+- cycle metrics define a deterministic vector projection (see `stateSpace` and `bloch-v1` references)
+- command execution applies deterministic transforms across that state
+- `verify` and promotion gates act as deterministic measurement points
+- compaction and promotion stabilize outcomes toward reusable attractors
+
+This framing is a modeling aid only and must stay consistent with `docs/architecture/BLOCH_SPHERE_STATE_SPACE.md` boundaries.
+
 ## Artifact path
 
 Runtime output path:
