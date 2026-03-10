@@ -201,4 +201,6 @@ export { buildMetaProposals } from './meta/buildMetaProposals.js';
 export type { AnalyzePlaybookArtifactsInput, AnalyzePlaybookArtifactsResult } from './meta/analyzePlaybookArtifacts.js';
 export type { MetaFindingType, MetaFindingSeverity, MetaFinding, MetaFindingsArtifact } from './schema/metaFinding.js';
 export type { MetaImprovementProposal, MetaProposalsArtifact } from './schema/metaProposal.js';
-export type { MetaPattern, MetaPatternsArtifact, MetaTelemetryArtifact } from './schema/metaPattern.js';
+export type { MetaPattern, MetaPatternsArtifact } from './schema/metaPattern.js';
+export type { MetaTelemetryArtifact } from './schema/metaTelemetry.js';
+export type { Evidence, Zettel, Edge, Pattern, Decision } from './schema/evidence.js';

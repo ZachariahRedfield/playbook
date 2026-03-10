@@ -1,90 +1,43 @@
-# Canonical Core vs Provisional Frontier
+# Canonical Core and Homeostasis Budgets
 
 ## Purpose
 
-This document defines Playbook's trust-layer architecture for knowledge growth.
+Playbook maintains a small, stable canonical core and a larger provisional frontier.
 
-Playbook must maintain a small, stable, high-trust **canonical core** and a larger, faster-moving **provisional frontier**.
+This document defines observability budgets used for governance review.
 
-This phase is documentation and telemetry only. It does not introduce hard runtime enforcement.
+## Trust layers
 
-## Trust-layer definitions
+- **Provisional frontier**: high-volume exploratory knowledge (artifacts, zettels, groups, drafts).
+- **Canonical core**: low-volume high-trust doctrine (promoted patterns, contracts).
 
-### Provisional frontier
-
-The provisional frontier is the high-volume, exploratory knowledge surface.
-
-It includes raw and semi-processed material that is still expected to change frequently:
-
-- runtime artifacts
-- zettels
-- groups
-- draft patterns
-
-### Canonical core
-
-The canonical core is the low-volume, high-trust doctrine surface.
-
-It contains knowledge that has passed stronger review and promotion controls:
-
-- promoted patterns
-- contracts
-
-## Trust ladder and compression requirements
-
-Trust increases as knowledge moves upward through the lifecycle.
+Trust ladder:
 
 `artifacts -> zettels -> groups -> draft patterns -> promoted patterns -> contracts`
 
-Each upward transition must perform topology-aware compression and trust hardening:
+## Homeostasis budgets
 
-- fewer entities should represent more evidence
-- mutation cadence should slow
-- review depth should increase
+Budgets are policy signals for review; they do not auto-mutate doctrine.
 
-## Lifecycle pyramid invariants
+- **Canonical core size**: maximum allowed growth of promoted patterns/contracts per cycle.
+- **Max unresolved draft age**: maximum age for unresolved drafts before intervention is required.
+- **Max contract mutations per cycle**: cap on contract mutation frequency.
+- **Duplication threshold**: upper bound for duplicate pattern pressure.
+- **Entropy budget trend**: acceptable trend band for entropy delta across cycles.
 
-Playbook lifecycle pyramid:
+## Lifecycle invariants
 
-`artifacts -> zettels -> groups -> draft patterns -> promoted patterns -> contracts`
+1. Volume decreases as authority increases.
+2. Mutation cadence decreases as authority increases.
+3. Review depth increases as authority increases.
 
-Required invariants:
-
-1. Volume must decrease as trust increases.
-2. Mutation frequency must decrease as trust increases.
-3. Review requirements must increase as trust increases.
-
-## Telemetry surface (docs-only in this phase)
-
-Track the following fields as lifecycle health indicators:
-
-- `artifactToZettelRatio`
-- `zettelToPatternRatio`
-- `draftToPromotedRatio`
-- `promotedToContractRatio`
-- `canonicalCoreSize`
-- `provisionalFrontierSize`
-- `unresolvedDraftAge`
-- `doctrineDrift`
-
-These metrics are intended for observability and budgeting preparation, not immediate hard-gate enforcement.
-
-## Future enforcement budgets (backlog direction)
-
-The following controls are intentionally deferred to future enforcement work:
-
-- canonical core size budget
-- max contract mutations per cycle
-- max unresolved draft age
-- forced topology compression threshold
-
-## Governance doctrine
+## Doctrine
 
 Rule:
 No knowledge layer may grow in authority faster than it shrinks in volume.
 
 Pattern:
-A reasoning engine stays healthy by maintaining a small canonical core and a large provisional frontier.
+A healthy reasoning system preserves a compact canonical core with explicit homeostasis budgets.
 
 Failure Mode:
-When canonical layers expand too quickly or provisional layers never compress, the system collapses into doctrine thrash or structured clutter.
+Without budgeted homeostasis, doctrine thrash and unresolved provisional sprawl accumulate simultaneously.

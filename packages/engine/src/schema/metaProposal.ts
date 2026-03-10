@@ -9,6 +9,7 @@ export type MetaImprovementProposal = {
   title: string;
   summary: string;
   actions: string[];
+  governedReviewRequired: true;
   mutationPolicy: 'proposal-only';
   guardrail: 'meta-proposals-cannot-mutate-doctrine';
   evidenceArtifactRefs: string[];

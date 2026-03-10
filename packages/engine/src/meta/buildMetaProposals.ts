@@ -14,6 +14,7 @@ const toProposal = (finding: MetaFinding, createdAt: string): MetaImprovementPro
     'design deterministic remediation experiment with success criteria',
     'submit through doctrine governance commands without automatic mutation'
   ],
+  governedReviewRequired: true,
   mutationPolicy: 'proposal-only',
   guardrail: 'meta-proposals-cannot-mutate-doctrine',
   evidenceArtifactRefs: [...finding.artifactRefs].sort((a, b) => a.localeCompare(b)),

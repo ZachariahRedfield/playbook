@@ -22,6 +22,12 @@ export type MetaAnalysisInput = {
 
 const round4 = (value: number): number => Math.round(value * 10_000) / 10_000;
 const safeDiv = (num: number, denom: number): number => (denom <= 0 ? 0 : num / denom);
+const hoursBetween = (startIso: string, endIso: string): number | undefined => {
+  const start = Date.parse(startIso);
+  const end = Date.parse(endIso);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return undefined;
+  return (end - start) / 3_600_000;
+};
 
 const toFinding = (finding: Omit<MetaFinding, 'findingId'>): MetaFinding => ({
   findingId: `meta-finding:${finding.type}`,
@@ -42,11 +48,13 @@ const computeTopologyStats = (input: MetaAnalysisInput): { totalTopologies: numb
   }
 
   const counts = [...topologyCounts.values()];
+  const duplicatedCardCount = counts.filter((count) => count > 1).reduce((sum, count) => sum + count, 0);
   const duplicateTopologies = counts.filter((count) => count > 1).length;
+
   return {
     totalTopologies: topologyCounts.size,
     duplicateTopologies,
-    duplicationRate: round4(safeDiv(counts.filter((count) => count > 1).reduce((sum, count) => sum + count, 0), counts.reduce((sum, count) => sum + count, 0)))
+    duplicationRate: round4(safeDiv(duplicatedCardCount, counts.reduce((sum, count) => sum + count, 0)))
   };
 };
 
@@ -88,28 +96,35 @@ export const buildMetaFindings = (input: MetaAnalysisInput): MetaFindingsArtifac
   const createdAt = input.createdAt ?? new Date().toISOString();
   const allDecisions = input.promotionDecisions.flatMap((batch) => batch.decisions);
   const promoteDecisions = allDecisions.filter((decision) => decision.decisionType === 'promote');
+  const supersedeDecisions = allDecisions.filter((decision) => decision.decisionType === 'supersede');
 
   const cycleById = new Map(input.runCycles.map((cycle) => [cycle.runCycleId, cycle]));
   const promotionLatencyHours = promoteDecisions
     .map((decision) => {
       const cycle = cycleById.get(decision.originCycleId);
       if (!cycle) return undefined;
-      const decisionMs = Date.parse(decision.timestamp);
-      const cycleMs = Date.parse(cycle.createdAt);
-      if (Number.isNaN(decisionMs) || Number.isNaN(cycleMs)) return undefined;
-      return (decisionMs - cycleMs) / 3_600_000;
+      return hoursBetween(cycle.createdAt, decision.timestamp);
     })
-    .filter((value): value is number => value !== undefined && Number.isFinite(value) && value >= 0);
+    .filter((value): value is number => value !== undefined);
 
   const avgPromotionLatency = round4(safeDiv(promotionLatencyHours.reduce((sum, value) => sum + value, 0), promotionLatencyHours.length));
   const topologyStats = computeTopologyStats(input);
 
-  const draftCards = input.draftPatternCards.flatMap((artifact) => artifact.drafts);
-  const promotedCards = input.patternCards.flatMap((artifact) => artifact.cards);
-  const draftBacklogPressure = round4(safeDiv(draftCards.length, draftCards.length + promotedCards.length));
+  const draftArtifacts = input.draftPatternCards;
+  const unresolvedDraftAgeDays = round4(
+    safeDiv(
+      draftArtifacts
+        .map((artifact) => hoursBetween(artifact.createdAt, createdAt))
+        .filter((value): value is number => value !== undefined)
+        .reduce((sum, hours) => sum + hours / 24, 0),
+      draftArtifacts.length
+    )
+  );
 
-  const contractMutations = input.contractHistory.length;
-  const mutationFrequency = round4(safeDiv(contractMutations + input.contractVersions.length, input.runCycles.length || 1));
+  const supersedeRate = round4(safeDiv(supersedeDecisions.length, allDecisions.length));
+
+  const contractMutations = input.contractHistory.length + input.contractVersions.length;
+  const mutationFrequency = round4(safeDiv(contractMutations, input.runCycles.length));
 
   const entropyValues = [...input.runCycles]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -133,17 +148,14 @@ export const buildMetaFindings = (input: MetaAnalysisInput): MetaFindingsArtifac
       }
     }),
     toFinding({
-      type: 'duplicate_pattern_topology',
-      title: 'Duplicate pattern topology',
-      summary: 'Repeated topology shapes across draft and promoted pattern cards.',
+      type: 'duplicate_pattern_pressure',
+      title: 'Duplicate pattern pressure',
+      summary: 'Repeated topology shapes across pattern cards.',
       severity: topologyStats.duplicationRate > 0.4 ? 'high' : topologyStats.duplicationRate > 0.2 ? 'medium' : 'low',
       value: topologyStats.duplicationRate,
       threshold: 0.2,
       trend: topologyStats.duplicationRate > 0.2 ? 'degrading' : 'stable',
-      artifactRefs: [
-        ...input.patternCards.map((artifact) => `pattern-cards:${artifact.artifactId}`),
-        ...input.draftPatternCards.map((artifact) => `pattern-card-drafts:${artifact.artifactId}`)
-      ],
+      artifactRefs: input.patternCards.map((artifact) => `pattern-cards:${artifact.artifactId}`),
       recommendation: 'Consolidate duplicate topology variants before promotion review to reduce maintenance overhead.',
       supportingMetrics: {
         duplicateTopologies: topologyStats.duplicateTopologies,
@@ -151,18 +163,33 @@ export const buildMetaFindings = (input: MetaAnalysisInput): MetaFindingsArtifac
       }
     }),
     toFinding({
-      type: 'draft_backlog_pressure',
-      title: 'Draft backlog pressure',
-      summary: 'Share of draft cards compared with all observed cards.',
-      severity: draftBacklogPressure > 0.65 ? 'high' : draftBacklogPressure > 0.45 ? 'medium' : 'low',
-      value: draftBacklogPressure,
-      threshold: 0.45,
-      trend: draftBacklogPressure > 0.45 ? 'degrading' : 'stable',
-      artifactRefs: input.draftPatternCards.map((artifact) => `pattern-card-drafts:${artifact.artifactId}`),
-      recommendation: 'Prioritize draft triage and promotion-readiness checks to prevent review queue saturation.',
+      type: 'unresolved_draft_age',
+      title: 'Unresolved draft age',
+      summary: 'Average age in days of unresolved draft artifacts.',
+      severity: unresolvedDraftAgeDays > 14 ? 'high' : unresolvedDraftAgeDays > 7 ? 'medium' : 'low',
+      value: unresolvedDraftAgeDays,
+      threshold: 7,
+      trend: unresolvedDraftAgeDays > 7 ? 'degrading' : 'stable',
+      artifactRefs: draftArtifacts.map((artifact) => `pattern-card-drafts:${artifact.artifactId}`),
+      recommendation: 'Resolve or archive stale draft artifacts before they exceed review windows.',
       supportingMetrics: {
-        draftCardCount: draftCards.length,
-        promotedCardCount: promotedCards.length
+        unresolvedDraftArtifacts: draftArtifacts.length,
+        unresolvedDraftAgeDays
+      }
+    }),
+    toFinding({
+      type: 'supersede_rate',
+      title: 'Supersede rate',
+      summary: 'Share of promotion decisions that supersede existing patterns.',
+      severity: supersedeRate > 0.35 ? 'high' : supersedeRate > 0.2 ? 'medium' : 'low',
+      value: supersedeRate,
+      threshold: 0.2,
+      trend: supersedeRate > 0.2 ? 'degrading' : 'stable',
+      artifactRefs: input.promotionDecisions.map((batch) => `promotion-decision:${batch.batchId}`),
+      recommendation: 'Stabilize promotion criteria when supersede pressure rises above baseline.',
+      supportingMetrics: {
+        supersedeDecisions: supersedeDecisions.length,
+        totalDecisions: allDecisions.length
       }
     }),
     toFinding({
@@ -180,7 +207,7 @@ export const buildMetaFindings = (input: MetaAnalysisInput): MetaFindingsArtifac
       recommendation: 'Batch related contract changes and validate stability windows before introducing more mutations.',
       supportingMetrics: {
         contractMutations,
-        contractVersionCount: input.contractVersions.length
+        runCycleCount: input.runCycles.length
       }
     }),
     toFinding({

@@ -19,25 +19,3 @@ export type MetaPatternsArtifact = {
   patterns: MetaPattern[];
 };
 
-export type MetaTelemetryArtifact = {
-  schemaVersion: typeof META_PATTERN_SCHEMA_VERSION;
-  kind: 'playbook-meta-telemetry';
-  createdAt: string;
-  totals: {
-    runCycles: number;
-    graphSnapshots: number;
-    groups: number;
-    candidatePatterns: number;
-    patternCards: number;
-    promotionDecisions: number;
-    contractEvents: number;
-  };
-  rates: {
-    promotionLatencyAvgHours: number;
-    duplicatePatternTopologyRate: number;
-    draftBacklogPressure: number;
-    contractMutationFrequency: number;
-    entropyTrendSlope: number;
-  };
-  artifactRefs: string[];
-};

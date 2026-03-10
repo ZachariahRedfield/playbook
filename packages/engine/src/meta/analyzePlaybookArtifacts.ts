@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 
 import type { ContractProposal } from '../schema/contractProposal.js';
 import type { CandidatePatternPreviewArtifact, GraphGroupArtifact, GraphSnapshot } from '../schema/graphMemory.js';
 import type { MetaFindingsArtifact } from '../schema/metaFinding.js';
-import type { MetaPatternsArtifact, MetaTelemetryArtifact } from '../schema/metaPattern.js';
+import type { MetaPatternsArtifact } from '../schema/metaPattern.js';
 import type { MetaProposalsArtifact } from '../schema/metaProposal.js';
+import type { MetaTelemetryArtifact } from '../schema/metaTelemetry.js';
 import type { PatternCardCollectionArtifact } from '../schema/patternCard.js';
 import type { PatternCardDraftArtifact } from '../schema/patternCardDraft.js';
 import type { PromotionDecisionArtifact } from '../schema/promotionDecision.js';
@@ -48,6 +50,18 @@ const ensureDir = (directory: string): void => {
 
 const writeArtifact = (filePath: string, payload: unknown): void => {
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+};
+
+const toStamp = (createdAt: string): string => createdAt.replace(/[-:.]/g, '').replace('T', 'T').replace('Z', 'Z');
+
+const resolveShortSha = (repoRoot: string, runCycles: RunCycle[]): string => {
+  const cycleSha = runCycles.find((cycle) => cycle.repository.git?.shortSha)?.repository.git?.shortSha;
+  if (cycleSha) return cycleSha;
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: repoRoot, encoding: 'utf8' }).trim() || 'nogit';
+  } catch {
+    return 'nogit';
+  }
 };
 
 export type AnalyzePlaybookArtifactsInput = {
@@ -113,9 +127,7 @@ export const analyzePlaybookArtifacts = (input: AnalyzePlaybookArtifactsInput): 
     path.join(demoDir, 'contract-proposal.example.json')
   ]);
 
-  const contractVersions = readMany<Record<string, unknown>>([
-    ...collectJsonFiles(path.join(playbookDir, 'contracts', 'versions'))
-  ]);
+  const contractVersions = readMany<Record<string, unknown>>([...collectJsonFiles(path.join(playbookDir, 'contracts', 'versions'))]);
 
   const analysisInput = {
     runCycles,
@@ -144,10 +156,11 @@ export const analyzePlaybookArtifacts = (input: AnalyzePlaybookArtifactsInput): 
   ensureDir(proposalsDir);
   ensureDir(telemetryDir);
 
-  const findingsPath = path.join(findingsDir, 'meta-findings.json');
-  const patternsPath = path.join(findingsDir, 'meta-patterns.json');
-  const telemetryPath = path.join(telemetryDir, 'meta-telemetry.json');
-  const proposalsPath = path.join(proposalsDir, 'meta-proposals.json');
+  const artifactStamp = `${toStamp(createdAt)}@${resolveShortSha(root, runCycles)}`;
+  const findingsPath = path.join(findingsDir, `${artifactStamp}.json`);
+  const patternsPath = path.join(findingsDir, `meta-patterns-${artifactStamp}.json`);
+  const telemetryPath = path.join(telemetryDir, `${artifactStamp}.json`);
+  const proposalsPath = path.join(proposalsDir, `${artifactStamp}.json`);
 
   writeArtifact(findingsPath, findings);
   writeArtifact(patternsPath, patterns);

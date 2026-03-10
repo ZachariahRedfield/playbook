@@ -20,6 +20,24 @@
         "promotedDecisionCount": 3,
         "cycleCount": 2
       }
+    },
+    {
+      "findingId": "meta-finding:duplicate_pattern_pressure",
+      "type": "duplicate_pattern_pressure",
+      "title": "Duplicate pattern pressure",
+      "summary": "Repeated topology shapes across pattern cards.",
+      "severity": "medium",
+      "value": 0.31,
+      "threshold": 0.2,
+      "trend": "degrading",
+      "artifactRefs": [
+        "pattern-cards:promoted-pattern-card:2026-01-01T00-00-00.000Z@abc1234"
+      ],
+      "recommendation": "Consolidate duplicate topology variants before promotion review to reduce maintenance overhead.",
+      "supportingMetrics": {
+        "duplicateTopologies": 3,
+        "totalTopologies": 8
+      }
     }
   ]
 }

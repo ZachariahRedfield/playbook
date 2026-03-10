@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-meta-telemetry",
+  "createdAt": "2026-01-01T01:00:00.000Z",
+  "totals": {
+    "runCycles": 2,
+    "graphSnapshots": 2,
+    "groups": 2,
+    "candidatePatterns": 2,
+    "patternCards": 1,
+    "promotionDecisions": 1,
+    "contractEvents": 1
+  },
+  "rates": {
+    "promotionLatencyAvgHours": 26.5,
+    "duplicatePatternPressure": 0.31,
+    "unresolvedDraftAgeDays": 8,
+    "supersedeRate": 0.2,
+    "contractMutationFrequency": 0.5,
+    "entropyTrend": 0.06
+  },
+  "homeostasis": {
+    "canonicalCoreSize": 6,
+    "unresolvedDraftAgeBudgetDays": 7,
+    "maxContractMutationsPerCycle": 1,
+    "duplicationThreshold": 0.2,
+    "entropyBudgetTrendThreshold": 0
+  },
+  "mutationPolicy": "proposal-only",
+  "artifactRefs": [
+    "run-cycle:run-cycle:2026-01-01T00-00-00.000Z@abc1234",
+    "promotion-decision:decision-batch:2026-01-01T00-00-00.000Z@abc1234"
+  ]
+}

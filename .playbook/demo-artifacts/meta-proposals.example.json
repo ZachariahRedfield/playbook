@@ -24,7 +24,8 @@
       "supportingMetrics": {
         "promotedDecisionCount": 3,
         "cycleCount": 2
-      }
+      },
+      "governedReviewRequired": true
     }
   ]
 }

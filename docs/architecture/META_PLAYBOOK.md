@@ -1,68 +1,60 @@
-# Meta-Playbook Introspection
+# Meta-Playbook
 
 ## Purpose
 
-Meta-Playbook lets Playbook analyze its own artifact stream to produce system-level findings, proposals, and telemetry.
+Meta-Playbook is Playbook's deterministic self-observation layer.
 
-The meta layer is observational and advisory only.
+It analyzes existing Playbook artifacts and emits findings, telemetry, and proposals for governed review.
 
-## Artifact scope
+Meta-Playbook is proposal-driven and explicitly **not self-editing**.
 
-Meta analysis reads the deterministic lifecycle artifacts:
+## Flow
 
-- run cycles
-- graph snapshots
-- deterministic graph groups
-- candidate patterns
-- draft pattern cards
-- promoted pattern cards
-- promotion decisions
-- contract versions and contract proposals
+```mermaid
+flowchart LR
+  A[playbook artifacts] --> B[meta findings]
+  B --> C[meta proposals]
+  C --> D[governed review]
+```
 
-Meta artifacts are emitted under:
+## Artifact outputs
 
-- `.playbook/meta/findings/meta-findings.json`
-- `.playbook/meta/findings/meta-patterns.json`
-- `.playbook/meta/proposals/meta-proposals.json`
-- `.playbook/meta/telemetry/meta-telemetry.json`
+Each run emits timestamped immutable artifacts:
 
-## System findings
+- `.playbook/meta/findings/<timestamp>@<shortsha>.json`
+- `.playbook/meta/telemetry/<timestamp>@<shortsha>.json`
+- `.playbook/meta/proposals/<timestamp>@<shortsha>.json`
 
-Current findings cover:
+## Meta objects
+
+- `MetaFinding`: deterministic analytical signal from existing artifacts.
+- `MetaTelemetry`: rollup metrics and rates for longitudinal health tracking.
+- `MetaProposal`: draft recommendation linked to one or more findings.
+
+## Required detections
+
+Meta analysis detects at least:
 
 - promotion latency
-- duplicate pattern topology
-- draft backlog pressure
-- contract mutation frequency
+- duplicate pattern pressure
+- unresolved draft age
+- supersede rate
 - entropy trend
+- contract mutation frequency
 
-These findings must reference source artifacts so reviewers can inspect the evidence path deterministically.
+## Safety boundary
 
-## Proposal requirements
+The meta layer may only emit findings, telemetry, and proposals.
 
-Meta proposals must include:
+It may not mutate contracts, pattern cards, thresholds, or schemas automatically.
 
-- source finding id
-- evidence artifacts
-- supporting metrics
-
-Proposals are always draft advisory artifacts and never mutate doctrine automatically.
-
-## Doctrine safety boundary
+## Doctrine
 
 Rule:
 Meta-Playbook may observe and propose improvements but cannot mutate doctrine automatically.
 
 Pattern:
-Self-analysis allows the reasoning engine to improve its learning process.
+Proposal-driven self-observation improves process quality without violating governance replayability.
 
 Failure Mode:
-If meta findings mutate process rules automatically, governance stability collapses.
-
-## Governance behavior
-
-Meta findings may create improvement proposals under `.playbook/meta/proposals/`.
-
-Those proposals are drafts and must flow through normal review and governance commands before any doctrine change can occur.
-
-The meta layer never writes to pattern-card artifacts or contract artifacts directly.
+If meta-analysis directly edits doctrine, governance becomes non-deterministic and trust collapses.
