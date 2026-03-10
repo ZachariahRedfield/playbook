@@ -14,12 +14,22 @@ const graphGroupsDir = path.join(playbookDir, 'graph', 'groups');
 const candidatePatternsDir = path.join(playbookDir, 'compaction', 'candidate-patterns');
 const patternCardDraftsDir = path.join(playbookDir, 'pattern-cards', 'drafts');
 const promotionQueueDir = path.join(playbookDir, 'promotion', 'review-queue');
+const promotionDecisionsDir = path.join(playbookDir, 'promotion', 'decisions');
+const promotedPatternCardsDir = path.join(playbookDir, 'pattern-cards', 'promoted');
 
 const shouldEmitGraph = !process.argv.includes('--no-graph');
 const shouldEmitGroups = shouldEmitGraph && !process.argv.includes('--no-groups');
 const shouldEmitCandidatePatterns = shouldEmitGroups && !process.argv.includes('--no-candidate-patterns');
 const shouldEmitPatternCardDrafts = shouldEmitCandidatePatterns && !process.argv.includes('--no-pattern-card-drafts');
 const shouldEmitPromotionQueue = shouldEmitPatternCardDrafts && !process.argv.includes('--no-promotion-review-queue');
+
+const getArgValue = (flag) => {
+  const index = process.argv.indexOf(flag);
+  if (index === -1) return undefined;
+  return process.argv[index + 1];
+};
+
+const promotionDecisionInput = getArgValue('--promotion-decisions');
 
 const jsonArtifacts = {
   aiContext: '.playbook/ai-context.json',
@@ -82,6 +92,8 @@ if (shouldEmitGroups) await mkdir(graphGroupsDir, { recursive: true });
 if (shouldEmitCandidatePatterns) await mkdir(candidatePatternsDir, { recursive: true });
 if (shouldEmitPatternCardDrafts) await mkdir(patternCardDraftsDir, { recursive: true });
 if (shouldEmitPromotionQueue) await mkdir(promotionQueueDir, { recursive: true });
+if (promotionDecisionInput) await mkdir(promotionDecisionsDir, { recursive: true });
+if (promotionDecisionInput) await mkdir(promotedPatternCardsDir, { recursive: true });
 
 const forwardArc = {
   aiContext: await resolveRef(jsonArtifacts.aiContext),
@@ -241,6 +253,53 @@ if (shouldEmitGraph) {
           await writeFile(promotionQueuePath, `${JSON.stringify(reviewQueue, null, 2)}\n`, 'utf8');
           graphMemoryRefs.promotionReviewQueue = { path: promotionQueueRelative, digest: await digestFile(promotionQueuePath) };
           console.log(`wrote ${promotionQueueRelative}`);
+
+          if (promotionDecisionInput) {
+            const decisionInputPath = path.isAbsolute(promotionDecisionInput)
+              ? promotionDecisionInput
+              : path.join(repoRoot, promotionDecisionInput);
+            const decisionInputRaw = await readFile(decisionInputPath, 'utf8');
+            const parsedDecisionInput = JSON.parse(decisionInputRaw);
+            const decisionList = Array.isArray(parsedDecisionInput) ? parsedDecisionInput : parsedDecisionInput.decisions ?? [];
+
+            const {
+              applyPromotionDecision,
+              buildPromotionDecisionArtifact,
+              buildPatternCardCollectionArtifact
+            } = await import(path.join(repoRoot, 'packages/engine/dist/promotion/applyPromotionDecision.js'));
+
+            let promotedPatterns = [];
+            for (const decision of decisionList) {
+              const result = applyPromotionDecision({ draftArtifact, decision, existingPatterns: promotedPatterns });
+              promotedPatterns = result.patterns;
+            }
+
+            const decisionsArtifact = buildPromotionDecisionArtifact({
+              originCycleId: runCycleId,
+              createdAt: now.toISOString(),
+              decisions: decisionList
+            });
+            const promotedArtifact = buildPatternCardCollectionArtifact({
+              originCycleId: runCycleId,
+              createdAt: now.toISOString(),
+              cards: promotedPatterns
+            });
+
+            const promotionDecisionRelative = `.playbook/promotion/decisions/${runCycleId}.json`;
+            const promotionDecisionPath = path.join(repoRoot, promotionDecisionRelative);
+            await writeFile(promotionDecisionPath, `${JSON.stringify(decisionsArtifact, null, 2)}\n`, 'utf8');
+            graphMemoryRefs.promotionDecisions = { path: promotionDecisionRelative, digest: await digestFile(promotionDecisionPath) };
+            console.log(`wrote ${promotionDecisionRelative}`);
+
+            const promotedPatternCardsRelative = `.playbook/pattern-cards/promoted/${runCycleId}.json`;
+            const promotedPatternCardsPath = path.join(repoRoot, promotedPatternCardsRelative);
+            await writeFile(promotedPatternCardsPath, `${JSON.stringify(promotedArtifact, null, 2)}\n`, 'utf8');
+            graphMemoryRefs.promotedPatternCards = {
+              path: promotedPatternCardsRelative,
+              digest: await digestFile(promotedPatternCardsPath)
+            };
+            console.log(`wrote ${promotedPatternCardsRelative}`);
+          }
         }
       }
     }

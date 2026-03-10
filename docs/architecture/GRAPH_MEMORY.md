@@ -122,6 +122,16 @@ Playbook memory matures through explicit compression boundaries, not hidden jump
 Failure Mode:
 A system that can group memory but not review it will either stall or over-promote.
 
+
+Rule:
+Durable knowledge must pass through an explicit promotion decision.
+
+Pattern:
+Pattern-card promotion forms the durable attractors of Playbook memory.
+
+Failure Mode:
+Unreviewed pattern promotion creates unstable doctrine and architecture drift.
+
 ## Runtime artifacts
 
 Current runtime graph-memory artifacts are emitted per run cycle:
@@ -133,6 +143,8 @@ Next-phase artifacts (not auto-promotion):
 
 - `.playbook/pattern-cards/drafts/<timestamp>@<shortsha>.json`
 - `.playbook/promotion/review-queue/<timestamp>@<shortsha>.json`
+- `.playbook/promotion/decisions/<timestamp>@<shortsha>.json`
+- `.playbook/pattern-cards/promoted/<timestamp>@<shortsha>.json`
 
 Grouping metrics include:
 

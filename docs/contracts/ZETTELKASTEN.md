@@ -147,3 +147,13 @@ Playbook memory matures in stages: atomic capture, structural linkage, determini
 
 Failure Mode:
 Skipping grouping and jumping straight from notes to doctrine causes brittle, non-reproducible promotion.
+
+
+Rule:
+Durable knowledge must pass through an explicit promotion decision.
+
+Pattern:
+Pattern-card promotion forms the durable attractors of Playbook memory.
+
+Failure Mode:
+Unreviewed pattern promotion creates unstable doctrine and architecture drift.

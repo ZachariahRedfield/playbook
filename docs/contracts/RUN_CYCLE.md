@@ -98,7 +98,9 @@ Example:
     "groups": { "path": ".playbook/graph/groups/<timestamp>@<shortsha>.json", "digest": "sha256:..." },
     "candidatePatterns": { "path": ".playbook/compaction/candidate-patterns/<timestamp>@<shortsha>.json", "digest": "sha256:..." },
     "draftPatternCards": { "path": ".playbook/pattern-cards/drafts/<timestamp>@<shortsha>.json", "digest": "sha256:..." },
-    "promotionReviewQueue": { "path": ".playbook/promotion/review-queue/<timestamp>@<shortsha>.json", "digest": "sha256:..." }
+    "promotionReviewQueue": { "path": ".playbook/promotion/review-queue/<timestamp>@<shortsha>.json", "digest": "sha256:..." },
+    "promotionDecisions": { "path": ".playbook/promotion/decisions/<timestamp>@<shortsha>.json", "digest": "sha256:..." },
+    "promotedPatternCards": { "path": ".playbook/pattern-cards/promoted/<timestamp>@<shortsha>.json", "digest": "sha256:..." }
   },
   "stateSpace": {
     "projection": "bloch-v1",
@@ -121,7 +123,7 @@ Example:
 - `returnArc`: refs to return/remediation artifacts (`verify`, `plan`, `apply`, post-`verify`).
 - `zettelkasten`: refs to `.playbook/zettelkasten/zettels.jsonl` and `.playbook/zettelkasten/links.jsonl`.
 - `metrics`: must include `loopClosureRate`, `promotionYield`, `compactionGain`, `reuseRate`, `driftScore`, and `entropyBudget`.
-- `graphMemory` (optional): refs to graph snapshot, deterministic groups, candidate contraction previews, synthesized pattern-card drafts, and promotion review queue artifacts.
+- `graphMemory` (optional): refs to graph snapshot, deterministic groups, candidate contraction previews, synthesized pattern-card drafts, promotion review queue artifacts, explicit promotion decisions, and promoted pattern-card artifacts.
 - `stateSpace` (optional): refs to internal state-space projection artifacts (for example `bloch-v1`).
 
 Each ref is nullable. Producers should populate refs only when source artifacts exist.
@@ -202,6 +204,16 @@ Playbook memory matures through explicit compression boundaries, not hidden jump
 
 Failure Mode:
 A system that can group memory but not review it will either stall or over-promote.
+
+
+Rule:
+Durable knowledge must pass through an explicit promotion decision.
+
+Pattern:
+Pattern-card promotion forms the durable attractors of Playbook memory.
+
+Failure Mode:
+Unreviewed pattern promotion creates unstable doctrine and architecture drift.
 
 ## Next-phase acceptance criteria
 
