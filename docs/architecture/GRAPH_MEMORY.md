@@ -90,6 +90,17 @@ Current scope stops before auto-promotion.
 ## Pipeline model
 
 ```text
+artifacts
+-> zettels
+-> groups
+-> draft patterns
+-> promoted patterns
+-> contracts
+```
+
+Detailed runtime pipeline:
+
+```text
 raw artifacts
 -> zettels
 -> graph snapshot
@@ -114,6 +125,29 @@ Graph memory is the structural core of Playbook's reasoning-engine lifecycle:
 - `draft pattern cards -> promotion decisions -> contracts`: applies explicit governance morphisms before doctrine gains policy force
 
 This keeps graph memory implementation-oriented: it is not passive storage, it is the compression and governance substrate for durable knowledge.
+
+
+## Canonical core and provisional frontier constraints
+
+Playbook graph memory uses a trust-partitioned topology:
+
+- provisional frontier: high-volume exploratory layers (`artifacts`, `zettels`, `groups`, `draft patterns`)
+- canonical core: low-volume high-trust layers (`promoted patterns`, `contracts`)
+
+Required invariants:
+
+- volume decreases as trust increases
+- mutation frequency decreases as trust increases
+- review requirements increase as trust increases
+
+Rule:
+No knowledge layer may grow in authority faster than it shrinks in volume.
+
+Pattern:
+A reasoning engine stays healthy by maintaining a small canonical core and a large provisional frontier.
+
+Failure Mode:
+When canonical layers expand too quickly or provisional layers never compress, the system collapses into doctrine thrash or structured clutter.
 
 ## Temperature model
 

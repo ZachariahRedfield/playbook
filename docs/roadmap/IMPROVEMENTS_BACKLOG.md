@@ -255,6 +255,22 @@ These are runtime implementation follow-ups for the RunCycle + zettelkasten arch
 - Add attractor-graph drift detection to surface over-merge, stale invariants, and contract-pattern divergence across cycles.
 
 
+
+## Staging candidates: Canonical-core enforcement budgets
+
+These items are future enforcement budgets and are intentionally backlog-only in this phase (docs/telemetry first; no hard gates yet).
+
+- Define canonical core size budget boundaries per repository profile.
+- Define max contract mutations per cycle to prevent doctrine churn.
+- Define max unresolved draft age to bound provisional frontier staleness.
+- Define forced topology compression threshold to prevent persistent frontier sprawl.
+
+Rule: No knowledge layer may grow in authority faster than it shrinks in volume.
+Pattern: A reasoning engine stays healthy by maintaining a small canonical core and a large provisional frontier.
+Failure Mode: When canonical layers expand too quickly or provisional layers never compress, the system collapses into doctrine thrash or structured clutter.
+
+---
+
 ## Backlog candidate: Bloch-style state-space telemetry
 
 Add deterministic telemetry fields to improve cycle-level state diagnostics:

@@ -21,6 +21,10 @@ This framing preserves current CLI value while clarifying why architecture inves
 
 Canonical lifecycle:
 
+`artifacts -> zettels -> groups -> draft patterns -> promoted patterns -> contracts`
+
+Detailed runtime mapping:
+
 `evidence -> zettels -> graph -> groups -> candidate patterns -> draft pattern cards -> promotion decisions -> contracts`
 
 Lifecycle intent by stage:
@@ -33,6 +37,29 @@ Lifecycle intent by stage:
 - **draft pattern cards**: reviewable, contract-shaped knowledge proposals
 - **promotion decisions**: explicit append-only morphisms that change durable state
 - **contracts**: enforced doctrine with policy/governance force
+
+
+## Canonical core vs provisional frontier
+
+Trust is intentionally asymmetric across layers:
+
+- provisional frontier: `artifacts`, `zettels`, `groups`, `draft patterns`
+- canonical core: `promoted patterns`, `contracts`
+
+Trust-ladder invariants:
+
+- volume decreases as trust increases
+- mutation frequency decreases as trust increases
+- review requirements increase as trust increases
+
+Rule:
+No knowledge layer may grow in authority faster than it shrinks in volume.
+
+Pattern:
+A reasoning engine stays healthy by maintaining a small canonical core and a large provisional frontier.
+
+Failure Mode:
+When canonical layers expand too quickly or provisional layers never compress, the system collapses into doctrine thrash or structured clutter.
 
 ## Next three defining capabilities
 
