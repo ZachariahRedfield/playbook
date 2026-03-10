@@ -7,6 +7,14 @@ This contract defines deterministic lifecycle semantics for Playbook zettels and
 Zettelkasten artifacts are working-memory evidence structures used by RunCycle consolidation.
 They are not durable memory by default.
 
+## Current maturity
+
+Current shipped scaffolding includes zettels, typed links, graph snapshots, and deterministic grouping.
+
+Next phase is deterministic candidate-pattern synthesis into draft pattern cards and promotion-readiness scoring.
+
+This phase stops before automatic promotion.
+
 ## Artifact paths
 
 Runtime output paths:
@@ -97,11 +105,12 @@ Long-term memory structure path:
 ```text
 raw artifacts
 -> zettels
--> graph edges
+-> graph snapshot
 -> deterministic groups
--> pattern-card drafts
--> promotion review queue
--> pattern cards
+-> candidate patterns
+-> draft pattern cards
+-> review queue
+-> promoted patterns
 -> contracts
 ```
 
@@ -131,10 +140,10 @@ Over-merging connected but incompatible zettels creates false patterns and doctr
 
 
 Rule:
-No compressed candidate becomes durable doctrine until it survives deterministic readiness scoring and review.
+Do not promote compressed knowledge until deterministic grouping and lineage-preserving contraction exist.
 
 Pattern:
-Pattern-card drafts are the bridge between graph contraction and trusted doctrine.
+Playbook memory matures in stages: atomic capture, structural linkage, deterministic grouping, then controlled compression.
 
 Failure Mode:
-Jumping directly from candidate grouping to promotion creates non-reviewable doctrine drift.
+Skipping grouping and jumping straight from notes to doctrine causes brittle, non-reproducible promotion.

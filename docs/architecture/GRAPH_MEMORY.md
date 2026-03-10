@@ -74,17 +74,30 @@ Stochastic clustering is exploratory only:
 - offline Louvain/Leiden may be used for research and diagnostics
 - exploratory clustering must not gate production promotion/contract decisions
 
+## Current maturity stage
+
+Shipped scaffolding currently covers:
+
+- RunCycle lineage capture
+- zettelkasten extraction (`zettels.jsonl`, `links.jsonl`)
+- graph snapshots
+- deterministic grouping
+
+The next phase is implementation of deterministic candidate-pattern synthesis into draft pattern cards, plus promotion-readiness scoring.
+
+Current scope stops before auto-promotion.
+
 ## Pipeline model
 
 ```text
 raw artifacts
 -> zettels
--> graph edges
+-> graph snapshot
 -> deterministic groups
--> candidate contraction preview
--> pattern-card drafts
--> promotion review queue
--> pattern cards
+-> candidate patterns
+-> draft pattern cards
+-> review queue
+-> promoted patterns
 -> contracts
 ```
 
@@ -101,20 +114,23 @@ hot graph -> warm graph -> cold graph
 ## Rule / Pattern / Failure Mode
 
 Rule:
-Grouping is allowed only when connectivity and boundary compatibility both hold.
+Do not promote grouped knowledge until it is rendered into reviewable draft pattern cards.
 
 Pattern:
-Deterministic grouping is the bridge between linked memory and compressed reusable knowledge.
+Playbook memory matures through explicit compression boundaries, not hidden jumps.
 
 Failure Mode:
-Over-merging connected but incompatible zettels creates false patterns and doctrine drift.
+A system that can group memory but not review it will either stall or over-promote.
 
 ## Runtime artifacts
 
-Deterministic grouping and contraction preview artifacts are emitted per run cycle:
+Current runtime graph-memory artifacts are emitted per run cycle:
 
 - `.playbook/graph/groups/<timestamp>@<shortsha>.json`
 - `.playbook/compaction/candidate-patterns/<timestamp>@<shortsha>.json`
+
+Next-phase artifacts (not auto-promotion):
+
 - `.playbook/pattern-cards/drafts/<timestamp>@<shortsha>.json`
 - `.playbook/promotion/review-queue/<timestamp>@<shortsha>.json`
 
@@ -133,10 +149,17 @@ Grouping metrics include:
 
 
 Rule:
-No compressed candidate becomes durable doctrine until it survives deterministic readiness scoring and review.
+Do not promote compressed knowledge until deterministic grouping and lineage-preserving contraction exist.
 
 Pattern:
-Pattern-card drafts are the bridge between graph contraction and trusted doctrine.
+Playbook memory matures in stages: atomic capture, structural linkage, deterministic grouping, then controlled compression.
 
 Failure Mode:
-Jumping directly from candidate grouping to promotion creates non-reviewable doctrine drift.
+Skipping grouping and jumping straight from notes to doctrine causes brittle, non-reproducible promotion.
+
+## Next-phase acceptance criteria
+
+- Candidate patterns are deterministically synthesized from grouped evidence.
+- Each draft pattern card preserves lineage to source zettels and origin run cycles.
+- Promotion-readiness scoring is reproducible and emitted with draft artifacts.
+- Promotion remains review-gated; no automatic promotion to contracts.

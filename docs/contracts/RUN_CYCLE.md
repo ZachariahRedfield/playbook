@@ -8,7 +8,16 @@ It is intended to anchor:
 - return remediation (`verify`/`plan`/`apply`/post-`verify`)
 - zettelkasten extraction (`zettels.jsonl` and `links.jsonl`)
 - deterministic graph snapshot linkage (`.playbook/graph/snapshots/<timestamp>@<shortsha>.json`)
-- cycle-based memory consolidation (`compact` and `promote` outcomes)
+- cycle-based memory progression (grouping outputs and promotion-readiness inputs)
+
+
+## Current memory maturity
+
+Current shipped scaffolding includes RunCycle capture, zettelkasten extraction, graph snapshots, and deterministic groups.
+
+Next phase adds deterministic candidate-pattern synthesis into reviewable draft pattern cards plus promotion-readiness scoring.
+
+Current scope explicitly stops before auto-promotion.
 
 ## RunCycle memory semantics
 
@@ -22,8 +31,11 @@ RunCycle(n)
 -> apply
 -> extract
 -> zettels
--> compact
--> promote
+-> graph snapshot
+-> deterministic groups
+-> candidate patterns
+-> draft pattern cards
+-> review queue
 -> RunCycle(n+1)
 ```
 
@@ -183,10 +195,17 @@ Over-merging connected but incompatible zettels creates false patterns and doctr
 ## Rule / Pattern / Failure Mode
 
 Rule:
-No compressed candidate becomes durable doctrine until it survives deterministic readiness scoring and review.
+Do not promote grouped knowledge until it is rendered into reviewable draft pattern cards.
 
 Pattern:
-Pattern-card drafts are the bridge between graph contraction and trusted doctrine.
+Playbook memory matures through explicit compression boundaries, not hidden jumps.
 
 Failure Mode:
-Jumping directly from candidate grouping to promotion creates non-reviewable doctrine drift.
+A system that can group memory but not review it will either stall or over-promote.
+
+## Next-phase acceptance criteria
+
+- Candidate patterns are deterministically synthesized from grouped evidence.
+- Draft pattern cards are emitted as the first reviewable compression boundary.
+- Promotion-readiness scoring is reproducible per run cycle.
+- Promotion remains review-gated with no automatic contract promotion.
