@@ -163,6 +163,35 @@ Implementation foundation (internal):
 - Implemented lifecycle helpers that enforce valid transitions and support supersede relationships.
 - Positioned lifecycle infrastructure as internal-only groundwork without expanding the public CLI knowledge-management surface.
 
+## Minimal reasoning engine first (proof before expansion)
+
+Playbook roadmap execution must prove one complete closed-loop reasoning engine before broadening scope to generalized cross-domain automation.
+
+Minimal closed loop target:
+
+`observe -> atomize -> connect -> compress -> govern -> enforce -> reflect`
+
+Phased rollout requirement:
+
+- **Phase 1**: self-host on Playbook
+- **Phase 2**: bounded pilot on Fawxzzy Fitness
+- **Phase 3**: controlled cross-repo transfer
+
+Roadmap stance:
+
+- prioritize phased proof over premature generalization
+- keep early pilot boundaries explicit (include/exclude surfaces)
+- promote only what passes deterministic governance and review gates
+
+Rule:
+Prove one complete closed-loop reasoning engine before expanding scope to generalized cross-domain automation.
+
+Pattern:
+A strong pilot repo improves both the product being built and the reasoning engine observing it.
+
+Failure Mode:
+Using a second repo too early without bounded rollout turns a proving ground into a noise amplifier.
+
 ## Next defining capabilities for reasoning-engine maturity
 
 ### Meta-Playbook introspection

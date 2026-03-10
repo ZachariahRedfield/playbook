@@ -56,3 +56,17 @@ Meta findings may create improvement proposals under `.playbook/meta/proposals/`
 Those proposals are drafts and must flow through normal review and governance commands before any doctrine change can occur.
 
 The meta layer never writes to pattern-card artifacts or contract artifacts directly.
+
+## Minimal reasoning engine role
+
+Meta introspection is one of the seven minimum layers in the minimal reasoning engine loop:
+
+`observe -> atomize -> connect -> compress -> govern -> enforce -> reflect`
+
+For the bounded Fawxzzy Fitness pilot, meta outputs should focus on:
+
+- artifact quality and lineage completeness
+- repeated failure motifs in verify/promotion flows
+- bounded proposals for operator review queues
+
+Meta introspection remains proposal-only in the pilot and must not perform automatic contract mutation or autonomous doctrine tuning.

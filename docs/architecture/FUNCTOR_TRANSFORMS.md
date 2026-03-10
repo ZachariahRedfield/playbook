@@ -17,6 +17,20 @@ Knowledge becomes executable when mapped across domains through structure-preser
 Failure Mode:
 Transforms that break structural invariants produce invalid doctrine.
 
+## Minimal-version boundary
+
+In the minimal reasoning engine, transform scope is intentionally narrow:
+
+- support contract proposal generation from validated pattern knowledge
+- keep mappings deterministic and lineage-complete
+- defer broad functor ecosystem expansion until phased proof is complete
+
+Out-of-scope during minimal proof:
+
+- broad functor ecosystem rollout
+- autonomous doctrine mutation through transform outputs
+- cross-repo pattern propagation by default
+
 ## Canonical transform domains
 
 Current deterministic mappings:

@@ -39,6 +39,46 @@ Lifecycle intent by stage:
 - **contracts**: enforced doctrine with policy/governance force
 
 
+## Minimal complete loop and bounded pilot path
+
+Minimal complete reasoning loop:
+
+`observe -> atomize -> connect -> compress -> govern -> enforce -> reflect`
+
+Minimum layers for proof:
+
+- evidence intake
+- atomic memory
+- structural memory
+- compression
+- governance
+- contract proposal layer
+- meta introspection
+
+Out of scope for the minimal version:
+
+- multi-repo orchestration
+- broad functor ecosystem
+- advanced topology compression
+- autonomous doctrine mutation
+- generalized UI platform
+
+Rollout path:
+
+- **Phase 1**: self-host on Playbook
+- **Phase 2**: bounded pilot on Fawxzzy Fitness
+- **Phase 3**: controlled cross-repo transfer
+
+Proof bar (minimal reasoning engine proven):
+
+- ingest deterministic repo artifacts
+- produce zettels with evidence refs
+- build deterministic graph/group artifacts
+- synthesize draft pattern cards
+- support explicit promotion decisions
+- generate contract mutation proposals without direct mutation
+- analyze its own artifacts and emit improvement findings
+
 ## Canonical core vs provisional frontier
 
 Trust is intentionally asymmetric across layers:
