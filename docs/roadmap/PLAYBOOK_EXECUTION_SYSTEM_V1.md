@@ -82,7 +82,7 @@ interface ScmContext {
 
 - Keep canonical machine roadmap in `docs/roadmap/ROADMAP.json`.
 - Enforce schema with `scripts/validate-roadmap-contract.mjs`.
-- Add `playbook roadmap verify` as CLI alias over the script in v1.0.
+- Add `pnpm playbook roadmap verify` as CLI alias over the script in v1.0.
 - PR template must include `Roadmap-ID: PB-V...`.
 - CI checks:
   - roadmap contract valid
@@ -204,7 +204,7 @@ interface ScmContext {
   "docs": ["docs/commands/failure.md"],
   "dependencies": ["PB-V05-PACKAGE-BOUNDARIES-001"],
   "package_ownership": ["@fawxzzy/playbook", "@zachariahredfield/playbook-engine"],
-  "verification_commands": ["node packages/cli/dist/main.js failure suggest --json"],
+  "verification_commands": ["pnpm playbook failure suggest --json"],
   "status": "planned"
 }
 ```
@@ -275,12 +275,12 @@ interface ScmContextProvider {
 - **Objective**: build shared SCM context provider and migrate analyze-pr.
 - **Plan**: add node provider, core types, fixtures for detached/shallow/rename cases, wire analyze-pr to provider.
 - **Files**: `packages/node/src/scm/*`, `packages/core/src/contracts/*`, `packages/engine/src/commands/analyze-pr/*`.
-- **Verification**: `node packages/cli/dist/main.js analyze-pr --json`, contract fixture tests.
+- **Verification**: `pnpm playbook analyze-pr --json`, contract fixture tests.
 - **Docs summary**: update `docs/architecture/SCM_CONTEXT_LAYER.md` and analyze-pr command docs.
 
 ### Cluster 3: failure intelligence v1
 - **Objective**: implement failure ingest/classify/suggest and prevention mapping.
 - **Plan**: add failure taxonomy schema, command handlers, suggestion generator, verify hook for unresolved codification-required classes.
 - **Files**: `packages/engine/src/failure/*`, `packages/cli/src/commands/failure.ts`, `docs/contracts/FAILURE_INTELLIGENCE_CONTRACT.md`.
-- **Verification**: `node packages/cli/dist/main.js failure ingest --json --input ...`, `pnpm test -- failure-intelligence`.
+- **Verification**: `pnpm playbook failure ingest --json --input ...`, `pnpm test -- failure-intelligence`.
 - **Docs summary**: add `docs/commands/failure.md` and workflow updates in dev workflow/roadmap docs.

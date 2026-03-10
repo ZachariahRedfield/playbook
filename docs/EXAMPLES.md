@@ -3,32 +3,32 @@
 ## Analyze a repository
 
 ```bash
-playbook analyze
+pnpm playbook analyze
 ```
 
 ## Verify repository governance
 
 ```bash
-playbook verify
+pnpm playbook verify
 ```
 
 ## Initialize Playbook
 
 ```bash
-playbook init
+pnpm playbook init
 ```
 
 ## Sample CLI output
 
 ```text
-$ playbook analyze
+$ pnpm playbook analyze
 Detected Stack
 
 Framework: Next.js
 Database: Supabase
 Styling: Tailwind
 
-$ playbook verify
+$ pnpm playbook verify
 PASS  requireNotesOnChanges
 All governance checks passed.
 ```

@@ -4,7 +4,7 @@ Remediation features require defined trust boundaries and change-scope levels.
 
 ## Scope
 
-This model governs `playbook verify`, `playbook plan`, and `playbook apply` execution boundaries.
+This model governs `pnpm playbook verify`, `pnpm playbook plan`, and `pnpm playbook apply` execution boundaries.
 
 ## Trust boundary principles
 

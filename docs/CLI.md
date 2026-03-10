@@ -76,7 +76,7 @@ Current diagnosis sources:
 - `docs audit` findings
 - repository index presence (`.playbook/repo-index.json`)
 
-`playbook doctor --json` emits a deterministic contract:
+`pnpm playbook doctor --json` emits a deterministic contract:
 
 ```json
 {

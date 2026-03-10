@@ -56,13 +56,13 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
 | analyze-pr | Diff-aware impact/risk surface | engine + node | stable | Must use shared SCM normalization + graph intelligence | First consumer of SCM context provider and graph risk paths |
 
 ### Final quick-start recommendation
-1. `playbook ai-context --json`
-2. `playbook ai-contract --json`
-3. `playbook index --json`
-4. `playbook query modules --json`
-5. `playbook verify --json`
-6. `playbook plan --json`
-7. `playbook apply --from-plan .playbook/plan.json`
+1. `pnpm playbook ai-context --json`
+2. `pnpm playbook ai-contract --json`
+3. `pnpm playbook index --json`
+4. `pnpm playbook query modules --json`
+5. `pnpm playbook verify --json`
+6. `pnpm playbook plan --json`
+7. `pnpm playbook apply --from-plan .playbook/plan.json`
 
 ### Final AI operating ladder
 `ai-context -> ai-contract -> context -> index -> query/explain -> ask --repo-context -> verify -> plan -> apply -> verify`
@@ -104,7 +104,7 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
   - docs audit included in delivery checklist docs.
 - **Verification commands**:
   - `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id`
-  - `node packages/cli/dist/main.js docs audit --json`
+  - `pnpm playbook docs audit --json`
   - `pnpm -r build`
 - **Required updates**: `docs/roadmap/README.md`, `docs/PLAYBOOK_DEV_WORKFLOW.md`, PR template.
 
@@ -120,8 +120,8 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
 - **Verification commands**:
   - `pnpm -r build`
   - `pnpm -r test`
-  - `node packages/cli/dist/main.js verify --json`
-  - `node packages/cli/dist/main.js plan --json`
+  - `pnpm playbook verify --json`
+  - `pnpm playbook plan --json`
 - **Required updates**: boundary refactor plan + command contract ownership wording.
 
 ### PR3 — PB-V05-PACKAGE-BOUNDARIES-001 (analyze composition migration)
@@ -134,8 +134,8 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
   - CLI analyze remains UX-compatible;
   - contract snapshots updated if envelope fields change.
 - **Verification commands**:
-  - `node packages/cli/dist/main.js analyze --json`
-  - `node packages/cli/dist/main.js verify --json`
+  - `pnpm playbook analyze --json`
+  - `pnpm playbook verify --json`
   - `pnpm -r test`
 - **Required updates**: README analyze positioning and boundary plan progress notes.
 
@@ -149,7 +149,7 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
   - analyze-pr consumes provider;
   - detached/shallow/rename/deleted/submodule/dirty fixtures pass.
 - **Verification commands**:
-  - `node packages/cli/dist/main.js analyze-pr --json`
+  - `pnpm playbook analyze-pr --json`
   - `pnpm -r test -- analyze-pr`
   - `pnpm -r build`
 - **Required updates**: SCM context architecture doc, analyze-pr command doc, roadmap refs if new fixture files/contracts added.
@@ -164,8 +164,8 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
   - prevention-target mappings generated;
   - unresolved codification-required failure blocks closure path.
 - **Verification commands**:
-  - `node packages/cli/dist/main.js failure ingest --json --input .playbook/failures/sample.json`
-  - `node packages/cli/dist/main.js failure suggest --json`
+  - `pnpm playbook failure ingest --json --input .playbook/failures/sample.json`
+  - `pnpm playbook failure suggest --json`
   - `pnpm -r test -- failure-intelligence`
 - **Required updates**: failure contract doc, command docs, dev workflow closure policy.
 
@@ -248,9 +248,9 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
 - Node: optional file ingestion adapters.
 
 ### Command surface (first slice)
-- `playbook failure ingest --input <file> --json`
-- `playbook failure classify --id <failure-id> --json`
-- `playbook failure suggest --id <failure-id> --json`
+- `pnpm playbook failure ingest --input <file> --json`
+- `pnpm playbook failure classify --id <failure-id> --json`
+- `pnpm playbook failure suggest --id <failure-id> --json`
 
 ### Schema/contracts
 - `docs/contracts/FAILURE_TAXONOMY_SCHEMA.json` (taxonomy + severity + recurrence + codification flags).
@@ -305,7 +305,7 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
 - `repo-graph.json`: stable compatibility export derived from `arch-graph.v2.json`.
 
 ### Stable external vs evolving internal
-- Stable: `playbook graph --json` envelope + compatibility fields.
+- Stable: `pnpm playbook graph --json` envelope + compatibility fields.
 - Evolving internal: semantic relationship types, impact score factors, boundary/risk annotations.
 
 ### Incremental update approach
@@ -330,9 +330,9 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
 
 ### First self-analysis usage inside Playbook
 - Add CI smoke step that runs:
-  - `playbook index --json`
-  - `playbook graph --json`
-  - `playbook analyze-pr --json`
+  - `pnpm playbook index --json`
+  - `pnpm playbook graph --json`
+  - `pnpm playbook analyze-pr --json`
 - Assert generated risk/impact payload contracts in this repo.
 
 ## 9) Concrete artifact specs (implementation-ready)
@@ -345,7 +345,7 @@ This document operationalizes the accepted roadmap baseline into an execution-gr
   "dependencies": ["PB-V05-PACKAGE-BOUNDARIES-001"],
   "verification_commands": [
     "node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id",
-    "node packages/cli/dist/main.js docs audit --json"
+    "pnpm playbook docs audit --json"
   ]
 }
 ```
@@ -472,7 +472,7 @@ export interface NormalizedScmContext {
 - **Verification**
   - `pnpm -r build`
   - `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id`
-  - `node packages/cli/dist/main.js docs audit --json`
+  - `pnpm playbook docs audit --json`
 - **Docs summary**
   - Clarify strategic vs contract roadmap authority and document gate failure semantics.
 
@@ -492,8 +492,8 @@ export interface NormalizedScmContext {
 - **Verification**
   - `pnpm -r build`
   - `pnpm -r test`
-  - `node packages/cli/dist/main.js verify --json`
-  - `node packages/cli/dist/main.js plan --json`
+  - `pnpm playbook verify --json`
+  - `pnpm playbook plan --json`
 - **Docs summary**
   - Update canonical ownership references and migrated command boundary notes.
 
@@ -514,7 +514,7 @@ export interface NormalizedScmContext {
 - **Verification**
   - `pnpm -r build`
   - `pnpm -r test`
-  - `node packages/cli/dist/main.js analyze --json`
-  - `node packages/cli/dist/main.js analyze-pr --json`
+  - `pnpm playbook analyze --json`
+  - `pnpm playbook analyze-pr --json`
 - **Docs summary**
   - Mark analyze as compatibility composition and codify SCM edge-case fixture requirements.

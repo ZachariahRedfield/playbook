@@ -9,13 +9,13 @@ This package provides the `playbook` CLI. It is not a general-purpose chat assis
 ## Canonical serious-user quickstart
 
 ```bash
-npx --yes @fawxzzy/playbook ai-context --json
-npx --yes @fawxzzy/playbook ai-contract --json
-npx --yes @fawxzzy/playbook context --json
-npx --yes @fawxzzy/playbook verify --json
-npx --yes @fawxzzy/playbook plan --json
-npx --yes @fawxzzy/playbook apply --from-plan .playbook/plan.json
-npx --yes @fawxzzy/playbook verify --ci --json
+pnpm playbook ai-context --json
+pnpm playbook ai-contract --json
+pnpm playbook context --json
+pnpm playbook verify --json
+pnpm playbook plan --json
+pnpm playbook apply --from-plan .playbook/plan.json
+pnpm playbook verify --ci --json
 ```
 
 Repository-intelligence commands (`index`, `query`, `explain`, `ask --repo-context`) are part of the same canonical ladder between context bootstrap and remediation.
@@ -30,15 +30,15 @@ For full command inventory and command contracts, use:
 
 ```bash
 pnpm -C packages/cli build
-node packages/cli/dist/main.js ai-context --json
-node packages/cli/dist/main.js verify --json
+pnpm playbook ai-context --json
+pnpm playbook verify --json
 ```
 
 ## Offline/limited-registry tgz test
 
 ```bash
 pnpm run pack:cli
-npx --yes ./packages/cli/fawxzzy-playbook-<version>.tgz verify --json
+pnpm playbook verify --json
 ```
 
 ## GitHub Action

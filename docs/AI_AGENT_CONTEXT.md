@@ -4,7 +4,7 @@
 
 When changing package layout or cross-package dependencies:
 
-1. Run `pnpm -r build && node packages/cli/dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` for repo-internal execution.
+1. Run `pnpm -r build && pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` for repo-internal execution.
 2. Review `Structure` to understand folder/workspace containment.
 3. Review `Dependencies` to avoid introducing unintended couplings.
 4. Regenerate diagrams after architecture updates and commit the updated markdown.
@@ -23,12 +23,12 @@ This keeps architecture reasoning explicit and reproducible for agents working i
 Use the scoped package entrypoint for the canonical serious-user ladder:
 
 ```bash
-npx --yes @fawxzzy/playbook ai-context --json
-npx --yes @fawxzzy/playbook ai-contract --json
-npx --yes @fawxzzy/playbook context --json
-npx --yes @fawxzzy/playbook index --json
-npx --yes @fawxzzy/playbook query modules --json
-npx --yes @fawxzzy/playbook explain architecture --json
+pnpm playbook ai-context --json
+pnpm playbook ai-contract --json
+pnpm playbook context --json
+pnpm playbook index --json
+pnpm playbook query modules --json
+pnpm playbook explain architecture --json
 ```
 
 `analyze` remains available for compatibility and lightweight stack inspection, but it is no longer the primary serious-user bootstrap path.
@@ -36,7 +36,7 @@ npx --yes @fawxzzy/playbook explain architecture --json
 Optional compatibility invocation (same scoped package):
 
 ```bash
-npx --yes -p @fawxzzy/playbook playbook ai-context --json
+npx --yes -p @fawxzzy/pnpm playbook pnpm playbook ai-context --json
 ```
 
 ### Publishing notes
@@ -69,14 +69,14 @@ Current product-facing command/artifact surface:
 - `diagram`
 - `plan`
 - `apply`
-- `playbook-demo` (via `playbook demo`)
+- `playbook-demo` (via `pnpm playbook demo`)
 
 If docs disagree with implementation, treat code as source of truth and realign docs.
 
 ## Internal CI command rule
 
 - Rule: Repo-internal CI must execute the built CLI directly, not through `npx`.
-- Pattern: Separate internal CLI execution (`node packages/cli/dist/main.js ...`) from consumer-install execution (`npx --yes @fawxzzy/playbook ...`).
+- Pattern: Separate internal CLI execution (`pnpm playbook ...`) from consumer-install execution (`pnpm playbook ...`).
 - Failure Mode: `npx could not determine executable to run` indicates package/bin resolution failure, not necessarily a command implementation bug.
 
 ## Documentation governance validation
@@ -85,7 +85,7 @@ When documentation, governance, or command-surface files change in the Playbook 
 
 ```bash
 pnpm -r build
-node packages/cli/dist/main.js docs audit --json
+pnpm playbook docs audit --json
 ```
 
 Pattern: AI working inside the Playbook repo should run docs audit alongside other branch-accurate local CLI validations.

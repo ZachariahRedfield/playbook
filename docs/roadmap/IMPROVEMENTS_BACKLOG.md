@@ -150,17 +150,17 @@ Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary
 ## Query System Ideas
 
 - Dependency graph query  
-  Command: `playbook query dependencies`
+  Command: `pnpm playbook query dependencies`
 
 - Impact analysis query enhancements  
-  Command: `playbook query impact <module>`
+  Command: `pnpm playbook query impact <module>`
 
 ---
 
 ## Developer Workflow Intelligence
 
 - Pull request analysis  
-  Command: `playbook analyze-pr`
+  Command: `pnpm playbook analyze-pr`
 
 Potential capabilities:
 
@@ -174,7 +174,7 @@ Potential capabilities:
 
 ## Risk Intelligence Enhancements
 
-- `playbook query risk --top`
+- `pnpm playbook query risk --top`
 
 Purpose:  
 Rank highest-risk modules in the repository.
@@ -183,7 +183,7 @@ Rank highest-risk modules in the repository.
 
 ## Follow-up Opportunities
 
-- `playbook backlog audit`
+- `pnpm playbook backlog audit`
 
 Purpose:  
 Automatically detect implemented improvements and archive them.
@@ -224,7 +224,7 @@ Near-term work should prioritize internal lifecycle contracts/artifacts over new
 
 ### Public surface stance (explicit)
 
-Potential `playbook knowledge *` commands remain directional concepts only and are intentionally deferred until lifecycle/trust contracts are stable and validated in deterministic workflows.
+Potential `pnpm playbook knowledge *` commands remain directional concepts only and are intentionally deferred until lifecycle/trust contracts are stable and validated in deterministic workflows.
 
 - Rule: Treat extracted knowledge as evidence first, reusable knowledge second.
 - Rule: Promotion requires stronger trust thresholds than observation and must be lifecycle-gated.

@@ -129,7 +129,7 @@ Styling: Tailwind
 <!-- docs-merge:duplicate-block -->
 > See also canonical block: [docs/EXAMPLES.md:27](EXAMPLES.md#block-27).
 
-Detector results should include structured evidence and confidence metadata, and `playbook analyze --json` should expose:
+Detector results should include structured evidence and confidence metadata, and `pnpm playbook analyze --json` should expose:
 
 - `detectorsRun: string[]`
 - `detected: Array<{ id, label, evidence[] }>`
@@ -152,7 +152,7 @@ The rule engine executes governance policies.
 
 Command:
 
-playbook verify
+pnpm playbook verify
 
 Execution pipeline:
 
@@ -236,7 +236,7 @@ JSON Output
 
 Command:
 
-playbook verify --json
+pnpm playbook verify --json
 
 Example output:
 
@@ -295,7 +295,7 @@ Playbook will support external plugins.
 
 Example:
 
-playbook plugins install company-rules
+pnpm playbook plugins install company-rules
 
 Plugins may add:
 

@@ -4,7 +4,7 @@
 
 ### WHAT
 
-- Strengthened `playbook apply --from-plan` plan loading to decode UTF-8 (with/without BOM) and UTF-16 (LE/BE BOM) artifacts, including conservative UTF-16 detection when shell redirection emits NUL-patterned output.
+- Strengthened `pnpm playbook apply --from-plan` plan loading to decode UTF-8 (with/without BOM) and UTF-16 (LE/BE BOM) artifacts, including conservative UTF-16 detection when shell redirection emits NUL-patterned output.
 - Improved invalid plan JSON diagnostics to preserve file path context and provide actionable shell-encoding guidance when payload bytes suggest PowerShell-style encoding artifacts.
 - Updated workflow docs with explicit PowerShell-safe plan capture examples and branch-local `node packages/cli/dist/main.js` commands for deterministic local validation.
 - Added PR-based `playbook-demo` refresh automation via `scripts/demo-refresh.mjs` and `.github/workflows/demo-refresh.yml`, with allowlisted artifact staging and `PLAYBOOK_CLI_PATH` injection.

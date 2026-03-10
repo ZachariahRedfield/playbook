@@ -51,9 +51,9 @@ inside CI
 
 Cloud must never be required.
 
-playbook init
-playbook analyze
-playbook verify
+pnpm playbook init
+pnpm playbook analyze
+pnpm playbook verify
 
 must always work independently.
 
@@ -71,7 +71,7 @@ Avoid "AI guessing" for core enforcement.
 
 CI contract stance:
 
-- `playbook verify --json` is the canonical repository validation gate in CI.
+- `pnpm playbook verify --json` is the canonical repository validation gate in CI.
 - CI should enforce product correctness, not automation maintenance.
 - Maintenance automation (for example `agents:update`, `agents:check`, docs audit) should run in dedicated scheduled/on-demand maintenance workflows.
 - Cross-repo demo refresh automation should run as PR-based scheduled/on-demand maintenance workflows (not inside the main correctness CI gate).
@@ -259,17 +259,17 @@ Current implemented product-facing command/artifact set:
 - `diagram`
 - `plan`
 - `apply`
-- `playbook-demo` artifact (exposed through `playbook demo`)
+- `playbook-demo` artifact (exposed through `pnpm playbook demo`)
 - `ai-context`
 - `ai-contract` (`.playbook/ai-contract.json` handshake contract)
 - `doctor --ai` AI-contract readiness gate (deterministic validation of contract + intelligence + remediation surfaces)
 - repository intelligence (`index`, `query`, `deps`, `ask`, `explain`)
-- deterministic architectural risk intelligence (`playbook query risk <module>`)
-- deterministic documentation coverage intelligence (`playbook query docs-coverage [module]`)
-- deterministic rule ownership intelligence (`playbook query rule-owners [rule-id]`)
-- deterministic module ownership intelligence (`playbook query module-owners [module]`)
-- deterministic test hotspot intelligence (`playbook query test-hotspots`) for candidate-only optimization discovery in validation workflows
-- deterministic architecture guardrail audits (`playbook audit architecture`) for platform hardening coverage
+- deterministic architectural risk intelligence (`pnpm playbook query risk <module>`)
+- deterministic documentation coverage intelligence (`pnpm playbook query docs-coverage [module]`)
+- deterministic rule ownership intelligence (`pnpm playbook query rule-owners [rule-id]`)
+- deterministic module ownership intelligence (`pnpm playbook query module-owners [module]`)
+- deterministic test hotspot intelligence (`pnpm playbook query test-hotspots`) for candidate-only optimization discovery in validation workflows
+- deterministic architecture guardrail audits (`pnpm playbook audit architecture`) for platform hardening coverage
 
 ## Roadmap framing (current baseline + future enhancements)
 
@@ -331,7 +331,7 @@ Conservative non-goals for this track:
 - no broad autonomous mutation behavior
 - no replacement of `verify -> plan -> apply -> verify`
 - no new broad command family in this pass
-- no public `playbook knowledge *` command-family expansion until lifecycle and trust contracts are stable
+- no public `pnpm playbook knowledge *` command-family expansion until lifecycle and trust contracts are stable
 - roadmap intent must not be presented as live command availability
 
 ## Product Development Lifecycle
@@ -371,9 +371,9 @@ Archived items preserve historical product intelligence without cluttering the a
 
 Current baseline:
 
-- **AI Repository Intelligence (`playbook ai-context`, `playbook ai-contract`, `index`, `query`, `deps`, `ask`, `explain`)** is implemented and available for deterministic AI bootstrap and repository intelligence workflows.
-- `playbook ask` now supports deterministic response modes (`--mode normal|concise|ultra`) to match explanation depth to developer workflow speed.
-- `playbook ask --repo-context` now hydrates ask prompts from trusted Playbook artifacts (`.playbook/repo-index.json` + AI contract metadata) instead of broad ad-hoc repository inference.
+- **AI Repository Intelligence (`pnpm playbook ai-context`, `pnpm playbook ai-contract`, `index`, `query`, `deps`, `ask`, `explain`)** is implemented and available for deterministic AI bootstrap and repository intelligence workflows.
+- `pnpm playbook ask` now supports deterministic response modes (`--mode normal|concise|ultra`) to match explanation depth to developer workflow speed.
+- `pnpm playbook ask --repo-context` now hydrates ask prompts from trusted Playbook artifacts (`.playbook/repo-index.json` + AI contract metadata) instead of broad ad-hoc repository inference.
 
 Future roadmap work should focus on enhancement quality (schema hardening, richer index coverage, CI artifact workflows, and contract durability), not on introducing these commands.
 
@@ -409,7 +409,7 @@ Priority hardening tracks:
    - track token/latency budgets for high-frequency command paths
 
 6. **Repeatable architecture guardrail audits**
-   - run `playbook audit architecture` as a deterministic hardening diagnostic
+   - run `pnpm playbook audit architecture` as a deterministic hardening diagnostic
    - keep audit checks aligned with docs/contracts/roadmap surfaces
    - enforce stable JSON contract coverage for architecture audit automation
 
@@ -766,7 +766,7 @@ Rewrite/reorganize these sections in `docs/PLAYBOOK_PRODUCT_ROADMAP.md`:
 - Consolidate **PHASE 2**, **PHASE 3**, **PHASE 4**, **PHASE 5**, **PHASE 6**, and **PHASE 7** into a clear progression: substrate -> knowledge graph -> context compression -> read runtime -> change runtime -> risk-aware execution.
 - Keep **AI Efficiency & Context Compression** as an explicit numbered phase.
 - Move **PR Intelligence (Implemented)** under the read-runtime phase grouping.
-- Add an explicit "Phase 9 prerequisites" block requiring deterministic mutation scope, policy gates, and contract validation before `playbook agent` expansion.
+- Add an explicit "Phase 9 prerequisites" block requiring deterministic mutation scope, policy gates, and contract validation before `pnpm playbook agent` expansion.
 - Add a future **Repository Learning Loop** phase scoped to human-reviewed suggestions only (no autonomous mutation).
 
 ### Documentation Capture Rules (Post-Audit)
@@ -794,7 +794,7 @@ Goal:
 Build deterministic repository intelligence artifacts that AI systems and developers can trust.
 
 Primary capability:
-- `playbook index` generates `.playbook/repo-index.json` as machine-readable repository context.
+- `pnpm playbook index` generates `.playbook/repo-index.json` as machine-readable repository context.
 
 Intelligence artifacts should include:
 - modules
@@ -808,9 +808,9 @@ Goal:
 Build a deterministic local Repository Knowledge Graph artifact from repository intelligence.
 
 Primary capability:
-- `playbook index` emits `.playbook/repo-graph.json` as a local, deterministic, CLI-first graph artifact generated from repository evidence.
+- `pnpm playbook index` emits `.playbook/repo-graph.json` as a local, deterministic, CLI-first graph artifact generated from repository evidence.
 - Graph artifact evolution is versioned by explicit contract policy with additive-vs-breaking guidance for downstream CI/AI consumers.
-- Implemented thin-slice hardening: graph stats include deterministic node/edge kind count maps and are exposed through `playbook graph --json` contracts.
+- Implemented thin-slice hardening: graph stats include deterministic node/edge kind count maps and are exposed through `pnpm playbook graph --json` contracts.
 
 Graph architecture stance:
 - local
@@ -850,7 +850,7 @@ Repository Knowledge Graph should power:
 - context compression
 
 Current shipped compression slice:
-- `playbook index` also emits `.playbook/context/modules/*.json` compressed module digests derived from index + graph + deterministic risk/docs/test signals.
+- `pnpm playbook index` also emits `.playbook/context/modules/*.json` compressed module digests derived from index + graph + deterministic risk/docs/test signals.
 - Existing read runtime (`query impact`, `explain <module>`) reuses digest/graph context additively before broader inference.
 - impact analysis
 - risk-aware reasoning
@@ -888,30 +888,30 @@ Goal:
 Enable deterministic repository reasoning through command-surface intelligence queries.
 
 Primary capability:
-- `playbook query`
+- `pnpm playbook query`
 
 Representative queries:
-- `playbook query architecture`
-- `playbook query dependencies <module>`
-- `playbook query impact <module>`
-- `playbook query risk <module>`
-- `playbook query docs-coverage`
-- `playbook query rule-owners`
-- `playbook query test-hotspots`
+- `pnpm playbook query architecture`
+- `pnpm playbook query dependencies <module>`
+- `pnpm playbook query impact <module>`
+- `pnpm playbook query risk <module>`
+- `pnpm playbook query docs-coverage`
+- `pnpm playbook query rule-owners`
+- `pnpm playbook query test-hotspots`
 
 This phase establishes contract-driven repository reasoning so AI systems can avoid ad-hoc inference.
 
 ### Impact Analysis Query
 
 Command:
-`playbook query impact <module>`
+`pnpm playbook query impact <module>`
 
 Purpose:
 Identify all modules, packages, and files affected by changes to a specific module.
 
 Example:
 
-`playbook query impact auth`
+`pnpm playbook query impact auth`
 
 Output:
 
@@ -926,7 +926,7 @@ Use repository dependency edges to make change impact deterministic.
 
 Primary capabilities:
 - dependency graph in index artifacts
-- impact analysis via `playbook query impact <module>`
+- impact analysis via `pnpm playbook query impact <module>`
 
 Expected outcomes:
 - identify downstream dependents before edits
@@ -939,7 +939,7 @@ Goal:
 Add deterministic module-level risk scoring for safer AI and human remediation planning.
 
 Primary capability:
-- `playbook query risk <module>`
+- `pnpm playbook query risk <module>`
 
 Risk model signals should include:
 - fan-in
@@ -952,14 +952,14 @@ Expected outcome:
 
 PHASE 8 — AI REPOSITORY CONTRACT
 
-Status: **Baseline implemented** via `playbook ai-contract` and `.playbook/ai-contract.json`.
+Status: **Baseline implemented** via `pnpm playbook ai-contract` and `.playbook/ai-contract.json`.
 
 Goal:
 Define a deterministic, machine-readable AI interaction contract that repositories expose before agent runtime execution is introduced.
 
 Primary capability:
 - `.playbook/ai-contract.json`
-- `playbook ai-contract` / `playbook ai-contract --json`
+- `pnpm playbook ai-contract` / `pnpm playbook ai-contract --json`
 
 The AI Contract specifies how AI systems should interact with a Playbook-governed repository.
 
@@ -1008,7 +1008,7 @@ Goal:
 Introduce **Playbook Agent** as an AI execution runtime for repositories.
 
 New command:
-- `playbook agent`
+- `pnpm playbook agent`
 
 Vision:
 Instead of AI systems directly editing code without guardrails, Playbook Agent orchestrates deterministic repository workflows so every proposal runs through repository intelligence and remediation contracts.
@@ -1023,16 +1023,16 @@ Example agent bootstrap flow:
 4. Executes the deterministic `plan -> apply -> verify` loop.
 
 Example:
-- `playbook agent "add pagination to workouts API"`
+- `pnpm playbook agent "add pagination to workouts API"`
 
 Deterministic AI execution loop:
-1. `playbook index`
-2. `playbook query architecture`
-3. `playbook query dependencies <module>`
-4. `playbook query risk <module>`
-5. `playbook plan`
-6. `playbook apply`
-7. `playbook verify`
+1. `pnpm playbook index`
+2. `pnpm playbook query architecture`
+3. `pnpm playbook query dependencies <module>`
+4. `pnpm playbook query risk <module>`
+5. `pnpm playbook plan`
+6. `pnpm playbook apply`
+7. `pnpm playbook verify`
 8. Repeat remediation cycle until verify is clean.
 
 This phase defines Playbook as an AI governance and execution runtime, not only a repository rule checker.
@@ -1043,9 +1043,9 @@ Playbook provides structured deterministic analysis of pull requests/branch diff
 
 Primary command:
 
-`playbook analyze-pr --json`
-`playbook analyze-pr --format github-comment`
-`playbook analyze-pr --format github-review`
+`pnpm playbook analyze-pr --json`
+`pnpm playbook analyze-pr --format github-comment`
+`pnpm playbook analyze-pr --format github-review`
 
 Current capabilities:
 
@@ -1059,7 +1059,7 @@ Current capabilities:
 - Standardize analyze-pr output selection through a single formatter layer (`--format text|json|github-comment|github-review`) so new presentation paths replace superseded ad-hoc branches
 - Wire GitHub Actions PR transport to post/update one sticky Playbook summary comment using the canonical `--format github-comment` formatter output (marker: `<!-- playbook:analyze-pr-comment -->`)
 - Wire GitHub Actions PR transport to synchronize inline review diagnostics using canonical `--format github-review` output (marker: `<!-- playbook:analyze-pr-inline -->`) so resolved diagnostics disappear
-- Treat index generation as an explicit prerequisite in CI (`playbook index` producer before `analyze-pr` consumer) to avoid artifact-readiness drift
+- Treat index generation as an explicit prerequisite in CI (`pnpm playbook index` producer before `analyze-pr` consumer) to avoid artifact-readiness drift
 - Treat PR diff base as an explicit CI contract (`--base origin/${{ github.base_ref }}` + `fetch-depth: 0`) instead of implicit environment inference
 
 Playbook should analyze PRs but not author them.
@@ -1072,8 +1072,8 @@ Goal:
 Extend Playbook Agent into recurring and CI-driven repository maintenance modes.
 
 Planned operating modes:
-- CI self-healing: `playbook agent --fix-ci`
-- maintenance mode: `playbook agent --mode maintain`
+- CI self-healing: `pnpm playbook agent --fix-ci`
+- maintenance mode: `pnpm playbook agent --mode maintain`
 
 Example autonomous tasks:
 - documentation drift fixes
@@ -1173,11 +1173,11 @@ Playbook will provide built-in deterministic security intelligence via the same 
 
 Planned command surface:
 
-- `playbook query vulnerabilities`
-- `playbook query secrets`
-- `playbook query risky-exec`
-- `playbook query unsafe-paths`
-- `playbook verify security-baseline`
+- `pnpm playbook query vulnerabilities`
+- `pnpm playbook query secrets`
+- `pnpm playbook query risky-exec`
+- `pnpm playbook query unsafe-paths`
+- `pnpm playbook verify security-baseline`
 
 Documentation patterns and rules to encode:
 
@@ -1248,7 +1248,7 @@ How do we keep AI-generated code aligned with architecture?
 
 This phase is now implemented in the current product baseline.
 
-Implemented baseline: `playbook index` (paired with `query`, `deps`, `ask`, `explain`, and `ai-context`).
+Implemented baseline: `pnpm playbook index` (paired with `query`, `deps`, `ask`, `explain`, and `ai-context`).
 
 - Command intent: generate a machine-readable repository intelligence artifact for AI-safe repository understanding.
 - Output path: `.playbook/repo-index.json`.
@@ -1356,12 +1356,12 @@ Feature: Agent Interface
 
 Expose machine-readable interfaces:
 
-- playbook analyze --json
-- playbook status --json
-- playbook plan --json
-- playbook apply --json
-- playbook fix --json (convenience path)
-- playbook verify --json
+- pnpm playbook analyze --json
+- pnpm playbook status --json
+- pnpm playbook plan --json
+- pnpm playbook apply --json
+- pnpm playbook fix --json (convenience path)
+- pnpm playbook verify --json
 
 Purpose:
 
@@ -1425,7 +1425,7 @@ Baseline validation commands:
 - `pnpm -r build`
 - `pnpm test`
 - `pnpm smoke:ci`
-- branch-accurate CLI runs through `node packages/cli/dist/main.js ...`
+- branch-accurate CLI runs through `pnpm playbook ...`
 
 Pattern: Self-Verifying Command Development
 - Every new command should increase both feature coverage and validation coverage.
@@ -1437,11 +1437,11 @@ Pattern: Branch-Accurate Command Validation
 - Inside the Playbook repository, command validation should run against the locally built CLI entrypoint rather than assuming published package behavior.
 
 Future enhancement:
-- introduce `playbook self-test` as a system-level validation entrypoint that exercises key commands and contracts against fixture repositories.
+- introduce `pnpm playbook self-test` as a system-level validation entrypoint that exercises key commands and contracts against fixture repositories.
 
 ## Documentation governance contract
 
-- Deliver deterministic documentation governance through `playbook docs audit` for humans, CI, and AI.
+- Deliver deterministic documentation governance through `pnpm playbook docs audit` for humans, CI, and AI.
 - Maintain a single strategic roadmap (`docs/PLAYBOOK_PRODUCT_ROADMAP.md`) and separate improvements backlog (`docs/PLAYBOOK_IMPROVEMENTS.md`).
 - Keep cleanup/migration guidance out of long-lived policy docs once governance is command-enforced.
 

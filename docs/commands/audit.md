@@ -1,12 +1,12 @@
-# `playbook audit architecture`
+# `pnpm playbook audit architecture`
 
-`playbook audit architecture` runs deterministic architecture guardrail checks for core platform hardening controls.
+`pnpm playbook audit architecture` runs deterministic architecture guardrail checks for core platform hardening controls.
 
 ## Usage
 
 ```bash
-playbook audit architecture
-playbook audit architecture --json
+pnpm playbook audit architecture
+pnpm playbook audit architecture --json
 ```
 
 ## What it checks (v1.1 hardening)
@@ -55,11 +55,11 @@ Text output is optimized for operator review:
 
 ## Workflow integration
 
-`playbook doctor` now consumes architecture-audit findings and surfaces non-pass checks in repository health reporting, so architecture hardening coverage stays visible in routine diagnostics.
+`pnpm playbook doctor` now consumes architecture-audit findings and surfaces non-pass checks in repository health reporting, so architecture hardening coverage stays visible in routine diagnostics.
 
 ## Governance intent
 
-- Hardened `playbook audit architecture` by standardizing severity semantics and guaranteeing deterministic output ordering.
+- Hardened `pnpm playbook audit architecture` by standardizing severity semantics and guaranteeing deterministic output ordering.
 - Improved architecture audit maintainability so new checks can be added with minimal command-layer changes.
 - Reduced brittleness in roadmap coverage auditing by using tolerant concept-based matching instead of fragile heading-only checks.
 - Improved human-readable architecture audit output for faster operator review and actionability.

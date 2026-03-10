@@ -1,16 +1,16 @@
-# `playbook plan`
+# `pnpm playbook plan`
 
 ## What it does
 Generates a deterministic remediation task list from verify failures.
 
 ## Common usage
-- `playbook plan`
-- `playbook plan --ci`
-- `playbook plan --json`
+- `pnpm playbook plan`
+- `pnpm playbook plan --ci`
+- `pnpm playbook plan --json`
 
 ## Contract notes
 - JSON output includes `schemaVersion`, `command`, `verify`, `remediation`, and `tasks`.
-- `playbook apply --from-plan <artifact>` consumes this JSON artifact as an execution contract.
+- `pnpm playbook apply --from-plan <artifact>` consumes this JSON artifact as an execution contract.
 - Task objects use stable fields: `id`, `ruleId`, `file`, `action`, `autoFix`.
 - `id` is deterministic for equivalent findings and safe to persist for later execution.
 - Findings are sorted before task generation to keep task order deterministic.
@@ -25,11 +25,11 @@ Generates a deterministic remediation task list from verify failures.
 ## Workflow role
 `plan` is the intent-generation step in the canonical remediation loop: `verify -> plan -> apply -> verify`.
 
-In automation contexts, prefer `playbook plan --json` so the output can be reviewed and then executed via `playbook apply --from-plan <artifact>`.
+In automation contexts, prefer `pnpm playbook plan --json` so the output can be reviewed and then executed via `pnpm playbook apply --from-plan <artifact>`.
 
 ## JSON example
 ```bash
-playbook plan --json
+pnpm playbook plan --json
 ```
 
 ```json

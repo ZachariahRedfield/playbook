@@ -24,8 +24,8 @@
       ],
       "dependencies": [],
       "verification_commands": [
-        "node packages/cli/dist/main.js index --json",
-        "node packages/cli/dist/main.js graph --json"
+        "pnpm playbook index --json",
+        "pnpm playbook graph --json"
       ],
       "status": "implemented-hardening",
       "package_ownership": [
@@ -54,7 +54,7 @@
         "PB-V03-INDEX-001"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js query modules --json"
+        "pnpm playbook query modules --json"
       ],
       "status": "implemented-hardening",
       "package_ownership": [
@@ -88,8 +88,8 @@
         "PB-V03-INDEX-001"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js verify --json",
-        "node packages/cli/dist/main.js plan --json"
+        "pnpm playbook verify --json",
+        "pnpm playbook plan --json"
       ],
       "status": "in-progress",
       "package_ownership": [
@@ -120,7 +120,7 @@
         "PB-V03-INDEX-001"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js analyze-pr --json"
+        "pnpm playbook analyze-pr --json"
       ],
       "status": "implemented-hardening",
       "package_ownership": [
@@ -189,7 +189,7 @@
       ],
       "verification_commands": [
         "node scripts/validate-roadmap-contract.mjs --ci",
-        "node packages/cli/dist/main.js docs audit --json"
+        "pnpm playbook docs audit --json"
       ],
       "status": "in-progress",
       "package_ownership": [
@@ -231,7 +231,7 @@
       "verification_commands": [
         "pnpm agents:update",
         "pnpm agents:check",
-        "node packages/cli/dist/main.js docs audit --json",
+        "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
       "status": "in-progress",
@@ -276,8 +276,8 @@
         "@zachariahredfield/playbook-core"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js failure ingest --json --input .playbook/failures/sample.json",
-        "node packages/cli/dist/main.js failure suggest --json",
+        "pnpm playbook failure ingest --json --input .playbook/failures/sample.json",
+        "pnpm playbook failure suggest --json",
         "pnpm test -- failure-intelligence"
       ],
       "status": "planned"
@@ -319,9 +319,9 @@
         "@zachariahredfield/playbook-node"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js index --json",
-        "node packages/cli/dist/main.js graph --json",
-        "node packages/cli/dist/main.js analyze-pr --json"
+        "pnpm playbook index --json",
+        "pnpm playbook graph --json",
+        "pnpm playbook analyze-pr --json"
       ],
       "status": "planned"
     },
@@ -384,7 +384,7 @@
         "pnpm -C packages/engine test -- knowledge.compaction.test.ts",
         "pnpm agents:update",
         "pnpm agents:check",
-        "node packages/cli/dist/main.js docs audit --json",
+        "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
       "status": "in-progress",
@@ -416,7 +416,7 @@
         "PB-V08-KNOWLEDGE-COMPACTION-SPEC-001"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js index --json",
+        "pnpm playbook index --json",
         "pnpm -C packages/engine test -- compaction.candidates.test.ts"
       ],
       "status": "in-progress",
@@ -449,7 +449,7 @@
         "PB-V08-KNOWLEDGE-CANDIDATE-EXTRACTION-001"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js index --json",
+        "pnpm playbook index --json",
         "pnpm -C packages/engine test -- compaction.buckets.test.ts"
       ],
       "status": "in-progress",
@@ -483,7 +483,7 @@
         "PB-V08-KNOWLEDGE-BUCKETING-001"
       ],
       "verification_commands": [
-        "node packages/cli/dist/main.js index --json",
+        "pnpm playbook index --json",
         "pnpm -C packages/engine test -- compaction.patternCards.test.ts"
       ],
       "status": "in-progress",
@@ -519,7 +519,7 @@
         "pnpm -r build",
         "pnpm agents:update",
         "pnpm agents:check",
-        "node packages/cli/dist/main.js docs audit --json",
+        "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
       "status": "planned",

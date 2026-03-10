@@ -61,5 +61,5 @@ Pattern: reviewed intent before execution. In automation, generate plan output f
 ## Capability discovery guidance
 
 - The CLI help output is authoritative for command and flag discovery (`playbook --help`, `playbook <command> --help`).
-- Use `playbook rules` to discover active deterministic rules.
-- Use `playbook explain <rule>` and `playbook explain architecture` to retrieve deterministic rule and repository-intelligence explanations.
+- Use `pnpm playbook rules` to discover active deterministic rules.
+- Use `pnpm playbook explain <rule>` and `pnpm playbook explain architecture` to retrieve deterministic rule and repository-intelligence explanations.

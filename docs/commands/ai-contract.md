@@ -1,12 +1,12 @@
-# `playbook ai-contract`
+# `pnpm playbook ai-contract`
 
 Print the repository AI interaction contract used by Playbook-aware tools.
 
 ## Usage
 
 ```bash
-playbook ai-contract
-playbook ai-contract --json
+pnpm playbook ai-contract
+pnpm playbook ai-contract --json
 ```
 
 ## Behavior
@@ -21,6 +21,6 @@ playbook ai-contract --json
 
 ## Related commands
 
-- `playbook ai-context --json`
-- `playbook context --json`
-- `playbook schema ai-contract --json`
+- `pnpm playbook ai-context --json`
+- `pnpm playbook context --json`
+- `pnpm playbook schema ai-contract --json`

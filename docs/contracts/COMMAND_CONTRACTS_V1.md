@@ -36,8 +36,8 @@ For JSON outputs, commands must emit deterministic objects with:
 ## CI enforcement hooks
 
 - `node scripts/validate-roadmap-contract.mjs --ci`
-- `node packages/cli/dist/main.js docs audit --json`
-- `node packages/cli/dist/main.js verify --json`
+- `pnpm playbook docs audit --json`
+- `pnpm playbook verify --json`
 
 ## Change policy
 

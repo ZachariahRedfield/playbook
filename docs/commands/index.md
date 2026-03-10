@@ -1,15 +1,15 @@
-# `playbook index`
+# `pnpm playbook index`
 
 Generate deterministic repository intelligence and write it to `.playbook/repo-index.json`.
 
 ## Usage
 
-- `playbook index`
-- `playbook index --json`
+- `pnpm playbook index`
+- `pnpm playbook index --json`
 
 ## Behavior
 
-`playbook index` performs lightweight heuristic detection for:
+`pnpm playbook index` performs lightweight heuristic detection for:
 
 - framework
 - language

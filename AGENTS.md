@@ -12,7 +12,7 @@ Use Playbook as the primary repository intelligence layer for this task.
 
 AI agents should prefer Playbook commands over direct repository inspection whenever command coverage exists.
 
-For repository-shape or architecture questions, prefer `playbook query`, `playbook explain`, or `playbook ask "<question>" --repo-context` over ad-hoc file inspection.
+For repository-shape or architecture questions, prefer `pnpm playbook query`, `pnpm playbook explain`, or `pnpm playbook ask "<question>" --repo-context` over ad-hoc file inspection.
 
 ### Recommended bootstrap
 
@@ -29,13 +29,13 @@ pnpm -r build
 Preferred (if available):
 
 ```
-node packages/cli/dist/main.js ai-context --json
+pnpm playbook ai-context --json
 ```
 
 Fallback:
 
 ```
-node packages/cli/dist/main.js context --json
+pnpm playbook context --json
 ```
 
 3. Use repository intelligence commands before broad file inspection.
@@ -43,20 +43,20 @@ node packages/cli/dist/main.js context --json
 Examples:
 
 ```
-playbook query modules
-playbook query architecture
-playbook ask "where should a new feature live?" --repo-context
-playbook explain <target>
+pnpm playbook query modules
+pnpm playbook query architecture
+pnpm playbook ask "where should a new feature live?" --repo-context
+pnpm playbook explain <target>
 ```
 
 4. When addressing rule or governance behavior, treat the deterministic remediation workflow as the source of truth:
 
 ```
-playbook verify
-playbook explain <rule-id>
-playbook plan
-playbook apply
-playbook verify
+pnpm playbook verify
+pnpm playbook explain <rule-id>
+pnpm playbook plan
+pnpm playbook apply
+pnpm playbook verify
 ```
 
 Direct file inspection should only be used when Playbook command coverage is insufficient.
@@ -67,9 +67,9 @@ When operating inside this repository, start from local source:
 
 ```bash
 pnpm -r build
-node packages/cli/dist/main.js ai-context --json
-node packages/cli/dist/main.js ai-contract --json
-node packages/cli/dist/main.js context --json
+pnpm playbook ai-context --json
+pnpm playbook ai-contract --json
+pnpm playbook context --json
 ```
 
 Inside the Playbook repo, prefer local built CLI entrypoints over globally installed or published CLI binaries so validation reflects the current branch.
@@ -113,7 +113,7 @@ Diagnostic augmentation: add `explain <rule-id>` between `verify` and `plan` whe
 
 - Prefer local execution for branch validation:
   - `pnpm -r build`
-  - `node packages/cli/dist/main.js <command> ...`
+  - `pnpm playbook <command> ...`
 - Treat command metadata and command outputs as the source of truth for command inventory.
 - Keep CLI command wrappers thin and engine behavior deterministic.
 
@@ -127,7 +127,7 @@ At minimum for command-surface changes:
 
 When documentation/governance surfaces are touched, also run:
 
-- `node packages/cli/dist/main.js docs audit --json`
+- `pnpm playbook docs audit --json`
 
 Add targeted smoke/contract tests when command behavior or output contracts change.
 
@@ -149,7 +149,7 @@ Copy-pastable governance bullets:
 - Pattern: Shared command metadata should feed command registry and AI-facing command inventory to reduce drift.
 - Failure Mode: AI Contract Drift occurs when new commands are added without refreshing AGENTS.md managed sections.
 
-- Pattern: `playbook ai-context` is the preferred agent bootstrap command for Playbook-aware AI workflows.
+- Pattern: `pnpm playbook ai-context` is the preferred agent bootstrap command for Playbook-aware AI workflows.
 - Rule: AI agents should prefer Playbook commands over broad repository inference when command coverage exists.
 - Rule: Inside the Playbook repo, use local built CLI entrypoints to reflect current branch behavior.
 - Pattern: `.playbook/ai-contract.json` is the canonical AI-operability handshake artifact for Playbook-enabled repositories.
@@ -167,53 +167,53 @@ Do not hand-edit entries inside the managed markers.
 ### Core
 
 - `analyze`: Analyze project stack
-  - Example: `playbook analyze --json`
+  - Example: `pnpm playbook analyze --json`
 - `verify`: Verify governance rules
-  - Example: `playbook verify --ci --json`
+  - Example: `pnpm playbook verify --ci --json`
 - `plan`: Generate a structured fix plan from rule findings
-  - Example: `playbook plan --json`
+  - Example: `pnpm playbook plan --json`
 - `apply`: Execute deterministic auto-fixable plan tasks
-  - Example: `playbook apply --from-plan .playbook/plan.json`
+  - Example: `pnpm playbook apply --from-plan .playbook/plan.json`
 
 ### Repository tools
 
 - `analyze-pr`: Analyze local branch/worktree changes with deterministic PR intelligence
-  - Example: `playbook analyze-pr --json`
+  - Example: `pnpm playbook analyze-pr --json`
 - `doctor`: Diagnose repository health by aggregating verify, risk, docs, and index analyzers
-  - Example: `playbook doctor --fix --dry-run`
+  - Example: `pnpm playbook doctor --fix --dry-run`
 - `diagram`: Generate deterministic architecture Mermaid diagrams
-  - Example: `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md`
+  - Example: `pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md`
 - `docs`: Audit documentation governance surfaces and contracts
-  - Example: `playbook docs audit --json`
+  - Example: `pnpm playbook docs audit --json`
 - `audit`: Audit deterministic architecture guardrails and platform hardening controls
-  - Example: `playbook audit architecture --json`
+  - Example: `pnpm playbook audit architecture --json`
 - `rules`: List loaded verify and analyze rules
-  - Example: `playbook rules --json`
+  - Example: `pnpm playbook rules --json`
 - `schema`: Print JSON Schemas for Playbook CLI command outputs
-  - Example: `playbook schema verify --json`
+  - Example: `pnpm playbook schema verify --json`
 - `context`: Print deterministic CLI and architecture context for tools and agents
-  - Example: `playbook context --json`
+  - Example: `pnpm playbook context --json`
 - `ai-context`: Print deterministic AI bootstrap context for Playbook-aware agents
-  - Example: `playbook ai-context --json`
+  - Example: `pnpm playbook ai-context --json`
 - `ai-contract`: Print deterministic AI repository contract for Playbook-aware agents
-  - Example: `playbook ai-contract --json`
+  - Example: `pnpm playbook ai-contract --json`
 - `contracts`: Emit deterministic contract registry for schemas, artifacts, and roadmap status
-  - Example: `playbook contracts --json`
+  - Example: `pnpm playbook contracts --json`
 
 ### Repository intelligence
 
 - `index`: Generate machine-readable repository intelligence index
-  - Example: `playbook index --json`
+  - Example: `pnpm playbook index --json`
 - `graph`: Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json
-  - Example: `playbook graph --json`
+  - Example: `pnpm playbook graph --json`
 - `query`: Query machine-readable repository intelligence from .playbook/repo-index.json
-  - Example: `playbook query modules --json`
+  - Example: `pnpm playbook query modules --json`
 - `deps`: Print module dependency graph from .playbook/repo-index.json
-  - Example: `playbook deps workouts --json`
+  - Example: `pnpm playbook deps workouts --json`
 - `ask`: Answer repository questions from machine-readable intelligence context
-  - Example: `playbook ask "where should a new feature live?" --repo-context --json`
+  - Example: `pnpm playbook ask "where should a new feature live?" --repo-context --json`
 - `explain`: Explain rules, modules, or architecture from repository intelligence
-  - Example: `playbook explain architecture --json`
+  - Example: `pnpm playbook explain architecture --json`
 
 ### Utility
 
@@ -234,25 +234,25 @@ Do not hand-edit entries inside the managed markers.
 
 | Command | Example |
 | --- | --- |
-| `analyze` | `playbook analyze --json` |
-| `verify` | `playbook verify --ci --json` |
-| `plan` | `playbook plan --json` |
-| `apply` | `playbook apply --from-plan .playbook/plan.json` |
-| `analyze-pr` | `playbook analyze-pr --json` |
-| `doctor` | `playbook doctor --fix --dry-run` |
-| `diagram` | `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
-| `docs` | `playbook docs audit --json` |
-| `audit` | `playbook audit architecture --json` |
-| `rules` | `playbook rules --json` |
-| `schema` | `playbook schema verify --json` |
-| `context` | `playbook context --json` |
-| `ai-context` | `playbook ai-context --json` |
-| `ai-contract` | `playbook ai-contract --json` |
-| `contracts` | `playbook contracts --json` |
-| `index` | `playbook index --json` |
-| `graph` | `playbook graph --json` |
-| `query` | `playbook query modules --json` |
-| `deps` | `playbook deps workouts --json` |
-| `ask` | `playbook ask "where should a new feature live?" --repo-context --json` |
-| `explain` | `playbook explain architecture --json` |
+| `analyze` | `pnpm playbook analyze --json` |
+| `verify` | `pnpm playbook verify --ci --json` |
+| `plan` | `pnpm playbook plan --json` |
+| `apply` | `pnpm playbook apply --from-plan .playbook/plan.json` |
+| `analyze-pr` | `pnpm playbook analyze-pr --json` |
+| `doctor` | `pnpm playbook doctor --fix --dry-run` |
+| `diagram` | `pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
+| `docs` | `pnpm playbook docs audit --json` |
+| `audit` | `pnpm playbook audit architecture --json` |
+| `rules` | `pnpm playbook rules --json` |
+| `schema` | `pnpm playbook schema verify --json` |
+| `context` | `pnpm playbook context --json` |
+| `ai-context` | `pnpm playbook ai-context --json` |
+| `ai-contract` | `pnpm playbook ai-contract --json` |
+| `contracts` | `pnpm playbook contracts --json` |
+| `index` | `pnpm playbook index --json` |
+| `graph` | `pnpm playbook graph --json` |
+| `query` | `pnpm playbook query modules --json` |
+| `deps` | `pnpm playbook deps workouts --json` |
+| `ask` | `pnpm playbook ask "where should a new feature live?" --repo-context --json` |
+| `explain` | `pnpm playbook explain architecture --json` |
 <!-- PLAYBOOK:EXAMPLES_END -->

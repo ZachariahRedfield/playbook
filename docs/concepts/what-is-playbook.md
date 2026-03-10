@@ -14,7 +14,7 @@ Playbook rules are written to be predictable and automatable:
 - failures include actionable evidence and clear fixes
 - policy lives in versioned files, not hidden process knowledge
 
-Playbook also includes deterministic repository analysis via `playbook analyze`, which detects common stack components (for example Next.js, Supabase, and Tailwind) using filesystem and dependency signals and can surface architecture suggestions in docs.
+Playbook also includes deterministic repository analysis via `pnpm playbook analyze`, which detects common stack components (for example Next.js, Supabase, and Tailwind) using filesystem and dependency signals and can surface architecture suggestions in docs.
 
 ## What Playbook is not
 

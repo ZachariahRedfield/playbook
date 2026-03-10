@@ -38,7 +38,7 @@ The repository CI workflow enforces the second mode through the reusable `./.git
 
 Rule: roadmap entries represent planned intent; command live availability is determined by implemented CLI help/contracts and command truth artifacts (`docs/contracts/command-truth.json`).
 
-Planned CLI mirror command surface: `playbook roadmap verify` (backed by the same roadmap-contract validator).
+Planned CLI mirror command surface: `pnpm playbook roadmap verify` (backed by the same roadmap-contract validator).
 
 ## Knowledge lifecycle direction (internal-first)
 

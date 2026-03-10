@@ -1,13 +1,13 @@
-# `playbook fix`
+# `pnpm playbook fix`
 
 ## What it does
 Applies safe, deterministic autofixes for eligible verify findings.
 
 ## Common usage
-- `playbook fix --dry-run`
-- `playbook fix --yes`
-- `playbook fix --json --yes`
-- `playbook fix --only notes.missing --yes`
+- `pnpm playbook fix --dry-run`
+- `pnpm playbook fix --yes`
+- `pnpm playbook fix --json --yes`
+- `pnpm playbook fix --only notes.missing --yes`
 
 ## Notable flags
 - `--dry-run`: preview changes without writing files.

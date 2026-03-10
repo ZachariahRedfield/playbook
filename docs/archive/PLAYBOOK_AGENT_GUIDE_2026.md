@@ -227,7 +227,7 @@ All Playbook commands should support machine-readable output.
 
 Example:
 
-playbook verify --json
+pnpm playbook verify --json
 
 Example response:
 
@@ -250,7 +250,7 @@ Playbook must remain fast.
 
 Target execution time:
 
-playbook verify < 1 second
+pnpm playbook verify < 1 second
 
 Agents should avoid:
 
@@ -262,22 +262,22 @@ Future Features Agents Should Support
 Agents may assist in implementing roadmap features such as:
 
 Repository intelligence
-playbook analyze
+pnpm playbook analyze
 
 Detect project stack automatically.
 
 Governance rule system
-playbook verify
+pnpm playbook verify
 
 Enforce architecture constraints.
 
 Knowledge extraction
-playbook learn
+pnpm playbook learn
 
 Extract engineering doctrine from repository history.
 
 Plugin ecosystem
-playbook plugins install <plugin>
+pnpm playbook plugins install <plugin>
 
 Allow organizations to extend governance rules.
 

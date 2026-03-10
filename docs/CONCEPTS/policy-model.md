@@ -12,7 +12,7 @@ A stable expectation for how a repo is governed.
 
 A practical enforcement that prevents drift from a contract.
 
-**Example:** `playbook verify` fails when code changed but `docs/PLAYBOOK_NOTES.md` was not touched.
+**Example:** `pnpm playbook verify` fails when code changed but `docs/PLAYBOOK_NOTES.md` was not touched.
 
 ## Pattern
 

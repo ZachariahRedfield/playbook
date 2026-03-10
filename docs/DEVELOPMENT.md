@@ -55,7 +55,7 @@ Use pnpm packaging (not manual tar) so workspace dependencies are rewritten to p
 
 ```bash
 pnpm run pack:cli
-npx --yes ./packages/cli/fawxzzy-playbook-<version>.tgz analyze
+pnpm playbook analyze
 ```
 
 This matches real publish/install behavior and avoids `workspace:*` dependency leakage in local install tests.

@@ -8,7 +8,7 @@ Meta-Playbook is proposal-driven, not self-editing.
 
 ```mermaid
 flowchart LR
-  A[playbook artifacts] --> B[meta findings]
+  A[pnpm playbook artifacts] --> B[meta findings]
   B --> C[meta proposals]
   C --> D[governed review]
 ```

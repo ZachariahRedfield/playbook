@@ -9,7 +9,7 @@ Playbook loads configuration from:
 If `playbook.config.json` is missing, Playbook loads defaults and emits a warning:
 
 - Loader warning: `playbook.config.json not found; using defaults.`
-- `playbook doctor` surfaces this as a warning (but does not fail solely for warnings).
+- `pnpm playbook doctor` surfaces this as a warning (but does not fail solely for warnings).
 
 ## Schema
 

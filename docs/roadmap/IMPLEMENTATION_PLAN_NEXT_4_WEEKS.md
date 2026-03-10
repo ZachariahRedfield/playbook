@@ -10,7 +10,7 @@ This plan operationalizes the existing roadmap and execution-system baseline for
 4. **`verify` decision**: `verify` is the deterministic gate kernel for governance + roadmap/docs/contracts checks through explicit profiles.
 5. **Product model unification**: governance and repository intelligence are one system: intelligence artifacts feed governance decisions and remediation.
 6. **Failure Intelligence**: every accepted high-severity failure must map to prevention targets (rule/test/doc/check) before closure.
-7. **Knowledge lifecycle gating**: repository knowledge evolution is internal-first and must follow `observation/extraction -> canonicalization -> deterministic comparison -> bucketing/compaction -> promotion -> retirement`; no broad public `playbook knowledge *` surface in this horizon.
+7. **Knowledge lifecycle gating**: repository knowledge evolution is internal-first and must follow `observation/extraction -> canonicalization -> deterministic comparison -> bucketing/compaction -> promotion -> retirement`; no broad public `pnpm playbook knowledge *` surface in this horizon.
 
 ## 2) Baseline Consistency Check (Execution-Critical)
 
@@ -44,12 +44,12 @@ This plan operationalizes the existing roadmap and execution-system baseline for
 | analyze-pr | diff-aware impact/risk intelligence | engine+node | stable | must use shared SCM context and graph | richer CI/github review output contracts |
 
 ### Recommended quick-start (final)
-1. `playbook ai-context --json`
-2. `playbook index --json`
-3. `playbook query modules --json`
-4. `playbook verify --json`
-5. `playbook plan --json`
-6. `playbook apply --from-plan .playbook/plan.json`
+1. `pnpm playbook ai-context --json`
+2. `pnpm playbook index --json`
+3. `pnpm playbook query modules --json`
+4. `pnpm playbook verify --json`
+5. `pnpm playbook plan --json`
+6. `pnpm playbook apply --from-plan .playbook/plan.json`
 
 ### Final AI operating ladder
 `ai-context -> ai-contract -> context -> index -> query/explain -> ask --repo-context -> verify -> plan -> apply -> verify`
@@ -141,7 +141,7 @@ interface NormalizedScmContext {
 `roadmap item -> design -> implementation -> contracts -> docs -> verification -> PR -> roadmap status update`
 
 ### Planned command surface
-- Add `playbook roadmap verify` as CLI mirror over roadmap validator script.
+- Add `pnpm playbook roadmap verify` as CLI mirror over roadmap validator script.
 
 ### Required PR metadata
 - `Roadmap-ID: PB-V...`
@@ -181,10 +181,10 @@ interface NormalizedScmContext {
 - CLI: `failure` command group wrappers.
 
 ### Command surface
-- `playbook failure ingest --from <json>`
-- `playbook failure classify --id <id> --json`
-- `playbook failure suggest --id <id> --json`
-- `playbook failure scaffold --id <id> --dry-run`
+- `pnpm playbook failure ingest --from <json>`
+- `pnpm playbook failure classify --id <id> --json`
+- `pnpm playbook failure suggest --id <id> --json`
+- `pnpm playbook failure scaffold --id <id> --dry-run`
 
 ### Taxonomy
 - dimensions: layer, failure_type, determinism, recurrence, severity, trigger_surface.
@@ -208,9 +208,9 @@ interface NormalizedScmContext {
 - docs: failure lifecycle + close criteria + examples.
 
 ### Verification commands
-- `node packages/cli/dist/main.js failure classify --id demo --json`
+- `pnpm playbook failure classify --id demo --json`
 - `pnpm -r test`
-- `node packages/cli/dist/main.js verify --json`
+- `pnpm playbook verify --json`
 
 ### Operational trap prevention (explicit)
 A failure cannot be marked closed until prevention-target mapping is complete and at least one codified artifact (rule/test/doc/check) is linked in PR evidence.
@@ -246,10 +246,10 @@ A failure cannot be marked closed until prevention-target mapping is complete an
 - docs: graph v2 concepts, compatibility policy, command usage.
 
 ### Verification commands
-- `node packages/cli/dist/main.js index --json`
-- `node packages/cli/dist/main.js graph --json`
-- `node packages/cli/dist/main.js query impact <module> --json`
-- `node packages/cli/dist/main.js analyze-pr --json`
+- `pnpm playbook index --json`
+- `pnpm playbook graph --json`
+- `pnpm playbook query impact <module> --json`
+- `pnpm playbook analyze-pr --json`
 
 ### Self-analysis usage
 Playbook must run graph-powered `analyze-pr` and `query impact/risk` against its own repo in CI smoke paths to prevent architecture-intelligence regressions.
@@ -360,7 +360,7 @@ Uncontrolled accumulation of patterns/candidates without compaction and retireme
   "verification_commands": [
     "pnpm -r build",
     "pnpm -r test",
-    "node packages/cli/dist/main.js verify --json"
+    "pnpm playbook verify --json"
   ],
   "dependencies": [
     "PB-V04-PLAN-APPLY-001",
@@ -473,8 +473,8 @@ Implement canonical engine command registry and migrate CLI handlers to thin wra
 **Verification**
 - `pnpm -r build`
 - `pnpm -r test`
-- `node packages/cli/dist/main.js analyze --json`
-- `node packages/cli/dist/main.js verify --json`
+- `pnpm playbook analyze --json`
+- `pnpm playbook verify --json`
 
 **Docs summary**
 Update boundary plan and command contract docs to reflect engine canonical ownership and compatibility status for `analyze`.
@@ -498,7 +498,7 @@ Create normalized SCM context provider and migrate `analyze-pr`.
 **Verification**
 - `pnpm -r build`
 - `pnpm -r test`
-- `node packages/cli/dist/main.js analyze-pr --json`
+- `pnpm playbook analyze-pr --json`
 
 **Docs summary**
 Document deterministic SCM normalization behavior and diff edge-case guarantees.
@@ -508,7 +508,7 @@ Document deterministic SCM normalization behavior and diff edge-case guarantees.
 Operationalize roadmap/contracts/docs CI gate model with roadmap verify surface.
 
 **Plan**
-1. Add `playbook roadmap verify` command wrapper.
+1. Add `pnpm playbook roadmap verify` command wrapper.
 2. Enforce roadmap feature ID linkage in PR validation flow.
 3. Couple command output changes to contracts/docs/snapshots.
 4. Wire docs audit and verification checks as explicit gates.
@@ -523,7 +523,7 @@ Operationalize roadmap/contracts/docs CI gate model with roadmap verify surface.
 **Verification**
 - `pnpm -r build`
 - `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id`
-- `node packages/cli/dist/main.js docs audit --json`
+- `pnpm playbook docs audit --json`
 
 **Docs summary**
 Add one canonical operator checklist for roadmap-driven delivery and gate states (blocking/advisory timeline).

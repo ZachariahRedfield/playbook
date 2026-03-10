@@ -7,8 +7,8 @@ This document defines the stability contract for Playbook's repository graph art
 - **Path**: `.playbook/repo-graph.json`
 - **Kind**: `playbook-repo-graph`
 - **Current schema version**: `1.1`
-- **Producer**: `playbook index`
-- **Primary read surfaces**: `playbook graph`, `playbook query`, `playbook explain`
+- **Producer**: `pnpm playbook index`
+- **Primary read surfaces**: `pnpm playbook graph`, `pnpm playbook query`, `pnpm playbook explain`
 
 ## Evolution policy
 

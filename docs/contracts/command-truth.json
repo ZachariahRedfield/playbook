@@ -13,7 +13,7 @@
       "canonicalSequence": 1,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook ai-context --json"
+      "example": "pnpm playbook ai-context --json"
     },
     {
       "name": "ai-contract",
@@ -25,7 +25,7 @@
       "canonicalSequence": 2,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook ai-contract --json"
+      "example": "pnpm playbook ai-contract --json"
     },
     {
       "name": "analyze",
@@ -37,7 +37,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook analyze --json"
+      "example": "pnpm playbook analyze --json"
     },
     {
       "name": "analyze-pr",
@@ -49,7 +49,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook analyze-pr --json"
+      "example": "pnpm playbook analyze-pr --json"
     },
     {
       "name": "apply",
@@ -61,7 +61,7 @@
       "canonicalSequence": 10,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook apply --from-plan .playbook/plan.json"
+      "example": "pnpm playbook apply --from-plan .playbook/plan.json"
     },
     {
       "name": "ask",
@@ -73,7 +73,7 @@
       "canonicalSequence": 7,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook ask \"where should a new feature live?\" --repo-context --json"
+      "example": "pnpm playbook ask \"where should a new feature live?\" --repo-context --json"
     },
     {
       "name": "audit",
@@ -85,7 +85,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook audit architecture --json"
+      "example": "pnpm playbook audit architecture --json"
     },
     {
       "name": "context",
@@ -97,7 +97,7 @@
       "canonicalSequence": 3,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook context --json"
+      "example": "pnpm playbook context --json"
     },
     {
       "name": "contracts",
@@ -109,7 +109,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook contracts --json"
+      "example": "pnpm playbook contracts --json"
     },
     {
       "name": "demo",
@@ -121,7 +121,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": false,
-      "example": "playbook demo"
+      "example": "pnpm playbook demo"
     },
     {
       "name": "deps",
@@ -133,7 +133,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook deps workouts --json"
+      "example": "pnpm playbook deps workouts --json"
     },
     {
       "name": "diagram",
@@ -145,7 +145,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": false,
-      "example": "playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md"
+      "example": "pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md"
     },
     {
       "name": "docs",
@@ -157,7 +157,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook docs audit --json"
+      "example": "pnpm playbook docs audit --json"
     },
     {
       "name": "doctor",
@@ -169,7 +169,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook doctor --fix --dry-run"
+      "example": "pnpm playbook doctor --fix --dry-run"
     },
     {
       "name": "explain",
@@ -181,7 +181,7 @@
       "canonicalSequence": 6,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook explain architecture --json"
+      "example": "pnpm playbook explain architecture --json"
     },
     {
       "name": "fix",
@@ -193,7 +193,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": true,
-      "example": "playbook fix --dry-run"
+      "example": "pnpm playbook fix --dry-run"
     },
     {
       "name": "graph",
@@ -205,7 +205,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook graph --json"
+      "example": "pnpm playbook graph --json"
     },
     {
       "name": "index",
@@ -217,7 +217,7 @@
       "canonicalSequence": 4,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook index --json"
+      "example": "pnpm playbook index --json"
     },
     {
       "name": "init",
@@ -229,7 +229,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": true,
-      "example": "playbook init"
+      "example": "pnpm playbook init"
     },
     {
       "name": "plan",
@@ -241,7 +241,7 @@
       "canonicalSequence": 9,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook plan --json"
+      "example": "pnpm playbook plan --json"
     },
     {
       "name": "query",
@@ -253,7 +253,7 @@
       "canonicalSequence": 5,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook query modules --json"
+      "example": "pnpm playbook query modules --json"
     },
     {
       "name": "rules",
@@ -265,7 +265,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook rules --json"
+      "example": "pnpm playbook rules --json"
     },
     {
       "name": "schema",
@@ -277,7 +277,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook schema verify --json"
+      "example": "pnpm playbook schema verify --json"
     },
     {
       "name": "session",
@@ -289,7 +289,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": true,
-      "example": "playbook session --help"
+      "example": "pnpm playbook session --help"
     },
     {
       "name": "status",
@@ -301,7 +301,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": true,
-      "example": "playbook status --json"
+      "example": "pnpm playbook status --json"
     },
     {
       "name": "upgrade",
@@ -313,7 +313,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": true,
-      "example": "playbook upgrade --check --json"
+      "example": "pnpm playbook upgrade --check --json"
     },
     {
       "name": "verify",
@@ -325,7 +325,7 @@
       "canonicalSequence": 8,
       "productFacing": true,
       "machineReadable": true,
-      "example": "playbook verify --ci --json"
+      "example": "pnpm playbook verify --ci --json"
     }
   ],
   "canonicalCommands": [

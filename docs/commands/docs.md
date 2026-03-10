@@ -1,13 +1,13 @@
-# `playbook docs audit`
+# `pnpm playbook docs audit`
 
-`playbook docs audit` validates Playbook documentation governance with deterministic guardrails for the active docs canon.
+`pnpm playbook docs audit` validates Playbook documentation governance with deterministic guardrails for the active docs canon.
 
 ## Usage
 
 ```bash
-playbook docs audit
-playbook docs audit --json
-playbook docs audit --ci --json
+pnpm playbook docs audit
+pnpm playbook docs audit --json
+pnpm playbook docs audit --ci --json
 ```
 
 ## Checks

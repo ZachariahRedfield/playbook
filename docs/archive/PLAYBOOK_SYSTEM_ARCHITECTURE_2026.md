@@ -51,9 +51,9 @@ Cloud services must be optional.
 
 Example usage:
 
-playbook init
-playbook analyze
-playbook verify
+pnpm playbook init
+pnpm playbook analyze
+pnpm playbook verify
 Deterministic Governance
 
 Playbook rules must produce predictable outcomes.
@@ -162,7 +162,7 @@ Responsible for running governance rules.
 
 Command:
 
-playbook verify
+pnpm playbook verify
 
 Runs all configured rules.
 
@@ -193,7 +193,7 @@ Every command must support machine-readable output.
 
 Example:
 
-playbook verify --json
+pnpm playbook verify --json
 
 Output:
 
@@ -255,7 +255,7 @@ templates/repo
 
 Used by:
 
-playbook init
+pnpm playbook init
 
 Baseline scaffold outputs include:
 
@@ -274,7 +274,7 @@ Plugin System
 
 Future support:
 
-playbook plugins install
+pnpm playbook plugins install
 
 Allow organizations to add custom governance rules.
 

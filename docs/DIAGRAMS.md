@@ -30,10 +30,10 @@ No network calls are used.
 ```bash
 # Internal repo CI/local (after building workspace)
 pnpm -r build
-node packages/cli/dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
+pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
 
 # Consumer-installed usage
-npx --yes @fawxzzy/playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
+pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
 ```
 
 By default both diagrams are generated. You can scope output with `--structure` or `--deps`.

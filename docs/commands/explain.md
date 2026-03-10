@@ -1,19 +1,19 @@
-# `playbook explain`
+# `pnpm playbook explain`
 
 Explain deterministic repository intelligence targets from `.playbook/repo-index.json`, `.playbook/repo-graph.json`, and the rule registry.
 
 ## Usage
 
-- `playbook explain PB001`
-- `playbook explain users`
-- `playbook explain workouts`
-- `playbook explain architecture`
-- `playbook explain workouts --json`
+- `pnpm playbook explain PB001`
+- `pnpm playbook explain users`
+- `pnpm playbook explain workouts`
+- `pnpm playbook explain architecture`
+- `pnpm playbook explain workouts --json`
 
 ## Supported target types
 
 - rule ids (for example `PB001`)
-- indexed modules (`playbook query modules`)
+- indexed modules (`pnpm playbook query modules`)
 - `architecture`
 
 ## JSON contract

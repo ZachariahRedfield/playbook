@@ -73,7 +73,7 @@ Planning sources are:
 
 ## Duplicate Headings
 
-### `playbook doctor`
+### `pnpm playbook doctor`
 - Canonical: `docs/REFERENCE/cli.md:23`
 - Duplicates:
   - `docs/REFERENCE/exit-codes.md:17` -> add canonical heading pointer

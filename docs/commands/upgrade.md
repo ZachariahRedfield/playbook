@@ -1,12 +1,12 @@
-# `playbook upgrade`
+# `pnpm playbook upgrade`
 
 ## What it does
 Plans and applies deterministic local Playbook upgrade migrations for known integration modes.
 
 ## Common usage
-- `playbook upgrade --check`
-- `playbook upgrade --apply --dry-run`
-- `playbook upgrade --check --from 0.1.0 --to 0.1.1`
+- `pnpm playbook upgrade --check`
+- `pnpm playbook upgrade --apply --dry-run`
+- `pnpm playbook upgrade --check --from 0.1.0 --to 0.1.1`
 
 ## Notable flags
 - `--check`: run migration checks only.

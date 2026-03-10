@@ -1,15 +1,15 @@
-# `playbook apply`
+# `pnpm playbook apply`
 
 Executes deterministic plan tasks from engine `verify -> plan` output.
 
 Examples:
 
-- `playbook apply`
-- `playbook apply --help`
-- `playbook apply --json`
-- `playbook apply --from-plan .playbook/plan.json`
-- `playbook apply --from-plan .playbook/plan.json --task <task-id>`
-- `playbook apply --from-plan .playbook/plan.json --task <task-a> --task <task-b>`
+- `pnpm playbook apply`
+- `pnpm playbook apply --help`
+- `pnpm playbook apply --json`
+- `pnpm playbook apply --from-plan .playbook/plan.json`
+- `pnpm playbook apply --from-plan .playbook/plan.json --task <task-id>`
+- `pnpm playbook apply --from-plan .playbook/plan.json --task <task-a> --task <task-b>`
 
 Contract rules:
 
@@ -28,7 +28,7 @@ Contract rules:
 
 Serializable execution contract:
 
-- `--from-plan` executes a previously exported `playbook plan --json` payload without recomputing intent.
+- `--from-plan` executes a previously exported `pnpm playbook plan --json` payload without recomputing intent.
 - Plan payload must declare `schemaVersion: "1.0"` and `command: "plan"`.
 - `--task` selection is exact and deterministic by stable `task.id` (no fuzzy matching by text/path/rule).
 - Repeated `--task` ids are deduplicated deterministically, and selected tasks preserve original artifact order.
@@ -45,14 +45,14 @@ Use `--from-plan` when you need automation-safe execution from a reviewed artifa
 
 Exact Task Selection pattern:
 
-1. `playbook plan --json > .playbook/plan.json`
+1. `pnpm playbook plan --json > .playbook/plan.json`
 2. Review stable task ids in `.playbook/plan.json`
-3. Apply only reviewed ids with `playbook apply --from-plan .playbook/plan.json --task <stable-task-id>`
-4. Run `playbook verify` after apply to validate repository state
+3. Apply only reviewed ids with `pnpm playbook apply --from-plan .playbook/plan.json --task <stable-task-id>`
+4. Run `pnpm playbook verify` after apply to validate repository state
 
 ## JSON example
 ```bash
-playbook apply --from-plan .playbook/plan.json --json
+pnpm playbook apply --from-plan .playbook/plan.json --json
 ```
 
 ```json

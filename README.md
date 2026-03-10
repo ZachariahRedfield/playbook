@@ -56,7 +56,7 @@ Playbook classifies repository artifacts into deterministic storage classes:
 - **Automation artifacts**: CI handoff outputs such as CI plan and verification artifacts.
 - **Contract artifacts**: committed snapshots and docs contracts like `tests/contracts/*.snapshot.json`, `.playbook/demo-artifacts/*`, and generated diagram documentation.
 
-Use `.playbookignore` to control repository intelligence scan scope for `playbook index` and other repository scans. The syntax mirrors `.gitignore`.
+Use `.playbookignore` to control repository intelligence scan scope for `pnpm playbook index` and other repository scans. The syntax mirrors `.gitignore`.
 
 Recommended starter entries:
 
@@ -69,31 +69,31 @@ coverage
 .playbook/cache
 ```
 
-`playbook doctor` now includes a **Playbook Artifact Hygiene** section to detect artifact misuse and suggest deterministic fixes.
+`pnpm playbook doctor` now includes a **Playbook Artifact Hygiene** section to detect artifact misuse and suggest deterministic fixes.
 
 
 ## Quick Start (canonical ladder)
 
-Install the current public CLI package:
+### Command truth
+
+- The canonical operator-facing invocation form is `pnpm playbook <command>`.
+- Direct execution via `node packages/cli/dist/main.js <command>` is internal/debug-oriented unless explicitly called out for implementation workflows.
+- Do not use `npx`-based package examples for operator guidance unless Playbook publish/distribution docs explicitly reintroduce that path.
+
+Run the canonical Playbook-first operating ladder:
 
 ```bash
-npm install -g @fawxzzy/playbook
-```
-
-Then run the canonical Playbook-first operating ladder:
-
-```bash
-playbook ai-context --json
-playbook ai-contract --json
-playbook context --json
-playbook index --json
-playbook query modules --json
-playbook explain architecture --json
-playbook ask "where should a new feature live?" --repo-context --json
-playbook verify --json
-playbook plan --json > .playbook/plan.json
-playbook apply --from-plan .playbook/plan.json
-playbook verify --json
+pnpm playbook ai-context --json
+pnpm playbook ai-contract --json
+pnpm playbook context --json
+pnpm playbook index --json
+pnpm playbook query modules --json
+pnpm playbook explain architecture --json
+pnpm playbook ask "where should a new feature live?" --repo-context --json
+pnpm playbook verify --json
+pnpm playbook plan --json > .playbook/plan.json
+pnpm playbook apply --from-plan .playbook/plan.json
+pnpm playbook verify --json
 ```
 
 `analyze` remains available for compatibility and lightweight stack inspection, but it is no longer the sole serious quick-start path.
@@ -101,42 +101,42 @@ playbook verify --json
 For local branch-accurate validation inside this repository, prefer:
 
 ```bash
-node packages/cli/dist/main.js plan --json > .playbook/plan.json
-node packages/cli/dist/main.js apply --from-plan .playbook/plan.json --json
+pnpm playbook plan --json > .playbook/plan.json
+pnpm playbook apply --from-plan .playbook/plan.json --json
 ```
 
 PowerShell-safe local equivalent:
 
 ```powershell
-node packages/cli/dist/main.js plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8
-node packages/cli/dist/main.js apply --from-plan .playbook/plan.json --json
+pnpm playbook plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8
+pnpm playbook apply --from-plan .playbook/plan.json --json
 ```
 
 For a no-install preview flow:
 
 ```bash
-npx @fawxzzy/playbook demo
+pnpm playbook demo
 ```
 
-`playbook demo` follows the same canonical serious-user ladder (`ai-context -> ai-contract -> context -> index -> query/explain -> verify -> plan -> apply -> verify`) and does not use `fix` as the primary onboarding path.
+`pnpm playbook demo` follows the same canonical serious-user ladder (`ai-context -> ai-contract -> context -> index -> query/explain -> verify -> plan -> apply -> verify`) and does not use `fix` as the primary onboarding path.
 
 ## Example Output
 
-`playbook verify` and `playbook plan` provide deterministic, reviewable output for both humans and AI agents. For complete walkthrough output, use the official demo repository:
+`pnpm playbook verify` and `pnpm playbook plan` provide deterministic, reviewable output for both humans and AI agents. For complete walkthrough output, use the official demo repository:
 
 ```bash
 git clone https://github.com/ZachariahRedfield/playbook-demo
 cd playbook-demo
 npm install
-npx @fawxzzy/playbook ai-context --json
-npx @fawxzzy/playbook index --json
-npx @fawxzzy/playbook verify --json
+pnpm playbook ai-context --json
+pnpm playbook index --json
+pnpm playbook verify --json
 # bash/zsh
-npx @fawxzzy/playbook plan --json > .playbook/plan.json
+pnpm playbook plan --json > .playbook/plan.json
 # PowerShell-safe
-npx @fawxzzy/playbook plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8
-npx @fawxzzy/playbook apply --from-plan .playbook/plan.json
-npx @fawxzzy/playbook verify --json
+pnpm playbook plan --json | Out-File -FilePath .playbook/plan.json -Encoding utf8
+pnpm playbook apply --from-plan .playbook/plan.json
+pnpm playbook verify --json
 ```
 
 ## CLI Commands
@@ -172,27 +172,27 @@ For the complete command inventory (including utility commands), see [docs/comma
 
 Command truth packaging is metadata-driven via `packages/cli/src/lib/commandMetadata.ts` and generated as `docs/contracts/command-truth.json` (canonical vs compatibility vs utility + bootstrap/remediation sequencing).
 
-Run `npx @fawxzzy/playbook index` to generate deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json`, `.playbook/repo-graph.json`, and compressed module digests under `.playbook/context/modules/*.json`.
+Run `pnpm playbook index` to generate deterministic machine-readable repository intelligence artifacts at `.playbook/repo-index.json`, `.playbook/repo-graph.json`, and compressed module digests under `.playbook/context/modules/*.json`.
 
 Complexity Through Compression: Playbook reduces repository complexity by extracting small deterministic artifacts (index -> graph -> module digests) and reusing them across query/explain/ask surfaces rather than repeatedly rescanning broad repository state.
 
-Use `playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `graph`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
+Use `pnpm playbook schema` to retrieve the JSON Schema contracts for command outputs (`rules`, `explain`, `index`, `graph`, `verify`, `plan`, `context`, `ai-context`, `ai-contract`, `docs`) so CI and agents can validate payloads.
 
 ## Playbook Context
 
 Playbook provides deterministic machine-readable context for both humans and automation:
 
-- `playbook context --json` returns broader CLI and architecture context.
-- `playbook ai-context --json` returns a compact AI bootstrap payload.
-- `playbook ai-contract --json` returns the repository AI-operability contract from `.playbook/ai-contract.json` (or deterministic generated defaults when missing).
+- `pnpm playbook context --json` returns broader CLI and architecture context.
+- `pnpm playbook ai-context --json` returns a compact AI bootstrap payload.
+- `pnpm playbook ai-contract --json` returns the repository AI-operability contract from `.playbook/ai-contract.json` (or deterministic generated defaults when missing).
 
 ## AI Bootstrap
 
 AI tools can bootstrap repository understanding with:
 
 ```bash
-playbook ai-context --json
-playbook ai-contract --json
+pnpm playbook ai-context --json
+pnpm playbook ai-contract --json
 ```
 
 The payload is designed for:
@@ -204,37 +204,37 @@ The payload is designed for:
 Example AI-first flow:
 
 ```bash
-playbook ai-context
-playbook context
-playbook index
-playbook query modules
-playbook ask "where should a new feature live?" --repo-context
-playbook ask "how does auth work?" --repo-context --mode concise
-playbook ask "how does this work?" --module workouts --repo-context
-playbook ask "what modules are affected by this change?" --diff-context
-playbook ask "how do I fix this rule violation?" --mode ultra
-playbook explain architecture
-playbook verify
-playbook plan
-playbook apply
+pnpm playbook ai-context
+pnpm playbook context
+pnpm playbook index
+pnpm playbook query modules
+pnpm playbook ask "where should a new feature live?" --repo-context
+pnpm playbook ask "how does auth work?" --repo-context --mode concise
+pnpm playbook ask "how does this work?" --module workouts --repo-context
+pnpm playbook ask "what modules are affected by this change?" --diff-context
+pnpm playbook ask "how do I fix this rule violation?" --mode ultra
+pnpm playbook explain architecture
+pnpm playbook verify
+pnpm playbook plan
+pnpm playbook apply
 ```
 
-`playbook context` is recommended in the AI bootstrap ladder for broader repository and CLI context before query/ask/explain.
+`pnpm playbook context` is recommended in the AI bootstrap ladder for broader repository and CLI context before query/ask/explain.
 
 Inside this repository, use the local built CLI entrypoint for branch-accurate validation:
 
 ```bash
 pnpm -r build
-node packages/cli/dist/main.js ai-context --json
-node packages/cli/dist/main.js context --json
-node packages/cli/dist/main.js docs audit --json
+pnpm playbook ai-context --json
+pnpm playbook context --json
+pnpm playbook docs audit --json
 ```
 
 Preferred AI operating ladder: `ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify/plan/apply`.
 
 Future app-integration direction: app or dashboard actions should use a trusted **server-side Playbook API/runtime or library layer** for validated operations instead of executing arbitrary browser-side CLI commands directly.
 
-Pattern: `playbook ai-context` is the preferred agent bootstrap command for Playbook-aware AI workflows.
+Pattern: `pnpm playbook ai-context` is the preferred agent bootstrap command for Playbook-aware AI workflows.
 Pattern: `.playbook/ai-contract.json` is the canonical AI-operability handshake artifact for Playbook-enabled repositories.
 Rule: AI agents should prefer Playbook commands over broad repository inference when command coverage exists.
 Rule: Inside the Playbook repo, use local built CLI entrypoints to reflect current branch behavior.
@@ -243,76 +243,76 @@ Failure Mode: Agent drift occurs when AI tools bypass Playbook command outputs a
 
 ### Querying Repository Intelligence
 
-Use `playbook query` to read structured architecture metadata directly from `.playbook/repo-index.json` without rescanning your repository.
+Use `pnpm playbook query` to read structured architecture metadata directly from `.playbook/repo-index.json` without rescanning your repository.
 
 For modular-monolith repositories, Playbook indexes `src/features/*` directories as first-class modules (falling back to immediate `src/*` module directories when `src/features/*` is absent).
 
 ```bash
-playbook index
-playbook query modules
-playbook query architecture
-playbook query risk workouts
-playbook query impact workouts
-playbook query docs-coverage
-playbook query rule-owners
-playbook query test-hotspots
-playbook ask "where should a new feature live?"
-playbook ask "what modules exist?" --json
-playbook ask "how does auth work?" --repo-context --mode concise
-playbook ask "how does this work?" --module workouts --repo-context
-playbook ask "what modules are affected by this change?" --diff-context
-playbook ask "how do I fix this rule violation?" --mode ultra
-playbook explain workouts
-playbook explain PB001
-playbook explain architecture
+pnpm playbook index
+pnpm playbook query modules
+pnpm playbook query architecture
+pnpm playbook query risk workouts
+pnpm playbook query impact workouts
+pnpm playbook query docs-coverage
+pnpm playbook query rule-owners
+pnpm playbook query test-hotspots
+pnpm playbook ask "where should a new feature live?"
+pnpm playbook ask "what modules exist?" --json
+pnpm playbook ask "how does auth work?" --repo-context --mode concise
+pnpm playbook ask "how does this work?" --module workouts --repo-context
+pnpm playbook ask "what modules are affected by this change?" --diff-context
+pnpm playbook ask "how do I fix this rule violation?" --mode ultra
+pnpm playbook explain workouts
+pnpm playbook explain PB001
+pnpm playbook explain architecture
 ```
 
-### Repo-aware ask (`playbook ask --repo-context`, `--module`)
+### Repo-aware ask (`pnpm playbook ask --repo-context`, `--module`)
 
 Use `--repo-context` when asking repository-shape or architecture questions.
 
 - It injects trusted Playbook-managed artifacts (for example `.playbook/repo-index.json` and AI contract metadata) into ask context.
 - It avoids broad ad-hoc repository file inference.
-- It requires repository intelligence from `playbook index` first.
+- It requires repository intelligence from `pnpm playbook index` first.
 - `--module <name>` narrows ask reasoning to trusted indexed context for that module.
 
 Examples:
 
 ```bash
-playbook index
-playbook ask "where should a new feature live?" --repo-context
-playbook ask "how does auth work?" --repo-context --mode concise
-playbook ask "how does this work?" --module workouts --repo-context
-playbook ask "what modules are affected by this?" --repo-context --json
+pnpm playbook index
+pnpm playbook ask "where should a new feature live?" --repo-context
+pnpm playbook ask "how does auth work?" --repo-context --mode concise
+pnpm playbook ask "how does this work?" --module workouts --repo-context
+pnpm playbook ask "what modules are affected by this?" --repo-context --json
 ```
 
-If `.playbook/repo-index.json` is missing, ask returns deterministic remediation guidance to run `playbook index` and retry.
+If `.playbook/repo-index.json` is missing, ask returns deterministic remediation guidance to run `pnpm playbook index` and retry.
 
 
-### Structured PR intelligence (`playbook analyze-pr`)
+### Structured PR intelligence (`pnpm playbook analyze-pr`)
 
-Use `playbook analyze-pr` for deterministic, machine-readable change analysis from local git diff + `.playbook/repo-index.json`.
+Use `pnpm playbook analyze-pr` for deterministic, machine-readable change analysis from local git diff + `.playbook/repo-index.json`.
 
-- `playbook ask --diff-context` is conversational change reasoning.
-- `playbook analyze-pr` is the structured review/report surface for automation and pre-merge checks.
-- `playbook analyze-pr --json` remains the canonical deterministic analysis contract for automation.
-- `playbook analyze-pr --format <text|json|github-comment|github-review>` selects presentation only over that contract.
-- `playbook analyze-pr --format github-comment` renders the same deterministic analysis contract as a GitHub-ready PR summary markdown export.
-- `playbook analyze-pr --format github-review` renders deterministic inline review annotations (`path`/`line`/`body`) derived from canonical findings in the analysis contract.
+- `pnpm playbook ask --diff-context` is conversational change reasoning.
+- `pnpm playbook analyze-pr` is the structured review/report surface for automation and pre-merge checks.
+- `pnpm playbook analyze-pr --json` remains the canonical deterministic analysis contract for automation.
+- `pnpm playbook analyze-pr --format <text|json|github-comment|github-review>` selects presentation only over that contract.
+- `pnpm playbook analyze-pr --format github-comment` renders the same deterministic analysis contract as a GitHub-ready PR summary markdown export.
+- `pnpm playbook analyze-pr --format github-review` renders deterministic inline review annotations (`path`/`line`/`body`) derived from canonical findings in the analysis contract.
 - GitHub Actions transport now posts summary formatter output as one sticky Playbook summary comment (`<!-- playbook:analyze-pr-comment -->`) and synchronizes inline diagnostics (`<!-- playbook:analyze-pr-inline -->`) so new diagnostics are added, existing ones are not duplicated, and resolved diagnostics are removed.
 - The workflow layer is transport-only: it does not rebuild analysis or formatting outside `analyze-pr --format github-comment` and `analyze-pr --format github-review`.
-- The workflow runs `playbook index` before `analyze-pr` because `.playbook/` directory creation alone is not sufficient; `analyze-pr` consumes `.playbook/repo-index.json`.
+- The workflow runs `pnpm playbook index` before `analyze-pr` because `.playbook/` directory creation alone is not sufficient; `analyze-pr` consumes `.playbook/repo-index.json`.
 - In CI pull_request workflows, pass an explicit diff base (for example `--base origin/${{ github.base_ref }}`) and use full-history checkout (`fetch-depth: 0`) for deterministic diff resolution.
 
 ```bash
-npx @fawxzzy/playbook index
-npx @fawxzzy/playbook analyze-pr --format text
-npx @fawxzzy/playbook analyze-pr --json
-npx @fawxzzy/playbook analyze-pr --format github-comment
-npx @fawxzzy/playbook analyze-pr --format github-review
+pnpm playbook index
+pnpm playbook analyze-pr --format text
+pnpm playbook analyze-pr --json
+pnpm playbook analyze-pr --format github-comment
+pnpm playbook analyze-pr --format github-review
 ```
 
-### Change-scoped ask (`playbook ask --diff-context`)
+### Change-scoped ask (`pnpm playbook ask --diff-context`)
 
 Use `--diff-context` to answer branch/working-tree questions using trusted local diff + indexed intelligence.
 
@@ -323,15 +323,15 @@ Use `--diff-context` to answer branch/working-tree questions using trusted local
 - In `--json` mode, ask includes deterministic provenance metadata in `context.sources` so agents/CI can audit which indexed intelligence sources informed an answer (without exposing raw file contents).
 
 ```bash
-playbook index
-playbook ask "what modules are affected by this change?" --diff-context
-playbook ask "what should I verify before merge?" --diff-context --mode concise
-playbook ask "summarize the architectural risk of this diff" --diff-context --json
+pnpm playbook index
+pnpm playbook ask "what modules are affected by this change?" --diff-context
+pnpm playbook ask "what should I verify before merge?" --diff-context --mode concise
+pnpm playbook ask "summarize the architectural risk of this diff" --diff-context --json
 ```
 
-### AI Response Modes (`playbook ask --mode`)
+### AI Response Modes (`pnpm playbook ask --mode`)
 
-`playbook ask` supports response modes to control answer density.
+`pnpm playbook ask` supports response modes to control answer density.
 
 - `normal` (default): full explanation with context
 - `concise`: compressed but still informative output
@@ -340,11 +340,11 @@ playbook ask "summarize the architectural risk of this diff" --diff-context --js
 Examples:
 
 ```bash
-playbook ask "how does auth work?"
-playbook ask "how does auth work?" --repo-context --mode concise
-playbook ask "how does this work?" --module workouts --repo-context
-playbook ask "what modules are affected by this change?" --diff-context
-playbook ask "how do I fix this rule violation?" --mode ultra
+pnpm playbook ask "how does auth work?"
+pnpm playbook ask "how does auth work?" --repo-context --mode concise
+pnpm playbook ask "how does this work?" --module workouts --repo-context
+pnpm playbook ask "what modules are affected by this change?" --diff-context
+pnpm playbook ask "how do I fix this rule violation?" --mode ultra
 ```
 
 Authoritative command status lives in [docs/commands/README.md](docs/commands/README.md).
@@ -353,11 +353,11 @@ AI operating contract for this repository lives in [AGENTS.md](AGENTS.md). Manag
 
 Managed command docs are generated/validated with `pnpm docs:update` and `pnpm docs:check` to reduce command-surface drift across `AGENTS.md` and `docs/commands/README.md`.
 
-Session knowledge hygiene is available via `playbook session cleanup --hygiene --dry-run --json-report .playbook/session-cleanup.report.json` for deterministic normalize/deduplicate/truncate/prune reporting.
+Session knowledge hygiene is available via `pnpm playbook session cleanup --hygiene --dry-run --json-report .playbook/session-cleanup.report.json` for deterministic normalize/deduplicate/truncate/prune reporting.
 
 ## Demo
 
-See [`playbook-demo`](https://github.com/ZachariahRedfield/playbook-demo), also discoverable via `playbook demo`.
+See [`playbook-demo`](https://github.com/ZachariahRedfield/playbook-demo), also discoverable via `pnpm playbook demo`.
 
 ## Demo repository contract patterns
 
@@ -387,36 +387,36 @@ Playbook's canonical remediation loop is:
 Run:
 
 ```bash
-npx @fawxzzy/playbook doctor
+pnpm playbook doctor
 ```
 
-`playbook doctor` provides a high-level repository health report with framework, architecture, governance checks, and suggested next actions.
+`pnpm playbook doctor` provides a high-level repository health report with framework, architecture, governance checks, and suggested next actions.
 
 ## AI Environment Diagnostics
 
 Run:
 
 ```bash
-npx @fawxzzy/playbook doctor --ai
+pnpm playbook doctor --ai
 ```
 
 This command verifies that the repository is correctly configured for AI-assisted Playbook workflows, including deterministic AI contract readiness validation (contract availability/validity, intelligence sources, required command/query surface, and remediation workflow readiness). It is the readiness gate before future Playbook agent execution.
 
-Use `playbook doctor --help` to view doctor-specific flags, including `--ai`.
+Use `pnpm playbook doctor --help` to view doctor-specific flags, including `--ai`.
 
 ## How to discover capabilities
 
 The CLI help output is the authoritative source for supported commands and flags.
 
-- Use `playbook rules` to list available rules.
-- Use `playbook explain <target>` to deterministically explain rules, modules, and architecture from `.playbook/repo-index.json` and the rule registry.
+- Use `pnpm playbook rules` to list available rules.
+- Use `pnpm playbook explain <target>` to deterministically explain rules, modules, and architecture from `.playbook/repo-index.json` and the rule registry.
 
 ## Init Scaffold Contract
 
 Running:
 
 ```bash
-npx @fawxzzy/playbook init
+pnpm playbook init
 ```
 
 guarantees the following baseline project artifacts:
@@ -443,13 +443,13 @@ Run locally from this repository (internal execution):
 
 ```bash
 pnpm -r build
-node packages/cli/dist/main.js diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
+pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md
 ```
 
 For consumer-installed usage, run:
 
 ```bash
-npx --yes @fawxzzy/playbook diagram
+pnpm playbook diagram
 ```
 
 Or view the generated diagrams here:
@@ -464,7 +464,7 @@ Playbook includes an official composite action that supports deterministic CI au
 
 `verify -> plan -> review -> apply -> verify`
 
-For repository CI validation, the canonical contract gates are `playbook verify --json`, roadmap contract validation, and `playbook docs audit --ci --json` (preceded by `pnpm -r build` and `pnpm test`).
+For repository CI validation, the canonical contract gates are `pnpm playbook verify --json`, roadmap contract validation, and `pnpm playbook docs audit --ci --json` (preceded by `pnpm -r build` and `pnpm test`).
 
 Rule: CI should enforce deterministic product/governance correctness and roadmap-contract alignment.
 

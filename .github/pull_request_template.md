@@ -17,4 +17,4 @@
 - [ ] `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id` (feature-id gate: PR title -> PR body -> `.playbook/pr-metadata.json`)
 - [ ] `.playbook/pr-metadata.json` updated with canonical featureIds/title/body snippet for repo-owned PR metadata truth
 - [ ] Optional: `pnpm pr:sync-metadata` attempted (warn-only if token cannot edit PR metadata)
-- [ ] `node packages/cli/dist/main.js docs audit --ci --json`
+- [ ] `pnpm playbook docs audit --ci --json`

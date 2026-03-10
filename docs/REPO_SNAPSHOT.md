@@ -44,7 +44,7 @@ Additional roadmap materials:
 
 ## CLI Command List
 
-From local CLI context output (`node packages/cli/dist/main.js context --json`):
+From local CLI context output (`pnpm playbook context --json`):
 
 - `demo`
 - `init`

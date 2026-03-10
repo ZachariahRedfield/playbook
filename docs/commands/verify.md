@@ -1,14 +1,14 @@
-# `playbook verify`
+# `pnpm playbook verify`
 
 ## What it does
 Runs deterministic governance rule checks and reports policy findings.
 
 ## Common usage
-- `playbook verify`
-- `playbook verify --ci`
-- `playbook verify --json`
-- `playbook verify --json --explain`
-- `playbook verify --policy --json`
+- `pnpm playbook verify`
+- `pnpm playbook verify --ci`
+- `pnpm playbook verify --json`
+- `pnpm playbook verify --json --explain`
+- `pnpm playbook verify --policy --json`
 
 ## Policy mode
 

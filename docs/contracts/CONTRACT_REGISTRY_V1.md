@@ -1,12 +1,12 @@
 # Contract Registry (v1)
 
-`playbook contracts` emits a deterministic, machine-readable registry that allows humans, CI, and agents to discover command schema surfaces, runtime artifact defaults, and tracked roadmap contract status from a single stable output.
+`pnpm playbook contracts` emits a deterministic, machine-readable registry that allows humans, CI, and agents to discover command schema surfaces, runtime artifact defaults, and tracked roadmap contract status from a single stable output.
 
 ## Contract scope
 
-- Command: `playbook contracts --json`
+- Command: `pnpm playbook contracts --json`
 - Schema version: `1.0`
-- JSON Schema target: `playbook schema contracts --json`
+- JSON Schema target: `pnpm playbook schema contracts --json`
 - Default artifact path when written: `.playbook/contracts-registry.json`
 
 ## Payload shape
@@ -17,7 +17,7 @@ Top-level object fields:
 - `command`: fixed `"contracts"`
 - `cliSchemas`:
   - `draft`: fixed `"2020-12"`
-  - `schemaCommand`: fixed `"playbook schema --json"`
+  - `schemaCommand`: fixed `"pnpm playbook schema --json"`
   - `commands`: deterministic list of CLI schema targets discoverable via `schema`
 - `artifacts`:
   - `runtimeDefaults`: deterministic runtime artifact contract defaults and producers

@@ -50,9 +50,9 @@ Playbook uses semantic version intent for artifact schemas:
 
 ## Regeneration and freshness expectations
 
-- `playbook index` is the canonical producer for `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
+- `pnpm playbook index` is the canonical producer for `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
 - Repository intelligence consumers (`query`, `deps`, `ask --repo-context`, `explain`, `analyze-pr`) must treat index artifacts as authoritative and fail with deterministic guidance when missing.
-- Freshness detection should surface deterministic warnings when artifacts appear stale relative to current repository state (for example via `playbook doctor`).
+- Freshness detection should surface deterministic warnings when artifacts appear stale relative to current repository state (for example via `pnpm playbook doctor`).
 - CI pipelines should regenerate required runtime artifacts before artifact-consuming analysis steps.
 
 ## CI mismatch behavior
@@ -60,7 +60,7 @@ Playbook uses semantic version intent for artifact schemas:
 When artifact schema versions mismatch command expectations:
 
 1. Command must fail deterministically with an explicit schema mismatch error.
-2. Output should include actionable remediation (`re-run playbook index`, regenerate plan, or rerun producing command).
+2. Output should include actionable remediation (`re-run pnpm playbook index`, regenerate plan, or rerun producing command).
 3. CI should treat mismatch as a contract failure, not a soft warning.
 
 ## Governance rule

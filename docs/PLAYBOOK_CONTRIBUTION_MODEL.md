@@ -85,7 +85,7 @@ Playbook accepts several categories of contributions.
 
 Rules define governance policies enforced by:
 
-playbook verify
+pnpm playbook verify
 
 Rules live in:
 
@@ -183,7 +183,7 @@ onboarding guides
 
 Repository templates are created using:
 
-playbook init
+pnpm playbook init
 
 Templates live in:
 

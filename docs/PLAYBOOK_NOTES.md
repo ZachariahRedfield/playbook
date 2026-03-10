@@ -75,7 +75,7 @@ Developer workflows should be executable commands rather than only written docum
 - WHAT changed: Added deterministic CI workflow (`.github/workflows/ci.yml`), explicit npm registry config (`.npmrc`), and a strict root `verify` script.
 - WHY it changed: Keeps installs reproducible in CI and makes pull-request validation fail fast on real build/test/smoke regressions.
 
-- WHAT changed: Implemented deterministic analyze formatters (human/ci/json), wired `playbook analyze --ci|--json`, and added snapshot tests for formatter stability.
+- WHAT changed: Implemented deterministic analyze formatters (human/ci/json), wired `pnpm playbook analyze --ci|--json`, and added snapshot tests for formatter stability.
 - WHY it changed: Provides high-signal output for developers and CI while preventing accidental formatting contract regressions.
 
 - WHAT changed: Wired `.github/workflows/ci.yml` to run the reusable `./.github/actions/playbook-ci` composite action and aligned demo integration docs to `ZachariahRedfield/playbook/actions/verify@main` with Node 22 + `--ci` inputs.
@@ -84,7 +84,7 @@ Developer workflows should be executable commands rather than only written docum
 - WHAT changed: Removed the standalone `pnpm build` step from `.github/workflows/playbook-diagrams-check.yml` so the workflow runs `pnpm playbook:diagram` (which builds and then runs `node packages/cli/dist/main.js`) before diff validation.
 - WHY it changed: Diagrams CI now builds only the Playbook CLI scope needed for diagram generation, avoiding unrelated package build toolchains (including engine/node tsup/rollup paths) that were blocking this workflow.
 
-- WHAT changed: Standardized Playbook npm distribution scope to `@fawxzzy`, replaced Unix-only `sh -c` lifecycle script direction with cross-platform Node-script guidance, and defined GitHub Action distribution as a composite action that runs `npx @fawxzzy/playbook verify --ci`.
+- WHAT changed: Standardized Playbook npm distribution scope to `@fawxzzy`, replaced Unix-only `sh -c` lifecycle script direction with cross-platform Node-script guidance, and defined GitHub Action distribution as a composite action that runs `pnpm playbook verify --ci`.
 - WHY it changed: This keeps onboarding and CI compatible across Windows (PowerShell/CMD) and Unix shells, reflects that unscoped `playbook` is unavailable for `npx`, and lowers adoption friction with a copy/paste CI path that stays product-language/agent/platform-agnostic.
 
 - WHAT changed: Added a centralized CLI command registry (`packages/cli/src/commands/index.ts`) and updated the CLI entrypoint to resolve and run commands through that registry.
@@ -93,7 +93,7 @@ Developer workflows should be executable commands rather than only written docum
 - WHAT changed: Added `docs/commands/` with minimal pages for `analyze`, `doctor`, `diagram`, and `upgrade`.
 - WHY it changed: Establishes a predictable command-documentation baseline so contributors and AI agents can quickly find usage, flags, and intent.
 
-- WHAT changed: Updated roadmap planning to include near-term CLI/docs cleanup milestones and a future AI Repository Intelligence phase centered on planned `playbook index` output at `.playbook/repo-index.json`.
+- WHAT changed: Updated roadmap planning to include near-term CLI/docs cleanup milestones and a future AI Repository Intelligence phase centered on planned `pnpm playbook index` output at `.playbook/repo-index.json`.
 - WHY it changed: Keeps foundation-phase delivery focused while documenting the intended machine-readable repository index direction without prematurely implementing it.
 
 
@@ -153,7 +153,7 @@ Reason:
 CI validates the current repository state, not a published version.
 
 Implementation:
-node packages/cli/dist/main.js <command>
+pnpm playbook <command>
 
 - Pattern: Index-backed query validation
   For every query subcommand contract, include one known indexed target success, one or more non-indexed deterministic failures, and `--json` validation from the built CLI artifact.
@@ -195,16 +195,16 @@ Workspace filters rely on package names that may change or be incorrectly guesse
 - Lifecycle: Idea → Improvement → Roadmap → Archive
   Product opportunities should progress through explicit lifecycle stages so the roadmap remains focused while historical intelligence is preserved.
 
-- Future feature: `playbook analyze-pr`
+- Future feature: `pnpm playbook analyze-pr`
   Add pull-request intelligence that reports affected modules, risk, boundary violations, and missing tests/docs.
 
-- Future feature: `playbook query impact`
+- Future feature: `pnpm playbook query impact`
   Add deterministic change blast-radius analysis for a target module.
 
 ## Documentation governance patterns
 
 - Pattern: Documentation governance should be executable through Playbook commands rather than enforced only through prose.
-- Pattern: `playbook docs audit` turns documentation architecture into a deterministic repository contract.
+- Pattern: `pnpm playbook docs audit` turns documentation architecture into a deterministic repository contract.
 - Rule: Playbook repositories should have a single strategic roadmap and a separate improvement backlog.
 - Rule: Idea/planning content belongs in approved planning surfaces, not scattered across runtime or workflow docs.
 - Pattern: AI working inside the Playbook repo should run docs audit alongside other branch-accurate local CLI validations.

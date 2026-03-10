@@ -1,16 +1,16 @@
-# `playbook schema`
+# `pnpm playbook schema`
 
 Expose JSON Schema contracts for Playbook CLI JSON outputs so tooling can validate response shape.
 
 ## Usage
 
 ```bash
-playbook schema
-playbook schema rules
-playbook schema explain
-playbook schema verify
-playbook schema context
-playbook schema ai-context
+pnpm playbook schema
+pnpm playbook schema rules
+pnpm playbook schema explain
+pnpm playbook schema verify
+pnpm playbook schema context
+pnpm playbook schema ai-context
 ```
 
 ## Supported schema targets

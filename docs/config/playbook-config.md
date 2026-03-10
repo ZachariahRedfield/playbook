@@ -9,7 +9,7 @@
 
 - `version` — config schema version.
 - `docs` — documentation paths used by Playbook.
-- `analyze.detectors` — detector list used by `playbook analyze`.
+- `analyze.detectors` — detector list used by `pnpm playbook analyze`.
 - `verify.rules.requireNotesOnChanges` — rule configuration for enforcing notes updates.
 
 ## Default config example

@@ -27,7 +27,7 @@ Enter
 
 Type "printf '\n- WHAT changed: Added src/foo.ts\n- WHY it changed: Demo notes update\n' >> docs/PLAYBOOK_NOTES.md"
 Enter
-Type "git add docs/PLAYBOOK_NOTES.md && git commit -m 'docs: update playbook notes'"
+Type "git add docs/PLAYBOOK_NOTES.md && git commit -m 'docs: update pnpm playbook notes'"
 Enter
 
 Type "node /workspace/playbook/packages/cli/dist/main.js verify"

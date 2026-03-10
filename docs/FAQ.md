@@ -37,6 +37,6 @@ No. Playbook is framework-agnostic and designed to work across repository types 
 Use the scoped package `@fawxzzy/playbook`.
 
 - Install: `npm install -g @fawxzzy/playbook`
-- Install-free: `npx --yes @fawxzzy/playbook <command>`
+- Install-free: `pnpm playbook <command>`
 
 Do not rely on unscoped `playbook` as an `npx` target.

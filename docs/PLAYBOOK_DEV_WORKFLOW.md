@@ -54,15 +54,15 @@ Optional sync surface: run `pnpm pr:sync-metadata` to project `.playbook/pr-meta
 For documentation/governance changes, also run:
 
 ```bash
-node packages/cli/dist/main.js docs audit --ci --json
+pnpm playbook docs audit --ci --json
 ```
 
 For remediation workflow updates, run canonical deterministic flow checks:
 
 ```bash
-node packages/cli/dist/main.js verify --json
-node packages/cli/dist/main.js plan --json
-node packages/cli/dist/main.js apply --from-plan .playbook/plan.json --dry-run
+pnpm playbook verify --json
+pnpm playbook plan --json
+pnpm playbook apply --from-plan .playbook/plan.json --dry-run
 ```
 
 ## Smoke testing
@@ -111,7 +111,7 @@ Detectors live in `packages/engine/src/analyze/detectors/` and should rely on st
 
 ## Template updates
 
-Templates used by `playbook init` live in `templates/repo/`.
+Templates used by `pnpm playbook init` live in `templates/repo/`.
 
 Baseline scaffold outputs include:
 
@@ -139,7 +139,7 @@ Record major repository decisions in `docs/PLAYBOOK_NOTES.md` and keep `docs/CHA
 
 - Every PR must reference at least one roadmap `feature_id` from `docs/roadmap/ROADMAP.json`.
 - Command output changes must update contract snapshots and `docs/contracts/COMMAND_CONTRACTS_V1.md`.
-- Documentation and governance changes must pass `playbook docs audit` in CI.
+- Documentation and governance changes must pass `pnpm playbook docs audit` in CI.
 
 ## Suggested PR structure
 

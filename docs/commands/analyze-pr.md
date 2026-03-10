@@ -1,15 +1,15 @@
-# `playbook analyze-pr`
+# `pnpm playbook analyze-pr`
 
 Structured pull request intelligence using local diff + indexed repository intelligence.
 
 ## Usage
 
-- `playbook analyze-pr`
-- `playbook analyze-pr --format text`
-- `playbook analyze-pr --json`
-- `playbook analyze-pr --base main --json`
-- `playbook analyze-pr --format github-comment`
-- `playbook analyze-pr --format github-review`
+- `pnpm playbook analyze-pr`
+- `pnpm playbook analyze-pr --format text`
+- `pnpm playbook analyze-pr --json`
+- `pnpm playbook analyze-pr --base main --json`
+- `pnpm playbook analyze-pr --format github-comment`
+- `pnpm playbook analyze-pr --format github-review`
 
 ## Behavior
 
@@ -29,7 +29,7 @@ Rule relevance is scoped to the current change set: docs-only diffs emit documen
 
 GitHub Actions PR transport treats `analyze-pr --format github-comment` as the sticky summary markdown producer and `analyze-pr --format github-review` as the inline diagnostics producer. Summary comment transport updates one sticky comment marker (`<!-- playbook:analyze-pr-comment -->`) while inline diagnostics are synchronized on reruns (`<!-- playbook:analyze-pr-inline -->`) so stale diagnostics are removed and current diagnostics are posted without duplicate comment spam.
 
-Producer/consumer contract note: `playbook analyze-pr` requires `.playbook/repo-index.json` and must be preceded by `playbook index`; creating `.playbook/` alone does not satisfy the artifact prerequisite. CI should run artifact producers before consumers (index first, then analyze-pr/query/impact).
+Producer/consumer contract note: `pnpm playbook analyze-pr` requires `.playbook/repo-index.json` and must be preceded by `pnpm playbook index`; creating `.playbook/` alone does not satisfy the artifact prerequisite. CI should run artifact producers before consumers (index first, then analyze-pr/query/impact).
 
 CI diff-base contract note: in pull_request automation, pass an explicit base ref (for example `--base origin/${{ github.base_ref }}`) and ensure checkout uses full history (`fetch-depth: 0`) so diff-based analysis can resolve base/head deterministically.
 
@@ -42,7 +42,7 @@ Shell integration notes for GitHub Actions transport:
 
 ## Scope contract
 
-Pattern: `playbook analyze-pr` composes local diff context with indexed repository intelligence to produce deterministic pull request analysis.
+Pattern: `pnpm playbook analyze-pr` composes local diff context with indexed repository intelligence to produce deterministic pull request analysis.
 
 Rule: Pull request intelligence must rely on trusted local git + Playbook-managed artifacts, not cloud-only or fuzzy repository inference.
 

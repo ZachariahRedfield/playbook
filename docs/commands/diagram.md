@@ -1,13 +1,13 @@
-# `playbook diagram`
+# `pnpm playbook diagram`
 
 ## What it does
 Generates deterministic architecture Mermaid diagrams for dependency and/or repository structure views.
 
 ## Common usage
-- `playbook diagram`
-- `playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md`
-- `playbook diagram --deps`
-- `playbook diagram --structure`
+- `pnpm playbook diagram`
+- `pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md`
+- `pnpm playbook diagram --deps`
+- `pnpm playbook diagram --structure`
 
 ## Notable flags
 - `--repo <path>`: repository root to analyze (default `.`).

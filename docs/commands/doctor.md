@@ -1,16 +1,16 @@
-# `playbook doctor`
+# `pnpm playbook doctor`
 
 ## What it does
 Checks local Playbook prerequisites and documentation/config health. Can also preview/apply safe deterministic fixes.
 
 ## Common usage
-- `playbook doctor`
-- `playbook doctor --help`
-- `playbook doctor --ai`
-- `playbook doctor --ai --json`
-- `playbook doctor --fix --dry-run`
-- `playbook doctor --fix --yes`
-- `playbook doctor --json`
+- `pnpm playbook doctor`
+- `pnpm playbook doctor --help`
+- `pnpm playbook doctor --ai`
+- `pnpm playbook doctor --ai --json`
+- `pnpm playbook doctor --fix --dry-run`
+- `pnpm playbook doctor --fix --yes`
+- `pnpm playbook doctor --json`
 
 ## Notable flags
 - `--help`: print doctor-specific help and options.
@@ -21,7 +21,7 @@ Checks local Playbook prerequisites and documentation/config health. Can also pr
 
 
 ## AI mode contract readiness
-`playbook doctor --ai` now validates AI contract readiness as a deterministic gate before future Playbook agent execution.
+`pnpm playbook doctor --ai` now validates AI contract readiness as a deterministic gate before future Playbook agent execution.
 
 Checks include:
 - AI contract availability (`.playbook/ai-contract.json` file-backed vs generated fallback).
@@ -34,7 +34,7 @@ A repository can be AI-capable while still not AI-contract ready when required c
 
 ## JSON contract stability
 
-`playbook doctor --json` is a stable machine-readable automation contract.
+`pnpm playbook doctor --json` is a stable machine-readable automation contract.
 
 The output includes:
 

@@ -69,9 +69,9 @@ Security checklist for command additions:
 
 After merge, prefer lightweight governance habit-forming checks before expanding enforcement scope:
 
-- `playbook audit architecture` when architecture guardrails, deterministic boundaries, or contracts change.
-- `playbook doctor` before handoff/review to expose architecture-audit status as a lightweight health signal.
-- `playbook docs audit` when contributor/developer workflow docs, governance docs, or roadmap-linked guidance changes.
+- `pnpm playbook audit architecture` when architecture guardrails, deterministic boundaries, or contracts change.
+- `pnpm playbook doctor` before handoff/review to expose architecture-audit status as a lightweight health signal.
+- `pnpm playbook docs audit` when contributor/developer workflow docs, governance docs, or roadmap-linked guidance changes.
 
 Use this guidance to keep governance human-visible and repeatable first, then add stricter blocking checks later only where false-positive risk is demonstrably low (for example, artifact `schemaVersion` consistency or shared SCM utility wiring checks).
 
@@ -82,7 +82,7 @@ Capture merge-ready architecture audit notes with these copy-pastable bullets:
 - Upgraded selected architecture checks from presence-only validation to minimum-quality deterministic validation.
 - Reduced roadmap audit brittleness by using tolerant concept-based coverage checks instead of strict heading dependence.
 - Improved human-readable architecture audit output for summary-first operator triage and actionable follow-up.
-- Integrated architecture audit findings into `playbook doctor` as a lightweight health signal without forcing broader workflow brittleness.
+- Integrated architecture audit findings into `pnpm playbook doctor` as a lightweight health signal without forcing broader workflow brittleness.
 - Pattern: governance commands should evolve from existence checks to minimum-quality checks only when intent can be validated deterministically.
 - Rule: governance evidence and action lists must be source-referenced, deduplicated, and stably ordered.
 - Failure Mode: over-broad warning/error integration in health workflows can create signal fatigue and reduce trust in real drift detection.

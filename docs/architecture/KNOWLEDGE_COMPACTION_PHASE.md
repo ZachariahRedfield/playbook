@@ -172,7 +172,7 @@ Non-goals in this pass:
 - no autonomous learning loop that mutates enforcement policy
 - no automatic rule promotion without review
 
-Future option (explicitly secondary): a maintenance-oriented `playbook compact` command may be introduced later once contracts, review UX, and promotion governance are hardened.
+Future option (explicitly secondary): a maintenance-oriented `pnpm playbook compact` command may be introduced later once contracts, review UX, and promotion governance are hardened.
 
 
 ## Toroidal Flow alignment (additive framing)

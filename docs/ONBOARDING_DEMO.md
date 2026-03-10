@@ -16,24 +16,24 @@ The demo repo is part of product adoption strategy:
 
 ## Current status
 
-`playbook-demo` is an active product artifact and is exposed directly through `playbook demo` (deterministic text/JSON onboarding contract).
+`playbook-demo` is an active product artifact and is exposed directly through `pnpm playbook demo` (deterministic text/JSON onboarding contract).
 
 ## Canonical serious-user ladder
 
 Use the demo to practice the same operating ladder used in real repositories:
 
 ```bash
-playbook ai-context --json
-playbook ai-contract --json
-playbook context --json
-playbook index --json
-playbook query modules --json
-playbook explain architecture --json
-playbook ask "where should a new feature live?" --repo-context --json
-playbook verify --json
-playbook plan --json > .playbook/plan.json
-playbook apply --from-plan .playbook/plan.json
-playbook verify --json
+pnpm playbook ai-context --json
+pnpm playbook ai-contract --json
+pnpm playbook context --json
+pnpm playbook index --json
+pnpm playbook query modules --json
+pnpm playbook explain architecture --json
+pnpm playbook ask "where should a new feature live?" --repo-context --json
+pnpm playbook verify --json
+pnpm playbook plan --json > .playbook/plan.json
+pnpm playbook apply --from-plan .playbook/plan.json
+pnpm playbook verify --json
 ```
 
 `analyze` can still be used as a compatibility-friendly shortcut for lightweight stack inspection, but it is not the primary serious-user narrative.
@@ -54,8 +54,8 @@ Unsupported/bounded question classes:
 
 Deterministic fallback guidance:
 
-- if index context is unavailable, run `playbook index --json` first
-- if question scope is too broad, narrow to a deterministic `playbook query` or `playbook explain` target
+- if index context is unavailable, run `pnpm playbook index --json` first
+- if question scope is too broad, narrow to a deterministic `pnpm playbook query` or `pnpm playbook explain` target
 - if `ask --repo-context` returns unsupported-question, keep the question within supported classes and retry with explicit repo target terms
 
 

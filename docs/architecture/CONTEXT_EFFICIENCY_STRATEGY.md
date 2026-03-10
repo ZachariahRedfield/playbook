@@ -9,7 +9,7 @@ Deliver high-signal repository intelligence with bounded runtime and bounded con
 ## Strategy pillars
 
 1. **Index once, query many**
-   - Build deterministic artifacts with `playbook index`.
+   - Build deterministic artifacts with `pnpm playbook index`.
    - Prefer `query`/`deps`/`explain`/`ask --repo-context` over repeated broad scans.
 
 2. **Narrow context first**

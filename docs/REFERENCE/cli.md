@@ -20,7 +20,7 @@ For canonical serious-user operation, use:
 
 ## Query-domain note
 
-Structured domains such as `risk`, `impact`, `docs-coverage`, `rule-owners`, and `test-hotspots` are query surfaces/subcommands (for example via `playbook query ...`), not standalone top-level commands.
+Structured domains such as `risk`, `impact`, `docs-coverage`, `rule-owners`, and `test-hotspots` are query surfaces/subcommands (for example via `pnpm playbook query ...`), not standalone top-level commands.
 
 ## Global options (all top-level commands)
 
