@@ -4,6 +4,18 @@ This document describes **current-state architecture**. Future-state initiatives
 
 Toroidal Flow is documented as an additive architecture overlay in [docs/architecture/TOROIDAL_FLOW.md](./architecture/TOROIDAL_FLOW.md). It preserves current command/runtime contracts and frames how execution and intelligence-return phases form a closed loop.
 
+## Toroidal Flow and Knowledge Compaction artifact set
+
+The Toroidal Flow + Knowledge Compaction architecture is also represented in compact reusable artifacts:
+
+- Pattern: `patterns/pattern.closed_loop_intelligence.md`
+- Rule: `rules/rule.intention_over_retention.md`
+- Rule: `rules/rule.smallest_predictive_pattern.md`
+- Principle: `architecture/principle.graph_before_theory.md`
+- Principle: `architecture/principle.state_transformation_relation.md`
+
+These artifacts capture deterministic architecture intent in reusable pattern/rule/principle cards while preserving existing runtime command contracts.
+
 ## System layering
 
 Playbook is organized as a layered monorepo:

@@ -124,6 +124,20 @@ Toroidal Flow framing (additive overlay):
 - Allow only promoted knowledge to re-enter future context assembly; raw extracted findings are evidence, not reusable context.
 - Keep promotion/retirement optional and governance-gated, not mandatory on every cycle.
 
+Architecture artifact alignment (Toroidal Flow + Knowledge Compaction):
+
+- Pattern artifact: `patterns/pattern.closed_loop_intelligence.md`
+  - captures the closed-loop architecture as a deterministic lifecycle from observation through retirement
+  - reinforces the invariant that `apply` is midpoint, not endpoint
+- Rule artifact: `rules/rule.intention_over_retention.md`
+  - constrains retention to cycle intention and reusable knowledge extraction outcomes
+- Rule artifact: `rules/rule.smallest_predictive_pattern.md`
+  - requires pattern storage to remain abstraction-first and minimally predictive
+- Principle artifact: `architecture/principle.graph_before_theory.md`
+  - anchors higher-order abstraction on stable relationship substrates
+- Principle artifact: `architecture/principle.state_transformation_relation.md`
+  - codifies the primitive model `State -> Transformation -> Relational Influence` for system framing
+
 Implementation foundation (internal):
 
 - Introduced internal knowledge artifact model representing `candidate -> compacted -> promoted -> retired` lifecycle states.
