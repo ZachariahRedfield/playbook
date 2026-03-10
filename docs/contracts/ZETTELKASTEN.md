@@ -157,3 +157,9 @@ Pattern-card promotion forms the durable attractors of Playbook memory.
 
 Failure Mode:
 Unreviewed pattern promotion creates unstable doctrine and architecture drift.
+
+## Promotion coupling rule
+
+- **Rule:** No zettel-derived promoted state is updated in place; transitions flow through append-only promotion decisions.
+- **Pattern:** Zettel lineage feeds promotion-decision morphisms that preserve ancestry into pattern versions.
+- **Failure Mode:** Direct zettel-to-pattern mutation breaks replay and loses evidence ancestry.

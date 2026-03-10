@@ -32,6 +32,7 @@ const getArgValue = (flag) => {
 };
 
 const promotionDecisionInput = getArgValue('--promotion-decisions');
+const promotionQueueInput = getArgValue('--promotion-review-queue');
 
 const jsonArtifacts = {
   aiContext: '.playbook/ai-context.json',
@@ -319,16 +320,28 @@ if (shouldEmitGraph) {
             const decisionList = Array.isArray(parsedDecisionInput) ? parsedDecisionInput : parsedDecisionInput.decisions ?? [];
 
             const {
-              applyPromotionDecision,
+              replayDecisionJournal
+            } = await import(path.join(repoRoot, 'packages/engine/dist/promotion/replayDecisionJournal.js'));
+            const {
               buildPromotionDecisionArtifact,
               buildPatternCardCollectionArtifact
             } = await import(path.join(repoRoot, 'packages/engine/dist/promotion/applyPromotionDecision.js'));
 
-            let promotedPatterns = [];
-            for (const decision of decisionList) {
-              const result = applyPromotionDecision({ draftArtifact, decision, existingPatterns: promotedPatterns });
-              promotedPatterns = result.patterns;
-            }
+            const queueSource = promotionQueueInput
+              ? JSON.parse(await readFile(path.isAbsolute(promotionQueueInput) ? promotionQueueInput : path.join(repoRoot, promotionQueueInput), 'utf8'))
+              : reviewQueue;
+
+            const replayed = replayDecisionJournal({
+              draftArtifact,
+              batch: {
+                schemaVersion: '1.0',
+                kind: 'playbook-promotion-decision-batch',
+                batchId: `dev:${runCycleId}`,
+                originCycleId: queueSource.originCycleId ?? runCycleId,
+                createdAt: now.toISOString(),
+                decisions: decisionList
+              }
+            });
 
             const decisionsArtifact = buildPromotionDecisionArtifact({
               originCycleId: runCycleId,
@@ -338,7 +351,7 @@ if (shouldEmitGraph) {
             const promotedArtifact = buildPatternCardCollectionArtifact({
               originCycleId: runCycleId,
               createdAt: now.toISOString(),
-              cards: promotedPatterns
+              cards: replayed.final.patterns
             });
 
             const promotionDecisionRelative = `.playbook/promotion/decisions/${runCycleId}.json`;

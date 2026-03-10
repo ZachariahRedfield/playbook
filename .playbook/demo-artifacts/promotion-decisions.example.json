@@ -1,92 +1,29 @@
 {
   "schemaVersion": "1.0",
-  "kind": "playbook-promotion-decisions",
-  "artifactId": "promotion-decisions:2026-01-01T00-00-00.000Z@abc1234:example",
+  "kind": "playbook-promotion-decision-batch",
+  "batchId": "promotion-decisions:2026-01-01T00-00-00.000Z@abc1234:demo",
   "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
-  "createdAt": "2026-01-01T00:00:00.000Z",
+  "createdAt": "2026-01-01T00:02:00.000Z",
   "decisions": [
     {
-      "decisionId": "decision:promote:001",
+      "decisionId": "decision.promote.1",
       "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
-      "patternDraftId": "draft.pattern.one",
-      "decisionType": "promote",
-      "decisionReason": "Cross-cycle recurrence and stable invariant confirmed.",
-      "reviewer": "playbook-maintainer",
-      "timestamp": "2026-01-01T00:00:00.000Z",
-      "sourceGroupIds": ["group:run-cycle"],
-      "sourceZettelIds": ["zettel:a", "zettel:b"],
-      "resultingPatternIds": ["pattern.run-cycle_1234567890"]
-    },
-    {
-      "decisionId": "decision:defer:001",
-      "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
-      "patternDraftId": "draft.pattern.two",
-      "decisionType": "defer",
-      "decisionReason": "Needs one additional cycle of evidence.",
+      "sequence": 1,
       "timestamp": "2026-01-01T00:01:00.000Z",
-      "sourceGroupIds": ["group:run-cycle"],
-      "sourceZettelIds": ["zettel:c"],
-      "resultingPatternIds": []
-    },
-    {
-      "decisionId": "decision:reject:001",
-      "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
-      "patternDraftId": "draft.pattern.three",
-      "decisionType": "reject",
-      "decisionReason": "Conflict flags indicate unstable doctrine candidate.",
-      "timestamp": "2026-01-01T00:02:00.000Z",
-      "sourceGroupIds": ["group:run-cycle"],
-      "sourceZettelIds": ["zettel:d"],
-      "resultingPatternIds": []
-    },
-    {
-      "decisionId": "decision:merge:001",
-      "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
-      "patternDraftId": "draft.pattern.merge-a",
-      "decisionType": "merge",
-      "decisionReason": "Two drafts represent one invariant with shared lineage.",
-      "timestamp": "2026-01-01T00:03:00.000Z",
-      "sourceGroupIds": ["group:run-cycle", "group:memory"],
-      "sourceZettelIds": ["zettel:e", "zettel:f"],
-      "resultingPatternIds": ["pattern.merged_0987654321"],
-      "relatedDraftIds": ["draft.pattern.merge-b"]
-    },
-    {
-      "decisionId": "decision:split:001",
-      "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
-      "patternDraftId": "draft.pattern.split-a",
-      "decisionType": "split",
-      "decisionReason": "Draft contains two separable mechanisms.",
-      "timestamp": "2026-01-01T00:04:00.000Z",
-      "sourceGroupIds": ["group:run-cycle"],
-      "sourceZettelIds": ["zettel:g", "zettel:h"],
-      "resultingPatternIds": [],
-      "splitDrafts": [
-        {
-          "title": "Deterministic promotion queueing",
-          "summary": "Queueing decisions is distinct from doctrine mutation.",
-          "sourceZettelIds": ["zettel:g"],
-          "mechanism": "explicit-decision-gate"
-        },
-        {
-          "title": "Lineage-preserving promotion artifacts",
-          "summary": "Lineage links to original zettels are preserved in promoted cards.",
-          "sourceZettelIds": ["zettel:h"],
-          "invariant": "lineage-must-remain-intact"
-        }
-      ]
-    },
-    {
-      "decisionId": "decision:supersede:001",
-      "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
-      "patternDraftId": "draft.pattern.four",
-      "decisionType": "supersede",
-      "decisionReason": "New formulation supersedes outdated pattern card.",
-      "timestamp": "2026-01-01T00:05:00.000Z",
-      "sourceGroupIds": ["group:run-cycle"],
-      "sourceZettelIds": ["zettel:i"],
-      "resultingPatternIds": ["pattern.updated_1122334455"],
-      "relatedPatternIds": ["pattern.legacy_5544332211"]
+      "decisionType": "promote",
+      "inputPatternIds": [],
+      "inputDraftIds": ["draft.a"],
+      "decisionReason": "Cross-cycle recurrence is stable.",
+      "resultingPatternIds": ["pattern.a"],
+      "resultingState": "promoted",
+      "evidenceRefs": ["verify:rule.promotions"],
+      "reviewer": "governance-bot",
+      "lineage": {
+        "sourceGroupIds": ["group.a"],
+        "sourceZettelIds": ["zettel.1", "zettel.2"],
+        "sourceArtifactPaths": [".playbook/pattern-cards/drafts/2026-01-01T00-00-00.000Z@abc1234.json"],
+        "priorVersionIds": []
+      }
     }
   ]
 }

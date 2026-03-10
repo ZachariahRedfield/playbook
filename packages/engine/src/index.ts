@@ -56,7 +56,7 @@ export type { EdgeSeed } from './graph/deterministicEdges.js';
 export type { VertexKind, EdgeKind, GraphVertexStatus, GraphVertex, GraphEdge, RelationVertex, GraphSnapshotMetrics, GraphSnapshot, GroupingReason, GroupCompatibilityStatus, GroupBoundaryFlag, GraphGroup, GraphGroupingMetrics, GraphGroupArtifact, CandidatePatternPreview, CandidatePatternPreviewArtifact } from './schema/graphMemory.js';
 export type { PatternCardDraftStatus, PatternCardDraftRecurrence, PatternCardDraft, PatternCardDraftArtifact } from './schema/patternCardDraft.js';
 export type { PromotionReadinessBucket, PromotionReadiness, PromotionReviewQueueItem, PromotionReviewQueue } from './schema/promotion.js';
-export type { PromotionDecisionType, PromotionDecision, PromotionDecisionArtifact, PromotionSplitDraft } from './schema/promotionDecision.js';
+export type { PromotionDecisionType, PromotionDecision, PromotionDecisionArtifact, PromotionState, PromotionStateTransition, DecisionBatch, PatternCardVersionRef } from './schema/promotionDecision.js';
 export type { PatternCardDecisionType, PatternCardVersionEntry, PatternCardLineage, PatternCard as PromotionPatternCard, PatternCardCollectionArtifact } from './schema/patternCard.js';
 
 export { queryDependencies } from './query/dependencies.js';
@@ -140,7 +140,10 @@ export { scorePromotionReadiness } from './promotion/scorePromotionReadiness.js'
 export { buildPromotionReviewQueue } from './promotion/buildPromotionReviewQueue.js';
 export type { BuildPromotionReviewQueueInput } from './promotion/buildPromotionReviewQueue.js';
 export { applyPromotionDecision, buildPromotionDecisionArtifact, buildPatternCardCollectionArtifact } from './promotion/applyPromotionDecision.js';
+export { validateTransition } from './promotion/validateTransition.js';
+export { replayDecisionJournal } from './promotion/replayDecisionJournal.js';
 export { createStablePatternId, createPatternCard } from './patternCards/createPatternCard.js';
+export { materializePatternCardVersion } from './patternCards/materializePatternCardVersion.js';
 export { appendPatternVersion, markPatternSuperseded } from './patternCards/versioning.js';
 
 export { buildStateSpaceSnapshot } from './stateSpace/buildStateSpaceSnapshot.js';

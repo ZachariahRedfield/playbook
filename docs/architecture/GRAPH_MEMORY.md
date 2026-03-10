@@ -175,3 +175,9 @@ Skipping grouping and jumping straight from notes to doctrine causes brittle, no
 - Each draft pattern card preserves lineage to source zettels and origin run cycles.
 - Promotion-readiness scoring is reproducible and emitted with draft artifacts.
 - Promotion remains review-gated; no automatic promotion to contracts.
+
+## Decision morphisms
+
+- **Rule:** No knowledge state may be mutated in place; durable state changes must be explicit decision morphisms.
+- **Pattern:** Promotion decisions are graph morphisms from input pattern-state objects to resulting pattern-state objects.
+- **Failure Mode:** Without append-only morphism journals, graph memory cannot be replayed or rolled back deterministically.

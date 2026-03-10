@@ -221,3 +221,9 @@ Unreviewed pattern promotion creates unstable doctrine and architecture drift.
 - Draft pattern cards are emitted as the first reviewable compression boundary.
 - Promotion-readiness scoring is reproducible per run cycle.
 - Promotion remains review-gated with no automatic contract promotion.
+
+## Promotion decision journal governance
+
+- **Rule:** No knowledge state may be mutated in place; all durable transitions must be expressed as explicit decision morphisms.
+- **Pattern:** Promotion decisions are the compositional algebra of Playbook knowledge governance.
+- **Failure Mode:** If promotion occurs without an append-only decision journal, doctrine becomes unreplayable and rollback semantics collapse.

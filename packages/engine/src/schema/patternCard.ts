@@ -1,12 +1,15 @@
+import type { PatternCardVersionRef, PromotionDecisionType, PromotionState } from './promotionDecision.js';
+
 export const PATTERN_CARD_SCHEMA_VERSION = '1.0' as const;
 
-export type PatternCardDecisionType = 'promote' | 'merge' | 'supersede';
+export type PatternCardDecisionType = PromotionDecisionType;
 
 export type PatternCardVersionEntry = {
   version: number;
   decisionId: string;
   decisionType: PatternCardDecisionType;
   timestamp: string;
+  state: PromotionState;
 };
 
 export type PatternCardLineage = {
@@ -14,9 +17,10 @@ export type PatternCardLineage = {
   sourceDraftIds: string[];
   sourceGroupIds: string[];
   sourceZettelIds: string[];
+  sourceArtifactPaths: string[];
   evidenceRefs: string[];
-  supersedesPatternIds: string[];
-  mergedFromPatternIds: string[];
+  parentPatternIds: string[];
+  priorVersionIds: string[];
   decisionIds: string[];
 };
 
@@ -30,13 +34,13 @@ export type PatternCard = {
   mechanism?: string;
   invariant?: string;
   linkedContractRefs: string[];
-  status: 'active' | 'superseded';
+  state: PromotionState;
   createdAt: string;
   updatedAt: string;
   currentVersion: number;
   versionHistory: PatternCardVersionEntry[];
   lineage: PatternCardLineage;
-  supersededByPatternId?: string;
+  versionRef: PatternCardVersionRef;
 };
 
 export type PatternCardCollectionArtifact = {

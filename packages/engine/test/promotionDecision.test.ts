@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyPromotionDecision } from '../src/promotion/applyPromotionDecision.js';
+import { replayDecisionJournal } from '../src/promotion/replayDecisionJournal.js';
 import type { PatternCardDraftArtifact } from '../src/schema/patternCardDraft.js';
 import type { PromotionDecision } from '../src/schema/promotionDecision.js';
 
@@ -13,135 +14,82 @@ const draftArtifact: PatternCardDraftArtifact = {
   createdAt: '2026-01-01T00:00:00.000Z',
   drafts: [
     {
-      patternId: 'draft.a',
-      originCycleId: '2026-01-01T00-00-00.000Z@abc1234',
-      sourceGroupId: 'group.a',
-      sourceZettelIds: ['zettel.1', 'zettel.2'],
-      sourceArtifactPaths: ['.playbook/run-cycles/a.json'],
-      canonicalKey: 'deterministic-promotion',
-      title: 'Deterministic promotion',
-      summary: 'Promotion requires explicit decision artifacts.',
-      evidenceRefs: ['evidence.a'],
-      linkedContractRefs: ['contract.a'],
-      recurrence: { cycleCount: 2, latestCycleId: 'cycle.2', sourceCycleIds: ['cycle.1', 'cycle.2'] },
-      conflictFlags: [],
-      boundaryFlags: [],
-      draftStatus: 'ready'
+      patternId: 'draft.a', originCycleId: 'cycle.1', sourceGroupId: 'group.a', sourceZettelIds: ['zettel.1', 'zettel.2'], sourceArtifactPaths: ['.playbook/run-cycles/a.json'], canonicalKey: 'deterministic-promotion', title: 'Deterministic promotion', summary: 'Promotion requires explicit decision artifacts.', evidenceRefs: ['evidence.a'], linkedContractRefs: ['contract.a'], recurrence: { cycleCount: 2, latestCycleId: 'cycle.2', sourceCycleIds: ['cycle.1', 'cycle.2'] }, conflictFlags: [], boundaryFlags: [], draftStatus: 'draft'
     },
     {
-      patternId: 'draft.b',
-      originCycleId: '2026-01-01T00-00-00.000Z@abc1234',
-      sourceGroupId: 'group.b',
-      sourceZettelIds: ['zettel.3'],
-      sourceArtifactPaths: ['.playbook/run-cycles/b.json'],
-      canonicalKey: 'deterministic-lineage',
-      title: 'Deterministic lineage',
-      summary: 'Lineage remains linked after promotion.',
-      evidenceRefs: ['evidence.b'],
-      linkedContractRefs: ['contract.b'],
-      recurrence: { cycleCount: 1, latestCycleId: 'cycle.1', sourceCycleIds: ['cycle.1'] },
-      conflictFlags: [],
-      boundaryFlags: [],
-      draftStatus: 'review'
+      patternId: 'draft.b', originCycleId: 'cycle.1', sourceGroupId: 'group.b', sourceZettelIds: ['zettel.3'], sourceArtifactPaths: ['.playbook/run-cycles/b.json'], canonicalKey: 'deterministic-lineage', title: 'Deterministic lineage', summary: 'Lineage remains linked after promotion.', evidenceRefs: ['evidence.b'], linkedContractRefs: ['contract.b'], recurrence: { cycleCount: 1, latestCycleId: 'cycle.1', sourceCycleIds: ['cycle.1'] }, conflictFlags: [], boundaryFlags: [], draftStatus: 'review'
     }
   ],
   metrics: { draftCount: 2, conflictFlagCount: 0, boundaryFlagCount: 0 }
 };
 
-const promoteDecision: PromotionDecision = {
+const baseDecision: PromotionDecision = {
   decisionId: 'decision.promote.1',
   originCycleId: draftArtifact.cycleId,
-  patternDraftId: 'draft.a',
-  decisionType: 'promote',
-  decisionReason: 'Stable recurrence observed.',
+  sequence: 1,
   timestamp: '2026-01-01T00:01:00.000Z',
-  sourceGroupIds: ['group.a'],
-  sourceZettelIds: ['zettel.1', 'zettel.2'],
-  resultingPatternIds: ['pattern.a']
+  decisionType: 'promote',
+  inputPatternIds: [],
+  inputDraftIds: ['draft.a'],
+  decisionReason: 'Stable recurrence observed.',
+  resultingPatternIds: ['pattern.a'],
+  resultingState: 'promoted',
+  evidenceRefs: ['evidence.a'],
+  lineage: { sourceGroupIds: ['group.a'], sourceZettelIds: ['zettel.1', 'zettel.2'], sourceArtifactPaths: ['.playbook/run-cycles/a.json'], priorVersionIds: [] }
 };
 
-describe('applyPromotionDecision', () => {
-  it('promotes deterministically from decision artifact only', () => {
-    const first = applyPromotionDecision({ draftArtifact, decision: promoteDecision });
-    const second = applyPromotionDecision({ draftArtifact, decision: promoteDecision });
-
-    expect(first.patterns).toEqual(second.patterns);
-    expect(first.patterns[0]).toMatchObject({
-      patternId: 'pattern.a',
-      status: 'active',
-      lineage: {
-        sourceDraftIds: ['draft.a'],
-        sourceZettelIds: ['zettel.1', 'zettel.2']
-      }
-    });
+describe('promotion decision algebra', () => {
+  it('rejects invalid transitions deterministically', () => {
+    expect(() =>
+      applyPromotionDecision({ draftArtifact, decision: { ...baseDecision, decisionId: 'bad.1', decisionType: 'supersede', resultingState: 'superseded' } })
+    ).toThrow('Invalid state transition');
   });
 
-  it('merge preserves parent lineage', () => {
+  it('replay journal is stable across repeated runs', () => {
+    const batch = {
+      schemaVersion: '1.0' as const,
+      kind: 'playbook-promotion-decision-batch' as const,
+      batchId: 'batch.1',
+      originCycleId: draftArtifact.cycleId,
+      createdAt: '2026-01-01T00:02:00.000Z',
+      decisions: [{ ...baseDecision }, { ...baseDecision, decisionId: 'decision.defer.1', sequence: 2, decisionType: 'defer', inputDraftIds: ['draft.b'], resultingState: 'deferred', resultingPatternIds: [] }]
+    };
+
+    const first = replayDecisionJournal({ draftArtifact, batch });
+    const second = replayDecisionJournal({ draftArtifact, batch });
+    expect(first.final.patterns).toEqual(second.final.patterns);
+  });
+
+  it('merge and split preserve lineage', () => {
     const merge = applyPromotionDecision({
       draftArtifact,
       decision: {
-        ...promoteDecision,
+        ...baseDecision,
         decisionId: 'decision.merge.1',
+        sequence: 2,
         decisionType: 'merge',
-        patternDraftId: 'draft.a',
-        relatedDraftIds: ['draft.b'],
+        inputPatternIds: ['pattern.a', 'pattern.b'],
+        inputDraftIds: ['draft.a', 'draft.b'],
         resultingPatternIds: ['pattern.merge.1']
       }
     });
 
-    expect(merge.patterns[0].lineage.sourceZettelIds).toEqual(['zettel.1', 'zettel.2', 'zettel.3']);
-    expect(merge.patterns[0].lineage.mergedFromPatternIds.length).toBe(2);
-  });
+    expect(merge.patterns[0].lineage.parentPatternIds).toEqual(['pattern.a', 'pattern.b']);
 
-  it('split emits new drafts and no promotions', () => {
     const split = applyPromotionDecision({
       draftArtifact,
       decision: {
-        ...promoteDecision,
+        ...baseDecision,
         decisionId: 'decision.split.1',
+        sequence: 3,
         decisionType: 'split',
-        splitDrafts: [
-          { title: 'Split One', summary: 'One', sourceZettelIds: ['zettel.1'] },
-          { title: 'Split Two', summary: 'Two', sourceZettelIds: ['zettel.2'] }
-        ],
-        resultingPatternIds: []
+        inputDraftIds: ['draft.a'],
+        resultingPatternIds: ['draft.split.1', 'draft.split.2'],
+        resultingState: 'review'
       }
     });
 
-    expect(split.patterns).toHaveLength(0);
     expect(split.emittedDrafts).toHaveLength(2);
-  });
-
-  it('supersede marks previous pattern as superseded', () => {
-    const promoted = applyPromotionDecision({ draftArtifact, decision: promoteDecision });
-    const superseded = applyPromotionDecision({
-      draftArtifact,
-      existingPatterns: promoted.patterns,
-      decision: {
-        ...promoteDecision,
-        decisionId: 'decision.supersede.1',
-        decisionType: 'supersede',
-        resultingPatternIds: ['pattern.new'],
-        relatedPatternIds: ['pattern.a']
-      }
-    });
-
-    const oldCard = superseded.patterns.find((card) => card.patternId === 'pattern.a');
-    expect(oldCard?.status).toBe('superseded');
-    expect(oldCard?.supersededByPatternId).toBe('pattern.new');
-  });
-
-  it('defer and reject do not mutate promoted cards', () => {
-    const defer = applyPromotionDecision({
-      draftArtifact,
-      decision: { ...promoteDecision, decisionId: 'decision.defer.1', decisionType: 'defer', resultingPatternIds: [] }
-    });
-    const reject = applyPromotionDecision({
-      draftArtifact,
-      decision: { ...promoteDecision, decisionId: 'decision.reject.1', decisionType: 'reject', resultingPatternIds: [] }
-    });
-
-    expect(defer.patterns).toHaveLength(0);
-    expect(reject.patterns).toHaveLength(0);
+    expect(split.terminalRecords[0].lineage.sourceGroupIds).toEqual(['group.a']);
   });
 });

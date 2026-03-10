@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-pattern-cards",
+  "artifactId": "pattern-cards:2026-01-01T00-00-00.000Z@abc1234:demo",
+  "originCycleId": "2026-01-01T00-00-00.000Z@abc1234",
+  "createdAt": "2026-01-01T00:02:00.000Z",
+  "cards": [
+    {
+      "schemaVersion": "1.0",
+      "kind": "playbook-pattern-card",
+      "patternId": "pattern.a",
+      "canonicalKey": "deterministic-promotion",
+      "title": "Deterministic promotion",
+      "summary": "Promotion requires explicit decision artifacts.",
+      "linkedContractRefs": ["contract.a"],
+      "state": "promoted",
+      "createdAt": "2026-01-01T00:01:00.000Z",
+      "updatedAt": "2026-01-01T00:01:00.000Z",
+      "currentVersion": 1,
+      "versionHistory": [
+        {
+          "version": 1,
+          "decisionId": "decision.promote.1",
+          "decisionType": "promote",
+          "timestamp": "2026-01-01T00:01:00.000Z",
+          "state": "promoted"
+        }
+      ],
+      "lineage": {
+        "originCycleIds": ["2026-01-01T00-00-00.000Z@abc1234"],
+        "sourceDraftIds": ["draft.a"],
+        "sourceGroupIds": ["group.a"],
+        "sourceZettelIds": ["zettel.1", "zettel.2"],
+        "sourceArtifactPaths": [".playbook/pattern-cards/drafts/2026-01-01T00-00-00.000Z@abc1234.json"],
+        "evidenceRefs": ["verify:rule.promotions"],
+        "parentPatternIds": [],
+        "priorVersionIds": [],
+        "decisionIds": ["decision.promote.1"]
+      },
+      "versionRef": {
+        "patternId": "pattern.a",
+        "version": 1,
+        "status": "promoted"
+      }
+    }
+  ]
+}

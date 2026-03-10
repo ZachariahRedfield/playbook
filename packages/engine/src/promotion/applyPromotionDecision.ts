@@ -1,24 +1,46 @@
 import { createHash } from 'node:crypto';
-import { createPatternCard, createStablePatternId } from '../patternCards/createPatternCard.js';
-import { markPatternSuperseded } from '../patternCards/versioning.js';
-import type { PatternCard, PatternCardCollectionArtifact } from '../schema/patternCard.js';
+import type { PatternCard } from '../schema/patternCard.js';
 import type { PatternCardDraft, PatternCardDraftArtifact } from '../schema/patternCardDraft.js';
-import type { PromotionDecision, PromotionDecisionArtifact } from '../schema/promotionDecision.js';
-
-const byId = <T extends { patternId: string }>(items: T[]): Map<string, T> => new Map(items.map((item) => [item.patternId, item]));
-
-const findDraft = (artifact: PatternCardDraftArtifact, patternDraftId: string): PatternCardDraft => {
-  const draft = artifact.drafts.find((item) => item.patternId === patternDraftId);
-  if (!draft) {
-    throw new Error(`Promotion decision references missing draft: ${patternDraftId}`);
-  }
-  return draft;
-};
+import type { DecisionBatch, PromotionDecision, PromotionState, PromotionStateTransition } from '../schema/promotionDecision.js';
+import { materializePatternCardVersion } from '../patternCards/materializePatternCardVersion.js';
+import { validateTransition } from './validateTransition.js';
 
 const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort();
 
-const buildSplitDraftId = (decisionId: string, title: string, index: number): string =>
-  `draft.${decisionId}.${index + 1}.${createHash('sha256').update(`${title}|${index}`).digest('hex').slice(0, 8)}`;
+const findDraft = (artifact: PatternCardDraftArtifact, draftId: string): PatternCardDraft => {
+  const draft = artifact.drafts.find((item) => item.patternId === draftId);
+  if (!draft) throw new Error(`Promotion decision references missing draft: ${draftId}`);
+  return draft;
+};
+
+const draftState = (draft: PatternCardDraft): PromotionState => (draft.draftStatus === 'review' || draft.draftStatus === 'ready' ? 'review' : 'draft');
+
+const stateByPatternId = (patterns: PatternCard[]): Map<string, PromotionState> =>
+  new Map(patterns.map((pattern) => [pattern.patternId, pattern.state]));
+
+const defaultTransitionState = (decision: PromotionDecision, draftArtifact: PatternCardDraftArtifact, existingPatterns: PatternCard[]): PromotionState => {
+  if (decision.decisionType === 'merge' || decision.decisionType === 'split') {
+    return decision.inputDraftIds.length > 0 ? draftState(findDraft(draftArtifact, decision.inputDraftIds[0])) : 'review';
+  }
+  if (decision.inputPatternIds.length > 0) {
+    const states = stateByPatternId(existingPatterns);
+    return states.get(decision.inputPatternIds[0]) ?? 'promoted';
+  }
+  if (decision.inputDraftIds.length > 0) {
+    return draftState(findDraft(draftArtifact, decision.inputDraftIds[0]));
+  }
+  return 'draft';
+};
+
+const buildTerminalRecord = (decision: PromotionDecision) => ({
+  decisionId: decision.decisionId,
+  patternIds: uniqueSorted(decision.inputPatternIds),
+  inputDraftIds: uniqueSorted(decision.inputDraftIds),
+  resultingState: decision.resultingState,
+  timestamp: decision.timestamp,
+  reason: decision.decisionReason,
+  lineage: decision.lineage
+});
 
 export type ApplyPromotionDecisionInput = {
   draftArtifact: PatternCardDraftArtifact;
@@ -30,109 +52,109 @@ export type ApplyPromotionDecisionResult = {
   decision: PromotionDecision;
   patterns: PatternCard[];
   emittedDrafts: PatternCardDraft[];
+  terminalRecords: Array<ReturnType<typeof buildTerminalRecord>>;
+  transitions: PromotionStateTransition[];
 };
 
 export const applyPromotionDecision = ({ draftArtifact, decision, existingPatterns = [] }: ApplyPromotionDecisionInput): ApplyPromotionDecisionResult => {
-  const primaryDraft = findDraft(draftArtifact, decision.patternDraftId);
-  const existing = byId(existingPatterns);
+  const existing = new Map(existingPatterns.map((pattern) => [pattern.patternId, pattern]));
+  const emittedDrafts: PatternCardDraft[] = [];
+  const terminalRecords: Array<ReturnType<typeof buildTerminalRecord>> = [];
+  const transitions: PromotionStateTransition[] = [];
+
+  const inputState = defaultTransitionState(decision, draftArtifact, existingPatterns);
+  const transition = validateTransition(inputState, decision.resultingState, decision.decisionType);
+  transitions.push(transition);
+  if (!transition.allowed) {
+    throw new Error(transition.validationErrors.join('; '));
+  }
 
   if (decision.decisionType === 'defer' || decision.decisionType === 'reject') {
-    return { decision, patterns: [...existing.values()], emittedDrafts: [] };
+    terminalRecords.push(buildTerminalRecord(decision));
+    return { decision, patterns: [...existing.values()], emittedDrafts, terminalRecords, transitions };
   }
 
   if (decision.decisionType === 'split') {
-    const emittedDrafts = (decision.splitDrafts ?? []).map((part, index) => ({
-      ...primaryDraft,
-      patternId: buildSplitDraftId(decision.decisionId, part.title, index),
-      title: part.title,
-      summary: part.summary,
-      mechanism: part.mechanism,
-      invariant: part.invariant,
-      sourceZettelIds: uniqueSorted(part.sourceZettelIds),
-      evidenceRefs: uniqueSorted(primaryDraft.evidenceRefs),
-      draftStatus: 'draft' as const
-    }));
-    return { decision, patterns: [...existing.values()], emittedDrafts };
+    const sourceDraft = findDraft(draftArtifact, decision.inputDraftIds[0]);
+    for (const [index, patternId] of decision.resultingPatternIds.entries()) {
+      emittedDrafts.push({
+        ...sourceDraft,
+        patternId,
+        draftStatus: index === 0 ? 'review' : 'draft'
+      });
+      terminalRecords.push(buildTerminalRecord({ ...decision, resultingPatternIds: [patternId] }));
+    }
+    return { decision, patterns: [...existing.values()], emittedDrafts, terminalRecords, transitions };
   }
 
+  const primaryDraft = findDraft(draftArtifact, decision.inputDraftIds[0]);
   if (decision.decisionType === 'merge') {
-    const mergeDrafts = uniqueSorted([decision.patternDraftId, ...(decision.relatedDraftIds ?? [])]).map((id) => findDraft(draftArtifact, id));
-    const mergedDraft: PatternCardDraft = {
-      ...primaryDraft,
-      patternId: `merged:${decision.decisionId}`,
-      canonicalKey: mergeDrafts.map((draft) => draft.canonicalKey).sort().join('+'),
-      title: mergeDrafts.map((draft) => draft.title).sort().join(' + '),
-      summary: mergeDrafts.map((draft) => draft.summary).sort().join(' '),
-      sourceGroupId: mergeDrafts.map((draft) => draft.sourceGroupId).sort()[0] ?? primaryDraft.sourceGroupId,
-      sourceZettelIds: uniqueSorted(mergeDrafts.flatMap((draft) => draft.sourceZettelIds)),
-      sourceArtifactPaths: uniqueSorted(mergeDrafts.flatMap((draft) => draft.sourceArtifactPaths)),
-      evidenceRefs: uniqueSorted(mergeDrafts.flatMap((draft) => draft.evidenceRefs)),
-      linkedContractRefs: uniqueSorted(mergeDrafts.flatMap((draft) => draft.linkedContractRefs)),
-      recurrence: {
-        cycleCount: mergeDrafts.reduce((sum, draft) => sum + draft.recurrence.cycleCount, 0),
-        latestCycleId: mergeDrafts.map((draft) => draft.recurrence.latestCycleId).sort().at(-1) ?? primaryDraft.recurrence.latestCycleId,
-        sourceCycleIds: uniqueSorted(mergeDrafts.flatMap((draft) => draft.recurrence.sourceCycleIds))
-      }
-    };
-
-    const mergedFromPatternIds = mergeDrafts.map((draft) => createStablePatternId(draft));
-    const card = createPatternCard({
-      draft: mergedDraft,
+    const targetPatternId = decision.resultingPatternIds[0];
+    const merged = materializePatternCardVersion({
       decision,
-      timestamp: decision.timestamp,
-      patternId: decision.resultingPatternIds[0] ?? createStablePatternId(mergedDraft),
-      mergedFromPatternIds
+      draft: primaryDraft,
+      patternId: targetPatternId,
+      state: 'promoted',
+      parentPatternIds: decision.inputPatternIds
     });
-
-    existing.set(card.patternId, card);
-    return { decision, patterns: [...existing.values()].sort((a, b) => a.patternId.localeCompare(b.patternId)), emittedDrafts: [] };
+    existing.set(targetPatternId, merged);
+    return { decision, patterns: [...existing.values()].sort((a, b) => a.patternId.localeCompare(b.patternId)), emittedDrafts, terminalRecords, transitions };
   }
-
-  const card = createPatternCard({
-    draft: primaryDraft,
-    decision,
-    timestamp: decision.timestamp,
-    patternId: decision.resultingPatternIds[0] ?? createStablePatternId(primaryDraft),
-    supersedesPatternIds: decision.decisionType === 'supersede' ? uniqueSorted(decision.relatedPatternIds ?? []) : []
-  });
-
-  existing.set(card.patternId, card);
 
   if (decision.decisionType === 'supersede') {
-    for (const supersededId of uniqueSorted(decision.relatedPatternIds ?? [])) {
-      const current = existing.get(supersededId);
-      if (current) {
-        existing.set(
-          supersededId,
-          markPatternSuperseded(current, { supersededByPatternId: card.patternId, decisionId: decision.decisionId, timestamp: decision.timestamp })
-        );
-      }
+    const supersededPatternId = decision.inputPatternIds[0];
+    const supersededPattern = existing.get(supersededPatternId);
+    if (!supersededPattern) {
+      throw new Error(`Supersede decision references missing promoted pattern: ${supersededPatternId}`);
     }
+
+    const supersededCard = materializePatternCardVersion({
+      decision,
+      draft: primaryDraft,
+      patternId: supersededPattern.patternId,
+      state: 'superseded',
+      previous: supersededPattern,
+      supersededBy: decision.resultingPatternIds[0]
+    });
+    existing.set(supersededPattern.patternId, supersededCard);
+
+    const replacement = materializePatternCardVersion({
+      decision,
+      draft: primaryDraft,
+      patternId: decision.resultingPatternIds[0],
+      state: 'promoted',
+      supersedes: supersededPattern.patternId,
+      parentPatternIds: [supersededPattern.patternId]
+    });
+    existing.set(replacement.patternId, replacement);
+    terminalRecords.push(buildTerminalRecord({ ...decision, resultingState: 'superseded', resultingPatternIds: [supersededPattern.patternId] }));
+    return { decision, patterns: [...existing.values()].sort((a, b) => a.patternId.localeCompare(b.patternId)), emittedDrafts, terminalRecords, transitions };
   }
 
-  return { decision, patterns: [...existing.values()].sort((a, b) => a.patternId.localeCompare(b.patternId)), emittedDrafts: [] };
+  const promotedPattern = materializePatternCardVersion({
+    decision,
+    draft: primaryDraft,
+    patternId: decision.resultingPatternIds[0],
+    state: 'promoted',
+    parentPatternIds: decision.inputPatternIds
+  });
+  existing.set(promotedPattern.patternId, promotedPattern);
+
+  return { decision, patterns: [...existing.values()].sort((a, b) => a.patternId.localeCompare(b.patternId)), emittedDrafts, terminalRecords, transitions };
 };
 
-export const buildPromotionDecisionArtifact = (input: {
-  originCycleId: string;
-  createdAt: string;
-  decisions: PromotionDecision[];
-}): PromotionDecisionArtifact => ({
+export const buildPromotionDecisionArtifact = (input: { originCycleId: string; createdAt: string; decisions: PromotionDecision[] }): DecisionBatch => ({
   schemaVersion: '1.0',
-  kind: 'playbook-promotion-decisions',
-  artifactId: `promotion-decisions:${input.originCycleId}:${createHash('sha256').update(JSON.stringify(input.decisions)).digest('hex').slice(0, 12)}`,
+  kind: 'playbook-promotion-decision-batch',
+  batchId: `promotion-decisions:${input.originCycleId}:${createHash('sha256').update(JSON.stringify(input.decisions)).digest('hex').slice(0, 12)}`,
   originCycleId: input.originCycleId,
   createdAt: input.createdAt,
-  decisions: [...input.decisions].sort((a, b) => a.decisionId.localeCompare(b.decisionId))
+  decisions: [...input.decisions].sort((a, b) => a.sequence - b.sequence || a.decisionId.localeCompare(b.decisionId))
 });
 
-export const buildPatternCardCollectionArtifact = (input: {
-  originCycleId: string;
-  createdAt: string;
-  cards: PatternCard[];
-}): PatternCardCollectionArtifact => ({
-  schemaVersion: '1.0',
-  kind: 'playbook-pattern-cards',
+export const buildPatternCardCollectionArtifact = (input: { originCycleId: string; createdAt: string; cards: PatternCard[] }) => ({
+  schemaVersion: '1.0' as const,
+  kind: 'playbook-pattern-cards' as const,
   artifactId: `pattern-cards:${input.originCycleId}:${createHash('sha256').update(JSON.stringify(input.cards)).digest('hex').slice(0, 12)}`,
   originCycleId: input.originCycleId,
   createdAt: input.createdAt,
