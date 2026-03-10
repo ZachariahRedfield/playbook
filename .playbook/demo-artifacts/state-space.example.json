@@ -9,16 +9,16 @@
     "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
   },
   "axes": {
-    "reuseRateX": 0.42,
-    "entropyBudgetY": -0.18,
-    "loopClosureRateZ": 0.66
+    "reuseRateX": -0.14,
+    "entropyBudgetY": 0.28,
+    "loopClosureRateZ": 0.56
   },
   "bloch": {
-    "direction": [0.5244, -0.2247, 0.8212],
-    "coherence": 0.73,
-    "vector": [0.3828, -0.164, 0.5995],
-    "magnitude": 0.73,
-    "purity": 0.76645,
+    "direction": [-0.218218, 0.436436, 0.872872],
+    "coherence": 0.64,
+    "vector": [-0.139659, 0.279319, 0.558638],
+    "magnitude": 0.64,
+    "purity": 0.64,
     "angularDistancePrev": 0.311
   },
   "gateEvents": [
@@ -27,30 +27,42 @@
       "at": "2025-01-01T00:00:10.000Z",
       "label": "bloch-v1-metrics-projection",
       "details": {
-        "axisLabels": {
-          "x": "reuseRate",
-          "y": "entropyBudget",
-          "z": "loopClosureRate"
+        "formula": {
+          "x": "2*reuseRate-1",
+          "y": "1-2*entropyBudget",
+          "z": "2*loopClosureRate-1"
+        }
+      }
+    },
+    {
+      "type": "measurement",
+      "at": "2025-01-01T00:00:10.000Z",
+      "label": "verify-measurement",
+      "details": {
+        "verify": {
+          "path": ".playbook/verify.json",
+          "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        "postVerify": {
+          "path": ".playbook/post-verify.json",
+          "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
         }
       }
     },
     {
       "type": "rotation",
       "at": "2025-01-01T00:00:10.000Z",
-      "label": "delta-from-previous-run-cycle",
+      "label": "plan-apply-rotation",
       "details": {
-        "fromRunCycleId": "2024-12-31T23-58-00.000Z@fff9999",
-        "toRunCycleId": "2025-01-01T00-00-00.000Z@abc1234",
-        "angularDistance": 0.311
-      }
-    },
-    {
-      "type": "measurement",
-      "at": "2025-01-01T00:00:10.000Z",
-      "label": "purity-readout",
-      "details": {
-        "metric": "purity",
-        "value": 0.76645
+        "plan": {
+          "path": ".playbook/plan.json",
+          "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+        },
+        "apply": {
+          "path": ".playbook/apply.json",
+          "digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+        },
+        "angularDistancePrev": 0.311
       }
     }
   ]

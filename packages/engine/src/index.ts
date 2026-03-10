@@ -142,3 +142,7 @@ export type { BuildPromotionReviewQueueInput } from './promotion/buildPromotionR
 export { applyPromotionDecision, buildPromotionDecisionArtifact, buildPatternCardCollectionArtifact } from './promotion/applyPromotionDecision.js';
 export { createStablePatternId, createPatternCard } from './patternCards/createPatternCard.js';
 export { appendPatternVersion, markPatternSuperseded } from './patternCards/versioning.js';
+
+export { buildStateSpaceSnapshot } from './stateSpace/buildStateSpaceSnapshot.js';
+export type { BuildStateSpaceSnapshotInput } from './stateSpace/buildStateSpaceSnapshot.js';
+export type { StateSpaceSnapshot, BlochAxesV1, BlochVector, GateEvent } from './schema/stateSpace.js';

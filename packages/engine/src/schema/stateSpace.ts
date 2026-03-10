@@ -27,6 +27,7 @@ export type StateSpaceSnapshot = {
   kind: 'playbook-state-space-snapshot';
   runCycleId: string;
   projection: 'bloch-v1';
+  createdAt?: string;
   sourceRunCycle: ArtifactRef;
   axes: BlochAxesV1;
   bloch: BlochVector;

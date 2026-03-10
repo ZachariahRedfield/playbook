@@ -33,18 +33,19 @@ Input metrics are expected in `[0,1]`:
 Axis transforms:
 
 - `x = 2*reuseRate - 1`
-- `y = 2*entropyBudget - 1`
+- `y = 1 - 2*entropyBudget`
 - `z = 2*loopClosureRate - 1`
 
 Direction and coherence:
 
 - `u = normalize([x,y,z])`
-- `c = clamp01(0.5*(1-driftScore) + 0.3*compactionGain + 0.2*loopClosureRate)`
-- `r = c*u`
+- `purity = clamp01(1 - entropyBudget)`
+- `magnitude = purity`
+- `r = magnitude*u`
 
 Derived values:
 
-- `purity = (1 + |r|^2)/2`
+- `purity` is also emitted as a top-level scalar in `bloch`.
 - `angularDistancePrev = arccos( dot(r_t, r_{t-1}) / (|r_t||r_{t-1}| + 1e-9) )`
 
 Notes:

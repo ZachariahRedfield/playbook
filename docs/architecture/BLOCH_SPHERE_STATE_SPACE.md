@@ -1,100 +1,72 @@
-# Bloch-Sphere State-Space Analogy for Playbook
+# Bloch Sphere / State-Space Modeling for Playbook
 
-## Purpose
+This document defines the deterministic Bloch-style state-space projection used by Playbook telemetry.
 
-This note captures a strict state-space analogy that helps reason about Playbook cycle behavior.
+> Bloch mapping is a deterministic projection for monitoring and drift metrics, not quantum behavior.
 
-The Bloch sphere is used as geometry for deterministic systems thinking, not as a claim that Playbook performs quantum computation.
+## Bloch sphere / Bloch ball basics (modeling aid)
 
-## Warning: use as state-space metaphor, not literal physics import
+- **Bloch sphere**: geometric model for idealized pure states as points on the unit sphere.
+- **Bloch ball**: extension where mixed states occupy interior points with reduced magnitude.
+- **Pure vs mixed**:
+  - pure state → magnitude near `1`
+  - mixed/noisy state → magnitude `< 1`
+- **Rotations**: transformations move state direction in 3D space.
+- **Measurement**: readout step that converts state into observable values for decisions.
 
-Use this model only when it clarifies deterministic engineering behavior:
+In Playbook, this is only a bounded geometry for deterministic observability.
 
-- state representation
-- transformation sequencing
-- verification/measurement decisions
-- drift/noise and stabilization pressure
+## Playbook mapping
 
-Do not import quantum-physics claims into Playbook design discussions.
+- **RunCycle metrics** define the projected state vector.
+- **Commands** (especially `plan`/`apply`) are modeled as deterministic rotations.
+- **Verify + promotion checkpoints** are modeled as measurements.
+- **Entropy/noise effects** are modeled as reduced vector magnitude (inside the Bloch ball).
 
-## Why geometry helps deterministic engineering systems
+## `bloch-v1` axis definitions
 
-Geometry provides an implementation-oriented way to reason about system trajectories:
+Given normalized metrics in `[0,1]`:
 
-- A bounded space makes "where the system is" explicit.
-- Transformations become directional changes, not just raw event lists.
-- Measurements become deterministic readouts that can gate promotion decisions.
-- Drift and stabilization can be compared cycle-to-cycle using distance and direction.
+- `reuseRate`
+- `entropyBudget`
+- `loopClosureRate`
 
-Raw logs remain critical evidence, but geometry is often a better control-plane abstraction for convergence, compaction, and promotion behavior.
+Axis projection for `bloch-v1`:
 
-## Compact analogy table
+- `x = 2*reuseRate - 1`
+- `y = 1 - 2*entropyBudget`
+- `z = 2*loopClosureRate - 1`
 
-| Model element | Classical bit | Qubit (Bloch representation) | Playbook state-space analogy |
-| --- | --- | --- | --- |
-| State form | `0` or `1` | Unit-vector direction with amplitude-derived measurement probabilities | Bounded state vector derived from RunCycle metrics and evidence quality |
-| Transition | Logical operation | Gate rotation | Deterministic command sequence (`verify -> plan -> apply -> compact -> promote`) |
-| Measurement | Read bit value | Basis-dependent probabilistic measurement | Deterministic governance readouts (`verify`, promotion gates, contract checks) |
-| Noise | Bit flips/transmission errors | Decoherence / mixedness increase | Entropy, context drift, stale artifacts, contradictory notes, low-signal zettels |
+Normalization:
 
-## Core mapping
+- `direction = [x,y,z] / ||[x,y,z]||`
+- If `||[x,y,z]|| = 0`, use `[0,0,0]`.
 
-- **Qubit state** -> Playbook state vector / repo-cycle state.
-- **Bloch sphere** -> bounded state-space visualization for cycle diagnostics.
-- **Gate rotations** -> deterministic transformations from commands and lifecycle stages.
-- **Measurement** -> `verify`, promotion, and contract decisions that determine whether evidence is stabilized.
-- **Pure state** -> coherent, low-conflict context where evidence and contracts align.
-- **Mixed state** -> noisy, partial, or conflicting context where confidence is reduced.
-- **Decoherence** -> entropy growth, context drift, stale artifacts, and conflicting notes.
+Purity and emitted vector:
 
-## Deterministic cycle diagram
+- `purity = clamp(1 - entropyBudget, 0, 1)`
+- `magnitude = purity`
+- `vector = direction * magnitude`
 
-```mermaid
-flowchart LR
-    S[State: RunCycle vector] --> T[Transform: deterministic commands]
-    T --> V[Verify: governance checks]
-    V --> C[Collapse / Promote: pattern or contract decision]
-    V --> D[Drift / Decoherence: unresolved noise]
-    D --> S
-    C --> S
-```
+Optional previous-cycle drift angle:
 
-## Attractors and compaction alignment
+- `angularDistancePrev = acos(clamp(dot(v_t, v_t-1) / (||v_t||*||v_t-1||), -1, 1))`
 
-This model aligns with existing Playbook memory architecture:
+## Determinism rule
 
-- Pattern cards act as **soft attractors** that pull noisy evidence toward reusable guidance.
-- Contracts act as **hard attractors** that enforce stable invariants.
-- Compaction functions as a projection pressure toward lower-entropy, stable representations that preserve required distinctions.
+State-space snapshots are derived artifacts.
 
-The useful interpretation is not "quantum behavior"; it is "bounded state evolution under deterministic transforms plus governance gates."
+- Inputs are RunCycle + deterministic artifact references.
+- No random inputs or non-deterministic transforms are allowed.
+- Re-running emission for identical inputs must produce identical snapshot semantics.
+- Runtime artifacts must remain under `.playbook/state-space/`.
 
-## Where the analogy breaks
+## Gate event conventions
 
-To avoid pseudo-physics drift, boundaries are explicit:
+`gateEvents` encode deterministic lifecycle intent:
 
-1. Playbook is **not quantum computation**.
-2. Playbook measurement is **not physical wavefunction collapse**.
-3. Multi-qubit scaling behavior does **not** directly map to multi-repo scaling behavior.
+- `projection`: metric-to-axis projection record.
+- `measurement`: verify/promotion readouts.
+- `rotation`: plan/apply transition steps.
 
-The analogy is structural and geometric only.
-
-## RunCycle + Zettelkasten + attractor integration
-
-Use this note alongside:
-
-- `docs/contracts/RUN_CYCLE.md` for artifact envelope and cycle metrics.
-- `docs/contracts/ZETTELKASTEN.md` for evidence lifecycle semantics.
-- `docs/architecture/ZETTELKASTEN_ATTRACTOR_COMPRESSION.md` for soft/hard attractor behavior.
-- `docs/contracts/STATE_SPACE.md` for projection schema and event-level state-space contracts.
-
-## Rule / Pattern / Failure Mode
-
-Rule:
-Use quantum/state-space language only when it clarifies deterministic system behavior.
-
-Pattern:
-State can often be modeled more clearly as geometry than as raw event logs.
-
-Failure Mode:
-Overextending the Bloch-sphere analogy turns a useful state-space model into pseudo-physics.
+These events are telemetry annotations, not physical quantum operations.

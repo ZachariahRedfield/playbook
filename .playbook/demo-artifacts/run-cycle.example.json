@@ -63,5 +63,12 @@
     "reuseRate": 0.43,
     "driftScore": 0.08,
     "entropyBudget": 0.36
+  },
+  "stateSpace": {
+    "projection": "bloch-v1",
+    "bloch": {
+      "path": ".playbook/state-space/2025-01-01T00-00-00.000Z@abc1234.json",
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
   }
 }

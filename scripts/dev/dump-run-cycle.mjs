@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
-import { readFile, stat, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, stat, mkdir, writeFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
@@ -16,7 +16,9 @@ const patternCardDraftsDir = path.join(playbookDir, 'pattern-cards', 'drafts');
 const promotionQueueDir = path.join(playbookDir, 'promotion', 'review-queue');
 const promotionDecisionsDir = path.join(playbookDir, 'promotion', 'decisions');
 const promotedPatternCardsDir = path.join(playbookDir, 'pattern-cards', 'promoted');
+const stateSpaceDir = path.join(playbookDir, 'state-space');
 
+const shouldEmitStateSpace = !process.argv.includes('--no-state-space');
 const shouldEmitGraph = !process.argv.includes('--no-graph');
 const shouldEmitGroups = shouldEmitGraph && !process.argv.includes('--no-groups');
 const shouldEmitCandidatePatterns = shouldEmitGroups && !process.argv.includes('--no-candidate-patterns');
@@ -63,6 +65,32 @@ const resolveRef = async (relativePath) => {
   }
 };
 
+const resolvePreviousStateSpaceSnapshot = async (currentRunCycleId) => {
+  if (!shouldEmitStateSpace) {
+    return undefined;
+  }
+
+  try {
+    const entries = await readdir(stateSpaceDir);
+    const previousId = entries
+      .filter((name) => name.endsWith('.json'))
+      .map((name) => name.replace(/\.json$/, ''))
+      .filter((id) => id !== currentRunCycleId)
+      .sort()
+      .at(-1);
+
+    if (!previousId) return undefined;
+    const previousRaw = await readFile(path.join(stateSpaceDir, `${previousId}.json`), 'utf8');
+    const previous = JSON.parse(previousRaw);
+    if (!previous?.bloch?.vector || !Array.isArray(previous.bloch.vector)) {
+      return undefined;
+    }
+    return previous;
+  } catch {
+    return undefined;
+  }
+};
+
 const getShortSha = () => {
   try {
     return execSync('git rev-parse --short HEAD', { cwd: repoRoot, encoding: 'utf8' }).trim();
@@ -94,6 +122,7 @@ if (shouldEmitPatternCardDrafts) await mkdir(patternCardDraftsDir, { recursive: 
 if (shouldEmitPromotionQueue) await mkdir(promotionQueueDir, { recursive: true });
 if (promotionDecisionInput) await mkdir(promotionDecisionsDir, { recursive: true });
 if (promotionDecisionInput) await mkdir(promotedPatternCardsDir, { recursive: true });
+if (shouldEmitStateSpace) await mkdir(stateSpaceDir, { recursive: true });
 
 const forwardArc = {
   aiContext: await resolveRef(jsonArtifacts.aiContext),
@@ -203,6 +232,33 @@ await writeFile(runCyclePath, `${JSON.stringify(runCycle, null, 2)}\n`, 'utf8');
 console.log(`wrote ${runCycleRelative}`);
 console.log(`wrote ${zettelsRelative}`);
 console.log(`wrote ${linksRelative}`);
+
+if (shouldEmitStateSpace) {
+  const previousStateSpace = await resolvePreviousStateSpaceSnapshot(runCycleId);
+  const { buildStateSpaceSnapshot } = await import(path.join(repoRoot, 'packages/engine/dist/stateSpace/buildStateSpaceSnapshot.js'));
+  const stateSpaceSnapshot = buildStateSpaceSnapshot({
+    runCycle,
+    sourceRunCycle: { path: runCycleRelative, digest: await digestFile(runCyclePath) },
+    createdAt: now.toISOString(),
+    prevSnapshot: previousStateSpace
+  });
+
+  const stateSpaceRelative = `.playbook/state-space/${runCycleId}.json`;
+  const stateSpacePath = path.join(repoRoot, stateSpaceRelative);
+  await writeFile(stateSpacePath, `${JSON.stringify(stateSpaceSnapshot, null, 2)}\n`, 'utf8');
+
+  runCycle.stateSpace = {
+    projection: 'bloch-v1',
+    bloch: {
+      path: stateSpaceRelative,
+      digest: await digestFile(stateSpacePath)
+    }
+  };
+
+  await writeFile(runCyclePath, `${JSON.stringify(runCycle, null, 2)}\n`, 'utf8');
+  console.log(`wrote ${stateSpaceRelative}`);
+  console.log(`updated ${runCycleRelative}`);
+}
 
 if (shouldEmitGraph) {
   const { buildGraphSnapshot } = await import(path.join(repoRoot, 'packages/engine/dist/graph/buildGraphSnapshot.js'));
