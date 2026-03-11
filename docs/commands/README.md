@@ -40,6 +40,34 @@ Do not hand-edit entries inside the managed markers.
 | `explain` | Explain rules, modules, or architecture from repository intelligence | canonical | repo-intelligence | primary | 6 | Current (implemented) | `pnpm playbook explain architecture --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
+## External repository targeting (`pnpm playbook --repo <path> <command>`)
+
+- Canonical local invocation remains `pnpm playbook <command>`.
+- Use `pnpm playbook --repo <path> <command>` to execute against an external repository without changing directories.
+- External analysis writes deterministic runtime artifacts into the target repo’s `.playbook/` directory.
+
+Pilot runbook:
+
+```bash
+pnpm playbook --repo ../fawxzzy-fitness context --json
+pnpm playbook --repo ../fawxzzy-fitness index --json
+pnpm playbook --repo ../fawxzzy-fitness query modules --json
+pnpm playbook --repo ../fawxzzy-fitness verify --json > ../fawxzzy-fitness/.playbook/findings.json
+pnpm playbook --repo ../fawxzzy-fitness plan --json > ../fawxzzy-fitness/.playbook/plan.json
+```
+
+Rule — External Runtime Writes Belong to the Target Repo
+When a repo-intelligence CLI analyzes an external repository, all generated runtime artifacts must land in the target repo, not the tool repo.
+
+Pattern — Coexistence-First External Runtime
+When introducing a new repo runtime into a real project with legacy tooling, run alongside the old system first and isolate outputs under deterministic artifact boundaries.
+
+Failure Mode — Tool-Repo Gravity
+If external analysis still reads from or writes to the tool’s own repo context, the system is not actually operating as an external runtime.
+
+Failure Mode — Positional Parse Regression
+Adding global options before positional subcommands can silently break commands like `query modules` unless argv normalization is handled centrally and tested.
+
 ## Additional implemented CLI utility commands
 
 The CLI registry currently also exposes utility commands not treated as part of the product-facing command set above:

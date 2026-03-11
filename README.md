@@ -126,12 +126,16 @@ Use `--repo <path>` to run Playbook from this monorepo against another local rep
 
 ```bash
 pnpm playbook --repo ../fawxzzy-fitness ai-context --json
+pnpm playbook --repo ../fawxzzy-fitness context --json
 pnpm playbook --repo ../fawxzzy-fitness index --json
 pnpm playbook --repo ../fawxzzy-fitness query modules --json
-pnpm playbook --repo ../fawxzzy-fitness verify --json
+pnpm playbook --repo ../fawxzzy-fitness verify --json > ../fawxzzy-fitness/.playbook/findings.json
+pnpm playbook --repo ../fawxzzy-fitness plan --json > ../fawxzzy-fitness/.playbook/plan.json
 ```
 
 This keeps `pnpm playbook <command>` as the canonical invocation while letting operators target external repositories deterministically from a single working checkout.
+
+When `--repo` is set, runtime artifacts are written into the target repository under `.playbook/` (for example `repo-index.json`, `repo-graph.json`, `findings.json`, and `plan.json`).
 
 ## Example Output
 

@@ -195,7 +195,7 @@ Using a second repo too early without bounded rollout turns a proving ground int
 
 ## External Pilot Integration — Fawxzzy Fitness
 
-Status: **Coexistence-first migration slice defined (policy + inventory + phased execution contract).**
+Status: **In progress — first-class external targeting delivered (`--repo`) with deterministic target-repo artifacts and fixture coverage.**
 
 This roadmap slice establishes the next operator-safe migration layer for running Playbook from this repository against the primary external pilot repository while preserving legacy pilot tooling until parity is proven.
 
@@ -205,6 +205,10 @@ Current slice establishes:
 - legacy Playbook inventory framework (`KEEP_TEMPORARILY`, `REPLACE_WITH_NEW_PLAYBOOK`, `INVESTIGATE_USAGE`, `REMOVE_AFTER_PARITY`)
 - phased removal strategy (`Coexistence -> Capability Mapping -> Parity Validation -> Controlled Removal`)
 - pilot execution contract for canonical external-runbook commands using `pnpm playbook --repo <path> ...`
+- first-class external repository targeting via global `--repo <path>` on canonical command surface
+- deterministic artifact generation in external repositories under `<target>/.playbook/`
+- coexistence-first pilot execution without legacy removal in the target repository
+- fixture-based coverage for external runtime behavior and positional parsing (`--repo <fixture> query modules --json`)
 
 Reference plan:
 

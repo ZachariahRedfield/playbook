@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import path from 'node:path';
 import { ExitCode } from './lib/cliContract.js';
 import { hasRegisteredCommand, listRegisteredCommands, runRegisteredCommand } from './commands/index.js';
+import { resolveTargetRepoRoot, stripGlobalRepoOption } from './lib/repoRoot.js';
 
 const rawArgs = process.argv.slice(2);
 
@@ -9,38 +9,6 @@ const parseFlag = (allArgs: string[], flag: string): boolean => allArgs.includes
 const parseOptionValue = (allArgs: string[], name: string): string | undefined => {
   const index = allArgs.indexOf(name);
   return index >= 0 && allArgs[index + 1] ? String(allArgs[index + 1]) : undefined;
-};
-
-const stripGlobalRepoOption = (allArgs: string[]): { args: string[]; repo: string | undefined } => {
-  const stripped = [...allArgs];
-  let repo: string | undefined;
-
-  const commandIndex = stripped.findIndex((arg) => !arg.startsWith('-'));
-  const parseLimit = commandIndex === -1 ? stripped.length : commandIndex;
-
-  for (let index = 0; index < parseLimit; index += 1) {
-    const arg = stripped[index];
-    if (arg === '--repo') {
-      const value = stripped[index + 1];
-      if (value) {
-        repo = String(value);
-        stripped.splice(index, 2);
-        index -= 1;
-      }
-      continue;
-    }
-
-    if (arg.startsWith('--repo=')) {
-      const value = arg.slice('--repo='.length);
-      if (value.length > 0) {
-        repo = value;
-      }
-      stripped.splice(index, 1);
-      index -= 1;
-    }
-  }
-
-  return { args: stripped, repo };
 };
 
 const { args, repo } = stripGlobalRepoOption(rawArgs);
@@ -103,7 +71,14 @@ const run = async () => {
     process.exit(ExitCode.Failure);
   }
 
-  const targetCwd = repo ? path.resolve(process.cwd(), repo) : process.cwd();
+  let targetCwd = '';
+  try {
+    targetCwd = resolveTargetRepoRoot(process.cwd(), repo);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(message);
+    process.exit(ExitCode.Failure);
+  }
 
   const exitCode = await runRegisteredCommand(command, {
     cwd: targetCwd,
