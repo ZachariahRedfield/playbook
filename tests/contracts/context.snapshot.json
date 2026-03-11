@@ -35,6 +35,7 @@
       "ai-context",
       "ai-contract",
       "contracts",
+      "pilot",
       "docs",
       "audit",
       "schema",
