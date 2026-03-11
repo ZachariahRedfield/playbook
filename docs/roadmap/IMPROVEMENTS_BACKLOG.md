@@ -233,6 +233,58 @@ Potential `pnpm playbook knowledge *` commands remain directional concepts only 
 
 
 
+
+## Cross-Repository Pattern Learning
+
+Playbook should eventually learn reusable architecture and workflow patterns across multiple analyzed repositories using normalized runtime artifacts.
+
+The future signal aggregation scope should include:
+
+- module structure
+- architecture inference
+- dependency graphs
+- rule violations
+- scan boundary classifications
+- ignore recommendations
+- remediation plans
+
+These signals should synthesize candidate reusable patterns that move through the existing knowledge lifecycle:
+
+`observation -> canonicalization -> comparison -> compaction -> promotion -> retirement`
+
+### Future acceptance criteria (pre-enable)
+
+Cross-repo learning should remain paused until all of the following are true:
+
+- recommendation identity normalization complete
+- ignore apply telemetry available
+- runtime coverage semantics stable
+- artifact schemas versioned and stable
+- at least three validated external pilot repositories
+
+### Intended architecture notes (future)
+
+A future implementation will likely use:
+
+- `.playbook/runtime/history`
+- `.playbook/runtime/cycles`
+- pattern candidate artifacts
+- a deterministic pattern compaction pipeline
+
+Rule — Pause Major Capability Until Data Quality Is Stable
+
+Cross-repo intelligence should only begin after runtime observability, scan boundaries, and artifact schemas are proven stable across multiple repositories.
+
+Pattern — Evidence Before Learning
+
+Playbook should treat runtime artifacts as evidence and only derive reusable patterns after deterministic normalization and compaction.
+
+Failure Mode — Learning From Noisy Repositories
+
+If cross-repo learning begins before scan boundaries and ignore semantics are stable, the system will learn from build artifacts, generated files, and repository noise rather than durable engineering structure.
+
+---
+
 ## Implemented recently: artifact hygiene and storage governance
 
 The following improvements are now implemented in the command surface:
