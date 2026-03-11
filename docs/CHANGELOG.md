@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Refined runtime observability coverage/telemetry contracts with explicit blind-spot accounting (`total_files_seen`, `oversized_files`, `parse_failed_files`), transparent scoring (`eligible_scan_coverage_score`, `repo_visibility_score`, `blind_spot_ratio`), deterministic expensive-path classification, and optimization-ready cycle telemetry summaries (phase counts, reads/writes, fallbacks, category counts). WHY: Prevents false-confidence near-100% scores and creates structured scan-waste signals for future `.playbookignore` recommendation workflows.
+
 - WHAT: Added first-class deterministic JSON artifact emission via `--out` for JSON-producing commands (`verify`, `plan`, `index`, `query`) using shared UTF-8 writer semantics (parent-directory creation, deterministic newline boundaries, and explicit write failures), plus external `--repo` regression coverage. WHY: Prevents shell-redirection corruption from wrapper/banner leakage and encoding drift in machine-consumed artifacts.
 
 - WHAT: Added repo-owned PR metadata fallback (`.playbook/pr-metadata.json`) to roadmap feature-id enforcement and introduced optional PR metadata sync helper (`pnpm pr:sync-metadata`) with warn-only degradation on permission limits. WHY: Makes feature-id governance resilient when GitHub PR title/body cannot be edited by automation tokens while keeping PR metadata as preferred presentation.

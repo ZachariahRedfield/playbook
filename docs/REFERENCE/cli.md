@@ -43,3 +43,12 @@ Every top-level Playbook command now emits deterministic runtime observability a
 - `.playbook/runtime/history/analyzer-version-history.json`
 
 This contract intentionally optimizes for measurable coverage accounting (analyzable, scanned, skipped, unsupported, unknown) rather than implied completeness claims. Coverage artifacts separate **observations** (measured facts) from **interpretations** (derived inferences) so analyzer upgrades can be distinguished from repository changes.
+
+Coverage artifacts expose explicit counts (`total_files_seen`, `eligible_files`, `scanned_files`, `ignored_files`, `unsupported_files`, `binary_files`, `oversized_files`, `parse_failed_files`) and explicit formulas for:
+
+- `eligible_scan_coverage_score`
+- `repo_visibility_score`
+- `blind_spot_ratio`
+
+Telemetry artifacts summarize optimization-relevant internals (phase counts, artifact reads/writes, fallback counts, and deterministic expensive-path categories such as `vcs-internal`, `build-cache`, `generated-report`, and `temporary-file`) without emitting raw event firehoses.
+

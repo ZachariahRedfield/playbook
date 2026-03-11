@@ -17,32 +17,58 @@ type RuntimeCycleContext = {
   playbookVersion: string;
 };
 
+type PathCategory =
+  | 'vcs-internal'
+  | 'build-cache'
+  | 'generated-report'
+  | 'binary-asset'
+  | 'oversized-source'
+  | 'temporary-file'
+  | 'user-source'
+  | 'unknown';
+
+type ReadStatus = 'found' | 'missing' | 'malformed';
+
 type CoverageArtifact = {
   schemaVersion: '1.0';
   cycle_id: string;
   observed_at: string;
+  total_files_seen: number;
   eligible_files: number;
   scanned_files: number;
   skipped_files: number;
+  oversized_files: number;
   ignored_files: number;
   unsupported_files: number;
   binary_files: number;
   parse_failures: number;
+  parse_failed_files: number;
   unresolved_imports: number;
   detected_modules: number;
   unknown_areas: string[];
-  coverage_score: number;
-  coverage_formula: string;
-  coverage_score_components: {
+  eligible_scan_coverage_score: number;
+  repo_visibility_score: number;
+  blind_spot_ratio: number;
+  coverage_formulas: {
+    eligible_scan_coverage_score: string;
+    repo_visibility_score: string;
+    blind_spot_ratio: string;
+  };
+  score_components: {
     numerator_scanned_files: number;
     denominator_eligible_files: number;
+    numerator_visible_files: number;
+    denominator_total_files_seen: number;
+    numerator_blind_spot_files: number;
+    denominator_total_files_seen_for_blind_spot: number;
   };
   observations: {
     file_inventory: {
       total_files_seen: number;
       sampled_file_hashes: Array<{ path: string; sha256: string }>;
       max_scan_bytes: number;
-      expensive_paths: Array<{ path: string; size_bytes: number }>;
+      expensive_paths: Array<{ path: string; size_bytes: number; category: PathCategory }>;
+      expensive_path_category_counts: Record<PathCategory, number>;
     };
     dependency_scan: {
       unresolved_relative_imports: number;
@@ -58,15 +84,24 @@ type CoverageArtifact = {
 type TelemetryArtifact = {
   schemaVersion: '1.0';
   cycle_id: string;
+  trigger_command: string;
   command_call_count: number;
   command_call_count_by_command: Record<string, number>;
   repeated_command_count: number;
   command_durations: Record<string, number>;
   artifact_cache_hits: number;
   artifact_cache_misses: number;
+  internal_phase_counts: Record<string, number>;
+  artifact_reads: { attempted: number; found: number; missing: number; malformed: number };
+  artifact_writes: { total: number; by_artifact: Record<string, number> };
+  graph_build_phase_count: number;
+  module_extraction_phase_count: number;
+  verify_rule_phase_count: number;
   fallback_usage_counts: Record<string, number>;
+  ignore_classification_counts: Record<PathCategory, number>;
+  expensive_path_category_counts: Record<PathCategory, number>;
   parser_failure_counts: Record<string, number>;
-  expensive_paths: Array<{ path: string; size_bytes: number }>;
+  expensive_paths: Array<{ path: string; size_bytes: number; category: PathCategory }>;
   warnings_count: number;
   failures_count: number;
 };
@@ -107,6 +142,17 @@ const readJsonFile = <T>(target: string): T | undefined => {
   } catch {
     return undefined;
   }
+};
+
+const classifyPath = (relativePath: string): PathCategory => {
+  const normalized = relativePath.toLowerCase();
+  if (normalized.startsWith('.git/')) return 'vcs-internal';
+  if (normalized.startsWith('.next/cache/') || normalized.startsWith('node_modules/') || normalized.includes('/.cache/')) return 'build-cache';
+  if (normalized.startsWith('playwright-report/') || normalized.startsWith('coverage/') || normalized.endsWith('.lcov')) return 'generated-report';
+  if (normalized.includes('/tmp/') || normalized.includes('/temp/') || normalized.startsWith('tmp/') || normalized.startsWith('temp/') || normalized.endsWith('.tmp') || normalized.includes('tmp_file')) {
+    return 'temporary-file';
+  }
+  return 'user-source';
 };
 
 const shouldIgnoreDirectory = (relativeDirPath: string): boolean => {
@@ -167,6 +213,29 @@ const listRepoFiles = (repoRoot: string): string[] => {
 
 const hashContent = (value: Buffer | string): string => crypto.createHash('sha256').update(value).digest('hex');
 
+const createCategoryCounter = (): Record<PathCategory, number> => ({
+  'vcs-internal': 0,
+  'build-cache': 0,
+  'generated-report': 0,
+  'binary-asset': 0,
+  'oversized-source': 0,
+  'temporary-file': 0,
+  'user-source': 0,
+  unknown: 0
+});
+
+const trackRead = (target: string): ReadStatus => {
+  if (!fs.existsSync(target)) {
+    return 'missing';
+  }
+  try {
+    JSON.parse(fs.readFileSync(target, 'utf8'));
+    return 'found';
+  } catch {
+    return 'malformed';
+  }
+};
+
 const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact => {
   const observedAt = new Date().toISOString();
   const analyzableExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
@@ -174,19 +243,21 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
 
   let scannedFiles = 0;
   let eligibleFiles = 0;
-  let skippedFiles = 0;
+  let oversizedFiles = 0;
   let unsupportedFiles = 0;
   let binaryFiles = 0;
   let parseFailures = 0;
   let unresolvedImports = 0;
   let ignoredFiles = 0;
 
-  const expensivePaths: Array<{ path: string; size_bytes: number }> = [];
+  const expensivePaths: Array<{ path: string; size_bytes: number; category: PathCategory }> = [];
+  const expensivePathCategoryCounts = createCategoryCounter();
 
   for (const absolutePath of files) {
+    const relativePath = posixRelative(repoRoot, absolutePath);
     const ext = path.extname(absolutePath).toLowerCase();
     const stat = fs.statSync(absolutePath);
-    expensivePaths.push({ path: posixRelative(repoRoot, absolutePath), size_bytes: stat.size });
+    let category = classifyPath(relativePath);
 
     if (absolutePath.includes(`${path.sep}.playbook${path.sep}runtime${path.sep}`)) {
       ignoredFiles += 1;
@@ -195,23 +266,34 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
 
     if (isLikelyBinary(absolutePath)) {
       binaryFiles += 1;
+      category = 'binary-asset';
+      expensivePathCategoryCounts[category] += 1;
+      expensivePaths.push({ path: relativePath, size_bytes: stat.size, category });
       continue;
     }
 
     if (!analyzableExtensions.has(ext)) {
       unsupportedFiles += 1;
+      expensivePathCategoryCounts[category] += 1;
+      expensivePaths.push({ path: relativePath, size_bytes: stat.size, category });
       continue;
     }
 
     eligibleFiles += 1;
+
     if (stat.size > DEFAULT_MAX_SCAN_BYTES) {
-      skippedFiles += 1;
+      oversizedFiles += 1;
+      category = 'oversized-source';
+      expensivePathCategoryCounts[category] += 1;
+      expensivePaths.push({ path: relativePath, size_bytes: stat.size, category });
       continue;
     }
 
     try {
       const content = fs.readFileSync(absolutePath, 'utf8');
       scannedFiles += 1;
+      expensivePathCategoryCounts[category] += 1;
+      expensivePaths.push({ path: relativePath, size_bytes: stat.size, category });
       const importRe = /from\s+['\"]([^'\"]+)['\"]|import\(['\"]([^'\"]+)['\"]\)|import\s+['\"]([^'\"]+)['\"]/g;
       for (const match of content.matchAll(importRe)) {
         const specifier = match[1] ?? match[2] ?? match[3];
@@ -221,6 +303,8 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
       }
     } catch {
       parseFailures += 1;
+      expensivePathCategoryCounts[category] += 1;
+      expensivePaths.push({ path: relativePath, size_bytes: stat.size, category });
     }
   }
 
@@ -228,14 +312,25 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
   const repoIndex = readJsonFile<{ framework?: string; architecture?: string; modules?: Array<{ name: string }> }>(repoIndexPath);
   const detectedModules = Array.isArray(repoIndex?.modules) ? repoIndex.modules.length : 0;
 
-  const coverageScore = eligibleFiles === 0 ? 1 : Number((scannedFiles / eligibleFiles).toFixed(4));
+  const denominatorEligible = eligibleFiles === 0 ? 1 : eligibleFiles;
+  const denominatorTotal = files.length === 0 ? 1 : files.length;
+  const blindSpotFiles = unsupportedFiles + binaryFiles + oversizedFiles + parseFailures + ignoredFiles;
+
+  const eligibleScanCoverageScore = Number((scannedFiles / denominatorEligible).toFixed(4));
+  const repoVisibilityScore = Number(((files.length - blindSpotFiles) / denominatorTotal).toFixed(4));
+  const blindSpotRatio = Number((blindSpotFiles / denominatorTotal).toFixed(4));
+
   const unknownAreas: string[] = [];
   if (unsupportedFiles > 0) unknownAreas.push('unsupported-file-types');
-  if (skippedFiles > 0) unknownAreas.push('oversized-files');
+  if (oversizedFiles > 0) unknownAreas.push('oversized-files');
   if (unresolvedImports > 0) unknownAreas.push('unresolved-imports');
-  if (parseFailures > 0) unknownAreas.push('parse-failures');
+  if (binaryFiles > 0) unknownAreas.push('binary-assets');
+  if (parseFailures > 0) unknownAreas.push('parse-failed-files');
+  if (expensivePathCategoryCounts['vcs-internal'] > 0) unknownAreas.push('vcs-internal-paths');
+  if (expensivePathCategoryCounts['generated-report'] > 0) unknownAreas.push('generated-reports');
+  if (expensivePathCategoryCounts['temporary-file'] > 0) unknownAreas.push('temporary-files');
 
-  const coverageConfidence: 'high' | 'medium' | 'low' = coverageScore >= 0.9 ? 'high' : coverageScore >= 0.6 ? 'medium' : 'low';
+  const coverageConfidence: 'high' | 'medium' | 'low' = repoVisibilityScore >= 0.9 ? 'high' : repoVisibilityScore >= 0.6 ? 'medium' : 'low';
   const sampledFileHashes = files
     .filter((filePath) => !filePath.includes(`${path.sep}.playbook${path.sep}runtime${path.sep}`))
     .slice(0, 5)
@@ -248,35 +343,47 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
     schemaVersion: '1.0',
     cycle_id: cycleId,
     observed_at: observedAt,
+    total_files_seen: files.length,
     eligible_files: eligibleFiles,
     scanned_files: scannedFiles,
-    skipped_files: skippedFiles,
+    skipped_files: oversizedFiles,
+    oversized_files: oversizedFiles,
     ignored_files: ignoredFiles,
     unsupported_files: unsupportedFiles,
     binary_files: binaryFiles,
     parse_failures: parseFailures,
+    parse_failed_files: parseFailures,
     unresolved_imports: unresolvedImports,
     detected_modules: detectedModules,
     unknown_areas: unknownAreas,
-    coverage_score: coverageScore,
-    coverage_formula: 'coverage_score = scanned_files / eligible_files (eligible_files defaults to 1 when empty)',
-    coverage_score_components: {
-      numerator_scanned_files: scannedFiles,
-      denominator_eligible_files: eligibleFiles === 0 ? 1 : eligibleFiles
+    eligible_scan_coverage_score: eligibleScanCoverageScore,
+    repo_visibility_score: repoVisibilityScore,
+    blind_spot_ratio: blindSpotRatio,
+    coverage_formulas: {
+      eligible_scan_coverage_score: 'eligible_scan_coverage_score = scanned_files / eligible_files (eligible_files defaults to 1 when empty)',
+      repo_visibility_score: 'repo_visibility_score = (total_files_seen - blind_spot_files) / total_files_seen (total_files_seen defaults to 1 when empty)',
+      blind_spot_ratio: 'blind_spot_ratio = blind_spot_files / total_files_seen (total_files_seen defaults to 1 when empty)'
     },
-    // Observation data records directly measured repository facts.
+    score_components: {
+      numerator_scanned_files: scannedFiles,
+      denominator_eligible_files: denominatorEligible,
+      numerator_visible_files: files.length - blindSpotFiles,
+      denominator_total_files_seen: denominatorTotal,
+      numerator_blind_spot_files: blindSpotFiles,
+      denominator_total_files_seen_for_blind_spot: denominatorTotal
+    },
     observations: {
       file_inventory: {
         total_files_seen: files.length,
         sampled_file_hashes: sampledFileHashes,
         max_scan_bytes: DEFAULT_MAX_SCAN_BYTES,
-        expensive_paths: expensivePaths.sort((a, b) => b.size_bytes - a.size_bytes).slice(0, 5)
+        expensive_paths: expensivePaths.sort((a, b) => b.size_bytes - a.size_bytes).slice(0, 5),
+        expensive_path_category_counts: expensivePathCategoryCounts
       },
       dependency_scan: {
         unresolved_relative_imports: unresolvedImports
       }
     },
-    // Interpretation data records inferred meaning derived from observations.
     interpretations: {
       framework_inference: repoIndex?.framework ?? 'unknown',
       architecture_inference: repoIndex?.architecture ?? 'unknown',
@@ -316,12 +423,21 @@ const updateCommandHistory = (runtimeRoot: string, command: string, durationMs: 
 
 const updateCoverageHistory = (runtimeRoot: string, coverage: CoverageArtifact): void => {
   const historyPath = path.join(runtimeRoot, 'history', 'coverage-trend.json');
-  const current = readJsonFile<{ schemaVersion: '1.0'; entries: Array<{ cycle_id: string; observed_at: string; coverage_score: number }> }>(historyPath) ?? {
+  const current = readJsonFile<{ schemaVersion: '1.0'; entries: Array<{ cycle_id: string; observed_at: string; eligible_scan_coverage_score: number; repo_visibility_score: number; blind_spot_ratio: number }> }>(historyPath) ?? {
     schemaVersion: '1.0',
     entries: []
   };
 
-  const entries = [...current.entries, { cycle_id: coverage.cycle_id, observed_at: coverage.observed_at, coverage_score: coverage.coverage_score }]
+  const entries = [
+    ...current.entries,
+    {
+      cycle_id: coverage.cycle_id,
+      observed_at: coverage.observed_at,
+      eligible_scan_coverage_score: coverage.eligible_scan_coverage_score,
+      repo_visibility_score: coverage.repo_visibility_score,
+      blind_spot_ratio: coverage.blind_spot_ratio
+    }
+  ]
     .slice(-200)
     .sort((a, b) => a.observed_at.localeCompare(b.observed_at));
 
@@ -391,16 +507,56 @@ export const endRuntimeCycle = (context: RuntimeCycleContext, input: { exitCode:
   }, {});
   const repeatedCommandCount = Object.values(commandCalls).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
 
+  const readTargets = [path.join(context.repoRoot, '.playbook', 'repo-index.json'), path.join(runtimeRoot, 'history', 'command-stats.json'), path.join(runtimeRoot, 'history', 'coverage-trend.json')];
+  const readStatuses = readTargets.map(trackRead);
+  const artifactReads = {
+    attempted: readTargets.length,
+    found: readStatuses.filter((status) => status === 'found').length,
+    missing: readStatuses.filter((status) => status === 'missing').length,
+    malformed: readStatuses.filter((status) => status === 'malformed').length
+  };
+
+  const internalPhaseCounts = {
+    coverage_collection: 1,
+    dependency_scan: 1,
+    history_update: 3,
+    cycle_manifest_write: 1
+  };
+
+  const artifactWrites = {
+    total: 6,
+    by_artifact: {
+      'runtime/current/coverage': 1,
+      'runtime/current/telemetry': 1,
+      'runtime/cycle/manifest': 1,
+      'runtime/cycle/coverage': 1,
+      'runtime/cycle/telemetry': 1,
+      'runtime/history-rollups': 1
+    }
+  };
+
   const telemetry: TelemetryArtifact = {
     schemaVersion: '1.0',
     cycle_id: context.cycleId,
+    trigger_command: context.triggerCommand,
     command_call_count: allCommands.length,
     command_call_count_by_command: Object.fromEntries(Object.entries(commandCalls).sort(([left], [right]) => left.localeCompare(right))),
     repeated_command_count: repeatedCommandCount,
     command_durations: { [context.triggerCommand]: Number(input.durationMs.toFixed(2)) },
     artifact_cache_hits: fs.existsSync(path.join(context.repoRoot, '.playbook', 'repo-index.json')) ? 1 : 0,
     artifact_cache_misses: fs.existsSync(path.join(context.repoRoot, '.playbook', 'repo-index.json')) ? 0 : 1,
-    fallback_usage_counts: {},
+    internal_phase_counts: internalPhaseCounts,
+    artifact_reads: artifactReads,
+    artifact_writes: artifactWrites,
+    graph_build_phase_count: context.triggerCommand === 'index' ? 1 : 0,
+    module_extraction_phase_count: context.triggerCommand === 'index' ? 1 : 0,
+    verify_rule_phase_count: context.triggerCommand === 'verify' ? 1 : 0,
+    fallback_usage_counts: {
+      coverage_denominator_defaulted: coverage.eligible_files === 0 ? 1 : 0,
+      total_files_denominator_defaulted: coverage.total_files_seen === 0 ? 1 : 0
+    },
+    ignore_classification_counts: coverage.observations.file_inventory.expensive_path_category_counts,
+    expensive_path_category_counts: coverage.observations.file_inventory.expensive_path_category_counts,
     parser_failure_counts: {
       coverage_parse_failures: coverage.parse_failures
     },
