@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { resolveTargetRepoRoot, stripGlobalRepoOption } from './repoRoot.js';
 
 describe('stripGlobalRepoOption', () => {
@@ -32,4 +32,25 @@ describe('resolveTargetRepoRoot', () => {
       fs.rmSync(fixtureRoot, { recursive: true, force: true });
     }
   });
+
+
+  it('normalizes Windows absolute repo paths to WSL-style paths on non-Windows platforms', () => {
+    const windowsPath = 'C:\\Users\\example\\project';
+    const expectedRoot = process.platform === 'win32' ? windowsPath : '/mnt/c/Users/example/project';
+
+    const existsSpy = vi.spyOn(fs, 'existsSync').mockImplementation((candidate) => String(candidate) === expectedRoot);
+    const realpathSpy = vi.spyOn(fs, 'realpathSync').mockImplementation(() => expectedRoot);
+    const statSpy = vi.spyOn(fs, 'statSync').mockReturnValue({ isDirectory: () => true } as fs.Stats);
+
+    try {
+      const resolved = resolveTargetRepoRoot('/workspace/playbook', windowsPath);
+      expect(resolved).toBe(expectedRoot);
+      expect(existsSpy).toHaveBeenCalledWith(expectedRoot);
+    } finally {
+      existsSpy.mockRestore();
+      realpathSpy.mockRestore();
+      statSpy.mockRestore();
+    }
+  });
+
 });

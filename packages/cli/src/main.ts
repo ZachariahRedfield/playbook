@@ -32,6 +32,23 @@ const format = formatFromArgs(args);
 const quiet = parseFlag(args, '--quiet') || ci;
 const explain = parseFlag(args, '--explain');
 
+const resolveRuntimeRepoRoot = (fallbackRoot: string): string => {
+  if (command !== 'pilot') {
+    return fallbackRoot;
+  }
+
+  const pilotRepoArg = parseOptionValue(commandArgs, '--repo');
+  if (!pilotRepoArg) {
+    return fallbackRoot;
+  }
+
+  try {
+    return resolveTargetRepoRoot(process.cwd(), pilotRepoArg);
+  } catch {
+    return fallbackRoot;
+  }
+};
+
 const showHelp = () => {
   const commandRows = listRegisteredCommands().map((entry) => `  ${entry.name.padEnd(27)} ${entry.description}`);
 
@@ -85,9 +102,10 @@ const run = async () => {
   const playbookVersion = '0.1.1';
   const childCommands =
     command === 'pilot' ? ['context', 'index', 'query modules', 'verify', 'plan'] : [];
+  const runtimeRepoRoot = resolveRuntimeRepoRoot(targetCwd);
 
   const cycle = beginRuntimeCycle({
-    repoRoot: targetCwd,
+    repoRoot: runtimeRepoRoot,
     triggerCommand: command,
     childCommands,
     playbookVersion

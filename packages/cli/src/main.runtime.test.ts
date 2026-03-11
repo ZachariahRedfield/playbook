@@ -90,4 +90,33 @@ describe('runtime observability artifacts', () => {
     expect(coverageTrend.entries.length).toBeGreaterThanOrEqual(2);
     expect(analyzerHistory.find((entry) => entry.analyzer_contract_version === '1.0')?.runs).toBeGreaterThanOrEqual(2);
   });
+
+
+  it('writes runtime artifacts under pilot --repo target when repo is passed as command option', () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-pilot-runtime-'));
+    const targetRepo = path.join(tempRoot, 'pilot-target');
+    fs.mkdirSync(path.join(targetRepo, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(targetRepo, 'package.json'), JSON.stringify({ name: 'pilot-target', version: '0.0.1' }, null, 2), 'utf8');
+    fs.writeFileSync(path.join(targetRepo, 'src', 'index.ts'), `export const ok = true;\n`, 'utf8');
+
+    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
+
+    execFileSync('node', [scriptPath, 'pilot', '--repo', targetRepo, '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+
+    const runtimeRoot = path.join(targetRepo, '.playbook', 'runtime');
+    const telemetryPath = path.join(runtimeRoot, 'current', 'telemetry.json');
+    const coveragePath = path.join(runtimeRoot, 'current', 'coverage.json');
+
+    const telemetry = JSON.parse(fs.readFileSync(telemetryPath, 'utf8')) as {
+      trigger_command: string;
+      command_call_count_by_command: Record<string, number>;
+    };
+
+    expect(() => JSON.parse(fs.readFileSync(coveragePath, 'utf8'))).not.toThrow();
+    expect(telemetry.trigger_command).toBe('pilot');
+    expect(telemetry.command_call_count_by_command.pilot).toBe(1);
+  });
 });

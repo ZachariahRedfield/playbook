@@ -33,8 +33,21 @@ export const stripGlobalRepoOption = (allArgs: readonly string[]): { args: strin
   return { args: stripped, repo };
 };
 
+const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[A-Za-z]:[\\/]/;
+
+const normalizeWindowsAbsolutePath = (repo: string): string => {
+  if (process.platform === 'win32' || !WINDOWS_ABSOLUTE_PATH_PATTERN.test(repo)) {
+    return repo;
+  }
+
+  const drive = repo.slice(0, 1).toLowerCase();
+  const remainder = repo.slice(2).replace(/[\\]+/g, '/').replace(/^\/+/, '');
+  return path.posix.join('/mnt', drive, remainder);
+};
+
 export const resolveTargetRepoRoot = (invocationCwd: string, repo: string | undefined): string => {
-  const requestedRoot = repo ? path.resolve(invocationCwd, repo) : invocationCwd;
+  const requestedPath = repo ? normalizeWindowsAbsolutePath(repo) : invocationCwd;
+  const requestedRoot = repo ? path.resolve(invocationCwd, requestedPath) : invocationCwd;
 
   if (!fs.existsSync(requestedRoot)) {
     throw new Error(`Target repository does not exist: ${requestedRoot}`);
