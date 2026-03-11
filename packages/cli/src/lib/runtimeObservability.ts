@@ -152,6 +152,42 @@ type HistoryCommandStats = {
 
 const posixRelative = (root: string, absolutePath: string): string => path.relative(root, absolutePath).split(path.sep).join(path.posix.sep);
 
+const resolveNestedRepoPrefix = (repoRoot: string): string | undefined => {
+  const repoBase = path.basename(repoRoot).toLowerCase();
+  const topDirectories = fs
+    .readdirSync(repoRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => !name.startsWith('.') && name.toLowerCase() !== '.git')
+    .filter((name) => name.length > 0);
+
+  if (topDirectories.length !== 1) {
+    return undefined;
+  }
+
+  const candidate = topDirectories[0];
+  return candidate.toLowerCase() === repoBase ? candidate : undefined;
+};
+
+const normalizeRepoRelativePath = (value: string, nestedPrefix?: string): string => {
+  const normalized = value
+    .split(path.sep)
+    .join(path.posix.sep)
+    .replace(/^\.\//, '')
+    .replace(/^\/+/, '');
+
+  if (!normalized || !nestedPrefix) {
+    return normalized;
+  }
+
+  const segments = normalized.split('/').filter(Boolean);
+  if (segments.length <= 1 || segments[0].toLowerCase() !== nestedPrefix.toLowerCase()) {
+    return normalized;
+  }
+
+  return segments.slice(1).join('/');
+};
+
 const ensureDir = (target: string): void => {
   fs.mkdirSync(target, { recursive: true });
 };
@@ -291,6 +327,7 @@ const listRepoFiles = (repoRoot: string): RepoInventory => {
   const files: RepoFileEntry[] = [];
   const explicitlyIgnoredFiles: RepoFileEntry[] = [];
   const prunedDirectories: Array<{ path: string; path_class: ScanPathClass; reason: string }> = [];
+  const nestedPrefix = resolveNestedRepoPrefix(repoRoot);
   const ignoreRules = parsePlaybookIgnore(repoRoot);
   const stack = [repoRoot];
 
@@ -302,7 +339,7 @@ const listRepoFiles = (repoRoot: string): RepoInventory => {
 
     for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
       const child = path.join(current, entry.name);
-      const relative = posixRelative(repoRoot, child);
+      const relative = normalizeRepoRelativePath(posixRelative(repoRoot, child), nestedPrefix);
       if (entry.isDirectory()) {
         const pathClass = classifyPath(relative, { isDirectory: true, isBinary: false });
         if (isPlaybookIgnored(relative, ignoreRules)) {
@@ -693,8 +730,36 @@ const collectHistoricalCoverage = (runtimeRoot: string, currentCycleId: string):
 };
 
 const buildIgnoreRecommendations = (runtimeRoot: string, coverage: CoverageArtifact): IgnoreRecommendationArtifact => {
+  const repoRoot = path.resolve(runtimeRoot, '..', '..');
+  const nestedPrefix = path.basename(repoRoot);
   const history = collectHistoricalCoverage(runtimeRoot, coverage.cycle_id);
-  const candidates = coverage.observations.file_inventory.ignore_candidate_paths;
+  const normalizeHistoryCandidate = (candidate: string): string => normalizeRepoRelativePath(candidate, nestedPrefix);
+  const normalizedHistory = history.map((entry) => ({
+    cycle: entry,
+    ignoreCandidates: Array.isArray(entry.observations?.file_inventory?.ignore_candidate_paths)
+      ? Array.from(
+          new Set(
+            entry.observations.file_inventory.ignore_candidate_paths
+              .map((candidate) => normalizeHistoryCandidate(candidate))
+              .filter((candidate) => candidate.length > 0)
+          )
+        )
+      : [],
+    expensivePaths: Array.isArray(entry.observations?.file_inventory?.expensive_paths)
+      ? entry.observations.file_inventory.expensive_paths.map((expensive) => ({
+          ...expensive,
+          path: normalizeHistoryCandidate(expensive.path)
+        }))
+      : []
+  }));
+
+  const candidates = Array.from(
+    new Set(
+      coverage.observations.file_inventory.ignore_candidate_paths
+        .map((candidate) => normalizeHistoryCandidate(candidate))
+        .filter((candidate) => candidate.length > 0)
+    )
+  );
 
   const safetyCounts: Record<RecommendationSafetyLevel, number> = {
     'safe-default': 0,
@@ -709,8 +774,10 @@ const buildIgnoreRecommendations = (runtimeRoot: string, coverage: CoverageArtif
     const matchedCurrentExpensive = coverage.observations.file_inventory.expensive_paths.filter((entry) => isPathWithinCandidate(entry.path, candidate));
     const estimatedBytes = matchedCurrentExpensive.reduce((sum, entry) => sum + entry.size_bytes, 0);
     const estimatedFiles = matchedCurrentExpensive.length;
-    const repeatedCandidateCycles = history.filter((entry) => Array.isArray(entry.observations?.file_inventory?.ignore_candidate_paths) && entry.observations.file_inventory.ignore_candidate_paths.includes(candidate)).length;
-    const repeatedExpensiveCycles = history.filter((entry) => Array.isArray(entry.observations?.file_inventory?.expensive_paths) && entry.observations.file_inventory.expensive_paths.some((pathEntry) => isPathWithinCandidate(pathEntry.path, candidate))).length;
+    const repeatedCandidateCycles = normalizedHistory.filter((entry) => entry.ignoreCandidates.includes(candidate)).length;
+    const repeatedExpensiveCycles = normalizedHistory.filter((entry) =>
+      entry.expensivePaths.some((pathEntry) => isPathWithinCandidate(pathEntry.path, candidate))
+    ).length;
 
     // Deterministic ranking weights; no learning/stateful tuning.
     const classWeight: Record<ScanPathClass, number> = {

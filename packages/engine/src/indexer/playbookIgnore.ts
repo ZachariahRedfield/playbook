@@ -127,7 +127,38 @@ const normalizePattern = (value: string): string => {
   return normalized;
 };
 
-const normalizeIgnoreEntry = (value: string): string => toPosixPath(value.trim()).replace(/^\//, '');
+const normalizeIgnoreEntryValue = (value: string): string => toPosixPath(value.trim()).replace(/^\//, '');
+
+const stripNestedRepoPrefix = (repoRoot: string, candidate: string): string => {
+  const normalized = candidate.split(path.sep).join(path.posix.sep).replace(/^\.\//, '').replace(/^\/+/, '');
+  const nestedPrefix = path.basename(repoRoot).toLowerCase();
+  const segments = normalized.split('/').filter(Boolean);
+
+  if (segments.length <= 1 || segments[0].toLowerCase() !== nestedPrefix) {
+    return normalized;
+  }
+
+  return segments.slice(1).join('/');
+};
+
+const normalizeLegacyRepoPrefixedPath = (repoRoot: string, value: string): string => {
+  const withPrefixRemoved = stripNestedRepoPrefix(repoRoot, value);
+  return withPrefixRemoved;
+};
+
+const normalizeIgnoreEntry = (repoRoot: string, value: string): string => {
+  const trimmed = normalizeIgnoreEntryValue(value).replace(/\/+$/, '');
+  if (!trimmed) {
+    return '';
+  }
+
+  const absolute = path.isAbsolute(value) ? path.relative(repoRoot, value) : trimmed;
+  const candidate = absolute.startsWith('..') || path.isAbsolute(absolute) ? trimmed : normalizeLegacyRepoPrefixedPath(repoRoot, absolute);
+  const hadTrailingSlash = value.endsWith('/');
+  const withTrailingSlash = candidate.endsWith('/') ? candidate : hadTrailingSlash ? `${candidate}/` : candidate;
+
+  return withTrailingSlash;
+};
 
 const parsePlaybookIgnoreLines = (lines: string[]): PlaybookIgnoreRule[] =>
   lines
@@ -139,7 +170,7 @@ const parsePlaybookIgnoreLines = (lines: string[]): PlaybookIgnoreRule[] =>
     }))
     .filter((entry) => entry.pattern.length > 0);
 
-const splitManagedBlock = (content: string): {
+const splitManagedBlock = (content: string, repoRoot: string): {
   contentWithoutManagedBlock: string;
   managedEntries: string[];
   hadManagedBlock: boolean;
@@ -161,7 +192,7 @@ const splitManagedBlock = (content: string): {
     .slice(startIndex + 1, endIndex)
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !line.startsWith('#'))
-    .map(normalizeIgnoreEntry)
+    .map((line) => normalizeIgnoreEntry(repoRoot, line))
     .filter((line) => line.length > 0);
 
   const nextLines = [...lines.slice(0, startIndex), ...lines.slice(endIndex + 1)];
@@ -174,8 +205,8 @@ const splitManagedBlock = (content: string): {
   };
 };
 
-const toCoverageProbe = (value: string): string => {
-  const normalized = normalizeIgnoreEntry(value);
+const toCoverageProbe = (repoRoot: string, value: string): string => {
+  const normalized = normalizeIgnoreEntry(repoRoot, value);
   if (normalized.endsWith('/')) {
     return `${normalized}__playbook_probe__`;
   }
@@ -183,8 +214,8 @@ const toCoverageProbe = (value: string): string => {
   return normalized;
 };
 
-const isRecommendationCovered = (recommendationPath: string, rules: PlaybookIgnoreRule[]): boolean => {
-  const probe = toCoverageProbe(recommendationPath);
+const isRecommendationCovered = (repoRoot: string, recommendationPath: string, rules: PlaybookIgnoreRule[]): boolean => {
+  const probe = toCoverageProbe(repoRoot, recommendationPath);
   if (probe.length === 0) {
     return false;
   }
@@ -256,8 +287,8 @@ export const suggestPlaybookIgnore = (repoRoot: string): PlaybookIgnoreSuggestRe
     .sort(compareRecommendations)
     .map<PlaybookIgnoreSuggestion>((entry) => ({
       ...entry,
-      path: normalizeIgnoreEntry(entry.path),
-      already_covered: isRecommendationCovered(entry.path, currentRules),
+      path: normalizeIgnoreEntry(repoRoot, entry.path),
+      already_covered: isRecommendationCovered(repoRoot, entry.path, currentRules),
       eligible_for_safe_apply: entry.safety_level === 'safe-default'
     }));
 
@@ -289,28 +320,28 @@ export const applySafePlaybookIgnoreRecommendations = (repoRoot: string): Playbo
   const ignorePath = path.join(repoRoot, '.playbookignore');
   const fileExisted = fs.existsSync(ignorePath);
   const currentContent = fileExisted ? fs.readFileSync(ignorePath, 'utf8') : '';
-  const { contentWithoutManagedBlock, managedEntries: existingManagedEntries } = splitManagedBlock(currentContent);
+  const { contentWithoutManagedBlock, managedEntries: existingManagedEntries } = splitManagedBlock(currentContent, repoRoot);
   const userRules = parsePlaybookIgnoreContent(contentWithoutManagedBlock);
 
   const safeRecommendations = suggestionResult.safe_defaults;
   const recommendedManagedEntries = safeRecommendations
-    .filter((entry) => !isRecommendationCovered(entry.path, userRules))
-    .map((entry) => normalizeIgnoreEntry(entry.path));
+    .filter((entry) => !isRecommendationCovered(repoRoot, entry.path, userRules))
+    .map((entry) => normalizeIgnoreEntry(repoRoot, entry.path));
   const retainedManagedEntries = existingManagedEntries
-    .map(normalizeIgnoreEntry)
-    .filter((entry) => !isRecommendationCovered(entry, userRules));
+    .map((entry) => normalizeIgnoreEntry(repoRoot, entry))
+    .filter((entry) => !isRecommendationCovered(repoRoot, entry, userRules));
   const uniqueNextManagedEntries = [...new Set([...retainedManagedEntries, ...recommendedManagedEntries])].sort(compareEntries);
-  const existingManagedEntrySet = new Set(existingManagedEntries.map(normalizeIgnoreEntry));
+  const existingManagedEntrySet = new Set(existingManagedEntries.map((entry) => normalizeIgnoreEntry(repoRoot, entry)));
   const nextManagedEntrySet = new Set(uniqueNextManagedEntries);
 
   const appliedEntries = uniqueNextManagedEntries.filter((entry) => !existingManagedEntrySet.has(entry));
   const retainedEntries = uniqueNextManagedEntries.filter((entry) => existingManagedEntrySet.has(entry));
-  const removedEntries = existingManagedEntries.filter((entry) => !nextManagedEntrySet.has(normalizeIgnoreEntry(entry)));
+  const removedEntries = existingManagedEntries.filter((entry) => !nextManagedEntrySet.has(normalizeIgnoreEntry(repoRoot, entry)));
   const alreadyCoveredEntries = safeRecommendations
-    .filter((entry) => isRecommendationCovered(entry.path, userRules))
-    .map((entry) => normalizeIgnoreEntry(entry.path))
+    .filter((entry) => isRecommendationCovered(repoRoot, entry.path, userRules))
+    .map((entry) => normalizeIgnoreEntry(repoRoot, entry.path))
     .sort(compareEntries);
-  const deferredEntries = suggestionResult.review_required.map((entry) => normalizeIgnoreEntry(entry.path)).sort(compareEntries);
+  const deferredEntries = suggestionResult.review_required.map((entry) => normalizeIgnoreEntry(repoRoot, entry.path)).sort(compareEntries);
 
   const userContent = contentWithoutManagedBlock.trimEnd();
   const managedBlock = uniqueNextManagedEntries.length > 0 ? renderManagedIgnoreBlock(uniqueNextManagedEntries) : '';
@@ -336,7 +367,7 @@ export const applySafePlaybookIgnoreRecommendations = (repoRoot: string): Playbo
     retained_entries: retainedEntries.sort(compareEntries),
     already_covered_entries: alreadyCoveredEntries,
     deferred_entries: deferredEntries,
-    removed_entries: removedEntries.map(normalizeIgnoreEntry).sort(compareEntries),
+    removed_entries: removedEntries.map((entry) => normalizeIgnoreEntry(repoRoot, entry)).sort(compareEntries),
     summary: {
       applied_count: appliedEntries.length,
       retained_count: retainedEntries.length,

@@ -236,4 +236,52 @@ describe('runtime observability artifacts', () => {
     );
     expect(coverage.observations.file_inventory.ignore_candidate_paths).not.toContain('playwright-report/');
   });
+
+  it('normalizes nested wrapper recommendation paths for runtime artifacts and pilot summary', () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-runtime-wrapper-'));
+    const targetRepo = path.join(tempRoot, 'nat1-games');
+    const wrapperRoot = path.join(targetRepo, 'nat1-games');
+    fs.mkdirSync(path.join(wrapperRoot, 'playwright-report'), { recursive: true });
+    fs.writeFileSync(path.join(targetRepo, 'package.json'), JSON.stringify({ name: 'nat1-games', version: '0.0.1' }, null, 2), 'utf8');
+    fs.writeFileSync(path.join(wrapperRoot, 'package.json'), JSON.stringify({ name: 'nat1-games', version: '0.0.1' }, null, 2), 'utf8');
+    fs.writeFileSync(path.join(wrapperRoot, 'playwright-report', 'index.html'), '<html>report</html>\n', 'utf8');
+    fs.writeFileSync(path.join(wrapperRoot, 'tmp_file.txt'), 'temporary output\n', 'utf8');
+    fs.writeFileSync(path.join(wrapperRoot, 'tmp_patch.diff'), 'tmp patch diff\n', 'utf8');
+
+    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
+    execFileSync('node', [scriptPath, 'pilot', '--repo', targetRepo, '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+
+    const runtimeRoot = path.join(targetRepo, '.playbook', 'runtime');
+    const coverage = JSON.parse(fs.readFileSync(path.join(runtimeRoot, 'current', 'coverage.json'), 'utf8')) as {
+      observations: {
+        file_inventory: {
+          ignore_candidate_paths: string[];
+        };
+      };
+    };
+    const recommendations = JSON.parse(fs.readFileSync(path.join(runtimeRoot, 'current', 'ignore-recommendations.json'), 'utf8')) as {
+      recommendations: Array<{ path: string }>;
+    };
+    const summaryFile = JSON.parse(fs.readFileSync(path.join(targetRepo, '.playbook', 'pilot-summary.json'), 'utf8')) as {
+      scanWasteCandidates?: string[];
+    };
+
+    expect(coverage.observations.file_inventory.ignore_candidate_paths).toEqual(
+      expect.arrayContaining(['playwright-report/', 'tmp_file.txt', 'tmp_patch.diff'])
+    );
+    expect(coverage.observations.file_inventory.ignore_candidate_paths).not.toEqual(
+      expect.arrayContaining(['nat1-games/playwright-report/', 'nat1-games/tmp_file.txt', 'nat1-games/tmp_patch.diff'])
+    );
+
+    expect(recommendations.recommendations.map((entry) => entry.path)).toEqual(
+      expect.not.arrayContaining(['nat1-games/playwright-report/', 'nat1-games/tmp_file.txt', 'nat1-games/tmp_patch.diff'])
+    );
+    expect(recommendations.recommendations.find((entry) => entry.path === 'playwright-report/')?.path).toBe('playwright-report/');
+
+    expect(summaryFile.scanWasteCandidates).toEqual(expect.not.arrayContaining(['nat1-games/playwright-report/', 'nat1-games/tmp_file.txt', 'nat1-games/tmp_patch.diff']));
+    expect(summaryFile.scanWasteCandidates).toEqual(expect.arrayContaining(['playwright-report/', 'tmp_file.txt']));
+  });
 });
