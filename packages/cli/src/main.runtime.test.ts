@@ -30,7 +30,8 @@ describe('runtime observability artifacts', () => {
       scanned_files: number;
       unresolved_imports: number;
       coverage_score: number;
-      observations: { file_inventory: { total_files_seen: number } };
+      coverage_score_components: { numerator_scanned_files: number; denominator_eligible_files: number };
+      observations: { file_inventory: { total_files_seen: number; sampled_file_hashes: Array<{ path: string; sha256: string }> } };
       interpretations: { framework_inference: string };
     };
     const telemetry = JSON.parse(fs.readFileSync(telemetryPath, 'utf8')) as {
@@ -44,7 +45,10 @@ describe('runtime observability artifacts', () => {
     expect(coverage.scanned_files).toBeGreaterThan(0);
     expect(coverage.unresolved_imports).toBeGreaterThan(0);
     expect(coverage.coverage_score).toBeGreaterThan(0);
+    expect(coverage.coverage_score_components.numerator_scanned_files).toBe(coverage.scanned_files);
+    expect(coverage.coverage_score_components.denominator_eligible_files).toBeGreaterThan(0);
     expect(coverage.observations.file_inventory.total_files_seen).toBeGreaterThan(0);
+    expect(coverage.observations.file_inventory.sampled_file_hashes.length).toBeGreaterThan(0);
     expect(coverage.interpretations.framework_inference).toBe('node');
 
     expect(telemetry.command_call_count).toBe(1);

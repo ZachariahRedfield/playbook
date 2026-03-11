@@ -33,9 +33,14 @@ type CoverageArtifact = {
   unknown_areas: string[];
   coverage_score: number;
   coverage_formula: string;
+  coverage_score_components: {
+    numerator_scanned_files: number;
+    denominator_eligible_files: number;
+  };
   observations: {
     file_inventory: {
       total_files_seen: number;
+      sampled_file_hashes: Array<{ path: string; sha256: string }>;
       max_scan_bytes: number;
       expensive_paths: Array<{ path: string; size_bytes: number }>;
     };
@@ -160,6 +165,8 @@ const listRepoFiles = (repoRoot: string): string[] => {
   return files.sort((a, b) => a.localeCompare(b));
 };
 
+const hashContent = (value: Buffer | string): string => crypto.createHash('sha256').update(value).digest('hex');
+
 const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact => {
   const observedAt = new Date().toISOString();
   const analyzableExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
@@ -172,6 +179,7 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
   let binaryFiles = 0;
   let parseFailures = 0;
   let unresolvedImports = 0;
+  let ignoredFiles = 0;
 
   const expensivePaths: Array<{ path: string; size_bytes: number }> = [];
 
@@ -179,6 +187,11 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
     const ext = path.extname(absolutePath).toLowerCase();
     const stat = fs.statSync(absolutePath);
     expensivePaths.push({ path: posixRelative(repoRoot, absolutePath), size_bytes: stat.size });
+
+    if (absolutePath.includes(`${path.sep}.playbook${path.sep}runtime${path.sep}`)) {
+      ignoredFiles += 1;
+      continue;
+    }
 
     if (isLikelyBinary(absolutePath)) {
       binaryFiles += 1;
@@ -223,8 +236,13 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
   if (parseFailures > 0) unknownAreas.push('parse-failures');
 
   const coverageConfidence: 'high' | 'medium' | 'low' = coverageScore >= 0.9 ? 'high' : coverageScore >= 0.6 ? 'medium' : 'low';
-
-  const ignoredFiles = files.filter((entry) => entry.includes(`${path.sep}.playbook${path.sep}runtime${path.sep}`)).length;
+  const sampledFileHashes = files
+    .filter((filePath) => !filePath.includes(`${path.sep}.playbook${path.sep}runtime${path.sep}`))
+    .slice(0, 5)
+    .map((filePath) => ({
+      path: posixRelative(repoRoot, filePath),
+      sha256: hashContent(fs.readFileSync(filePath))
+    }));
 
   return {
     schemaVersion: '1.0',
@@ -242,10 +260,15 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
     unknown_areas: unknownAreas,
     coverage_score: coverageScore,
     coverage_formula: 'coverage_score = scanned_files / eligible_files (eligible_files defaults to 1 when empty)',
+    coverage_score_components: {
+      numerator_scanned_files: scannedFiles,
+      denominator_eligible_files: eligibleFiles === 0 ? 1 : eligibleFiles
+    },
     // Observation data records directly measured repository facts.
     observations: {
       file_inventory: {
         total_files_seen: files.length,
+        sampled_file_hashes: sampledFileHashes,
         max_scan_bytes: DEFAULT_MAX_SCAN_BYTES,
         expensive_paths: expensivePaths.sort((a, b) => b.size_bytes - a.size_bytes).slice(0, 5)
       },
