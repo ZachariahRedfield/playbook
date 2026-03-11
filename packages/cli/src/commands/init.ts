@@ -99,7 +99,7 @@ export const runInit = (cwd: string, options: InitOptions): number => {
     }))
   ];
 
-  const nextActions = ['npx playbook status', 'npx playbook fix', 'npx playbook verify'];
+  const nextActions = ['pnpm playbook status', 'pnpm playbook fix', 'pnpm playbook verify'];
 
   if (options.format === 'json') {
     emitResult({

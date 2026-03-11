@@ -192,6 +192,32 @@ A strong pilot repo improves both the product being built and the reasoning engi
 Failure Mode:
 Using a second repo too early without bounded rollout turns a proving ground into a noise amplifier.
 
+
+## External Pilot Integration — Fawxzzy Fitness
+
+Status: **Foundation implemented (command-truth + external targeting slice).**
+
+This roadmap slice establishes the operator-safe baseline for running Playbook from this repository against external pilot repositories.
+
+Delivered in this slice:
+
+- canonical command-truth normalization around `pnpm playbook <command>` across operator-facing docs/templates
+- managed-doc normalization at metadata/generator layer so regenerated command examples stay canonical
+- first-class external repo targeting via global `--repo <path>` for command execution from outside target repo
+- deterministic external pilot bootstrap test coverage for `index`, `query modules`, and `verify` against a fixture repo
+
+Rule — Canonical Operator Surface
+A CLI repo must expose one canonical operator-facing invocation form across docs, templates, generated docs, and roadmap guidance.
+
+Pattern — Generator-Level Truth Enforcement
+If a documentation surface is generated, command normalization must be fixed at the metadata/generator layer rather than by patching rendered markdown.
+
+Failure Mode — Command-Surface Drift
+When bare commands, npx flows, and direct internal entrypoints are all shown as if they are equivalent truth, humans and agents start planning against the wrong surface.
+
+Failure Mode — External-Repo Coupling
+A repo-intelligence system that only works when executed inside its own repo context is not yet a true external runtime.
+
 ## Next defining capabilities for reasoning-engine maturity
 
 ### Meta-Playbook introspection
@@ -284,7 +310,7 @@ All idea-level planning belongs in `docs/roadmap/IMPROVEMENTS_BACKLOG.md`.
 
 Machine-readable roadmap commitments are maintained in `docs/roadmap/ROADMAP.json`. CI validates this contract and enforces feature ID references for pull requests in CI contexts.
 
-Roadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.
+Roadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `pnpm playbook --help` and implemented command contracts as the source of truth for live command availability.
 
 Toroidal Flow initiative (`PB-V08-TOROIDAL-FLOW-001`) is roadmap-scoped architecture framing that overlays current behavior. It does not introduce runtime behavior changes in this pass.
 
@@ -554,7 +580,7 @@ Current implementation status (features: `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001`,
 
 Live-command boundary note:
 - The compaction slice above does **not** introduce a new public CLI command.
-- Treat `playbook --help` and `docs/commands/README.md` as the source of truth for currently available commands.
+- Treat `pnpm playbook --help` and `docs/commands/README.md` as the source of truth for currently available commands.
 
 Compaction spec details are defined in `docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md`.
 

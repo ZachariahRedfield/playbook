@@ -23,17 +23,17 @@ const DEMO_REPOSITORY_URL = 'https://github.com/ZachariahRedfield/playbook-demo'
 const DEMO_WORKFLOW: string[] = [
   `git clone ${DEMO_REPOSITORY_URL}`,
   'cd playbook-demo',
-  'npm install',
-  'npx playbook ai-context --json',
-  'npx playbook ai-contract --json',
-  'npx playbook context --json',
-  'npx playbook index --json',
-  'npx playbook query modules --json',
-  'npx playbook explain architecture --json',
-  'npx playbook verify',
-  'npx playbook plan --json > .playbook/plan.json',
-  'npx playbook apply --from-plan .playbook/plan.json',
-  'npx playbook verify'
+  'pnpm install',
+  'pnpm playbook ai-context --json',
+  'pnpm playbook ai-contract --json',
+  'pnpm playbook context --json',
+  'pnpm playbook index --json',
+  'pnpm playbook query modules --json',
+  'pnpm playbook explain architecture --json',
+  'pnpm playbook verify',
+  'pnpm playbook plan --json > .playbook/plan.json',
+  'pnpm playbook apply --from-plan .playbook/plan.json',
+  'pnpm playbook verify'
 ];
 
 const DEMONSTRATES: string[] = [

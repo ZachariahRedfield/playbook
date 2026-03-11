@@ -11,34 +11,39 @@ const parseOptionValue = (allArgs: string[], name: string): string | undefined =
   return index >= 0 && allArgs[index + 1] ? String(allArgs[index + 1]) : undefined;
 };
 
-const stripLeadingGlobalRepoOption = (allArgs: string[]): { args: string[]; repo: string | undefined } => {
-  const stripped: string[] = [];
+const stripGlobalRepoOption = (allArgs: string[]): { args: string[]; repo: string | undefined } => {
+  const stripped = [...allArgs];
   let repo: string | undefined;
 
-  for (let index = 0; index < allArgs.length; index += 1) {
-    const arg = allArgs[index];
+  const commandIndex = stripped.findIndex((arg) => !arg.startsWith('-'));
+  const parseLimit = commandIndex === -1 ? stripped.length : commandIndex;
 
-    if (!arg.startsWith('-')) {
-      stripped.push(...allArgs.slice(index));
-      break;
-    }
-
+  for (let index = 0; index < parseLimit; index += 1) {
+    const arg = stripped[index];
     if (arg === '--repo') {
-      const value = allArgs[index + 1];
+      const value = stripped[index + 1];
       if (value) {
         repo = String(value);
-        index += 1;
+        stripped.splice(index, 2);
+        index -= 1;
       }
       continue;
     }
 
-    stripped.push(arg);
+    if (arg.startsWith('--repo=')) {
+      const value = arg.slice('--repo='.length);
+      if (value.length > 0) {
+        repo = value;
+      }
+      stripped.splice(index, 1);
+      index -= 1;
+    }
   }
 
   return { args: stripped, repo };
 };
 
-const { args, repo } = stripLeadingGlobalRepoOption(rawArgs);
+const { args, repo } = stripGlobalRepoOption(rawArgs);
 
 const formatFromArgs = (allArgs: string[]): 'text' | 'json' => {
   if (parseFlag(allArgs, '--json')) {

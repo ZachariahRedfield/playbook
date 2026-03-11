@@ -159,7 +159,7 @@ const printHuman = (
     console.log(`${topIssue.id} – ${topIssue.description}`);
     console.log('');
     console.log('Run:');
-    console.log(`npx playbook explain ${topIssue.id}`);
+    console.log(`pnpm playbook explain ${topIssue.id}`);
   }
 };
 
