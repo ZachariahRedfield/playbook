@@ -2,18 +2,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export const stripGlobalRepoOption = (allArgs: readonly string[]): { args: string[]; repo: string | undefined } => {
-  const stripped = [...allArgs];
+  const stripped: string[] = [];
   let repo: string | undefined;
+  let index = 0;
 
-  for (let index = 0; index < stripped.length; index += 1) {
-    const arg = stripped[index];
+  while (index < allArgs.length) {
+    const arg = allArgs[index];
     if (arg === '--repo') {
-      const value = stripped[index + 1];
+      const value = allArgs[index + 1];
       if (value && !value.startsWith('-')) {
         repo = String(value);
-        stripped.splice(index, 2);
-        index -= 1;
+        index += 2;
+        continue;
       }
+
+      stripped.push(arg);
+      index += 1;
       continue;
     }
 
@@ -21,11 +25,24 @@ export const stripGlobalRepoOption = (allArgs: readonly string[]): { args: strin
       const value = arg.slice('--repo='.length);
       if (value.length > 0) {
         repo = value;
+        index += 1;
+        continue;
       }
-      stripped.splice(index, 1);
-      index -= 1;
+
+      stripped.push(arg);
+      index += 1;
+      continue;
     }
+
+    if (arg === '--' || !arg.startsWith('-')) {
+      break;
+    }
+
+    stripped.push(arg);
+    index += 1;
   }
+
+  stripped.push(...allArgs.slice(index));
 
   return { args: stripped, repo };
 };

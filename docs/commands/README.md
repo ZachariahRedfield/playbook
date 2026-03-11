@@ -47,6 +47,8 @@ Do not hand-edit entries inside the managed markers.
 
 - Canonical local invocation remains `pnpm playbook <command>`.
 - Use `pnpm playbook --repo <path> <command>` to execute against an external repository without changing directories.
+- Global `--repo` is parsed only from the argv prefix before the command token.
+- Any `--repo` flags after the command token are command-local options and are left untouched for command parsers.
 - External analysis writes deterministic runtime artifacts into the target repo's `.playbook/` directory.
 
 Canonical one-command baseline flow:

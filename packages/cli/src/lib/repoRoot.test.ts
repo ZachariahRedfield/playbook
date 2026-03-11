@@ -18,6 +18,20 @@ describe('stripGlobalRepoOption', () => {
     expect(result.repo).toBeUndefined();
     expect(result.args).toEqual(['diagram', '--repo', '.', '--out', 'docs/diagram.md']);
   });
+
+  it('removes --repo before nested commands and preserves nested argv', () => {
+    const result = stripGlobalRepoOption(['--repo', '../demo', 'query', 'modules']);
+
+    expect(result.repo).toBe('../demo');
+    expect(result.args).toEqual(['query', 'modules']);
+  });
+
+  it('leaves argv unchanged when --repo is not present', () => {
+    const result = stripGlobalRepoOption(['verify']);
+
+    expect(result.repo).toBeUndefined();
+    expect(result.args).toEqual(['verify']);
+  });
 });
 
 describe('resolveTargetRepoRoot', () => {
