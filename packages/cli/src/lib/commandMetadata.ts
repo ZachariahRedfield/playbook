@@ -409,6 +409,19 @@ export const commandMetadata: CommandMetadata[] = [
     productFacing: false,
     exampleArgs: 'session --help',
     machineReadable: true
+  },
+  {
+    name: 'learn',
+    description: 'Draft deterministic knowledge candidates from local diff and repository intelligence',
+    category: 'Utility',
+    role: 'utility',
+    lifecycle: 'utility',
+    discoverability: 'secondary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'learn draft --json --out .playbook/knowledge/candidates.json',
+    machineReadable: true
   }
 ];
 

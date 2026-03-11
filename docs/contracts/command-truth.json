@@ -244,6 +244,18 @@
       "example": "pnpm playbook init"
     },
     {
+      "name": "learn",
+      "category": "Utility",
+      "role": "utility",
+      "lifecycle": "utility",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json"
+    },
+    {
       "name": "pilot",
       "category": "Core",
       "role": "bootstrap",
@@ -395,6 +407,7 @@
     "demo",
     "diagram",
     "init",
+    "learn",
     "schema",
     "session",
     "status",

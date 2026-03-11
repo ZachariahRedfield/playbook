@@ -20,6 +20,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const analyzePullRequest: (...args: any[]) => any;
   export const formatAnalyzePrGithubComment: (...args: any[]) => string;
   export const formatAnalyzePrOutput: (...args: any[]) => string;
+  export const generateKnowledgeCandidatesDraft: (...args: any[]) => any;
   export const generateRepositoryIndex: (...args: any[]) => any;
   export const generateRepositoryGraph: (...args: any[]) => any;
   export const buildModuleContextDigests: (...args: any[]) => any;

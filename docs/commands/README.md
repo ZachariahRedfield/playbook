@@ -41,6 +41,7 @@ Do not hand-edit entries inside the managed markers.
 | `deps` | Print module dependency graph from .playbook/repo-index.json | canonical | repo-intelligence | secondary | — | Current (implemented) | `pnpm playbook deps workouts --json` |
 | `ask` | Answer repository questions from machine-readable intelligence context | canonical | repo-intelligence | primary | 7 | Current (implemented) | `pnpm playbook ask "where should a new feature live?" --repo-context --json` |
 | `explain` | Explain rules, modules, or architecture from repository intelligence | canonical | repo-intelligence | primary | 6 | Current (implemented) | `pnpm playbook explain architecture --json` |
+| `learn` | Draft deterministic knowledge candidates from local diff and repository intelligence | utility | utility | secondary | — | Current (implemented) | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
 ## External repository targeting (`pnpm playbook --repo <path> <command>`)
@@ -124,6 +125,29 @@ If docs and implementation disagree, treat implementation as source of truth and
 
 
 Command reference: [`pnpm playbook docs audit`](docs.md).
+
+## Learn draft (`pnpm playbook learn draft`)
+
+`pnpm playbook learn draft` generates deterministic knowledge-candidate drafts from local git diff context plus indexed repository intelligence.
+
+- Requires `.playbook/repo-index.json` (run `pnpm playbook index` first when missing).
+- Writes machine-readable candidates to `.playbook/knowledge/candidates.json` by default.
+- Supports `--out <path>` to redirect artifact output.
+- Supports `--append-notes` to append a human-readable draft section to `docs/PLAYBOOK_NOTES.md`.
+- Candidate evidence contains only changed file paths (no raw source content), and dedupe markers are deterministic MVP placeholders (`kind: none`).
+
+Examples:
+
+```bash
+pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json
+pnpm playbook learn draft --base main --json
+pnpm playbook learn draft --append-notes --json
+```
+
+Artifact intent:
+
+- `.playbook/knowledge/**` is runtime draft state and should stay gitignored by default.
+- Promote/commit knowledge artifacts only when intentionally reviewed for upstream inclusion.
 
 ## Internal knowledge compaction status (no public command surface yet)
 
