@@ -31,6 +31,10 @@ describe('external repo bootstrap', () => {
     const fixtureRepo = createFixtureRepo();
 
     try {
+      const context = runCli(['--repo', fixtureRepo, 'context', '--json']);
+      expect(context.status).toBe(0);
+      expect(context.stdout).toContain('"command": "context"');
+
       const index = runCli(['--repo', fixtureRepo, 'index', '--json']);
       expect(index.status).toBe(0);
       expect(index.stdout).toContain('"command": "index"');
@@ -40,6 +44,10 @@ describe('external repo bootstrap', () => {
       const verify = runCli(['--repo', fixtureRepo, 'verify', '--json']);
       expect(verify.status).toBe(0);
       expect(verify.stdout).toContain('"command": "verify"');
+
+      const plan = runCli([`--repo=${fixtureRepo}`, 'plan', '--json']);
+      expect(plan.status).toBe(0);
+      expect(plan.stdout).toContain('"command": "plan"');
 
       const query = runCli(['--repo', fixtureRepo, 'query', 'modules', '--json']);
       expect(query.status).toBe(0);

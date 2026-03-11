@@ -68,7 +68,7 @@ describe('runStatus', () => {
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
     expect(output).toContain('Top issue');
     expect(output).toContain('analyze-no-signals – Warn when no framework or database stack signals are detected.');
-    expect(output).toContain('npx playbook explain analyze-no-signals');
+    expect(output).toContain('pnpm playbook explain analyze-no-signals');
 
     logSpy.mockRestore();
   });
