@@ -318,6 +318,7 @@ pnpm playbook ignore apply --repo "<target-repo>" --safe-defaults
 ```
 
 `ignore suggest` reports ranked recommendations, safety level, rationale, expected scan impact, and whether each entry is already covered. `ignore apply --safe-defaults` writes only `safe-default` entries into a deterministic managed block and leaves lower-confidence recommendations in review-only output.
+`ignore apply --safe-defaults` also writes explicit ignore outcome telemetry to `.playbook/runtime/current/ignore-apply.json` (and per-cycle copies), and updates `.playbook/runtime/history/ignore-apply-stats.json` as a compact cumulative rollup.
 
 Rule - Apply Only Trusted Ignore Recommendations.
 

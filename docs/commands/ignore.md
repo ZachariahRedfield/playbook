@@ -26,6 +26,19 @@ Suggest and safely apply ranked `.playbookignore` recommendations from Playbook 
 - keeps `likely-safe` and `review-first` recommendations in suggestion-only output
 - avoids duplicate entries across user content and the managed block
 - rewrites the managed block deterministically so reruns are idempotent
+- records outcome telemetry to `.playbook/runtime/current/ignore-apply.json` and `.playbook/runtime/cycles/<cycle_id>/ignore-apply.json` with explicit fields:
+  - `applied_count`
+  - `already_present_count`
+  - `safe_default_deferred_count`
+  - `review_first_count`
+  - `applied_paths`
+  - `already_present_paths`
+  - `safe_default_deferred_paths`
+  - `review_first_paths`
+- retains compact historical rollups in `.playbook/runtime/history/ignore-apply-stats.json` (`*_total` and `last_*` fields)
+- keeps compatibility aliases for existing artifact readers:
+  - `deferred_count` (legacy, now mirrors `review_first_count`)
+  - `deferred_paths` (legacy, now mirrors `review_first_paths`)
 
 Managed block format:
 

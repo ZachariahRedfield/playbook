@@ -239,4 +239,50 @@ describe('playbook ignore workflow', () => {
     expect(content).toContain('.git/');
     expect(content).toContain('node_modules/');
   });
+
+  it('writes clarified ignore-apply outcome fields and updates compact history rollup deterministically', () => {
+    const repo = createRepo();
+    writeRecommendations(repo, [
+      { path: '.git/', class: 'vcs-internal', safety_level: 'safe-default', confidence: 0.99, estimated_files_reduced: 1, estimated_bytes_reduced: 1, impact_level: 'low' },
+      { path: 'node_modules/', class: 'build-cache', safety_level: 'safe-default', confidence: 0.99, estimated_files_reduced: 1, estimated_bytes_reduced: 1, impact_level: 'low' }
+    ]);
+    fs.writeFileSync(path.join(repo, '.playbookignore'), 'node_modules/\n', 'utf8');
+
+    const first = applySafePlaybookIgnoreRecommendations(repo);
+    const firstRuntime = JSON.parse(
+      fs.readFileSync(path.join(repo, '.playbook', 'runtime', 'current', 'ignore-apply.json'), 'utf8')
+    ) as Record<string, unknown>;
+    const firstHistory = JSON.parse(
+      fs.readFileSync(path.join(repo, '.playbook', 'runtime', 'history', 'ignore-apply-stats.json'), 'utf8')
+    ) as Record<string, unknown>;
+
+    expect(first.changed).toBe(true);
+    expect(firstRuntime.applied_count).toBe(1);
+    expect(firstRuntime.already_present_count).toBe(1);
+    expect(firstRuntime.safe_default_deferred_count).toBe(1);
+    expect(firstRuntime.review_first_count).toBe(0);
+    expect(firstRuntime.applied_paths).toEqual(['.git/']);
+    expect(firstRuntime.already_present_paths).toEqual(['node_modules/']);
+    expect(firstRuntime.safe_default_deferred_paths).toEqual(['node_modules/']);
+    expect((firstRuntime.deferred_count as number) ?? 0).toBe(0);
+    expect(firstHistory.cycles_recorded).toBe(1);
+    expect(firstHistory.applied_total).toBe(1);
+    expect(firstHistory.already_present_total).toBe(1);
+    expect(firstHistory.safe_default_deferred_total).toBe(1);
+    expect(firstHistory.review_first_total).toBe(0);
+    expect(firstHistory.last_cycle_id).toBe('cycle-1');
+
+    const second = applySafePlaybookIgnoreRecommendations(repo);
+    const secondHistory = JSON.parse(
+      fs.readFileSync(path.join(repo, '.playbook', 'runtime', 'history', 'ignore-apply-stats.json'), 'utf8')
+    ) as Record<string, unknown>;
+
+    expect(second.changed).toBe(false);
+    expect(secondHistory.cycles_recorded).toBe(1);
+    expect(secondHistory.applied_total).toBe(1);
+    expect(secondHistory.already_present_total).toBe(1);
+    expect(secondHistory.safe_default_deferred_total).toBe(1);
+    expect(secondHistory.review_first_total).toBe(0);
+    expect(secondHistory.last_cycle_id).toBe('cycle-1');
+  });
 });

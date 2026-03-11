@@ -5,10 +5,7 @@ export const stripGlobalRepoOption = (allArgs: readonly string[]): { args: strin
   const stripped = [...allArgs];
   let repo: string | undefined;
 
-  const commandIndex = stripped.findIndex((arg) => !arg.startsWith('-'));
-  const parseLimit = commandIndex === -1 ? stripped.length : commandIndex;
-
-  for (let index = 0; index < parseLimit; index += 1) {
+  for (let index = 0; index < stripped.length; index += 1) {
     const arg = stripped[index];
     if (arg === '--repo') {
       const value = stripped[index + 1];

@@ -1,0 +1,6 @@
+# PLAYBOOK:IGNORE_START
+# Managed by Playbook from ranked ignore recommendations.
+# Only safe-default recommendations are auto-applied. Review-first and lower-confidence entries stay suggestion-only.
+.git/
+node_modules/
+# PLAYBOOK:IGNORE_END

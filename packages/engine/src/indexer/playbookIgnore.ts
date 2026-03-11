@@ -61,12 +61,31 @@ export type PlaybookIgnoreApplyOutcomeArtifact = {
   safe_default_candidates_count: number;
   applied_count: number;
   already_present_count: number;
-  deferred_count: number;
+  safe_default_deferred_count: number;
   review_first_count: number;
   applied_paths: string[];
   already_present_paths: string[];
-  deferred_paths: string[];
+  safe_default_deferred_paths: string[];
   review_first_paths: string[];
+  deferred_count?: number;
+  deferred_paths?: string[];
+};
+
+export type IgnoreApplyStatsArtifact = {
+  schemaVersion: '1.0';
+  cycles_recorded: number;
+  applied_total: number;
+  already_present_total: number;
+  safe_default_deferred_total: number;
+  review_first_total: number;
+  last_cycle_id: string;
+  last_observed_at: string;
+  last_cycle_counts: {
+    applied_count: number;
+    already_present_count: number;
+    safe_default_deferred_count: number;
+    review_first_count: number;
+  };
 };
 
 export type PlaybookIgnoreSuggestion = IgnoreRecommendation & {
@@ -185,6 +204,18 @@ const writeJson = (targetPath: string, payload: unknown): void => {
   fs.writeFileSync(targetPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 };
 
+const readJsonFile = <T>(targetPath: string): T | undefined => {
+  if (!fs.existsSync(targetPath)) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(targetPath, 'utf8')) as T;
+  } catch {
+    return undefined;
+  }
+};
+
 const dedupeSortedEntries = (entries: string[]): string[] =>
   Array.from(new Set(entries.filter((entry) => entry.length > 0))).sort((left, right) => left.localeCompare(right));
 
@@ -261,6 +292,111 @@ const compareRecommendations = (left: IgnoreRecommendation, right: IgnoreRecomme
 };
 
 const compareEntries = (left: string, right: string): number => left.localeCompare(right);
+
+const sanitizeCount = (value: number): number => {
+  if (!Number.isFinite(value) || value < 0 || !Number.isInteger(value)) {
+    return 0;
+  }
+
+  return value;
+};
+
+const readIgnoreApplyHistory = (runtimeRoot: string): IgnoreApplyStatsArtifact => {
+  const historyPath = path.join(runtimeRoot, 'history', 'ignore-apply-stats.json');
+  const existing = readJsonFile<{
+    schemaVersion?: '1.0';
+    cycles_recorded?: number;
+    applied_total?: number;
+    already_present_total?: number;
+    safe_default_deferred_total?: number;
+    review_first_total?: number;
+    last_cycle_id?: string;
+    last_observed_at?: string;
+    last_cycle_counts?: {
+      applied_count?: number;
+      already_present_count?: number;
+      safe_default_deferred_count?: number;
+      review_first_count?: number;
+    };
+  }>(historyPath);
+
+  if (!existing || existing.schemaVersion !== '1.0') {
+    return {
+      schemaVersion: '1.0',
+      cycles_recorded: 0,
+      applied_total: 0,
+      already_present_total: 0,
+      safe_default_deferred_total: 0,
+      review_first_total: 0,
+      last_cycle_id: '',
+      last_observed_at: '',
+      last_cycle_counts: {
+        applied_count: 0,
+        already_present_count: 0,
+        safe_default_deferred_count: 0,
+        review_first_count: 0
+      }
+    };
+  }
+
+  return {
+    schemaVersion: '1.0',
+    cycles_recorded: sanitizeCount(existing.cycles_recorded ?? 0),
+    applied_total: sanitizeCount(existing.applied_total ?? 0),
+    already_present_total: sanitizeCount(existing.already_present_total ?? 0),
+    safe_default_deferred_total: sanitizeCount(existing.safe_default_deferred_total ?? 0),
+    review_first_total: sanitizeCount(existing.review_first_total ?? 0),
+    last_cycle_id: typeof existing.last_cycle_id === 'string' ? existing.last_cycle_id : '',
+    last_observed_at: typeof existing.last_observed_at === 'string' ? existing.last_observed_at : '',
+    last_cycle_counts: {
+      applied_count: sanitizeCount(existing.last_cycle_counts?.applied_count ?? 0),
+      already_present_count: sanitizeCount(existing.last_cycle_counts?.already_present_count ?? 0),
+      safe_default_deferred_count: sanitizeCount(existing.last_cycle_counts?.safe_default_deferred_count ?? 0),
+      review_first_count: sanitizeCount(existing.last_cycle_counts?.review_first_count ?? 0)
+    }
+  };
+};
+
+const writeIgnoreApplyHistory = (runtimeRoot: string, outcome: PlaybookIgnoreApplyOutcomeArtifact, changed: boolean): void => {
+  const historyPath = path.join(runtimeRoot, 'history', 'ignore-apply-stats.json');
+  const current = readIgnoreApplyHistory(runtimeRoot);
+  if (!changed) {
+    return;
+  }
+
+  const isCurrentCycle = current.last_cycle_id === outcome.cycle_id;
+  const priorCycleCounts = isCurrentCycle
+    ? current.last_cycle_counts
+    : {
+        applied_count: 0,
+        already_present_count: 0,
+        safe_default_deferred_count: 0,
+        review_first_count: 0
+      };
+
+  writeJson(historyPath, {
+    schemaVersion: '1.0',
+    cycles_recorded: current.cycles_recorded + (isCurrentCycle ? 0 : 1),
+    applied_total: Math.max(0, current.applied_total + outcome.applied_count - priorCycleCounts.applied_count),
+    already_present_total: Math.max(
+      0,
+      current.already_present_total + outcome.already_present_count - priorCycleCounts.already_present_count
+    ),
+    safe_default_deferred_total: Math.max(
+      0,
+      current.safe_default_deferred_total + outcome.safe_default_deferred_count - priorCycleCounts.safe_default_deferred_count
+    ),
+    review_first_total: Math.max(0, current.review_first_total + outcome.review_first_count - priorCycleCounts.review_first_count),
+    last_cycle_id: outcome.cycle_id,
+    last_observed_at: outcome.observed_at,
+    last_cycle_counts: {
+      applied_count: outcome.applied_count,
+      already_present_count: outcome.already_present_count,
+      safe_default_deferred_count: outcome.safe_default_deferred_count,
+      review_first_count: outcome.review_first_count
+    }
+  });
+};
 
 export const parsePlaybookIgnoreContent = (content: string): PlaybookIgnoreRule[] =>
   parsePlaybookIgnoreLines(content.replace(/\r\n/g, '\n').split('\n'));
@@ -372,6 +508,7 @@ export const applySafePlaybookIgnoreRecommendations = (repoRoot: string): Playbo
     .sort(compareEntries);
   const deferredEntries = suggestionResult.review_required.map((entry) => normalizeIgnoreEntry(repoRoot, entry.path)).sort(compareEntries);
   const reviewFirstEntries = dedupeSortedEntries(deferredEntries);
+  const safeDefaultDeferredEntries = dedupeSortedEntries(alreadyCoveredEntries);
 
   const userContent = contentWithoutManagedBlock.trimEnd();
   const managedBlock = uniqueNextManagedEntries.length > 0 ? renderManagedIgnoreBlock(uniqueNextManagedEntries) : '';
@@ -392,17 +529,20 @@ export const applySafePlaybookIgnoreRecommendations = (repoRoot: string): Playbo
     safe_default_candidates_count: safeRecommendations.length,
     applied_count: appliedEntries.length,
     already_present_count: alreadyCoveredEntries.length,
-    deferred_count: deferredEntries.length,
+    safe_default_deferred_count: safeDefaultDeferredEntries.length,
     review_first_count: reviewFirstEntries.length,
     applied_paths: dedupeSortedEntries(appliedEntries),
     already_present_paths: dedupeSortedEntries(alreadyCoveredEntries),
-    deferred_paths: dedupeSortedEntries(deferredEntries),
-    review_first_paths: reviewFirstEntries
+    safe_default_deferred_paths: safeDefaultDeferredEntries,
+    review_first_paths: reviewFirstEntries,
+    deferred_count: reviewFirstEntries.length,
+    deferred_paths: reviewFirstEntries
   };
   const runtimeRoot = path.join(repoRoot, '.playbook', 'runtime');
   writeJson(path.join(runtimeRoot, 'current', 'ignore-apply.json'), outcome);
   const cycleDir = path.join(runtimeRoot, 'cycles', outcome.cycle_id);
   writeJson(path.join(cycleDir, 'ignore-apply.json'), outcome);
+  writeIgnoreApplyHistory(runtimeRoot, outcome, changed);
 
   return {
     schemaVersion: '1.0',
