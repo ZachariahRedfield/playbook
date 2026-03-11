@@ -34,7 +34,7 @@ case "$mode" in
   plan)
     mkdir -p .playbook
     plan_path=".playbook/plan.json"
-    "${playbook_cli[@]}" plan --json > "$plan_path"
+    "${playbook_cli[@]}" plan --json --out "$plan_path"
     echo "plan_path=$repo_path/$plan_path" >> "$GITHUB_OUTPUT"
     ;;
   apply)

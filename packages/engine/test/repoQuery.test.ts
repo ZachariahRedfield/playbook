@@ -168,7 +168,7 @@ describe('queryRepositoryIndex', () => {
     expect(result.signals.transitiveImpact).toBe(0);
     expect(result.signals.verifyFailures).toBe(0);
     expect(result.warnings).toEqual([
-      'Verify failure signal unavailable; no .playbook/verify-report.json, .playbook/verify.json, or .playbook/plan.json verify payload found.'
+      'Verify failure signal unavailable; no .playbook/verify-report.json, .playbook/verify.json, .playbook/findings.json, or .playbook/plan.json verify payload found.'
     ]);
   });
 
@@ -211,6 +211,31 @@ describe('queryRepositoryIndex', () => {
     expect(result.reasons).toContain('High reverse dependency fan-in');
     expect(result.reasons).toContain('Large transitive impact radius');
     expect(result.reasons).toContain('Active verify failures associated with this module');
+  });
+
+
+
+  it('fails with deterministic corruption guidance when verify artifacts contain invalid JSON wrappers', () => {
+    const repo = createRepo('playbook-repo-query-risk-corrupt-artifact');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] }
+      ],
+      database: 'none',
+      rules: []
+    });
+
+    const verifyPath = path.join(repo, '.playbook', 'findings.json');
+    fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
+    fs.writeFileSync(verifyPath, 'wrapper contamination\n{\n  "command": "verify"\n}\n', 'utf8');
+
+    expect(() => queryRisk(repo, 'auth')).toThrowError(/playbook query risk: invalid or corrupted JSON artifact at .*findings\.json/);
+    expect(() => queryRisk(repo, 'auth')).toThrowError(/Regenerate artifacts with CLI-owned output flags/);
   });
 
 

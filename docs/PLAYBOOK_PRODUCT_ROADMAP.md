@@ -195,7 +195,7 @@ Using a second repo too early without bounded rollout turns a proving ground int
 
 ## External Pilot Integration — Fawxzzy Fitness
 
-Status: **In progress — first-class external targeting delivered (`--repo`) with deterministic target-repo artifacts and fixture coverage, and proven on two independent pilot repositories (FawxzzyFitness and Nat1-Games). Next hardening slice: deterministic machine-written JSON artifact output via `--out` for external runtime workflows.**
+Status: **In progress — first-class external targeting delivered (`--repo`) with deterministic target-repo artifacts and fixture coverage, and proven on two independent pilot repositories (FawxzzyFitness and Nat1-Games). Hardening delivered: deterministic machine-written JSON artifact output via `--out` for external runtime workflows, plus deterministic invalid-artifact guardrails for risk/query readers.**
 
 This roadmap slice establishes the next operator-safe migration layer for running Playbook from this repository against the primary external pilot repository while preserving legacy pilot tooling until parity is proven.
 
@@ -210,12 +210,26 @@ Current slice establishes:
 - coexistence-first pilot execution without legacy removal in the target repository
 - fixture-based coverage for external runtime behavior and positional parsing (`--repo <fixture> query modules --json`)
 - independent external pilot validation confirms runtime targeting works beyond the Playbook repository (FawxzzyFitness and Nat1-Games)
-- next hardening slice delivers deterministic machine-written JSON artifact output for machine-consumed findings/plan flows (`--json --out`)
+- deterministic machine-written JSON artifact output for machine-consumed findings/plan flows (`--json --out`)
+- deterministic invalid-artifact read guardrails for risk/query flows, including explicit corruption errors and CLI-owned regeneration guidance
 - next hardening slice converts pilot success into a generic onboarding contract (optional `playbook.config.json`, optional `.playbookignore`, and Playbook-owned `.playbook/` runtime state)
 
 Reference plan:
 
 - `docs/roadmap/EXTERNAL_PILOT_FAWXZZY_FITNESS.md`
+
+
+Rule — Machine-Consumed Artifacts Must Be CLI-Written
+If downstream commands read generated JSON artifacts, those artifacts must be written by the CLI itself rather than relying on shell redirection.
+
+Pattern — First-Class Artifact Emission
+Structured runtime artifacts should be emitted through explicit output flags with controlled encoding, directory creation, and deterministic content boundaries.
+
+Failure Mode — Shell Redirect Artifact Corruption
+Machine-readable JSON captured through wrappers or shell redirection can be silently corrupted by banner text, encoding differences, or shell behavior.
+
+Failure Mode — Opaque JSON Parse Crash
+When corrupted runtime artifacts are parsed without a guardrail, later commands fail far from the original write site, making the real bug harder to diagnose.
 
 Rule — Canonical Operator Surface
 A CLI repo must expose one canonical operator-facing invocation form across docs, templates, generated docs, and roadmap guidance.

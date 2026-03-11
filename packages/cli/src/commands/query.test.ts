@@ -106,6 +106,44 @@ describe('runQuery', () => {
     logSpy.mockRestore();
   });
 
+
+
+  it('writes deterministic query JSON output with --out', async () => {
+    const repo = createRepo('playbook-cli-query-out');
+    writeRepoIndex(repo);
+    const outPath = path.join(repo, '.playbook', 'query-modules.json');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['modules'], { format: 'json', quiet: false, outFile: outPath });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const stdoutPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    const artifactPayload = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    expect(artifactPayload).toEqual(stdoutPayload);
+
+    logSpy.mockRestore();
+  });
+
+  it('fails risk query with deterministic corruption guidance when findings.json is invalid', async () => {
+    const repo = createRepo('playbook-cli-query-risk-corrupt-artifact');
+    writeRepoIndex(repo);
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbook', 'findings.json'), 'wrapper contamination\n{\n  "command": "verify"\n}', 'utf8');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['risk', 'auth'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('invalid or corrupted JSON artifact')
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Regenerate artifacts with CLI-owned output flags')
+    );
+
+    errorSpy.mockRestore();
+  });
+
   it('prints dependency query JSON output', async () => {
     const repo = createRepo('playbook-cli-query-dependencies');
     writeRepoIndex(repo);

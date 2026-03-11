@@ -47,6 +47,26 @@ describe('runIndex', () => {
 
     logSpy.mockRestore();
   });
+
+
+  it('writes deterministic command JSON output with --out', async () => {
+    const repo = createRepo('playbook-cli-index-out');
+    fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({}, null, 2));
+    fs.mkdirSync(path.join(repo, 'src', 'features'), { recursive: true });
+
+    const outPath = path.join(repo, '.playbook', 'index-command-output.json');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runIndex(repo, { format: 'json', quiet: false, outFile: outPath });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const stdoutPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    const artifactPayload = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    expect(artifactPayload).toEqual(stdoutPayload);
+
+    logSpy.mockRestore();
+  });
+
 });
 
 describe('command registry', () => {
