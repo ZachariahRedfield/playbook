@@ -223,6 +223,9 @@ Do not hand-edit entries inside the managed markers.
 
 ### Utility
 
+- `learn`: Draft deterministic knowledge candidates from local diff and repository intelligence
+  - Example: `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json`
+
 - `demo`: Show the official Playbook demo repository and guided first-run workflow
 - `init`: Initialize playbook docs/config
 - `fix`: Apply safe, deterministic autofixes for verify findings
@@ -264,4 +267,5 @@ Do not hand-edit entries inside the managed markers.
 | `deps` | `pnpm playbook deps workouts --json` |
 | `ask` | `pnpm playbook ask "where should a new feature live?" --repo-context --json` |
 | `explain` | `pnpm playbook explain architecture --json` |
+| `learn` | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 <!-- PLAYBOOK:EXAMPLES_END -->

@@ -47,6 +47,15 @@ const parseOptionValues = (allArgs: string[], name: string): string[] | undefine
 };
 
 
+
+const parseLearnDiffContext = (allArgs: string[]): boolean => {
+  if (allArgs.includes('--no-diff-context')) {
+    return false;
+  }
+
+  return true;
+};
+
 const parseAnalyzePrFormat = (allArgs: string[], globalFormat: 'text' | 'json'): 'text' | 'json' | 'github-comment' | 'github-review' => {
   if (globalFormat === 'json') {
     return 'json';
@@ -212,6 +221,36 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
     const { runSchema } = await import('./schema.js');
     return runSchema(cwd, commandArgs, { format, quiet });
   },
+  learn: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runLearnDraft } = await import('./learnDraft.js');
+    const subcommand = commandArgs.find((arg) => !arg.startsWith('-'));
+
+    if (subcommand !== 'draft') {
+      const message = 'playbook learn: unsupported subcommand. Use "playbook learn draft".';
+      if (format === 'json') {
+        console.log(JSON.stringify({ schemaVersion: '1.0', command: 'learn-draft', error: message }, null, 2));
+      } else {
+        console.error(message);
+      }
+      return ExitCode.Failure;
+    }
+
+    const draftArgs = commandArgs.filter((arg, index) => {
+      if (index === 0 && arg === subcommand) {
+        return false;
+      }
+      return true;
+    });
+
+    return runLearnDraft(cwd, draftArgs, {
+      format,
+      quiet,
+      outFile: parseOptionValue(draftArgs, '--out'),
+      baseRef: parseOptionValue(draftArgs, '--base'),
+      diffContext: parseLearnDiffContext(draftArgs),
+      appendNotes: parseFlag(draftArgs, '--append-notes')
+    });
+  },
   rules: async ({ cwd, explain, format, quiet }) => {
     const { runRules } = await import('./rules.js');
     return runRules(cwd, { explain, format, quiet });
@@ -279,7 +318,8 @@ const commandOrder = [
   'ask',
   'deps',
   'query',
-  'session'
+  'session',
+  'learn'
 ] as const;
 
 const metadataByName = new Map(commandMetadata.map((command) => [command.name, command]));

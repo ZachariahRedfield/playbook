@@ -46,7 +46,8 @@
       "ask",
       "deps",
       "query",
-      "session"
+      "session",
+      "learn"
     ]
   }
 }
