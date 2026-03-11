@@ -124,25 +124,42 @@ describe('runQuery', () => {
     logSpy.mockRestore();
   });
 
-  it('fails risk query with deterministic corruption guidance when findings.json is invalid', async () => {
+  it('degrades risk query with deterministic corruption guidance when findings.json is invalid', async () => {
     const repo = createRepo('playbook-cli-query-risk-corrupt-artifact');
     writeRepoIndex(repo);
     fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.playbook', 'findings.json'), 'wrapper contamination\n{\n  "command": "verify"\n}', 'utf8');
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const exitCode = await runQuery(repo, ['risk', 'auth'], { format: 'text', quiet: false });
+    const exitCode = await runQuery(repo, ['risk', 'auth'], { format: 'json', quiet: false });
 
-    expect(exitCode).toBe(ExitCode.Failure);
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('invalid or corrupted JSON artifact')
-    );
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Regenerate artifacts with CLI-owned output flags')
-    );
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.type).toBe('risk');
+    expect(payload.signals.verifyFailures).toBe(0);
+    expect(payload.warnings[0]).toContain('optional artifact');
+    expect(payload.warnings[0]).toContain('Regenerate artifacts with CLI-owned output flags');
 
-    errorSpy.mockRestore();
+    logSpy.mockRestore();
   });
+
+  it('degrades risk query when plan.json contains UTF-16/BOM-like malformed content', async () => {
+    const repo = createRepo('playbook-cli-query-risk-corrupt-utf16');
+    writeRepoIndex(repo);
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbook', 'plan.json'), Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('{"command":"plan"}', 'utf16le')]));
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['risk', 'auth'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.warnings[0]).toContain('.playbook/plan.json');
+    expect(payload.warnings[0]).toContain('optional artifact');
+
+    logSpy.mockRestore();
+  });
+
 
   it('prints dependency query JSON output', async () => {
     const repo = createRepo('playbook-cli-query-dependencies');

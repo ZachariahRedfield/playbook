@@ -244,7 +244,10 @@ export const buildModuleContextDigests = (
         risk: {
           level: risk.riskLevel,
           score: risk.riskScore,
-          signals: [...risk.reasons]
+          signals: [
+            ...risk.reasons,
+            ...(risk.warnings ?? []).map((warning) => `warning: ${warning}`)
+          ]
         },
         graphNeighborhood: {
           nodeId,

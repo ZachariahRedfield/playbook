@@ -137,6 +137,8 @@ This keeps `pnpm playbook <command>` as the canonical invocation while letting o
 
 When `--repo` is set, runtime artifacts are written into the target repository under `.playbook/` (for example `repo-index.json`, `repo-graph.json`, `findings.json`, and `plan.json`).
 
+For machine-consumed JSON artifacts, use CLI-owned output flags (for example `--json --out ...`). Shell redirection is not a supported canonical artifact-generation path.
+
 ### External Repo Pilot
 
 Run the canonical external-repository analysis pipeline with one command:

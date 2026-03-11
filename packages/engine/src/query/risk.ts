@@ -53,7 +53,10 @@ const SCORE_WEIGHTS = {
 
 const HUB_DEPENDENTS_THRESHOLD = 3;
 
-const parseJsonArtifact = (absolutePath: string, consumer: string): Record<string, unknown> => {
+const invalidArtifactRecoveryHint =
+  'Regenerate artifacts with CLI-owned output flags (for example: "playbook verify --json --out .playbook/findings.json" and "playbook plan --json --out .playbook/plan.json").';
+
+const parseRequiredJsonArtifact = (absolutePath: string, consumer: string): Record<string, unknown> => {
   let raw = '';
   try {
     raw = fs.readFileSync(absolutePath, 'utf8');
@@ -66,9 +69,22 @@ const parseJsonArtifact = (absolutePath: string, consumer: string): Record<strin
     return JSON.parse(raw) as Record<string, unknown>;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `${consumer}: invalid or corrupted JSON artifact at ${absolutePath}. ${message}. Regenerate artifacts with CLI-owned output flags (for example: "playbook verify --json --out .playbook/findings.json" and "playbook plan --json --out .playbook/plan.json").`
-    );
+    throw new Error(`${consumer}: invalid or corrupted JSON artifact at ${absolutePath}. ${message}. ${invalidArtifactRecoveryHint}`);
+  }
+};
+
+const parseOptionalJsonArtifact = (
+  absolutePath: string,
+  consumer: string
+): { payload: Record<string, unknown> | null; warning?: string } => {
+  try {
+    return { payload: parseRequiredJsonArtifact(absolutePath, consumer) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      payload: null,
+      warning: `${consumer}: optional artifact at ${absolutePath} is unreadable or corrupted; risk verification signals were skipped. ${message}`
+    };
   }
 };
 
@@ -82,7 +98,7 @@ const readRepositoryIndex = (projectRoot: string): RepositoryIndex => {
     throw new Error('playbook query: missing repository index at .playbook/repo-index.json. Run "playbook index" first.');
   }
 
-  const parsed = parseJsonArtifact(indexPath, 'playbook query') as Partial<RepositoryIndex>;
+  const parsed = parseRequiredJsonArtifact(indexPath, 'playbook query') as Partial<RepositoryIndex>;
 
   if (parsed.schemaVersion !== '1.0') {
     throw new Error(
@@ -137,13 +153,24 @@ const computeTransitiveImpact = (moduleName: string, reverseGraph: Map<string, s
 };
 
 const readVerifyFailures = (projectRoot: string): { failures: VerifyFailure[]; warning?: string } => {
+  const warnings: string[] = [];
+
   for (const relativePath of VERIFY_ARTIFACT_RELATIVE_PATHS) {
     const absolutePath = path.join(projectRoot, relativePath);
     if (!fs.existsSync(absolutePath)) {
       continue;
     }
 
-    const payload = parseJsonArtifact(absolutePath, 'playbook query risk');
+    const parsedArtifact = parseOptionalJsonArtifact(absolutePath, 'playbook query risk');
+    if (parsedArtifact.warning) {
+      warnings.push(parsedArtifact.warning);
+      continue;
+    }
+
+    const payload = parsedArtifact.payload;
+    if (!payload) {
+      continue;
+    }
 
     const findings = Array.isArray(payload.failures)
       ? (payload.failures as VerifyFailure[])
@@ -151,7 +178,17 @@ const readVerifyFailures = (projectRoot: string): { failures: VerifyFailure[]; w
         ? (payload.findings as VerifyFailure[])
         : [];
 
-    return { failures: findings };
+    return {
+      failures: findings,
+      warning: warnings.length > 0 ? warnings.join(' ') : undefined
+    };
+  }
+
+  if (warnings.length > 0) {
+    return {
+      failures: [],
+      warning: warnings.join(' ')
+    };
   }
 
   return {

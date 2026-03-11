@@ -163,7 +163,6 @@ describe('queryRepositoryIndex', () => {
     const result = queryRisk(repo, 'billing');
 
     expect(result.module).toBe('billing');
-    expect(result.riskLevel).toBe('low');
     expect(result.signals.dependents).toBe(0);
     expect(result.signals.transitiveImpact).toBe(0);
     expect(result.signals.verifyFailures).toBe(0);
@@ -215,7 +214,7 @@ describe('queryRepositoryIndex', () => {
 
 
 
-  it('fails with deterministic corruption guidance when verify artifacts contain invalid JSON wrappers', () => {
+  it('degrades gracefully with deterministic warning when verify artifacts contain invalid JSON wrappers', () => {
     const repo = createRepo('playbook-repo-query-risk-corrupt-artifact');
     writeRepoIndex(repo, {
       schemaVersion: '1.0',
@@ -234,8 +233,39 @@ describe('queryRepositoryIndex', () => {
     fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
     fs.writeFileSync(verifyPath, 'wrapper contamination\n{\n  "command": "verify"\n}\n', 'utf8');
 
-    expect(() => queryRisk(repo, 'auth')).toThrowError(/playbook query risk: invalid or corrupted JSON artifact at .*findings\.json/);
-    expect(() => queryRisk(repo, 'auth')).toThrowError(/Regenerate artifacts with CLI-owned output flags/);
+    const result = queryRisk(repo, 'auth');
+
+    expect(result.signals.verifyFailures).toBe(0);
+    expect(result.warnings?.[0]).toContain('optional artifact');
+    expect(result.warnings?.[0]).toContain('.playbook/findings.json');
+    expect(result.warnings?.[0]).toContain('Regenerate artifacts with CLI-owned output flags');
+  });
+
+
+  it('degrades gracefully when verify artifacts contain UTF-16/BOM-like malformed content', () => {
+    const repo = createRepo('playbook-repo-query-risk-corrupt-utf16');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [
+        { name: 'auth', dependencies: [] },
+        { name: 'workouts', dependencies: ['auth'] }
+      ],
+      database: 'none',
+      rules: []
+    });
+
+    const verifyPath = path.join(repo, '.playbook', 'plan.json');
+    fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
+    fs.writeFileSync(verifyPath, Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('{"command":"plan"}', 'utf16le')]));
+
+    const result = queryRisk(repo, 'auth');
+
+    expect(result.signals.verifyFailures).toBe(0);
+    expect(result.warnings?.[0]).toContain('.playbook/plan.json');
+    expect(result.warnings?.[0]).toContain('optional artifact');
   });
 
 

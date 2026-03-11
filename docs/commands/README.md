@@ -286,6 +286,12 @@ Operator-friendly wrapper output is acceptable on stdout, but it must never leak
 Failure Mode — Opaque JSON Parse Crash
 When corrupted runtime artifacts are parsed without a guardrail, later commands fail far from the original write site, making the real bug harder to diagnose.
 
+Pattern — Artifact Consumers Treat Prior JSON as Untrusted Input
+Commands that consume prior runtime artifacts should treat those files as untrusted inputs and degrade gracefully when artifacts are missing or malformed.
+
+Failure Mode — Hidden Optional Artifact Dependency Crash
+A secondary command like index can fail because of a hidden dependency on stale or corrupted `.playbook/*.json` artifacts produced by an earlier workflow step.
+
 `.playbookignore` support is available for repository intelligence scans (`pnpm playbook index` and related repository scans). The file uses `.gitignore`-style syntax and should be used to exclude high-churn directories (for example `node_modules`, `dist`, `build`, `coverage`, `.next`, and `.playbook/cache`).
 
 

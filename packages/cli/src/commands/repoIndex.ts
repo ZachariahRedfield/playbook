@@ -32,7 +32,8 @@ const writeRepositoryIndex = (cwd: string): { indexPath: string; result: IndexRe
   fs.mkdirSync(path.dirname(indexPath), { recursive: true });
   fs.writeFileSync(indexPath, `${JSON.stringify(index, null, 2)}\n`, 'utf8');
   fs.writeFileSync(graphPath, `${JSON.stringify(graph, null, 2)}\n`, 'utf8');
-  writeModuleContextDigests(cwd, buildModuleContextDigests(cwd, index, graph));
+  const moduleDigests = buildModuleContextDigests(cwd, index, graph);
+  writeModuleContextDigests(cwd, moduleDigests);
   generateCompactionCandidateArtifact({ repoRoot: cwd, index, graph });
 
   return {
