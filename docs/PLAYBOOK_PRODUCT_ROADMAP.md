@@ -249,6 +249,22 @@ When bare commands, npx flows, and direct internal entrypoints are all shown as 
 Failure Mode — External-Repo Coupling
 A repo-intelligence system that only works when executed inside its own repo context is not yet a true external runtime.
 
+
+Rule — Optimize for Measurable Coverage, Not Imagined Completeness
+A repo-intelligence system should report how much of a repository was analyzable, analyzed, skipped, and unknown instead of claiming total understanding.
+
+Pattern — Versioned Runtime Observability
+A durable analysis system should store current state, immutable per-cycle snapshots, and compact history rollups so it can reason about both repo state and its own behavior over time.
+
+Pattern — Observation / Interpretation Split
+Observed facts and derived inferences must be stored separately so analyzer upgrades can be distinguished from repository changes.
+
+Failure Mode — Artifact Heap Without Runtime Model
+If `.playbook/` only accumulates outputs without cycle boundaries, coverage accounting, and telemetry, the system cannot learn, explain drift, or optimize itself reliably.
+
+Failure Mode — False 100 Percent Analysis
+If Playbook reports strong conclusions without modeling blind spots, skipped files, unsupported areas, and confidence boundaries, users will overtrust incomplete analysis.
+
 ## Next defining capabilities for reasoning-engine maturity
 
 ### Meta-Playbook introspection

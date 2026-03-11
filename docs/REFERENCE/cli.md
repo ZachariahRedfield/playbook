@@ -29,3 +29,17 @@ Structured domains such as `risk`, `impact`, `docs-coverage`, `rule-owners`, and
 - `--json`: alias for `--format=json`
 - `--quiet`: suppress success output in text mode
 - `--explain`: include rationale/remediation context in text mode where supported
+
+
+## Runtime observability contract
+
+Every top-level Playbook command now emits deterministic runtime observability artifacts under the target repository:
+
+- `.playbook/runtime/current/coverage.json`
+- `.playbook/runtime/current/telemetry.json`
+- `.playbook/runtime/cycles/<cycle_id>/manifest.json`
+- `.playbook/runtime/history/command-stats.json`
+- `.playbook/runtime/history/coverage-trend.json`
+- `.playbook/runtime/history/analyzer-version-history.json`
+
+This contract intentionally optimizes for measurable coverage accounting (analyzable, scanned, skipped, unsupported, unknown) rather than implied completeness claims. Coverage artifacts separate **observations** (measured facts) from **interpretations** (derived inferences) so analyzer upgrades can be distinguished from repository changes.

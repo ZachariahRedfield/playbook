@@ -2,6 +2,7 @@
 import { ExitCode } from './lib/cliContract.js';
 import { hasRegisteredCommand, listRegisteredCommands, runRegisteredCommand } from './commands/index.js';
 import { resolveTargetRepoRoot, stripGlobalRepoOption } from './lib/repoRoot.js';
+import { beginRuntimeCycle, endRuntimeCycle } from './lib/runtimeObservability.js';
 
 const rawArgs = process.argv.slice(2);
 
@@ -81,17 +82,41 @@ const run = async () => {
     process.exit(ExitCode.Failure);
   }
 
-  const exitCode = await runRegisteredCommand(command, {
-    cwd: targetCwd,
-    args,
-    commandArgs,
-    ci,
-    explain,
-    format,
-    quiet
+  const playbookVersion = '0.1.1';
+  const cycle = beginRuntimeCycle({
+    repoRoot: targetCwd,
+    triggerCommand: command,
+    childCommands: [],
+    playbookVersion
   });
 
-  process.exit(exitCode);
+  const startedAt = Date.now();
+
+  try {
+    const exitCode = await runRegisteredCommand(command, {
+      cwd: targetCwd,
+      args,
+      commandArgs,
+      ci,
+      explain,
+      format,
+      quiet
+    });
+
+    endRuntimeCycle(cycle, {
+      exitCode,
+      durationMs: Date.now() - startedAt
+    });
+    process.exit(exitCode);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    endRuntimeCycle(cycle, {
+      exitCode: ExitCode.Failure,
+      durationMs: Date.now() - startedAt,
+      error: message
+    });
+    throw error;
+  }
 };
 
 void run();
