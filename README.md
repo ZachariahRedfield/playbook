@@ -137,6 +137,27 @@ This keeps `pnpm playbook <command>` as the canonical invocation while letting o
 
 When `--repo` is set, runtime artifacts are written into the target repository under `.playbook/` (for example `repo-index.json`, `repo-graph.json`, `findings.json`, and `plan.json`).
 
+### External Repo Pilot
+
+Run the canonical external-repository analysis pipeline with one command:
+
+```bash
+pnpm pilot "C:\Users\zjhre\dev\FawxzzyFitness"
+```
+
+The pilot runner executes `context -> index -> query modules -> verify -> plan` and writes deterministic artifacts into the target repository:
+
+- `.playbook/repo-index.json`
+- `.playbook/repo-graph.json`
+- `.playbook/findings.json`
+- `.playbook/plan.json`
+
+Rule — External Repo Analysis Should Be One Command.
+
+Pattern — CLI Playbook Workflow Runner.
+
+Failure Mode — Operator Command Drift.
+
 External onboarding contract (minimal):
 
 - `playbook.config.json` is optional; missing config is not a failure and Playbook runs with defaults.
