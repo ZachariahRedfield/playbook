@@ -265,6 +265,21 @@ If `.playbook/` only accumulates outputs without cycle boundaries, coverage acco
 Failure Mode — False 100 Percent Analysis
 If Playbook reports strong conclusions without modeling blind spots, skipped files, unsupported areas, and confidence boundaries, users will overtrust incomplete analysis.
 
+Rule — Scores Must Not Hide Blind Spots
+Coverage metrics must expose what was excluded, unsupported, ignored, or unresolved so high scores do not create false confidence.
+
+Pattern — Optimization-Ready Telemetry
+Runtime telemetry should summarize the phases, fallbacks, reads/writes, and path classes that matter for deterministic optimization rather than logging raw event noise.
+
+Pattern — Scan Waste Classification
+Expensive or low-value scan paths become actionable only when the system classifies them into deterministic categories such as build-cache, vcs-internal, generated-report, or temporary-file.
+
+Failure Mode — Pretty Score, False Confidence
+If coverage appears near-perfect while blind spots remain large, the system will overstate repo understanding and mislead future learning layers.
+
+Failure Mode — Telemetry Too Thin to Optimize
+If telemetry only records top-level command calls, the system cannot meaningfully optimize scan strategy, cache behavior, or internal execution flow.
+
 ## Next defining capabilities for reasoning-engine maturity
 
 ### Meta-Playbook introspection

@@ -29,8 +29,10 @@ describe('runtime observability artifacts', () => {
       eligible_files: number;
       scanned_files: number;
       unresolved_imports: number;
-      coverage_score: number;
-      coverage_score_components: { numerator_scanned_files: number; denominator_eligible_files: number };
+      eligible_scan_coverage_score: number;
+      repo_visibility_score: number;
+      blind_spot_ratio: number;
+      score_components: { numerator_scanned_files: number; denominator_eligible_files: number };
       observations: { file_inventory: { total_files_seen: number; sampled_file_hashes: Array<{ path: string; sha256: string }> } };
       interpretations: { framework_inference: string };
     };
@@ -44,9 +46,11 @@ describe('runtime observability artifacts', () => {
     expect(coverage.eligible_files).toBeGreaterThan(0);
     expect(coverage.scanned_files).toBeGreaterThan(0);
     expect(coverage.unresolved_imports).toBeGreaterThan(0);
-    expect(coverage.coverage_score).toBeGreaterThan(0);
-    expect(coverage.coverage_score_components.numerator_scanned_files).toBe(coverage.scanned_files);
-    expect(coverage.coverage_score_components.denominator_eligible_files).toBeGreaterThan(0);
+    expect(coverage.eligible_scan_coverage_score).toBeGreaterThan(0);
+    expect(coverage.repo_visibility_score).toBeGreaterThan(0);
+    expect(coverage.blind_spot_ratio).toBeGreaterThanOrEqual(0);
+    expect(coverage.score_components.numerator_scanned_files).toBe(coverage.scanned_files);
+    expect(coverage.score_components.denominator_eligible_files).toBeGreaterThan(0);
     expect(coverage.observations.file_inventory.total_files_seen).toBeGreaterThan(0);
     expect(coverage.observations.file_inventory.sampled_file_hashes.length).toBeGreaterThan(0);
     expect(coverage.interpretations.framework_inference).toBe('node');
@@ -78,7 +82,7 @@ describe('runtime observability artifacts', () => {
       commands: { index: { runs: number } };
     };
     const coverageTrend = JSON.parse(fs.readFileSync(coverageTrendPath, 'utf8')) as {
-      entries: Array<{ cycle_id: string; coverage_score: number }>;
+      entries: Array<{ cycle_id: string; eligible_scan_coverage_score: number; repo_visibility_score: number; blind_spot_ratio: number }>;
     };
     const analyzerHistory = JSON.parse(fs.readFileSync(analyzerHistoryPath, 'utf8')) as Array<{ runs: number; analyzer_contract_version: string }>;
 
