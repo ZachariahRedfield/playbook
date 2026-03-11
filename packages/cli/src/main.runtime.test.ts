@@ -29,8 +29,10 @@ describe('runtime observability artifacts', () => {
       eligible_files: number;
       scanned_files: number;
       unresolved_imports: number;
-      coverage_score: number;
-      coverage_score_components: { numerator_scanned_files: number; denominator_eligible_files: number };
+      eligible_scan_coverage_score: number;
+      repo_visibility_score: number;
+      blind_spot_ratio: number;
+      score_components: { numerator_scanned_files: number; denominator_eligible_files: number };
       observations: { file_inventory: { total_files_seen: number; sampled_file_hashes: Array<{ path: string; sha256: string }> } };
       interpretations: { framework_inference: string };
     };
@@ -44,9 +46,11 @@ describe('runtime observability artifacts', () => {
     expect(coverage.eligible_files).toBeGreaterThan(0);
     expect(coverage.scanned_files).toBeGreaterThan(0);
     expect(coverage.unresolved_imports).toBeGreaterThan(0);
-    expect(coverage.coverage_score).toBeGreaterThan(0);
-    expect(coverage.coverage_score_components.numerator_scanned_files).toBe(coverage.scanned_files);
-    expect(coverage.coverage_score_components.denominator_eligible_files).toBeGreaterThan(0);
+    expect(coverage.eligible_scan_coverage_score).toBeGreaterThan(0);
+    expect(coverage.repo_visibility_score).toBeGreaterThan(0);
+    expect(coverage.blind_spot_ratio).toBeGreaterThanOrEqual(0);
+    expect(coverage.score_components.numerator_scanned_files).toBe(coverage.scanned_files);
+    expect(coverage.score_components.denominator_eligible_files).toBeGreaterThan(0);
     expect(coverage.observations.file_inventory.total_files_seen).toBeGreaterThan(0);
     expect(coverage.observations.file_inventory.sampled_file_hashes.length).toBeGreaterThan(0);
     expect(coverage.interpretations.framework_inference).toBe('node');
@@ -78,7 +82,7 @@ describe('runtime observability artifacts', () => {
       commands: { index: { runs: number } };
     };
     const coverageTrend = JSON.parse(fs.readFileSync(coverageTrendPath, 'utf8')) as {
-      entries: Array<{ cycle_id: string; coverage_score: number }>;
+      entries: Array<{ cycle_id: string; eligible_scan_coverage_score: number; repo_visibility_score: number; blind_spot_ratio: number }>;
     };
     const analyzerHistory = JSON.parse(fs.readFileSync(analyzerHistoryPath, 'utf8')) as Array<{ runs: number; analyzer_contract_version: string }>;
 
@@ -87,6 +91,7 @@ describe('runtime observability artifacts', () => {
     expect(analyzerHistory.find((entry) => entry.analyzer_contract_version === '1.0')?.runs).toBeGreaterThanOrEqual(2);
   });
 
+<<<<<<< HEAD
   it('records pilot as one top-level cycle with child phases', () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-pilot-runtime-'));
     const targetRepo = path.join(tempRoot, 'pilot-target');
@@ -198,5 +203,34 @@ describe('runtime observability artifacts', () => {
       expect.arrayContaining(['.git/', '.next/cache/', 'playwright-report/', 'tmp_file.txt'])
     );
     expect(coverage.observations.file_inventory.path_class_counts.unknown).toBeGreaterThan(0);
+=======
+
+  it('writes runtime artifacts under pilot --repo target when repo is passed as command option', () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-pilot-runtime-'));
+    const targetRepo = path.join(tempRoot, 'pilot-target');
+    fs.mkdirSync(path.join(targetRepo, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(targetRepo, 'package.json'), JSON.stringify({ name: 'pilot-target', version: '0.0.1' }, null, 2), 'utf8');
+    fs.writeFileSync(path.join(targetRepo, 'src', 'index.ts'), `export const ok = true;\n`, 'utf8');
+
+    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
+
+    execFileSync('node', [scriptPath, 'pilot', '--repo', targetRepo, '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+
+    const runtimeRoot = path.join(targetRepo, '.playbook', 'runtime');
+    const telemetryPath = path.join(runtimeRoot, 'current', 'telemetry.json');
+    const coveragePath = path.join(runtimeRoot, 'current', 'coverage.json');
+
+    const telemetry = JSON.parse(fs.readFileSync(telemetryPath, 'utf8')) as {
+      trigger_command: string;
+      command_call_count_by_command: Record<string, number>;
+    };
+
+    expect(() => JSON.parse(fs.readFileSync(coveragePath, 'utf8'))).not.toThrow();
+    expect(telemetry.trigger_command).toBe('pilot');
+    expect(telemetry.command_call_count_by_command.pilot).toBe(1);
+>>>>>>> e7e6212fdfca535a8bea181c1e417bbc752efb88
   });
 });

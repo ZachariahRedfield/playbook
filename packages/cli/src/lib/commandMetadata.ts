@@ -213,6 +213,21 @@ export const commandMetadata: CommandMetadata[] = [
     exampleArgs: 'ai-contract --json',
     machineReadable: true
   },
+
+  {
+    name: 'pilot',
+    description: 'Run one-command external baseline analysis workflow for a target repository',
+    category: 'Repository tools',
+    role: 'bootstrap',
+    lifecycle: 'canonical',
+    discoverability: 'primary',
+    onboardingPriority: 11,
+    canonicalSequence: 11,
+    productFacing: true,
+    exampleArgs: 'pilot --repo ../target-repo --json',
+    machineReadable: true
+  },
+
   {
     name: 'contracts',
     description: 'Emit deterministic contract registry for schemas, artifacts, and roadmap status',

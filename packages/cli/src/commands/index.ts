@@ -184,6 +184,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
       quiet
     });
   },
+  pilot: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runPilot } = await import('./pilot.js');
+    return runPilot(cwd, commandArgs, { format, quiet });
+  },
   explain: async ({ cwd, commandArgs, format, quiet }) => {
     const { runExplain } = await import('./explain.js');
     return runExplain(cwd, commandArgs, { format, quiet });
@@ -265,6 +269,7 @@ const commandOrder = [
   'ai-context',
   'ai-contract',
   'contracts',
+  'pilot',
   'docs',
   'audit',
   'schema',

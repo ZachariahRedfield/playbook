@@ -4,7 +4,11 @@
 
 ### Added
 
+<<<<<<< HEAD
 - WHAT: Added first-class `pnpm playbook pilot --repo "<target-repo-path>"` orchestration that deterministically runs `context -> index -> query modules -> verify -> plan`, writes `.playbook/findings.json` and `.playbook/plan.json` directly, emits `.playbook/pilot-summary.json`, and records one top-level runtime cycle with child phases. WHY: Converts a repeated external multi-command baseline workflow into one canonical command to reduce operator drift and prevent helper scripts from becoming shadow product surface.
+=======
+- WHAT: Refined runtime observability coverage/telemetry contracts with explicit blind-spot accounting (`total_files_seen`, `oversized_files`, `parse_failed_files`), transparent scoring (`eligible_scan_coverage_score`, `repo_visibility_score`, `blind_spot_ratio`), deterministic expensive-path classification, and optimization-ready cycle telemetry summaries (phase counts, reads/writes, fallbacks, category counts). WHY: Prevents false-confidence near-100% scores and creates structured scan-waste signals for future `.playbookignore` recommendation workflows.
+>>>>>>> e7e6212fdfca535a8bea181c1e417bbc752efb88
 
 - WHAT: Added first-class deterministic JSON artifact emission via `--out` for JSON-producing commands (`verify`, `plan`, `index`, `query`) using shared UTF-8 writer semantics (parent-directory creation, deterministic newline boundaries, and explicit write failures), plus external `--repo` regression coverage. WHY: Prevents shell-redirection corruption from wrapper/banner leakage and encoding drift in machine-consumed artifacts.
 

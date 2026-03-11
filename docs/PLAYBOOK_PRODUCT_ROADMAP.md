@@ -204,13 +204,22 @@ Current slice establishes:
 - coexistence-first migration policy for external pilot rollout
 - legacy Playbook inventory framework (`KEEP_TEMPORARILY`, `REPLACE_WITH_NEW_PLAYBOOK`, `INVESTIGATE_USAGE`, `REMOVE_AFTER_PARITY`)
 - phased removal strategy (`Coexistence -> Capability Mapping -> Parity Validation -> Controlled Removal`)
+<<<<<<< HEAD
 - pilot execution contract centered on `pnpm playbook pilot --repo <path>` for first external baseline analysis
 - first-class external repository targeting via global `--repo <path>` and command-local `playbook pilot --repo <path>` on canonical command surface
+=======
+- pilot execution contract upgraded to one-command baseline onboarding via `pnpm playbook pilot --repo <path>`
+- first-class external repository targeting via global `--repo <path>` on canonical command surface
+>>>>>>> e7e6212fdfca535a8bea181c1e417bbc752efb88
 - deterministic artifact generation in external repositories under `<target>/.playbook/`
 - coexistence-first pilot execution without legacy removal in the target repository
 - fixture-based coverage for external runtime behavior and positional parsing (`--repo <fixture> query modules --json`)
 - independent external pilot validation confirms runtime targeting works beyond the Playbook repository (FawxzzyFitness and Nat1-Games)
+<<<<<<< HEAD
 - deterministic machine-written JSON artifact output for machine-consumed findings/plan flows (`--json --out`) and direct pilot-owned artifact writes (`.playbook/findings.json`, `.playbook/plan.json`)
+=======
+- deterministic pilot-owned machine-written JSON artifacts for machine-consumed findings/plan flows (`.playbook/findings.json` and `.playbook/plan.json`)
+>>>>>>> e7e6212fdfca535a8bea181c1e417bbc752efb88
 - deterministic invalid-artifact read guardrails for risk/query flows, including explicit corruption errors and CLI-owned regeneration guidance
 - next hardening slice converts pilot success into a generic onboarding contract (optional `playbook.config.json`, optional `.playbookignore`, and Playbook-owned `.playbook/` runtime state)
 
@@ -264,6 +273,21 @@ If `.playbook/` only accumulates outputs without cycle boundaries, coverage acco
 
 Failure Mode â€” False 100 Percent Analysis
 If Playbook reports strong conclusions without modeling blind spots, skipped files, unsupported areas, and confidence boundaries, users will overtrust incomplete analysis.
+
+Rule — Scores Must Not Hide Blind Spots
+Coverage metrics must expose what was excluded, unsupported, ignored, or unresolved so high scores do not create false confidence.
+
+Pattern — Optimization-Ready Telemetry
+Runtime telemetry should summarize the phases, fallbacks, reads/writes, and path classes that matter for deterministic optimization rather than logging raw event noise.
+
+Pattern — Scan Waste Classification
+Expensive or low-value scan paths become actionable only when the system classifies them into deterministic categories such as build-cache, vcs-internal, generated-report, or temporary-file.
+
+Failure Mode — Pretty Score, False Confidence
+If coverage appears near-perfect while blind spots remain large, the system will overstate repo understanding and mislead future learning layers.
+
+Failure Mode — Telemetry Too Thin to Optimize
+If telemetry only records top-level command calls, the system cannot meaningfully optimize scan strategy, cache behavior, or internal execution flow.
 
 ## Next defining capabilities for reasoning-engine maturity
 

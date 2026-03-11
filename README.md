@@ -147,18 +147,29 @@ pnpm playbook pilot --repo "C:\Users\zjhre\dev\FawxzzyFitness"
 Optional convenience alias:
 
 ```bash
+pnpm playbook pilot --repo "C:\Users\zjhre\dev\FawxzzyFitness"
+```
+
+Optional convenience alias:
+
+```bash
 pnpm pilot "C:\Users\zjhre\dev\FawxzzyFitness"
 ```
 
+<<<<<<< HEAD
 `playbook pilot` executes one deterministic baseline cycle (`context -> index -> query modules -> verify -> plan`), writes machine-readable artifacts directly, records one top-level runtime cycle with child phases, and emits a compact final summary.
 
 Artifacts written in the target repository:
+=======
+The canonical pilot command executes `context -> index -> query modules -> verify -> plan` as one deterministic top-level cycle and writes machine-readable artifacts into the target repository:
+>>>>>>> e7e6212fdfca535a8bea181c1e417bbc752efb88
 
 - `.playbook/repo-index.json`
 - `.playbook/repo-graph.json`
 - `.playbook/findings.json`
 - `.playbook/plan.json`
 - `.playbook/pilot-summary.json`
+<<<<<<< HEAD
 - `.playbook/runtime/current/*`
 - `.playbook/runtime/cycles/*`
 - `.playbook/runtime/history/*`
@@ -170,6 +181,16 @@ Pattern - Orchestrated Baseline Analysis.
 Failure Mode - Manual Workflow Drift.
 
 Failure Mode - Helper Script Becomes Shadow Product Surface.
+=======
+
+Rule — Repeated Multi-Step Operator Flows Deserve a First-Class Command.
+
+Pattern — Orchestrated Baseline Analysis.
+
+Failure Mode — Manual Workflow Drift.
+
+Failure Mode — Helper Script Becomes Shadow Product Surface.
+>>>>>>> e7e6212fdfca535a8bea181c1e417bbc752efb88
 
 External onboarding contract (minimal):
 

@@ -32,6 +32,7 @@ Do not hand-edit entries inside the managed markers.
 | `context` | Print deterministic CLI and architecture context for tools and agents | canonical | bootstrap | primary | 3 | Current (implemented) | `pnpm playbook context --json` |
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | canonical | bootstrap | primary | 1 | Current (implemented) | `pnpm playbook ai-context --json` |
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | canonical | bootstrap | primary | 2 | Current (implemented) | `pnpm playbook ai-contract --json` |
+| `pilot` | Run one-command external baseline analysis workflow for a target repository | canonical | bootstrap | primary | 11 | Current (implemented) | `pnpm playbook pilot --repo ../target-repo --json` |
 | `contracts` | Emit deterministic contract registry for schemas, artifacts, and roadmap status | utility | utility | secondary | — | Current (implemented) | `pnpm playbook contracts --json` |
 | `index` | Generate machine-readable repository intelligence index | canonical | repo-intelligence | primary | 4 | Current (implemented) | `pnpm playbook index --json` |
 | `graph` | Summarize machine-readable repository knowledge graph from .playbook/repo-graph.json | canonical | repo-intelligence | secondary | — | Current (implemented) | `pnpm playbook graph --json` |
@@ -60,7 +61,11 @@ Optional convenience alias:
 pnpm pilot "$TARGET_REPO_PATH"
 ```
 
+<<<<<<< HEAD
 `playbook pilot` deterministically executes `context -> index -> query modules -> verify -> plan`, writes machine-readable artifacts directly (`.playbook/findings.json`, `.playbook/plan.json`, `.playbook/pilot-summary.json`), and records one top-level runtime cycle with child phases.
+=======
+Pilot deterministically executes `context -> index -> query modules -> verify -> plan`, writes `.playbook/findings.json` and `.playbook/plan.json` directly, and emits `.playbook/pilot-summary.json` with compact onboarding telemetry.
+>>>>>>> e7e6212fdfca535a8bea181c1e417bbc752efb88
 
 Minimal external onboarding contract:
 
