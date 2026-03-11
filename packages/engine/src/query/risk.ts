@@ -42,7 +42,7 @@ type VerifyFailure = {
 };
 
 const INDEX_RELATIVE_PATH = '.playbook/repo-index.json' as const;
-const VERIFY_ARTIFACT_RELATIVE_PATHS = ['.playbook/verify-report.json', '.playbook/verify.json', '.playbook/plan.json'] as const;
+const VERIFY_ARTIFACT_RELATIVE_PATHS = ['.playbook/verify-report.json', '.playbook/verify.json', '.playbook/findings.json', '.playbook/plan.json'] as const;
 
 const SCORE_WEIGHTS = {
   fanIn: 0.35,
@@ -52,6 +52,41 @@ const SCORE_WEIGHTS = {
 } as const;
 
 const HUB_DEPENDENTS_THRESHOLD = 3;
+
+const invalidArtifactRecoveryHint =
+  'Regenerate artifacts with CLI-owned output flags (for example: "playbook verify --json --out .playbook/findings.json" and "playbook plan --json --out .playbook/plan.json").';
+
+const parseRequiredJsonArtifact = (absolutePath: string, consumer: string): Record<string, unknown> => {
+  let raw = '';
+  try {
+    raw = fs.readFileSync(absolutePath, 'utf8');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${consumer}: unable to read JSON artifact at ${absolutePath}: ${message}`);
+  }
+
+  try {
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${consumer}: invalid or corrupted JSON artifact at ${absolutePath}. ${message}. ${invalidArtifactRecoveryHint}`);
+  }
+};
+
+const parseOptionalJsonArtifact = (
+  absolutePath: string,
+  consumer: string
+): { payload: Record<string, unknown> | null; warning?: string } => {
+  try {
+    return { payload: parseRequiredJsonArtifact(absolutePath, consumer) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      payload: null,
+      warning: `${consumer}: optional artifact at ${absolutePath} is unreadable or corrupted; risk verification signals were skipped. ${message}`
+    };
+  }
+};
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
@@ -63,8 +98,7 @@ const readRepositoryIndex = (projectRoot: string): RepositoryIndex => {
     throw new Error('playbook query: missing repository index at .playbook/repo-index.json. Run "playbook index" first.');
   }
 
-  const raw = fs.readFileSync(indexPath, 'utf8');
-  const parsed = JSON.parse(raw) as Partial<RepositoryIndex>;
+  const parsed = parseRequiredJsonArtifact(indexPath, 'playbook query') as Partial<RepositoryIndex>;
 
   if (parsed.schemaVersion !== '1.0') {
     throw new Error(
@@ -119,14 +153,24 @@ const computeTransitiveImpact = (moduleName: string, reverseGraph: Map<string, s
 };
 
 const readVerifyFailures = (projectRoot: string): { failures: VerifyFailure[]; warning?: string } => {
+  const warnings: string[] = [];
+
   for (const relativePath of VERIFY_ARTIFACT_RELATIVE_PATHS) {
     const absolutePath = path.join(projectRoot, relativePath);
     if (!fs.existsSync(absolutePath)) {
       continue;
     }
 
-    const raw = fs.readFileSync(absolutePath, 'utf8');
-    const payload = JSON.parse(raw) as Record<string, unknown>;
+    const parsedArtifact = parseOptionalJsonArtifact(absolutePath, 'playbook query risk');
+    if (parsedArtifact.warning) {
+      warnings.push(parsedArtifact.warning);
+      continue;
+    }
+
+    const payload = parsedArtifact.payload;
+    if (!payload) {
+      continue;
+    }
 
     const findings = Array.isArray(payload.failures)
       ? (payload.failures as VerifyFailure[])
@@ -134,13 +178,23 @@ const readVerifyFailures = (projectRoot: string): { failures: VerifyFailure[]; w
         ? (payload.findings as VerifyFailure[])
         : [];
 
-    return { failures: findings };
+    return {
+      failures: findings,
+      warning: warnings.length > 0 ? warnings.join(' ') : undefined
+    };
+  }
+
+  if (warnings.length > 0) {
+    return {
+      failures: [],
+      warning: warnings.join(' ')
+    };
   }
 
   return {
     failures: [],
     warning:
-      'Verify failure signal unavailable; no .playbook/verify-report.json, .playbook/verify.json, or .playbook/plan.json verify payload found.'
+      'Verify failure signal unavailable; no .playbook/verify-report.json, .playbook/verify.json, .playbook/findings.json, or .playbook/plan.json verify payload found.'
   };
 };
 

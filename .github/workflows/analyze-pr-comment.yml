@@ -54,8 +54,8 @@ jobs:
         shell: bash
         run: |
           node packages/cli/dist/main.js index --json
-          node packages/cli/dist/main.js analyze-pr --base "origin/${{ github.base_ref }}" --format github-comment > .playbook/analyze-pr-comment.md
-          node packages/cli/dist/main.js analyze-pr --base "origin/${{ github.base_ref }}" --format github-review > .playbook/analyze-pr-review.json
+          node -e "const fs=require('node:fs'); const cp=require('node:child_process'); const out=cp.execFileSync('node',['packages/cli/dist/main.js','analyze-pr','--base','origin/${{ github.base_ref }}','--format','github-comment'],{encoding:'utf8'}); fs.mkdirSync('.playbook',{recursive:true}); fs.writeFileSync('.playbook/analyze-pr-comment.md', out, 'utf8');"
+          node -e "const fs=require('node:fs'); const cp=require('node:child_process'); const out=cp.execFileSync('node',['packages/cli/dist/main.js','analyze-pr','--base','origin/${{ github.base_ref }}','--format','github-review'],{encoding:'utf8'}); fs.mkdirSync('.playbook',{recursive:true}); fs.writeFileSync('.playbook/analyze-pr-review.json', out, 'utf8');"
 
       - name: Post sticky Playbook PR comment
         if: github.event.pull_request.head.repo.full_name == github.repository

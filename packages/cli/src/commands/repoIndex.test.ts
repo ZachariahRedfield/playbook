@@ -47,6 +47,53 @@ describe('runIndex', () => {
 
     logSpy.mockRestore();
   });
+
+
+  it('continues index generation when optional verify artifacts are malformed and reports deterministic warnings', async () => {
+    const repo = createRepo('playbook-cli-index-corrupt-optional-artifacts');
+    fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({}, null, 2));
+    fs.mkdirSync(path.join(repo, 'src', 'features', 'auth'), { recursive: true });
+    fs.mkdirSync(path.join(repo, 'src', 'features', 'workouts'), { recursive: true });
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbook', 'findings.json'), 'wrapper contamination\n{\n  "command": "verify"\n}\n', 'utf8');
+    fs.writeFileSync(path.join(repo, '.playbook', 'plan.json'), Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('{"command":"plan"}', 'utf16le')]));
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runIndex(repo, { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('index');
+    expect(payload.ok).toBe(true);
+    const contextFile = path.join(repo, '.playbook', 'context', 'modules', 'auth.json');
+    expect(fs.existsSync(contextFile)).toBe(true);
+    const contextPayload = JSON.parse(fs.readFileSync(contextFile, 'utf8'));
+    expect(Array.isArray(contextPayload.risk.signals)).toBe(true);
+    expect(contextPayload.risk.signals.some((signal: string) => signal.includes('warning: playbook query risk: optional artifact'))).toBe(true);
+
+    logSpy.mockRestore();
+  });
+
+
+  it('writes deterministic command JSON output with --out', async () => {
+    const repo = createRepo('playbook-cli-index-out');
+    fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({}, null, 2));
+    fs.mkdirSync(path.join(repo, 'src', 'features'), { recursive: true });
+
+    const outPath = path.join(repo, '.playbook', 'index-command-output.json');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runIndex(repo, { format: 'json', quiet: false, outFile: outPath });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const stdoutPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    const artifactPayload = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    expect(artifactPayload).toEqual(stdoutPayload);
+
+    logSpy.mockRestore();
+  });
+
 });
 
 describe('command registry', () => {

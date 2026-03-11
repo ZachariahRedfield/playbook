@@ -271,10 +271,10 @@ Rule: Generated runtime artifacts should be gitignored unless intentionally comm
 Rule: Playbook remains local/private-first by default.
 Failure Mode: Recommitting regenerated artifacts on every run causes unnecessary repo-history growth and noisy diffs.
 
-Rule — Machine-Consumed Artifacts Need First-Class Output Paths
+Rule — Machine-Consumed Artifacts Must Be CLI-Written
 If a CLI expects downstream commands to read generated JSON artifacts, those artifacts must be written by the CLI itself rather than relying on shell redirection.
 
-Pattern — Deterministic Artifact Emission
+Pattern — First-Class Artifact Emission
 Structured runtime artifacts should be emitted through explicit flags with controlled encoding, directory creation, and content boundaries.
 
 Failure Mode — Shell Redirection Artifact Corruption
@@ -282,6 +282,15 @@ When JSON artifacts are captured through script wrappers and shell redirection, 
 
 Failure Mode — Human-Readable Wrapper Leakage
 Operator-friendly wrapper output is acceptable on stdout, but it must never leak into persisted JSON artifacts that are intended for later programmatic reads.
+
+Failure Mode — Opaque JSON Parse Crash
+When corrupted runtime artifacts are parsed without a guardrail, later commands fail far from the original write site, making the real bug harder to diagnose.
+
+Pattern — Artifact Consumers Treat Prior JSON as Untrusted Input
+Commands that consume prior runtime artifacts should treat those files as untrusted inputs and degrade gracefully when artifacts are missing or malformed.
+
+Failure Mode — Hidden Optional Artifact Dependency Crash
+A secondary command like index can fail because of a hidden dependency on stale or corrupted `.playbook/*.json` artifacts produced by an earlier workflow step.
 
 `.playbookignore` support is available for repository intelligence scans (`pnpm playbook index` and related repository scans). The file uses `.gitignore`-style syntax and should be used to exclude high-churn directories (for example `node_modules`, `dist`, `build`, `coverage`, `.next`, and `.playbook/cache`).
 

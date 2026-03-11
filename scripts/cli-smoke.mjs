@@ -11,7 +11,7 @@ if (!fs.existsSync(cliPath)) {
   throw new Error('cli-smoke failed: missing packages/cli/dist/main.js. Run "pnpm build" first.');
 }
 
-const runCommand = ({ args, cwd, artifactFile, allowedExitCodes = [0] }) => {
+const runCommand = ({ args, cwd, artifactFile, allowedExitCodes = [0], useCliOut = false }) => {
   const result = spawnSync(nodeBin, [cliPath, ...args], {
     cwd,
     encoding: 'utf8',
@@ -27,7 +27,14 @@ const runCommand = ({ args, cwd, artifactFile, allowedExitCodes = [0] }) => {
   const stderr = result.stderr ?? '';
 
   if (artifactFile) {
-    fs.writeFileSync(path.join(cwd, artifactFile), stdout, 'utf8');
+    const target = path.join(cwd, artifactFile);
+    if (useCliOut) {
+      if (!fs.existsSync(target)) {
+        throw new Error(`cli-smoke failed: expected CLI --out artifact at ${artifactFile}`);
+      }
+    } else {
+      fs.writeFileSync(target, stdout, 'utf8');
+    }
   }
 
   if (!allowedExitCodes.includes(status)) {
@@ -65,12 +72,12 @@ try {
   runCommand({ args: ['rules', '--json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/rules.json' });
   runCommand({ args: ['explain', 'PB001', '--json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/explain-rule.json' });
   runCommand({ args: ['explain', 'architecture', '--json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/explain-architecture.json' });
-  runCommand({ args: ['verify', '--json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/verify.json', allowedExitCodes: [0, 3] });
-  runCommand({ args: ['plan', '--json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/plan.json' });
+  runCommand({ args: ['verify', '--json', '--out', '.playbook/test-artifacts/verify.json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/verify.json', allowedExitCodes: [0, 3], useCliOut: true });
+  runCommand({ args: ['plan', '--json', '--out', '.playbook/test-artifacts/plan.json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/plan.json', useCliOut: true });
   runCommand({ args: ['apply', '--json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/apply.json' });
   runCommand({ args: ['doctor'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/doctor.txt' });
   runCommand({ args: ['ask', 'what architecture is this repo?'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/ask.txt' });
-  runCommand({ args: ['query', 'modules'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/query.txt' });
+  runCommand({ args: ['query', 'modules', '--json', '--out', '.playbook/test-artifacts/query.json'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/query.json', useCliOut: true });
   runCommand({ args: ['diagram', '--repo', '.', '--out', 'tmp/diagram.md'], cwd: projectDir, artifactFile: '.playbook/test-artifacts/diagram.txt' });
 
   const diagramPath = path.join(projectDir, 'tmp', 'diagram.md');
