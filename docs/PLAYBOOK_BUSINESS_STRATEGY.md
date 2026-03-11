@@ -111,6 +111,8 @@ Goal: maximize activation, proof of value, and workflow habit formation.
 
 ### Layer 2: Paid team workflow surface
 
+(Architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`, especially Interface Layer, Policy / Control Plane, and Learning / Longitudinal State Layer.)
+
 - Hosted indexing and shared repository intelligence.
 - Team policies and shared rulesets.
 - Pull request annotations/checks.
@@ -121,6 +123,8 @@ Goal: maximize activation, proof of value, and workflow habit formation.
 Goal: monetize coordination pain and workflow reliability across teams.
 
 ### Layer 3: Enterprise trust surface
+
+(Architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`, especially Trust / Evidence Layer and Policy / Control Plane.)
 
 - SSO/RBAC and org-level permissions.
 - Audit logs and approval controls.

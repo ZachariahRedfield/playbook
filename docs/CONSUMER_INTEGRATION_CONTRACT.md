@@ -84,6 +84,12 @@ Consumer repositories produce three classes of intelligence:
 Promotion expectations:
 
 - Repo-local knowledge remains local by default.
+
+Cross-repository learning direction (future-facing) must preserve privacy and scoped ownership boundaries.
+
+- No consumer repository should receive another repository's raw local facts by default.
+- Reuse should happen through sanitized, reviewable pattern artifacts only.
+- Ownership metadata should remain explicit so promotion authority and consumption scope are auditable.
 - Reusable patterns should be promoted upstream through:
   - new rules
   - architecture patterns
@@ -91,6 +97,20 @@ Promotion expectations:
 - Product gaps should be promoted as issues, roadmap items, or targeted design proposals.
 
 This keeps local implementation autonomy while strengthening shared Playbook Core.
+
+
+### Repo-local vs promotable knowledge boundaries
+
+Playbook separates consumer-repository intelligence into two governance classes:
+
+- **Repo-local facts (default-local):** repository-specific architecture details, internal operational context, findings history, and sensitive evidence.
+- **Promotable reusable patterns (sanitized):** generalized rules/patterns/contracts that have been reviewed for reuse and stripped of repository-identifying or sensitive detail.
+
+Boundary rules:
+
+- Repo-local facts stay local unless an explicit promotion workflow is approved.
+- Promotion candidates must be sanitized before any upstream or cross-repository use.
+- Promoted patterns must retain evidence lineage while preserving privacy and scoped ownership boundaries.
 
 ## 5) Extension Model
 

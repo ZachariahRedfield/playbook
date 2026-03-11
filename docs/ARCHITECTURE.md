@@ -1,6 +1,6 @@
 # Playbook Architecture
 
-This document describes **current-state architecture**. Future-state initiatives live in [PLAYBOOK_PRODUCT_ROADMAP.md](./PLAYBOOK_PRODUCT_ROADMAP.md), including the platform-evolution layer model that separates active delivery from longer-horizon architectural direction.
+This document describes **current-state architecture**. Future-state initiatives live in [PLAYBOOK_PRODUCT_ROADMAP.md](./PLAYBOOK_PRODUCT_ROADMAP.md). Long-term platform layering is documented in [architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md](./architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md).
 
 Toroidal Flow is documented as an additive architecture overlay in [docs/architecture/TOROIDAL_FLOW.md](./architecture/TOROIDAL_FLOW.md). It preserves current command/runtime contracts and frames how execution and intelligence-return phases form a closed loop.
 

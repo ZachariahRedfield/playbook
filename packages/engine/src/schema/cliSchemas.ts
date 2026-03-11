@@ -15,7 +15,8 @@ export type CliSchemaCommand =
   | 'query'
   | 'docs'
   | 'contracts'
-  | 'ignore';
+  | 'ignore'
+  | 'learn';
 
 export type JsonSchema = {
   [key: string]: unknown;
@@ -1145,6 +1146,69 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     ]
   },
 
+
+  learn: {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookLearnDraftOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'error'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'learn-draft' },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'baseRef', 'baseSha', 'headSha', 'diffContext', 'changedFiles', 'candidates'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'learn-draft' },
+          baseRef: { type: 'string' },
+          baseSha: { type: 'string' },
+          headSha: { type: 'string' },
+          diffContext: { type: 'boolean' },
+          changedFiles: { type: 'array', items: { type: 'string' } },
+          candidates: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['candidateId', 'theme', 'evidence', 'dedupe'],
+              properties: {
+                candidateId: { type: 'string' },
+                theme: { type: 'string' },
+                evidence: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['path'],
+                    properties: {
+                      path: { type: 'string' }
+                    }
+                  }
+                },
+                dedupe: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['kind'],
+                  properties: {
+                    kind: { const: 'none' },
+                    hint: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
   'ai-context': {
     $schema: JSON_SCHEMA_DRAFT,
     title: 'PlaybookAiContextOutput',
@@ -1256,6 +1320,7 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   docs: cliSchemas.docs,
   contracts: cliSchemas.contracts,
   ignore: cliSchemas.ignore,
+  learn: cliSchemas.learn,
   query: cliSchemas.query
 });
 

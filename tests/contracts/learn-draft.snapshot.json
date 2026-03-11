@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0",
+  "command": "learn-draft",
+  "baseRef": "main",
+  "baseSha": "0000000000000000000000000000000000000000",
+  "headSha": "1111111111111111111111111111111111111111",
+  "diffContext": true,
+  "changedFiles": [
+    "packages/cli/src/commands/learnDraft.ts",
+    "packages/engine/src/learn/draft.ts"
+  ],
+  "candidates": [
+    {
+      "candidateId": "2f8f84f9a5db9ff1",
+      "theme": "cli-surface",
+      "evidence": [
+        {
+          "path": "packages/cli/src/commands/learnDraft.ts"
+        }
+      ],
+      "dedupe": {
+        "kind": "none"
+      }
+    },
+    {
+      "candidateId": "8fa970f38f95a1d2",
+      "theme": "engine-behavior",
+      "evidence": [
+        {
+          "path": "packages/engine/src/learn/draft.ts"
+        }
+      ],
+      "dedupe": {
+        "kind": "none"
+      }
+    }
+  ]
+}
