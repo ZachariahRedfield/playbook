@@ -41,6 +41,7 @@ export type MemoryReplayCandidate = {
   failureShape: string;
   eventCount: number;
   provenance: MemoryReplayCandidateProvenance[];
+  lastSeenAt?: string;
 };
 
 export type MemoryReplayResult = {

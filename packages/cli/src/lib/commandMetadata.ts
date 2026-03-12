@@ -451,7 +451,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'memory',
-    description: 'Replay episodic memory events into deterministic candidate knowledge artifacts',
+    description: 'Replay, promote, and prune repository memory artifacts with explicit human-reviewed doctrine promotion',
     category: 'Utility',
     role: 'utility',
     lifecycle: 'utility',
@@ -459,7 +459,7 @@ export const commandMetadata: CommandMetadata[] = [
     onboardingPriority: null,
     canonicalSequence: null,
     productFacing: true,
-    exampleArgs: 'memory replay --json',
+    exampleArgs: 'memory promote --from-candidate <id> --json',
     machineReadable: true
   }
 ];

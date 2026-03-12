@@ -29,6 +29,7 @@ describe('replayMemoryToCandidates', () => {
     expect(output.clustersEvaluated).toBe(2);
     expect(output.candidates.map((candidate) => candidate.kind)).toEqual(['open_question', 'pattern']);
     expect(output.candidates[0]?.provenance.map((entry) => entry.eventId)).toEqual(['evt-plan-1', 'evt-verify-1']);
+    expect(output.candidates[0]?.lastSeenAt).toBeDefined();
 
     const written = JSON.parse(
       fs.readFileSync(path.join(root, '.playbook/memory/candidates.json'), 'utf8')
