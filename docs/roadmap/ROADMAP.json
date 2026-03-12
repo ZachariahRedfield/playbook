@@ -1030,6 +1030,43 @@
       ]
     },
     {
+      "feature_id": "PB-V09-METRICS-ROI-PROOF-OF-VALUE-001",
+      "version": "v0.9",
+      "title": "Metrics / ROI / Proof-of-Value Architecture",
+      "goal": "Define canonical value measurement architecture grounded in deterministic repository outcomes, trust, governance impact, and evidence-linked attribution across Open Core, Team, and Enterprise without cloud-required instrumentation.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md",
+        "docs/PLAYBOOK_BUSINESS_STRATEGY.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md",
+        "docs/PLAYBOOK_BUSINESS_STRATEGY.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V09-PACKAGING-SKU-ARCHITECTURE-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ]
+    },
+    {
       "feature_id": "PB-V09-INTERFACE-SURFACES-001",
       "version": "v0.9",
       "title": "Platform interface surfaces",

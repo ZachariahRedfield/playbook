@@ -95,6 +95,8 @@ Do not broaden into a diffuse “do everything AI coding platform” before the 
 
 Canonical packaging reference: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
 
+Canonical metrics and ROI reference: `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
+
 ### Product model decision
 
 Adopt an **open-core SKU architecture** where packaging follows the deterministic runtime and governance model:
@@ -242,7 +244,7 @@ Deliverables:
 
 - Clear free/team/enterprise packaging.
 - Self-hosted or boundary-controlled deployment option (if demand validates).
-- Case-study-backed ROI narrative.
+- Case-study-backed ROI narrative grounded in baseline/after deterministic workflow evidence.
 
 Commercial motion:
 
@@ -255,13 +257,25 @@ Success signals:
 - Multiple reference customers.
 - Documented ROI around consistency, safety, and governance throughput.
 
-## Operating metrics to track from day one
+## Operating measurement architecture from day one
+
+Use `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md` as the canonical measurement contract.
+
+Operating measurement layers:
 
 - Activation: time-to-first-useful verify/query result.
 - Retention: weekly repeated deterministic workflow usage.
-- Trust: acceptance rate of generated plan/apply outputs.
-- Governance impact: drift findings resolved per repo over time.
+- Trust: acceptance rate of generated plan/apply outputs and pass-after-remediation outcomes.
+- Governance impact: drift findings resolved per repo over time with provenance.
 - Team value: onboarding time reduction and PR policy compliance trend.
+- Enterprise value: approval latency, audit trace completeness, and policy-controlled workflow adoption.
+- Commercial proof-of-value: baseline vs after measurement with explicit attribution and evidence linkage.
+
+Measurement rules:
+
+- Measure deterministic outcomes, not generic AI activity volume.
+- ROI claims require baseline + attribution + evidence lineage.
+- Cross-repo/team aggregates must preserve per-repo explainability.
 
 ## Explicit non-goals (first 12 months)
 

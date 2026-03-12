@@ -1609,7 +1609,7 @@ Sentry â†’ runtime errors
 Playbook â†’ architecture governance
 NORTH STAR METRICS
 
-Year 1:
+Year 1 (adoption-over-revenue, measured with deterministic proof-of-value context):
 
 1,000 GitHub stars
 100 repositories using Playbook
@@ -1625,6 +1625,21 @@ FOCUS MANTRA
 Every feature must answer one question:
 
 How do we keep AI-generated code aligned with architecture?
+
+
+## Proof-of-value measurement architecture alignment
+
+Canonical reference: `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
+
+Roadmap and adoption decisions should measure value through deterministic repository outcomes, trust signals, governance improvements, and evidence-linked before/after pilot windows.
+
+Rule: adoption-over-revenue Year 1 remains the operating stance, but proof-of-value measurement must be explicit from day one.
+
+Measurement guardrails:
+
+- measure outcomes, trust, governance, and coordination impact rather than vanity usage activity
+- preserve CLI-first, offline-capable, private-first operation; cloud aggregation is optional, never required
+- preserve per-repo explainability/provenance when aggregating to team/workspace/tenant views
 
 
 ## Phase: AI Repository Intelligence (Current + Next Enhancements)
