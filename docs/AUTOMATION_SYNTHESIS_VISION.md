@@ -145,9 +145,11 @@ Automation Synthesis should remain downstream of Playbook's deterministic trust 
 - **Human approval surfaces:** PR checks, CI gates, and future dashboard/API review flows should expose explicit approve/deny transitions.
 - **Longitudinal runtime learning:** post-deployment outcomes should feed deterministic learning loops for template refinement and rollback policy tightening.
 - **Promoted knowledge artifacts:** trigger classification and synthesis template selection should consume promoted/reviewed knowledge artifacts (not raw candidate memory), with lineage preserved.
+- **Knowledge query/inspection prerequisite:** synthesis should consume governed knowledge only after deterministic inspection surfaces make candidate/promoted provenance auditable by humans/CI.
 
 Rule: synthesized automation remains untrusted until verification evidence is complete and required approvals pass.
 Rule: automation synthesis is a downstream consumer of governed knowledge artifacts and cannot bypass review, policy, or verification gates.
+Rule: automation synthesis should consume promoted knowledge only after that knowledge is inspectable and provenance-linked through deterministic query/inspection surfaces.
 
 Rule: verification remains the trust boundary even when synthesis quality, session evidence, or approval history appears strong.
 

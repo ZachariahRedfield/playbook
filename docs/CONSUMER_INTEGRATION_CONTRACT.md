@@ -152,6 +152,8 @@ Integration rules for application clients:
 - Browser clients should call validated server APIs/actions.
 - Browser clients should not execute arbitrary local CLI commands directly.
 - Deterministic governance and policy enforcement should remain server-side and route through shared control-plane checks.
+- Memory inspection remains repo-local/private-first by default, including longitudinal state and candidate/promoted knowledge views.
+- Future app/server integrations should expose validated read-only knowledge inspection surfaces rather than arbitrary local execution or implicit sync/export behavior.
 
 This direction enables safer product integrations (dashboards, control planes, internal platforms) without weakening governance boundaries.
 

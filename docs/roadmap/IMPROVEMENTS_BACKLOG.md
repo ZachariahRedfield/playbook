@@ -173,6 +173,31 @@ Failure Mode: Broad agent UX shipped before review-loop trust hardening.
 
 ---
 
+
+## Platform direction: Knowledge Query / Inspection Surfaces for Memory
+
+Backlog scope (directional, not current-sprint commitment):
+
+- Add deterministic memory query schema for read-only inspection outputs.
+- Add provenance trace inspection surfaces linking memory records to evidence bundles.
+- Add candidate/promoted knowledge comparison views with explicit class boundaries.
+- Add stale/superseded knowledge inspection views.
+- Add repo timeline/trend inspection surfaces for longitudinal change visibility.
+- Add validated server/API read surfaces for knowledge inspection that preserve control-plane governance.
+
+Pattern: Inspectable Memory Before Automated Memory Consumption.
+Pattern: Queryable Repository Knowledge.
+Pattern: Provenance-Preserving Inspection.
+Rule: Candidate knowledge must remain distinguishable from promoted governance.
+Rule: Memory query surfaces are read-only intelligence surfaces.
+Rule: Repo-local knowledge remains private-first unless intentionally promoted/exported.
+Failure Mode: Memory exists but cannot be trusted or inspected.
+Failure Mode: Free-form memory blob without deterministic inspection contracts.
+Failure Mode: Automation consumes knowledge before humans can inspect provenance.
+Failure Mode: Query surfaces imply enforcement.
+
+---
+
 ## Platform direction: Multi-Repo Knowledge Transfer Model
 
 Backlog scope:
