@@ -149,4 +149,10 @@ Rule: synthesized automation remains untrusted until verification evidence is co
 
 Rule: verification remains the trust boundary even when synthesis quality, session evidence, or approval history appears strong.
 
+PR review-loop alignment:
+
+- Future synthesized review/remediation flows should inherit PR Review Loop contracts from `docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md`.
+- Synthesis pathways cannot bypass review evidence lineage, control-plane mutation-scope policy, or re-verification requirements after candidate mutations.
+- PR adapter surfaces (CI comments, checks, future UIs) remain thin transports over one deterministic runtime rather than independent semantics.
+
 Failure mode to avoid: evidence-poor automation that appears successful in isolated runs but lacks policy- and trust-linked runtime lineage.

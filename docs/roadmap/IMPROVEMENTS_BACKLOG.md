@@ -134,6 +134,30 @@ Failure Mode: Distributed policy logic across tools without a shared control pla
 
 ---
 
+
+## Platform direction: PR Review Loop Architecture
+
+Backlog scope:
+
+- Define canonical review finding taxonomy (`architecture drift`, `risk/blast radius`, `missing tests`, `documentation gaps`, `rule/contract violations`, `remediation candidates`, `prevention targets`).
+- Define bounded autofix eligibility classes and map them to control-plane mutation scopes.
+- Define mandatory review evidence linkage for comments, suggestions, and escalation decisions.
+- Define deterministic escalation policy for ambiguous, high-risk, or policy-blocked review findings.
+- Define re-verification contract after any candidate mutation path in PR review workflows.
+
+Pattern: Review Loop Over Deterministic Artifacts.
+Pattern: Evidence-Attached PR Intelligence.
+Pattern: Thin Review Interfaces Over One Runtime.
+Rule: Re-verify after any candidate mutation.
+Rule: Only bounded low-risk classes may be autofix-eligible.
+Rule: Ambiguous review outcomes fail closed.
+Failure Mode: Review comments without evidence lineage.
+Failure Mode: PR autofix before policy/mutation-scope checks.
+Failure Mode: Adapter-specific review behavior leaking into core semantics.
+Failure Mode: Broad agent UX shipped before review-loop trust hardening.
+
+---
+
 ## Platform direction: Multi-Repo Knowledge Transfer Model
 
 Backlog scope:

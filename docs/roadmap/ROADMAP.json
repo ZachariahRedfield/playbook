@@ -774,6 +774,50 @@
       ]
     },
     {
+      "feature_id": "PB-V09-PR-REVIEW-LOOP-001",
+      "version": "v0.9",
+      "title": "PR Review Loop architecture",
+      "goal": "Define canonical PR review/orchestration workflow with deterministic analysis, evidence-linked findings, policy-gated bounded autofix eligibility, and mandatory re-verification.",
+      "commands": [
+        "analyze-pr",
+        "verify",
+        "plan",
+        "apply"
+      ],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md",
+        "docs/architecture/PLAYBOOK_SESSION_EVIDENCE_ARCHITECTURE.md",
+        "docs/architecture/PLAYBOOK_CONTROL_PLANE_ARCHITECTURE.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/AUTOMATION_SYNTHESIS_VISION.md"
+      ],
+      "dependencies": [
+        "PB-V09-SESSION-EVIDENCE-001",
+        "PB-V09-CONTROL-PLANE-001",
+        "PB-V04-ANALYZEPR-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-core"
+      ]
+    },
+    {
       "feature_id": "PB-V09-EXECUTION-ORCHESTRATION-001",
       "version": "v0.9",
       "title": "Execution orchestration hardening",
@@ -794,6 +838,7 @@
       ],
       "dependencies": [
         "PB-V09-CONTROL-PLANE-001",
+        "PB-V09-PR-REVIEW-LOOP-001",
         "PB-V04-PLAN-APPLY-001"
       ],
       "verification_commands": [

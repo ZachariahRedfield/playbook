@@ -401,11 +401,12 @@ Failure Mode: Roadmap inflation from treating platform direction as near-term co
 1. deterministic runtime hardening (`verify -> plan -> apply`, intelligence artifacts, and contract validation)
 2. session envelope + evidence model
 3. control plane (policy, approvals, mutation scopes, adapter boundaries, export rules)
-4. review and execution orchestration hardening
-5. knowledge persistence / compaction / longitudinal learning layers
-6. multi-repo transfer (explicit promotion only)
-7. interface surfaces
-8. capability / model routing
+4. PR review loop hardening (session/evidence-attached review intelligence + policy-gated actioning)
+5. longitudinal learning / knowledge persistence / promotion layers
+6. broader execution orchestration hardening
+7. multi-repo transfer (explicit promotion only)
+8. interface surfaces
+9. capability / model routing
 
 This ordering is a dependency recommendation, not an active delivery commitment.
 
@@ -469,16 +470,17 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window except for active delivery-system and remediation-hardening work already committed elsewhere.
 
-#### 6. Review + Execution Orchestration
+#### 6. PR Review Loop
 
 - **Already exists today**
-  - reviewed `verify -> plan -> apply -> verify` execution loops, CLI-first execution, and CI-safe remediation workflows are implemented.
+  - deterministic `analyze-pr` analysis and reviewed `verify -> plan -> apply -> verify` remediation loops provide the current substrate for PR intelligence and guarded remediation.
 - **Partially defined**
-  - serialized plan execution, approval layers, maintenance modes, and automation-synthesis staging are defined as future operating models.
+  - review finding taxonomy, evidence-linked comment/suggestion contracts, action-class semantics, and escalation policy are not yet fully standardized as one canonical PR review loop.
 - **Future work**
-  - orchestration hardening across recurring workflows, maintenance runtimes, and policy-gated non-interactive execution that must route through shared control-plane checks.
+  - formalize the PR Review Loop architecture in `docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md` so trigger normalization, session creation, artifact hydration, deterministic analysis, evidence attachment, policy gating, bounded autofix eligibility, re-verification, and human escalation share one governed runtime contract.
+  - enforce thin review interfaces (CI, PR comments, future UI/API) over the same deterministic runtime and control-plane checks.
 - **Execution window**
-  - near-term work is limited to current remediation contract hardening; broader orchestration expansion is outside the 4-week plan.
+  - outside the current near-term execution window except for currently implemented deterministic `analyze-pr` and remediation trust hardening.
 
 #### 7. Longitudinal State / Learning
 
@@ -491,7 +493,18 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window.
 
-#### 8. Multi-Repo Knowledge Transfer
+#### 8. Review + Execution Orchestration
+
+- **Already exists today**
+  - reviewed `verify -> plan -> apply -> verify` execution loops, CLI-first execution, and CI-safe remediation workflows are implemented.
+- **Partially defined**
+  - serialized plan execution, approval layers, maintenance modes, and automation-synthesis staging are defined as future operating models.
+- **Future work**
+  - broader orchestration hardening across recurring workflows and policy-gated non-interactive execution, dependency-ordered after PR review-loop trust hardening.
+- **Execution window**
+  - near-term work is limited to current remediation contract hardening; broader orchestration expansion is outside the 4-week plan.
+
+#### 9. Multi-Repo Knowledge Transfer
 
 - **Already exists today**
   - external repository targeting and bounded pilot execution exist today through `--repo` and `playbook pilot --repo <path>`.
@@ -502,7 +515,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window beyond current external pilot/runtime hardening.
 
-#### 9. Interface Surfaces
+#### 10. Interface Surfaces
 
 - **Already exists today**
   - CLI, JSON command contracts, GitHub/CI formatting surfaces, AI contract/bootstrap artifacts, and demo/docs surfaces are implemented.
@@ -513,7 +526,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window except for current product-truth/documentation packaging work.
 
-#### 10. Capability / Model Routing
+#### 11. Capability / Model Routing
 
 - **Already exists today**
   - deterministic routing is presently command- and contract-driven rather than model-driven; Playbook prefers explicit command surfaces and repository intelligence artifacts over open-ended inference.

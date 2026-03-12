@@ -197,7 +197,15 @@ Use this phased sequence for real downstream repositories so adoption remains de
 
 - add `analyze-pr` for deterministic PR intelligence
 - wire `verify` and selected intelligence commands into CI for repeatable policy checks
+- require PR review findings/comments to preserve session/evidence lineage and inherit control-plane mutation/approval boundaries
+- keep PR remediation suggestions bounded and policy-gated; re-run `verify` after any candidate mutation path
 - promote tested reusable governance improvements upstream, while keeping consumer-specific ops/playbooks local
+
+PR review inheritance rule:
+
+- `analyze-pr`/CI review workflows are downstream of Session + Evidence and Control Plane contracts.
+- Repo-local runtime state remains local unless explicitly promoted.
+- Promotion/export boundaries remain explicit and review-gated; review interfaces must not imply automatic cross-repo memory transfer.
 
 ## 9) Consumer artifact handling and display snapshots
 
