@@ -88,6 +88,8 @@ Metrics/proof-of-value contract:
 
 Metrics architecture reference: `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
 
+Pilot/rollout architecture reference: `docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md`.
+
 ## 4) Governed Promotion and Cross-Repo Transfer Model
 
 Consumer repositories produce three classes of intelligence:
@@ -249,33 +251,40 @@ Graceful-adoption rule:
 
 ## 8) Phased downstream consumer rollout (reusable)
 
-Use this phased sequence for real downstream repositories so adoption remains deterministic and low risk.
+This downstream sequence aligns to the canonical pilot/rollout architecture stages and keeps consumer adoption tied to deterministic trust maturity.
 
-### Phase 1 — bootstrap / read-only intelligence
+### Phase 1 — bootstrap / read-only intelligence (Stage 1 alignment)
 
 - install Playbook in the consumer repository
 - run read-only repository intelligence commands first (`context`, `ai-context`, `index`, `query`, `explain`)
-- confirm operators can inspect architecture and rule surfaces before running mutation workflows
+- confirm operators can inspect architecture and rule surfaces before any mutation workflows
+- record activation/readability proof from deterministic command outputs
 
-### Phase 2 — verify-only governance
+### Phase 2 — verify-only governance baseline (Stage 2 alignment)
 
 - run `verify` only on active branches to establish governance baseline and findings quality
 - treat findings and docs alignment as onboarding output; do not run `apply` yet
 - confirm baseline safety and trust in deterministic findings/contracts
+- capture trust proof artifacts (repeatability, finding quality, operator acceptance)
 
-### Phase 3 — plan/apply pilot on low-risk branches
+### Phase 3 — plan/apply pilot on low-risk branches (Stage 3 alignment)
 
 - enable `plan` and `apply` for tightly scoped, low-risk maintenance branches
 - require human review of plan tasks before apply execution
+- require post-apply `verify` closure for every mutation path
 - keep repository-specific implementation details local; only promote reusable rule/pattern improvements upstream
 
-### Phase 4 — analyze-pr / CI rollout
+### Phase 4 — analyze-pr / CI rollout (Stage 4 alignment)
 
 - add `analyze-pr` for deterministic PR intelligence
 - wire `verify` and selected intelligence commands into CI for repeatable policy checks
 - require PR review findings/comments to preserve session/evidence lineage and inherit control-plane mutation/approval boundaries
 - keep PR remediation suggestions bounded and policy-gated; re-run `verify` after any candidate mutation path
 - promote tested reusable governance improvements upstream, while keeping consumer-specific ops/playbooks local
+
+Expansion note:
+
+- Team/workspace and enterprise-style rollout (Stages 5-6) should only start after repo-level trust is proven in this phase model.
 
 PR review inheritance rule:
 

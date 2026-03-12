@@ -17,6 +17,16 @@ Playbook continues to ship as a deterministic repository intelligence and govern
 
 Positioning rule: preserve current command-surface reliability while growing reasoning depth behind the same deterministic contracts.
 
+## Rollout architecture doctrine (single-roadmap alignment)
+
+Canonical rollout architecture reference: `docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md`.
+
+Roadmap rule:
+
+- adoption must progress by deterministic trust maturity (`read-only -> verify-only -> low-risk plan/apply -> PR/CI -> workspace/team governance -> org/tenant governance`)
+- control-plane adoption must be staged over proven repo-level trust boundaries
+- CLI-first, offline-capable, private-first operation remains valid at every stage
+
 
 Playbook ensures repository change workflows:
 

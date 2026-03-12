@@ -103,6 +103,34 @@ Failure Mode: Aggregated metrics that lose per-repo evidence lineage.
 
 ---
 
+
+## Platform direction: Pilot / Design-Partner / Rollout architecture
+
+Backlog scope (directional, not current-sprint commitment):
+
+- Define a canonical pilot qualification rubric for solo, team, and governance-sensitive lanes.
+- Define a rollout stage-gate checklist aligned to trust boundaries (`read-only`, `verify-only`, `plan/apply`, `PR/CI`, `team`, `enterprise`).
+- Add a design-partner deterministic evidence template for pilot execution and review.
+- Add proof-of-value scorecard templates linked to baseline/after deterministic artifacts.
+- Define explicit rollout expansion trigger criteria between stage boundaries.
+- Publish a reusable repo -> team -> enterprise adoption playbook over shared runtime semantics.
+- Define reusable pattern capture workflow from pilots into roadmap/shared-core strengthening.
+
+Pattern: Rollout Follows Trust Maturity.
+Pattern: Design Partners Discover Product Truth, Not Product Forks.
+Pattern: Start Read-Only, Expand by Evidence.
+Rule: Mutation follows trust, not curiosity.
+Rule: Pilot success requires deterministic evidence, not anecdotal excitement.
+Rule: Expansion gates must be explicit.
+Rule: Reusable insights from pilots should strengthen shared core.
+Failure Mode: Mutation-first rollout.
+Failure Mode: Consulting detours that bypass the product.
+Failure Mode: Team rollout before repo-level trust exists.
+Failure Mode: Pilot excitement mistaken for proof-of-value.
+Failure Mode: Cloud-first rollout pressure weakening local trust.
+
+---
+
 ## Platform direction: Session + Evidence prerequisites
 
 Backlog scope (explicitly directional; not an active delivery commitment):

@@ -97,6 +97,8 @@ Canonical packaging reference: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARC
 
 Canonical metrics and ROI reference: `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
 
+Canonical pilot/rollout architecture reference: `docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md`.
+
 ### Product model decision
 
 Adopt an **open-core SKU architecture** where packaging follows the deterministic runtime and governance model:
@@ -159,103 +161,109 @@ Price Playbook as:
 
 not as a generic AI code-generation seat.
 
-## 4) 12-month go-to-market sequence
+## 4) 12-month go-to-market sequence (rollout architecture aligned)
 
-### Phase 1 (Months 0–3): prove solo developer pull
+This sequence follows the canonical rollout architecture in `docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md` and preserves wedge sequencing from solo proof to team and enterprise governance.
 
-Objectives:
-
-- Make core CLI workflows obviously better than ad hoc repo inspection.
-- Drive repeat usage for query/explain/verify loops.
-
-Deliverables:
-
-- Improved output quality and determinism for repo understanding commands.
-- Tight “first value” onboarding for existing repositories.
-- Practical templates/examples for architecture + remediation workflows.
-
-Commercial motion:
-
-- Free/open adoption.
-- Design-partner interviews and lightweight pilots.
-
-Success signals:
-
-- Weekly active repeat users.
-- High completion rate on deterministic workflow loop.
-- Evidence that users trust plan/apply suggestions.
-
-### Phase 2 (Months 4–6): convert team workflow pain
+### Phase 1 (Months 0–3): qualification + solo trust baseline
 
 Objectives:
 
-- Move from individual utility to shared team workflows.
-- Prove measurable value in coordination and governance.
+- qualify serious repositories/design partners with recurring governance pain
+- prove local read/runtime value first (`context/ai-context/index/query/explain`)
+- establish verify-only trust baseline before mutation workflows
 
 Deliverables:
 
-- Shared rulesets and policy controls.
-- Basic PR/CI integration path.
-- Team-level reporting for findings/remediation status.
+- repeatable read-only repository understanding quality
+- deterministic verify findings with usable governance baselines
+- pilot qualification and evidence capture discipline
 
 Commercial motion:
 
-- Paid team plan beta.
-- Select startup/small-team pilots.
+- free/open adoption with qualified design partners
+- lightweight pilots focused on deterministic evidence
 
 Success signals:
 
-- First paid teams.
-- Reduced policy drift in pilot repos.
-- Faster onboarding and less senior-engineer routing in pilot feedback.
+- repeated read-only + verify usage on real repos
+- clear trust uplift in findings quality and repo understanding
+- explicit stage-gate readiness to enter low-risk plan/apply pilots
 
-### Phase 3 (Months 7–9): establish governance credibility
+### Phase 2 (Months 4–6): low-risk remediation pilots + PR/CI rollout
 
 Objectives:
 
-- Build trust for governance-sensitive use.
-- Strengthen auditability and operational controls.
+- prove bounded `plan/apply` value on low-risk branches
+- convert repo-level trust into deterministic PR/CI enforcement
+- preserve human review + post-mutation verify closure
 
 Deliverables:
 
-- Audit history and approval primitives.
-- Org-scoped access controls.
-- Expanded deterministic contracts for automation.
+- low-risk plan/apply pilot playbook and guardrails
+- analyze-pr and CI integration for deterministic governance checks
+- evidence-linked remediation outcomes and drift trends
 
 Commercial motion:
 
-- Higher-touch pilots with governance-minded teams.
-- Optional implementation/support packages.
+- select team pilots converting from verified repo trust
+- paid team-plan beta where coordination pain is already proven
 
 Success signals:
 
-- Multi-repo team expansions.
-- Security/governance stakeholder buy-in.
-- Initial enterprise pipeline.
+- stable low-risk remediation acceptance and pass-after-remediation rates
+- repeatable PR/CI usage with policy-aligned findings handling
+- first team conversions grounded in deterministic proof-of-value
 
-### Phase 4 (Months 10–12): package scale-ready offers
+### Phase 3 (Months 7–9): workspace/team governance expansion
 
 Objectives:
 
-- Formalize packaging, pricing, and deployment options.
-- Prepare repeatable GTM for team + enterprise lanes.
+- expand from single-repo trust to multi-repo/team governance
+- prove coordination value without weakening per-repo evidence boundaries
+- harden reusable pattern promotion from pilot outcomes
 
 Deliverables:
 
-- Clear free/team/enterprise packaging.
-- Self-hosted or boundary-controlled deployment option (if demand validates).
-- Case-study-backed ROI narrative grounded in baseline/after deterministic workflow evidence.
+- shared rulesets/policy controls and team-level governance views
+- reusable pattern capture pipeline from pilots to shared core
+- stronger trust/acceptance instrumentation across team workflows
 
 Commercial motion:
 
-- Repeatable outbound + partner-assisted motions.
-- Contracted annual plans for qualified teams.
+- higher-touch multi-repo team pilots
+- governance-sensitive pilots with explicit stage gates
 
 Success signals:
 
-- Stable conversion from free to paid teams.
-- Multiple reference customers.
-- Documented ROI around consistency, safety, and governance throughput.
+- measurable cross-repo governance consistency improvements
+- reduced onboarding/routing friction in team pilots
+- successful promotion of reusable pilot learnings into product core
+
+### Phase 4 (Months 10–12): enterprise governance/deployment readiness
+
+Objectives:
+
+- formalize enterprise-style governance rollout path
+- align packaging/deployment posture with trust maturity gates
+- preserve CLI-first, offline-capable, private-first guarantees across lanes
+
+Deliverables:
+
+- org/tenant governance control expectations and rollout criteria
+- optional hosted/self-hosted boundary-controlled deployment readiness path
+- proof-of-value narratives backed by deterministic baseline/after evidence
+
+Commercial motion:
+
+- repeatable enterprise qualification based on repo/team trust maturity
+- annual plan packaging for governance-ready teams/orgs
+
+Success signals:
+
+- repeatable repo -> team -> enterprise expansion pattern
+- governance stakeholder approval tied to deterministic evidence
+- stable conversion from pilot trust milestones to paid governance rollouts
 
 ## Operating measurement architecture from day one
 
