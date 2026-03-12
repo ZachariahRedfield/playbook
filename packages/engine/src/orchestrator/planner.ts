@@ -7,6 +7,31 @@ const normalizeGoal = (goal: string): string => goal.replace(/\s+/g, ' ').trim()
 
 const uniqueSorted = (values: string[]): string[] => Array.from(new Set(values)).sort((left, right) => left.localeCompare(right));
 
+const SHARED_PATH_POLICY_ORDER = new Map<string, number>(SHARED_PATHS.map((sharedPath, index) => [sharedPath, index]));
+
+const orderSharedPaths = (values: string[]): string[] => {
+  const unique = Array.from(new Set(values));
+
+  return unique.sort((left, right) => {
+    const leftPolicyIndex = SHARED_PATH_POLICY_ORDER.get(left);
+    const rightPolicyIndex = SHARED_PATH_POLICY_ORDER.get(right);
+
+    if (leftPolicyIndex !== undefined && rightPolicyIndex !== undefined) {
+      return leftPolicyIndex - rightPolicyIndex;
+    }
+
+    if (leftPolicyIndex !== undefined) {
+      return -1;
+    }
+
+    if (rightPolicyIndex !== undefined) {
+      return 1;
+    }
+
+    return left.localeCompare(right);
+  });
+};
+
 type LaneBlueprint = Omit<OrchestratorLaneContract, 'id' | 'promptFile' | 'dependsOn'> & { dependsOnLaneIndexes: number[] };
 
 const buildLaneBlueprints = (goal: string): LaneBlueprint[] => [
@@ -146,7 +171,7 @@ export const buildOrchestratorContract = (input: BuildOrchestratorContractInput)
     objective: lane.objective,
     allowedPaths: uniqueSorted(lane.allowedPaths),
     forbiddenPaths: uniqueSorted(lane.forbiddenPaths),
-    sharedPaths: uniqueSorted(lane.sharedPaths),
+    sharedPaths: orderSharedPaths(lane.sharedPaths),
     wave: lane.wave,
     dependsOn: uniqueSorted(lane.dependsOnLaneIndexes.map((value) => `lane-${value + 1}`)),
     promptFile: buildLanePromptFilename(index + 1),
@@ -160,7 +185,7 @@ export const buildOrchestratorContract = (input: BuildOrchestratorContractInput)
     goal,
     laneCountRequested: requested,
     laneCountProduced: lanes.length,
-    sharedPaths: uniqueSorted([...SHARED_PATHS]),
+    sharedPaths: orderSharedPaths([...SHARED_PATHS]),
     warnings,
     lanes
   };
