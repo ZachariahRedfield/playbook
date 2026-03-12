@@ -51,6 +51,12 @@ It provides:
 | 20 | Metrics / ROI / Proof-of-Value Architecture | Deterministic value measurement across trust/governance/adoption outcomes. | Packaging / SKU Architecture, Session + Evidence | Evidence-backed product and rollout decisions. | Evidence-linked claims boundary. | Cross-scope reporting overlay | roadmap/planned |
 | 21 | Pilot / Design-Partner / Rollout Architecture | Staged rollout doctrine from local trust to org-scale readiness. | Metrics / ROI / Proof-of-Value Architecture, Packaging / SKU Architecture, Workspace / Tenant Governance + Optional Hosted Deployment Model | Controlled adoption sequencing. | Trust-maturity gates for expansion. | Cross-scope rollout overlay | roadmap/planned |
 
+## Roadmap sequencing cross-link
+
+For implementation sequencing posture (`implemented baseline`, `active hardening`, `build now`, `build later`, `product overlays`), see `docs/PLAYBOOK_PRODUCT_ROADMAP.md` (Final roadmap contract alignment section).
+
+Rule: This architecture map defines dependency order; strategic roadmap + ROADMAP contract define commitment and execution posture.
+
 ## Canonical dependency assertions
 
 - Read runtime depends on repository intelligence + context compression.

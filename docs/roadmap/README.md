@@ -2,6 +2,20 @@
 
 This directory contains machine-readable roadmap artifacts used by CI and AI automation.
 
+## Source-of-truth hierarchy (canonical)
+
+1. **Strategic roadmap**: `docs/PLAYBOOK_PRODUCT_ROADMAP.md` (single strategic sequencing + commitment posture).
+2. **Machine-readable roadmap contract**: `docs/roadmap/ROADMAP.json` (CI-validated feature/dependency/status contract).
+3. **Canonical architecture dependency map**: `docs/architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md` (dependency ordering and trust-chain map).
+4. **Implementation sequencing view**: `docs/PLAYBOOK_PRODUCT_ROADMAP.md` implementation sequencing section (build-now vs later order).
+5. **Active implementation plan window**: `docs/roadmap/IMPLEMENTATION_PLAN_NEXT_4_WEEKS.md` and `docs/roadmap/WEEK0_WEEK1_EXECUTION_VALIDATOR.md`.
+6. **Backlog**: `docs/roadmap/IMPROVEMENTS_BACKLOG.md` (emerging, unscheduled ideas only).
+
+Rule: One Strategic Roadmap, One Machine-Readable Contract.
+Rule: ROADMAP.json must stay synchronized with merged architecture and roadmap truth.
+Rule: Architecture-defined does not equal implementation-committed.
+Rule: Product overlays must not be sequenced as runtime prerequisites.
+
 ## Canonical files
 
 - `ROADMAP.json`: deterministic roadmap contract entries.
@@ -22,6 +36,19 @@ This directory contains machine-readable roadmap artifacts used by CI and AI aut
 
 Rule: Roadmap entries represent planned intent; live command availability is determined by implemented command contracts and CLI help.
 Rule: The 4-week implementation plan must stay narrower than the long-term platform direction.
+
+## Architecture-slice contract policy
+
+ROADMAP contract policy in this repository:
+
+- Implementation-facing architecture slices should have explicit `feature_id` entries when they define dependency-relevant build sequencing.
+- Product/commercial architecture overlays may be represented as smaller umbrella feature families when they are not direct runtime prerequisites.
+- Architecture research docs do **not** imply implemented capability status; statuses must reflect implementation truth (`implemented-hardening`, `in-progress`, `planned`, `planned-later`, `directional`).
+- Dependency ordering in `ROADMAP.json` must follow the canonical architecture map.
+
+Failure Mode: Architecture docs merged without roadmap-contract alignment.
+Failure Mode: Machine-readable roadmap lagging behind strategic roadmap.
+Failure Mode: Future platform direction mistaken for active implementation.
 
 ## Rule
 

@@ -22,7 +22,29 @@ Archive
 
 This structure prevents roadmap bloat while preserving engineering intelligence discovered during development.
 
+Maintenance rule:
+
+- If an item has a merged architecture slice and clear dependency placement, it should not stay as ambiguous backlog-only idea text.
+- Keep backlog entries concise and unscheduled; move implementation-sequenced material into roadmap + contract surfaces.
+
 Related long-term architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`.
+
+## Architecture and roadmap promotion rule
+
+This backlog is for **emerging / unscheduled** ideas only.
+
+Promotion rule:
+
+- Promote to **architecture docs** when a slice needs canonical dependency and trust-boundary definition.
+- Promote to **`docs/roadmap/ROADMAP.json`** when architecture-defined scope becomes roadmap-committed sequencing intent.
+- Promote to an **active implementation plan** (`IMPLEMENTATION_PLAN_NEXT_4_WEEKS.md` + execution validator) only when dependencies are satisfied and work is implementation-ready.
+
+Rule: Architecture-defined does not equal implementation-committed.
+Rule: Product overlays must not be sequenced as runtime prerequisites.
+Rule: Local trust/runtime foundations come before hosted/control-plane scale.
+
+Failure Mode: Future platform direction mistaken for active implementation.
+Failure Mode: Product/commercial layers polluting technical dependency order.
 
 ## Meta backlog hygiene
 

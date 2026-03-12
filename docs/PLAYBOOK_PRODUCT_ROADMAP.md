@@ -395,6 +395,83 @@ Roadmap entries describe implementation intent and may include planned command f
 
 Toroidal Flow initiative (`PB-V08-TOROIDAL-FLOW-001`) is roadmap-scoped architecture framing that overlays current behavior. It does not introduce runtime behavior changes in this pass.
 
+## Final roadmap contract alignment: implementation sequencing canon
+
+Pattern: Architecture Then Contract Then Implementation
+Pattern: One Strategic Roadmap, One Machine-Readable Contract
+Pattern: Dependency-Ordered Execution
+Rule: Architecture-defined does not equal implementation-committed
+Rule: ROADMAP.json must reflect merged roadmap truth
+Rule: Product overlays must not be sequenced as runtime prerequisites
+Rule: Local trust/runtime foundations come before hosted/control-plane scale
+Failure Mode: Architecture docs merged without roadmap-contract alignment
+Failure Mode: Machine-readable roadmap lagging behind strategic roadmap
+Failure Mode: Future platform direction mistaken for active implementation
+Failure Mode: Product/commercial layers polluting technical dependency order
+Failure Mode: Hosted/interface expansion outrunning deterministic core hardening
+
+Canonical sequencing reference:
+
+- strategic sequencing and commitment posture: this roadmap document
+- machine-readable contract and dependency-linked feature entries: `docs/roadmap/ROADMAP.json`
+- canonical architecture dependency stack: `docs/architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md`
+
+### Implementation sequencing order (canonical)
+
+#### A) Implemented baseline + active hardening
+
+1. deterministic core runtime
+2. repository intelligence artifacts and query surfaces
+3. plan/apply trust hardening
+4. analyze-pr contract hardening
+5. package boundary convergence
+6. delivery system and roadmap-contract CI hardening
+7. failure intelligence
+8. architecture intelligence graph
+
+#### B) Architecture-defined platform layers (not yet fully implemented)
+
+1. session + evidence
+2. control plane
+3. PR review loop
+4. repo longitudinal state + knowledge promotion
+5. knowledge query / inspection surfaces
+6. automation synthesis consuming governed/promoted knowledge
+7. outcome feedback + automation runtime learning
+8. governed cross-repo pattern promotion / transfer
+9. governed interface / API surfaces for multi-repo control planes
+10. workspace / tenant governance + optional hosted deployment
+
+#### C) Product/business overlays (non-runtime prerequisites)
+
+1. packaging / SKU architecture
+2. metrics / ROI / proof-of-value architecture
+3. pilot / design-partner / rollout architecture
+
+### Build now vs later
+
+- **Build now (implementation-ready after active hardening):**
+  1. package boundary convergence and delivery hardening already in motion
+  2. session + evidence implementation surfaces
+  3. control-plane enforcement surfaces
+  4. PR review loop implementation
+  5. repo longitudinal memory + promotion implementation
+  6. knowledge query / inspection implementation
+  7. governed automation synthesis inputs
+  8. outcome feedback learning loop
+  9. governed cross-repo transfer
+  10. interface/API control-plane surfaces
+  11. workspace/tenant governance and hosted/self-hosted coordination
+- **Build later (architecture-defined but dependency-blocked):** wider interface surface expansion and capability/model routing layers that depend on proof from prior implementation slices.
+- **Product overlays:** packaging, ROI, and rollout surfaces stay sequenced over proven implementation evidence and must not be treated as runtime-layer prerequisites.
+
+### Architecture status taxonomy (applies across roadmap + contract)
+
+- **Architecture-defined:** scope and dependency position are documented in architecture docs.
+- **Roadmap-committed:** appears in strategic roadmap and `ROADMAP.json` with explicit dependency placement.
+- **Implementation-ready:** dependencies satisfied and eligible for active build planning.
+- **Later / dependency-blocked:** architecture-defined direction that remains intentionally unscheduled.
+
 ## Platform evolution: deterministic runtime first, platform second
 
 Playbook develops from **deterministic repo intelligence + governance + remediation runtime** into a broader engineering intelligence platform over time. That growth is layered, dependency-ordered, and explicitly separated from the active delivery window.

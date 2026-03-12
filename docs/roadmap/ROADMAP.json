@@ -157,7 +157,7 @@
         "pnpm -r build",
         "pnpm test"
       ],
-      "status": "planned",
+      "status": "in-progress",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine"
@@ -280,7 +280,7 @@
         "pnpm playbook failure suggest --json",
         "pnpm test -- failure-intelligence"
       ],
-      "status": "planned"
+      "status": "in-progress"
     },
     {
       "feature_id": "PB-V07-ARCH-INTELLIGENCE-GRAPH-001",
@@ -690,7 +690,8 @@
       ],
       "dependencies": [
         "PB-V04-PLAN-APPLY-001",
-        "PB-V1-PRODUCT-TRUTH-PACKAGING-001"
+        "PB-V06-FAILURE-INTELLIGENCE-001",
+        "PB-V07-ARCH-INTELLIGENCE-GRAPH-001"
       ],
       "verification_commands": [
         "pnpm playbook verify --json",
@@ -698,7 +699,7 @@
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "planned-later",
+      "status": "planned",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine"
@@ -924,30 +925,30 @@
     {
       "feature_id": "PB-V09-MULTI-REPO-TRANSFER-001",
       "version": "v0.9",
-      "title": "Multi-repo knowledge transfer",
-      "goal": "Promote validated reusable knowledge across repositories only after execution orchestration and trust boundaries are mature enough to preserve local-context separation.",
+      "title": "Governed cross-repo pattern promotion and transfer",
+      "goal": "Promote proven, governed patterns across repositories only after local promotion and outcome evidence validate transfer readiness.",
       "commands": [],
       "contracts": [
+        "docs/architecture/PLAYBOOK_GOVERNED_CROSS_REPO_PATTERN_PROMOTION_AND_TRANSFER.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
-        "docs/ARCHITECTURE.md",
         "docs/roadmap/ROADMAP.json"
       ],
       "tests": [
         "scripts/validate-roadmap-contract.mjs"
       ],
       "docs": [
+        "docs/architecture/PLAYBOOK_GOVERNED_CROSS_REPO_PATTERN_PROMOTION_AND_TRANSFER.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/roadmap/README.md"
       ],
       "dependencies": [
-        "PB-V09-EXECUTION-ORCHESTRATION-001",
-        "PB-V1-DEMO-REFRESH-001"
+        "PB-V09-OUTCOME-FEEDBACK-LEARNING-001"
       ],
       "verification_commands": [
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "backlog",
+      "status": "planned-later",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine",
@@ -982,7 +983,7 @@
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "backlog",
+      "status": "planned-later",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine",
@@ -1203,6 +1204,80 @@
         "@zachariahredfield/playbook-engine",
         "@zachariahredfield/playbook-core"
       ]
+    },
+    {
+      "feature_id": "PB-V09-AUTOMATION-SYNTHESIS-001",
+      "version": "v0.9",
+      "title": "Automation synthesis consuming governed/promoted knowledge",
+      "goal": "Implement governed automation synthesis that consumes only inspected/promoted knowledge inputs with provenance and verification boundaries.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/README.md"
+      ],
+      "dependencies": [
+        "PB-V09-KNOWLEDGE-QUERY-INSPECTION-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ]
+    },
+    {
+      "feature_id": "PB-V09-OUTCOME-FEEDBACK-LEARNING-001",
+      "version": "v0.9",
+      "title": "Outcome feedback and automation runtime learning",
+      "goal": "Implement outcome-linked learning loops that convert runtime results into governed evidence for pattern quality and safe promotion decisions.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_OUTCOME_FEEDBACK_AND_AUTOMATION_RUNTIME_LEARNING.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_OUTCOME_FEEDBACK_AND_AUTOMATION_RUNTIME_LEARNING.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/README.md"
+      ],
+      "dependencies": [
+        "PB-V09-AUTOMATION-SYNTHESIS-001",
+        "PB-V09-PR-REVIEW-LOOP-001",
+        "PB-V09-SESSION-EVIDENCE-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ]
     }
-  ]
+  ],
+  "contractPolicy": {
+    "architectureSlices": "Implementation-facing architecture slices are represented as explicit feature entries when they define dependency-relevant build sequencing.",
+    "productOverlays": "Product/business overlays may be grouped as roadmap feature families and must not be treated as runtime prerequisites.",
+    "statusSemantics": "Architecture-defined does not imply implementation-committed or implemented status; statuses must reflect implementation truth.",
+    "alignmentRule": "ROADMAP.json must stay aligned with docs/PLAYBOOK_PRODUCT_ROADMAP.md and the final architecture dependency map."
+  }
 }
