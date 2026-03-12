@@ -1067,6 +1067,43 @@
       ]
     },
     {
+      "feature_id": "PB-V09-PILOT-DESIGN-PARTNER-ROLLOUT-001",
+      "version": "v0.9",
+      "title": "Pilot / Design-Partner / Rollout Architecture",
+      "goal": "Define canonical staged adoption from local read-only proof through team/workspace and enterprise governance readiness so rollout is evidence-driven, trust-gated, and aligned to deterministic runtime/control-plane maturity.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md",
+        "docs/PLAYBOOK_BUSINESS_STRATEGY.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md",
+        "docs/PLAYBOOK_BUSINESS_STRATEGY.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V09-METRICS-ROI-PROOF-OF-VALUE-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ]
+    },
+    {
       "feature_id": "PB-V09-INTERFACE-SURFACES-001",
       "version": "v0.9",
       "title": "Platform interface surfaces",
@@ -1088,7 +1125,8 @@
       "dependencies": [
         "PB-V09-GOVERNED-INTERFACE-API-001",
         "PB-V1-PRODUCT-TRUTH-PACKAGING-001",
-        "PB-V09-PACKAGING-SKU-ARCHITECTURE-001"
+        "PB-V09-PACKAGING-SKU-ARCHITECTURE-001",
+        "PB-V09-PILOT-DESIGN-PARTNER-ROLLOUT-001"
       ],
       "verification_commands": [
         "pnpm playbook docs audit --json",
