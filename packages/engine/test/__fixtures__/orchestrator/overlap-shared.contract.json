@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0",
+  "goal": "test overlap shared",
+  "sharedPaths": ["packages/shared"],
+  "lanes": [
+    { "id": "lane-a", "allowedPaths": ["packages/shared"], "sharedPaths": ["packages/shared"], "wave": 1 },
+    { "id": "lane-b", "allowedPaths": ["packages/shared"], "sharedPaths": ["packages/shared"], "wave": 2, "dependsOn": ["lane-a"] }
+  ]
+}
