@@ -93,14 +93,17 @@ Do not broaden into a diffuse “do everything AI coding platform” before the 
 
 ## 3) Monetization ladder
 
+Canonical packaging reference: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
+
 ### Product model decision
 
-Adopt an **open-core model**:
+Adopt an **open-core SKU architecture** where packaging follows the deterministic runtime and governance model:
 
-- Local CLI drives adoption and trust.
-- Hosted/team governance layers drive recurring revenue.
+- Open Core proves deterministic local value and trust.
+- Team and Enterprise package coordination, governance, deployment, and operational trust surfaces over the same runtime semantics.
+- Deployment/SKU choices must not redefine engine truth.
 
-### Layer 1: Free / open adoption surface
+### Layer 1: Open Core / Free
 
 - Local deterministic CLI workflows.
 - Core commands: context/query/explain/verify/plan/apply.
@@ -109,7 +112,7 @@ Adopt an **open-core model**:
 
 Goal: maximize activation, proof of value, and workflow habit formation.
 
-### Layer 2: Paid team workflow surface
+### Layer 2: Team
 
 (Architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`, especially Interface Layer, Policy / Control Plane, and Learning / Longitudinal State Layer.)
 
@@ -124,9 +127,9 @@ Workspace/tenant deployment reference: `docs/architecture/PLAYBOOK_WORKSPACE_TEN
 - Workspace/project-group governance views with per-repo evidence drill-down.
 - Optional hosted control-plane packaging over the same deterministic local runtime.
 
-Goal: monetize coordination pain and workflow reliability across teams.
+Goal: monetize coordination pain and workflow reliability across teams while preserving local per-repo ownership and the same verify/session/evidence semantics as Open Core.
 
-### Layer 3: Enterprise trust surface
+### Layer 3: Enterprise
 
 (Architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`, especially Trust / Evidence Layer and Policy / Control Plane.)
 
@@ -138,7 +141,7 @@ Workspace/tenant deployment reference: `docs/architecture/PLAYBOOK_WORKSPACE_TEN
 - Compliance policy packs.
 - Support, rollout assistance, and governance onboarding.
 
-Goal: capture high-ACV governance and boundary-control demand.
+Goal: capture high-ACV governance and boundary-control demand through stronger operational guarantees, not alternate runtime semantics.
 
 ### Services policy
 

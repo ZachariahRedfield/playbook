@@ -73,8 +73,11 @@ Recommended later platform-layer sequence:
 5. control plane
 6. execution orchestration hardening
 7. multi-repo transfer
-8. interface surfaces
-9. capability / model routing
+8. governed interface/API surfaces
+9. workspace/tenant governance + optional hosted deployment model
+10. packaging/SKU architecture (Open Core -> Team -> Enterprise)
+11. interface surfaces
+12. capability / model routing
 
 This sequence is roadmap direction, not part of the current 4-week execution commitment.
 

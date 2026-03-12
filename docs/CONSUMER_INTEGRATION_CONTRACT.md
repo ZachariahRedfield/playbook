@@ -211,6 +211,10 @@ Workspace/tenant integration contract clarifications:
 - Workspace/tenant coordination layers provide governed aggregation and policy views; they do not replace per-repo local evidence truth.
 - Tenant/workspace defaults must remain inspectable and must not silently erase repository-local override visibility.
 - Hosted/self-hosted coordination remains optional packaging over shared deterministic runtime semantics.
+- Paid coordination/governance layers must not erase per-repo local ownership boundaries.
+- Open Core, Team, and Enterprise packaging variants must preserve shared core + project-local state semantics.
+
+Packaging architecture reference: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
 
 ## 7) Example Consumer Repository Layout
 

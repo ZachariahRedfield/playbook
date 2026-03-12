@@ -409,10 +409,21 @@ Failure Mode: Roadmap inflation from treating platform direction as near-term co
 9. multi-repo transfer (explicit promotion only)
 10. governed interface/API surfaces for multi-repo control planes
 11. workspace/tenant governance + optional hosted deployment model
-12. broader interface surfaces
-13. capability / model routing
+12. packaging/SKU architecture (Open Core -> Team -> Enterprise)
+13. broader interface surfaces
+14. capability / model routing
 
 This ordering is a dependency recommendation, not an active delivery commitment.
+
+### Packaging stance: product layer over one runtime
+
+Packaging is a product-layer framing over the same deterministic runtime/governance architecture, not a separate engine family.
+
+Canonical packaging reference: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
+
+Rule: SKU boundaries must not change core runtime semantics.
+Rule: Cloud must remain optional.
+Pattern: Same runtime, different operational surfaces.
 
 ### Platform layers
 
@@ -582,7 +593,20 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - dependency-ordered after Governed Interface / API Surfaces for Multi-Repo Control Planes and before broader interface packaging; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 14. Review + Execution Orchestration
+#### 14. Packaging / SKU Architecture (Open Core -> Team -> Enterprise)
+
+- **Already exists today**
+  - open-core CLI-first, offline-capable, private-first deterministic runtime posture and optional hosted-layer language already exist across strategy and architecture docs.
+- **Partially defined**
+  - monetization ladder language exists, but explicit SKU-to-architecture mapping and cross-SKU invariants were previously distributed across multiple docs.
+- **Future work**
+  - formalize the canonical architecture in `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
+  - require Open Core, Team, and Enterprise packaging to route through the same verify/session/evidence/control-plane semantics.
+  - require monetization to focus on coordination/governance scale while preserving strong local deterministic value in Open Core.
+- **Execution window**
+  - dependency-ordered after Workspace/Tenant Governance + Optional Hosted Deployment Model; directional/planned unless explicitly promoted in roadmap status.
+
+#### 15. Review + Execution Orchestration
 
 - **Already exists today**
   - reviewed `verify -> plan -> apply -> verify` execution loops, CLI-first execution, and CI-safe remediation workflows are implemented.
@@ -593,7 +617,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - near-term work is limited to current remediation contract hardening; broader orchestration expansion is outside the 4-week plan.
 
-#### 15. Interface Surfaces
+#### 16. Interface Surfaces
 
 - **Already exists today**
   - CLI, JSON command contracts, GitHub/CI formatting surfaces, AI contract/bootstrap artifacts, and demo/docs surfaces are implemented.
@@ -604,7 +628,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window except for current product-truth/documentation packaging work.
 
-#### 16. Capability / Model Routing
+#### 17. Capability / Model Routing
 
 - **Already exists today**
   - deterministic routing is presently command- and contract-driven rather than model-driven; Playbook prefers explicit command surfaces and repository intelligence artifacts over open-ended inference.

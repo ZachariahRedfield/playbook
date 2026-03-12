@@ -37,6 +37,27 @@ These backlog candidates feed roadmap track `PB-V1-PRODUCT-TRUTH-PACKAGING-001` 
 
 ---
 
+## Platform direction: Packaging / SKU Architecture consistency
+
+Backlog scope (directional, not current-sprint commitment):
+
+- Define SKU capability boundaries for Open Core, Team, and Enterprise over one deterministic runtime.
+- Add packaging-to-architecture consistency checks across strategy, roadmap, architecture, and contract surfaces.
+- Add open-core proof-of-value guardrails so free/local workflows remain strong trust/activation surfaces.
+- Define team coordination surface taxonomy (shared visibility, policies, PR checks, remediation history, governance reporting direction).
+- Define enterprise trust surface taxonomy (tenant governance, RBAC/SSO direction, approvals/auditability, compliance packs, deployment controls).
+- Define packaging/deployment parity rules across hosted and self-hosted/boundary-controlled models.
+- Define optional services policy and discovery role so services accelerate adoption without becoming the product moat.
+
+Pattern: Packaging follows architecture.
+Pattern: Open Core proves trust; paid layers scale coordination/governance.
+Rule: SKU boundaries must not change runtime semantics.
+Rule: Cloud remains optional; local-only operation remains valid.
+Failure Mode: Cloud-first SKU fork of deterministic runtime truth.
+Failure Mode: Free tier too weak to prove deterministic value.
+
+---
+
 ## Research synthesis summary (platform direction labels)
 
 - Pattern: Shared Core + Project-Local Intelligence

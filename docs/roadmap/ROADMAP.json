@@ -993,6 +993,43 @@
       ]
     },
     {
+      "feature_id": "PB-V09-PACKAGING-SKU-ARCHITECTURE-001",
+      "version": "v0.9",
+      "title": "Packaging / SKU architecture (Open Core -> Team -> Enterprise)",
+      "goal": "Define a canonical SKU architecture where Open Core, Team, and Enterprise package coordination/governance/deployment surfaces over one deterministic runtime without introducing cloud-required or SKU-specific engine semantics.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md",
+        "docs/PLAYBOOK_BUSINESS_STRATEGY.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md",
+        "docs/PLAYBOOK_BUSINESS_STRATEGY.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V09-WORKSPACE-TENANT-GOVERNANCE-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ]
+    },
+    {
       "feature_id": "PB-V09-INTERFACE-SURFACES-001",
       "version": "v0.9",
       "title": "Platform interface surfaces",
@@ -1013,7 +1050,8 @@
       ],
       "dependencies": [
         "PB-V09-GOVERNED-INTERFACE-API-001",
-        "PB-V1-PRODUCT-TRUTH-PACKAGING-001"
+        "PB-V1-PRODUCT-TRUTH-PACKAGING-001",
+        "PB-V09-PACKAGING-SKU-ARCHITECTURE-001"
       ],
       "verification_commands": [
         "pnpm playbook docs audit --json",
