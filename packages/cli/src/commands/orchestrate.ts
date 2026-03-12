@@ -44,6 +44,8 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
     artifactFormat: options.artifactFormat
   });
 
+  const artifactIncludesJson = options.artifactFormat === 'json' || options.artifactFormat === 'both';
+
   emitResult({
     format: options.format,
     quiet: options.quiet,
@@ -79,11 +81,11 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
       }))
     ],
     nextActions: [
-      `Review ${path.relative(cwd, compilation.artifact.orchestratorPath)} lane contracts.`,
       `Distribute ${compilation.artifact.workerBundleDirs.length} worker bundles from ${path.relative(cwd, path.join(compilation.outputDir, 'workers'))} to parallel Codex plan-mode workers.`,
       ...(compilation.artifact.lanePromptPaths.length > 0
         ? [`Legacy lane prompts remain available at ${compilation.relativeOutputDir} for backward compatibility.`]
-        : [])
+        : []),
+      ...(artifactIncludesJson ? [`Review ${path.relative(cwd, compilation.artifact.orchestratorPath)} lane contracts.`] : [])
     ]
   });
 
