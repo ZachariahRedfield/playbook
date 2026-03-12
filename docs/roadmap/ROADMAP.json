@@ -530,6 +530,39 @@
       ]
     },
     {
+      "feature_id": "PB-V09-FINAL-ARCHITECTURE-MAP-001",
+      "version": "v0.9",
+      "title": "Final Architecture Map / Canonical Dependency Index",
+      "goal": "Establish one canonical dependency-ordered architecture map and navigation index linking runtime foundations, trust boundaries, learning layers, and product/deployment overlays without redefining existing architecture semantics.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/README.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V1-PRODUCT-TRUTH-PACKAGING-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
+    },
+    {
       "feature_id": "PB-V09-PLATFORM-OBSERVATION-001",
       "version": "v0.9",
       "title": "Platform observation layer evolution",

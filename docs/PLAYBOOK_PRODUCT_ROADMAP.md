@@ -21,6 +21,13 @@ Positioning rule: preserve current command-surface reliability while growing rea
 
 Canonical rollout architecture reference: `docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md`.
 
+Canonical dependency-ordered architecture index reference: `docs/architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md`.
+
+Roadmap layering rule:
+
+- the Final Architecture Map is the dependency-ordered index over roadmap architecture layers
+- this roadmap remains the single strategic roadmap doctrine for sequencing and commitment posture
+
 Roadmap rule:
 
 - adoption must progress by deterministic trust maturity (`read-only -> verify-only -> low-risk plan/apply -> PR/CI -> workspace/team governance -> org/tenant governance`)

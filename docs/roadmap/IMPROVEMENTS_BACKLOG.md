@@ -24,6 +24,10 @@ This structure prevents roadmap bloat while preserving engineering intelligence 
 
 Related long-term architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`.
 
+## Meta backlog hygiene
+
+- Keep `docs/architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md` synchronized with merged architecture slices so dependency ordering, trust-chain framing, and roadmap navigation remain canonical.
+
 ---
 
 ## Staging candidates: Product truth packaging and narrative sync

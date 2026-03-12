@@ -6,6 +6,7 @@ This directory contains machine-readable roadmap artifacts used by CI and AI aut
 
 - `ROADMAP.json`: deterministic roadmap contract entries.
 - `../PLAYBOOK_PRODUCT_ROADMAP.md`: canonical product roadmap, including current runtime position, near-term execution boundaries, and longer-horizon platform direction.
+- `../architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md`: canonical dependency-ordered architecture map and navigation index across architecture slices, trust boundaries, and roadmap layers.
 - `IMPROVEMENTS_BACKLOG.md`: idea and enhancement staging backlog.
 - `IMPLEMENTATION_PLAN_NEXT_4_WEEKS.md`: implementation-grade 4-week operating plan aligned to accepted roadmap baseline.
 - `WEEK0_WEEK1_EXECUTION_VALIDATOR.md`: execution validator and immediate Week 0/1 build queue derived from the accepted baseline.
@@ -14,6 +15,7 @@ This directory contains machine-readable roadmap artifacts used by CI and AI aut
 ## Navigation
 
 - Read `../PLAYBOOK_PRODUCT_ROADMAP.md` for the strategic roadmap and the platform-evolution layer model.
+- Read `../architecture/PLAYBOOK_FINAL_ARCHITECTURE_MAP_AND_CANONICAL_DEPENDENCY_INDEX.md` for the canonical dependency order and architecture-slice navigation index used by roadmap layers.
 - Read `IMPLEMENTATION_PLAN_NEXT_4_WEEKS.md` for the active execution window only.
 - Read `IMPROVEMENTS_BACKLOG.md` for unscheduled ideas and staging candidates.
 - Read `ROADMAP.json` for the machine-readable contract CI and automation validate.
@@ -85,3 +87,6 @@ Rule: Treat extracted knowledge as evidence first, reusable knowledge second.
 Rule: Promotion must only happen after canonicalization, deterministic comparison, and compaction.
 Failure Mode: Unbounded pattern accumulation degrades determinism, retrieval quality, and operator trust.
 
+
+
+Rule: Keep the Final Architecture Map synchronized with merged architecture slices so roadmap-layer navigation remains canonical.
