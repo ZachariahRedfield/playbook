@@ -71,6 +71,19 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'orchestrate',
+    description: 'Generate deterministic orchestration lane artifacts for a goal',
+    category: 'Core',
+    role: 'remediation',
+    lifecycle: 'canonical',
+    discoverability: 'primary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'orchestrate --goal "ship capability" --lanes 3 --format both',
+    machineReadable: true
+  },
+  {
     name: 'apply',
     description: 'Execute deterministic auto-fixable plan tasks',
     category: 'Core',

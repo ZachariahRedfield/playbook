@@ -21,6 +21,7 @@ Do not hand-edit entries inside the managed markers.
 | `pilot` | Run deterministic baseline external repository analysis in one command | canonical | bootstrap | primary | — | Current (implemented) | `pnpm playbook pilot --repo "./target-repo" --json` |
 | `verify` | Verify governance rules | canonical | governance | primary | 8 | Current (implemented) | `pnpm playbook verify --ci --json` |
 | `plan` | Generate a structured fix plan from rule findings | canonical | remediation | primary | 9 | Current (implemented) | `pnpm playbook plan --json` |
+| `orchestrate` | Generate deterministic orchestration lane artifacts for a goal | canonical | remediation | primary | — | Current (implemented) | `pnpm playbook orchestrate --goal "ship capability" --lanes 3 --format both` |
 | `apply` | Execute deterministic auto-fixable plan tasks | canonical | remediation | primary | 10 | Current (implemented) | `pnpm playbook apply --from-plan .playbook/plan.json` |
 | `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | canonical | repo-intelligence | secondary | — | Current (implemented) | `pnpm playbook analyze-pr --json` |
 | `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook doctor --fix --dry-run` |

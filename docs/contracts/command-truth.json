@@ -268,6 +268,18 @@
       "example": "pnpm playbook memory promote --from-candidate <id> --json"
     },
     {
+      "name": "orchestrate",
+      "category": "Core",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "primary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook orchestrate --goal \"ship capability\" --lanes 3 --format both"
+    },
+    {
       "name": "patterns",
       "category": "Repository tools",
       "role": "governance",
@@ -427,6 +439,7 @@
     "graph",
     "ignore",
     "index",
+    "orchestrate",
     "patterns",
     "pilot",
     "pilot",

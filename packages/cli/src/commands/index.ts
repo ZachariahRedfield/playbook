@@ -73,6 +73,19 @@ const parseAnalyzePrFormat = (allArgs: string[], globalFormat: 'text' | 'json'):
   return format === 'json' ? 'json' : 'text';
 };
 
+const parseOrchestrateArtifactFormat = (allArgs: string[], globalFormat: 'text' | 'json'): 'md' | 'json' | 'both' => {
+  if (globalFormat === 'json') {
+    return 'json';
+  }
+
+  const format = parseOptionValue(allArgs, '--format');
+  if (format === 'md' || format === 'json' || format === 'both') {
+    return format;
+  }
+
+  return 'both';
+};
+
 const commandRunners: Record<string, (context: CommandContext) => Promise<CommandRunResult>> = {
   demo: async ({ cwd, format, quiet }) => {
     const { runDemo } = await import('./demo.js');
@@ -127,6 +140,30 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
   plan: async ({ cwd, commandArgs, ci, format, quiet }) => {
     const { runPlan } = await import('./plan.js');
     return runPlan(cwd, { ci, format, quiet, outFile: parseOptionValue(commandArgs, '--out'), runId: parseOptionValue(commandArgs, '--run-id') });
+  },
+  orchestrate: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runOrchestrate } = await import('./orchestrate.js');
+    const lanesValue = parseOptionValue(commandArgs, '--lanes');
+    const lanes = lanesValue === undefined ? 3 : Number.parseInt(lanesValue, 10);
+
+    if (!Number.isFinite(lanes) || Number.isNaN(lanes) || lanes < 1) {
+      const message = 'playbook orchestrate: --lanes must be a positive integer.';
+      if (format === 'json') {
+        console.log(JSON.stringify({ schemaVersion: '1.0', command: 'orchestrate', error: message }, null, 2));
+      } else {
+        console.error(message);
+      }
+      return ExitCode.Failure;
+    }
+
+    return runOrchestrate(cwd, {
+      format,
+      quiet,
+      goal: parseOptionValue(commandArgs, '--goal'),
+      lanes,
+      outDir: parseOptionValue(commandArgs, '--out') ?? '.playbook/orchestrator',
+      artifactFormat: parseOrchestrateArtifactFormat(commandArgs, format)
+    });
   },
   apply: async ({ cwd, commandArgs, ci, format, quiet }) => {
     const { runApply } = await import('./apply.js');
@@ -312,6 +349,7 @@ const commandOrder = [
   'ignore',
   'verify',
   'plan',
+  'orchestrate',
   'apply',
   'fix',
   'doctor',
