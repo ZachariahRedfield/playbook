@@ -203,6 +203,15 @@ Privacy/locality posture for control planes:
 
 Governed-interface architecture reference: `docs/architecture/PLAYBOOK_GOVERNED_INTERFACE_API_SURFACES_FOR_MULTI_REPO_CONTROL_PLANES.md`.
 
+Workspace/tenant governance + deployment packaging reference: `docs/architecture/PLAYBOOK_WORKSPACE_TENANT_GOVERNANCE_AND_OPTIONAL_HOSTED_DEPLOYMENT.md`.
+
+Workspace/tenant integration contract clarifications:
+
+- Consumer repos retain local ownership of `.playbook/*` state even when attached to optional workspace/tenant control planes.
+- Workspace/tenant coordination layers provide governed aggregation and policy views; they do not replace per-repo local evidence truth.
+- Tenant/workspace defaults must remain inspectable and must not silently erase repository-local override visibility.
+- Hosted/self-hosted coordination remains optional packaging over shared deterministic runtime semantics.
+
 ## 7) Example Consumer Repository Layout
 
 ```text

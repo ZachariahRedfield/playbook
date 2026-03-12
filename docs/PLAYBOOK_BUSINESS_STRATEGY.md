@@ -113,12 +113,16 @@ Goal: maximize activation, proof of value, and workflow habit formation.
 
 (Architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`, especially Interface Layer, Policy / Control Plane, and Learning / Longitudinal State Layer.)
 
+Workspace/tenant deployment reference: `docs/architecture/PLAYBOOK_WORKSPACE_TENANT_GOVERNANCE_AND_OPTIONAL_HOSTED_DEPLOYMENT.md`.
+
 - Hosted indexing and shared repository intelligence.
 - Team policies and shared rulesets.
 - Pull request annotations/checks.
 - Remediation history and change tracking.
 - Multi-repo memory and visibility.
 - Team analytics and governance dashboards.
+- Workspace/project-group governance views with per-repo evidence drill-down.
+- Optional hosted control-plane packaging over the same deterministic local runtime.
 
 Goal: monetize coordination pain and workflow reliability across teams.
 
@@ -126,9 +130,11 @@ Goal: monetize coordination pain and workflow reliability across teams.
 
 (Architecture reference: `docs/architecture/PLAYBOOK_PLATFORM_ARCHITECTURE.md`, especially Trust / Evidence Layer and Policy / Control Plane.)
 
+Workspace/tenant deployment reference: `docs/architecture/PLAYBOOK_WORKSPACE_TENANT_GOVERNANCE_AND_OPTIONAL_HOSTED_DEPLOYMENT.md`.
+
 - SSO/RBAC and org-level permissions.
 - Audit logs and approval controls.
-- Self-hosted/VPC deployment options.
+- Optional self-hosted/VPC/boundary-controlled deployment over the same deterministic runtime semantics.
 - Compliance policy packs.
 - Support, rollout assistance, and governance onboarding.
 

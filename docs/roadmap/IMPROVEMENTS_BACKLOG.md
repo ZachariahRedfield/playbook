@@ -307,6 +307,33 @@ Failure Mode: Multi-repo data pooling without explicit governance.
 
 ---
 
+## Platform direction: Workspace / Tenant Governance + Optional Hosted Deployment Model
+
+Backlog scope:
+
+- Define policy inheritance model across core defaults, tenant defaults, workspace scope, and repo-local adoption authority.
+- Define workspace/repo boundary contract so aggregated views preserve per-repo evidence drill-down.
+- Define tenant/org RBAC direction for developer, reviewer, workspace maintainer, org admin, and automation actors.
+- Define hosted vs self-hosted parity guarantees for governance semantics.
+- Define data-flow classification for hosted aggregation (governed summaries/artifacts by default, explicit export for broader data movement).
+- Define repo-local override and escalation rules with fail-closed conflict handling.
+- Define workspace-level audit and approval view contracts with provenance-linked policy source visibility.
+
+Pattern: Optional Hosted Layer Over Deterministic Local Core.
+Pattern: Workspace Aggregation With Per-Repo Accountability.
+Pattern: Policy Inheritance With Local Adoption Authority.
+Rule: Deployment model must not change governance semantics.
+Rule: Cloud must remain optional.
+Rule: Repo-local facts stay local unless explicitly governed for export/aggregation.
+Rule: Workspace and tenant views must preserve per-repo evidence drill-down.
+Failure Mode: SaaS-first drift that weakens local trust.
+Failure Mode: Hosted aggregation without provenance.
+Failure Mode: Tenant policy silently overriding repo-local governance without visibility.
+Failure Mode: Self-hosted tier receiving weaker guarantees than hosted.
+Failure Mode: Cloud control plane becoming the only real product.
+
+---
+
 ## Platform direction: Capability / Model Routing Layer
 
 Backlog scope:

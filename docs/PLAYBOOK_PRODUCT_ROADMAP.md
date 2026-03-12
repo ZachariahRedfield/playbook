@@ -408,8 +408,9 @@ Failure Mode: Roadmap inflation from treating platform direction as near-term co
 8. broader execution orchestration hardening
 9. multi-repo transfer (explicit promotion only)
 10. governed interface/API surfaces for multi-repo control planes
-11. broader interface surfaces
-12. capability / model routing
+11. workspace/tenant governance + optional hosted deployment model
+12. broader interface surfaces
+13. capability / model routing
 
 This ordering is a dependency recommendation, not an active delivery commitment.
 
@@ -566,7 +567,22 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - dependency-ordered after Governed Cross-Repo Pattern Promotion / Transfer and before broader interface packaging; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 13. Review + Execution Orchestration
+#### 13. Workspace / Tenant Governance + Optional Hosted Deployment Model
+
+- **Already exists today**
+  - control-plane, session/evidence, and governed interface contracts already establish deterministic runtime and per-repo trust boundaries that this layer must preserve.
+- **Partially defined**
+  - optional cloud/control-plane language exists, but canonical workspace/tenant policy inheritance, override visibility, and hosted-vs-self-hosted parity semantics were not centralized in one architecture slice.
+- **Future work**
+  - formalize the canonical architecture in `docs/architecture/PLAYBOOK_WORKSPACE_TENANT_GOVERNANCE_AND_OPTIONAL_HOSTED_DEPLOYMENT.md`.
+  - define user/session/repo/workspace/tenant/promotion scope boundaries with explicit policy inheritance and fail-closed conflict rules.
+  - keep Playbook Cloud optional and subordinate to CLI-first, offline-capable, private-first local guarantees.
+  - require hosted/self-hosted layers to remain coordination packaging over the same deterministic runtime semantics.
+  - require workspace/tenant aggregation to preserve per-repo evidence lineage and drill-down accountability.
+- **Execution window**
+  - dependency-ordered after Governed Interface / API Surfaces for Multi-Repo Control Planes and before broader interface packaging; outside the current near-term execution window unless explicitly promoted in roadmap status.
+
+#### 14. Review + Execution Orchestration
 
 - **Already exists today**
   - reviewed `verify -> plan -> apply -> verify` execution loops, CLI-first execution, and CI-safe remediation workflows are implemented.
@@ -577,7 +593,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - near-term work is limited to current remediation contract hardening; broader orchestration expansion is outside the 4-week plan.
 
-#### 14. Interface Surfaces
+#### 15. Interface Surfaces
 
 - **Already exists today**
   - CLI, JSON command contracts, GitHub/CI formatting surfaces, AI contract/bootstrap artifacts, and demo/docs surfaces are implemented.
@@ -588,7 +604,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window except for current product-truth/documentation packaging work.
 
-#### 15. Capability / Model Routing
+#### 16. Capability / Model Routing
 
 - **Already exists today**
   - deterministic routing is presently command- and contract-driven rather than model-driven; Playbook prefers explicit command surfaces and repository intelligence artifacts over open-ended inference.
@@ -1057,9 +1073,11 @@ Use a layered phase model so each phase compounds directly on the previous one:
    Controlled compounding of reusable engineering knowledge across repositories through explicit, provenance-preserving, sanitization-verified, compatibility-gated transfer packages. Imported patterns are candidate inputs until locally reviewed; no hidden telemetry or automatic global sync.
 17. **Phase 17 â€” Governed Interface / API Surfaces for Multi-Repo Control Planes**  
    Optional interface expansion that exposes validated server/API action surfaces over the same deterministic runtime, preserving per-repo policy/provenance boundaries while enabling coordinated multi-repo control-plane workflows.
-18. **Phase 18 â€” Autonomous Maintenance (Policy-Gated)**  
-   Recurring maintenance execution modes with approval and policy controls, layered after governed synthesis, outcome-feedback, cross-repo transfer, and governed control-plane interface contracts.
-19. **Phase 19 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
+18. **Phase 18 â€” Workspace / Tenant Governance + Optional Hosted Deployment Model**  
+   Optional workspace/tenant governance and deployment packaging layer over the same deterministic runtime, defining policy inheritance, per-repo accountability, and hosted/self-hosted parity without making cloud connectivity mandatory.
+19. **Phase 19 â€” Autonomous Maintenance (Policy-Gated)**  
+   Recurring maintenance execution modes with approval and policy controls, layered after governed synthesis, outcome-feedback, cross-repo transfer, governed control-plane interface contracts, and workspace/tenant governance boundaries.
+20. **Phase 20 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
    Broader pattern detection and candidate improvements from repeated findings/remediations/query usage, including advanced clustering, graph-informed learning artifacts, and higher-order synthesis inputs. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
 
 Reasoning for reordering:

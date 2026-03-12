@@ -957,6 +957,42 @@
       ]
     },
     {
+      "feature_id": "PB-V09-WORKSPACE-TENANT-GOVERNANCE-001",
+      "version": "v0.9",
+      "title": "Workspace / tenant governance + optional hosted deployment model",
+      "goal": "Define explicit workspace/tenant policy boundaries and optional hosted/self-hosted control-plane packaging over one deterministic runtime without weakening CLI-first, offline-capable, private-first guarantees.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_WORKSPACE_TENANT_GOVERNANCE_AND_OPTIONAL_HOSTED_DEPLOYMENT.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_WORKSPACE_TENANT_GOVERNANCE_AND_OPTIONAL_HOSTED_DEPLOYMENT.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/PLAYBOOK_BUSINESS_STRATEGY.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V09-GOVERNED-INTERFACE-API-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ]
+    },
+    {
       "feature_id": "PB-V09-INTERFACE-SURFACES-001",
       "version": "v0.9",
       "title": "Platform interface surfaces",
