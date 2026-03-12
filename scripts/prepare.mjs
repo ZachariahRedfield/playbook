@@ -9,8 +9,10 @@ function hasPnpm() {
   }
 }
 
-if (process.env.CI === "true") {
-  console.log("[prepare] CI detected; skipping lifecycle build.");
+if (process.env.PLAYBOOK_PREPARE_BUILD !== "1") {
+  console.log(
+    "[prepare] Skipping lifecycle build. Set PLAYBOOK_PREPARE_BUILD=1 to enable.",
+  );
   process.exit(0);
 }
 
