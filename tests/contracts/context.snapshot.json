@@ -48,6 +48,7 @@
       "query",
       "route",
       "session",
+      "patterns",
       "learn"
     ]
   }

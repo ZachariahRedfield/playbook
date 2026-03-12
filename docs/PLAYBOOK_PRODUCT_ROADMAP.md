@@ -964,10 +964,12 @@ Current implementation status (features: `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001`,
 - Review artifacts keep canonical reason codes as the primary machine contract, with human-readable rationale derived deterministically from those reason codes.
 - This remains an internal bridge between extraction and promotion.
 - Graph-ready durable pattern card storage is now live under `.playbook/patterns/*.json` with deterministic review drafts under `.playbook/compaction/review-drafts.json`.
-- Promotion workflows, graph traversal/query, and broad autonomous generalization remain future work and are not live command surfaces.
+- Promotion now includes an explicit deterministic local review boundary with staged candidate queue and reviewed approvals/rejections; no silent or automatic promotion is allowed.
+- Live deterministic promotion surfaces in this slice: `pnpm playbook query pattern-review`, `pnpm playbook query promoted-patterns`, and `pnpm playbook patterns promote --id <pattern-id> --decision approve|reject`.
+- Storage remains local and explicit (`.playbook/pattern-review-queue.json`, `.playbook/patterns-promoted.json`); cross-repo sync remains future work.
 
 Live-command boundary note:
-- Deterministic compaction readback is now available via `pnpm playbook query patterns`; no additional dedicated compaction command family is introduced in this slice.
+- Deterministic compaction readback remains available via `pnpm playbook query patterns`, now alongside explicit review/promotion query and decision commands.
 - Treat `pnpm playbook --help` and `docs/commands/README.md` as the source of truth for currently available commands.
 
 Compaction spec details are defined in `docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md`.

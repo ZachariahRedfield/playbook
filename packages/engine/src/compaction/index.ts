@@ -78,3 +78,16 @@ export type { BuildCandidatePatternsInput } from './buildCandidatePatterns.js';
 
 export { synthesizePatternCardDrafts } from './synthesizePatternCardDrafts.js';
 export type { SynthesizePatternCardDraftsInput } from './synthesizePatternCardDrafts.js';
+
+export {
+  buildPatternReviewQueue,
+  writePatternReviewQueue,
+  readPatternReviewQueue,
+  readPromotedPatterns,
+  promotePatternCandidate,
+  PATTERN_REVIEW_QUEUE_RELATIVE_PATH,
+  PROMOTED_PATTERNS_ARTIFACT_RELATIVE_PATH
+} from './promotionQueue.js';
+export { scorePatternCandidate } from './scorePatternCandidate.js';
+export type { PatternCandidateScore } from './scorePatternCandidate.js';
+export type { PatternReviewQueueArtifact, PromotedPatternsArtifact } from './promotionQueue.js';

@@ -8,6 +8,8 @@ import {
   queryModuleOwners,
   queryTestHotspots,
   queryPatterns,
+  queryPatternReviewQueue,
+  queryPromotedPatterns,
   listExecutionRuns,
   readExecutionRun,
   SUPPORTED_QUERY_FIELDS,
@@ -551,6 +553,70 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
   }
 
 
+  if (fieldArg === 'pattern-review') {
+    try {
+      const payload = queryPatternReviewQueue(cwd);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        console.log('Pattern Review Queue');
+        console.log('────────────────────');
+        if (payload.candidates.length === 0) {
+          console.log('none');
+        } else {
+          for (const candidate of payload.candidates) {
+            console.log(`${candidate.id} score=${candidate.promotionScore} confidence=${candidate.confidence}`);
+          }
+        }
+      }
+
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload: { schemaVersion: '1.0', command: 'query', type: 'pattern-review', error: message }, outFile: options.outFile });
+      } else {
+        console.error(message);
+      }
+      return ExitCode.Failure;
+    }
+  }
+
+  if (fieldArg === 'promoted-patterns') {
+    try {
+      const payload = queryPromotedPatterns(cwd);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        console.log('Promoted Patterns');
+        console.log('─────────────────');
+        if (payload.promotedPatterns.length === 0) {
+          console.log('none');
+        } else {
+          for (const pattern of payload.promotedPatterns) {
+            console.log(`${pattern.id} (${pattern.canonicalPatternName}) confidence=${pattern.confidence}`);
+          }
+        }
+      }
+
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload: { schemaVersion: '1.0', command: 'query', type: 'promoted-patterns', error: message }, outFile: options.outFile });
+      } else {
+        console.error(message);
+      }
+      return ExitCode.Failure;
+    }
+  }
+
   if (fieldArg === 'runs') {
     try {
       const payload = { schemaVersion: '1.0', command: 'query', type: 'runs', runs: listExecutionRuns(cwd) };
@@ -703,7 +769,7 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             command: 'query',
             field: fieldArg,
             error: message,
-            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners', 'test-hotspots', 'patterns', 'runs', 'run']
+            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners', 'test-hotspots', 'patterns', 'pattern-review', 'promoted-patterns', 'runs', 'run']
           }, outFile: options.outFile });
     } else {
       console.error(message);

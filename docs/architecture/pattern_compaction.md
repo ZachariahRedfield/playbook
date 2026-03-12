@@ -12,7 +12,7 @@ Canonicalization reduces reasoning complexity and enables cross-repository learn
 
 ## Deterministic flow
 
-`verify -> pattern compaction -> .playbook/patterns.json`
+`verify -> pattern compaction -> candidate review queue -> explicit promotion decision -> promoted patterns`
 
 Pattern extraction sources:
 
@@ -51,7 +51,19 @@ Artifact contract:
 Query surface:
 
 - `playbook query patterns`
+- `playbook query pattern-review`
+- `playbook query promoted-patterns`
+- `playbook patterns promote --id <pattern-id> --decision approve|reject`
 
-## Future work
+Promotion boundaries:
 
-Pattern promotion system for cross-repository knowledge sharing.
+- Compact observations are staged as candidate knowledge in `.playbook/pattern-review-queue.json`.
+- Promotion requires an explicit deterministic decision record and never happens silently.
+- Approved patterns are persisted to `.playbook/patterns-promoted.json`.
+- Storage is local-only for this slice; cross-repo sync is intentionally out of scope.
+
+Rule: Compacted observations are not durable knowledge until they pass through an explicit promotion boundary.
+
+Pattern: Knowledge systems compound best when extraction and promotion are separated.
+
+Failure Mode: If every observation becomes permanent knowledge immediately, the system accumulates noisy pseudo-patterns and degrades future reasoning.

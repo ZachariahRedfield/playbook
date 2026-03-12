@@ -25,6 +25,7 @@ Do not hand-edit entries inside the managed markers.
 | `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | canonical | repo-intelligence | secondary | — | Current (implemented) | `pnpm playbook analyze-pr --json` |
 | `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook doctor --fix --dry-run` |
 | `diagram` | Generate deterministic architecture Mermaid diagrams | utility | utility | secondary | — | Current (implemented) | `pnpm playbook diagram --repo . --out docs/ARCHITECTURE_DIAGRAMS.md` |
+| `patterns` | Apply explicit local promotion decisions for compacted pattern candidates | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook patterns promote --id <pattern-id> --decision approve` |
 | `docs` | Audit documentation governance surfaces and contracts | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook docs audit --json` |
 | `audit` | Audit deterministic architecture guardrails and platform hardening controls | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook audit architecture --json` |
 | `rules` | List loaded verify and analyze rules | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook rules --json` |

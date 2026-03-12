@@ -46,6 +46,7 @@ export type { RepositoryGraph, RepositoryGraphNode, RepositoryGraphEdge, Reposit
 
 export { queryRepositoryIndex, SUPPORTED_QUERY_FIELDS } from './query/repoQuery.js';
 export { queryPatterns } from './query/patterns.js';
+export { queryPatternReviewQueue, queryPromotedPatterns } from './query/patternPromotion.js';
 export type { RepositoryQueryField, RepositoryQueryResult } from './query/repoQuery.js';
 export { answerRepositoryQuestion } from './ask/askEngine.js';
 export type { AskEngineResult } from './ask/askEngine.js';
@@ -169,7 +170,13 @@ export {
   writePatternCards,
   toExistingPatternTargets,
   buildCandidatePatterns,
-  synthesizePatternCardDrafts
+  synthesizePatternCardDrafts,
+  buildPatternReviewQueue,
+  writePatternReviewQueue,
+  readPatternReviewQueue,
+  readPromotedPatterns,
+  promotePatternCandidate,
+  scorePatternCandidate
 } from './compaction/index.js';
 export type {
   CompactionCandidate,
@@ -189,7 +196,10 @@ export type {
   PatternCard,
   PatternCardReviewDraftArtifact,
   PatternCardReviewDraftEntry,
-  SynthesizePatternCardDraftsInput
+  SynthesizePatternCardDraftsInput,
+  PatternCandidateScore,
+  PatternReviewQueueArtifact,
+  PromotedPatternsArtifact
 } from './compaction/index.js';
 
 export { scorePromotionReadiness } from './promotion/scorePromotionReadiness.js';

@@ -632,20 +632,28 @@
       "feature_id": "PB-V09-KNOWLEDGE-COMPACTION-PROMOTION-001",
       "version": "v0.9",
       "title": "Knowledge compaction and promotion layer",
-      "goal": "Sequence durable knowledge compaction, promotion, and retirement behavior after persistence foundations while keeping current work limited to deterministic internal-first groundwork.",
-      "commands": [],
+      "goal": "Implement deterministic local pattern promotion pipeline with explicit review queue and decision-recorded approvals/rejections so compacted observations become durable knowledge only after governed promotion.",
+      "commands": [
+        "query patterns",
+        "query pattern-review",
+        "query promoted-patterns",
+        "patterns promote"
+      ],
       "contracts": [
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/ARCHITECTURE.md",
         "docs/roadmap/ROADMAP.json"
       ],
       "tests": [
+        "packages/cli/src/commands/patterns.test.ts",
+        "packages/engine/test/patternPromotionQueue.test.ts",
         "scripts/validate-roadmap-contract.mjs"
       ],
       "docs": [
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
-        "docs/roadmap/README.md",
-        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+        "docs/architecture/pattern_compaction.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md",
+        "docs/roadmap/README.md"
       ],
       "dependencies": [
         "PB-V09-KNOWLEDGE-PERSISTENCE-001",
@@ -653,8 +661,12 @@
         "PB-V08-PATTERN-CARD-STORAGE-001"
       ],
       "verification_commands": [
+        "node scripts/validate-roadmap-contract.mjs --ci",
         "pnpm playbook docs audit --json",
-        "node scripts/validate-roadmap-contract.mjs --ci"
+        "pnpm playbook patterns promote --id <pattern-id> --decision approve --json",
+        "pnpm playbook query pattern-review --json",
+        "pnpm playbook query promoted-patterns --json",
+        "pnpm playbook verify --json"
       ],
       "status": "planned-later",
       "package_ownership": [

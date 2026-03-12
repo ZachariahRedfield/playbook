@@ -116,6 +116,9 @@ declare module "@zachariahredfield/playbook-engine" {
   export type RepositoryModule = any;
   export const answerRepositoryQuestion: (...args: any[]) => any;
   export const queryPatterns: (...args: any[]) => any;
+  export const queryPatternReviewQueue: (...args: any[]) => any;
+  export const queryPromotedPatterns: (...args: any[]) => any;
+  export const promotePatternCandidate: (...args: any[]) => any;
   export const explainTarget: (...args: any[]) => any;
   export type ExplainTargetResult = any;
   export const SUPPORTED_QUERY_FIELDS: readonly string[];

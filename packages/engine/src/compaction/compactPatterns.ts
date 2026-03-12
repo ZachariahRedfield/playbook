@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { VerifyReport } from '../report/types.js';
 import { canonicalizePatternId } from './canonicalizePatterns.js';
 import { resolvePatternBucket, type PatternBucket } from './patternBuckets.js';
+import { buildPatternReviewQueue, writePatternReviewQueue } from './promotionQueue.js';
 
 const PATTERNS_ARTIFACT_RELATIVE_PATH = '.playbook/patterns.json' as const;
 const PLAN_ARTIFACT_RELATIVE_PATH = '.playbook/plan.json' as const;
@@ -121,6 +122,9 @@ export const compactPatterns = (repoRoot: string, verifyReport: VerifyReport): P
   const outputPath = path.join(repoRoot, PATTERNS_ARTIFACT_RELATIVE_PATH);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+
+  const reviewQueue = buildPatternReviewQueue(artifact);
+  writePatternReviewQueue(repoRoot, reviewQueue);
 
   return artifact;
 };

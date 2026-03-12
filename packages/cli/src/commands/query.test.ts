@@ -79,6 +79,85 @@ const writePatternsArtifact = (repo: string): void => {
   );
 };
 
+
+const writePatternReviewQueue = (repo: string): void => {
+  const filePath = path.join(repo, '.playbook', 'pattern-review-queue.json');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'playbook-pattern-review-queue',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        candidates: [
+          {
+            id: 'candidate-module_test_absence',
+            sourcePatternId: 'MODULE_TEST_ABSENCE',
+            canonicalPatternName: 'module test absence',
+            whyItExists: 'why',
+            examples: ['module lacks tests'],
+            confidence: 0.9,
+            reusableEngineeringMeaning: 'meaning',
+            recurrenceCount: 3,
+            repoSurfaceBreadth: 0.6,
+            remediationUsefulness: 0.8,
+            canonicalClarity: 0.9,
+            falsePositiveRisk: 0.1,
+            promotionScore: 0.83,
+            stage: 'review'
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+};
+
+const writePromotedPatterns = (repo: string): void => {
+  const filePath = path.join(repo, '.playbook', 'patterns-promoted.json');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'playbook-promoted-patterns',
+        promotedPatterns: [
+          {
+            id: 'MODULE_TEST_ABSENCE',
+            sourceCandidateId: 'candidate-module_test_absence',
+            canonicalPatternName: 'module test absence',
+            whyItExists: 'why',
+            examples: ['module lacks tests'],
+            confidence: 0.9,
+            reusableEngineeringMeaning: 'meaning',
+            promotedAt: '2026-01-02T00:00:00.000Z',
+            reviewRecord: {
+              candidateId: 'candidate-module_test_absence',
+              canonicalPatternName: 'module test absence',
+              whyItExists: 'why',
+              examples: ['module lacks tests'],
+              confidence: 0.9,
+              reusableEngineeringMeaning: 'meaning',
+              decision: {
+                candidateId: 'candidate-module_test_absence',
+                decision: 'approve',
+                decidedBy: 'human-reviewed-local',
+                decidedAt: '2026-01-02T00:00:00.000Z',
+                rationale: 'Approved through explicit deterministic local review boundary.'
+              }
+            }
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeVerifyReport = (repo: string): void => {
   const verifyPath = path.join(repo, '.playbook', 'verify-report.json');
   fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
@@ -823,5 +902,35 @@ describe('command registry', () => {
 
     expect(command).toBeDefined();
     expect(command?.description).toBe('Query machine-readable repository intelligence from .playbook/repo-index.json');
+  });
+
+  it('prints pattern-review query JSON output', async () => {
+    const repo = createRepo('playbook-cli-query-pattern-review');
+    writePatternReviewQueue(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['pattern-review'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.kind).toBe('playbook-pattern-review-queue');
+    expect(payload.candidates).toHaveLength(1);
+
+    logSpy.mockRestore();
+  });
+
+  it('prints promoted-patterns query JSON output', async () => {
+    const repo = createRepo('playbook-cli-query-promoted-patterns');
+    writePromotedPatterns(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['promoted-patterns'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.kind).toBe('playbook-promoted-patterns');
+    expect(payload.promotedPatterns[0].id).toBe('MODULE_TEST_ABSENCE');
+
+    logSpy.mockRestore();
   });
 });

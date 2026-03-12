@@ -292,6 +292,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
   session: async ({ cwd, commandArgs, format, quiet }) => {
     const { runSession } = await import('./session.js');
     return runSession(cwd, commandArgs, { format, quiet });
+  },
+  patterns: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runPatterns } = await import('./patterns.js');
+    return runPatterns(cwd, commandArgs, { format, quiet, outFile: parseOptionValue(commandArgs, '--out') });
   }
 };
 
@@ -326,6 +330,7 @@ const commandOrder = [
   'query',
   'route',
   'session',
+  'patterns',
   'learn'
 ] as const;
 

@@ -123,6 +123,19 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: false
   },
   {
+    name: 'patterns',
+    description: 'Apply explicit local promotion decisions for compacted pattern candidates',
+    category: 'Repository tools',
+    role: 'governance',
+    lifecycle: 'canonical',
+    discoverability: 'secondary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'patterns promote --id <pattern-id> --decision approve',
+    machineReadable: true
+  },
+  {
     name: 'docs',
     description: 'Audit documentation governance surfaces and contracts',
     category: 'Repository tools',
