@@ -9,12 +9,15 @@ concurrency:
   group: demo-${{ github.workflow }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   demo-integration:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Playbook CI composite action
         uses: ./.github/actions/playbook-ci

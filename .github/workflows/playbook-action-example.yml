@@ -13,12 +13,15 @@ on:
           - 'false'
           - 'true'
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     name: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github
         with:
           mode: verify
@@ -28,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github
         with:
           mode: plan
@@ -40,7 +43,7 @@ jobs:
     needs: plan
     if: github.event_name == 'workflow_dispatch' && inputs.run_apply == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # In production, gate this step behind approval/review before apply.
       - name: Download reviewed plan artifact

@@ -1939,3 +1939,15 @@ Playbook artifacts must only be written via the artifact IO layer to guarantee d
 
 Failure Mode
 Shell redirection (`>`) may introduce encoding corruption. CLI owned artifact output must always be preferred.
+
+
+## CI Checkout Auth Hardening
+
+Rule
+Treat checkout auth failures as stage-0 blockers and remediate token/permissions before runtime warning cleanup.
+
+Pattern
+Use explicit least-privilege workflow permissions (`contents: read` for PR validation jobs) and modern checkout action versions to keep fork/same-repo PR checkout deterministic.
+
+Failure Mode
+If workflow permissions are implicit/restricted, `actions/checkout` can fail early with `could not read Username for https://github.com` before any build/test stage executes.
