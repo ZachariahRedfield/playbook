@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Implemented first live `pnpm playbook orchestrate` as a deterministic control-plane lane-contract compiler that emits `orchestrator.json` plus lane prompt artifacts with explicit ownership, shared-file risk, wave/dependency ordering, and safe lane-count degradation. WHY: Turns orchestration from planned direction into a merge-safe governance surface for parallel Codex plan-mode execution without introducing autonomous worker/branch/PR behavior.
+
 - WHAT: Added planned `orchestrate` command contract documentation (`docs/commands/orchestrate.md`), linked it in the command docs index, and aligned roadmap phase scope language for deterministic lane contract generation vs later worker launch/merge-guard/state-tracking orchestration capabilities. WHY: Establishes a clear control-plane/worker-plane orchestration contract without implying unimplemented runtime behavior.
 
 - WHAT: Added explicit `pnpm playbook memory promote --from-candidate <id>` and `pnpm playbook memory prune` workflows with semantic-memory artifacts, supersession links (`supersedes`/`supersededBy`), stale/duplicate pruning, and provenance-preserving promotion boundaries. WHY: Enables durable memory promotion through human-reviewed steps without auto-canonicalizing every historical artifact into governance doctrine.

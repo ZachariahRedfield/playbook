@@ -27,6 +27,7 @@ Playbook continues to ship as a deterministic repository intelligence and govern
 Positioning guardrails:
 
 - Keep command-surface reliability stable while reasoning depth grows.
+- Control-plane milestone: `pnpm playbook orchestrate` is now implemented as deterministic lane-contract generation (goal -> ownership-bounded lanes -> wave/dependency ordering -> worker prompt artifacts) while preserving non-autonomous boundaries (no worker launch/branch/PR/merge execution).
 - Preserve deterministic runtime and trust-layer identity across all phases.
 - Expand by trust maturity (`read-only -> verify-only -> low-risk plan/apply -> PR/CI -> workspace/team governance -> org/tenant governance`), not by feature sprawl.
 

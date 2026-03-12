@@ -1,138 +1,84 @@
-# Orchestrate (`pnpm playbook orchestrate`) — Planned Command Contract
+# Orchestrate (`pnpm playbook orchestrate`)
 
-Status: **Planned reference (not yet implemented)**.
+`orchestrate` is a **deterministic control-plane command** that compiles one high-level goal into merge-safe lane contracts for parallel Codex plan-mode workflows.
 
-This document captures the intended contract for a future `orchestrate` command so control-plane and worker-plane integration can be designed deterministically before runtime execution is enabled.
+## Control-plane boundary
 
-## Purpose
+Playbook orchestration is governance-first:
 
-`orchestrate` is intended to generate deterministic lane contracts that split a larger task into bounded execution lanes with explicit ownership, file boundaries, and dependency order.
+- Defines lane ownership, dependencies, and shared-file risk.
+- Generates deterministic artifacts for workers.
+- **Does not** launch workers, create branches, open PRs, merge code, or run autonomous execution loops.
 
-Primary goals:
+Codex workers are expected to execute lane prompts within the contracts produced by this command.
 
-- generate machine-readable lane contracts before any worker execution,
-- preserve Playbook as the policy and plan authority,
-- ensure every lane advertises exactly which files it may mutate,
-- enable merge-safe, dependency-aware wave planning.
+## Usage
 
-## Non-goals (Phase 1)
+```bash
+pnpm playbook orchestrate \
+  --goal "Implement query risk and docs audit improvements in parallel" \
+  --lanes 3 \
+  --out .playbook/orchestrator \
+  --format both
+```
 
-Phase 1 is contract generation only. It does **not**:
+## Flags
 
-- launch Codex workers,
-- auto-merge lane outputs,
-- evaluate merge guards in CI,
-- maintain long-running orchestration runtime state.
+- `--goal <string>` (required)
+- `--lanes <number>` (optional, default `3`)
+- `--out <dir>` (optional, default `.playbook/orchestrator`)
+- `--format <md|json|both>` (optional, default `both`)
 
-## Control-plane vs worker-plane split
+## Deterministic decomposition model (v1)
 
-`orchestrate` follows a two-plane model:
+`orchestrate` uses fixed lane categories and deterministic merges:
 
-- **Playbook control-plane**
-  - owns task decomposition,
-  - validates lane/file policy,
-  - emits deterministic orchestration artifacts,
-  - remains the source of truth for governance rules.
-- **Codex worker-plane**
-  - executes a single assigned lane contract,
-  - stays inside that lane's approved file set,
-  - returns outputs for later control-plane reconciliation.
+1. CLI / command surface
+2. Engine / domain logic
+3. Tests / validation
+4. Docs / command-truth integration
 
-Rule: worker execution must be policy-constrained by control-plane artifacts, not free-form repository mutation.
+If requested lane count is lower than available categories, categories are merged deterministically.
+If safe isolation is not possible, lane count is reduced rather than inventing unsafe parallelism.
 
-## Lane ownership rules
+## Output artifacts
 
-Each lane contract should define:
+Default output directory: `.playbook/orchestrator`
 
-- `laneId`: stable lane identifier,
-- `owner`: assigned worker identity or role,
-- `allowedFiles`: explicit write scope,
-- `readContext`: allowed supporting context,
-- `deliverables`: expected output artifacts/doc changes,
-- `dependsOn`: prerequisite lane IDs,
-- `status`: deterministic lifecycle marker (`planned`, `ready`, `blocked`, `complete`).
+- `orchestrator.json`
+- `lane-1.prompt.md`
+- `lane-2.prompt.md`
+- `...`
 
-Ownership rules:
+`orchestrator.json` includes:
 
-- one lane has one owner at a time,
-- lane owners may only modify files in `allowedFiles`,
-- cross-lane edits require an explicit contract update before execution,
-- shared-file edits must be serialized by dependency/wave order.
+- Goal and requested/produced lane counts
+- Explicit shared-file conflict hubs
+- Warnings for deterministic degradations
+- Lane contracts with allowed/forbidden paths, wave/dependency ordering, and prompt file mapping
 
 ## Shared-file policy
 
-Shared files (for example roadmap/docs indexes/contracts) must be declared upfront.
+The following conflict hubs are always surfaced explicitly:
 
-Policy:
+- `README.md`
+- `docs/CHANGELOG.md`
+- `docs/PLAYBOOK_PRODUCT_ROADMAP.md`
 
-- shared files are either:
-  - assigned to a dedicated integration lane, or
-  - protected by wave ordering so only one lane edits them at a time,
-- no optimistic concurrent writes to the same shared file,
-- reconciliation is deterministic and control-plane-led.
+These files are treated as shared-risk surfaces and should be integrated with explicit coordination.
 
-This policy prevents hidden overlap and reduces merge ambiguity.
+## Worker prompt contract
 
-Integration rule for shared surfaces: treat barrel files (`index.ts`), changelog files, and top-level public API export surfaces as dedicated integration files, not primary worker lanes.
+Each generated lane prompt includes:
 
-Failure mode to avoid: parallel lanes can each add valid exports independently, but merged shared barrels can accumulate duplicate symbol re-exports that only fail at TypeScript build time; reserve final consolidation of shared export surfaces for an integration pass.
+- Objective
+- Why the lane exists
+- Allowed and forbidden files
+- Shared-file policy
+- Dependency / wave info
+- Implementation plan
+- Verification steps
+- Documentation updates
+- Merge notes
 
-## Wave and dependency model
-
-Lanes are grouped into deterministic waves:
-
-- **Wave 0**: prerequisite contract/doc prep,
-- **Wave N**: independent lanes runnable in parallel,
-- **Wave N+1**: lanes blocked on outputs from earlier waves,
-- **Final integration wave**: shared-surface alignment (indexes/contracts/changelog/roadmap updates).
-
-Dependency rules:
-
-- a lane may start only when all `dependsOn` lanes are `complete`,
-- failed/blocked lanes halt dependent lanes,
-- wave planning is artifact-driven (not inferred ad hoc by workers).
-
-## Usage examples (planned)
-
-Generate lane contracts for a task:
-
-```bash
-pnpm playbook orchestrate plan \
-  --task "add orchestrate docs and roadmap alignment" \
-  --lanes 3 \
-  --json \
-  --out .playbook/orchestration/plan.json
-```
-
-Render human-readable lane summary:
-
-```bash
-pnpm playbook orchestrate explain \
-  --from .playbook/orchestration/plan.json
-```
-
-Validate lane-file boundaries before worker execution:
-
-```bash
-pnpm playbook orchestrate verify \
-  --from .playbook/orchestration/plan.json \
-  --json
-```
-
-## Generated artifacts (planned)
-
-Expected artifact set (shape may evolve with implementation):
-
-- `.playbook/orchestration/plan.json`
-  - lane contracts, ownership, dependencies, wave ordering,
-- `.playbook/orchestration/state.json`
-  - orchestration lifecycle state snapshot,
-- `.playbook/orchestration/merge-guards.json`
-  - shared-file and dependency guard evaluation inputs,
-- `.playbook/orchestration/run-summary.json`
-  - deterministic run summary for CI/automation.
-
-## Phase scope summary
-
-- **Phase 1 (in scope):** deterministic lane contract generation and validation.
-- **Future scope (out of Phase 1):** worker launch, merge guards, orchestration state tracking.
+This keeps worker execution bounded and lane ownership explicit.

@@ -34,31 +34,67 @@ describe('runOrchestrate', () => {
       format: 'json',
       quiet: false,
       goal: 'ship orchestration command',
-      lanes: 2,
+      lanes: 3,
       outDir: '.playbook/orchestrator',
       artifactFormat: 'both'
     });
 
     expect(exitCode).toBe(ExitCode.Success);
 
+    const jsonArtifact = path.join(repoDir, '.playbook', 'orchestrator', 'orchestrator.json');
+    const lane1Prompt = path.join(repoDir, '.playbook', 'orchestrator', 'lane-1.prompt.md');
+
+    expect(fs.existsSync(jsonArtifact)).toBe(true);
+    expect(fs.existsSync(lane1Prompt)).toBe(true);
+
+    const artifactPayload = JSON.parse(fs.readFileSync(jsonArtifact, 'utf8')) as {
+      goal: string;
+      laneCountProduced: number;
+      lanes: Array<{ id: string; wave: number; dependsOn: string[]; allowedPaths: string[] }>;
+      sharedPaths: string[];
+    };
+    expect(artifactPayload.goal).toBe('ship orchestration command');
+    expect(artifactPayload.laneCountProduced).toBe(3);
+    expect(artifactPayload.sharedPaths).toEqual(['README.md', 'docs/CHANGELOG.md', 'docs/PLAYBOOK_PRODUCT_ROADMAP.md']);
+
+    const owned = new Set<string>();
+    artifactPayload.lanes.forEach((lane) => {
+      lane.allowedPaths.forEach((ownedPath) => {
+        expect(owned.has(ownedPath)).toBe(false);
+        owned.add(ownedPath);
+      });
+    });
+
+    const lane3 = artifactPayload.lanes.find((lane) => lane.id === 'lane-3');
+    expect(lane3?.wave).toBe(2);
+    expect(lane3?.dependsOn).toEqual(['lane-1', 'lane-2']);
+
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
     expect(payload.command).toBe('orchestrate');
     expect(payload.ok).toBe(true);
 
-    const jsonArtifact = path.join(repoDir, '.playbook', 'orchestrator', 'orchestration.json');
-    const markdownArtifact = path.join(repoDir, '.playbook', 'orchestrator', 'orchestration.md');
+    logSpy.mockRestore();
+  });
 
-    expect(fs.existsSync(jsonArtifact)).toBe(true);
-    expect(fs.existsSync(markdownArtifact)).toBe(true);
+  it('degrades to a single lane when one lane is requested', async () => {
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-orchestrate-one-lane-'));
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const artifactPayload = JSON.parse(fs.readFileSync(jsonArtifact, 'utf8')) as Record<string, unknown>;
-    expect(artifactPayload.goal).toBe('ship orchestration command');
-    expect(artifactPayload.lanes).toBe(2);
+    await runOrchestrate(repoDir, {
+      format: 'json',
+      quiet: false,
+      goal: 'single lane scenario',
+      lanes: 1,
+      outDir: '.playbook/orchestrator',
+      artifactFormat: 'json'
+    });
 
-    const markdown = fs.readFileSync(markdownArtifact, 'utf8');
-    expect(markdown).toContain('# Playbook Orchestration Plan');
-    expect(markdown).toContain('Lane 1');
-    expect(markdown).toContain('Lane 2');
+    const artifactPayload = JSON.parse(
+      fs.readFileSync(path.join(repoDir, '.playbook', 'orchestrator', 'orchestrator.json'), 'utf8')
+    ) as { laneCountProduced: number };
+
+    expect(artifactPayload.laneCountProduced).toBe(1);
+    expect(fs.existsSync(path.join(repoDir, '.playbook', 'orchestrator', 'lane-1.prompt.md'))).toBe(false);
 
     logSpy.mockRestore();
   });

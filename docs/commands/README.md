@@ -58,7 +58,7 @@ Do not hand-edit entries inside the managed markers.
 
 ### Planned command docs (reference contracts)
 
-- [`orchestrate` (planned)](orchestrate.md)
+- [`orchestrate`](orchestrate.md)
 
 ## External repository targeting (`pnpm playbook --repo <path> <command>`)
 

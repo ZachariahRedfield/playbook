@@ -1,43 +1,34 @@
-export type SharedFileHandling = 'single-owner' | 'deferred-merge';
-
-export interface SharedFilePolicy {
-  path: string;
-  handling: SharedFileHandling;
-  ownerLaneId: string | null;
-  notes: string;
-}
-
-export interface LaneContract {
+export interface OrchestratorLane {
   id: string;
-  wave: number;
-  goal: string;
-  dependsOn: string[];
+  title: string;
+  objective: string;
+  whyThisLaneExists: string;
   allowedPaths: string[];
   forbiddenPaths: string[];
   sharedPaths: string[];
+  wave: number;
+  dependsOn: string[];
+  promptFile: string;
+  verification: string[];
+  documentationUpdates: string[];
+  implementationPlan: string[];
+  mergeNotes: string[];
 }
 
 export interface OrchestratorContract {
-  generatedAt: string;
+  schemaVersion: '1.0';
+  command: 'orchestrate';
   goal: string;
-  lanes: LaneContract[];
-  sharedFilePolicy: SharedFilePolicy[];
-}
-
-export interface PlannerLaneInput {
-  goal: string;
-  wave?: number;
-  dependsOn?: string[];
-  allowedPaths: string[];
-  forbiddenPaths?: string[];
-  sharedPaths?: string[];
+  laneCountRequested: number;
+  laneCountProduced: number;
+  sharedPaths: string[];
+  warnings: string[];
+  lanes: OrchestratorLane[];
 }
 
 export interface BuildOrchestratorContractInput {
   goal: string;
-  repoRoot: string;
-  lanes: PlannerLaneInput[];
-  overlapStrategy?: 'fail' | 'migrate-to-shared';
+  laneCountRequested: number;
 }
 
 export interface OrchestratorArtifactWriteResult {

@@ -1,5 +1,5 @@
-import fs from 'node:fs';
 import path from 'node:path';
+import { buildOrchestratorContract, writeOrchestratorArtifact } from '@zachariahredfield/playbook-engine';
 import { emitResult, ExitCode } from '../lib/cliContract.js';
 
 type OrchestrateArtifactFormat = 'md' | 'json' | 'both';
@@ -11,31 +11,6 @@ type OrchestrateOptions = {
   lanes: number;
   outDir: string;
   artifactFormat: OrchestrateArtifactFormat;
-};
-
-type OrchestrateLane = {
-  lane: number;
-  objective: string;
-};
-
-const buildLanePlan = (goal: string, lanes: number): OrchestrateLane[] =>
-  Array.from({ length: lanes }, (_, index) => ({
-    lane: index + 1,
-    objective: `Advance "${goal}" via lane ${index + 1}`
-  }));
-
-const buildMarkdown = (goal: string, lanes: OrchestrateLane[]): string => {
-  const lines = [
-    '# Playbook Orchestration Plan',
-    '',
-    `Goal: ${goal}`,
-    `Lane count: ${lanes.length}`,
-    '',
-    '## Lanes',
-    ...lanes.map((lane) => `- Lane ${lane.lane}: ${lane.objective}`)
-  ];
-
-  return `${lines.join('\n')}\n`;
 };
 
 export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): Promise<number> => {
@@ -61,33 +36,15 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
     return ExitCode.Failure;
   }
 
-  const lanes = buildLanePlan(goal, options.lanes);
   const outDir = path.resolve(cwd, options.outDir);
   const relativeOutDir = path.relative(cwd, outDir) || '.';
-  const jsonArtifactPath = path.join(relativeOutDir, 'orchestration.json');
-  const markdownArtifactPath = path.join(relativeOutDir, 'orchestration.md');
 
-  const payload = {
-    schemaVersion: '1.0' as const,
-    command: 'orchestrate' as const,
+  const contract = buildOrchestratorContract({
     goal,
-    lanes: lanes.length,
-    plan: lanes,
-    artifacts: {
-      json: jsonArtifactPath,
-      markdown: markdownArtifactPath
-    }
-  };
+    laneCountRequested: options.lanes
+  });
 
-  fs.mkdirSync(outDir, { recursive: true });
-
-  if (options.artifactFormat === 'json' || options.artifactFormat === 'both') {
-    fs.writeFileSync(path.join(outDir, 'orchestration.json'), `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
-  }
-
-  if (options.artifactFormat === 'md' || options.artifactFormat === 'both') {
-    fs.writeFileSync(path.join(outDir, 'orchestration.md'), buildMarkdown(goal, lanes), 'utf8');
-  }
+  const artifact = writeOrchestratorArtifact(contract, outDir, options.artifactFormat);
 
   emitResult({
     format: options.format,
@@ -100,20 +57,35 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
       {
         id: 'orchestrate.goal',
         level: 'info',
-        message: `Goal: ${goal}`
+        message: `Goal: ${contract.goal}`
       },
       {
-        id: 'orchestrate.lanes',
+        id: 'orchestrate.lanes.requested',
         level: 'info',
-        message: `Lanes: ${lanes.length}`
+        message: `Lanes requested: ${contract.laneCountRequested}`
+      },
+      {
+        id: 'orchestrate.lanes.produced',
+        level: 'info',
+        message: `Lanes produced: ${contract.laneCountProduced}`
       },
       {
         id: 'orchestrate.artifact-format',
         level: 'info',
         message: `Artifact format: ${options.artifactFormat}`
-      }
+      },
+      ...contract.warnings.map((warning, index) => ({
+        id: `orchestrate.warning.${index + 1}`,
+        level: 'warning' as const,
+        message: warning
+      }))
     ],
-    nextActions: ['Review orchestration artifacts and execute planned lane tasks.']
+    nextActions: [
+      `Review ${path.relative(cwd, artifact.orchestratorPath)} lane contracts.`,
+      ...(artifact.lanePromptPaths.length > 0
+        ? [`Distribute ${artifact.lanePromptPaths.length} lane prompt files to parallel Codex plan-mode workers.`]
+        : [])
+    ]
   });
 
   return ExitCode.Success;

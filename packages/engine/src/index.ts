@@ -267,9 +267,7 @@ export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, E
 export { buildOrchestratorContract, writeOrchestratorArtifact } from './orchestrator/index.js';
 export type {
   BuildOrchestratorContractInput,
-  LaneContract,
   OrchestratorArtifactWriteResult,
-  PlannerLaneInput,
-  SharedFileHandling,
-  SharedFilePolicy
+  OrchestratorContract,
+  OrchestratorLane
 } from './orchestrator/index.js';

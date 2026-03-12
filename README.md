@@ -463,6 +463,10 @@ Playbook's canonical remediation loop is:
 
 `fix` remains available as a convenience direct-remediation path (for example `--dry-run`, `--yes`, `--only`) when you want a single-command local workflow instead of explicit plan/apply steps.
 
+## Deterministic orchestration workflow
+
+Use `pnpm playbook orchestrate --goal "<implementation goal>" --lanes 3 --format both` to compile a governance-safe lane contract set for parallel Codex plan-mode workers. The command is control-plane only: it defines lane boundaries/dependencies and emits artifacts, but never launches workers or performs branch/PR/merge automation.
+
 ## Getting Started
 
 Run:
