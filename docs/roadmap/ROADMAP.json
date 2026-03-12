@@ -820,6 +820,40 @@
       ]
     },
     {
+      "feature_id": "PB-V09-KNOWLEDGE-QUERY-INSPECTION-001",
+      "version": "v0.9",
+      "title": "Knowledge Query / Inspection Surfaces for Memory",
+      "goal": "Define deterministic, read-only, provenance-preserving inspection surfaces for repo-local memory and promoted knowledge before broader automation consumption.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md",
+        "docs/CONSUMER_INTEGRATION_CONTRACT.md",
+        "docs/AUTOMATION_SYNTHESIS_VISION.md"
+      ],
+      "dependencies": [
+        "PB-V09-LONGITUDINAL-STATE-001"
+      ],
+      "verification_commands": [
+        "pnpm playbook docs audit --json",
+        "node scripts/validate-roadmap-contract.mjs --ci"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
+    },
+    {
       "feature_id": "PB-V09-EXECUTION-ORCHESTRATION-001",
       "version": "v0.9",
       "title": "Execution orchestration hardening",

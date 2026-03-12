@@ -495,7 +495,20 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - after Session + Evidence, Control Plane, and PR Review Loop architecture layers; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 8. Review + Execution Orchestration
+#### 8. Knowledge Query / Inspection Surfaces
+
+- **Already exists today**
+  - deterministic read-runtime intelligence surfaces (`index`, `query`, `ask`, `explain`) already establish contract-first inspection behavior for repository intelligence artifacts.
+- **Partially defined**
+  - repository memory inspection requirements exist directionally in longitudinal-state docs, but there is not yet a canonical architecture slice for deterministic memory query/inspection with provenance-preserving comparison/timeline/staleness views.
+- **Future work**
+  - formalize the canonical architecture in `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md`.
+  - define deterministic read-only inspection contracts for memory classes (session evidence, repo longitudinal memory, candidate knowledge, promoted governance, and promotable reusable patterns).
+  - ensure candidate vs promoted distinction, provenance traceability, and stale/superseded inspection are explicit before broader automation consumption.
+- **Execution window**
+  - dependency-ordered after Repo Longitudinal State + Knowledge Promotion and before broader automation synthesis or expanded agent/runtime surfaces.
+
+#### 9. Review + Execution Orchestration
 
 - **Already exists today**
   - reviewed `verify -> plan -> apply -> verify` execution loops, CLI-first execution, and CI-safe remediation workflows are implemented.
@@ -506,7 +519,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - near-term work is limited to current remediation contract hardening; broader orchestration expansion is outside the 4-week plan.
 
-#### 9. Multi-Repo Knowledge Transfer
+#### 10. Multi-Repo Knowledge Transfer
 
 - **Already exists today**
   - external repository targeting and bounded pilot execution exist today through `--repo` and `playbook pilot --repo <path>`.
@@ -517,7 +530,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window beyond current external pilot/runtime hardening.
 
-#### 10. Interface Surfaces
+#### 11. Interface Surfaces
 
 - **Already exists today**
   - CLI, JSON command contracts, GitHub/CI formatting surfaces, AI contract/bootstrap artifacts, and demo/docs surfaces are implemented.
@@ -528,7 +541,7 @@ This ordering is a dependency recommendation, not an active delivery commitment.
 - **Execution window**
   - outside the current near-term execution window except for current product-truth/documentation packaging work.
 
-#### 11. Capability / Model Routing
+#### 12. Capability / Model Routing
 
 - **Already exists today**
   - deterministic routing is presently command- and contract-driven rather than model-driven; Playbook prefers explicit command surfaces and repository intelligence artifacts over open-ended inference.
@@ -985,9 +998,11 @@ Use a layered phase model so each phase compounds directly on the previous one:
    Policy-gated orchestration that consumes repository intelligence + AI contracts + session/evidence + control-plane checks while preserving deterministic mutation workflow.
 12. **Phase 12 â€” Repo Longitudinal State + Knowledge Promotion (Human-Reviewed)**  
    Repo-local-first longitudinal repository learning built from deterministic evidence, with candidate extraction, compaction, provenance-preserving promotion review, and demotion/supersession handling. This layer is dependency-ordered after Session + Evidence, Control Plane, and PR Review Loop.
-13. **Phase 13 â€” Autonomous Maintenance (Policy-Gated)**  
+13. **Phase 13 â€” Knowledge Query / Inspection Surfaces (Read Runtime)**  
+   Deterministic, provenance-preserving read-runtime inspection of repository memory and promoted knowledge so humans/CI can query, compare, and audit candidate/promoted/stale states before broader automation consumption.
+14. **Phase 14 â€” Autonomous Maintenance (Policy-Gated)**  
    Recurring maintenance execution modes with approval and policy controls.
-14. **Phase 14 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
+15. **Phase 15 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
    Broader pattern detection and candidate improvements from repeated findings/remediations/query usage, including advanced clustering, graph-informed learning artifacts, and higher-order synthesis inputs. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
 
 Reasoning for reordering:
@@ -1570,6 +1585,8 @@ Detailed product direction: see `docs/AUTOMATION_SYNTHESIS_VISION.md`.
 
 Goal:
 Extend Playbook from deterministic remediation into a future **Automation Synthesis** platform that can propose and safely operationalize recurring engineering automations without bypassing governance.
+
+This track is dependency-ordered after inspectable, provenance-linked repository knowledge query surfaces so automation consumes governed knowledge that humans can inspect first.
 
 Why this matters:
 - Teams repeatedly perform the same operational and repository maintenance work.
