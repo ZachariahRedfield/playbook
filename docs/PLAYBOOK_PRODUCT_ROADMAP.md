@@ -1930,3 +1930,12 @@ Contract:
 - fail on non-allowlisted mutations
 - configure explicit git author identity and explicit token-based push auth in `--push` mode (`PLAYBOOK_GIT_AUTHOR_*`, `PLAYBOOK_DEMO_GH_TOKEN`/`GH_TOKEN`)
 - open/update PRs only (no direct push to `main`)
+
+
+## Deterministic Artifact Layer
+
+Rule
+Playbook artifacts must only be written via the artifact IO layer to guarantee determinism and pipeline reliability.
+
+Failure Mode
+Shell redirection (`>`) may introduce encoding corruption. CLI owned artifact output must always be preferred.

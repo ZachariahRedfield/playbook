@@ -29,6 +29,13 @@ type SerializedPlanEnvelope = {
   tasks?: unknown;
 };
 
+type ArtifactEnvelope = {
+  artifact?: string;
+  version?: number;
+  generated_at?: string;
+  checksum?: string;
+  data?: unknown;
+};
 
 const buildArtifactHygieneTasks = (repoRoot: string): PlanTask[] => {
   const hygiene = generateRepositoryHealth(repoRoot).artifactHygiene;
@@ -121,11 +128,16 @@ export const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | u
 };
 
 export const parsePlanArtifact = (payload: unknown): { tasks: PlanTask[] } => {
-  if (!payload || typeof payload !== 'object') {
+  const normalizedPayload =
+    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+      ? (payload as ArtifactEnvelope).data
+      : payload;
+
+  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
     throw new Error('Invalid plan payload: expected an object envelope.');
   }
 
-  const envelope = payload as SerializedPlanEnvelope;
+  const envelope = normalizedPayload as SerializedPlanEnvelope;
 
   if (envelope.schemaVersion !== '1.0') {
     throw new Error(`Unsupported plan schemaVersion: ${String(envelope.schemaVersion ?? 'undefined')}.`);

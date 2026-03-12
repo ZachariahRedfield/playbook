@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "playbook.findings",
+  "type": "object",
+  "required": ["schemaVersion", "command"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "command": { "const": "verify" },
+    "findings": { "type": "array" },
+    "failures": { "type": "array" }
+  },
+  "additionalProperties": true,
+  "anyOf": [
+    { "required": ["findings"] },
+    { "required": ["failures"] }
+  ]
+}

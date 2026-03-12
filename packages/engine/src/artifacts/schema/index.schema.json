@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "playbook.index",
+  "type": "object",
+  "required": ["schemaVersion", "modules"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "modules": { "type": "array" }
+  },
+  "additionalProperties": true
+}

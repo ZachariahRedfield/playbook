@@ -1,8 +1,7 @@
 import { buildModuleContextDigests, generateCompactionCandidateArtifact, generateRepositoryGraph, generateRepositoryIndex, MODULE_CONTEXT_DIR_RELATIVE_PATH, REPOSITORY_GRAPH_RELATIVE_PATH, writeModuleContextDigests } from '@zachariahredfield/playbook-engine';
-import fs from 'node:fs';
 import path from 'node:path';
 import { ExitCode } from '../lib/cliContract.js';
-import { emitJsonOutput } from '../lib/jsonArtifact.js';
+import { emitJsonOutput, writeJsonArtifactAbsolute } from '../lib/jsonArtifact.js';
 
 type IndexOptions = {
   format: 'text' | 'json';
@@ -29,9 +28,8 @@ const writeRepositoryIndex = (cwd: string): { indexPath: string; result: IndexRe
   const indexPath = path.join(cwd, INDEX_RELATIVE_PATH);
   const graphPath = path.join(cwd, REPOSITORY_GRAPH_RELATIVE_PATH);
 
-  fs.mkdirSync(path.dirname(indexPath), { recursive: true });
-  fs.writeFileSync(indexPath, `${JSON.stringify(index, null, 2)}\n`, 'utf8');
-  fs.writeFileSync(graphPath, `${JSON.stringify(graph, null, 2)}\n`, 'utf8');
+  writeJsonArtifactAbsolute(indexPath, index as Record<string, unknown>, 'index', { envelope: false });
+  writeJsonArtifactAbsolute(graphPath, graph as Record<string, unknown>, 'index', { envelope: false });
   const moduleDigests = buildModuleContextDigests(cwd, index, graph);
   writeModuleContextDigests(cwd, moduleDigests);
   generateCompactionCandidateArtifact({ repoRoot: cwd, index, graph });

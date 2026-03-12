@@ -388,3 +388,12 @@ Suggested remediation IDs:
 `pnpm playbook query impact <module>` converts indexed module/dependency data plus graph/digest context (`.playbook/repo-graph.json`, `.playbook/context/modules/*.json`) into deterministic module blast-radius analysis, including dependencies, reverse dependencies, docs/tests/rules, and risk signals when available.
 
 Rule: Module impact and module-scoped ask rely on Playbook-managed index artifacts, not ad-hoc rescans.
+
+
+## Deterministic Artifact Layer
+
+Rule
+Playbook artifacts must only be written via the artifact IO layer to guarantee determinism and pipeline reliability.
+
+Failure Mode
+Shell redirection (`>`) may introduce encoding corruption. CLI owned artifact output must always be preferred.

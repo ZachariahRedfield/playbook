@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { RepositoryIndex, RepositoryModule } from '../indexer/repoIndexer.js';
 import { resolveRepositoryTarget, type ResolvedTarget } from '../intelligence/targetResolver.js';
+import { readJsonArtifact, INVALID_ARTIFACT_ERROR } from '../artifacts/artifactIO.js';
 
 export type RiskLevel = 'low' | 'medium' | 'high';
 
@@ -57,19 +58,14 @@ const invalidArtifactRecoveryHint =
   'Regenerate artifacts with CLI-owned output flags (for example: "playbook verify --json --out .playbook/findings.json" and "playbook plan --json --out .playbook/plan.json").';
 
 const parseRequiredJsonArtifact = (absolutePath: string, consumer: string): Record<string, unknown> => {
-  let raw = '';
   try {
-    raw = fs.readFileSync(absolutePath, 'utf8');
+    return readJsonArtifact<Record<string, unknown>>(absolutePath);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    if (message.includes(INVALID_ARTIFACT_ERROR)) {
+      throw new Error(`${consumer}: invalid or corrupted JSON artifact at ${absolutePath}. ${invalidArtifactRecoveryHint}`);
+    }
     throw new Error(`${consumer}: unable to read JSON artifact at ${absolutePath}: ${message}`);
-  }
-
-  try {
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`${consumer}: invalid or corrupted JSON artifact at ${absolutePath}. ${message}. ${invalidArtifactRecoveryHint}`);
   }
 };
 
