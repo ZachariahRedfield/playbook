@@ -210,3 +210,12 @@ Workspace filters rely on package names that may change or be incorrectly guesse
 - Pattern: AI working inside the Playbook repo should run docs audit alongside other branch-accurate local CLI validations.
 - Failure Mode: Documentation responsibility drift occurs when roadmap, backlog, workflow, and notes content begin overlapping again.
 - Failure Mode: Cleanup guidance becomes duplicated when one-off migration docs remain active after governance rules have been formalized.
+
+## Repository memory system doctrine notes
+
+- Pattern: Fast Episodic Store, Slow Doctrine Store
+- Pattern: Structural Graph + Memory Graph/Index
+- Rule: Promotion Required for Durable Doctrine
+- Rule: Replay Is Human-Review-Oriented, Not Autonomous Mutation
+- Failure Mode: Memory Hoarding
+- Failure Mode: Rebuilding Durable Memory From Current Repo State Only

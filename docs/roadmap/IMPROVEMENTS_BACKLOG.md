@@ -33,11 +33,11 @@ If an item is already architecture-defined with clear dependency placement, remo
 - Add lightweight checks for wording drift across roadmap/docs/demo surfaces so planned-vs-live language stays clear.
 - Add concise `ask --repo-context` boundary examples for operator expectations.
 
-### 2) Knowledge lifecycle guardrail hardening
+### 2) Knowledge lifecycle guardrail hardening (post-memory-model details)
 
-- Add stricter contracts for candidate vs promoted knowledge states.
+- Repository Memory System architecture and core memory contracts have been promoted to canonical docs; this backlog item is now limited to unresolved guardrail details.
 - Add deterministic lifecycle audit checks for promotion prerequisites (canonicalization, comparison, compaction evidence).
-- Add retirement/supersession hygiene checks for stale promoted artifacts.
+- Add retirement/supersession hygiene checks for stale promoted artifacts and prune-policy effectiveness.
 
 ### 3) Packaging and deployment boundary hygiene
 

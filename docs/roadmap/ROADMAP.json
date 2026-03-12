@@ -1289,6 +1289,147 @@
         "@zachariahredfield/playbook-engine",
         "@zachariahredfield/playbook-node"
       ]
+    },
+    {
+      "feature_id": "PB-V09-REPO-MEMORY-FOUNDATION-001",
+      "version": "v0.9",
+      "title": "Repository Memory System foundation",
+      "goal": "Establish first-class repository memory architecture and contracts that separate structural intelligence from episodic memory and doctrine promotion boundaries without changing current runtime behavior.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/REPOSITORY_MEMORY_MODEL.md",
+        "docs/contracts/REPOSITORY_MEMORY_EVENT_CONTRACT.md",
+        "docs/contracts/REPOSITORY_MEMORY_KNOWLEDGE_CONTRACT.md",
+        "docs/contracts/repository-graph-contract.md"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/PLAYBOOK_NOTES.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V06-FAILURE-INTELLIGENCE-001",
+        "PB-V07-ARCH-INTELLIGENCE-GRAPH-001"
+      ],
+      "verification_commands": [
+        "node scripts/validate-roadmap-contract.mjs --ci",
+        "pnpm playbook docs audit --json"
+      ],
+      "status": "planned",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
+    },
+    {
+      "feature_id": "PB-V09-REPO-MEMORY-REPLAY-CONSOLIDATION-001",
+      "version": "v0.9",
+      "title": "Repository memory replay and consolidation",
+      "goal": "Define deterministic replay/consolidation artifacts that derive candidate knowledge from episodic memory for human review before doctrine promotion.",
+      "commands": [],
+      "contracts": [
+        "docs/architecture/REPOSITORY_MEMORY_MODEL.md",
+        "docs/contracts/REPOSITORY_MEMORY_EVENT_CONTRACT.md",
+        "docs/contracts/REPOSITORY_MEMORY_KNOWLEDGE_CONTRACT.md"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "dependencies": [
+        "PB-V09-REPO-MEMORY-FOUNDATION-001",
+        "PB-V06-FAILURE-INTELLIGENCE-001",
+        "PB-V07-ARCH-INTELLIGENCE-GRAPH-001"
+      ],
+      "verification_commands": [
+        "node scripts/validate-roadmap-contract.mjs --ci",
+        "pnpm playbook docs audit --json"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
+    },
+    {
+      "feature_id": "PB-V09-REPO-MEMORY-AWARE-RETRIEVAL-001",
+      "version": "v0.9",
+      "title": "Memory-aware retrieval composition",
+      "goal": "Compose structural graph/index intelligence with episodic memory indexes and governed doctrine artifacts for deterministic memory-aware retrieval.",
+      "commands": [
+        "query",
+        "explain",
+        "ask"
+      ],
+      "contracts": [
+        "docs/architecture/REPOSITORY_MEMORY_MODEL.md",
+        "docs/contracts/REPOSITORY_MEMORY_KNOWLEDGE_CONTRACT.md",
+        "docs/contracts/COMMAND_CONTRACTS_V1.md"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "dependencies": [
+        "PB-V09-REPO-MEMORY-REPLAY-CONSOLIDATION-001",
+        "PB-V07-ARCH-INTELLIGENCE-GRAPH-001"
+      ],
+      "verification_commands": [
+        "node scripts/validate-roadmap-contract.mjs --ci",
+        "pnpm playbook docs audit --json"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
+    },
+    {
+      "feature_id": "PB-V09-REPO-MEMORY-PROMOTION-PRUNE-001",
+      "version": "v0.9",
+      "title": "Repository memory promotion and prune workflow",
+      "goal": "Define deterministic promotion/demotion/prune workflow so durable doctrine remains compact, reviewable, and provenance-linked.",
+      "commands": [
+        "patterns",
+        "query"
+      ],
+      "contracts": [
+        "docs/contracts/REPOSITORY_MEMORY_KNOWLEDGE_CONTRACT.md",
+        "docs/architecture/REPOSITORY_MEMORY_MODEL.md",
+        "docs/roadmap/ROADMAP.json"
+      ],
+      "tests": [
+        "scripts/validate-roadmap-contract.mjs"
+      ],
+      "docs": [
+        "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
+        "docs/PLAYBOOK_NOTES.md",
+        "docs/roadmap/IMPROVEMENTS_BACKLOG.md"
+      ],
+      "dependencies": [
+        "PB-V09-REPO-MEMORY-REPLAY-CONSOLIDATION-001",
+        "PB-V09-REPO-MEMORY-AWARE-RETRIEVAL-001",
+        "PB-V09-KNOWLEDGE-COMPACTION-PROMOTION-001"
+      ],
+      "verification_commands": [
+        "node scripts/validate-roadmap-contract.mjs --ci",
+        "pnpm playbook docs audit --json"
+      ],
+      "status": "planned-later",
+      "package_ownership": [
+        "@fawxzzy/playbook",
+        "@zachariahredfield/playbook-engine"
+      ]
     }
   ],
   "contractPolicy": {

@@ -1146,29 +1146,31 @@ Use a layered phase model so each phase compounds directly on the previous one:
    Risk signals, impact-aware sequencing, and risk-shaped remediation prioritization.
 8. **Phase 8 â€” AI Repository Contract**  
    Machine-readable AI-operability contract and enforcement rules.
-9. **Phase 9 â€” Session + Evidence Layer**  
+9. **Phase 9 â€” Repository Memory System**  
+   First-class repository memory architecture that separates structural graph artifacts from temporal/event memory and doctrine promotion flows.
+10. **Phase 10 â€” Session + Evidence Layer**  
    Session envelope and evidence provenance contracts that bind actor context, command lineage, approvals, and deterministic artifact references.
-10. **Phase 10 â€” Control Plane Layer**  
+11. **Phase 11 â€” Control Plane Layer**  
    First-class policy/approval/mutation-boundary architecture that gates all privileged execution after session evidence and before broader orchestration surfaces.
-11. **Phase 11 â€” Review + Execution Orchestration**  
+12. **Phase 12 â€” Review + Execution Orchestration**  
    Policy-gated orchestration that consumes repository intelligence + AI contracts + session/evidence + control-plane checks while preserving deterministic mutation workflow.
-12. **Phase 12 â€” Repo Longitudinal State + Knowledge Promotion (Human-Reviewed)**  
+13. **Phase 13 â€” Repo Longitudinal State + Knowledge Promotion (Human-Reviewed)**  
    Repo-local-first longitudinal repository learning built from deterministic evidence, with candidate extraction, compaction, provenance-preserving promotion review, and demotion/supersession handling. This layer is dependency-ordered after Session + Evidence, Control Plane, and PR Review Loop.
-13. **Phase 13 â€” Knowledge Query / Inspection Surfaces (Read Runtime)**  
+14. **Phase 14 â€” Knowledge Query / Inspection Surfaces (Read Runtime)**  
    Deterministic, provenance-preserving read-runtime inspection of repository memory and promoted knowledge so humans/CI can query, compare, and audit candidate/promoted/stale states before broader automation consumption.
-14. **Phase 14 â€” Automation Synthesis (Governed Knowledge Consumption)**  
+15. **Phase 15 â€” Automation Synthesis (Governed Knowledge Consumption)**  
    Future controlled synthesis that consumes only governed/promoted, inspectable, provenance-linked knowledge artifacts after knowledge query/inspection surfaces are in place. This phase explicitly excludes raw chat memory, unreviewed candidate knowledge, and undocumented inference as automation-grade input.
-15. **Phase 15 â€” Outcome Feedback + Automation Runtime Learning (Human-Reviewed)**  
+16. **Phase 16 â€” Outcome Feedback + Automation Runtime Learning (Human-Reviewed)**  
    Governed feedback loops that convert verified runtime outcomes, rollback/deactivation events, and later regressions into provenance-linked repo-local candidate learning artifacts (confidence, template suitability, trigger quality, rollback heuristics, stale-knowledge flags, and trend updates). Outputs remain candidate artifacts until explicit human-reviewed promotion/demotion/supersession.
-16. **Phase 16 â€” Governed Cross-Repo Pattern Promotion / Transfer**  
+17. **Phase 17 â€” Governed Cross-Repo Pattern Promotion / Transfer**  
    Controlled compounding of reusable engineering knowledge across repositories through explicit, provenance-preserving, sanitization-verified, compatibility-gated transfer packages. Imported patterns are candidate inputs until locally reviewed; no hidden telemetry or automatic global sync.
-17. **Phase 17 â€” Governed Interface / API Surfaces for Multi-Repo Control Planes**  
+18. **Phase 18 â€” Governed Interface / API Surfaces for Multi-Repo Control Planes**  
    Optional interface expansion that exposes validated server/API action surfaces over the same deterministic runtime, preserving per-repo policy/provenance boundaries while enabling coordinated multi-repo control-plane workflows.
-18. **Phase 18 â€” Workspace / Tenant Governance + Optional Hosted Deployment Model**  
+19. **Phase 19 â€” Workspace / Tenant Governance + Optional Hosted Deployment Model**  
    Optional workspace/tenant governance and deployment packaging layer over the same deterministic runtime, defining policy inheritance, per-repo accountability, and hosted/self-hosted parity without making cloud connectivity mandatory.
-19. **Phase 19 â€” Autonomous Maintenance (Policy-Gated)**  
+20. **Phase 20 â€” Autonomous Maintenance (Policy-Gated)**  
    Recurring maintenance execution modes with approval and policy controls, layered after governed synthesis, outcome-feedback, cross-repo transfer, governed control-plane interface contracts, and workspace/tenant governance boundaries.
-20. **Phase 20 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
+21. **Phase 21 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
    Broader pattern detection and candidate improvements from repeated findings/remediations/query usage, including advanced clustering, graph-informed learning artifacts, and higher-order synthesis inputs. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
 
 Reasoning for reordering:
@@ -1216,7 +1218,7 @@ Rewrite/reorganize these sections in `docs/PLAYBOOK_PRODUCT_ROADMAP.md`:
 - Consolidate **PHASE 2**, **PHASE 3**, **PHASE 4**, **PHASE 5**, **PHASE 6**, and **PHASE 7** into a clear progression: substrate -> knowledge graph -> context compression -> read runtime -> change runtime -> risk-aware execution.
 - Keep **AI Efficiency & Context Compression** as an explicit numbered phase.
 - Move **PR Intelligence (Implemented)** under the read-runtime phase grouping.
-- Add an explicit "Phase 9 prerequisites" block requiring deterministic mutation scope, policy gates, and contract validation before `pnpm playbook agent` expansion.
+- Add an explicit "Phase 10 prerequisites" block requiring deterministic mutation scope, policy gates, repository-memory boundaries, and contract validation before `pnpm playbook agent` expansion.
 - Add a future **Repository Learning Loop** phase scoped to human-reviewed suggestions only (no autonomous mutation).
 
 ### Documentation Capture Rules (Post-Audit)
@@ -1452,7 +1454,25 @@ This phase formalizes Playbook's repository-to-AI protocol, ensuring AI behavior
 Future standardization direction:
 - Publish `docs/AI_CONTRACT_SPEC.md` as a public AI Contract specification for AI-operable repositories.
 
-PHASE 9 â€” AI EXECUTION RUNTIME (PLAYBOOK AGENT)
+PHASE 9 â€” REPOSITORY MEMORY SYSTEM (ARCHITECTURE + CONTRACT FOUNDATIONS)
+
+Goal:
+Introduce first-class Repository Memory System architecture and contracts while preserving current runtime behavior.
+
+Scope in this phase:
+- define explicit memory layering (`structural intelligence -> working context -> episodic memory -> replay/consolidation -> doctrine/policy memory`)
+- publish memory event and knowledge/promotion contracts
+- keep structural graph contract boundaries explicit
+- wire roadmap/contract language for future memory-aware retrieval and promotion/prune workflows
+
+Boundary rule:
+- `.playbook/repo-graph.json` remains the structural graph and must not be repurposed as the full temporal memory store.
+
+Execution posture:
+- documentation/contract architecture phase only
+- no command-surface or runtime behavior expansion required in this slice
+
+PHASE 10 â€” AI EXECUTION RUNTIME (PLAYBOOK AGENT)
 
 Goal:
 Introduce **Playbook Agent** as an AI execution runtime for repositories.
@@ -1464,7 +1484,7 @@ Vision:
 Instead of AI systems directly editing code without guardrails, Playbook Agent orchestrates deterministic repository workflows so every proposal runs through repository intelligence and remediation contracts.
 
 Agent contract relationship:
-- Playbook Agent consumes `.playbook/ai-contract.json` to determine repository workflow and operating rules.
+- Playbook Agent consumes `.playbook/ai-contract.json` and repository-memory doctrine boundaries to determine repository workflow and operating rules.
 
 Example agent bootstrap flow:
 1. AI system enters repository.
@@ -1516,7 +1536,7 @@ Playbook should analyze PRs but not author them.
 
 Rule: **Playbook analyzes changes rather than rewriting developer intent.**
 
-PHASE 10 â€” AUTONOMOUS REPOSITORY MAINTENANCE
+PHASE 11 â€” AUTONOMOUS REPOSITORY MAINTENANCE
 
 Goal:
 Extend Playbook Agent into recurring and CI-driven repository maintenance modes.
