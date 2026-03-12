@@ -2,92 +2,74 @@
 
 ## Purpose
 
-Define a future-state integration model between:
+Define the canonical future-state contract for integrating:
 
 - the **structural repository graph** (`.playbook/repo-graph.json`), and
-- the **memory system** (`.playbook/memory/*`).
+- the **repository memory substrate** (`.playbook/memory/*`)
 
-This spec is additive. It preserves current contracts while introducing deterministic join semantics and provenance requirements for memory-aware command behavior.
+without collapsing them into a single artifact.
 
-## Non-goal and contract guardrail
+This specification is intentionally contract-first: structural truth and memory truth remain separate, independently versioned, and joined only through explicit semantics.
 
-### Structural graph remains structural truth
+## Canonical substrate separation
 
-`.playbook/repo-graph.json` remains the canonical structural representation of repository topology (modules, files, ownership, static relations).
-
-It is **not** redefined here as:
-
-- a temporal event stream,
-- a longitudinal memory ledger,
-- or a session transcript store.
-
-### Memory remains the temporal and interpretive layer
-
-`.playbook/memory/*` remains the layer for temporal accumulation, promotion history, investigative artifacts, and question/answer traces.
-
-Rule:
-Structural graph contract and memory contract must remain separable and independently versioned.
-
-Failure Mode:
-If structural graph is overloaded as a temporal log, deterministic structure queries become unstable and contract drift propagates across commands.
-
-## Substrate separation model
-
-## 1) Structural substrate
+### Structural substrate
 
 **Artifact:** `.playbook/repo-graph.json`
 
-**Responsibility:**
+**Role:** Deterministic topology and architecture structure.
 
-- repository topology and structural dependencies,
-- deterministic entity IDs for structural nodes,
-- static/slow-moving architecture relationships.
+**Contains:**
 
-**Allowed evolution:**
+- structural entities (modules, files, ownership anchors, rule anchors)
+- structural edges (imports, dependencies, ownership, containment)
+- stable identifiers for structural traversal
 
-- additive structural fields,
-- contract-versioned edge/node schema updates,
-- deterministic normalization improvements.
+**Must not contain:**
 
-**Disallowed scope expansion:**
+- session transcripts
+- longitudinal promotion history
+- investigative narratives
+- memory-native doctrine entities
 
-- storing conversational memory,
-- storing promotion decisions as primary source,
-- storing investigation timelines.
-
-## 2) Memory substrate
+### Memory substrate
 
 **Artifacts:** `.playbook/memory/*`
 
-**Responsibility:**
+**Role:** Temporal, evidentiary, and interpretive repository memory.
 
-- temporal knowledge objects,
-- evidence-backed decisions,
-- promotion and supersession trails,
-- investigative context and unresolved questions,
-- session-local and cross-session knowledge continuity.
+**Contains:**
 
-**Allowed evolution:**
+- promoted and non-promoted memory entities
+- supersession/promotion lineage
+- evidence links and synthesis lineage
+- session-level and cross-session continuity artifacts
 
-- new memory-native node kinds,
-- new memory relation kinds,
-- richer provenance metadata,
-- retrieval indexes tuned for command usage.
+**Must not redefine:**
 
-## Memory-native concepts (first-class node kinds)
+- structural topology as primary source of truth
+- canonical module/file dependency truth
 
-The memory substrate introduces/normalizes the following node kinds:
+## Memory-native entities (first-class)
 
-- `decision`: accepted/rejected/partial governance decisions.
-- `pattern`: reusable architecture or remediation patterns with promotion state.
-- `failure_mode`: recurring breakdown classes with trigger conditions and impact signature.
-- `investigation`: bounded inquiry threads tying symptoms, hypotheses, and evidence.
-- `session`: execution-local context bundles (operator intent, command chain, artifacts).
-- `question`: explicit unresolved or resolved repository questions.
+The memory system defines the following canonical entities:
 
-### Minimal common fields (memory nodes)
+- `decision`
+  - Governance or architecture decisions with accepted/rejected/superseded lifecycle.
+- `pattern`
+  - Reusable solution shape validated across one or more contexts.
+- `failure_mode`
+  - Recurring breakdown class with trigger and impact profile.
+- `investigation`
+  - Bounded inquiry artifact connecting symptoms, hypotheses, and findings.
+- `session`
+  - Execution/session context envelope for command chains and artifacts.
+- `question`
+  - Explicit unresolved/resolved inquiry item, often upstream of investigation.
 
-All memory-native nodes should expose:
+### Minimal memory entity envelope
+
+Each memory-native entity should expose at least:
 
 - `id`
 - `kind`
@@ -95,153 +77,122 @@ All memory-native nodes should expose:
 - `status`
 - `created_at`
 - `updated_at`
+- `scope`
 - `provenance`
 - `evidence_refs[]`
-- `scope` (repo/module/rule/command scope)
 
-## Cross-substrate edge relations
+## Memory-native edges (first-class)
 
-These relations are memory-layer relations and should not mutate structural graph meaning.
+The memory system defines the following canonical edge types:
 
 - `promoted_from`
-  - expresses promotion lineage (example: `pattern` promoted_from `investigation` outcome set).
+  - Promotion lineage from precursor artifacts into promoted doctrine.
 - `supersedes`
-  - expresses canonical replacement (example: new `decision` supersedes previous decision).
+  - Successor relationship indicating replacement while preserving history.
 - `evidenced_by`
-  - attaches claims to immutable or content-addressed evidence artifacts.
+  - Evidence attachment from a claim-bearing node to source artifacts.
 - `derived_from`
-  - captures synthesis lineage (example: `failure_mode` derived_from repeated `question`/`investigation` clusters).
+  - Synthesis lineage from source nodes into inferred or compacted artifacts.
+- `related_to`
+  - Non-causal, contextual relationship for adjacency and retrieval support.
 
-### Relation invariants
+### Edge invariants
 
-- Relations must be directional and typed.
-- Relations must include provenance metadata.
-- `supersedes` edges must not delete prior nodes; they mark historical continuity.
-- `evidenced_by` edges should resolve to durable artifact identifiers, not transient in-memory pointers.
+- Edges are directional and typed.
+- Edges carry provenance metadata.
+- `supersedes` never erases prior nodes; it preserves continuity.
+- `evidenced_by` points to durable artifact identifiers (path or content-addressed ID).
 
-## Retrieval and join semantics by command
+## Join semantics (federated, not merged)
 
-All joins are **federated joins** across structural and memory substrates, not substrate collapse.
+All command joins are **federated** joins across two substrates. The join layer composes outputs; it does not rewrite either substrate contract.
 
-## `ask`
+### `query`
 
-`ask --repo-context` should:
+- Structural `query` behavior remains deterministic and contract-stable.
+- Memory-aware querying is explicit (dedicated namespace/flag/subcommand), never implicit widening.
+- Joined responses must separate:
+  - `structural_facts`
+  - `memory_context`
+  - `provenance`
 
-1. ground response in structural entities from repo intelligence/graph,
-2. enrich with memory nodes linked by `derived_from`/`evidenced_by`/`supersedes`,
-3. return answer slices with explicit provenance blocks.
+### `explain`
 
-Join preference order:
+- Baseline explanation resolves from structural intelligence first.
+- Memory context (decisions, patterns, failure modes, investigations, questions) is attached second.
+- If doctrine conflicts exist:
+  - prefer latest promoted non-superseded node,
+  - include supersession lineage and conflict metadata.
 
-- structural match (module/file/rule target), then
-- memory relevance scored by recency + promotion status + evidence density.
+### `ask --repo-context`
 
-## `explain`
+- Resolve target context from structural graph/index first.
+- Enrich answer with memory entities reachable through `derived_from`, `evidenced_by`, `supersedes`, `related_to`, `promoted_from`.
+- Return provenance per claim and clearly distinguish:
+  - topology facts,
+  - memory interpretation,
+  - confidence annotations.
 
-`explain <target>` should:
+### `analyze-pr`
 
-1. resolve deterministic structural explanation baseline,
-2. attach memory-backed rationale layers (decisions, patterns, failure modes),
-3. include supersession notices when prior doctrine is replaced.
+- Detect impacted structural entities from diff.
+- Traverse memory graph from impacted IDs and related rule/module scopes.
+- Emit deterministic PR intelligence including:
+  - relevant decisions,
+  - applicable patterns,
+  - known failure modes,
+  - active investigations,
+  - unresolved/high-value questions.
+- Output must separate structural impact from memory interpretation and include provenance and confidence.
 
-If memory conflicts exist, prefer latest non-superseded promoted node and include conflict metadata.
+## Provenance rules
 
-## `query`
+Any memory-derived statement in command output must include machine-readable provenance.
 
-`query` remains contract-first and deterministic.
+### Required provenance fields
 
-- Existing structural query contracts remain unchanged.
-- New memory-aware query modes must be explicit (for example, `query memory ...` or additional flags).
-- No implicit widening of structural query response shape without schema versioning.
-
-## `analyze-pr`
-
-`analyze-pr` should:
-
-1. detect structural impact from diff,
-2. join to relevant memory nodes by impacted entity IDs and relation traversal,
-3. emit deterministic PR intelligence:
-   - prior decisions touched,
-   - applicable patterns,
-   - known failure modes,
-   - open investigations/questions related to changed area.
-
-Output should include confidence and provenance, and distinguish structural facts from memory interpretations.
-
-## Provenance requirements
-
-Every memory-derived statement included in command output must provide machine-readable provenance.
-
-Required provenance fields:
-
-- `source_artifact` (path or content-addressed ID)
-- `source_kind` (decision/pattern/failure_mode/investigation/session/question)
+- `source_artifact`
+- `source_kind`
 - `captured_at`
-- `captured_by` (command or workflow stage)
-- `lineage` (edge chain used in derivation)
-- `integrity` (hash/checksum when available)
+- `captured_by`
+- `lineage`
+- `integrity`
 
-Provenance policy:
+### Provenance policy
 
-- No promoted memory claim without `evidenced_by` links.
+- No promoted claim without evidence lineage (`evidenced_by` chain).
 - No supersession without explicit `supersedes` edge and timestamp.
-- No command-level synthesis without traceable `derived_from` lineage.
+- No synthesized memory claim without explicit `derived_from` lineage.
 
-## Graph evolution and contract boundaries
+## Contract-boundary rules
 
-## Versioning
+1. **Structural contract independence**
+   - Structural schema versioning remains independent from memory schema versioning.
+2. **Memory contract independence**
+   - Memory schema evolution must not mutate structural semantics.
+3. **Join contract explicitness**
+   - Join behavior versioning is explicit and separate from both substrates.
+4. **Backward compatibility**
+   - Existing structural consumers remain valid unless an explicit major contract boundary is crossed.
+5. **No silent widening**
+   - Commands must not silently change structural response shape to include memory payloads without explicit contract/version signaling.
 
-- Structural graph contract versioning is independent from memory contract versioning.
-- Cross-substrate join contract has its own compatibility envelope.
-
-Recommended envelope:
+### Recommended compatibility envelope
 
 - `repo_graph_schema_version`
 - `memory_schema_version`
 - `join_contract_version`
 
-## Backward compatibility
+## Rule / Pattern / Failure Mode note candidates
 
-- Adding memory integration must not break consumers expecting pure structural `repo-graph` semantics.
-- Commands may add optional provenance/memory sections, but required existing fields remain stable until explicit major contract transition.
+### Rule candidate
 
-## Migration posture
+Commands that compose structural and memory outputs must preserve substrate boundaries and emit provenance for every memory-derived claim.
 
-- Prefer additive fields and optional sections first.
-- Gate behavior shifts behind explicit flags or version negotiation.
-- Publish schema deltas before defaulting new join behavior.
+### Pattern candidate
 
-## Notes candidates (for promotion pipeline)
+Use **structural-first grounding + memory-second enrichment** via typed relation traversal (`promoted_from`, `supersedes`, `evidenced_by`, `derived_from`, `related_to`) to maximize determinism without losing temporal intelligence.
 
-These are candidate note templates for deterministic memory capture.
+### Failure Mode candidate
 
-## Rule candidate
-
-A command that merges structural and memory information must emit provenance per claim and preserve substrate boundaries in output shape.
-
-## Pattern candidate
-
-Use structural-first grounding with memory-side enrichment via typed relation traversal (`derived_from`, `evidenced_by`, `supersedes`, `promoted_from`) to preserve determinism and contextual intelligence simultaneously.
-
-## Failure Mode candidate
-
-Contract collapse occurs when memory facts are backfilled into structural graph as if they were topology truth, causing ambiguous query behavior and schema instability.
-
-## Implementation guidance (phased)
-
-1. Introduce memory node/edge schemas and provenance blocks in `.playbook/memory/*`.
-2. Add join adapters for `ask`, `explain`, `query` (opt-in), and `analyze-pr`.
-3. Add schema contracts for join outputs and provenance invariants.
-4. Validate with deterministic fixtures that assert:
-   - structural invariants untouched,
-   - supersession lineage preserved,
-   - evidence links resolvable,
-   - command outputs stable across repeated runs.
-
-## Acceptance criteria (future-state)
-
-- Structural graph remains topology-only and free of temporal memory payloads.
-- Memory-native nodes support required kinds and edge relations.
-- Joined command outputs are provenance-complete.
-- Supersession and promotion trails are machine-traceable.
-- Contract versions cleanly communicate structural vs memory vs join changes.
+**Contract collapse** occurs when temporal memory artifacts are backfilled into structural graph payloads as topology truth, causing schema drift, ambiguous query behavior, and non-deterministic command outputs.
