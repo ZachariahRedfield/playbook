@@ -65,6 +65,17 @@ export const runPlan = async (
     ]
   });
 
+  const runArtifactPath = engine.executionRunPath(cwd, runId);
+  engine.attachSessionRunState(cwd, {
+    step: 'plan',
+    runId,
+    goal: 'generate remediation execution plan',
+    artifacts: [
+      { artifact: runArtifactPath, kind: 'run' },
+      ...(options.outFile ? [{ artifact: options.outFile, kind: 'plan' as const }] : [])
+    ]
+  });
+
   if (process.env.PLAYBOOK_DEBUG_REMEDIATION === '1') {
     console.error(
       JSON.stringify(

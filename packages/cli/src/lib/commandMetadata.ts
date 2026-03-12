@@ -412,7 +412,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'session',
-    description: 'Import, merge, and cleanup session snapshots',
+    description: 'Manage repo-scoped session memory and snapshot workflows',
     category: 'Utility',
     role: 'utility',
     lifecycle: 'utility',
@@ -420,7 +420,7 @@ export const commandMetadata: CommandMetadata[] = [
     onboardingPriority: null,
     canonicalSequence: null,
     productFacing: false,
-    exampleArgs: 'session --help',
+    exampleArgs: 'session show --json',
     machineReadable: true
   },
   {

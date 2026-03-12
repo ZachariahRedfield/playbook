@@ -511,13 +511,19 @@ Pattern: Same runtime, different operational surfaces.
 
 - **Already exists today**
   - deterministic command artifacts (`.playbook/repo-index.json`, findings/plan outputs, and verify/apply execution outputs) provide the substrate that a session envelope must compose.
+  - repo-scoped workflow continuity now persists in `.playbook/session.json` and supports deterministic `session show/pin/resume/clear` semantics with stale-artifact warnings.
 - **Partially defined**
-  - evidence-linked findings/plans and trust-boundary language exist, but there is not yet a first-class canonical session contract across actor, refs, command chain, approvals, and promotion-candidate lineage.
+  - evidence-linked findings/plans and trust-boundary language exist, while broader actor/ref/approval/promotion-candidate lineage contracts still need deeper unification across layers.
 - **Future work**
   - standardize the Session envelope and Evidence provenance model described in `docs/architecture/PLAYBOOK_SESSION_EVIDENCE_ARCHITECTURE.md`.
   - require deterministic evidence references for policy decisions, promotion candidates, and future automation synthesis inputs.
 - **Execution window**
   - outside the current near-term execution window except for existing remediation/evidence hardening already in progress.
+
+
+Rule - Workflow continuity must be stored in repo-scoped session state, not implied from transient conversation history.
+Pattern - Resumeable systems externalize working memory into inspectable artifacts.
+Failure Mode - If workflow memory lives only in chat or human recall, the system cannot scale to agentic iteration.
 
 #### 4. Trust / Evidence Hardening
 

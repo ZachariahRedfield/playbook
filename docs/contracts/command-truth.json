@@ -349,7 +349,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": true,
-      "example": "pnpm playbook session --help"
+      "example": "pnpm playbook session show --json"
     },
     {
       "name": "status",

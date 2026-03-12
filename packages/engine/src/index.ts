@@ -236,6 +236,7 @@ export { routeTask } from './routing/routeTask.js';
 export type { RouteDecision, RouteTaskInput, RouteTaskKind, RouteMutabilityLevel, RouteSafetyConstraints, TaskRoute } from './routing/types.js';
 
 export { createExecutionRun, createExecutionIntent } from './execution/createExecutionRun.js';
+export { initializeSession, readSession, updateSession, pinSessionArtifact, clearSession, resumeSession, attachSessionRunState, sessionArtifactPath, SESSION_ARTIFACT_RELATIVE_PATH } from './session/sessionStore.js';
 export { appendExecutionStep, completeExecutionRun, recordExecutionFailure } from './execution/updateExecutionRun.js';
 export { writeExecutionRun, readExecutionRun, listExecutionRuns, getLatestMutableRun, executionRunPath } from './execution/writeExecutionRun.js';
 

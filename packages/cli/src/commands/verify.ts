@@ -120,6 +120,17 @@ export const runVerify = async (
     ]
   });
 
+
+  const runArtifactPath = engine.executionRunPath(cwd, runId);
+  engine.attachSessionRunState(cwd, {
+    step: 'verify',
+    runId,
+    goal: inPolicyMode ? 'verify repository policy posture' : 'verify repository governance',
+    artifacts: [
+      { artifact: runArtifactPath, kind: 'run' },
+      ...(options.outFile ? [{ artifact: options.outFile, kind: 'finding' as const }] : [])
+    ]
+  });
   const hasApplyStep = run.steps.some((step: { kind: string }) => step.kind === 'apply');
   if (hasApplyStep) {
     engine.completeExecutionRun(cwd, runId, ok

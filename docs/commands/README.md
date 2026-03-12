@@ -301,8 +301,9 @@ Use the following intent model when deciding whether command outputs stay local,
   - Commit guidance: typically ephemeral; commit only when a repository explicitly treats plan artifacts as stable review contracts.
 - `query` / `deps` / `ask` / `explain`
   - Default intent: **runtime reads and derived outputs** from `.playbook/repo-index.json`; results are usually ephemeral unless exported intentionally for docs/contracts.
-- `session` cleanup/reporting flows
-  - Default intent: **local hygiene/runtime maintenance artifacts** (for example cleanup reports under `.playbook/`).
+- `session` memory + cleanup flows
+  - Default intent: **local repo-scoped workflow continuity artifacts** (`.playbook/session.json`, pinned findings/plan/run refs) plus optional cleanup reports under `.playbook/`.
+  - Recommended continuity commands: `pnpm playbook session show`, `pnpm playbook session pin <artifact>`, `pnpm playbook session resume`, `pnpm playbook session clear`.
   - Commit guidance: keep local unless intentionally preserving an audit example or contract fixture.
 - `diagram` and docs-facing flows
   - Default intent: **committed docs/contracts** when repositories choose generated architecture/docs outputs as source-controlled documentation surfaces.

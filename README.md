@@ -52,7 +52,7 @@ Failure Mode: Recommitting regenerated runtime artifacts on every run causes unn
 
 Playbook classifies repository artifacts into deterministic storage classes:
 
-- **Runtime artifacts**: local outputs like `.playbook/repo-index.json`, `.playbook/plan.json`, `.playbook/verify.json`, session cleanup reports, and cache files.
+- **Runtime artifacts**: local outputs like `.playbook/repo-index.json`, `.playbook/plan.json`, `.playbook/verify.json`, `.playbook/session.json`, session cleanup reports, and cache files.
 - **Automation artifacts**: CI handoff outputs such as CI plan and verification artifacts.
 - **Contract artifacts**: committed snapshots and docs contracts like `tests/contracts/*.snapshot.json`, `.playbook/demo-artifacts/*`, and generated diagram documentation.
 
@@ -433,6 +433,8 @@ AI operating contract for this repository lives in [AGENTS.md](AGENTS.md). Manag
 Managed command docs are generated/validated with `pnpm docs:update` and `pnpm docs:check` to reduce command-surface drift across `AGENTS.md` and `docs/commands/README.md`.
 
 Session knowledge hygiene is available via `pnpm playbook session cleanup --hygiene --dry-run --json-report .playbook/session-cleanup.report.json` for deterministic normalize/deduplicate/truncate/prune reporting.
+Session continuity is repo-scoped and deterministic via `.playbook/session.json` with `pnpm playbook session show`, `pnpm playbook session pin <artifact>`, `pnpm playbook session resume`, and `pnpm playbook session clear`.
+
 
 ## Demo
 

@@ -13,9 +13,11 @@ const getLatestMutableRun = vi.fn();
 const createExecutionIntent = vi.fn();
 const createExecutionRun = vi.fn();
 const appendExecutionStep = vi.fn();
+const executionRunPath = vi.fn();
+const attachSessionRunState = vi.fn();
 const loadVerifyRules = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
 
@@ -47,9 +49,12 @@ describe('runApply', () => {
     createExecutionIntent.mockReset();
     createExecutionRun.mockReset();
     appendExecutionStep.mockReset();
+    executionRunPath.mockReset();
+    attachSessionRunState.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });
+    executionRunPath.mockReturnValue('.playbook/runs/run-test.json');
     routeTask.mockReturnValue({
       route: 'hybrid',
       why: 'ok',
@@ -325,9 +330,12 @@ describe('runApply remediation status preconditions', () => {
     createExecutionIntent.mockReset();
     createExecutionRun.mockReset();
     appendExecutionStep.mockReset();
+    executionRunPath.mockReset();
+    attachSessionRunState.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });
+    executionRunPath.mockReturnValue('.playbook/runs/run-test.json');
     routeTask.mockReturnValue({
       route: 'hybrid',
       why: 'ok',
@@ -397,9 +405,12 @@ describe('runApply warning-only remediation handling', () => {
     createExecutionIntent.mockReset();
     createExecutionRun.mockReset();
     appendExecutionStep.mockReset();
+    executionRunPath.mockReset();
+    attachSessionRunState.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });
+    executionRunPath.mockReturnValue('.playbook/runs/run-test.json');
     routeTask.mockReturnValue({
       route: 'hybrid',
       why: 'ok',

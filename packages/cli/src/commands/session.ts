@@ -1,9 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  clearSession,
   cleanupSessionSnapshots,
   formatMergeReportMarkdown,
   importChatTextSnapshot,
+  pinSessionArtifact,
+  readSession,
+  resumeSession,
   mergeSessionSnapshots,
   validateSessionSnapshot
 } from '@zachariahredfield/playbook-engine';
@@ -53,11 +57,107 @@ export const runSession = async (cwd: string, args: string[], options: SessionOp
       command: 'session',
       ok: false,
       exitCode: ExitCode.Failure,
-      summary: 'Usage: playbook session <import|merge|cleanup> [options]',
+      summary: 'Usage: playbook session <import|merge|cleanup|show|pin|resume|clear> [options]',
       findings: [{ id: 'session.subcommand.missing', level: 'error', message: 'Missing session subcommand.' }],
-      nextActions: ['Provide one of: import, merge, cleanup.']
+      nextActions: ['Provide one of: import, merge, cleanup, show, pin, resume, clear.']
     });
     return ExitCode.Failure;
+  }
+
+  if (subcommand === 'show') {
+    const session = readSession(cwd);
+
+    if (!session) {
+      emitResult({
+        format: options.format,
+        quiet: options.quiet,
+        command: 'session.show',
+        ok: true,
+        exitCode: ExitCode.Success,
+        summary: 'No active repo-scoped session found.',
+        findings: [{ id: 'session.show.empty', level: 'info', message: 'Session artifact does not exist yet.' }],
+        nextActions: ['Use `playbook session pin <artifact>` to create and populate session state.']
+      });
+      return ExitCode.Success;
+    }
+
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'session.show',
+      ok: true,
+      exitCode: ExitCode.Success,
+      summary: `Session ${session.sessionId} at step ${session.currentStep}`,
+      findings: [
+        { id: 'session.show.goal', level: 'info', message: `goal=${session.activeGoal}` },
+        { id: 'session.show.run', level: 'info', message: `selectedRunId=${session.selectedRunId ?? 'none'}` },
+        { id: 'session.show.artifacts', level: 'info', message: `pinnedArtifacts=${session.pinnedArtifacts.length}` }
+      ],
+      nextActions: []
+    });
+    return ExitCode.Success;
+  }
+
+  if (subcommand === 'pin') {
+    const artifact = rest[0] && !rest[0]?.startsWith('--') ? rest[0] : parseOption(rest, '--artifact');
+    const kind = parseOption(rest, '--kind') as 'finding' | 'plan' | 'run' | 'pattern' | 'artifact' | undefined;
+    if (!artifact) {
+      throw new Error('playbook session pin requires <artifact> or --artifact <path>.');
+    }
+    const session = pinSessionArtifact(cwd, artifact, kind);
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'session.pin',
+      ok: true,
+      exitCode: ExitCode.Success,
+      summary: `Pinned artifact: ${artifact}`,
+      findings: [
+        { id: 'session.pin.count', level: 'info', message: `pinnedArtifacts=${session.pinnedArtifacts.length}` }
+      ],
+      nextActions: []
+    });
+    return ExitCode.Success;
+  }
+
+  if (subcommand === 'resume') {
+    const resumed = resumeSession(cwd);
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'session.resume',
+      ok: resumed.warnings.length === 0,
+      exitCode: resumed.warnings.length === 0 ? ExitCode.Success : ExitCode.PolicyFailure,
+      summary: resumed.warnings.length === 0 ? 'Session resumed.' : 'Session resumed with warnings.',
+      findings: [
+        { id: 'session.resume.goal', level: 'info', message: `goal=${resumed.session.activeGoal}` },
+        { id: 'session.resume.run', level: 'info', message: `activeRunFound=${resumed.activeRunFound}` },
+        ...resumed.warnings.map((warning: string, index: number) => ({
+          id: `session.resume.warning.${index + 1}`,
+          level: 'warning' as const,
+          message: warning
+        }))
+      ],
+      nextActions: resumed.warnings.length > 0 ? ['Refresh or repin missing artifacts before continuing.'] : []
+    });
+    return resumed.warnings.length === 0 ? ExitCode.Success : ExitCode.PolicyFailure;
+  }
+
+  if (subcommand === 'clear') {
+    const cleared = clearSession(cwd);
+    emitResult({
+      format: options.format,
+      quiet: options.quiet,
+      command: 'session.clear',
+      ok: true,
+      exitCode: ExitCode.Success,
+      summary: cleared ? 'Cleared repo-scoped session state.' : 'No repo-scoped session state to clear.',
+      findings: [
+        { id: 'session.clear.result', level: 'info', message: `cleared=${cleared}` }
+      ],
+      nextActions: []
+    });
+    return ExitCode.Success;
   }
 
   if (subcommand === 'import') {
@@ -232,9 +332,9 @@ export const runSession = async (cwd: string, args: string[], options: SessionOp
     command: 'session',
     ok: false,
     exitCode: ExitCode.Failure,
-    summary: 'Usage: playbook session <import|merge|cleanup> [options]',
+    summary: 'Usage: playbook session <import|merge|cleanup|show|pin|resume|clear> [options]',
     findings: [{ id: 'session.subcommand.invalid', level: 'error', message: `Unknown subcommand: ${subcommand}` }],
-    nextActions: ['Provide one of: import, merge, cleanup.']
+    nextActions: ['Provide one of: import, merge, cleanup, show, pin, resume, clear.']
   });
   return ExitCode.Failure;
 };

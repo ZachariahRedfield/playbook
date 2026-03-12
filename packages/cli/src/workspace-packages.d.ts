@@ -160,4 +160,13 @@ declare module "@zachariahredfield/playbook-engine" {
   export const listExecutionRuns: (...args: any[]) => any[];
   export const readExecutionRun: (...args: any[]) => any;
   export const getLatestMutableRun: (...args: any[]) => any;
+  export const executionRunPath: (...args: any[]) => string;
+
+  export const initializeSession: (...args: any[]) => any;
+  export const readSession: (...args: any[]) => any;
+  export const updateSession: (...args: any[]) => any;
+  export const pinSessionArtifact: (...args: any[]) => any;
+  export const clearSession: (...args: any[]) => boolean;
+  export const resumeSession: (...args: any[]) => any;
+  export const attachSessionRunState: (...args: any[]) => any;
 }

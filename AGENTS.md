@@ -233,7 +233,7 @@ Do not hand-edit entries inside the managed markers.
 - `fix`: Apply safe, deterministic autofixes for verify findings
 - `status`: Show overall Playbook repository health
 - `upgrade`: Plan safe upgrades and local deterministic migrations
-- `session`: Import, merge, and cleanup session snapshots
+- `session`: Manage repo-scoped session memory and snapshot workflows
 <!-- PLAYBOOK:COMMANDS_END -->
 
 ## Managed examples

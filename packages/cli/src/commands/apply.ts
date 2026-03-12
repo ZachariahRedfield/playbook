@@ -305,6 +305,17 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
       evidence: options.fromPlan ? [{ id: 'evidence-plan-artifact', kind: 'artifact', ref: options.fromPlan }] : []
     });
 
+    const runArtifactPath = engine.executionRunPath(cwd, runId);
+    engine.attachSessionRunState(cwd, {
+      step: 'apply',
+      runId,
+      goal: 'apply deterministic remediation plan',
+      artifacts: [
+        { artifact: runArtifactPath, kind: 'run' },
+        ...(options.fromPlan ? [{ artifact: options.fromPlan, kind: 'plan' as const }] : [])
+      ]
+    });
+
     if (options.format === 'json') {
       console.log(JSON.stringify(payload, null, 2));
       return ExitCode.Success;
@@ -362,6 +373,17 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     ]
   });
 
+
+  const runArtifactPath = engine.executionRunPath(cwd, runId);
+  engine.attachSessionRunState(cwd, {
+    step: 'apply',
+    runId,
+    goal: 'apply deterministic remediation plan',
+    artifacts: [
+      { artifact: runArtifactPath, kind: 'run' },
+      ...(options.fromPlan ? [{ artifact: options.fromPlan, kind: 'plan' as const }] : [])
+    ]
+  });
   if (options.format === 'json') {
     console.log(JSON.stringify(payload, null, 2));
     return exitCode;
