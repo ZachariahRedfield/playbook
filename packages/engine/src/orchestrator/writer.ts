@@ -12,6 +12,7 @@ const toPromptSpec = (contract: OrchestratorContract): LanePromptSpec[] =>
     forbiddenFilesToModify: lane.forbiddenPaths,
     sharedFilesPolicy: `Shared-file conflict hubs are explicitly controlled: ${contract.sharedPaths.join(', ')}. Do not claim ownership; coordinate through dependencies and shared-path policy.`,
     dependenciesWaveInfo: `Wave ${lane.wave}. Depends on: ${lane.dependsOn.length > 0 ? lane.dependsOn.join(', ') : 'none'}.`,
+    shardOwnershipInfo: `Shard key: ${lane.shardKey}.`,
     implementationPlan: [
       `Implement lane objective: ${lane.objective}`,
       `Keep edits within allowed paths: ${lane.allowedPaths.join(', ') || '(none)'}`,
@@ -25,6 +26,7 @@ const toPromptSpec = (contract: OrchestratorContract): LanePromptSpec[] =>
     ],
     laneOwnershipConstraints: [
       `Primary ownership is exclusive to: ${lane.allowedPaths.join(', ') || '(none)'}.`,
+      `Canonical shard ownership key: ${lane.shardKey}.`,
       `Forbidden paths remain off-limits: ${lane.forbiddenPaths.join(', ') || '(none)'}.`
     ]
   }));
@@ -32,6 +34,7 @@ const toPromptSpec = (contract: OrchestratorContract): LanePromptSpec[] =>
 const buildWorkerContract = (lane: OrchestratorLaneContract, goal: string) => ({
   laneId: lane.id,
   goal,
+  shardKey: lane.shardKey,
   allowedPaths: lane.allowedPaths,
   forbiddenPaths: lane.forbiddenPaths,
   sharedPaths: lane.sharedPaths,

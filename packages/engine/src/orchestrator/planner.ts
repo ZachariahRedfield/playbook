@@ -32,7 +32,115 @@ const orderSharedPaths = (values: string[]): string[] => {
   });
 };
 
-type LaneBlueprint = Omit<OrchestratorLaneContract, 'id' | 'promptFile' | 'dependsOn'> & { dependsOnLaneIndexes: number[] };
+type LaneBlueprint = Omit<OrchestratorLaneContract, 'id' | 'promptFile' | 'dependsOn' | 'shardKey'> & { dependsOnLaneIndexes: number[] };
+
+const SHARD_KEY_PREFIX_RULES: Array<{ prefix: string; shardKey: string }> = [
+  { prefix: 'packages/engine/', shardKey: 'packages-engine' },
+  { prefix: 'packages/cli/', shardKey: 'packages-cli' },
+  { prefix: 'packages/core/', shardKey: 'packages-core' },
+  { prefix: 'docs/', shardKey: 'docs' },
+  { prefix: 'tests/', shardKey: 'tests' }
+];
+
+const SHARED_GOVERNANCE_PATHS = new Set<string>([
+  ...SHARED_PATHS,
+  'docs/commands/orchestrate.md',
+  'docs/commands/README.md',
+  'README.md'
+]);
+
+const toShardSegment = (value: string): string =>
+  value
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    .replace(/^\/+/, '')
+    .replace(/\/+$/, '')
+    .replace(/\./g, '-')
+    .replace(/[^a-zA-Z0-9/-]+/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase();
+
+const shardKeyFromPath = (ownedPath: string): string => {
+  const normalized = toShardSegment(ownedPath);
+  for (const rule of SHARD_KEY_PREFIX_RULES) {
+    if (normalized.startsWith(rule.prefix)) {
+      return rule.shardKey;
+    }
+  }
+
+  if (normalized.startsWith('docs/')) {
+    return 'docs';
+  }
+
+  if (normalized.startsWith('tests/')) {
+    return 'tests';
+  }
+
+  const segments = normalized.split('/').filter(Boolean);
+  if (segments.length >= 2) {
+    return `${segments[0]}-${segments[1]}`;
+  }
+
+  if (segments.length === 1) {
+    return segments[0];
+  }
+
+  return 'shared-governance';
+};
+
+
+const isTestOwnedPath = (ownedPath: string): boolean => {
+  const normalized = toShardSegment(ownedPath);
+  return normalized.startsWith('tests/') || normalized.includes('/test/') || normalized.includes('.test-') || normalized.endsWith('-test-ts');
+};
+
+const deriveShardKey = (allowedPaths: string[]): string => {
+  if (allowedPaths.length === 0) {
+    return 'shared-governance';
+  }
+
+  const sortedPaths = uniqueSorted(allowedPaths);
+  const exclusivePaths = sortedPaths.filter((ownedPath) => !SHARED_GOVERNANCE_PATHS.has(ownedPath));
+
+  if (exclusivePaths.length === 0) {
+    return 'shared-governance';
+  }
+
+  if (exclusivePaths.every((ownedPath) => isTestOwnedPath(ownedPath))) {
+    return 'tests';
+  }
+
+  return shardKeyFromPath(exclusivePaths[0]);
+};
+
+const isSharedGovernanceShard = (shardKey: string): boolean => shardKey === 'shared-governance';
+
+const assertShardOwnershipByWave = (lanes: OrchestratorLaneContract[]): void => {
+  const perWave = new Map<number, Map<string, string>>();
+
+  lanes.forEach((lane) => {
+    const waveShards = perWave.get(lane.wave) ?? new Map<string, string>();
+    const existingOwner = waveShards.get(lane.shardKey);
+
+    if (existingOwner) {
+      throw new Error(`Duplicate shardKey in wave ${lane.wave}: ${lane.shardKey} owned by ${existingOwner} and ${lane.id}.`);
+    }
+
+    waveShards.set(lane.shardKey, lane.id);
+    perWave.set(lane.wave, waveShards);
+  });
+
+  lanes.forEach((lane) => {
+    if (!isSharedGovernanceShard(lane.shardKey)) {
+      return;
+    }
+
+    const hasOnlySharedPaths = lane.allowedPaths.every((ownedPath) => SHARED_GOVERNANCE_PATHS.has(ownedPath));
+    if (!hasOnlySharedPaths) {
+      throw new Error(`Lane ${lane.id} mixes shared-governance shard with exclusive ownership paths.`);
+    }
+  });
+};
 
 const buildLaneBlueprints = (goal: string): LaneBlueprint[] => [
   {
@@ -166,6 +274,7 @@ export const buildOrchestratorContract = (input: BuildOrchestratorContractInput)
   assertNoOverlap(blueprints);
 
   const lanes: OrchestratorLaneContract[] = blueprints.map((lane, index) => ({
+    shardKey: deriveShardKey(lane.allowedPaths),
     id: `lane-${index + 1}`,
     title: lane.title,
     objective: lane.objective,
@@ -178,6 +287,8 @@ export const buildOrchestratorContract = (input: BuildOrchestratorContractInput)
     verification: uniqueSorted(lane.verification),
     documentationUpdates: uniqueSorted(lane.documentationUpdates)
   }));
+
+  assertShardOwnershipByWave(lanes);
 
   return {
     schemaVersion: '1.0',

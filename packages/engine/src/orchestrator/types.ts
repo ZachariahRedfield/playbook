@@ -2,6 +2,7 @@ export interface OrchestratorLaneContract {
   id: string;
   title: string;
   objective: string;
+  shardKey: string;
   allowedPaths: string[];
   forbiddenPaths: string[];
   sharedPaths: string[];

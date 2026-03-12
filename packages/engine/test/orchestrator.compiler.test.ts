@@ -24,6 +24,7 @@ describe('buildOrchestratorContract', () => {
         id: expect.any(String),
         title: expect.any(String),
         objective: expect.any(String),
+        shardKey: expect.any(String),
         allowedPaths: expect.any(Array),
         forbiddenPaths: expect.any(Array),
         sharedPaths: expect.any(Array),
@@ -43,12 +44,31 @@ describe('buildOrchestratorContract', () => {
     const waveTwo = contract.lanes.filter((lane) => lane.wave === 2);
     expect(waveTwo).toHaveLength(1);
     expect(waveTwo[0]?.dependsOn).toEqual(['lane-1', 'lane-2']);
+
+    expect(contract.lanes.map((lane) => lane.shardKey)).toEqual(['packages-cli', 'packages-engine', 'tests']);
+  });
+
+
+  it('surfaces shared-governance shard explicitly and avoids duplicate shard ownership within each wave', () => {
+    const contract = buildOrchestratorContract({ goal: 'Wave shard safety', laneCountRequested: 4 });
+
+    const waveShardOwners = new Map<number, Set<string>>();
+    contract.lanes.forEach((lane) => {
+      const keys = waveShardOwners.get(lane.wave) ?? new Set<string>();
+      expect(keys.has(lane.shardKey)).toBe(false);
+      keys.add(lane.shardKey);
+      waveShardOwners.set(lane.wave, keys);
+    });
+
+    const sharedGovernanceLane = contract.lanes.find((lane) => lane.shardKey === 'shared-governance');
+    expect(sharedGovernanceLane?.allowedPaths).toEqual(expect.arrayContaining(['docs/commands/README.md', 'docs/commands/orchestrate.md']));
   });
 
   it('is stable for identical input', () => {
     const first = buildOrchestratorContract({ goal: 'Test orchestration slice', laneCountRequested: 3 });
     const second = buildOrchestratorContract({ goal: 'Test orchestration slice', laneCountRequested: 3 });
     expect(first).toEqual(second);
+    expect(first.lanes.map((lane) => lane.shardKey)).toEqual(second.lanes.map((lane) => lane.shardKey));
   });
 
   it('degrades lane count safely to one lane for constrained requests', () => {
@@ -88,6 +108,13 @@ describe('buildOrchestratorContract', () => {
     workerLaneDirs.forEach((laneId) => {
       expect(fs.existsSync(path.join(workersDir, laneId, 'prompt.md'))).toBe(true);
       expect(fs.existsSync(path.join(workersDir, laneId, 'contract.json'))).toBe(true);
+
+      const workerContract = JSON.parse(fs.readFileSync(path.join(workersDir, laneId, 'contract.json'), 'utf8')) as { shardKey: string };
+      expect(workerContract.shardKey).toBeTruthy();
     });
+
+    const laneOnePrompt = fs.readFileSync(path.join(workersDir, 'lane-1', 'prompt.md'), 'utf8');
+    expect(laneOnePrompt).toContain('## Shard ownership');
+    expect(laneOnePrompt).toContain('Shard key:');
   });
 });

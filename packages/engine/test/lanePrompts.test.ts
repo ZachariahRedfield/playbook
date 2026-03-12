@@ -11,6 +11,7 @@ const sampleLane: LanePromptSpec = {
   forbiddenFilesToModify: ['packages/cli/**', 'README.md'],
   sharedFilesPolicy: 'Coordinate shared files through merge notes before editing.',
   dependenciesWaveInfo: 'Depends on wave 1 schema stabilization.',
+  shardOwnershipInfo: 'Shard key: packages-engine.',
   implementationPlan: ['Define schema.', 'Render markdown.', 'Write output files.'],
   verificationSteps: ['pnpm -r build', 'pnpm --filter @zachariahredfield/playbook-engine test'],
   documentationUpdates: ['Update docs/commands/README.md if command surface changes.'],
@@ -28,6 +29,8 @@ describe('lane prompt rendering', () => {
     expect(prompt).toContain('## Forbidden files to modify');
     expect(prompt).toContain('## Shared files policy');
     expect(prompt).toContain('## Dependencies / wave info');
+    expect(prompt).toContain('## Shard ownership');
+    expect(prompt).toContain('Shard key: packages-engine.');
     expect(prompt).toContain('## Implementation plan');
     expect(prompt).toContain('## Verification steps');
     expect(prompt).toContain('## Documentation updates');

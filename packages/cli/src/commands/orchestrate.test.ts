@@ -52,7 +52,7 @@ describe('runOrchestrate', () => {
     const artifactPayload = JSON.parse(fs.readFileSync(jsonArtifact, 'utf8')) as {
       goal: string;
       laneCountProduced: number;
-      lanes: Array<{ id: string; wave: number; dependsOn: string[]; allowedPaths: string[] }>;
+      lanes: Array<{ id: string; shardKey: string; wave: number; dependsOn: string[]; allowedPaths: string[] }>;
       sharedPaths: string[];
     };
     expect(artifactPayload.goal).toBe('ship orchestration command');
@@ -75,6 +75,7 @@ describe('runOrchestrate', () => {
       sharedPaths: string[];
       wave: number;
       dependsOn: string[];
+      shardKey: string;
       verification: string[];
     };
 
@@ -84,6 +85,7 @@ describe('runOrchestrate', () => {
       allowedPaths: expect.any(Array),
       forbiddenPaths: expect.any(Array),
       sharedPaths: expect.any(Array),
+      shardKey: expect.any(String),
       wave: expect.any(Number),
       dependsOn: expect.any(Array),
       verification: expect.any(Array)
@@ -96,6 +98,13 @@ describe('runOrchestrate', () => {
         owned.add(ownedPath);
       });
     });
+
+    artifactPayload.lanes.forEach((lane) => {
+      expect(lane.shardKey).toBeTruthy();
+    });
+
+    const lane1WorkerPrompt = fs.readFileSync(path.join(workersDir, 'lane-1', 'prompt.md'), 'utf8');
+    expect(lane1WorkerPrompt).toContain('## Shard ownership');
 
     const lane3 = artifactPayload.lanes.find((lane) => lane.id === 'lane-3');
     expect(lane3?.wave).toBe(2);

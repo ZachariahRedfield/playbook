@@ -8,6 +8,7 @@ export type LanePromptSpec = {
   forbiddenFilesToModify: string[];
   sharedFilesPolicy: string;
   dependenciesWaveInfo: string;
+  shardOwnershipInfo: string;
   implementationPlan: string[];
   verificationSteps: string[];
   documentationUpdates: string[];
@@ -56,6 +57,9 @@ export const renderLanePrompt = ({ laneNumber, lane }: RenderLanePromptInput): s
     '',
     '## Dependencies / wave info',
     lane.dependenciesWaveInfo,
+    '',
+    '## Shard ownership',
+    lane.shardOwnershipInfo,
     '',
     '## Implementation plan',
     toBulletList(lane.implementationPlan),
