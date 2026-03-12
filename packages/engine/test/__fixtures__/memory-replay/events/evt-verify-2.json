@@ -1,0 +1,20 @@
+{
+  "runId": "run-3",
+  "fingerprint": "fp-tests",
+  "module": "packages/engine",
+  "ruleId": "tests.required",
+  "failureShape": "missing-test",
+  "severity": "warning",
+  "recurrenceCount": 1,
+  "modules": [
+    "packages/engine"
+  ],
+  "riskScore": 3,
+  "ownershipGap": false,
+  "docsGap": false,
+  "successfulRemediation": true,
+  "remediation": {
+    "status": "success",
+    "shape": "add-test-skeleton"
+  }
+}

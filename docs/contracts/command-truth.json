@@ -256,6 +256,18 @@
       "example": "pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json"
     },
     {
+      "name": "memory",
+      "category": "Utility",
+      "role": "utility",
+      "lifecycle": "utility",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook memory replay --json"
+    },
+    {
       "name": "patterns",
       "category": "Repository tools",
       "role": "governance",
@@ -434,6 +446,7 @@
     "diagram",
     "init",
     "learn",
+    "memory",
     "schema",
     "session",
     "status",

@@ -44,6 +44,7 @@ Do not hand-edit entries inside the managed markers.
 | `explain` | Explain rules, modules, or architecture from repository intelligence | canonical | repo-intelligence | primary | 6 | Current (implemented) | `pnpm playbook explain architecture --json` |
 | `route` | Classify tasks into deterministic execution vs bounded model reasoning routes | canonical | repo-intelligence | primary | — | Current (implemented) | `pnpm playbook route "summarize current repo state" --json` |
 | `learn` | Draft deterministic knowledge candidates from local diff and repository intelligence | utility | utility | secondary | — | Current (implemented) | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
+| `memory` | Replay episodic memory events into deterministic candidate knowledge artifacts | utility | utility | secondary | — | Current (implemented) | `pnpm playbook memory replay --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
 ## External repository targeting (`pnpm playbook --repo <path> <command>`)
@@ -150,6 +151,22 @@ Artifact intent:
 
 - `.playbook/knowledge/**` is runtime draft state and should stay gitignored by default.
 - Promote/commit knowledge artifacts only when intentionally reviewed for upstream inclusion.
+
+## Memory replay (`pnpm playbook memory replay`)
+
+`pnpm playbook memory replay` replays episodic memory events into deterministic candidate knowledge artifacts for human review.
+
+- Reads `.playbook/memory/index.json` and referenced memory event files.
+- Clusters by `fingerprint/module/rule/failure shape`.
+- Applies deterministic salience scoring from explicit event inputs only.
+- Emits `.playbook/memory/candidates.json` with provenance references to source events.
+- Replay is read-only with respect to source/rules/docs files.
+
+Example:
+
+```bash
+pnpm playbook memory replay --json
+```
 
 ## Internal knowledge compaction status (no public command surface yet)
 

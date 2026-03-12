@@ -223,6 +223,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
     const { runSchema } = await import('./schema.js');
     return runSchema(cwd, commandArgs, { format, quiet });
   },
+  memory: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runMemory } = await import('./memory.js');
+    return runMemory(cwd, commandArgs, { format, quiet });
+  },
   learn: async ({ cwd, commandArgs, format, quiet }) => {
     const { runLearnDraft } = await import('./learnDraft.js');
     const subcommand = commandArgs.find((arg) => !arg.startsWith('-'));
@@ -331,7 +335,8 @@ const commandOrder = [
   'route',
   'session',
   'patterns',
-  'learn'
+  'learn',
+  'memory'
 ] as const;
 
 const metadataByName = new Map(commandMetadata.map((command) => [command.name, command]));

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "events": [
+    {
+      "eventId": "evt-verify-1",
+      "relativePath": ".playbook/memory/events/evt-verify-1.json"
+    },
+    {
+      "eventId": "evt-plan-1",
+      "relativePath": ".playbook/memory/events/evt-plan-1.json"
+    },
+    {
+      "eventId": "evt-apply-1",
+      "relativePath": ".playbook/memory/events/evt-apply-1.json"
+    },
+    {
+      "eventId": "evt-verify-2",
+      "relativePath": ".playbook/memory/events/evt-verify-2.json"
+    }
+  ]
+}

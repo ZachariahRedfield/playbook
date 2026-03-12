@@ -1,0 +1,14 @@
+{
+  "runId": "run-2",
+  "fingerprint": "fp-tests",
+  "module": "packages/engine",
+  "ruleId": "tests.required",
+  "failureShape": "missing-test",
+  "severity": "warning",
+  "recurrenceCount": 2,
+  "modules": ["packages/engine", "packages/cli"],
+  "riskScore": 4,
+  "ownershipGap": false,
+  "docsGap": false,
+  "remediation": { "status": "success", "shape": "add-fixture-and-assert" }
+}

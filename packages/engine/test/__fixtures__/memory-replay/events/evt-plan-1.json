@@ -1,0 +1,13 @@
+{
+  "runId": "run-1",
+  "fingerprint": "fp-notes",
+  "module": "packages/cli",
+  "ruleId": "notes.missing",
+  "failureShape": "missing-file",
+  "severity": "warning",
+  "recurrence": { "count": 1 },
+  "modules": ["packages/cli"],
+  "riskScore": 7,
+  "gaps": { "ownership": true, "docs": false },
+  "remediation": { "status": "pending" }
+}

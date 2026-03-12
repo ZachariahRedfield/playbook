@@ -53,6 +53,8 @@ export type { AskEngineResult } from './ask/askEngine.js';
 export { resolveDiffAskContext } from './ask/diffContext.js';
 export type { DiffAskContext } from './ask/diffContext.js';
 export { generateKnowledgeCandidatesDraft } from './learn/draft.js';
+export { replayMemoryToCandidates, MEMORY_CANDIDATES_RELATIVE_PATH } from './memory/replay.js';
+export type { MemoryCandidateKind, MemoryReplayResult, MemoryReplayCandidate, MemoryReplayCandidateProvenance, MemoryReplaySalienceFactors, MemoryReplayIndex, MemoryReplayEventReference } from './schema/memoryReplay.js';
 export type { LearnDraftResult, KnowledgeCandidate, KnowledgeCandidateEvidencePointer, KnowledgeCandidateDedupe } from './schema/knowledgeCandidate.js';
 export { analyzePullRequest } from './pr/analyzePr.js';
 export type { AnalyzePullRequestResult } from './pr/analyzePr.js';

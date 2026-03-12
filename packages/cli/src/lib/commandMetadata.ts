@@ -448,6 +448,19 @@ export const commandMetadata: CommandMetadata[] = [
     productFacing: true,
     exampleArgs: 'learn draft --json --out .playbook/knowledge/candidates.json',
     machineReadable: true
+  },
+  {
+    name: 'memory',
+    description: 'Replay episodic memory events into deterministic candidate knowledge artifacts',
+    category: 'Utility',
+    role: 'utility',
+    lifecycle: 'utility',
+    discoverability: 'secondary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'memory replay --json',
+    machineReadable: true
   }
 ];
 
