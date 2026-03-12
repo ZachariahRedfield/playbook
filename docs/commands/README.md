@@ -375,6 +375,14 @@ Suggested remediation IDs:
 
 
 
+### Deterministic pattern compaction query
+
+`pnpm playbook query patterns` reads `.playbook/patterns.json` generated during `playbook verify` and returns compacted canonical engineering patterns.
+
+- Canonical IDs collapse semantically equivalent observations (for example, module test absence variants).
+- Buckets are deterministic: architecture, testing, dependency, documentation, governance.
+- Output is stable machine-readable pattern summaries (`id`, `bucket`, `occurrences`, `examples`).
+
 ### Deterministic test hotspot discovery
 
 `pnpm playbook query test-hotspots` reports likely test inefficiency candidates from test files using deterministic heuristics only.

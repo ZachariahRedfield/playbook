@@ -24,6 +24,10 @@ const writeRepoIndex = (repo: string): void => {
           { name: 'workouts', dependencies: ['auth'] },
           { name: 'analytics', dependencies: ['workouts'] }
         ],
+        dependencies: [{ from: 'workouts', to: 'auth', type: 'source-import' }],
+        workspace: [{ name: 'engine', path: 'packages/engine', role: 'engine', dependsOn: [] }],
+        tests: [{ module: 'auth', tests_present: true, coverage_estimate: 'unknown' }],
+        configs: [{ name: 'tsconfig', path: 'tsconfig.json', present: true }],
         database: 'supabase',
         rules: ['requireNotesOnChanges']
       },
@@ -57,6 +61,24 @@ const writeModuleOwners = (repo: string): void => {
   );
 };
 
+
+const writePatternsArtifact = (repo: string): void => {
+  const patternsPath = path.join(repo, '.playbook', 'patterns.json');
+  fs.mkdirSync(path.dirname(patternsPath), { recursive: true });
+  fs.writeFileSync(
+    patternsPath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        command: 'pattern-compaction',
+        patterns: [{ id: 'MODULE_TEST_ABSENCE', bucket: 'testing', occurrences: 3, examples: ['module lacks tests'] }]
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeVerifyReport = (repo: string): void => {
   const verifyPath = path.join(repo, '.playbook', 'verify-report.json');
   fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
@@ -80,6 +102,26 @@ describe('runQuery', () => {
 
     expect(exitCode).toBe(ExitCode.Success);
     expect(logSpy.mock.calls.map((call) => String(call[0]))).toEqual(['Modules', '───────', 'auth: none', 'workouts: auth', 'analytics: workouts']);
+
+    logSpy.mockRestore();
+  });
+
+
+  it('supports deps and tests repository query fields', async () => {
+    const repo = createRepo('playbook-cli-query-new-fields');
+    writeRepoIndex(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const depsExit = await runQuery(repo, ['deps'], { format: 'json', quiet: false });
+    expect(depsExit).toBe(ExitCode.Success);
+    const depsPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(depsPayload.field).toBe('dependencies');
+
+    logSpy.mockClear();
+    const testsExit = await runQuery(repo, ['tests'], { format: 'json', quiet: false });
+    expect(testsExit).toBe(ExitCode.Success);
+    const testsPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(testsPayload.field).toBe('tests');
 
     logSpy.mockRestore();
   });
@@ -487,6 +529,25 @@ describe('runQuery', () => {
 
 
 
+
+  it('prints patterns query JSON output', async () => {
+    const repo = createRepo('playbook-cli-query-patterns-json');
+    writePatternsArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runQuery(repo, ['patterns'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      schemaVersion: '1.0',
+      command: 'pattern-compaction',
+      patterns: [{ id: 'MODULE_TEST_ABSENCE', bucket: 'testing', occurrences: 3, examples: ['module lacks tests'] }]
+    });
+
+    logSpy.mockRestore();
+  });
+
   it('prints test-hotspots query JSON output', async () => {
     const repo = createRepo('playbook-cli-query-test-hotspots-json');
     writeRepoIndex(repo);
@@ -736,7 +797,7 @@ describe('runQuery', () => {
 
     expect(exitCode).toBe(ExitCode.Failure);
     expect(errorSpy).toHaveBeenCalledWith(
-      'playbook query: unsupported field "docs". Supported fields: architecture, framework, language, modules, database, rules.'
+      'playbook query: unsupported field "docs". Supported fields: architecture, framework, language, modules, dependencies, workspace, tests, configs, database, rules.'
     );
 
     errorSpy.mockRestore();

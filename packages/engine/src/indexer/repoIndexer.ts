@@ -3,6 +3,9 @@ import path from 'node:path';
 import { loadConfig } from '../config/load.js';
 import { getCoreRules } from '../rules/coreRules.js';
 import { scanWorkspaceDeps } from '../diagrams/scanWorkspaceDeps.js';
+import { extractDependencyEdges, type RepositoryDependencyEdge } from './extractDependencies.js';
+
+export type { RepositoryDependencyEdge } from './extractDependencies.js';
 import { getDefaultPlaybookIgnoreSuggestions, isPlaybookIgnored, parsePlaybookIgnore } from './playbookIgnore.js';
 
 export type RepositoryModule = {
@@ -16,8 +19,32 @@ export type RepositoryIndex = {
   language: string;
   architecture: string;
   modules: RepositoryModule[];
+  dependencies: RepositoryDependencyEdge[];
+  workspace: RepositoryWorkspaceNode[];
+  tests: RepositoryTestCoverage[];
+  configs: RepositoryConfigEntry[];
   database: string;
   rules: string[];
+};
+
+export type RepositoryWorkspaceNode = {
+  name: string;
+  path: string;
+  role: 'cli' | 'core' | 'engine' | 'node' | 'package';
+  dependsOn: string[];
+};
+
+export type RepositoryTestCoverage = {
+  module: string;
+  tests_present: boolean;
+  coverage_estimate: 'unknown';
+};
+
+export type RepositoryConfigEntry = {
+  name: 'eslint' | 'tsconfig' | 'jest' | 'vitest' | 'command-inventory';
+  path: string;
+  present: boolean;
+  commands?: string[];
 };
 
 const IMPORT_RE = /from\s+['\"]([^'\"]+)['\"]|import\(['\"]([^'\"]+)['\"]\)|import\s+['\"]([^'\"]+)['\"]/g;
@@ -292,15 +319,130 @@ const detectRules = (projectRoot: string): string[] => {
     .sort();
 };
 
+const detectWorkspace = (projectRoot: string): RepositoryWorkspaceNode[] => {
+  const workspaceGraph = scanWorkspaceDeps(projectRoot);
+  const dependencyMap = new Map<string, Set<string>>();
+
+  for (const workspace of workspaceGraph.workspaces) {
+    dependencyMap.set(workspace.name, new Set<string>());
+  }
+
+  for (const edge of workspaceGraph.edges) {
+    dependencyMap.get(edge.from)?.add(edge.to);
+  }
+
+  const inferRole = (name: string): RepositoryWorkspaceNode['role'] => {
+    if (name.includes('/playbook') || name.endsWith('/cli')) {
+      return 'cli';
+    }
+    if (name.includes('/playbook-core') || name.endsWith('/core')) {
+      return 'core';
+    }
+    if (name.includes('/playbook-engine') || name.endsWith('/engine')) {
+      return 'engine';
+    }
+    if (name.includes('/playbook-node') || name.endsWith('/node')) {
+      return 'node';
+    }
+    return 'package';
+  };
+
+  return workspaceGraph.workspaces
+    .map((workspace) => ({
+      name: workspace.name,
+      path: workspace.path,
+      role: inferRole(workspace.name),
+      dependsOn: Array.from(dependencyMap.get(workspace.name) ?? []).sort((left, right) => left.localeCompare(right))
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+};
+
+const detectTests = (projectRoot: string, modules: RepositoryModule[], workspace: RepositoryWorkspaceNode[]): RepositoryTestCoverage[] => {
+  const workspacePathByName = new Map(workspace.map((entry) => [entry.name, entry.path]));
+
+  const hasModuleTests = (moduleName: string): boolean => {
+    const workspacePath = workspacePathByName.get(moduleName);
+    if (workspacePath) {
+      return [
+        path.join(projectRoot, workspacePath, 'tests'),
+        path.join(projectRoot, workspacePath, 'test'),
+        path.join(projectRoot, workspacePath, '__tests__')
+      ].some((testPath) => fs.existsSync(testPath));
+    }
+
+    const srcCandidates = [
+      path.join(projectRoot, 'src', moduleName, 'tests'),
+      path.join(projectRoot, 'src', moduleName, 'test'),
+      path.join(projectRoot, 'src', moduleName, '__tests__'),
+      path.join(projectRoot, 'tests', moduleName),
+      path.join(projectRoot, 'test', moduleName)
+    ];
+
+    return srcCandidates.some((testPath) => fs.existsSync(testPath));
+  };
+
+  return modules.map((moduleEntry) => ({
+    module: moduleEntry.name,
+    tests_present: hasModuleTests(moduleEntry.name),
+    coverage_estimate: 'unknown'
+  }));
+};
+
+const detectConfigs = (projectRoot: string): RepositoryConfigEntry[] => {
+  const configCandidates: Array<Pick<RepositoryConfigEntry, 'name' | 'path'>> = [
+    { name: 'eslint', path: '.eslintrc.js' },
+    { name: 'eslint', path: '.eslintrc.cjs' },
+    { name: 'eslint', path: '.eslintrc.json' },
+    { name: 'eslint', path: 'eslint.config.js' },
+    { name: 'eslint', path: 'eslint.config.mjs' },
+    { name: 'tsconfig', path: 'tsconfig.json' },
+    { name: 'jest', path: 'jest.config.js' },
+    { name: 'jest', path: 'jest.config.cjs' },
+    { name: 'jest', path: 'jest.config.ts' },
+    { name: 'vitest', path: 'vitest.config.ts' },
+    { name: 'vitest', path: 'vitest.config.js' },
+    { name: 'vitest', path: 'vitest.workspace.ts' }
+  ];
+
+  const configEntries = configCandidates.map((candidate) => ({
+    name: candidate.name,
+    path: candidate.path,
+    present: fs.existsSync(path.join(projectRoot, candidate.path))
+  }));
+
+  const rootPackageJsonPath = path.join(projectRoot, 'package.json');
+  let commandInventory: string[] = [];
+  if (fs.existsSync(rootPackageJsonPath)) {
+    const packageJson = JSON.parse(fs.readFileSync(rootPackageJsonPath, 'utf8')) as { scripts?: Record<string, string> };
+    commandInventory = Object.keys(packageJson.scripts ?? {}).sort((left, right) => left.localeCompare(right));
+  }
+
+  return [
+    ...configEntries,
+    {
+      name: 'command-inventory',
+      path: 'package.json#scripts',
+      present: commandInventory.length > 0,
+      commands: commandInventory
+    }
+  ];
+};
+
 export const generateRepositoryIndex = (projectRoot: string): RepositoryIndex => {
   const architecture = detectArchitecture(projectRoot);
+  const modules = detectModules(projectRoot, architecture);
+  const workspace = detectWorkspace(projectRoot);
 
   return {
     schemaVersion: '1.0',
     framework: detectFramework(projectRoot),
     language: detectLanguage(projectRoot),
     architecture,
-    modules: detectModules(projectRoot, architecture),
+    modules,
+    dependencies: extractDependencyEdges(projectRoot),
+    workspace,
+    tests: detectTests(projectRoot, modules, workspace),
+    configs: detectConfigs(projectRoot),
     database: detectDatabase(projectRoot),
     rules: detectRules(projectRoot)
   };

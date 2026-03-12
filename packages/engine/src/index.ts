@@ -17,7 +17,7 @@ export { generateRepositoryHealth } from './doctor/index.js';
 export type { RepositoryHealth, GovernanceStatusItem, ArtifactHygieneReport } from './doctor/index.js';
 
 export { generateRepositoryIndex } from './indexer/repoIndexer.js';
-export type { RepositoryIndex, RepositoryModule } from './indexer/repoIndexer.js';
+export type { RepositoryIndex, RepositoryModule, RepositoryDependencyEdge, RepositoryWorkspaceNode, RepositoryTestCoverage, RepositoryConfigEntry } from './indexer/repoIndexer.js';
 export {
   parsePlaybookIgnore,
   parsePlaybookIgnoreContent,
@@ -45,6 +45,7 @@ export type { ModuleContextDigest } from './context/moduleContext.js';
 export type { RepositoryGraph, RepositoryGraphNode, RepositoryGraphEdge, RepositoryGraphSummary, GraphNeighborhoodSummary } from './graph/repoGraph.js';
 
 export { queryRepositoryIndex, SUPPORTED_QUERY_FIELDS } from './query/repoQuery.js';
+export { queryPatterns } from './query/patterns.js';
 export type { RepositoryQueryField, RepositoryQueryResult } from './query/repoQuery.js';
 export { answerRepositoryQuestion } from './ask/askEngine.js';
 export type { AskEngineResult } from './ask/askEngine.js';
@@ -150,6 +151,8 @@ export type {
 export { validateRepoBoundary, validateRemediationPlan, redactSecretsForLogs } from './security/guards.js';
 
 export {
+  compactPatterns,
+  readCompactedPatterns,
   generateCompactionCandidateArtifact,
   extractCompactionCandidates,
   canonicalizeCandidate,

@@ -7,6 +7,7 @@ import {
   queryRuleOwners,
   queryModuleOwners,
   queryTestHotspots,
+  queryPatterns,
   SUPPORTED_QUERY_FIELDS,
   type DependenciesQueryResult,
   type ImpactQueryResult,
@@ -32,13 +33,13 @@ type QueryOptions = {
 type QueryResult = {
   command: 'query';
   field: RepositoryQueryField;
-  result: string | string[] | RepositoryModule[];
+  result: string | string[] | RepositoryModule[] | Array<Record<string, unknown>>;
   graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
 const firstPositionalArg = (args: string[]): string | undefined => args.find((arg) => !arg.startsWith('-'));
 
-const printText = (field: RepositoryQueryField, result: string | string[] | RepositoryModule[]): void => {
+const printText = (field: RepositoryQueryField, result: string | string[] | RepositoryModule[] | Array<Record<string, unknown>>): void => {
   const heading = field.charAt(0).toUpperCase() + field.slice(1);
   console.log(heading);
   console.log('───────');
@@ -57,8 +58,15 @@ const printText = (field: RepositoryQueryField, result: string | string[] | Repo
       return;
     }
 
-    for (const value of result as string[]) {
-      console.log(value);
+    if (typeof firstValue === 'string') {
+      for (const value of result as string[]) {
+        console.log(value);
+      }
+      return;
+    }
+
+    for (const value of result as Array<Record<string, unknown>>) {
+      console.log(JSON.stringify(value));
     }
     return;
   }
@@ -500,6 +508,46 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     }
   }
 
+
+  if (fieldArg === 'patterns') {
+    try {
+      const payload = queryPatterns(cwd);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        console.log('Patterns');
+        console.log('────────');
+        if (payload.patterns.length === 0) {
+          console.log('none');
+        } else {
+          for (const pattern of payload.patterns) {
+            console.log(`${pattern.id} (${pattern.bucket}) x${pattern.occurrences}`);
+          }
+        }
+      }
+
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload: {
+              schemaVersion: '1.0',
+              command: 'query',
+              type: 'patterns',
+              error: message
+            }, outFile: options.outFile });
+      } else {
+        console.error(message);
+      }
+
+      return ExitCode.Failure;
+    }
+  }
+
   if (fieldArg === 'risk') {
     const moduleArg = commandArgs.find((arg, index) => index > commandArgs.indexOf(fieldArg) && !arg.startsWith('-'));
 
@@ -578,7 +626,7 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             command: 'query',
             field: fieldArg,
             error: message,
-            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners', 'test-hotspots']
+            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners', 'test-hotspots', 'patterns']
           }, outFile: options.outFile });
     } else {
       console.error(message);

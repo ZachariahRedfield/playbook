@@ -6,6 +6,7 @@ import { loadPlugins } from '../plugins/loadPlugins.js';
 import { getRegisteredRules, registerRule, resetPluginRegistry } from '../plugins/pluginRegistry.js';
 import { getCoreRules } from '../rules/coreRules.js';
 import { RuleRunner } from '../execution/ruleRunner.js';
+import { compactPatterns } from '../compaction/compactPatterns.js';
 
 export const verifyRepo = (repoRoot: string): VerifyReport => {
   const warnings: VerifyReport['warnings'] = [];
@@ -24,7 +25,7 @@ export const verifyRepo = (repoRoot: string): VerifyReport => {
   const runner = new RuleRunner(getRegisteredRules());
   const { failures } = runner.run({ repoRoot, changedFiles });
 
-  return {
+  const report: VerifyReport = {
     ok: failures.length === 0,
     summary: {
       failures: failures.length,
@@ -35,4 +36,14 @@ export const verifyRepo = (repoRoot: string): VerifyReport => {
     failures,
     warnings
   };
+
+  try {
+    compactPatterns(repoRoot, report);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    report.warnings.push({ id: 'pattern-compaction', message: `Pattern compaction skipped: ${message}` });
+    report.summary.warnings = report.warnings.length;
+  }
+
+  return report;
 };

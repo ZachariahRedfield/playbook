@@ -1,16 +1,34 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { RepositoryIndex, RepositoryModule } from '../indexer/repoIndexer.js';
+import type {
+  RepositoryIndex,
+  RepositoryModule,
+  RepositoryDependencyEdge,
+  RepositoryWorkspaceNode,
+  RepositoryTestCoverage,
+  RepositoryConfigEntry
+} from '../indexer/repoIndexer.js';
 import { readRepositoryGraph, summarizeGraphNeighborhood, type GraphNeighborhoodSummary } from '../graph/repoGraph.js';
 import { readJsonArtifact } from '../artifacts/artifactIO.js';
 
-export const SUPPORTED_QUERY_FIELDS = ['architecture', 'framework', 'language', 'modules', 'database', 'rules'] as const;
+export const SUPPORTED_QUERY_FIELDS = [
+  'architecture',
+  'framework',
+  'language',
+  'modules',
+  'dependencies',
+  'workspace',
+  'tests',
+  'configs',
+  'database',
+  'rules'
+] as const;
 
 export type RepositoryQueryField = (typeof SUPPORTED_QUERY_FIELDS)[number];
 
 export type RepositoryQueryResult = {
   field: RepositoryQueryField;
-  result: string | string[] | RepositoryModule[];
+  result: string | string[] | RepositoryModule[] | RepositoryDependencyEdge[] | RepositoryWorkspaceNode[] | RepositoryTestCoverage[] | RepositoryConfigEntry[];
   graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
@@ -23,6 +41,14 @@ const isRepositoryQueryField = (field: string): field is RepositoryQueryField =>
 const normalizeRepositoryQueryField = (input: string): RepositoryQueryField | null => {
   if (isRepositoryQueryField(input)) {
     return input;
+  }
+
+  const aliases: Record<string, RepositoryQueryField> = {
+    deps: 'dependencies'
+  };
+
+  if (aliases[input.toLowerCase()]) {
+    return aliases[input.toLowerCase()];
   }
 
   const normalizedTokens = input

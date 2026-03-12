@@ -162,6 +162,8 @@
 
 ### Added
 
+- WHAT: Added deterministic verify-stage pattern compaction (`.playbook/patterns.json`) plus `pnpm playbook query patterns` for canonical pattern inspection using stable buckets and occurrence summaries. WHY: Stores reusable engineering knowledge as canonical patterns instead of raw observations, reducing reasoning complexity and enabling future cross-repo learning.
+
 - WHAT: Hardened the repository-graph substrate by extending `.playbook/repo-graph.json` stats with deterministic node/edge kind breakdowns and aligned `pnpm playbook graph --json` schema coverage. WHY: Makes the graph a reusable contract artifact for automation and read-runtime reuse rather than an ornamental side output.
 - WHAT: Added compressed module context digests under `.playbook/context/modules/*.json` during `pnpm playbook index` and reused them in `query impact` / `explain <module>`. WHY: Implements the next thin slice of complexity-through-compression using deterministic local artifacts.
 - WHAT: Enriched `ask --repo-context` module-scoped responses to prefer module digest + graph-neighborhood context when available and emit `module-digest`/`repo-graph` provenance sources. WHY: Turns compressed artifacts into immediate AI/runtime reuse instead of generation-only output.

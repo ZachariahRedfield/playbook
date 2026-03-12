@@ -27,6 +27,16 @@ describe('generateRepositoryIndex', () => {
         { name: 'api', dependencies: ['ui'] },
         { name: 'ui', dependencies: [] }
       ],
+      dependencies: [],
+      workspace: [],
+      tests: [
+        { module: 'api', tests_present: false, coverage_estimate: 'unknown' },
+        { module: 'ui', tests_present: false, coverage_estimate: 'unknown' }
+      ],
+      configs: expect.arrayContaining([
+        expect.objectContaining({ name: 'tsconfig', path: 'tsconfig.json', present: true }),
+        expect.objectContaining({ name: 'command-inventory', path: 'package.json#scripts' })
+      ]),
       database: 'supabase',
       rules: ['requireNotesFileWhenGovernanceExists', 'requireNotesOnChanges', 'verify.rule.tests.required']
     });
@@ -110,5 +120,46 @@ describe('generateRepositoryIndex', () => {
       { name: 'users', dependencies: [] },
       { name: 'workouts', dependencies: [] }
     ]);
+  });
+
+  it('extracts workspace topology, dependency edges, tests, and config surface for monorepos', () => {
+    const repo = createRepo('playbook-repo-index-monorepo');
+    fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({
+      private: true,
+      workspaces: ['packages/*'],
+      scripts: { build: 'pnpm -r build', test: 'vitest' }
+    }, null, 2));
+    fs.writeFileSync(path.join(repo, 'pnpm-workspace.yaml'), 'packages:\n  - "packages/*"\n');
+    fs.writeFileSync(path.join(repo, 'tsconfig.json'), '{}');
+    fs.writeFileSync(path.join(repo, 'vitest.config.ts'), 'export default {};\n');
+    fs.mkdirSync(path.join(repo, 'packages', 'engine', 'src'), { recursive: true });
+    fs.mkdirSync(path.join(repo, 'packages', 'engine', 'tests'), { recursive: true });
+    fs.mkdirSync(path.join(repo, 'packages', 'core', 'src'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'packages', 'engine', 'package.json'), JSON.stringify({
+      name: '@acme/engine',
+      dependencies: { '@acme/core': '^1.0.0' }
+    }, null, 2));
+    fs.writeFileSync(path.join(repo, 'packages', 'core', 'package.json'), JSON.stringify({ name: '@acme/core' }, null, 2));
+    fs.writeFileSync(path.join(repo, 'packages', 'engine', 'src', 'index.ts'), "import { core } from '@acme/core';\nexport const engine = core;\n");
+
+    const index = generateRepositoryIndex(repo);
+
+    expect(index.workspace).toEqual([
+      { name: '@acme/core', path: 'packages/core', role: 'core', dependsOn: [] },
+      { name: '@acme/engine', path: 'packages/engine', role: 'engine', dependsOn: ['@acme/core'] }
+    ]);
+    expect(index.dependencies).toEqual([
+      { from: '@acme/engine', to: '@acme/core', type: 'source-import' },
+      { from: '@acme/engine', to: '@acme/core', type: 'workspace-manifest' }
+    ]);
+    expect(index.tests).toEqual([
+      { module: '@acme/core', tests_present: false, coverage_estimate: 'unknown' },
+      { module: '@acme/engine', tests_present: true, coverage_estimate: 'unknown' }
+    ]);
+    expect(index.configs).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'tsconfig', path: 'tsconfig.json', present: true }),
+      expect.objectContaining({ name: 'vitest', path: 'vitest.config.ts', present: true }),
+      expect.objectContaining({ name: 'command-inventory', commands: ['build', 'test'] })
+    ]));
   });
 });

@@ -10,6 +10,7 @@ import { queryDocsCoverage } from '../src/query/docsCoverage.js';
 import { queryRuleOwners } from '../src/query/ruleOwners.js';
 import { queryModuleOwners } from '../src/query/moduleOwners.js';
 import { queryTestHotspots } from '../src/query/testHotspots.js';
+import { queryPatterns } from '../src/query/patterns.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
 
@@ -38,6 +39,10 @@ describe('queryRepositoryIndex', () => {
         { name: 'users', dependencies: [] },
         { name: 'workouts', dependencies: ['users'] }
       ],
+      dependencies: [{ from: 'users', to: 'workouts', type: 'source-import' }],
+      workspace: [{ name: 'users', path: 'packages/users', role: 'package', dependsOn: [] }],
+      tests: [{ module: 'users', tests_present: true, coverage_estimate: 'unknown' }],
+      configs: [{ name: 'tsconfig', path: 'tsconfig.json', present: true }],
       database: 'supabase',
       rules: ['requireNotesOnChanges']
     });
@@ -50,6 +55,14 @@ describe('queryRepositoryIndex', () => {
         { name: 'workouts', dependencies: ['users'] }
       ]
     });
+    expect(queryRepositoryIndex(repo, 'deps')).toEqual({
+      field: 'dependencies',
+      result: [{ from: 'users', to: 'workouts', type: 'source-import' }]
+    });
+    expect(queryRepositoryIndex(repo, 'tests')).toEqual({
+      field: 'tests',
+      result: [{ module: 'users', tests_present: true, coverage_estimate: 'unknown' }]
+    });
   });
 
   it('normalizes natural language query field requests to supported fields', () => {
@@ -60,6 +73,10 @@ describe('queryRepositoryIndex', () => {
       language: 'typescript',
       architecture: 'modular-monolith',
       modules: [{ name: 'api', dependencies: [] }],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: ['notes.missing']
     });
@@ -78,6 +95,10 @@ describe('queryRepositoryIndex', () => {
         { name: 'auth', dependencies: [] },
         { name: 'workouts', dependencies: ['auth'] }
       ],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: []
     });
@@ -225,6 +246,10 @@ describe('queryRepositoryIndex', () => {
         { name: 'auth', dependencies: [] },
         { name: 'workouts', dependencies: ['auth'] }
       ],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: []
     });
@@ -253,6 +278,10 @@ describe('queryRepositoryIndex', () => {
         { name: 'auth', dependencies: [] },
         { name: 'workouts', dependencies: ['auth'] }
       ],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: []
     });
@@ -317,6 +346,10 @@ describe('queryRepositoryIndex', () => {
         { name: 'auth', dependencies: [] },
         { name: 'workouts', dependencies: ['auth'] }
       ],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: []
     });
@@ -350,6 +383,10 @@ describe('queryRepositoryIndex', () => {
         { name: 'auth', dependencies: [] },
         { name: 'workouts', dependencies: ['auth'] }
       ],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: []
     });
@@ -404,7 +441,7 @@ describe('queryRepositoryIndex', () => {
     });
 
     expect(() => queryRepositoryIndex(repo, 'docs')).toThrow(
-      'playbook query: unsupported field "docs". Supported fields: architecture, framework, language, modules, database, rules.'
+      'playbook query: unsupported field "docs". Supported fields: architecture, framework, language, modules, dependencies, workspace, tests, configs, database, rules.'
     );
   });
 
@@ -416,6 +453,10 @@ describe('queryRepositoryIndex', () => {
       language: 'javascript',
       architecture: 'modular-monolith',
       modules: [{ name: 'api', dependencies: [] }],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: []
     });
@@ -500,6 +541,10 @@ describe('queryRepositoryIndex', () => {
         { name: 'auth', dependencies: [] },
         { name: 'workouts', dependencies: ['auth'] }
       ],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
       database: 'none',
       rules: []
     });
@@ -610,4 +655,28 @@ describe('queryRepositoryIndex', () => {
       'playbook query: unsupported repository index schemaVersion "2.0". Expected "1.0".'
     );
   });
+
+
+  it('returns compacted patterns from .playbook/patterns.json', () => {
+    const repo = createRepo('playbook-repo-query-patterns');
+    const patternsPath = path.join(repo, '.playbook', 'patterns.json');
+    fs.mkdirSync(path.dirname(patternsPath), { recursive: true });
+    fs.writeFileSync(
+      patternsPath,
+      JSON.stringify({
+        schemaVersion: '1.0',
+        command: 'pattern-compaction',
+        patterns: [
+          { id: 'MODULE_TEST_ABSENCE', bucket: 'testing', occurrences: 3, examples: ['module lacks tests'] }
+        ]
+      })
+    );
+
+    expect(queryPatterns(repo)).toEqual({
+      schemaVersion: '1.0',
+      command: 'pattern-compaction',
+      patterns: [{ id: 'MODULE_TEST_ABSENCE', bucket: 'testing', occurrences: 3, examples: ['module lacks tests'] }]
+    });
+  });
+
 });

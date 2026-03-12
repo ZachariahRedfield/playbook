@@ -958,6 +958,8 @@ Contract stance:
 
 Current implementation status (features: `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001`, `PB-V08-KNOWLEDGE-CANDIDATE-EXTRACTION-001`, `PB-V08-KNOWLEDGE-BUCKETING-001`, `PB-V08-PATTERN-CARD-STORAGE-001`):
 
+- `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001` now includes deterministic verify-stage pattern compaction output to `.playbook/patterns.json` plus `playbook query patterns` for deterministic inspection of compacted canonical patterns.
+
 - Internal deterministic foundations are now live in the engine: canonicalization, deterministic bucket decisions (`discard | attach | merge | add`), and deterministic review artifacts layered on top of bucketing for inspection/testing.
 - Review artifacts keep canonical reason codes as the primary machine contract, with human-readable rationale derived deterministically from those reason codes.
 - This remains an internal bridge between extraction and promotion.
@@ -965,7 +967,7 @@ Current implementation status (features: `PB-V08-KNOWLEDGE-COMPACTION-SPEC-001`,
 - Promotion workflows, graph traversal/query, and broad autonomous generalization remain future work and are not live command surfaces.
 
 Live-command boundary note:
-- The compaction slice above does **not** introduce a new public CLI command.
+- Deterministic compaction readback is now available via `pnpm playbook query patterns`; no additional dedicated compaction command family is introduced in this slice.
 - Treat `pnpm playbook --help` and `docs/commands/README.md` as the source of truth for currently available commands.
 
 Compaction spec details are defined in `docs/architecture/KNOWLEDGE_COMPACTION_PHASE.md`.
@@ -1709,7 +1711,10 @@ Implemented baseline: `pnpm playbook index` (paired with `query`, `deps`, `ask`,
 - Output path: `.playbook/repo-index.json`.
 - Current index coverage:
   - modules (including modular-monolith `src/features/*` modules as first-class indexed/explainable module targets)
-  - dependencies
+  - dependency edges (workspace manifest links, root manifest links, and source import relationships)
+  - workspace topology (`packages/*` relationships and package roles)
+  - module test presence mapping (`tests_present` + deterministic `coverage_estimate: unknown`)
+  - config surface inventory (eslint, tsconfig, jest, vitest, and command inventory from package scripts)
   - database schema
   - framework
   - architecture contracts

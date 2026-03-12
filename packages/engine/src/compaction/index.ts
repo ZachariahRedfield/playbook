@@ -1,3 +1,4 @@
+export { compactPatterns, readCompactedPatterns } from './compactPatterns.js';
 import type { RepositoryGraph } from '../graph/repoGraph.js';
 import type { RepositoryIndex } from '../indexer/repoIndexer.js';
 import { assessImportance } from './assessImportance.js';

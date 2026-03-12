@@ -47,6 +47,26 @@ describe('verify -> plan -> apply -> verify workflow', () => {
     expect(finalVerify.ok).toBe(true);
   });
 
+
+
+  it('generates deterministic pattern compaction artifact during verify', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-patterns-'));
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'PROJECT_GOVERNANCE.md'), '# Governance\n');
+
+    const report = verifyRepo(root);
+    expect(report.ok).toBe(false);
+
+    const patternsPath = path.join(root, '.playbook', 'patterns.json');
+    expect(fs.existsSync(patternsPath)).toBe(true);
+
+    const patterns = JSON.parse(fs.readFileSync(patternsPath, 'utf8')) as {
+      command: string;
+      patterns: Array<{ id: string }>;
+    };
+    expect(patterns.command).toBe('pattern-compaction');
+    expect(patterns.patterns.length).toBeGreaterThan(0);
+  });
   it('supports plugin-derived auto-fixable tasks when handler is provided', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-plugin-'));
     fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'fixture' }));
