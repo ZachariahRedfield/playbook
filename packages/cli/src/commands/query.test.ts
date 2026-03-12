@@ -161,7 +161,11 @@ describe('runQuery', () => {
     expect(exitCode).toBe(ExitCode.Success);
     const stdoutPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     const artifactPayload = JSON.parse(fs.readFileSync(outPath, 'utf8'));
-    expect(artifactPayload).toEqual(stdoutPayload);
+    expect(artifactPayload.data).toEqual(stdoutPayload);
+    expect(artifactPayload.artifact).toBe('playbook.artifact');
+    expect(artifactPayload.version).toBe(1);
+    expect(typeof artifactPayload.generated_at).toBe('string');
+    expect(typeof artifactPayload.checksum).toBe('string');
 
     logSpy.mockRestore();
   });

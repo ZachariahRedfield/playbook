@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { RepositoryIndex } from '../indexer/repoIndexer.js';
+import { readJsonArtifact } from '../artifacts/artifactIO.js';
 
 export type RepositoryGraphNodeKind = 'module' | 'repository' | 'rule';
 export type RepositoryGraphEdgeKind = 'contains' | 'depends_on' | 'governed_by';
@@ -150,7 +151,7 @@ export const readRepositoryGraph = (projectRoot: string): RepositoryGraph => {
     throw new Error('playbook graph: missing repository graph at .playbook/repo-graph.json. Run "playbook index" first.');
   }
 
-  const parsed = JSON.parse(fs.readFileSync(graphPath, 'utf8')) as Partial<RepositoryGraph>;
+  const parsed = readJsonArtifact<Partial<RepositoryGraph>>(graphPath);
   if (parsed.kind !== 'playbook-repo-graph') {
     throw new Error('playbook graph: invalid graph artifact kind in .playbook/repo-graph.json. Run "playbook index" to regenerate.');
   }

@@ -229,3 +229,5 @@ export type { MetaFindingType, MetaFinding, MetaFindingsArtifact } from './schem
 export type { MetaProposal, MetaProposalsArtifact } from './schema/metaProposal.js';
 export type { MetaTelemetryArtifact } from './schema/metaTelemetry.js';
 export type { Evidence, Zettel, Edge, Pattern, Decision } from './schema/evidence.js';
+
+export { writeJsonArtifact as writeArtifactJson, readJsonArtifact as readArtifactJson, INVALID_ARTIFACT_ERROR } from './artifacts/artifactIO.js';

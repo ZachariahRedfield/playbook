@@ -183,7 +183,9 @@ describe('runPlan', () => {
     expect(exitCode).toBe(ExitCode.Success);
     const stdoutPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     const artifactPayload = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
-    expect(artifactPayload).toEqual(stdoutPayload);
+    expect(artifactPayload.data).toEqual(stdoutPayload);
+    expect(typeof artifactPayload.checksum).toBe('string');
+    expect(artifactPayload.version).toBe(1);
 
     logSpy.mockRestore();
   });

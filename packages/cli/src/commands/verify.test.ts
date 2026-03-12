@@ -119,7 +119,9 @@ describe('runVerify policy mode', () => {
     expect(exitCode).toBe(ExitCode.PolicyFailure);
     const stdoutPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     const artifactPayload = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
-    expect(artifactPayload).toEqual(stdoutPayload);
+    expect(artifactPayload.data).toEqual(stdoutPayload);
+    expect(typeof artifactPayload.checksum).toBe('string');
+    expect(artifactPayload.version).toBe(1);
 
     const contaminated = `pnpm header\n${fs.readFileSync(outputPath, 'utf8')}`;
     expect(() => JSON.parse(contaminated)).toThrow();

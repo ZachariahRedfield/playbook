@@ -4,7 +4,7 @@
 
 ### Added
 
-- WHAT: Added deterministic verify-stage pattern compaction (`.playbook/patterns.json`) plus `pnpm playbook query patterns` for canonical pattern inspection using stable buckets and occurrence summaries. WHY: Stores reusable engineering knowledge as canonical patterns instead of raw observations, reducing reasoning complexity and enabling future cross-repo learning.
+- WHAT: Hardened GitHub PR/scheduled CI checkout auth by upgrading all workflows to `actions/checkout@v6` and adding explicit least-privilege `permissions: contents: read` to read-only workflows (`ci`, `playbook`, `maintenance`, `demo-integration`, `playbook-diagrams-check`, `playbook-action-example`). WHY: Prevents early checkout auth failures (`could not read Username for https://github.com`) when repository default token permissions are restricted, while preserving fork PR safety and avoiding over-privileged tokens.
 
 - WHAT: Added first-class `pnpm playbook ignore suggest` and `pnpm playbook ignore apply --safe-defaults` commands that read ranked runtime ignore recommendations, report coverage against `.playbookignore`, and write only missing safe-default entries into a deterministic managed block while preserving user-authored lines and leaving review-first entries unapplied. WHY: Converts ignore intelligence into a reviewable bootstrap/apply workflow without hiding relevant repository content or creating noisy non-idempotent ignore churn.
 

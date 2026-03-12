@@ -156,11 +156,16 @@ const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
 
   const parsedPlan = parsePlanArtifact(payload);
 
-  if (!payload || typeof payload !== 'object') {
+  const normalizedPayload =
+    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+      ? ((payload as Record<string, unknown>).data as Record<string, unknown>)
+      : (payload as Record<string, unknown>);
+
+  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
     throw new Error('Invalid plan payload: expected an object envelope.');
   }
 
-  const remediation = parsePlanRemediation((payload as Record<string, unknown>).remediation);
+  const remediation = parsePlanRemediation(normalizedPayload.remediation);
 
   return {
     tasks: parsedPlan.tasks,

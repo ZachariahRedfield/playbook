@@ -9,6 +9,7 @@ import type {
   RepositoryConfigEntry
 } from '../indexer/repoIndexer.js';
 import { readRepositoryGraph, summarizeGraphNeighborhood, type GraphNeighborhoodSummary } from '../graph/repoGraph.js';
+import { readJsonArtifact } from '../artifacts/artifactIO.js';
 
 export const SUPPORTED_QUERY_FIELDS = [
   'architecture',
@@ -69,8 +70,7 @@ const readRepositoryIndex = (projectRoot: string): RepositoryIndex => {
     throw new Error('playbook query: missing repository index at .playbook/repo-index.json. Run "playbook index" first.');
   }
 
-  const raw = fs.readFileSync(indexPath, 'utf8');
-  const parsed = JSON.parse(raw) as Partial<RepositoryIndex>;
+  const parsed = readJsonArtifact<Partial<RepositoryIndex>>(indexPath);
 
   if (parsed.schemaVersion !== '1.0') {
     throw new Error(
