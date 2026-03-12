@@ -6,6 +6,14 @@ This document defines Playbook's canonical rollout doctrine from first local rep
 
 This is product architecture, not ad hoc GTM guidance.
 
+Document role in the broader product story:
+
+- Product roadmap owns strategic direction and commitment posture: `docs/PLAYBOOK_PRODUCT_ROADMAP.md`.
+- Business strategy owns GTM/commercial sequencing: `docs/PLAYBOOK_BUSINESS_STRATEGY.md`.
+- Packaging architecture owns SKU boundaries by trust maturity: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
+- Metrics architecture owns proof-of-value measurement: `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
+- This document owns trust-maturity rollout sequencing and stage gates.
+
 Rollout reference alignment:
 
 - Consumer integration contract: `docs/CONSUMER_INTEGRATION_CONTRACT.md`

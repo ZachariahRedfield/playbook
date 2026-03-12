@@ -1,11 +1,23 @@
 # Playbook Business Strategy (Working Draft)
 
-## Purpose and assumptions
+## Purpose and alignment boundaries
 
-This document converts the current market and product analysis into an execution-ready business strategy for Playbook.
+This document converts product direction into go-to-market, monetization, and commercial sequencing.
+
+- Roadmap remains the strategic direction surface: `docs/PLAYBOOK_PRODUCT_ROADMAP.md`.
+- This strategy document owns ICP, wedge, monetization ladder, and rollout-linked commercial motion.
+- Packaging architecture remains canonical for SKU boundaries: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
+- Metrics architecture remains canonical for proof-of-value claims: `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
+- Rollout architecture remains canonical for trust-maturity stage gates: `docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md`.
+
+Pattern: Product Story Follows Architecture.
+Rule: Monetize coordination/governance scale, not basic trust primitives.
+Failure Mode: Business docs drifting away from runtime truth.
+
+Working assumptions:
 
 - Market sizing and external benchmarks are treated as working assumptions (not validated market data).
-- The strategy is optimized around what Playbook already does today: deterministic repository intelligence, governance verification, and remediation workflows.
+- The strategy is optimized around current product truth: deterministic repository intelligence, governance verification, and remediation workflows.
 - Core strategic decision: position Playbook as **AI-native repo intelligence and remediation infrastructure** rather than as a generic coding assistant.
 
 ## 1) ICP (Ideal Customer Profile)
@@ -101,7 +113,7 @@ Canonical pilot/rollout architecture reference: `docs/architecture/PLAYBOOK_PILO
 
 ### Product model decision
 
-Adopt an **open-core SKU architecture** where packaging follows the deterministic runtime and governance model:
+Adopt an **open-core SKU architecture** where packaging follows deterministic runtime and governance model truth:
 
 - Open Core proves deterministic local value and trust.
 - Team and Enterprise package coordination, governance, deployment, and operational trust surfaces over the same runtime semantics.
@@ -131,7 +143,7 @@ Workspace/tenant deployment reference: `docs/architecture/PLAYBOOK_WORKSPACE_TEN
 - Workspace/project-group governance views with per-repo evidence drill-down.
 - Optional hosted control-plane packaging over the same deterministic local runtime.
 
-Goal: monetize coordination pain and workflow reliability across teams while preserving local per-repo ownership and the same verify/session/evidence semantics as Open Core.
+Goal: monetize coordination pain and workflow reliability across teams while preserving local per-repo ownership and the same verify/session/evidence semantics as Open Core; do not monetize basic trust primitives.
 
 ### Layer 3: Enterprise
 
@@ -145,7 +157,7 @@ Workspace/tenant deployment reference: `docs/architecture/PLAYBOOK_WORKSPACE_TEN
 - Compliance policy packs.
 - Support, rollout assistance, and governance onboarding.
 
-Goal: capture high-ACV governance and boundary-control demand through stronger operational guarantees, not alternate runtime semantics.
+Goal: capture high-ACV governance and boundary-control demand through stronger operational guarantees, not alternate runtime semantics or cloud-required behavior.
 
 ### Services policy
 

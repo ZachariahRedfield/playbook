@@ -1,21 +1,34 @@
-PLAYBOOK â€“ 12 MONTH PRODUCT ROADMAP
+# PLAYBOOK - 12 MONTH PRODUCT ROADMAP
 
 Deterministic Repo Runtime and Trust Layer for Software Engineering
 
-MISSION
+## Mission
 
 Build the deterministic runtime and trust layer between humans/AI agents and real repositories.
 
-## Strategic repositioning: CLI to reasoning engine
+## Document job and alignment boundaries
 
-Playbook continues to ship as a deterministic repository intelligence and governance CLI, but the product is being intentionally repositioned as a deterministic reasoning engine for:
+This roadmap defines strategic product direction and sequencing only.
 
-- knowledge formation
-- knowledge compression
-- governance enforcement
-- self-improvement via introspection
+- Roadmap: strategic direction and maturity sequencing.
+- Business strategy: monetization and go-to-market sequencing in `docs/PLAYBOOK_BUSINESS_STRATEGY.md`.
+- SKU packaging: architecture of Open Core -> Team -> Enterprise in `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
+- Metrics and proof-of-value: deterministic measurement contract in `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
+- Rollout architecture: trust-maturity stage gates in `docs/architecture/PLAYBOOK_PILOT_DESIGN_PARTNER_AND_ROLLOUT_ARCHITECTURE.md`.
 
-Positioning rule: preserve current command-surface reliability while growing reasoning depth behind the same deterministic contracts.
+Pattern: Product Story Follows Architecture.
+Rule: Roadmap sequencing must preserve CLI-first, offline-capable, private-first operation.
+Failure Mode: Business docs drifting away from runtime truth.
+
+## Strategic direction
+
+Playbook continues to ship as a deterministic repository intelligence and governance CLI, while deepening into a deterministic reasoning engine behind stable command contracts.
+
+Positioning guardrails:
+
+- Keep command-surface reliability stable while reasoning depth grows.
+- Preserve deterministic runtime and trust-layer identity across all phases.
+- Expand by trust maturity (`read-only -> verify-only -> low-risk plan/apply -> PR/CI -> workspace/team governance -> org/tenant governance`), not by feature sprawl.
 
 ## Rollout architecture doctrine (single-roadmap alignment)
 
@@ -27,31 +40,16 @@ Roadmap layering rule:
 
 - the Final Architecture Map is the dependency-ordered index over roadmap architecture layers
 - this roadmap remains the single strategic roadmap doctrine for sequencing and commitment posture
-
-Roadmap rule:
-
-- adoption must progress by deterministic trust maturity (`read-only -> verify-only -> low-risk plan/apply -> PR/CI -> workspace/team governance -> org/tenant governance`)
 - control-plane adoption must be staged over proven repo-level trust boundaries
-- CLI-first, offline-capable, private-first operation remains valid at every stage
-
-
-Playbook ensures repository change workflows:
-
-follows architecture
-
-captures engineering knowledge
-
-maintains documentation discipline
-
-prevents architectural drift
 
 Playbook sits between humans/AI coding agents and repositories as a contract-first operating layer.
 
 Humans + AI Agents
-        â†“
+        ↓
      Playbook
-        â†“
+        ↓
    Repository
+
 CORE PRINCIPLES
 
 These rules guide all development decisions.

@@ -6,10 +6,17 @@ Define the canonical measurement architecture for Playbook so product value is m
 
 This architecture is strategy and contract guidance only. It does not require cloud instrumentation and does not weaken CLI-first, offline-capable, or private-first operation.
 
+Document role in the broader product story:
+
+- Product roadmap owns strategic direction: `docs/PLAYBOOK_PRODUCT_ROADMAP.md`.
+- Business strategy owns commercial sequencing: `docs/PLAYBOOK_BUSINESS_STRATEGY.md`.
+- Packaging architecture owns SKU boundaries: `docs/architecture/PLAYBOOK_PACKAGING_AND_SKU_ARCHITECTURE_OPEN_CORE_TO_TEAM_TO_ENTERPRISE.md`.
+- This document owns proof-of-value and ROI measurement contracts.
+
 ## Core doctrine
 
 - Playbook value is measured through deterministic workflow outcomes, trust posture, governance quality, and coordination improvements.
-- Proof-of-value must be evidence-linked, reproducible, and attributable; anecdotes are not sufficient.
+- Proof-of-value must be evidence-linked, reproducible, and attributable; anecdotes are not sufficient and should never outrank deterministic evidence.
 - ROI models must be separated by value layer:
   - individual developer value
   - team coordination value

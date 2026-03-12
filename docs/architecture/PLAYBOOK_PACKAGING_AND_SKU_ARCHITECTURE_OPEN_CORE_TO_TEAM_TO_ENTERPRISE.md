@@ -6,6 +6,12 @@ This document defines the canonical Packaging / SKU Architecture for Playbook.
 
 It ensures packaging follows the existing deterministic architecture and governance model so Open Core, Team, and Enterprise remain one product with one runtime truth.
 
+Document role in the broader product story:
+
+- Product roadmap owns strategic direction: `docs/PLAYBOOK_PRODUCT_ROADMAP.md`.
+- Business strategy owns GTM and monetization sequencing: `docs/PLAYBOOK_BUSINESS_STRATEGY.md`.
+- This document owns SKU boundaries and deployment packaging invariants.
+
 Pattern: Packaging Follows Architecture.
 Pattern: Open Core for Trust, Paid Layers for Coordination and Governance.
 Pattern: Same Runtime, Different Operational Surfaces.
