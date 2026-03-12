@@ -258,3 +258,14 @@ export { appendExecutionStep, completeExecutionRun, recordExecutionFailure } fro
 export { writeExecutionRun, readExecutionRun, listExecutionRuns, getLatestMutableRun, executionRunPath } from './execution/writeExecutionRun.js';
 
 export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './execution/runContract.js';
+
+export { buildOrchestratorContract, writeOrchestratorArtifact } from './orchestrator/index.js';
+export type {
+  BuildOrchestratorContractInput,
+  LaneContract,
+  OrchestratorArtifactWriteResult,
+  OrchestratorContract,
+  PlannerLaneInput,
+  SharedFileHandling,
+  SharedFilePolicy
+} from './orchestrator/index.js';
