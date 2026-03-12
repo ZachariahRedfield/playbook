@@ -1,112 +1,143 @@
-# Playbook Control Plane and Agent Runtime v1 (Canonical Future-State Spec)
+# Playbook Control Plane / Agent Runtime v1 (Canonical Future-State Spec)
+
+- feature_id: PB-V09-CONTROL-PLANE-001
+- status: canonical future-state specification
 
 ## Purpose
 
-This document defines the canonical **future-state** architecture for Playbook Control Plane / Agent Runtime v1.
+This document defines the canonical future-state architecture for Playbook Control Plane / Agent Runtime v1.
 
-It specifies boundaries, responsibilities, and minimum contracts for control-plane-directed agent execution while preserving Playbook's deterministic mutation governance.
+It establishes subsystem boundaries, minimum models, and runtime invariants for agentic operation without weakening deterministic governance.
 
-Rule: The control plane is an orchestration and policy layer **above** the Playbook engine.
-Rule: Agents and executors **never bypass** the engine's mutation controls.
+## Scope and non-goals
 
-## Non-goals
+### In scope
 
-- This is not a claim that all capabilities are implemented today.
-- This does not replace deterministic engine workflows.
-- This does not grant direct mutation authority to autonomous agents.
+- Control-plane orchestration and policy decisions.
+- Agent lifecycle, scheduling, retries, approvals, and telemetry.
+- Minimal v1 task and agent contracts.
+- Deterministic mutation boundary between runtime components and the Playbook engine.
+
+### Out of scope
+
+- Claiming all behaviors are already implemented.
+- Replacing deterministic Playbook engine workflows.
+- Granting direct repository mutation authority to autonomous agents.
 
 ## Subsystem boundaries
 
-### 1) Playbook engine (deterministic mutation trust boundary)
+## 1) Playbook engine (deterministic mutation substrate)
 
-The Playbook engine is the canonical mutation and governance boundary.
+The Playbook engine is the canonical deterministic substrate for all real repository mutation.
 
-- Owns deterministic command contracts and mutation invariants.
-- Owns canonical remediation loop: `verify -> plan -> apply -> verify`.
-- Rejects out-of-contract mutation attempts.
+Responsibilities:
+- Own deterministic command contracts and mutation invariants.
+- Execute governed workflows (for example `verify -> plan -> apply -> verify`).
+- Validate preconditions and reject out-of-contract mutation attempts.
+- Produce mutation evidence artifacts and deterministic outputs.
 
-### 2) Control plane (orchestration and policy boundary)
+Boundary:
+- Mutation is valid only when performed through engine-governed interfaces.
 
-The control plane decides **whether**, **when**, and **under what policy** tasks execute.
+## 2) Control plane (runtime governance and orchestration)
 
-- Owns task intake, admission, prioritization, and scheduling policy.
-- Owns approval-gate policy and safety-policy enforcement decisions.
-- Owns lifecycle state machine and dispatch/lease control.
-- Does not directly mutate repositories outside engine-governed interfaces.
+The control plane decides whether, when, and under which policy a task may execute.
 
-### 3) Agents (policy-constrained workers)
+Responsibilities:
+- Task intake, admission control, deduplication, and dependency handling.
+- Scheduling and dispatch policy (priority, fairness, anti-starvation).
+- Retry classification and retry policy enforcement.
+- Approval-gate evaluation and state transitions.
+- Safety policy resolution and execution-time policy projection.
+- Lifecycle persistence and lease management.
 
-Agents are workers that claim tasks and execute approved workflows.
+Boundary:
+- The control plane orchestrates work but does not bypass engine mutation controls.
 
-- Operate within declared capabilities and scoped authority.
-- Execute only assigned tasks under lease.
-- Persist state only through governed runtime artifacts.
+## 3) Agents (policy-constrained workers)
 
-### 4) Observers (non-mutating evidence and telemetry boundary)
+Agents claim leases and perform assigned work under control-plane policy.
 
-Observers record runtime behavior and decision lineage.
+Responsibilities:
+- Advertise capabilities and runtime health.
+- Claim, renew, and release leases.
+- Execute assigned task steps via approved executors.
+- Emit lifecycle and execution telemetry.
 
-- Capture lifecycle events, queue transitions, and policy decisions.
-- Capture command lineage and evidence references.
-- Never perform repository mutation.
+Boundary:
+- Agents have no independent mutation authority beyond engine-mediated execution.
 
-### 5) Executors (mutation-capable runtime adapters)
+## 4) Observers (non-mutating evidence and telemetry)
 
-Executors invoke deterministic engine commands on behalf of agents.
+Observers provide runtime visibility and audit lineage.
 
-- Translate approved task intent to engine invocations.
-- Enforce control-plane constraints (scope, policy, approvals) at execution time.
-- Must fail closed if required approvals/policy evidence is missing.
+Responsibilities:
+- Record lifecycle events, queue transitions, and policy decisions.
+- Capture command lineage, evidence references, and outcome metadata.
+- Emit immutable telemetry streams for diagnostics and governance audits.
 
-## Responsibility model
+Boundary:
+- Observers are strictly non-mutating.
+
+## 5) Executors (engine invocation adapters)
+
+Executors are runtime adapters that invoke deterministic engine commands on behalf of leased agents.
+
+Responsibilities:
+- Translate approved task intent into engine command invocations.
+- Enforce scope, approval, and policy constraints before execution.
+- Fail closed when required policy artifacts are missing or invalid.
+
+Boundary:
+- Executors cannot perform direct side-channel mutation outside engine pathways.
+
+## Responsibility domains
 
 ### Agent lifecycle
 
-- Register and advertise capabilities.
-- Emit health heartbeats.
-- Claim, renew, and release task leases.
-- Transition through runtime states (`queued`, `leased`, `running`, `awaiting-approval`, `retry-scheduled`, terminal states).
-- Recover from stale lease or worker loss via reassignment policy.
+- Registration and capability declaration.
+- Heartbeats and liveness tracking.
+- Lease claim/renew/release with stale-lease recovery.
+- State transitions across: `queued`, `leased`, `running`, `awaiting-approval`, `retry-scheduled`, `succeeded`, `failed`, `cancelled`.
 
 ### Task scheduling
 
-- Admission control and deduplication.
-- Deterministic queueing with dependency constraints.
-- Fairness and anti-starvation handling.
-- Work-conserving dispatch with policy-aware routing.
+- Deterministic enqueue/dequeue semantics.
+- Priority-aware dispatch with dependency constraints.
+- Fairness and anti-starvation policy.
+- Route selection by capability, scope, and safety profile.
 
-### Retry and priority
+### Retry / priority
 
 - Priority classes: `urgent`, `high`, `normal`, `low`.
-- Bounded retries with explicit failure classification.
-- Backoff/jitter policies to prevent retry storms.
-- Priority inversion mitigation for safety-critical tasks.
+- Bounded retry budgets by failure class.
+- Backoff strategy (for example exponential with jitter) to avoid retry storms.
+- Priority inversion mitigation when safety-sensitive work is blocked.
 
 ### Approval gates
 
 - Compute required approvals from mutation scope + policy profile.
-- Hold tasks in `awaiting-approval` until valid approval artifact exists.
+- Transition to `awaiting-approval` until valid approval evidence is attached.
 - Bind approver identity, decision, and timestamp to execution evidence.
 
 ### Safety policy
 
-- Command allowlists and denied operations.
+- Operation allowlists/denylists by task type.
 - Path/module/scope constraints.
-- Side-effect boundaries by task class.
-- Fail-closed semantics for missing/ambiguous policy inputs.
+- Side-effect boundaries and environment constraints.
+- Fail-closed semantics for missing or ambiguous policy inputs.
 
 ### Runtime telemetry
 
-- Queue depth, wait time, lease churn, and retry metrics.
-- Lifecycle event stream and failure taxonomy.
-- Policy/approval decision traces.
-- Immutable evidence bundles for audit and rollback analysis.
+- Queue depth, queue age, lease churn, retry counts, success/failure rates.
+- Lifecycle event stream, policy decisions, and failure taxonomy.
+- Immutable evidence bundles for audit, incident analysis, and rollback reasoning.
 
 ### Memory access
 
-- Separation of repo-local working memory vs promoted/shared memory.
-- Policy-scoped read/write permissions by actor and task type.
-- Provenance and lineage required for automation-influencing writes.
+- Separation of repo-local runtime memory vs promoted/shared memory.
+- Policy-scoped read/write permissions by actor and task class.
+- Provenance and lineage requirements for writes that can influence future automation.
 
 ## Minimal task model (v1)
 
@@ -122,7 +153,10 @@ Executors invoke deterministic engine commands on behalf of agents.
   "dependencies": ["task_101"],
   "requiresApproval": true,
   "approvalPolicy": "owner-required",
-  "retryPolicy": { "maxAttempts": 3, "backoff": "exponential-jitter" },
+  "retryPolicy": {
+    "maxAttempts": 3,
+    "backoff": "exponential-jitter"
+  },
   "status": "queued",
   "createdAt": "ISO-8601",
   "evidenceRef": "session://..."
@@ -138,53 +172,53 @@ Executors invoke deterministic engine commands on behalf of agents.
   "capabilities": ["verify", "plan", "apply", "explain"],
   "allowedScopes": ["L0", "L1", "L2"],
   "state": "idle|busy|degraded|offline",
-  "lease": { "taskId": null, "expiresAt": null },
+  "lease": {
+    "taskId": null,
+    "expiresAt": null
+  },
   "lastHeartbeatAt": "ISO-8601",
   "policyVersion": "v1",
   "telemetryChannel": "runtime://events"
 }
 ```
 
-## Canonical execution flow
+## Canonical execution semantics
 
-1. Task is submitted with intent, scope, and requester identity.
-2. Control plane validates policy preconditions and computes approvals.
-3. Scheduler enqueues with priority, dependencies, and retry policy.
-4. Agent claims task lease and performs bounded preflight checks.
-5. If approvals are required, task pauses in `awaiting-approval`.
-6. Executor invokes governed engine loop: `verify -> plan -> apply -> verify`.
-7. Observer records command lineage, policy decisions, artifacts, and outcome.
-8. Control plane writes terminal state and emits completion evidence.
+1. Task is submitted with requester identity, intent, scope, and policy context.
+2. Control plane performs admission checks and computes required approvals.
+3. Scheduler enqueues based on dependencies, priority, and fairness constraints.
+4. Eligible agent claims lease and runs bounded preflight policy checks.
+5. If approval is required, task remains in `awaiting-approval` until evidence is valid.
+6. Executor invokes deterministic engine workflow for mutation-capable steps.
+7. Observer records command lineage, policy decisions, artifacts, and outcomes.
+8. Control plane commits terminal state and publishes completion evidence.
 
 ## Invariants
 
-- **No-bypass invariant:** agents/executors cannot mutate outside engine-governed interfaces.
-- **Control-plane-above-engine invariant:** control plane governs orchestration/policy; engine governs mutation correctness.
-- **Fail-closed invariant:** missing approval/evidence/policy blocks mutation.
-- **Scoped-authority invariant:** agent capability must be a strict subset of policy + task scope.
-- **Auditability invariant:** mutation-capable runs preserve immutable lineage.
+- Agents never bypass the engine's mutation controls.
+- Real mutation occurs only through deterministic engine interfaces.
+- Missing approvals or safety inputs block mutation (fail closed).
+- Agent authority is a strict subset of task scope and policy allowance.
+- Mutation-capable runs are evidence-linked and audit-visible.
 
 ## Control Plane vs Automation Synthesis
 
-Control Plane and Automation Synthesis are distinct:
+These are distinct layers with separate trust semantics:
 
-- **Control Plane** = runtime governance, scheduling, approvals, policy enforcement, and evidence.
-- **Automation Synthesis** = generation/proposal of candidate actions or plans.
+- **Control Plane**: runtime governance, scheduling, lifecycle management, approvals, policy enforcement, and evidence handling.
+- **Automation Synthesis**: generation of candidate actions/plans/strategies.
 
-Synthesis outputs are **untrusted proposals** until they pass control-plane policy and engine deterministic execution.
+Automation Synthesis can propose; it cannot directly mutate. Proposals remain untrusted until accepted by control-plane policy and executed through deterministic engine pathways.
 
-Therefore, synthesis does not gain direct mutation rights; it is upstream of governed execution.
+## Playbook Notes candidates
 
-## Rule / Pattern / Failure Mode note candidates
+- Pattern: Agents Sit Above Deterministic Substrate
+- Rule: Agents Never Bypass Engine Mutation Controls
+- Rule: Approval Gates Guard Real Mutation
+- Failure Mode: Control Plane Without Deterministic Substrate
 
-Pattern: Control plane governs orchestration while the engine governs mutation.
-Pattern: Queue-integrated approval holds preserve deterministic safety.
-Pattern: Agents are policy-constrained executors, not autonomous mutators.
-Rule: Agents and executors must not bypass Playbook engine mutation controls.
-Rule: Mutation-capable tasks require approval and evidence linkage when policy demands.
-Rule: Runtime state transitions and command lineage must be telemetry-visible and auditable.
-Failure Mode: Hidden side-channel mutation outside engine-governed interfaces.
-Failure Mode: Approval bypass through direct executor invocation.
-Failure Mode: Priority inversion starving high-safety tasks.
-Failure Mode: Unbounded retries causing repeated unsafe execution.
-Failure Mode: Memory writes without provenance contaminating future automation.
+Additional optional candidates:
+- Pattern: Lease-Based Agent Lifecycle with Fail-Closed Policy Checks
+- Pattern: Queue-Integrated Approval Hold Before Mutation
+- Rule: Mutation-Capable Tasks Must Emit Immutable Evidence Lineage
+- Failure Mode: Side-Channel Executor Path Bypasses Approval State
