@@ -1132,7 +1132,7 @@ Sequencing issues:
 Use a layered phase model so each phase compounds directly on the previous one:
 
 1. **Phase 1 â€” CLI Foundations**  
-   Deterministic command contracts, distribution reliability, and baseline verification UX.
+   Deterministic command contracts, distribution reliability, baseline verification UX, and deterministic lane contract generation for orchestration planning.
 2. **Phase 2 â€” Repository Intelligence Substrate**  
    Formalize index contracts for modules, dependencies, test relationships, docs mapping, ownership, and architecture metadata.
 3. **Phase 3 â€” Repository Knowledge Graph**  
@@ -1197,6 +1197,7 @@ Current-state command surfaces remain the canonical implemented interface and ar
    - Builds on memory + evidence + policy boundaries, not in parallel with them.
    - Keeps the architecture rule explicit: **agents sit on top of the deterministic substrate** (index/graph/verify/plan/apply/contracts), not inside or instead of it.
    - Preserves deterministic governance and human-review boundaries as mandatory runtime gates.
+   - Future orchestration scope after deterministic lane contract generation includes: worker launch, merge guards, and orchestration state tracking.
 
 3. **Autonomous Maintenance (policy-gated)**
    - Distinct from control-plane foundations.

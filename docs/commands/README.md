@@ -47,6 +47,18 @@ Do not hand-edit entries inside the managed markers.
 | `memory` | Replay, promote, and prune repository memory artifacts with explicit human-reviewed doctrine promotion | utility | utility | secondary | — | Current (implemented) | `pnpm playbook memory promote --from-candidate <id> --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
+## Command docs index
+
+### Implemented command docs
+
+- Core flow: [`verify`](verify.md), [`plan`](plan.md), [`apply`](apply.md), [`pilot`](pilot.md)
+- Repository intelligence: [`index`](index.md), [`query`](query.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md)
+- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`analyze`](analyze.md)
+
+### Planned command docs (reference contracts)
+
+- [`orchestrate` (planned)](orchestrate.md)
+
 ## External repository targeting (`pnpm playbook --repo <path> <command>`)
 
 - Canonical local invocation remains `pnpm playbook <command>`.

@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Added planned `orchestrate` command contract documentation (`docs/commands/orchestrate.md`), linked it in the command docs index, and aligned roadmap phase scope language for deterministic lane contract generation vs later worker launch/merge-guard/state-tracking orchestration capabilities. WHY: Establishes a clear control-plane/worker-plane orchestration contract without implying unimplemented runtime behavior.
+
 - WHAT: Added explicit `pnpm playbook memory promote --from-candidate <id>` and `pnpm playbook memory prune` workflows with semantic-memory artifacts, supersession links (`supersedes`/`supersededBy`), stale/duplicate pruning, and provenance-preserving promotion boundaries. WHY: Enables durable memory promotion through human-reviewed steps without auto-canonicalizing every historical artifact into governance doctrine.
 
 - WHAT: Hardened GitHub PR/scheduled CI checkout auth by upgrading all workflows to `actions/checkout@v6` and adding explicit least-privilege `permissions: contents: read` to read-only workflows (`ci`, `playbook`, `maintenance`, `demo-integration`, `playbook-diagrams-check`, `playbook-action-example`). WHY: Prevents early checkout auth failures (`could not read Username for https://github.com`) when repository default token permissions are restricted, while preserving fork PR safety and avoiding over-privileged tokens.
