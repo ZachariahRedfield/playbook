@@ -265,7 +265,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "pnpm playbook memory replay --json"
+      "example": "pnpm playbook memory promote --from-candidate <id> --json"
     },
     {
       "name": "patterns",

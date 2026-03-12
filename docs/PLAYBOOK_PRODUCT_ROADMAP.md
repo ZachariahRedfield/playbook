@@ -564,8 +564,9 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 
 - **Already exists today**
   - deterministic artifacts provide point-in-time evidence (index/findings/plan/apply/verify outputs) and candidate knowledge lifecycle framing.
+  - explicit memory lifecycle commands now support replayed candidate promotion into repo-local semantic memory plus deterministic prune workflows for stale/superseded/duplicate artifacts.
 - **Partially defined**
-  - longitudinal memory and promotion direction exist in roadmap/architecture language, but governed repo-level state and review promotion contracts are not yet fully productized runtime behavior.
+  - initial promotion/prune semantics are productized for local semantic memory, while broader repo-level longitudinal state and deeper review contracts remain directional.
 - **Future work**
   - formalize the canonical architecture in `docs/architecture/PLAYBOOK_REPO_LONGITUDINAL_STATE_AND_KNOWLEDGE_PROMOTION.md`.
   - define schema-governed repo-local longitudinal state (session/review timelines, recurring findings, remediation history, verification outcomes, approvals, recurring failure clusters, unresolved risks, candidate/promoted/superseded knowledge).

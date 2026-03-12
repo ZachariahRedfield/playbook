@@ -29,6 +29,7 @@ type ReplayEvent = {
   docsGap: boolean;
   successfulRemediation: boolean;
   remediationShape: string | null;
+  createdAt: string;
 };
 
 type ReplayCluster = {
@@ -136,7 +137,8 @@ const parseReplayEvent = (eventId: string, sourcePath: string, raw: Record<strin
     ownershipGap: raw.ownershipGap === true || (raw.gaps as Record<string, unknown> | undefined)?.ownership === true,
     docsGap: raw.docsGap === true || (raw.gaps as Record<string, unknown> | undefined)?.docs === true,
     successfulRemediation,
-    remediationShape: typeof remediation?.shape === 'string' ? remediation.shape : null
+    remediationShape: typeof remediation?.shape === 'string' ? remediation.shape : null,
+    createdAt: typeof raw.createdAt === 'string' && !Number.isNaN(Date.parse(raw.createdAt)) ? new Date(Date.parse(raw.createdAt)).toISOString() : new Date(0).toISOString()
   };
 };
 
@@ -252,6 +254,9 @@ const toCandidate = (cluster: ReplayCluster, factors: MemoryReplaySalienceFactor
   const kind = chooseCandidateKind(cluster, factors);
   const salienceScore = computeSalienceScore(factors);
 
+  const sortedEvents = [...cluster.events].sort((a, b) => `${a.eventId}:${a.sourcePath}`.localeCompare(`${b.eventId}:${b.sourcePath}`));
+  const lastSeenAt = sortedEvents.reduce((latest, event) => (Date.parse(event.createdAt) > Date.parse(latest) ? event.createdAt : latest), new Date(0).toISOString());
+
   return {
     candidateId: createHash('sha256').update(cluster.key).digest('hex').slice(0, 16),
     kind,
@@ -265,14 +270,14 @@ const toCandidate = (cluster: ReplayCluster, factors: MemoryReplaySalienceFactor
     ruleId,
     failureShape,
     eventCount: cluster.events.length,
-    provenance: [...cluster.events]
-      .sort((a, b) => `${a.eventId}:${a.sourcePath}`.localeCompare(`${b.eventId}:${b.sourcePath}`))
+    provenance: sortedEvents
       .map((event) => ({
         eventId: event.eventId,
         sourcePath: event.sourcePath,
         fingerprint: event.fingerprint,
         runId: event.runId
-      }))
+      })),
+    lastSeenAt
   };
 };
 

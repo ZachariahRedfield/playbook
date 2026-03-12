@@ -2,54 +2,7 @@
 
 ## Purpose
 
-Define deterministic replay/consolidation behavior for `.playbook/memory/*` episodic events into candidate knowledge artifacts for human review.
-
-## Replay pipeline
-
-Canonical flow:
-
-1. Read `.playbook/memory/index.json`.
-2. Resolve and load each referenced event file.
-3. Cluster events by `fingerprint/module/rule/failure shape`.
-4. Compute deterministic salience factors from explicit event inputs only.
-5. Emit `.playbook/memory/candidates.json`.
-
-Replay is read-only with respect to repository source/governance files (rules/docs/code).
-
-## Pattern: Replay Before Promotion
-
-All candidate knowledge promotion decisions should start from replayed clustered events with provenance, not ad-hoc narrative memory.
-
-## Rule: Salience Gates Consolidation
-
-Candidate generation and ordering must be driven by explicit salience factors only:
-
-- severity
-- recurrence count
-- cross-module breadth
-- risk score
-- persistence across runs
-- ownership/docs gaps
-- novel successful remediation shape
-
-No hidden/implicit model inference is allowed to alter salience ordering.
-
-## Failure Mode: Candidate Flood From Low-Signal Events
-
-When low-signal events bypass salience gates, candidate volume rises while reviewer signal quality drops. Replay implementations should preserve deterministic clustering and scoring to keep candidate sets reviewable.
-
-## Candidate schema expectations
-
-Each candidate in `.playbook/memory/candidates.json` includes:
-
-- stable candidate id
-- kind (`decision | pattern | failure_mode | invariant | open_question`)
-- salience score and factor breakdown
-- cluster key (`fingerprint/module/rule/failure shape`)
-- provenance references (`eventId`, `sourcePath`, run context)
-Define governance boundaries between episodic repository memory and durable doctrine/policy memory.
-
-This contract formalizes promotion/prune semantics as documentation and roadmap intent without changing runtime behavior yet.
+Define deterministic replay/consolidation behavior for `.playbook/memory/*` episodic events and explicit promotion/pruning boundaries for durable local semantic memory artifacts.
 
 ## Memory classes
 
@@ -63,34 +16,45 @@ This contract formalizes promotion/prune semantics as documentation and roadmap 
    - `.playbook/memory/index.json`
 4. **Replay/consolidation candidates**
    - `.playbook/memory/candidates.json`
-5. **Doctrine/policy memory**
+5. **Local semantic memory (reviewed, non-doctrine by default)**
+   - `.playbook/memory/knowledge/decisions.json`
+   - `.playbook/memory/knowledge/patterns.json`
+   - `.playbook/memory/knowledge/failure-modes.json`
+   - `.playbook/memory/knowledge/invariants.json`
+6. **Doctrine/policy memory**
    - rules, contracts, docs, and remediation templates
 
 Pattern: Structural Graph + Memory Graph/Index.
-Rule: Promotion Required for Durable Doctrine.
 
-## Promotion boundary
+## Replay and promotion pipeline
 
-Durable doctrine must only be created from reviewed candidate knowledge.
+Canonical flow:
 
-Minimum promotion evidence:
+`replay -> promote (human-reviewed) -> prune`
 
-- source event lineage
-- deterministic replay/consolidation summary
-- human/policy decision record
-- resulting doctrine target references (rule/contract/doc/template)
+Pattern: **Fast Episodic Store, Slow Doctrine Store**.
+Pattern: **Replay Before Promotion**.
+Pattern: **Human-Reviewed Knowledge Promotion**.
 
-## Prune/supersede boundary
+Promotion requirements:
 
-Promotion does not imply infinite retention.
+- candidate id from replay artifact
+- provenance preservation (`eventId`, `sourcePath`, run linkage)
+- supersession links (`supersedes`, `supersededBy`) where applicable
 
-Required lifecycle controls:
+Rule: **Working Memory Is Not Doctrine**.
 
-- stale-candidate pruning
-- superseded doctrine linkage
-- explicit demotion/retirement records where applicable
+Promotion into `.playbook/memory/knowledge/*` does **not** automatically rewrite committed rules/docs/contracts.
 
-Pattern: Fast Episodic Store, Slow Doctrine Store.
+## Pruning semantics
+
+Pruning is deterministic and local-memory scoped:
+
+- stale candidate expiration (`lastSeenAt`)
+- superseded knowledge cleanup
+- duplicate collapse by fingerprint
+
+Rule: Replay/prune operations must never mutate governance doctrine artifacts automatically.
 
 ## Retrieval guidance
 
@@ -98,11 +62,14 @@ Memory-aware retrieval should compose:
 
 1. structural context from `.playbook/repo-index.json` + `.playbook/repo-graph.json`
 2. relevant episodic events from `.playbook/memory/index.json`
-3. promotion-approved doctrine artifacts
+3. promoted local semantic memory artifacts
+4. committed governance doctrine where explicitly reviewed and adopted
 
-Rule: Replay Is Human-Review-Oriented, Not Autonomous Mutation.
+Rule: **Retrieval Must Return Provenance**.
 
 ## Failure modes
 
-Failure Mode: Memory Hoarding.
-Failure Mode: Rebuilding Durable Memory From Current Repo State Only.
+Failure Mode: **Memory Hoarding**.
+Failure Mode: **Premature Canonicalization**.
+Failure Mode: **Rebuilding Durable Memory From Current Repo State Only**.
+Failure Mode: **Candidate Flood From Low-Signal Events**.
