@@ -1179,6 +1179,35 @@ Reasoning for reordering:
 - Makes intelligence and context efficiency foundational before AI runtime expansion.
 - Ensures advanced automation is gated by deterministic contracts, session evidence, policy approvals, and mutation safety.
 
+### Official future-work split (post current stabilization)
+
+Current-state command surfaces remain the canonical implemented interface and are unchanged by this section. Future sequencing below describes architecture maturity order only.
+
+1. **Repository Memory System (next major platform phase)**
+   - Positioned after graph/failure-intelligence maturity and before deeper agent-runtime expansion.
+   - Formalizes **fast memory vs slow doctrine**:
+     - fast memory = episodic/session evidence and replay inputs
+     - slow doctrine = promoted, reviewed, durable governance knowledge
+   - Formalizes **replay -> consolidation -> salience** as deterministic memory-system internals feeding human-reviewed promotion queues.
+   - Formalizes **structural graph vs memory system** boundaries:
+     - structural graph = repository topology and dependency shape
+     - memory system = temporal execution/observation evidence and doctrine-candidate lifecycle
+
+2. **Control Plane / Agent Runtime v1**
+   - Builds on memory + evidence + policy boundaries, not in parallel with them.
+   - Keeps the architecture rule explicit: **agents sit on top of the deterministic substrate** (index/graph/verify/plan/apply/contracts), not inside or instead of it.
+   - Preserves deterministic governance and human-review boundaries as mandatory runtime gates.
+
+3. **Autonomous Maintenance (policy-gated)**
+   - Distinct from control-plane foundations.
+   - Focuses on bounded recurring maintenance workflows under explicit approval and fail-closed policies.
+   - Does not imply autonomous doctrine promotion or uncontrolled mutation.
+
+4. **Repository Learning Loop / Outcome Learning (human-reviewed)**
+   - Distinct from autonomous maintenance.
+   - Focuses on outcome feedback quality, repository learning signals, and candidate knowledge refinement.
+   - Maintains promotion gates: learning outputs remain candidate artifacts until explicit human-reviewed promotion/demotion decisions.
+
 ### Missing Capabilities to Formalize
 
 The roadmap should make these explicit as first-class contracts:

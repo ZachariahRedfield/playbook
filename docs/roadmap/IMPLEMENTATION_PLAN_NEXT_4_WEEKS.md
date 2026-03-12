@@ -529,3 +529,31 @@ Operationalize roadmap/contracts/docs CI gate model with roadmap verify surface.
 
 **Docs summary**
 Add one canonical operator checklist for roadmap-driven delivery and gate states (blocking/advisory timeline).
+
+
+## 14) Next Queued Wave After Current Stabilization
+
+The 4-week plan above remains the active commitment and is unchanged.
+
+The next queued wave starts **only after** the current stabilization commitments (package-boundary convergence, SCM normalization, delivery gates, failure-intelligence first slice, and graph-v2 internals) have completed and are verified.
+
+### Dependency gate
+- Memory-system and control-plane work is dependency-gated on completion of the current stabilization window.
+- No new command-state commitments are introduced in this queued wave section.
+
+### Queued wave sequence (dependency-ordered)
+1. **Repository Memory System**
+   - foundation + replay/consolidation + salience/ranking + promotion/prune governance
+   - explicit fast-memory vs slow-doctrine boundaries
+2. **Control Plane / Agent Runtime v1**
+   - policy/approval/mutation-scope enforcement over deterministic engine artifacts
+   - agents remain above the deterministic substrate (not inside engine command semantics)
+3. **Autonomous Maintenance (policy-gated)**
+   - bounded recurring maintenance modes after control-plane trust boundaries are proven
+4. **Repository Learning Loop / Outcome Learning (human-reviewed)**
+   - outcome evidence and learning refinement as candidate-generation loops, not autonomous doctrine mutation
+
+### Guardrails carried forward
+- Preserve deterministic governance as merge-time truth boundary (`verify -> plan -> apply -> verify`).
+- Preserve explicit human-review for doctrine promotion/demotion decisions.
+- Keep Autonomous Maintenance and Repository Learning Loop as separate layers with non-overlapping goals.

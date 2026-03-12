@@ -219,3 +219,27 @@ Workspace filters rely on package names that may change or be incorrectly guesse
 - Rule: Replay Is Human-Review-Oriented, Not Autonomous Mutation
 - Failure Mode: Memory Hoarding
 - Failure Mode: Rebuilding Durable Memory From Current Repo State Only
+
+
+## Repository memory + control-plane promoted notes
+
+- Pattern: Fast Memory / Slow Doctrine Split
+  Keep episodic/session memory and replay candidates fast and revisable, while durable doctrine remains promoted, reviewed, and compact.
+
+- Pattern: Replay -> Consolidation -> Salience
+  Memory-system processing should replay deterministic evidence, consolidate candidate insights, and rank salience before any doctrine promotion decision.
+
+- Pattern: Structural Graph + Memory System Separation
+  Structural graph artifacts capture repository topology and deterministic relationships; the memory system captures temporal execution evidence and doctrine-candidate lifecycles.
+
+- Rule: Agents sit above the deterministic substrate
+  Agent/control-plane behavior must consume deterministic engine artifacts/contracts and cannot bypass verify/plan/apply governance semantics.
+
+- Rule: Replay and memory consolidation are review-oriented
+  Replay/consolidation must never silently mutate durable governance doctrine without explicit human-reviewed promotion flow.
+
+- Failure Mode: Control-plane-first autonomy
+  If autonomy expands before policy, mutation-scope, and evidence gates are enforceable, trust boundaries collapse and fail-open behavior emerges.
+
+- Failure Mode: Memory-system conflation with graph substrate
+  If structural graph and temporal memory concerns are merged into one opaque store, retrieval provenance and governance semantics become ambiguous.
