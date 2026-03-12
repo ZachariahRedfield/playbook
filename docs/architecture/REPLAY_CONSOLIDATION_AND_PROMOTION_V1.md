@@ -1,180 +1,233 @@
-# Replay Consolidation and Promotion V1 (Future-State Architecture)
+# Replay, Consolidation, Salience, Pruning, and Promotion V1 (Canonical Future-State Spec)
 
 ## Purpose
 
-This document defines a future-state, **artifact-first and deterministic** architecture for converting operational events into governed knowledge candidates.
+Define the deterministic, artifact-first future state for how Playbook:
 
-The architecture is explicitly designed to:
+1. captures high-signal operational events,
+2. scores salience,
+3. consolidates recurring signals,
+4. generates governed promotion candidates,
+5. prunes or supersedes stale knowledge,
+6. writes durable knowledge only after human approval.
 
-- preserve replayable evidence,
-- avoid autonomous doctrine mutation,
-- require human review before durable governance changes,
-- maintain deterministic behavior across repeated runs.
+This spec is the canonical V1 contract for replay/consolidation/promotion behavior.
 
 ## Scope
 
-This V1 slice covers:
+This document defines:
 
-- event capture surfaces,
-- deterministic salience scoring,
-- replay/consolidation flow,
-- promotion candidate generation,
-- pruning/forgetting/supersession policies,
-- identity and provenance contracts,
-- candidate note classes (Rule, Pattern, Failure Mode).
+- high-signal event capture sources,
+- deterministic salience inputs and scoring contract,
+- replay flow (`capture -> score -> cluster -> candidate generation -> human review -> durable write`),
+- pruning and supersession policy,
+- identity split between `eventInstanceId` and semantic fingerprint identity,
+- candidate note classes (Rule / Pattern / Failure Mode).
 
 ## Non-goals
 
-- autonomous mutation of rules, doctrine, or governance state,
-- hidden background learning,
-- non-deterministic score or clustering outcomes,
-- doctrine writes without explicit human approval.
+- autonomous doctrine/rule mutation,
+- opaque or non-deterministic scoring/clustering,
+- durable writes without explicit human review,
+- hidden background learning outside artifacted workflows.
 
-## Event capture sources
+## 1) High-signal event capture sources
 
-The replay bus ingests normalized, append-only events from canonical command/runtime surfaces:
+Replay input is sourced from deterministic Playbook command surfaces and adjacent governance signals.
 
-1. `verify` findings and summaries,
-2. `plan` outputs (planned remediation intent),
-3. `apply` outputs (executed deterministic changes),
-4. `analyze-pr` results (deterministic PR intelligence),
-5. failures (command failures, validation failures, remediation failures, rollback-worthy outcomes).
+### 1.1 Canonical command sources
 
-Each source emits structured artifacts suitable for replay and deterministic post-processing.
+1. `verify`
+   - rule findings, severities, impacted surfaces, ownership gaps.
+2. `plan`
+   - deterministic remediation intent, task decomposition, unresolved tasks.
+3. `apply`
+   - executed remediations, applied/not-applied outcomes, fix evidence.
+4. `analyze-pr`
+   - branch/worktree risk deltas, governance drift indicators, review signals.
 
-## Deterministic salience scoring inputs
+### 1.2 Governance/failure intelligence sources
 
-Each captured event (or consolidated cluster) receives a deterministic salience score derived from stable inputs:
+5. failure-intelligence signals
+   - command failures, failed remediations, retries, rollback-worthy outcomes.
+6. docs-audit/governance signals
+   - `docs audit` findings, stale contract surfaces, documentation drift, missing governance evidence.
 
-- **severity**: governance/risk seriousness,
-- **recurrence**: frequency over bounded replay windows,
-- **blast radius**: affected files/modules/surfaces,
-- **cross-module spread**: breadth across module boundaries,
-- **ownership ambiguity**: uncertainty/conflict in ownership attribution,
-- **docs gaps**: missing/stale governance or documentation contracts,
-- **novel successful remediation**: first-observed successful deterministic fix pattern.
+### 1.3 Capture contract
 
-Scoring invariants:
+Each event MUST be persisted as immutable evidence with:
 
-- same inputs produce the same score,
-- scoring versions are explicit and persisted,
-- no opaque model-only weighting in the critical path.
+- `eventInstanceId` (unique per occurrence),
+- source (`verify|plan|apply|analyze-pr|failure-intelligence|docs-audit`),
+- command version/runtime metadata,
+- timestamp,
+- raw payload pointer + normalized payload,
+- repository/ref context,
+- actor/executor context.
 
-## Replay and consolidation flow
+Capture is append-only. No event mutation in place.
+
+## 2) Deterministic salience inputs
+
+Salience is derived from explicit, versioned inputs only.
+
+### 2.1 Required inputs
+
+- **severity**: intrinsic risk/criticality of the finding or outcome,
+- **recurrence**: repeat frequency within bounded replay windows,
+- **blast radius**: number/criticality of impacted files/modules/surfaces,
+- **cross-module spread**: breadth across architectural boundaries,
+- **unresolved ownership**: unresolved/conflicting owner assignment,
+- **docs gaps**: missing/stale documentation and governance contract coverage,
+- **novel successful remediation**: first-observed successful deterministic fix pattern with reusable value.
+
+### 2.2 Scoring invariants
+
+- deterministic: same normalized inputs + same scoring version => same score,
+- auditable: component contribution vector is stored,
+- versioned: scoring algorithm/version is first-class metadata,
+- bounded: scoring depends only on declared inputs and bounded replay windows.
+
+## 3) Replay and consolidation flow
 
 Canonical flow:
 
-`event capture -> salience scoring -> clustering -> promotion candidates -> human review -> durable knowledge write`
+`capture -> score -> cluster -> generate promotion candidates -> human review -> durable write`
 
-### 1) Event capture
+### 3.1 Capture
 
-- Persist immutable event artifacts with timestamp, source command, and execution context.
-- Preserve raw and normalized forms for deterministic replay.
+- ingest canonical events,
+- normalize to stable schema,
+- persist raw + normalized forms for replay.
 
-### 2) Salience scoring
+### 3.2 Score
 
-- Compute deterministic score vectors from the canonical inputs.
-- Persist component contributions for auditability.
+- compute salience vector + aggregate score from required deterministic inputs,
+- persist score and per-input contributions.
 
-### 3) Clustering
+### 3.3 Cluster
 
-- Group semantically similar events using deterministic fingerprinting + bounded similarity rules.
-- Preserve membership lineage so each cluster can be reconstructed from source events.
+- group events by semantic similarity using deterministic fingerprinting and bounded rules,
+- preserve full cluster membership lineage (`eventInstanceId` list),
+- support replay reconstruction of every cluster state.
 
-### 4) Promotion candidates
+### 3.4 Generate promotion candidates
 
-- Produce candidate notes only when cluster salience and confidence thresholds are met.
-- Emit candidates as artifacts; do not auto-apply doctrine or rule changes.
+- emit candidates when salience/recurrence/confidence thresholds are met,
+- candidate generation is artifact-first and deterministic,
+- candidates are proposals only (no automatic doctrine writes).
 
-### 5) Human review
+### 3.5 Human review
 
-- Require explicit reviewer approval/rejection/defer/supersede decisions.
-- Record reviewer identity, rationale, and decision timestamp.
+- review decisions: `approve | reject | defer | supersede`,
+- require reviewer identity and rationale,
+- capture decision artifacts as immutable governance evidence.
 
-### 6) Durable knowledge write
+### 3.6 Durable write
 
-- Only approved candidates can be written into durable governed knowledge stores.
-- Writes are explicit, auditable, and linked to decision provenance.
+- only approved candidates are materialized into durable knowledge surfaces,
+- writes must reference the exact reviewed candidate and decision artifact,
+- writes are reversible via explicit supersession, never silent overwrite.
 
-## Identity model: event instance vs semantic/fingerprint identity
+## 4) Identity model: `eventInstanceId` vs semantic identity
 
-Two identity layers are required:
+Two identities are mandatory and distinct.
 
-1. **Event instance identity**
-   - unique per occurrence,
-   - used for exact replay lineage,
-   - includes execution-bound context (run ID, command invocation, timestamp).
+### 4.1 `eventInstanceId` (occurrence identity)
 
-2. **Semantic/fingerprint identity**
-   - stable across repeated similar occurrences,
-   - used for clustering, recurrence, and supersession,
-   - derived from normalized content and deterministic fingerprint rules.
+- unique per captured event occurrence,
+- carries run/invocation/timestamp-specific provenance,
+- used for replay exactness and forensic traceability.
 
-Design rule:
+### 4.2 `eventFingerprint` (semantic identity)
 
-- many event instances may map to one semantic identity;
-- semantic identity must not erase per-instance provenance.
+- deterministic fingerprint from normalized content,
+- stable across repeated semantically equivalent events,
+- used for recurrence counting, clustering, and supersession relationships.
 
-## Provenance requirements
+### 4.3 Design constraints
 
-Every stage (capture, scoring, clustering, promotion, review, durable write) must retain traceable provenance:
+- many `eventInstanceId` values may map to one `eventFingerprint`,
+- semantic consolidation MUST NOT erase per-instance provenance,
+- policy and analytics may operate on either layer, but must declare which layer is used.
 
-- source command and artifact pointers,
-- command/version metadata,
-- scoring version and input vector,
-- clustering version and cluster membership,
-- candidate generation thresholds and gating decisions,
-- reviewer decision records,
-- durable write target and resulting artifact ID.
+## 5) Pruning and supersession policy
 
-Fail-closed behavior:
+Pruning and supersession are explicit governance operations.
 
-- if provenance is incomplete or inconsistent, promotion is blocked.
+### 5.1 Pruning
 
-## Pruning, forgetting, and supersession policy
+- eligible for low-salience, low-recurrence, stale, non-promoted artifacts,
+- must preserve tombstone metadata (`id`, reason, timestamp, actor/policy),
+- must not break replay integrity or historical audit trails.
 
-### Pruning
+### 5.2 Supersession
 
-- prune low-salience, low-recurrence candidate artifacts after bounded retention windows,
-- preserve minimal audit tombstones (identity + reason + timestamp).
+- newer evidence-backed candidates/knowledge can supersede older ones,
+- persist directed edges: `supersedes` and `supersededBy`,
+- require rationale + linkage to replacement artifact,
+- historical artifacts remain immutable and queryable.
 
-### Forgetting
+### 5.3 Guardrails
 
-- support policy-driven forgetting for stale, non-actionable, or invalidated candidates,
-- forgetting must be explicit, logged, and replay-safe (no history corruption).
+- no hard delete of governance-relevant evidence,
+- no silent replacement of approved knowledge,
+- all lifecycle transitions are evented and replayable.
 
-### Supersession
+## 6) Candidate note classes
 
-- allow newer, better-supported candidates/doctrine to supersede older items,
-- maintain explicit supersession edges (`supersedes`, `superseded-by`) and rationale,
-- never silently rewrite historical artifacts.
+Promotion candidates are typed and evidence-backed.
 
-## Candidate note classes
+### 6.1 Rule note candidate
 
-Promotion candidates are emitted as typed notes:
+Use when evidence indicates an enforceable governance invariant should exist or be strengthened.
 
-- **Rule** candidate: governance invariant or enforceable constraint suggestion,
-- **Pattern** candidate: reusable successful remediation or architecture practice,
-- **Failure Mode** candidate: recurring anti-pattern, breakdown condition, or risk signature.
+Minimum fields:
 
-Each note class must include:
+- candidate id + deterministic fingerprint,
+- proposed rule statement,
+- supporting cluster/event evidence,
+- salience/confidence,
+- expected enforcement surface,
+- review state.
 
-- deterministic fingerprint,
-- supporting evidence set,
-- confidence/salience metadata,
-- review status,
-- provenance chain.
+### 6.2 Pattern note candidate
 
-## Governance guardrails
+Use when evidence shows a reusable successful remediation or architecture practice.
 
-- Behavior remains artifact-first and deterministic end-to-end.
-- No autonomous mutation of doctrine, rules, or governance contracts.
-- Human review is mandatory before any durable doctrine change.
-- Replays of identical artifact sets under the same versions must produce identical candidate outputs.
+Minimum fields:
 
-## Suggested implementation posture (V1)
+- candidate id + deterministic fingerprint,
+- pattern statement and applicability scope,
+- successful remediation evidence,
+- salience/confidence,
+- constraints/known limits,
+- review state.
 
-- start append-only and replay-centric,
-- keep scoring/clustering heuristics explicit and versioned,
-- optimize for auditability before optimization for compression,
-- treat promotion as a governance workflow, not an autonomous learning loop.
+### 6.3 Failure Mode note candidate
+
+Use when evidence shows a recurring anti-pattern or systemic breakdown condition.
+
+Minimum fields:
+
+- candidate id + deterministic fingerprint,
+- failure mode statement,
+- recurrence and blast-radius evidence,
+- trigger/precondition hints,
+- mitigation references (if known),
+- review state.
+
+## 7) Determinism and governance guarantees
+
+- artifact-first at every stage,
+- deterministic replay for identical inputs and versions,
+- explicit versioning for schemas/scoring/clustering,
+- fail-closed behavior: incomplete provenance blocks promotion,
+- human approval required before durable knowledge mutation.
+
+## 8) V1 implementation posture
+
+- prioritize reproducibility and auditability over compression,
+- keep scoring/clustering logic explicit and inspectable,
+- treat replay/consolidation as governance infrastructure, not autonomous learning,
+- evolve by versioned contracts and explicit supersession rather than mutation in place.
