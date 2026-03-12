@@ -13,6 +13,8 @@ import type { VerifyReport } from '../report/types.js';
 import { verifyRepo } from '../verify/index.js';
 import { generateRepositoryHealth } from '../doctor/index.js';
 import { captureMemoryEventSafe } from '../memory/index.js';
+export { renderLanePrompt, writeLanePrompts, buildLanePromptFilename } from './lanePrompts.js';
+export type { LanePromptSpec, RenderLanePromptInput, WriteLanePromptsInput } from './lanePrompts.js';
 
 export type PlanContract = {
   verify: {
