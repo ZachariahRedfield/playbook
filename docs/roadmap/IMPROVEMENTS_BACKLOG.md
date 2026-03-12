@@ -76,6 +76,33 @@ These labels are long-term architecture/backlog framing only and do not modify t
 ---
 
 
+## Platform direction: Metrics / ROI / Proof-of-Value architecture
+
+Backlog scope (directional, not current-sprint commitment):
+
+- Define canonical trust metric definitions and thresholds for deterministic workflows.
+- Add ROI baseline capture templates for before/after pilot measurement windows.
+- Add pilot proof-of-value scorecards with evidence-link requirements.
+- Define governance impact measurement contracts with provenance fields.
+- Define team coordination measurement model for onboarding/review/routing outcomes.
+- Define enterprise audit/approval value measurement model for governance throughput and traceability.
+- Define per-repo to workspace/team/tenant aggregation rules that preserve explainability.
+
+Pattern: Proof of Value Follows Deterministic Evidence.
+Pattern: Trust Before ROI Scale.
+Pattern: Multi-Layer Value Model (Individual, Team, Enterprise).
+Rule: Measure outcomes, not just activity.
+Rule: ROI claims require baseline + attribution.
+Rule: Governance metrics must preserve provenance and per-repo explainability.
+Rule: Unsafe speed is not product value.
+Failure Mode: Vanity usage metrics mistaken for value.
+Failure Mode: ROI claims without baseline.
+Failure Mode: Cloud-only instrumentation biasing product strategy.
+Failure Mode: Fast but unsafe automation looking “successful” in dashboards.
+Failure Mode: Aggregated metrics that lose per-repo evidence lineage.
+
+---
+
 ## Platform direction: Session + Evidence prerequisites
 
 Backlog scope (explicitly directional; not an active delivery commitment):

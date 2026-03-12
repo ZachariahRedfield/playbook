@@ -78,6 +78,16 @@ Required privacy rules:
 
 This model ensures consumer repositories can adopt Playbook without implicit data sharing or cloud dependency.
 
+
+Metrics/proof-of-value contract:
+
+- downstream pilots should measure value from deterministic repo-local outputs first (for example `.playbook/*` artifacts, verify/plan/apply outcomes, and evidence lineage)
+- workspace/tenant aggregation is optional and must preserve per-repo provenance and explainability
+- private-first behavior remains mandatory: no hidden telemetry and no cloud-required instrumentation for baseline value measurement
+- export of aggregated metrics remains explicit opt-in and policy-controlled
+
+Metrics architecture reference: `docs/architecture/PLAYBOOK_METRICS_ROI_AND_PROOF_OF_VALUE_ARCHITECTURE.md`.
+
 ## 4) Governed Promotion and Cross-Repo Transfer Model
 
 Consumer repositories produce three classes of intelligence:
