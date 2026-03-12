@@ -117,6 +117,31 @@ describe('runOrchestrate', () => {
     logSpy.mockRestore();
   });
 
+  it('omits orchestrator.json guidance when artifact format is md', async () => {
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-orchestrate-md-only-'));
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runOrchestrate(repoDir, {
+      format: 'json',
+      quiet: false,
+      goal: 'md-only artifacts',
+      lanes: 3,
+      outDir: '.playbook/orchestrator',
+      artifactFormat: 'md'
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as {
+      nextActions: string[];
+    };
+
+    expect(fs.existsSync(path.join(repoDir, '.playbook', 'orchestrator', 'orchestrator.json'))).toBe(false);
+    expect(payload.nextActions.some((action) => action.includes('orchestrator.json'))).toBe(false);
+
+    logSpy.mockRestore();
+  });
+
   it('degrades to a single lane when one lane is requested', async () => {
     const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-orchestrate-one-lane-'));
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
