@@ -5,6 +5,7 @@ import { queryRuleOwners } from '../query/ruleOwners.js';
 import { resolveDiffAskContext } from '../ask/diffContext.js';
 import { execFileSync } from 'node:child_process';
 import { resolveScmDiffBase } from '../git/context.js';
+import { captureMemoryEventSafe } from '../memory/index.js';
 
 type RiskLevel = 'low' | 'medium' | 'high';
 
@@ -272,7 +273,28 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
     repositoryIndex = readIndexedRepository(projectRoot);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw toAnalyzePrError(message);
+    const normalized = toAnalyzePrError(message);
+
+    captureMemoryEventSafe(projectRoot, {
+      kind: 'failure_ingest',
+      sources: [{ type: 'command', reference: 'analyze-pr' }],
+      subjectModules: [],
+      ruleIds: [],
+      riskSummary: {
+        level: 'high',
+        signals: ['analyze-pr-bootstrap-failure']
+      },
+      outcome: {
+        status: 'failure',
+        summary: normalized.message
+      },
+      salienceInputs: {
+        command: 'analyze-pr',
+        baseRef: options?.baseRef ?? null
+      }
+    });
+
+    throw normalized;
   }
 
   const affectedModules = [...diffContext.affectedModules];
@@ -364,7 +386,7 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
     });
   }
 
-  return {
+  const result: AnalyzePullRequestResult = {
     schemaVersion: '1.0',
     command: 'analyze-pr',
     baseRef: diffContext.baseRef,
@@ -407,4 +429,35 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
       ]
     }
   };
+
+  captureMemoryEventSafe(projectRoot, {
+    kind: 'pr_analysis',
+    sources: [
+      { type: 'command', reference: 'analyze-pr' },
+      { type: 'artifact', reference: '.playbook/repo-index.json' }
+    ],
+    subjectModules: result.affectedModules,
+    ruleIds: result.rules.related,
+    riskSummary: {
+      level: result.risk.level,
+      signals: result.risk.signals
+    },
+    outcome: {
+      status: 'success',
+      summary: 'analyze-pr completed',
+      metrics: {
+        changedFileCount: result.summary.changedFileCount,
+        affectedModuleCount: result.summary.affectedModuleCount,
+        findingCount: result.findings.length
+      }
+    },
+    salienceInputs: {
+      command: 'analyze-pr',
+      baseRef: result.baseRef,
+      boundariesTouched: result.architecture.boundariesTouched,
+      docsChangedCount: result.docs.changed.length
+    }
+  });
+
+  return result;
 };
