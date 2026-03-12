@@ -1956,3 +1956,13 @@ Use explicit least-privilege workflow permissions (`contents: read` for PR valid
 
 Failure Mode
 If workflow permissions are implicit/restricted, `actions/checkout` can fail early with `could not read Username for https://github.com` before any build/test stage executes.
+
+## Agent Routing Boundary (Controller vs Worker)
+
+Status: **In progress - routing authority introduced for task classification before model usage.**
+
+- Playbook now classifies task routes as `deterministic_local`, `model_reasoning`, `hybrid`, or `unsupported`.
+- Routing decisions include reasons, required inputs, missing prerequisites, and mutation eligibility.
+- Rule: The model must never decide its own authority boundary; Playbook must classify the task first.
+- Pattern: Stable AI systems separate controller logic from reasoning workers.
+- Failure Mode: Implicit model usage makes behavior non-deterministic, hard to audit, and difficult to improve.

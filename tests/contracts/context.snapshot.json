@@ -46,6 +46,7 @@
       "ask",
       "deps",
       "query",
+      "route",
       "session",
       "learn"
     ]

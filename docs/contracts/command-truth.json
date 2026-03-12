@@ -304,6 +304,18 @@
       "example": "pnpm playbook query modules --json"
     },
     {
+      "name": "route",
+      "category": "Repository intelligence",
+      "role": "repo-intelligence",
+      "lifecycle": "canonical",
+      "discoverability": "primary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook route \"summarize current repo state\" --json"
+    },
+    {
       "name": "rules",
       "category": "Repository tools",
       "role": "governance",
@@ -395,6 +407,7 @@
     "pilot",
     "plan",
     "query",
+    "route",
     "rules",
     "verify"
   ],

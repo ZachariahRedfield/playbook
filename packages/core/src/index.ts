@@ -1,3 +1,4 @@
+export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';
 export type Severity = 'WARN' | 'RECOMMEND' | 'INFO';
 
 export { runArchitectureAudit } from './audit/architecture.js';

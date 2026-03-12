@@ -5,12 +5,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 
 const generatePlanContract = vi.fn();
+const routeTask = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask }));
 
 describe('runPlan', () => {
   beforeEach(() => {
     generatePlanContract.mockReset();
+    routeTask.mockReset();
+    routeTask.mockReturnValue({
+      route: 'deterministic_local',
+      why: 'ok',
+      requiredInputs: [],
+      missingPrerequisites: [],
+      repoMutationAllowed: false
+    });
   });
 
   it('renders deterministic text output with task count and entries', async () => {

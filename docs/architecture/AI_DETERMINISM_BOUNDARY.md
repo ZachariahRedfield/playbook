@@ -40,3 +40,11 @@ Advisory (AI):
 
 AI-generated recommendations should reference deterministic sources (artifact path + command surface) and degrade gracefully when required artifacts are missing.
 
+
+## Routing authority boundary
+
+Playbook owns routing authority; models supply bounded reasoning.
+
+- Route classification is deterministic and explicit (`deterministic_local`, `model_reasoning`, `hybrid`, `unsupported`).
+- Unsupported routes must include missing prerequisites and next steps before model invocation is allowed.
+- Plan/apply and model-assisted flows should consult routing first so authority boundaries remain auditable.

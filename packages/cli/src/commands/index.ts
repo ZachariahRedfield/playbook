@@ -279,6 +279,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
     const { runDeps } = await import('./deps.js');
     return runDeps(cwd, commandArgs, { format, quiet });
   },
+  route: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runRoute } = await import('./route.js');
+    return runRoute(cwd, commandArgs, { format, quiet });
+  },
   query: async ({ cwd, commandArgs, format, quiet }) => {
     const { runQuery } = await import('./query.js');
     return runQuery(cwd, commandArgs, { format, quiet, outFile: parseOptionValue(commandArgs, '--out') });
@@ -318,6 +322,7 @@ const commandOrder = [
   'ask',
   'deps',
   'query',
+  'route',
   'session',
   'learn'
 ] as const;

@@ -231,3 +231,6 @@ export type { MetaTelemetryArtifact } from './schema/metaTelemetry.js';
 export type { Evidence, Zettel, Edge, Pattern, Decision } from './schema/evidence.js';
 
 export { writeJsonArtifact as writeArtifactJson, readJsonArtifact as readArtifactJson, INVALID_ARTIFACT_ERROR } from './artifacts/artifactIO.js';
+
+export { routeTask } from './routing/routeTask.js';
+export type { RouteDecision, RouteTaskInput, RouteTaskKind, RouteMutabilityLevel, RouteSafetyConstraints, TaskRoute } from './routing/types.js';

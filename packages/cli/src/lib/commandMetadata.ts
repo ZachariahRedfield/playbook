@@ -398,6 +398,19 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'route',
+    description: 'Classify tasks into deterministic execution vs bounded model reasoning routes',
+    category: 'Repository intelligence',
+    role: 'repo-intelligence',
+    lifecycle: 'canonical',
+    discoverability: 'primary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'route "summarize current repo state" --json',
+    machineReadable: true
+  },
+  {
     name: 'session',
     description: 'Import, merge, and cleanup session snapshots',
     category: 'Utility',

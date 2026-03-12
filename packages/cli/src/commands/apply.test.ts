@@ -5,12 +5,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 
 const generatePlanContract = vi.fn();
+const routeTask = vi.fn();
 const applyExecutionPlan = vi.fn();
 const parsePlanArtifact = vi.fn();
 const validateRemediationPlan = vi.fn();
 const loadVerifyRules = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
 
@@ -34,10 +35,18 @@ const encodeUtf16Be = (value: string): Buffer => {
 describe('runApply', () => {
   beforeEach(() => {
     generatePlanContract.mockReset();
+    routeTask.mockReset();
     applyExecutionPlan.mockReset();
     parsePlanArtifact.mockReset();
     validateRemediationPlan.mockReset();
     loadVerifyRules.mockReset();
+    routeTask.mockReturnValue({
+      route: 'hybrid',
+      why: 'ok',
+      requiredInputs: [],
+      missingPrerequisites: [],
+      repoMutationAllowed: true
+    });
   });
 
   it('renders deterministic text output', async () => {
@@ -298,10 +307,18 @@ describe('runApply', () => {
 describe('runApply remediation status preconditions', () => {
   beforeEach(() => {
     generatePlanContract.mockReset();
+    routeTask.mockReset();
     applyExecutionPlan.mockReset();
     parsePlanArtifact.mockReset();
     validateRemediationPlan.mockReset();
     loadVerifyRules.mockReset();
+    routeTask.mockReturnValue({
+      route: 'hybrid',
+      why: 'ok',
+      requiredInputs: [],
+      missingPrerequisites: [],
+      repoMutationAllowed: true
+    });
   });
 
   it('returns explicit no-op when remediation status is not_needed', async () => {
@@ -356,10 +373,18 @@ describe('runApply remediation status preconditions', () => {
 describe('runApply warning-only remediation handling', () => {
   beforeEach(() => {
     generatePlanContract.mockReset();
+    routeTask.mockReset();
     applyExecutionPlan.mockReset();
     parsePlanArtifact.mockReset();
     validateRemediationPlan.mockReset();
     loadVerifyRules.mockReset();
+    routeTask.mockReturnValue({
+      route: 'hybrid',
+      why: 'ok',
+      requiredInputs: [],
+      missingPrerequisites: [],
+      repoMutationAllowed: true
+    });
   });
 
   it('treats warning-only verify output as apply no-op instead of unavailable remediation', async () => {

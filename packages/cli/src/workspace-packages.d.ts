@@ -143,4 +143,13 @@ declare module "@zachariahredfield/playbook-engine" {
   export const importChatTextSnapshot: (...args: any[]) => any;
   export const mergeSessionSnapshots: (...args: any[]) => any;
   export const validateSessionSnapshot: (...args: any[]) => any;
+
+  export type RouteDecision = {
+    route: 'deterministic_local' | 'model_reasoning' | 'hybrid' | 'unsupported';
+    why: string;
+    requiredInputs: string[];
+    missingPrerequisites: string[];
+    repoMutationAllowed: boolean;
+  };
+  export const routeTask: (...args: any[]) => RouteDecision;
 }

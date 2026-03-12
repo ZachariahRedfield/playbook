@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { applyExecutionPlan, generatePlanContract, parsePlanArtifact, validateRemediationPlan } from '@zachariahredfield/playbook-engine';
+import { applyExecutionPlan, generatePlanContract, parsePlanArtifact, routeTask, validateRemediationPlan } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
 import {
@@ -235,6 +235,16 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   if (options.help) {
     printApplyHelp();
     return ExitCode.Success;
+  }
+
+  const routeDecision = routeTask(cwd, 'apply approved remediation plan', {
+    taskKind: 'patch_execution',
+    hasApprovedPlan: true,
+    safetyConstraints: { allowRepositoryMutation: true, requiresApprovedPlan: true }
+  });
+
+  if (routeDecision.route === 'unsupported') {
+    throw new Error(`Cannot execute apply flow: ${routeDecision.why}`);
   }
 
   if ((options.tasks?.length ?? 0) > 0 && !options.fromPlan) {

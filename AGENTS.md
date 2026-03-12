@@ -220,6 +220,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook ask "where should a new feature live?" --repo-context --json`
 - `explain`: Explain rules, modules, or architecture from repository intelligence
   - Example: `pnpm playbook explain architecture --json`
+- `route`: Classify tasks into deterministic execution vs bounded model reasoning routes
+  - Example: `pnpm playbook route "summarize current repo state" --json`
 
 ### Utility
 
@@ -267,5 +269,6 @@ Do not hand-edit entries inside the managed markers.
 | `deps` | `pnpm playbook deps workouts --json` |
 | `ask` | `pnpm playbook ask "where should a new feature live?" --repo-context --json` |
 | `explain` | `pnpm playbook explain architecture --json` |
+| `route` | `pnpm playbook route "summarize current repo state" --json` |
 | `learn` | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 <!-- PLAYBOOK:EXAMPLES_END -->
