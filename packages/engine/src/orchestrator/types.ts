@@ -1,8 +1,7 @@
-export interface OrchestratorLane {
+export interface OrchestratorLaneContract {
   id: string;
   title: string;
   objective: string;
-  whyThisLaneExists: string;
   allowedPaths: string[];
   forbiddenPaths: string[];
   sharedPaths: string[];
@@ -11,8 +10,6 @@ export interface OrchestratorLane {
   promptFile: string;
   verification: string[];
   documentationUpdates: string[];
-  implementationPlan: string[];
-  mergeNotes: string[];
 }
 
 export interface OrchestratorContract {
@@ -23,7 +20,7 @@ export interface OrchestratorContract {
   laneCountProduced: number;
   sharedPaths: string[];
   warnings: string[];
-  lanes: OrchestratorLane[];
+  lanes: OrchestratorLaneContract[];
 }
 
 export interface BuildOrchestratorContractInput {
@@ -35,4 +32,19 @@ export interface OrchestratorArtifactWriteResult {
   outputDir: string;
   orchestratorPath: string;
   lanePromptPaths: string[];
+}
+
+export interface CompileOrchestratorArtifactsInput {
+  cwd: string;
+  goal: string;
+  laneCountRequested: number;
+  outDir: string;
+  artifactFormat: 'md' | 'json' | 'both';
+}
+
+export interface CompileOrchestratorArtifactsResult {
+  contract: OrchestratorContract;
+  artifact: OrchestratorArtifactWriteResult;
+  outputDir: string;
+  relativeOutputDir: string;
 }

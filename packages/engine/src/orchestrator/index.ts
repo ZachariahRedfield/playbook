@@ -1,3 +1,11 @@
 export { buildOrchestratorContract } from './planner.js';
 export { writeOrchestratorArtifact } from './writer.js';
-export type { BuildOrchestratorContractInput, OrchestratorArtifactWriteResult, OrchestratorContract, OrchestratorLane } from './types.js';
+export { compileOrchestratorArtifacts } from './compiler.js';
+export type {
+  BuildOrchestratorContractInput,
+  CompileOrchestratorArtifactsInput,
+  CompileOrchestratorArtifactsResult,
+  OrchestratorArtifactWriteResult,
+  OrchestratorContract,
+  OrchestratorLaneContract
+} from './types.js';

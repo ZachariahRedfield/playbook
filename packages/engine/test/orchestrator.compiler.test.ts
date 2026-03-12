@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildOrchestratorContract } from '../src/orchestrator/index.js';
 
 describe('buildOrchestratorContract', () => {
-  it('builds deterministic contracts with explicit shared file risk and non-overlapping ownership', () => {
+  it('builds deterministic lane contracts with explicit ownership metadata', () => {
     const contract = buildOrchestratorContract({
       goal: '  Implement query risk and docs audit improvements in parallel  ',
       laneCountRequested: 3
@@ -17,6 +17,20 @@ describe('buildOrchestratorContract', () => {
 
     const owned = new Set<string>();
     contract.lanes.forEach((lane) => {
+      expect(lane).toMatchObject({
+        id: expect.any(String),
+        title: expect.any(String),
+        objective: expect.any(String),
+        allowedPaths: expect.any(Array),
+        forbiddenPaths: expect.any(Array),
+        sharedPaths: expect.any(Array),
+        wave: expect.any(Number),
+        dependsOn: expect.any(Array),
+        promptFile: expect.any(String),
+        verification: expect.any(Array),
+        documentationUpdates: expect.any(Array)
+      });
+
       lane.allowedPaths.forEach((ownedPath) => {
         expect(owned.has(ownedPath)).toBe(false);
         owned.add(ownedPath);

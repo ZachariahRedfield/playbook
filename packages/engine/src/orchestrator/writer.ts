@@ -7,18 +7,25 @@ import type { OrchestratorArtifactWriteResult, OrchestratorContract } from './ty
 const toPromptSpec = (contract: OrchestratorContract): LanePromptSpec[] =>
   contract.lanes.map((lane) => ({
     objective: lane.objective,
-    whyThisLaneExists: lane.whyThisLaneExists,
+    whyThisLaneExists: `Lane ${lane.id} (${lane.title}) owns a deterministic execution slice for this orchestration goal.`,
     allowedFilesToModify: lane.allowedPaths,
     forbiddenFilesToModify: lane.forbiddenPaths,
-    sharedFilesPolicy: `Shared-file conflict hubs are explicitly controlled: ${contract.sharedPaths.join(', ')}. Do not claim ownership; coordinate in merge notes or the integration lane.`,
+    sharedFilesPolicy: `Shared-file conflict hubs are explicitly controlled: ${contract.sharedPaths.join(', ')}. Do not claim ownership; coordinate through dependencies and shared-path policy.`,
     dependenciesWaveInfo: `Wave ${lane.wave}. Depends on: ${lane.dependsOn.length > 0 ? lane.dependsOn.join(', ') : 'none'}.`,
-    implementationPlan: lane.implementationPlan,
+    implementationPlan: [
+      `Implement lane objective: ${lane.objective}`,
+      `Keep edits within allowed paths: ${lane.allowedPaths.join(', ') || '(none)'}`,
+      `Honor explicit dependencies before starting blocked work.`
+    ],
     verificationSteps: lane.verification,
     documentationUpdates: lane.documentationUpdates,
-    mergeNotes: lane.mergeNotes,
+    mergeNotes: [
+      `Coordinate shared-path updates only when changes touch: ${lane.sharedPaths.join(', ') || '(none)'}.`,
+      `Prompt artifact: ${lane.promptFile}.`
+    ],
     laneOwnershipConstraints: [
       `Primary ownership is exclusive to: ${lane.allowedPaths.join(', ') || '(none)'}.`,
-      `Prompt artifact: ${lane.promptFile}.`
+      `Forbidden paths remain off-limits: ${lane.forbiddenPaths.join(', ') || '(none)'}.`
     ]
   }));
 

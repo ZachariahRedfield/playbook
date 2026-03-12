@@ -264,10 +264,12 @@ export { writeExecutionRun, readExecutionRun, listExecutionRuns, getLatestMutabl
 
 export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './execution/runContract.js';
 
-export { buildOrchestratorContract, writeOrchestratorArtifact } from './orchestrator/index.js';
+export { buildOrchestratorContract, writeOrchestratorArtifact, compileOrchestratorArtifacts } from './orchestrator/index.js';
 export type {
   BuildOrchestratorContractInput,
+  CompileOrchestratorArtifactsInput,
+  CompileOrchestratorArtifactsResult,
   OrchestratorArtifactWriteResult,
-  OrchestratorContract,
-  OrchestratorLane
+  OrchestratorContract as OrchestratorLaneContractArtifact,
+  OrchestratorLaneContract
 } from './orchestrator/index.js';

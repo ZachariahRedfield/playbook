@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { buildOrchestratorContract, writeOrchestratorArtifact } from '@zachariahredfield/playbook-engine';
+import { compileOrchestratorArtifacts } from '@zachariahredfield/playbook-engine';
 import { emitResult, ExitCode } from '../lib/cliContract.js';
 
 type OrchestrateArtifactFormat = 'md' | 'json' | 'both';
@@ -36,15 +36,13 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
     return ExitCode.Failure;
   }
 
-  const outDir = path.resolve(cwd, options.outDir);
-  const relativeOutDir = path.relative(cwd, outDir) || '.';
-
-  const contract = buildOrchestratorContract({
+  const compilation = compileOrchestratorArtifacts({
+    cwd,
     goal,
-    laneCountRequested: options.lanes
+    laneCountRequested: options.lanes,
+    outDir: options.outDir,
+    artifactFormat: options.artifactFormat
   });
-
-  const artifact = writeOrchestratorArtifact(contract, outDir, options.artifactFormat);
 
   emitResult({
     format: options.format,
@@ -52,38 +50,38 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
     command: 'orchestrate',
     ok: true,
     exitCode: ExitCode.Success,
-    summary: `Orchestration artifacts generated in ${relativeOutDir}`,
+    summary: `Orchestration artifacts generated in ${compilation.relativeOutputDir}`,
     findings: [
       {
         id: 'orchestrate.goal',
         level: 'info',
-        message: `Goal: ${contract.goal}`
+        message: `Goal: ${compilation.contract.goal}`
       },
       {
         id: 'orchestrate.lanes.requested',
         level: 'info',
-        message: `Lanes requested: ${contract.laneCountRequested}`
+        message: `Lanes requested: ${compilation.contract.laneCountRequested}`
       },
       {
         id: 'orchestrate.lanes.produced',
         level: 'info',
-        message: `Lanes produced: ${contract.laneCountProduced}`
+        message: `Lanes produced: ${compilation.contract.laneCountProduced}`
       },
       {
         id: 'orchestrate.artifact-format',
         level: 'info',
         message: `Artifact format: ${options.artifactFormat}`
       },
-      ...contract.warnings.map((warning, index) => ({
+      ...compilation.contract.warnings.map((warning, index) => ({
         id: `orchestrate.warning.${index + 1}`,
         level: 'warning' as const,
         message: warning
       }))
     ],
     nextActions: [
-      `Review ${path.relative(cwd, artifact.orchestratorPath)} lane contracts.`,
-      ...(artifact.lanePromptPaths.length > 0
-        ? [`Distribute ${artifact.lanePromptPaths.length} lane prompt files to parallel Codex plan-mode workers.`]
+      `Review ${path.relative(cwd, compilation.artifact.orchestratorPath)} lane contracts.`,
+      ...(compilation.artifact.lanePromptPaths.length > 0
+        ? [`Distribute ${compilation.artifact.lanePromptPaths.length} lane prompt files to parallel Codex plan-mode workers.`]
         : [])
     ]
   });
