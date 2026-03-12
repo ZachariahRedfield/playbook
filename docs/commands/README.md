@@ -406,3 +406,12 @@ Playbook artifacts must only be written via the artifact IO layer to guarantee d
 
 Failure Mode
 Shell redirection (`>`) may introduce encoding corruption. CLI owned artifact output must always be preferred.
+
+## Execution run state
+
+Remediation ladder commands (`verify`, `plan`, `apply`, `verify`) now append deterministic step state to run artifacts at `.playbook/runs/<run-id>.json`.
+
+Use query surfaces to inspect state:
+
+- `pnpm playbook query runs`
+- `pnpm playbook query run --id <run-id>`

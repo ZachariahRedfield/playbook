@@ -1966,3 +1966,13 @@ Status: **In progress - routing authority introduced for task classification bef
 - Rule: The model must never decide its own authority boundary; Playbook must classify the task first.
 - Pattern: Stable AI systems separate controller logic from reasoning workers.
 - Failure Mode: Implicit model usage makes behavior non-deterministic, hard to audit, and difficult to improve.
+
+## Deterministic execution contract and run-state
+
+Playbook now treats remediation/agent execution as first-class state, persisted as deterministic execution runs.
+
+- Rule: Every multi-step remediation flow must be representable as a deterministic execution run artifact.
+- Pattern: Agent-ready systems model actions as inspectable state transitions rather than transient command output.
+- Failure mode: Without explicit run-state, the system cannot reliably resume, audit, compare, or learn from execution behavior.
+
+Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryable through `playbook query runs` and `playbook query run --id <run-id>`.

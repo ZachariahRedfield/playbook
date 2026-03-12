@@ -9,9 +9,13 @@ const routeTask = vi.fn();
 const applyExecutionPlan = vi.fn();
 const parsePlanArtifact = vi.fn();
 const validateRemediationPlan = vi.fn();
+const getLatestMutableRun = vi.fn();
+const createExecutionIntent = vi.fn();
+const createExecutionRun = vi.fn();
+const appendExecutionStep = vi.fn();
 const loadVerifyRules = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
 
@@ -39,7 +43,13 @@ describe('runApply', () => {
     applyExecutionPlan.mockReset();
     parsePlanArtifact.mockReset();
     validateRemediationPlan.mockReset();
+    getLatestMutableRun.mockReset();
+    createExecutionIntent.mockReset();
+    createExecutionRun.mockReset();
+    appendExecutionStep.mockReset();
     loadVerifyRules.mockReset();
+    getLatestMutableRun.mockReturnValue({ id: 'run-test' });
+    appendExecutionStep.mockReturnValue({ id: 'run-test' });
     routeTask.mockReturnValue({
       route: 'hybrid',
       why: 'ok',
@@ -311,7 +321,13 @@ describe('runApply remediation status preconditions', () => {
     applyExecutionPlan.mockReset();
     parsePlanArtifact.mockReset();
     validateRemediationPlan.mockReset();
+    getLatestMutableRun.mockReset();
+    createExecutionIntent.mockReset();
+    createExecutionRun.mockReset();
+    appendExecutionStep.mockReset();
     loadVerifyRules.mockReset();
+    getLatestMutableRun.mockReturnValue({ id: 'run-test' });
+    appendExecutionStep.mockReturnValue({ id: 'run-test' });
     routeTask.mockReturnValue({
       route: 'hybrid',
       why: 'ok',
@@ -377,7 +393,13 @@ describe('runApply warning-only remediation handling', () => {
     applyExecutionPlan.mockReset();
     parsePlanArtifact.mockReset();
     validateRemediationPlan.mockReset();
+    getLatestMutableRun.mockReset();
+    createExecutionIntent.mockReset();
+    createExecutionRun.mockReset();
+    appendExecutionStep.mockReset();
     loadVerifyRules.mockReset();
+    getLatestMutableRun.mockReturnValue({ id: 'run-test' });
+    appendExecutionStep.mockReturnValue({ id: 'run-test' });
     routeTask.mockReturnValue({
       route: 'hybrid',
       why: 'ok',

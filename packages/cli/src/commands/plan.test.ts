@@ -6,13 +6,23 @@ import { ExitCode } from '../lib/cliContract.js';
 
 const generatePlanContract = vi.fn();
 const routeTask = vi.fn();
+const getLatestMutableRun = vi.fn();
+const createExecutionIntent = vi.fn();
+const createExecutionRun = vi.fn();
+const appendExecutionStep = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep }));
 
 describe('runPlan', () => {
   beforeEach(() => {
     generatePlanContract.mockReset();
     routeTask.mockReset();
+    getLatestMutableRun.mockReset();
+    createExecutionIntent.mockReset();
+    createExecutionRun.mockReset();
+    appendExecutionStep.mockReset();
+    getLatestMutableRun.mockReturnValue({ id: 'run-test' });
+    appendExecutionStep.mockReturnValue({ id: 'run-test' });
     routeTask.mockReturnValue({
       route: 'deterministic_local',
       why: 'ok',

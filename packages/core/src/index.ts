@@ -1,3 +1,4 @@
+export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './contracts/execution.js';
 export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';
 export type Severity = 'WARN' | 'RECOMMEND' | 'INFO';
 

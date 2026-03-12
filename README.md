@@ -671,3 +671,16 @@ A full local example is available at `.github/workflows/playbook-action-example.
 
 
 `pnpm test:security` runs security contract and regression tests.
+
+## Deterministic execution runs
+
+Playbook now records multi-step remediation as first-class execution run state in `.playbook/runs/<run-id>.json`.
+
+- Rule: Every multi-step remediation flow must be representable as a deterministic execution run artifact.
+- Pattern: A system becomes agent-ready when actions are represented as inspectable state transitions rather than transient command output.
+- Failure Mode: Without explicit run-state, the system cannot reliably resume, audit, compare, or learn from execution behavior.
+
+Execution runs are appended by `verify`, `plan`, `apply`, and follow-up `verify`, and can be inspected via:
+
+- `playbook query runs`
+- `playbook query run --id <run-id>`

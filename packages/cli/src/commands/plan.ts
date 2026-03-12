@@ -1,4 +1,4 @@
-import { generatePlanContract, routeTask } from '@zachariahredfield/playbook-engine';
+import * as engine from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { buildPlanRemediation, deriveVerifyFailureFacts } from '../lib/remediationContract.js';
@@ -21,11 +21,25 @@ const renderTextPlan = (tasks: Array<{ ruleId: string; action: string }>): void 
   }
 };
 
+const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
+  if (requestedRunId) {
+    return requestedRunId;
+  }
+
+  const latest = engine.getLatestMutableRun ? engine.getLatestMutableRun(cwd) : null;
+  if (latest) {
+    return latest.id;
+  }
+
+  const intent = engine.createExecutionIntent('execute deterministic remediation workflow', ['verify', 'plan', 'apply', 'verify'], ['ordered-steps'], 'user');
+  return engine.createExecutionRun(cwd, intent).id;
+};
+
 export const runPlan = async (
   cwd: string,
-  options: { format: 'text' | 'json'; ci: boolean; quiet: boolean; outFile?: string }
+  options: { format: 'text' | 'json'; ci: boolean; quiet: boolean; outFile?: string; runId?: string }
 ): Promise<number> => {
-  const routeDecision = routeTask(cwd, 'generate remediation execution plan', {
+  const routeDecision = engine.routeTask(cwd, 'generate remediation execution plan', {
     taskKind: 'graph_query_report',
     hasApprovedPlan: true,
     safetyConstraints: { allowRepositoryMutation: false, requiresApprovedPlan: false }
@@ -35,10 +49,21 @@ export const runPlan = async (
     throw new Error(`Cannot generate plan: ${routeDecision.why}`);
   }
 
-  const plan = generatePlanContract(cwd);
+  const plan = engine.generatePlanContract(cwd);
   const failureFacts = deriveVerifyFailureFacts(plan.verify);
   const failureCount = failureFacts.failureCount;
   const remediation = buildPlanRemediation({ failureCount, stepCount: plan.tasks.length });
+  const runId = resolveRunId(cwd, options.runId);
+
+  engine.appendExecutionStep(cwd, runId, {
+    kind: 'plan',
+    status: 'passed',
+    inputs: { verifyFailures: failureCount },
+    outputs: { taskCount: plan.tasks.length, remediationStatus: remediation.status },
+    evidence: [
+      ...(options.outFile ? [{ id: 'evidence-plan-artifact', kind: 'artifact' as const, ref: options.outFile }] : [])
+    ]
+  });
 
   if (process.env.PLAYBOOK_DEBUG_REMEDIATION === '1') {
     console.error(
@@ -65,7 +90,7 @@ export const runPlan = async (
       command: 'plan',
       ok: true,
       exitCode: ExitCode.Success,
-      verify: plan.verify,
+        verify: plan.verify,
       remediation,
       tasks: plan.tasks
     };

@@ -120,12 +120,13 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
       format,
       quiet,
       policy: parseFlag(commandArgs, '--policy'),
-      outFile: parseOptionValue(commandArgs, '--out')
+      outFile: parseOptionValue(commandArgs, '--out'),
+      runId: parseOptionValue(commandArgs, '--run-id')
     });
   },
   plan: async ({ cwd, commandArgs, ci, format, quiet }) => {
     const { runPlan } = await import('./plan.js');
-    return runPlan(cwd, { ci, format, quiet, outFile: parseOptionValue(commandArgs, '--out') });
+    return runPlan(cwd, { ci, format, quiet, outFile: parseOptionValue(commandArgs, '--out'), runId: parseOptionValue(commandArgs, '--run-id') });
   },
   apply: async ({ cwd, commandArgs, ci, format, quiet }) => {
     const { runApply } = await import('./apply.js');
@@ -135,7 +136,8 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
       quiet,
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h'),
       fromPlan: parseOptionValue(commandArgs, '--from-plan'),
-      tasks: parseOptionValues(commandArgs, '--task')
+      tasks: parseOptionValues(commandArgs, '--task'),
+      runId: parseOptionValue(commandArgs, '--run-id')
     });
   },
   fix: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {

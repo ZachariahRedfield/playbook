@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { applyExecutionPlan, generatePlanContract, parsePlanArtifact, routeTask, validateRemediationPlan } from '@zachariahredfield/playbook-engine';
+import * as engine from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
 import {
@@ -18,6 +18,7 @@ type ApplyOptions = {
   help?: boolean;
   fromPlan?: string;
   tasks?: string[];
+  runId?: string;
 };
 
 type ApplyResult = {
@@ -154,7 +155,7 @@ const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
     throw new Error(`Invalid plan JSON in ${resolvedPath}: ${message}.${encodingHint}`);
   }
 
-  const parsedPlan = parsePlanArtifact(payload);
+  const parsedPlan = engine.parsePlanArtifact(payload);
 
   const normalizedPayload =
     payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
@@ -231,13 +232,28 @@ const printApplyHelp = (): void => {
   console.log('  --help                     Show help');
 };
 
+
+const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
+  if (requestedRunId) {
+    return requestedRunId;
+  }
+
+  const latest = engine.getLatestMutableRun ? engine.getLatestMutableRun(cwd) : null;
+  if (latest) {
+    return latest.id;
+  }
+
+  const intent = engine.createExecutionIntent('apply deterministic remediation plan', ['plan', 'apply', 'verify'], ['approved-plan-required'], 'user');
+  return engine.createExecutionRun(cwd, intent).id;
+};
+
 export const runApply = async (cwd: string, options: ApplyOptions): Promise<number> => {
   if (options.help) {
     printApplyHelp();
     return ExitCode.Success;
   }
 
-  const routeDecision = routeTask(cwd, 'apply approved remediation plan', {
+  const routeDecision = engine.routeTask(cwd, 'apply approved remediation plan', {
     taskKind: 'patch_execution',
     hasApprovedPlan: true,
     safetyConstraints: { allowRepositoryMutation: true, requiresApprovedPlan: true }
@@ -247,6 +263,8 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     throw new Error(`Cannot execute apply flow: ${routeDecision.why}`);
   }
 
+  const runId = resolveRunId(cwd, options.runId);
+
   if ((options.tasks?.length ?? 0) > 0 && !options.fromPlan) {
     throw new Error('The --task flag requires --from-plan so task selection is tied to a reviewed artifact.');
   }
@@ -254,7 +272,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   const plan = options.fromPlan
     ? loadPlanFromFile(cwd, options.fromPlan)
     : (() => {
-        const generatedPlan = generatePlanContract(cwd);
+        const generatedPlan = engine.generatePlanContract(cwd);
         const failureFacts = deriveVerifyFailureFacts(generatedPlan.verify);
         return {
           tasks: generatedPlan.tasks,
@@ -271,13 +289,21 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     const payload: ApplyJsonResult = {
       schemaVersion: '1.0',
       command: 'apply',
-      ok: true,
+        ok: true,
       exitCode: ExitCode.Success,
       remediation: plan.remediation,
       message: applyPrecondition.message,
       results: [],
       summary: { applied: 0, skipped: 0, unsupported: 0, failed: 0 }
     };
+
+    engine.appendExecutionStep(cwd, runId, {
+      kind: 'apply',
+      status: 'skipped',
+      inputs: { fromPlan: options.fromPlan ?? null, selectedTaskCount: 0 },
+      outputs: payload.summary,
+      evidence: options.fromPlan ? [{ id: 'evidence-plan-artifact', kind: 'artifact', ref: options.fromPlan }] : []
+    });
 
     if (options.format === 'json') {
       console.log(JSON.stringify(payload, null, 2));
@@ -292,7 +318,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   }
 
   const selectedTasks = selectPlanTasks(plan.tasks, options.tasks);
-  validateRemediationPlan(cwd, selectedTasks);
+  engine.validateRemediationPlan(cwd, selectedTasks);
   const verifyRules = await loadVerifyRules(cwd);
 
   const handlers: Record<string, NonNullable<(typeof verifyRules)[number]['fix']>> = {};
@@ -303,7 +329,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     }
   }
 
-  const execution = await applyExecutionPlan(cwd, selectedTasks, { dryRun: false, handlers });
+  const execution = await engine.applyExecutionPlan(cwd, selectedTasks, { dryRun: false, handlers });
 
   const exitCode = execution.summary.failed > 0 ? ExitCode.Failure : ExitCode.Success;
   const payload: ApplyJsonResult = {
@@ -316,6 +342,25 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     results: execution.results,
     summary: execution.summary
   };
+
+  engine.appendExecutionStep(cwd, runId, {
+    kind: 'apply',
+    status: exitCode === ExitCode.Success ? 'passed' : 'failed',
+    inputs: {
+      fromPlan: options.fromPlan ?? null,
+      selectedTaskCount: selectedTasks.length
+    },
+    outputs: payload.summary,
+    evidence: [
+      ...(options.fromPlan ? [{ id: 'evidence-plan-artifact', kind: 'artifact' as const, ref: options.fromPlan }] : []),
+      ...execution.results.map((result: ApplyResult, index: number) => ({
+        id: `evidence-apply-${String(index + 1).padStart(3, '0')}`,
+        kind: 'log' as const,
+        ref: `${result.ruleId}:${result.status}`,
+        note: result.message
+      }))
+    ]
+  });
 
   if (options.format === 'json') {
     console.log(JSON.stringify(payload, null, 2));

@@ -152,4 +152,12 @@ declare module "@zachariahredfield/playbook-engine" {
     repoMutationAllowed: boolean;
   };
   export const routeTask: (...args: any[]) => RouteDecision;
+
+  export const createExecutionIntent: (...args: any[]) => any;
+  export const createExecutionRun: (...args: any[]) => any;
+  export const appendExecutionStep: (...args: any[]) => any;
+  export const completeExecutionRun: (...args: any[]) => any;
+  export const listExecutionRuns: (...args: any[]) => any[];
+  export const readExecutionRun: (...args: any[]) => any;
+  export const getLatestMutableRun: (...args: any[]) => any;
 }

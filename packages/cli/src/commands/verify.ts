@@ -1,4 +1,4 @@
-import { formatHuman, loadConfig, verifyRepo } from '@zachariahredfield/playbook-engine';
+import * as engine from '@zachariahredfield/playbook-engine';
 import { buildResult, emitResult, ExitCode } from '../lib/cliContract.js';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
@@ -35,16 +35,30 @@ const resolveFailureGuidance = (
   };
 };
 
-export const collectVerifyReport = async (cwd: string): Promise<VerifyReport> => verifyRepo(cwd) as VerifyReport;
+export const collectVerifyReport = async (cwd: string): Promise<VerifyReport> => engine.verifyRepo(cwd) as VerifyReport;
+
+const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
+  if (requestedRunId) {
+    return requestedRunId;
+  }
+
+  const latest = engine.getLatestMutableRun ? engine.getLatestMutableRun(cwd) : null;
+  if (latest) {
+    return latest.id;
+  }
+
+  const intent = engine.createExecutionIntent('verify repository governance', ['repository'], ['deterministic-cli-only-writes'], 'user');
+  return engine.createExecutionRun(cwd, intent).id;
+};
 
 export const runVerify = async (
   cwd: string,
-  options: { format: 'text' | 'json'; ci: boolean; quiet: boolean; explain: boolean; policy: boolean; outFile?: string }
+  options: { format: 'text' | 'json'; ci: boolean; quiet: boolean; explain: boolean; policy: boolean; outFile?: string; runId?: string }
 ): Promise<number> => {
   const verifyRules = await loadVerifyRules(cwd);
   const report = await collectVerifyReport(cwd);
 
-  const { config } = await Promise.resolve(loadConfig(cwd));
+  const { config } = await Promise.resolve(engine.loadConfig(cwd));
   const configuredPolicyRules = new Set(config.verify.policy.rules);
   const policyEvaluation: PolicyEvaluation[] = report.failures
     .map((failure: VerifyFailure): PolicyEvaluation | undefined => {
@@ -85,9 +99,36 @@ export const runVerify = async (
   const inPolicyMode = options.policy;
   const ok = inPolicyMode ? policyViolations.length === 0 : report.ok;
   const exitCode = ok ? ExitCode.Success : ExitCode.PolicyFailure;
+  const runId = resolveRunId(cwd, options.runId);
+  const run = engine.appendExecutionStep(cwd, runId, {
+    kind: 'verify',
+    status: ok ? 'passed' : 'failed',
+    inputs: { policyMode: inPolicyMode },
+    outputs: {
+      failures: report.failures.length,
+      warnings: report.warnings.length,
+      ok
+    },
+    evidence: [
+      ...(options.outFile ? [{ id: 'evidence-findings-artifact', kind: 'artifact' as const, ref: options.outFile }] : []),
+      ...report.failures.map((failure, index) => ({
+        id: `evidence-finding-${String(index + 1).padStart(3, '0')}`,
+        kind: 'finding' as const,
+        ref: `verify.failure.${failure.id}`,
+        note: failure.message
+      }))
+    ]
+  });
+
+  const hasApplyStep = run.steps.some((step: { kind: string }) => step.kind === 'apply');
+  if (hasApplyStep) {
+    engine.completeExecutionRun(cwd, runId, ok
+      ? { status: 'passed', summary: 'Remediation run completed and verification passed.' }
+      : { status: 'partial', summary: 'Remediation run completed but verification failed.', failure_cause: 'verification_failed' });
+  }
 
   if (options.format === 'text' && !options.ci && !options.explain && !inPolicyMode) {
-    console.log(formatHuman(report));
+    console.log(engine.formatHuman(report));
     return exitCode;
   }
 

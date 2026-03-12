@@ -234,3 +234,9 @@ export { writeJsonArtifact as writeArtifactJson, readJsonArtifact as readArtifac
 
 export { routeTask } from './routing/routeTask.js';
 export type { RouteDecision, RouteTaskInput, RouteTaskKind, RouteMutabilityLevel, RouteSafetyConstraints, TaskRoute } from './routing/types.js';
+
+export { createExecutionRun, createExecutionIntent } from './execution/createExecutionRun.js';
+export { appendExecutionStep, completeExecutionRun, recordExecutionFailure } from './execution/updateExecutionRun.js';
+export { writeExecutionRun, readExecutionRun, listExecutionRuns, getLatestMutableRun, executionRunPath } from './execution/writeExecutionRun.js';
+
+export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './execution/runContract.js';

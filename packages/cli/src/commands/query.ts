@@ -8,6 +8,8 @@ import {
   queryModuleOwners,
   queryTestHotspots,
   queryPatterns,
+  listExecutionRuns,
+  readExecutionRun,
   SUPPORTED_QUERY_FIELDS,
   type DependenciesQueryResult,
   type ImpactQueryResult,
@@ -548,6 +550,81 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     }
   }
 
+
+  if (fieldArg === 'runs') {
+    try {
+      const payload = { schemaVersion: '1.0', command: 'query', type: 'runs', runs: listExecutionRuns(cwd) };
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        console.log('Execution Runs');
+        console.log('──────────────');
+        if (payload.runs.length === 0) {
+          console.log('none');
+        } else {
+          for (const run of payload.runs) {
+            console.log(`${run.id} ${run.frozen ? 'frozen' : 'open'} steps=${run.steps.length}`);
+          }
+        }
+      }
+
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload: { schemaVersion: '1.0', command: 'query', type: 'runs', error: message }, outFile: options.outFile });
+      } else {
+        console.error(message);
+      }
+
+      return ExitCode.Failure;
+    }
+  }
+
+  if (fieldArg === 'run') {
+    const idFlagIndex = commandArgs.indexOf('--id');
+    const runId = idFlagIndex >= 0 ? commandArgs[idFlagIndex + 1] : undefined;
+
+    if (!runId) {
+      const message = 'playbook query run: missing required --id <run-id> argument';
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload: { schemaVersion: '1.0', command: 'query', type: 'run', error: message }, outFile: options.outFile });
+      } else {
+        console.error(message);
+      }
+      return ExitCode.Failure;
+    }
+
+    try {
+      const payload = { schemaVersion: '1.0', command: 'query', type: 'run', run: readExecutionRun(cwd, runId) };
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
+        return ExitCode.Success;
+      }
+
+      if (!options.quiet) {
+        console.log('Execution Run');
+        console.log('────────────');
+        console.log(`id: ${payload.run.id}`);
+        console.log(`frozen: ${payload.run.frozen}`);
+        console.log(`steps: ${payload.run.steps.length}`);
+      }
+      return ExitCode.Success;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'query', payload: { schemaVersion: '1.0', command: 'query', type: 'run', runId, error: message }, outFile: options.outFile });
+      } else {
+        console.error(message);
+      }
+
+      return ExitCode.Failure;
+    }
+  }
+
   if (fieldArg === 'risk') {
     const moduleArg = commandArgs.find((arg, index) => index > commandArgs.indexOf(fieldArg) && !arg.startsWith('-'));
 
@@ -626,7 +703,7 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
             command: 'query',
             field: fieldArg,
             error: message,
-            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners', 'test-hotspots', 'patterns']
+            supportedFields: [...SUPPORTED_QUERY_FIELDS, 'dependencies', 'impact', 'risk', 'docs-coverage', 'rule-owners', 'module-owners', 'test-hotspots', 'patterns', 'runs', 'run']
           }, outFile: options.outFile });
     } else {
       console.error(message);
