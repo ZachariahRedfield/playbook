@@ -474,6 +474,19 @@ export const commandMetadata: CommandMetadata[] = [
     productFacing: true,
     exampleArgs: 'memory events --json',
     machineReadable: true
+  },
+  {
+    name: 'agent',
+    description: 'Read runtime control-plane records for agent visibility',
+    category: 'Utility',
+    role: 'utility',
+    lifecycle: 'utility',
+    discoverability: 'secondary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'agent runs --json',
+    machineReadable: true
   }
 ];
 

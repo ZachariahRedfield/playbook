@@ -5,9 +5,11 @@ export {
   listRuntimeLogRecords,
   listRuntimeRuns,
   listRuntimeTasks,
+  readRuntimeControlPlaneStatus,
   readRuntimeRun,
   readRuntimeTask,
   runtimeLifecyclePaths,
   transitionRuntimeRunState,
-  transitionRuntimeTaskState
+  transitionRuntimeTaskState,
+  type RuntimeControlPlaneStatus
 } from './lifecycleStore.js';

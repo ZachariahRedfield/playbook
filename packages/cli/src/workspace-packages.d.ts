@@ -185,6 +185,12 @@ declare module "@zachariahredfield/playbook-engine" {
   };
   export const routeTask: (...args: any[]) => RouteDecision;
 
+
+  export const listRuntimeRuns: (...args: any[]) => any[];
+  export const readRuntimeRun: (...args: any[]) => any;
+  export const listRuntimeTasks: (...args: any[]) => any[];
+  export const listRuntimeLogRecords: (...args: any[]) => any[];
+  export const readRuntimeControlPlaneStatus: (...args: any[]) => any;
   export const createExecutionIntent: (...args: any[]) => any;
   export const createExecutionRun: (...args: any[]) => any;
   export const appendExecutionStep: (...args: any[]) => any;

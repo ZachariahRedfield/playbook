@@ -4,6 +4,18 @@
   "generatedBy": "scripts/update-managed-docs.mjs",
   "commandTruth": [
     {
+      "name": "agent",
+      "category": "Utility",
+      "role": "utility",
+      "lifecycle": "utility",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook agent runs --json"
+    },
+    {
       "name": "ai-context",
       "category": "Repository tools",
       "role": "bootstrap",
@@ -454,6 +466,7 @@
     "fix"
   ],
   "utilityCommands": [
+    "agent",
     "contracts",
     "demo",
     "diagram",
