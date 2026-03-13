@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "1.0",
+  "command": "knowledge-timeline",
+  "filters": {
+    "limit": 4,
+    "order": "asc"
+  },
+  "summary": {
+    "total": 4,
+    "byType": {
+      "evidence": 2,
+      "candidate": 1,
+      "promoted": 0,
+      "superseded": 1
+    },
+    "byStatus": {
+      "observed": 2,
+      "active": 0,
+      "stale": 1,
+      "retired": 0,
+      "superseded": 1
+    }
+  },
+  "knowledge": [
+    {
+      "id": "cand-stale",
+      "type": "candidate",
+      "createdAt": "<TIMESTAMP>",
+      "repo": "playbook-contract-fixture",
+      "source": {
+        "kind": "memory-candidate",
+        "path": ".playbook/memory/candidates.json",
+        "command": "memory-replay"
+      },
+      "confidence": 0.3,
+      "status": "stale",
+      "provenance": {
+        "repo": "playbook-contract-fixture",
+        "sourceCommand": "memory-replay",
+        "runId": "run-2",
+        "sourcePath": ".playbook/memory/events/event-2.json",
+        "eventIds": [
+          "event-2"
+        ],
+        "evidenceIds": [
+          "event-2"
+        ],
+        "fingerprints": [
+          "fp-2"
+        ],
+        "relatedRecordIds": []
+      },
+      "metadata": {
+        "kind": "decision",
+        "title": "Stale candidate",
+        "summary": "Old evidence",
+        "clusterKey": "cluster-stale",
+        "salienceScore": 3,
+        "salienceFactors": {
+          "severity": 1
+        },
+        "fingerprint": "fp-2",
+        "module": "module-b",
+        "ruleId": "RULE-2",
+        "failureShape": "shape-b",
+        "eventCount": 1,
+        "lastSeenAt": "2025-01-01T00:00:00.000Z",
+        "supersession": {
+          "evolutionOrdinal": 1,
+          "priorCandidateIds": [],
+          "supersedesCandidateIds": []
+        }
+      }
+    },
+    {
+      "id": "pattern-old",
+      "type": "superseded",
+      "createdAt": "<TIMESTAMP>",
+      "repo": "playbook-contract-fixture",
+      "source": {
+        "kind": "memory-knowledge",
+        "path": ".playbook/memory/knowledge/patterns.json",
+        "command": null
+      },
+      "confidence": null,
+      "status": "superseded",
+      "provenance": {
+        "repo": "playbook-contract-fixture",
+        "sourceCommand": null,
+        "runId": "run-2",
+        "sourcePath": ".playbook/memory/events/event-2.json",
+        "eventIds": [
+          "event-2"
+        ],
+        "evidenceIds": [
+          "event-2"
+        ],
+        "fingerprints": [
+          "fp-2"
+        ],
+        "relatedRecordIds": [
+          "cand-stale",
+          "pattern-live"
+        ]
+      },
+      "metadata": {
+        "kind": "pattern",
+        "candidateId": "cand-stale",
+        "title": "Superseded pattern",
+        "summary": "Old guidance",
+        "fingerprint": "fp-2",
+        "module": "module-b",
+        "ruleId": "RULE-2",
+        "failureShape": "shape-b",
+        "sourceCandidateIds": [
+          "cand-stale"
+        ],
+        "sourceEventFingerprints": [
+          "fp-2"
+        ],
+        "supersedes": [],
+        "supersededBy": [
+          "pattern-live"
+        ],
+        "retiredAt": null,
+        "retirementReason": null
+      }
+    },
+    {
+      "id": "event-1",
+      "type": "evidence",
+      "createdAt": "<TIMESTAMP>",
+      "repo": "playbook-contract-fixture",
+      "source": {
+        "kind": "memory-event",
+        "path": ".playbook/memory/events/event-1.json",
+        "command": "verify_run"
+      },
+      "confidence": null,
+      "status": "observed",
+      "provenance": {
+        "repo": "playbook-contract-fixture",
+        "sourceCommand": "verify_run",
+        "runId": null,
+        "sourcePath": ".playbook/memory/events/event-1.json",
+        "eventIds": [
+          "event-1"
+        ],
+        "evidenceIds": [
+          "event-1"
+        ],
+        "fingerprints": [
+          "fp-1"
+        ],
+        "relatedRecordIds": []
+      },
+      "metadata": {
+        "kind": "verify_run",
+        "eventFingerprint": "fp-1",
+        "repoRevision": "r1",
+        "subjectModules": [
+          "module-a"
+        ],
+        "ruleIds": [
+          "RULE-1"
+        ],
+        "riskSummary": {
+          "level": "low",
+          "signals": []
+        },
+        "outcome": {
+          "status": "success",
+          "summary": "ok"
+        },
+        "salienceInputs": {},
+        "sources": [
+          {
+            "type": "verify",
+            "reference": "verify-1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "event-2",
+      "type": "evidence",
+      "createdAt": "<TIMESTAMP>",
+      "repo": "playbook-contract-fixture",
+      "source": {
+        "kind": "memory-event",
+        "path": ".playbook/memory/events/event-2.json",
+        "command": "plan_run"
+      },
+      "confidence": null,
+      "status": "observed",
+      "provenance": {
+        "repo": "playbook-contract-fixture",
+        "sourceCommand": "plan_run",
+        "runId": null,
+        "sourcePath": ".playbook/memory/events/event-2.json",
+        "eventIds": [
+          "event-2"
+        ],
+        "evidenceIds": [
+          "event-2"
+        ],
+        "fingerprints": [
+          "fp-2"
+        ],
+        "relatedRecordIds": []
+      },
+      "metadata": {
+        "kind": "plan_run",
+        "eventFingerprint": "fp-2",
+        "repoRevision": "r2",
+        "subjectModules": [
+          "module-b"
+        ],
+        "ruleIds": [
+          "RULE-2"
+        ],
+        "riskSummary": {
+          "level": "medium",
+          "signals": []
+        },
+        "outcome": {
+          "status": "success",
+          "summary": "ok"
+        },
+        "salienceInputs": {},
+        "sources": [
+          {
+            "type": "plan",
+            "reference": "plan-1"
+          }
+        ]
+      }
+    }
+  ]
+}

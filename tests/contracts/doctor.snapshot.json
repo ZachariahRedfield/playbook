@@ -138,7 +138,7 @@
       "category": "Memory",
       "severity": "warning",
       "id": "doctor.memory.replay-output-inconsistent",
-      "message": "Replay output inconsistencies detected (0 missing indexed events, 1 provenance mismatches). Regenerate replay outputs from a valid memory index and event set before promotion."
+      "message": "Replay output inconsistencies detected (0 missing indexed events, 2 provenance mismatches). Regenerate replay outputs from a valid memory index and event set before promotion."
     },
     {
       "category": "Testing",
@@ -199,7 +199,7 @@
       {
         "code": "replay-output-inconsistent",
         "severity": "warning",
-        "message": "Replay output inconsistencies detected (0 missing indexed events, 1 provenance mismatches).",
+        "message": "Replay output inconsistencies detected (0 missing indexed events, 2 provenance mismatches).",
         "recommendation": "Regenerate replay outputs from a valid memory index and event set before promotion."
       }
     ],

@@ -1,8 +1,8 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { createEmptyKnowledgeFixtureRepo, createSeededKnowledgeFixtureRepo } from '../../../test/fixtures/knowledge/seededKnowledgeFixture.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
 const cliEntry = path.join(repoRoot, 'packages', 'cli', 'dist', 'main.js');
@@ -44,18 +44,15 @@ const commandContracts: readonly CommandContract[] = [
   { file: 'ignore-suggest.snapshot.json', args: ['ignore', 'suggest', '--json'], schemaCommand: 'ignore' },
   { file: 'knowledge-list.snapshot.json', args: ['knowledge', 'list', '--json'], schemaCommand: 'knowledge' },
   { file: 'knowledge-query.snapshot.json', args: ['knowledge', 'query', '--type', 'candidate', '--json'], schemaCommand: 'knowledge' },
-  { file: 'knowledge-inspect.snapshot.json', args: ['knowledge', 'inspect', 'pattern-live', '--json'], schemaCommand: 'knowledge' }
+  { file: 'knowledge-inspect.snapshot.json', args: ['knowledge', 'inspect', 'pattern-live', '--json'], schemaCommand: 'knowledge' },
+  { file: 'knowledge-timeline.snapshot.json', args: ['knowledge', 'timeline', '--order', 'asc', '--limit', '4', '--json'], schemaCommand: 'knowledge' },
+  { file: 'knowledge-provenance.snapshot.json', args: ['knowledge', 'provenance', 'pattern-live', '--json'], schemaCommand: 'knowledge' },
+  { file: 'knowledge-stale.snapshot.json', args: ['knowledge', 'stale', '--json'], schemaCommand: 'knowledge' }
 ] as const;
 
-function writeJson(filePath: string, payload: unknown): void {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
-}
-
 function createContractFixtureRepo(): string {
-  const fixtureRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-contract-fixture-'));
+  const fixtureRepo = createSeededKnowledgeFixtureRepo({ prefix: 'playbook-contract-fixture-' });
 
-  fs.writeFileSync(path.join(fixtureRepo, 'package.json'), JSON.stringify({ name: 'playbook-contract-fixture' }, null, 2));
   fs.mkdirSync(path.join(fixtureRepo, 'src', 'features'), { recursive: true });
   fs.mkdirSync(path.join(fixtureRepo, 'docs', 'contracts'), { recursive: true });
   fs.writeFileSync(path.join(fixtureRepo, 'docs', 'PLAYBOOK_NOTES.md'), '# Playbook Notes\n\n- Baseline fixture notes.\n');
@@ -145,89 +142,6 @@ function createContractFixtureRepo(): string {
       2
     )
   );
-
-  writeJson(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'event-1.json'), {
-    schemaVersion: '1.0',
-    kind: 'verify_run',
-    eventInstanceId: 'event-1',
-    eventFingerprint: 'fp-1',
-    createdAt: '2026-02-01T00:00:00.000Z',
-    repoRevision: 'r1',
-    sources: [{ type: 'verify', reference: 'verify-1' }],
-    subjectModules: ['module-a'],
-    ruleIds: ['RULE-1'],
-    riskSummary: { level: 'low', signals: [] },
-    outcome: { status: 'success', summary: 'ok' },
-    salienceInputs: {}
-  });
-  writeJson(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'event-2.json'), {
-    schemaVersion: '1.0',
-    kind: 'plan_run',
-    eventInstanceId: 'event-2',
-    eventFingerprint: 'fp-2',
-    createdAt: '2026-02-02T00:00:00.000Z',
-    repoRevision: 'r2',
-    sources: [{ type: 'plan', reference: 'plan-1' }],
-    subjectModules: ['module-b'],
-    ruleIds: ['RULE-2'],
-    riskSummary: { level: 'medium', signals: [] },
-    outcome: { status: 'success', summary: 'ok' },
-    salienceInputs: {}
-  });
-  writeJson(path.join(fixtureRepo, '.playbook', 'memory', 'candidates.json'), {
-    schemaVersion: '1.0',
-    command: 'memory-replay',
-    generatedAt: '2026-02-03T00:00:00.000Z',
-    candidates: [
-      {
-        candidateId: 'cand-live',
-        kind: 'pattern',
-        title: 'Live candidate',
-        summary: 'Needs review',
-        clusterKey: 'cluster-live',
-        salienceScore: 8,
-        salienceFactors: { severity: 1 },
-        fingerprint: 'fp-1',
-        module: 'module-a',
-        ruleId: 'RULE-1',
-        failureShape: 'shape-a',
-        eventCount: 1,
-        provenance: [
-          { eventId: 'event-1', sourcePath: '.playbook/memory/events/event-1.json', fingerprint: 'fp-1', runId: 'run-1' }
-        ],
-        lastSeenAt: '2026-02-03T00:00:00.000Z',
-        supersession: { evolutionOrdinal: 1, priorCandidateIds: [], supersedesCandidateIds: [] }
-      }
-    ]
-  });
-  writeJson(path.join(fixtureRepo, '.playbook', 'memory', 'knowledge', 'patterns.json'), {
-    schemaVersion: '1.0',
-    artifact: 'memory-knowledge',
-    kind: 'pattern',
-    generatedAt: '2026-02-04T00:00:00.000Z',
-    entries: [
-      {
-        knowledgeId: 'pattern-live',
-        candidateId: 'cand-live',
-        sourceCandidateIds: ['cand-live'],
-        sourceEventFingerprints: ['fp-1'],
-        kind: 'pattern',
-        title: 'Promoted pattern',
-        summary: 'Reusable guidance',
-        fingerprint: 'fp-1',
-        module: 'module-a',
-        ruleId: 'RULE-1',
-        failureShape: 'shape-a',
-        promotedAt: '2026-02-04T00:00:00.000Z',
-        provenance: [
-          { eventId: 'event-1', sourcePath: '.playbook/memory/events/event-1.json', fingerprint: 'fp-1', runId: 'run-1' }
-        ],
-        status: 'active',
-        supersedes: [],
-        supersededBy: []
-      }
-    ]
-  });
 
   return fixtureRepo;
 }
@@ -398,6 +312,7 @@ describe('CLI JSON contract snapshots', () => {
 
     try {
       for (const contract of commandContracts) {
+        fs.rmSync(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'runtime'), { recursive: true, force: true });
         const snapshotPath = path.join(snapshotDir, contract.file);
         const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
         const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
@@ -419,6 +334,33 @@ describe('CLI JSON contract snapshots', () => {
       fs.rmSync(fixtureRepo, { recursive: true, force: true });
     }
   });
+
+  it('returns valid zero-state payloads for all knowledge commands in empty repositories', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-13T00:00:00.000Z'));
+    const fixtureRepo = createEmptyKnowledgeFixtureRepo({ prefix: 'playbook-contract-empty-fixture-' });
+
+    try {
+      const listPayload = runCliJsonContract(['knowledge', 'list', '--json'], fixtureRepo) as { summary: { total: number }, knowledge: unknown[] };
+      expect(listPayload.summary.total).toBe(0);
+      expect(listPayload.knowledge).toEqual([]);
+
+      const queryPayload = runCliJsonContract(['knowledge', 'query', '--type', 'candidate', '--json'], fixtureRepo) as { summary: { total: number }, knowledge: unknown[] };
+      expect(queryPayload.summary.total).toBe(0);
+      expect(queryPayload.knowledge).toEqual([]);
+
+      const timelinePayload = runCliJsonContract(['knowledge', 'timeline', '--json'], fixtureRepo) as { summary: { total: number }, knowledge: unknown[] };
+      expect(timelinePayload.summary.total).toBe(0);
+      expect(timelinePayload.knowledge).toEqual([]);
+
+      const stalePayload = runCliJsonContract(['knowledge', 'stale', '--json'], fixtureRepo) as { summary: { total: number }, knowledge: unknown[] };
+      expect(stalePayload.summary.total).toBe(0);
+      expect(stalePayload.knowledge).toEqual([]);
+    } finally {
+      fs.rmSync(fixtureRepo, { recursive: true, force: true });
+    }
+  });
+
 });
 
 describe('contracts command artifact behavior', () => {
@@ -446,4 +388,5 @@ describe('contracts command artifact behavior', () => {
       fs.rmSync(fixtureRepo, { recursive: true, force: true });
     }
   });
+
 });

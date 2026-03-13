@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "1.0",
+  "command": "knowledge-provenance",
+  "id": "pattern-live",
+  "provenance": {
+    "record": {
+      "id": "pattern-live",
+      "type": "promoted",
+      "createdAt": "<TIMESTAMP>",
+      "repo": "playbook-contract-fixture",
+      "source": {
+        "kind": "memory-knowledge",
+        "path": ".playbook/memory/knowledge/patterns.json",
+        "command": null
+      },
+      "confidence": null,
+      "status": "active",
+      "provenance": {
+        "repo": "playbook-contract-fixture",
+        "sourceCommand": null,
+        "runId": "run-1",
+        "sourcePath": ".playbook/memory/events/event-1.json",
+        "eventIds": [
+          "event-1"
+        ],
+        "evidenceIds": [
+          "event-1"
+        ],
+        "fingerprints": [
+          "fp-1"
+        ],
+        "relatedRecordIds": [
+          "cand-live"
+        ]
+      },
+      "metadata": {
+        "kind": "pattern",
+        "candidateId": "cand-live",
+        "title": "Promoted pattern",
+        "summary": "Reusable guidance",
+        "fingerprint": "fp-1",
+        "module": "module-a",
+        "ruleId": "RULE-1",
+        "failureShape": "shape-a",
+        "sourceCandidateIds": [
+          "cand-live"
+        ],
+        "sourceEventFingerprints": [
+          "fp-1"
+        ],
+        "supersedes": [],
+        "supersededBy": [],
+        "retiredAt": null,
+        "retirementReason": null
+      }
+    },
+    "evidence": [
+      {
+        "id": "event-1",
+        "type": "evidence",
+        "createdAt": "<TIMESTAMP>",
+        "repo": "playbook-contract-fixture",
+        "source": {
+          "kind": "memory-event",
+          "path": ".playbook/memory/events/event-1.json",
+          "command": "verify_run"
+        },
+        "confidence": null,
+        "status": "observed",
+        "provenance": {
+          "repo": "playbook-contract-fixture",
+          "sourceCommand": "verify_run",
+          "runId": null,
+          "sourcePath": ".playbook/memory/events/event-1.json",
+          "eventIds": [
+            "event-1"
+          ],
+          "evidenceIds": [
+            "event-1"
+          ],
+          "fingerprints": [
+            "fp-1"
+          ],
+          "relatedRecordIds": []
+        },
+        "metadata": {
+          "kind": "verify_run",
+          "eventFingerprint": "fp-1",
+          "repoRevision": "r1",
+          "subjectModules": [
+            "module-a"
+          ],
+          "ruleIds": [
+            "RULE-1"
+          ],
+          "riskSummary": {
+            "level": "low",
+            "signals": []
+          },
+          "outcome": {
+            "status": "success",
+            "summary": "ok"
+          },
+          "salienceInputs": {},
+          "sources": [
+            {
+              "type": "verify",
+              "reference": "verify-1"
+            }
+          ]
+        }
+      }
+    ],
+    "relatedRecords": [
+      {
+        "id": "cand-live",
+        "type": "candidate",
+        "createdAt": "<TIMESTAMP>",
+        "repo": "playbook-contract-fixture",
+        "source": {
+          "kind": "memory-candidate",
+          "path": ".playbook/memory/candidates.json",
+          "command": "memory-replay"
+        },
+        "confidence": 0.8,
+        "status": "active",
+        "provenance": {
+          "repo": "playbook-contract-fixture",
+          "sourceCommand": "memory-replay",
+          "runId": "run-1",
+          "sourcePath": ".playbook/memory/events/event-1.json",
+          "eventIds": [
+            "event-1"
+          ],
+          "evidenceIds": [
+            "event-1"
+          ],
+          "fingerprints": [
+            "fp-1"
+          ],
+          "relatedRecordIds": []
+        },
+        "metadata": {
+          "kind": "pattern",
+          "title": "Live candidate",
+          "summary": "Needs review",
+          "clusterKey": "cluster-live",
+          "salienceScore": 8,
+          "salienceFactors": {
+            "severity": 1
+          },
+          "fingerprint": "fp-1",
+          "module": "module-a",
+          "ruleId": "RULE-1",
+          "failureShape": "shape-a",
+          "eventCount": 1,
+          "lastSeenAt": "2026-02-03T00:00:00.000Z",
+          "supersession": {
+            "evolutionOrdinal": 1,
+            "priorCandidateIds": [],
+            "supersedesCandidateIds": []
+          }
+        }
+      }
+    ]
+  }
+}

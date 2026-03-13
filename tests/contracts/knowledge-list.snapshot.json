@@ -5,19 +5,19 @@
     "order": "desc"
   },
   "summary": {
-    "total": 11,
+    "total": 7,
     "byType": {
-      "evidence": 9,
-      "candidate": 1,
+      "evidence": 3,
+      "candidate": 2,
       "promoted": 1,
-      "superseded": 0
+      "superseded": 1
     },
     "byStatus": {
-      "observed": 9,
+      "observed": 3,
       "active": 2,
-      "stale": 0,
+      "stale": 1,
       "retired": 0,
-      "superseded": 0
+      "superseded": 1
     }
   },
   "knowledge": [
@@ -289,267 +289,107 @@
       }
     },
     {
-      "id": "evt_<RUNTIME_EVENT_ID>",
-      "type": "evidence",
+      "id": "pattern-old",
+      "type": "superseded",
       "createdAt": "<TIMESTAMP>",
       "repo": "playbook-contract-fixture",
       "source": {
-        "kind": "memory-event",
-        "path": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "command": "memory-event"
+        "kind": "memory-knowledge",
+        "path": ".playbook/memory/knowledge/patterns.json",
+        "command": null
       },
       "confidence": null,
-      "status": "observed",
+      "status": "superseded",
       "provenance": {
         "repo": "playbook-contract-fixture",
-        "sourceCommand": "memory-event",
-        "runId": null,
-        "sourcePath": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
+        "sourceCommand": null,
+        "runId": "run-2",
+        "sourcePath": ".playbook/memory/events/event-2.json",
         "eventIds": [
-          "evt_<RUNTIME_EVENT_ID>"
+          "event-2"
         ],
         "evidenceIds": [
-          "evt_<RUNTIME_EVENT_ID>"
+          "event-2"
         ],
-        "fingerprints": [],
-        "relatedRecordIds": []
+        "fingerprints": [
+          "fp-2"
+        ],
+        "relatedRecordIds": [
+          "cand-stale",
+          "pattern-live"
+        ]
       },
       "metadata": {
-        "kind": "memory-event",
-        "eventFingerprint": {
-          "dimensions": [
-            "command:verify"
-          ],
-          "fingerprintVersion": "1",
-          "value": "evtfp_<RUNTIME_EVENT_FP>"
-        },
-        "repoRevision": null,
-        "subjectModules": [],
-        "ruleIds": [],
-        "riskSummary": null,
-        "outcome": null,
-        "salienceInputs": null,
-        "sources": []
+        "kind": "pattern",
+        "candidateId": "cand-stale",
+        "title": "Superseded pattern",
+        "summary": "Old guidance",
+        "fingerprint": "fp-2",
+        "module": "module-b",
+        "ruleId": "RULE-2",
+        "failureShape": "shape-b",
+        "sourceCandidateIds": [
+          "cand-stale"
+        ],
+        "sourceEventFingerprints": [
+          "fp-2"
+        ],
+        "supersedes": [],
+        "supersededBy": [
+          "pattern-live"
+        ],
+        "retiredAt": null,
+        "retirementReason": null
       }
     },
     {
-      "id": "evt_<RUNTIME_EVENT_ID>",
-      "type": "evidence",
+      "id": "cand-stale",
+      "type": "candidate",
       "createdAt": "<TIMESTAMP>",
       "repo": "playbook-contract-fixture",
       "source": {
-        "kind": "memory-event",
-        "path": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "command": "memory-event"
+        "kind": "memory-candidate",
+        "path": ".playbook/memory/candidates.json",
+        "command": "memory-replay"
       },
-      "confidence": null,
-      "status": "observed",
+      "confidence": 0.3,
+      "status": "stale",
       "provenance": {
         "repo": "playbook-contract-fixture",
-        "sourceCommand": "memory-event",
-        "runId": null,
-        "sourcePath": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
+        "sourceCommand": "memory-replay",
+        "runId": "run-2",
+        "sourcePath": ".playbook/memory/events/event-2.json",
         "eventIds": [
-          "evt_<RUNTIME_EVENT_ID>"
+          "event-2"
         ],
         "evidenceIds": [
-          "evt_<RUNTIME_EVENT_ID>"
+          "event-2"
         ],
-        "fingerprints": [],
+        "fingerprints": [
+          "fp-2"
+        ],
         "relatedRecordIds": []
       },
       "metadata": {
-        "kind": "memory-event",
-        "eventFingerprint": {
-          "dimensions": [
-            "command:verify"
-          ],
-          "fingerprintVersion": "1",
-          "value": "evtfp_<RUNTIME_EVENT_FP>"
+        "kind": "decision",
+        "title": "Stale candidate",
+        "summary": "Old evidence",
+        "clusterKey": "cluster-stale",
+        "salienceScore": 3,
+        "salienceFactors": {
+          "severity": 1
         },
-        "repoRevision": null,
-        "subjectModules": [],
-        "ruleIds": [],
-        "riskSummary": null,
-        "outcome": null,
-        "salienceInputs": null,
-        "sources": []
-      }
-    },
-    {
-      "id": "evt_<RUNTIME_EVENT_ID>",
-      "type": "evidence",
-      "createdAt": "<TIMESTAMP>",
-      "repo": "playbook-contract-fixture",
-      "source": {
-        "kind": "memory-event",
-        "path": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "command": "memory-event"
-      },
-      "confidence": null,
-      "status": "observed",
-      "provenance": {
-        "repo": "playbook-contract-fixture",
-        "sourceCommand": "memory-event",
-        "runId": null,
-        "sourcePath": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "eventIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "evidenceIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "fingerprints": [],
-        "relatedRecordIds": []
-      },
-      "metadata": {
-        "kind": "memory-event",
-        "eventFingerprint": {
-          "dimensions": [
-            "command:verify"
-          ],
-          "fingerprintVersion": "1",
-          "value": "evtfp_<RUNTIME_EVENT_FP>"
-        },
-        "repoRevision": null,
-        "subjectModules": [],
-        "ruleIds": [],
-        "riskSummary": null,
-        "outcome": null,
-        "salienceInputs": null,
-        "sources": []
-      }
-    },
-    {
-      "id": "evt_<RUNTIME_EVENT_ID>",
-      "type": "evidence",
-      "createdAt": "<TIMESTAMP>",
-      "repo": "playbook-contract-fixture",
-      "source": {
-        "kind": "memory-event",
-        "path": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "command": "memory-event"
-      },
-      "confidence": null,
-      "status": "observed",
-      "provenance": {
-        "repo": "playbook-contract-fixture",
-        "sourceCommand": "memory-event",
-        "runId": null,
-        "sourcePath": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "eventIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "evidenceIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "fingerprints": [],
-        "relatedRecordIds": []
-      },
-      "metadata": {
-        "kind": "memory-event",
-        "eventFingerprint": {
-          "dimensions": [
-            "command:verify"
-          ],
-          "fingerprintVersion": "1",
-          "value": "evtfp_<RUNTIME_EVENT_FP>"
-        },
-        "repoRevision": null,
-        "subjectModules": [],
-        "ruleIds": [],
-        "riskSummary": null,
-        "outcome": null,
-        "salienceInputs": null,
-        "sources": []
-      }
-    },
-    {
-      "id": "evt_<RUNTIME_EVENT_ID>",
-      "type": "evidence",
-      "createdAt": "<TIMESTAMP>",
-      "repo": "playbook-contract-fixture",
-      "source": {
-        "kind": "memory-event",
-        "path": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "command": "memory-event"
-      },
-      "confidence": null,
-      "status": "observed",
-      "provenance": {
-        "repo": "playbook-contract-fixture",
-        "sourceCommand": "memory-event",
-        "runId": null,
-        "sourcePath": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "eventIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "evidenceIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "fingerprints": [],
-        "relatedRecordIds": []
-      },
-      "metadata": {
-        "kind": "memory-event",
-        "eventFingerprint": {
-          "dimensions": [
-            "command:verify"
-          ],
-          "fingerprintVersion": "1",
-          "value": "evtfp_<RUNTIME_EVENT_FP>"
-        },
-        "repoRevision": null,
-        "subjectModules": [],
-        "ruleIds": [],
-        "riskSummary": null,
-        "outcome": null,
-        "salienceInputs": null,
-        "sources": []
-      }
-    },
-    {
-      "id": "evt_<RUNTIME_EVENT_ID>",
-      "type": "evidence",
-      "createdAt": "<TIMESTAMP>",
-      "repo": "playbook-contract-fixture",
-      "source": {
-        "kind": "memory-event",
-        "path": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "command": "memory-event"
-      },
-      "confidence": null,
-      "status": "observed",
-      "provenance": {
-        "repo": "playbook-contract-fixture",
-        "sourceCommand": "memory-event",
-        "runId": null,
-        "sourcePath": ".playbook/memory/events/runtime/evt_<RUNTIME_EVENT_ID>.json",
-        "eventIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "evidenceIds": [
-          "evt_<RUNTIME_EVENT_ID>"
-        ],
-        "fingerprints": [],
-        "relatedRecordIds": []
-      },
-      "metadata": {
-        "kind": "memory-event",
-        "eventFingerprint": {
-          "dimensions": [
-            "command:plan"
-          ],
-          "fingerprintVersion": "1",
-          "value": "evtfp_<RUNTIME_EVENT_FP>"
-        },
-        "repoRevision": null,
-        "subjectModules": [],
-        "ruleIds": [],
-        "riskSummary": null,
-        "outcome": null,
-        "salienceInputs": null,
-        "sources": []
+        "fingerprint": "fp-2",
+        "module": "module-b",
+        "ruleId": "RULE-2",
+        "failureShape": "shape-b",
+        "eventCount": 1,
+        "lastSeenAt": "2025-01-01T00:00:00.000Z",
+        "supersession": {
+          "evolutionOrdinal": 1,
+          "priorCandidateIds": [],
+          "supersedesCandidateIds": []
+        }
       }
     }
   ]
