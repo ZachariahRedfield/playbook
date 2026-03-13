@@ -4,6 +4,9 @@
 
 ### Added
 
+- WHAT: Restored `.playbook` artifact hygiene by relocating tracked repository intelligence outputs into committed demo fixtures (`.playbook/demo-artifacts/repo-index.example.json`, `.playbook/demo-artifacts/repo-graph.example.json`) and removing root runtime artifacts from tracked state. WHY: Prevents regenerated local runtime files from creating noisy feature diffs while preserving contract examples for docs and tests.
+- WHAT: Tightened ignore policy to explicitly exclude nested runtime memory outputs under `packages/engine/.playbook/**` and clarified README commit policy for `.playbook` content. WHY: Reduces accidental recommit risk for runtime artifacts and makes allowed committed `.playbook` surfaces explicit.
+
 - WHAT: Added read-only `pnpm playbook knowledge` inspection surfaces (`list`, `query`, `inspect`, `timeline`, `provenance`, `stale`) backed by a canonical normalized knowledge record schema, CLI contract coverage, and roadmap/docs updates for Phase 14. WHY: Makes evidence, candidate knowledge, promoted doctrine, and superseded knowledge queryable and auditable without introducing mutation into the inspection layer.
 
 - WHAT: Implemented first live `pnpm playbook orchestrate` as a deterministic control-plane lane-contract compiler that emits `orchestrator.json` plus lane prompt artifacts with explicit ownership, shared-file risk, wave/dependency ordering, and safe lane-count degradation. WHY: Turns orchestration from planned direction into a merge-safe governance surface for parallel Codex plan-mode execution without introducing autonomous worker/branch/PR behavior.

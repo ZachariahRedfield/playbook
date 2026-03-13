@@ -40,6 +40,7 @@ Playbook uses `.playbook/` as the default home for local runtime artifacts (for 
 
 - Generated runtime artifacts should generally be gitignored unless intentionally committed as stable contracts/examples.
 - Committed demo artifacts under `.playbook/demo-artifacts/` are product-facing snapshot contracts and examples, not general-purpose runtime logs.
+- Allowed committed `.playbook` content is limited to curated contract/example fixtures (`.playbook/demo-artifacts/*.example.json`) and explicit governance metadata (`.playbook/pr-metadata.json`); generated runtime outputs like `.playbook/repo-index.json` and `.playbook/repo-graph.json` must remain untracked.
 - Playbook remains local/private-first by default: local scanning and artifact generation do not imply automatic cloud sync or upstream export.
 
 Pattern: Runtime Artifacts Live Under `.playbook/`.
@@ -159,13 +160,13 @@ pnpm pilot "C:\Users\zjhre\dev\FawxzzyFitness"
 
 Artifacts written in the target repository:
 
-- `.playbook/repo-index.json`
-- `.playbook/repo-graph.json`
-- `.playbook/findings.json`
-- `.playbook/plan.json`
-- `.playbook/pilot-summary.json`
-- `.playbook/runtime/current/*`
-- `.playbook/runtime/cycles/*`
+- `.playbook/repo-index.json` *(runtime-only, gitignored)*
+- `.playbook/repo-graph.json` *(runtime-only, gitignored)*
+- `.playbook/findings.json` *(runtime-only, gitignored)*
+- `.playbook/plan.json` *(runtime-only, gitignored)*
+- `.playbook/pilot-summary.json` *(runtime-only, gitignored)*
+- `.playbook/runtime/current/*` *(runtime-only, gitignored)*
+- `.playbook/runtime/cycles/*` *(runtime-only, gitignored)*
 - `.playbook/runtime/history/*`
 
 Rule - Repeated Multi-Step Operator Flows Deserve a First-Class Command.

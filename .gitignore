@@ -9,6 +9,8 @@ coverage
 !.playbook/pr-metadata.json
 !.playbook/demo-artifacts/
 !.playbook/demo-artifacts/*.json
+packages/engine/.playbook/
+packages/engine/.playbook/**
 merged*.json
 merged*.md
 test-chat*.md
