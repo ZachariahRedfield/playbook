@@ -1311,11 +1311,12 @@
     {
       "feature_id": "PB-V09-AUTOMATION-SYNTHESIS-001",
       "version": "v0.9",
-      "title": "Automation synthesis consuming governed/promoted knowledge",
-      "goal": "Implement governed automation synthesis that consumes only inspected/promoted knowledge inputs with provenance and verification boundaries.",
+      "title": "Automation synthesis governed knowledge-consumption contract shell (Phase 15 thin slice)",
+      "goal": "Define the Phase 15 architecture/contract shell for governed automation synthesis: promoted-knowledge-only inputs, suggestion-generation boundary, and policy/provenance/rollback accountability hooks without mutation-heavy runtime behavior.",
       "commands": [],
       "contracts": [
         "docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md",
+        "docs/AUTOMATION_SYNTHESIS_VISION.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/roadmap/ROADMAP.json"
       ],
@@ -1324,6 +1325,7 @@
       ],
       "docs": [
         "docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md",
+        "docs/AUTOMATION_SYNTHESIS_VISION.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/roadmap/README.md"
       ],
@@ -1335,7 +1337,7 @@
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "future-facing",
+      "status": "planned",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine",

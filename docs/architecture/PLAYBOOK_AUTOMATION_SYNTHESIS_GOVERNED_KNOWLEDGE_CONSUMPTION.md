@@ -27,6 +27,11 @@ This architecture is directional and contract-oriented. It does **not** permit b
 
 Automation Synthesis may only consume governed, inspectable, provenance-linked knowledge inputs.
 
+Phase 15 contract boundary: the first implementation slice is **suggestion synthesis only**.
+
+- allowed: deterministic generation of candidate suggestions/packages for human review
+- disallowed: autonomous repository mutation, autonomous execution, autonomous deployment, or hidden background mutation loops
+
 Automation Synthesis must not rely on:
 
 - raw chat history
@@ -44,8 +49,8 @@ Automation synthesis context may include only policy-allowed, inspectable inputs
 4. validated repository intelligence artifacts
 5. approved trigger taxonomy
 6. policy-approved templates
-7. session/evidence references where provenance is preserved
-8. inspectable repo-local longitudinal knowledge that remains within policy boundaries
+7. session/evidence references where provenance is preserved and the referenced knowledge is promoted/reviewed
+8. inspectable repo-local longitudinal knowledge that remains within policy boundaries and review status requirements
 
 All inputs must preserve source lineage (artifact IDs, command lineage, session references, promotion/review status, and freshness state).
 
@@ -59,19 +64,25 @@ Disallowed by default:
 - evidence-free inferred rules
 - repo-local sensitive knowledge for upstream/global synthesis unless explicitly approved
 
+Hard disallow for Phase 15:
+
+- raw evidence artifacts as direct automation-grade synthesis input
+- unreviewed candidate knowledge artifacts as direct automation-grade synthesis input
+- autonomous mutation plans generated without explicit human review and existing `verify -> plan -> apply` gates
+
 Restricted use rule:
 
 - Any override path (for example stale-knowledge exception handling) must be explicit, policy-approved, and audit-linked to a deterministic approval record.
 
 ## Downstream governed synthesis pipeline
 
-Canonical future synthesis flow:
+Canonical future synthesis flow (target state):
 
 1. **Trigger ingestion**
 2. **Governed knowledge lookup**
 3. **Template/pattern family selection**
 4. **Bounded context package generation**
-5. **Candidate automation generation**
+5. **Candidate suggestion generation**
 6. **Sandbox verification**
 7. **Policy/approval gate**
 8. **Controlled deployment/orchestration**
@@ -85,6 +96,11 @@ Trust boundary rules for this flow:
 - Ambiguous or incomplete verification fails closed.
 - Synthesis cannot bypass `verify -> plan -> apply` for repository mutations.
 - Deployment/orchestration remains adapter-bounded and policy-controlled.
+
+Phase 15 thin-slice execution rule:
+
+- implement up to bounded candidate suggestion generation and policy-ready packaging only
+- defer autonomous deployment/orchestration behavior to later phases
 
 ## Role of knowledge query and inspection surfaces
 
@@ -124,6 +140,21 @@ Template and pattern-family contracts for synthesis should enforce:
 - generated outputs attach knowledge/evidence lineage used during synthesis
 
 Template contracts should fail closed when required knowledge classes are missing, stale, unapproved, or non-inspectable.
+
+## Policy gates, provenance, rollback, and accountability hooks
+
+All synthesis outputs must be policy-gated and traceable before any operational usage path.
+
+Required gate/hook contracts:
+
+- **Policy gate metadata**: actor, authority source, requested action class, and explicit allow/deny decision record.
+- **Knowledge provenance envelope**: knowledge IDs, source artifact paths, promotion status, fingerprints, and freshness timestamps.
+- **Suggestion accountability envelope**: synthesis run ID, template/pattern family ID, and reviewer-facing rationale.
+- **Rollback/deactivation hooks**: required rollback path metadata must be attached even for suggestion-only outputs.
+- **Audit replayability**: outputs must retain enough lineage to replay why a suggestion existed and who approved/denied downstream use.
+
+Rule: no synthesis output may be treated as execution-authoritative without policy decision records and provenance completeness.
+Rule: rollback/deactivation metadata is required contract surface, not an optional operational add-on.
 
 ## Locality and privacy boundaries
 

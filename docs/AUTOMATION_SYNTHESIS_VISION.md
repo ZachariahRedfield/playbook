@@ -36,6 +36,7 @@ Automation Synthesis should follow a staged architecture aligned with Playbook's
    - Run candidate automations in isolated test environments with deterministic checks and evidence capture.
 6. **Approval gates**
    - Require explicit policy/owner approval for promotion and mutation boundaries.
+   - Require policy decision records and reviewer accountability metadata before any operationalization path.
 7. **Deployment/orchestration**
    - Publish approved automations into orchestration backends through controlled adapters.
 8. **Runtime monitoring + rollback**
@@ -53,6 +54,12 @@ Governed cross-repo transfer reference: `docs/architecture/PLAYBOOK_GOVERNED_CRO
 
 Automation Synthesis is downstream of governed knowledge and must consume approved, inspectable artifacts instead of opaque conversational memory.
 
+Phase 15 implementation boundary (thin slice):
+
+- suggestion generation and policy-ready context packaging only
+- no autonomous mutation-heavy runtime behavior
+- no autonomous deployment/orchestration activation paths in this phase
+
 Required input constraints:
 
 - trigger classification, template selection, and context packaging must consume approved knowledge artifacts
@@ -69,6 +76,8 @@ Disallowed input constraints:
 
 Rule: automation synthesis may only consume governed/promoted knowledge artifacts that are inspectable and provenance-linked.
 Rule: candidate knowledge is not automation-grade input until explicit review/promotion.
+Rule: raw evidence artifacts are traceability inputs, not direct automation-grade synthesis inputs.
+Rule: initial Phase 15 output contract is reviewable suggestion artifacts only, never direct autonomous mutation actions.
 
 ## Candidate trigger sources
 
@@ -143,6 +152,7 @@ Operational confidence depends on deterministic observability and recovery paths
 
 Future runtime expectations:
 
+- per-suggestion/per-automation trace IDs linked to policy decisions and provenance envelopes
 - per-automation health, success/failure, and latency metrics
 - execution traces linked back to templates, approvals, and deployment revisions
 - anomaly/drift detection against expected behavior contracts

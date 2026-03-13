@@ -610,10 +610,12 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
   - directional architecture/vision language establishes that synthesis remains future-scoped and governance-gated.
 - **Partially defined**
   - future synthesis sequencing exists, but first-class governed input eligibility and provenance-linked context packaging contracts were previously implicit across multiple docs.
+  - suggestion-only vs mutation-capable synthesis boundary needed explicit contract framing for first implementation slices.
 - **Future work**
   - formalize the canonical architecture in `docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md`.
   - require synthesis to consume only governed/promoted, inspectable, provenance-linked knowledge artifacts and template contracts.
   - require stale/superseded exclusion rules, explicit override policy, and lineage-attached generation outputs before any operationalization path.
+  - Phase 15 thin slice: ship suggestion-generation contracts with policy/provenance/rollback-accountability envelopes, while deferring autonomous mutation/deployment behavior to later phases.
 - **Execution window**
   - dependency-ordered after Knowledge Query / Inspection Surfaces and before broader orchestration/interface expansion; remains outside the current near-term execution window unless explicitly promoted in roadmap status.
 
@@ -1177,7 +1179,7 @@ Use a layered phase model so each phase compounds directly on the previous one:
 14. **Phase 14 â€” Knowledge Query / Inspection Surfaces (Read Runtime) - implemented (hardening)**  
    Deterministic, provenance-preserving read-runtime inspection of repository memory and promoted knowledge so humans/CI can query, compare, and audit candidate/promoted/stale states before broader automation consumption.
 15. **Phase 15 â€” Automation Synthesis (Governed Knowledge Consumption)**  
-   Future controlled synthesis that consumes only governed/promoted, inspectable, provenance-linked knowledge artifacts after knowledge query/inspection surfaces are in place. This phase explicitly excludes raw chat memory, unreviewed candidate knowledge, and undocumented inference as automation-grade input.
+   Future controlled synthesis that consumes only governed/promoted, inspectable, provenance-linked knowledge artifacts after knowledge query/inspection surfaces are in place. This phase explicitly excludes raw chat memory, unreviewed candidate knowledge, and undocumented inference as automation-grade input. Initial thin implementation slice is architecture/contracts/docs plus suggestion-generation contracts only (no autonomous mutation-heavy runtime behavior).
 16. **Phase 16 â€” Outcome Feedback + Automation Runtime Learning (Human-Reviewed)**  
    Governed feedback loops that convert verified runtime outcomes, rollback/deactivation events, and later regressions into provenance-linked repo-local candidate learning artifacts (confidence, template suitability, trigger quality, rollback heuristics, stale-knowledge flags, and trend updates). Outputs remain candidate artifacts until explicit human-reviewed promotion/demotion/supersession.
 17. **Phase 17 â€” Governed Cross-Repo Pattern Promotion / Transfer**  
