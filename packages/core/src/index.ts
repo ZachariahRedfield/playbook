@@ -2,7 +2,39 @@ export type { SessionContract, SessionPinnedArtifact, SessionPinnedArtifactKind,
 export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './contracts/execution.js';
 export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';
 export type { CandidatePattern, PromotedPattern, PromotionDecision, PromotionReviewRecord } from './contracts/patternPromotion.js';
+export type {
+  CandidateKnowledgeRecord,
+  EventFingerprint,
+  MemoryArtifactKind,
+  MemoryEvent,
+  MemoryKnowledgeRecord,
+  MemoryLifecycleState,
+  MemorySchemaMetadata,
+  PromotedKnowledgeRecord,
+  RetiredKnowledgeRecord,
+  SalienceScoreEnvelope,
+  SessionEvidenceReference,
+  SupersessionRetirementMetadata
+} from './contracts/memory.js';
 export type Severity = 'WARN' | 'RECOMMEND' | 'INFO';
+
+export {
+  MEMORY_CONTRACT_SCHEMA_VERSION,
+  assertMemoryLifecycleTransition,
+  createCandidateKnowledgeRecord,
+  createEventFingerprint,
+  createEventInstanceId,
+  createKnowledgeRecordId,
+  createMemoryEvent,
+  createMemorySchemaMetadata,
+  isSupportedMemorySchemaVersion,
+  memoryArtifactKinds,
+  memoryArtifactPaths,
+  memoryLifecycleStates,
+  normalizeEventFingerprintDimensions,
+  promoteCandidateKnowledgeRecord,
+  retirePromotedKnowledgeRecord
+} from './contracts/memory.js';
 
 export { runArchitectureAudit } from './audit/architecture.js';
 export { decideKnowledgeCompaction } from './knowledge/compaction/compaction-engine.js';
