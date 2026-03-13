@@ -13,6 +13,8 @@ export type MemoryKnowledgeKind = Exclude<MemoryCandidateKind, 'open_question'>;
 export type MemoryKnowledgeEntry = {
   knowledgeId: string;
   candidateId: string;
+  sourceCandidateIds: string[];
+  sourceEventFingerprints: string[];
   kind: MemoryKnowledgeKind;
   title: string;
   summary: string;
@@ -22,9 +24,11 @@ export type MemoryKnowledgeEntry = {
   failureShape: string;
   promotedAt: string;
   provenance: MemoryReplayCandidate['provenance'];
-  status: 'active' | 'superseded';
+  status: 'active' | 'superseded' | 'retired';
   supersedes: string[];
   supersededBy: string[];
+  retiredAt?: string;
+  retirementReason?: string;
 };
 
 export type MemoryKnowledgeArtifact = {
@@ -43,6 +47,21 @@ export type MemoryPromotionResult = {
   artifactPath: string;
 };
 
+export type MemoryRetireResult = {
+  schemaVersion: '1.0';
+  command: 'memory-retire';
+  retired: MemoryKnowledgeEntry;
+  artifactPath: string;
+};
+
+export type MemorySupersedeResult = {
+  schemaVersion: '1.0';
+  command: 'memory-supersede';
+  superseded: MemoryKnowledgeEntry;
+  successor: MemoryKnowledgeEntry;
+  artifactPath: string;
+};
+
 export type MemoryPruneResult = {
   schemaVersion: '1.0';
   command: 'memory-prune';
@@ -54,6 +73,8 @@ export type MemoryPruneResult = {
 };
 
 const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort((a, b) => a.localeCompare(b));
+
+const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 
 const safeIsoDate = (value: string | undefined): string | null => {
   if (typeof value !== 'string') {
@@ -92,6 +113,37 @@ const readCandidates = (projectRoot: string): MemoryReplayResult => {
   return parsed;
 };
 
+const ensureCandidateComplete = (candidate: MemoryReplayCandidate): void => {
+  if (!isNonEmptyString(candidate.candidateId)) {
+    throw new Error('playbook memory promote: invalid candidate: missing candidateId');
+  }
+  if (!isNonEmptyString(candidate.title) || !isNonEmptyString(candidate.summary) || !isNonEmptyString(candidate.fingerprint)) {
+    throw new Error(`playbook memory promote: invalid candidate: incomplete narrative fields for ${candidate.candidateId}`);
+  }
+  if (!isNonEmptyString(candidate.module) || !isNonEmptyString(candidate.ruleId) || !isNonEmptyString(candidate.failureShape)) {
+    throw new Error(`playbook memory promote: invalid candidate: missing classification fields for ${candidate.candidateId}`);
+  }
+  if (!Array.isArray(candidate.provenance) || candidate.provenance.length === 0) {
+    throw new Error(`playbook memory promote: invalid candidate: missing provenance for ${candidate.candidateId}`);
+  }
+  for (const provenance of candidate.provenance) {
+    if (!isNonEmptyString(provenance.eventId) || !isNonEmptyString(provenance.sourcePath) || !isNonEmptyString(provenance.fingerprint)) {
+      throw new Error(`playbook memory promote: invalid candidate: malformed provenance for ${candidate.candidateId}`);
+    }
+  }
+};
+
+export const listCandidateKnowledge = (projectRoot: string): MemoryReplayCandidate[] =>
+  [...readCandidates(projectRoot).candidates].sort((left, right) => left.candidateId.localeCompare(right.candidateId));
+
+export const loadCandidateKnowledgeById = (projectRoot: string, candidateId: string): MemoryReplayCandidate => {
+  const candidate = readCandidates(projectRoot).candidates.find((entry) => entry.candidateId === candidateId);
+  if (!candidate) {
+    throw new Error(`playbook memory promote: candidate not found: ${candidateId}`);
+  }
+  return candidate;
+};
+
 const readKnowledgeArtifact = (projectRoot: string, kind: MemoryKnowledgeKind): MemoryKnowledgeArtifact => {
   const relativePath = resolveKnowledgePath(kind);
   const fullPath = path.join(projectRoot, relativePath);
@@ -107,12 +159,42 @@ const readKnowledgeArtifact = (projectRoot: string, kind: MemoryKnowledgeKind): 
   }
 
   const parsed = readJson<Partial<MemoryKnowledgeArtifact>>(fullPath);
+  const entries = Array.isArray(parsed.entries)
+    ? (parsed.entries as Partial<MemoryKnowledgeEntry>[]).map((entry) => {
+      const status: MemoryKnowledgeEntry['status'] = entry.status === 'superseded' || entry.status === 'retired' ? entry.status : 'active';
+      return {
+        knowledgeId: entry.knowledgeId ?? '',
+        candidateId: entry.candidateId ?? '',
+        sourceCandidateIds: uniqueSorted([...(Array.isArray(entry.sourceCandidateIds) ? entry.sourceCandidateIds : []), ...(entry.candidateId ? [entry.candidateId] : [])]),
+        sourceEventFingerprints: uniqueSorted(Array.isArray(entry.sourceEventFingerprints)
+          ? entry.sourceEventFingerprints
+          : Array.isArray(entry.provenance)
+            ? entry.provenance.map((source) => source.fingerprint)
+            : []),
+        kind: (entry.kind ?? kind) as MemoryKnowledgeKind,
+        title: entry.title ?? '',
+        summary: entry.summary ?? '',
+        fingerprint: entry.fingerprint ?? '',
+        module: entry.module ?? '',
+        ruleId: entry.ruleId ?? '',
+        failureShape: entry.failureShape ?? '',
+        promotedAt: entry.promotedAt ?? new Date(0).toISOString(),
+        provenance: Array.isArray(entry.provenance) ? entry.provenance : [],
+        status,
+        supersedes: uniqueSorted(Array.isArray(entry.supersedes) ? entry.supersedes : []),
+        supersededBy: uniqueSorted(Array.isArray(entry.supersededBy) ? entry.supersededBy : []),
+        ...(safeIsoDate(entry.retiredAt) ? { retiredAt: safeIsoDate(entry.retiredAt) as string } : {}),
+        ...(isNonEmptyString(entry.retirementReason) ? { retirementReason: entry.retirementReason } : {})
+      };
+    })
+    : [];
+
   return {
     schemaVersion: KNOWLEDGE_SCHEMA_VERSION,
     artifact: 'memory-knowledge',
     kind,
     generatedAt: safeIsoDate(parsed.generatedAt) ?? new Date(0).toISOString(),
-    entries: Array.isArray(parsed.entries) ? parsed.entries as MemoryKnowledgeEntry[] : []
+    entries
   };
 };
 
@@ -131,11 +213,8 @@ const sortEntries = (entries: MemoryKnowledgeEntry[]): MemoryKnowledgeEntry[] =>
   });
 
 export const promoteMemoryCandidate = (projectRoot: string, fromCandidateId: string): MemoryPromotionResult => {
-  const candidates = readCandidates(projectRoot);
-  const candidate = candidates.candidates.find((entry) => entry.candidateId === fromCandidateId);
-  if (!candidate) {
-    throw new Error(`playbook memory promote: candidate not found: ${fromCandidateId}`);
-  }
+  const candidate = loadCandidateKnowledgeById(projectRoot, fromCandidateId);
+  ensureCandidateComplete(candidate);
 
   if (candidate.kind === 'open_question') {
     throw new Error('playbook memory promote: open_question candidates are not promotable into doctrine knowledge artifacts');
@@ -151,6 +230,8 @@ export const promoteMemoryCandidate = (projectRoot: string, fromCandidateId: str
   const promotedEntry: MemoryKnowledgeEntry = {
     knowledgeId: toKnowledgeId(candidate),
     candidateId: candidate.candidateId,
+    sourceCandidateIds: uniqueSorted([candidate.candidateId]),
+    sourceEventFingerprints: uniqueSorted(candidate.provenance.map((entry) => entry.fingerprint)),
     kind,
     title: candidate.title,
     summary: candidate.summary,
@@ -194,6 +275,128 @@ export const promoteMemoryCandidate = (projectRoot: string, fromCandidateId: str
     artifactPath: relativeArtifactPath
   };
 };
+
+const writeKnowledgeArtifact = (projectRoot: string, kind: MemoryKnowledgeKind, artifact: MemoryKnowledgeArtifact): void => {
+  writeJson(path.join(projectRoot, resolveKnowledgePath(kind)), artifact);
+};
+
+const requireKnowledgeEntry = (artifact: MemoryKnowledgeArtifact, knowledgeId: string): MemoryKnowledgeEntry => {
+  const entry = artifact.entries.find((item) => item.knowledgeId === knowledgeId);
+  if (!entry) {
+    throw new Error(`playbook memory knowledge: record not found: ${knowledgeId}`);
+  }
+  return entry;
+};
+
+export const retirePromotedKnowledge = (
+  projectRoot: string,
+  knowledgeId: string,
+  input: { reason: string; allowAlreadyRetired?: boolean }
+): MemoryRetireResult => {
+  if (!isNonEmptyString(input.reason)) {
+    throw new Error('playbook memory retire: retirement reason is required');
+  }
+
+  for (const kind of Object.keys(knowledgePathByKind) as MemoryKnowledgeKind[]) {
+    const artifact = readKnowledgeArtifact(projectRoot, kind);
+    const target = artifact.entries.find((entry) => entry.knowledgeId === knowledgeId);
+    if (!target) {
+      continue;
+    }
+
+    if (target.status === 'retired' && !input.allowAlreadyRetired) {
+      throw new Error(`playbook memory retire: knowledge ${knowledgeId} is already retired; provide explicit reason handling`);
+    }
+
+    const retiredAt = new Date().toISOString();
+    const updated = artifact.entries.map((entry) =>
+      entry.knowledgeId === knowledgeId
+        ? {
+          ...entry,
+          status: 'retired' as const,
+          retiredAt,
+          retirementReason: input.reason
+        }
+        : entry
+    );
+
+    const nextArtifact = { ...artifact, generatedAt: retiredAt, entries: sortEntries(updated) };
+    writeKnowledgeArtifact(projectRoot, kind, nextArtifact);
+    return {
+      schemaVersion: '1.0',
+      command: 'memory-retire',
+      retired: requireKnowledgeEntry(nextArtifact, knowledgeId),
+      artifactPath: resolveKnowledgePath(kind)
+    };
+  }
+
+  throw new Error(`playbook memory retire: knowledge not found: ${knowledgeId}`);
+};
+
+export const supersedePromotedKnowledge = (
+  projectRoot: string,
+  supersededKnowledgeId: string,
+  successorKnowledgeId: string
+): MemorySupersedeResult => {
+  const kinds = Object.keys(knowledgePathByKind) as MemoryKnowledgeKind[];
+  const artifacts = kinds.map((kind) => ({ kind, artifact: readKnowledgeArtifact(projectRoot, kind) }));
+
+  const supersededLocation = artifacts.find(({ artifact }) => artifact.entries.some((entry) => entry.knowledgeId === supersededKnowledgeId));
+  const successorLocation = artifacts.find(({ artifact }) => artifact.entries.some((entry) => entry.knowledgeId === successorKnowledgeId));
+
+  if (!supersededLocation || !successorLocation) {
+    throw new Error('playbook memory supersede: knowledge records not found');
+  }
+
+  if (supersededLocation.kind !== successorLocation.kind) {
+    throw new Error('playbook memory supersede: incompatible knowledge kinds cannot be superseded');
+  }
+
+  const kind = supersededLocation.kind;
+  const artifact = supersededLocation.artifact;
+  const superseded = requireKnowledgeEntry(artifact, supersededKnowledgeId);
+  const successor = requireKnowledgeEntry(artifact, successorKnowledgeId);
+
+  const nowIso = new Date().toISOString();
+  const updatedEntries = artifact.entries.map((entry) => {
+    if (entry.knowledgeId === supersededKnowledgeId) {
+      return {
+        ...entry,
+        status: 'superseded' as const,
+        supersededBy: uniqueSorted([...entry.supersededBy, successorKnowledgeId]),
+        retiredAt: entry.retiredAt,
+        retirementReason: entry.retirementReason
+      };
+    }
+
+    if (entry.knowledgeId === successorKnowledgeId) {
+      return {
+        ...entry,
+        supersedes: uniqueSorted([...entry.supersedes, supersededKnowledgeId]),
+        sourceCandidateIds: uniqueSorted([...entry.sourceCandidateIds, ...superseded.sourceCandidateIds]),
+        sourceEventFingerprints: uniqueSorted([...entry.sourceEventFingerprints, ...superseded.sourceEventFingerprints])
+      };
+    }
+
+    return entry;
+  });
+
+  const nextArtifact = {
+    ...artifact,
+    generatedAt: nowIso,
+    entries: sortEntries(updatedEntries)
+  };
+  writeKnowledgeArtifact(projectRoot, kind, nextArtifact);
+
+  return {
+    schemaVersion: '1.0',
+    command: 'memory-supersede',
+    superseded: requireKnowledgeEntry(nextArtifact, supersededKnowledgeId),
+    successor: requireKnowledgeEntry(nextArtifact, successorKnowledgeId),
+    artifactPath: resolveKnowledgePath(kind)
+  };
+};
+
 
 const staleCutoffMs = (): number => Date.now() - CANDIDATE_STALE_DAYS * 24 * 60 * 60 * 1000;
 
