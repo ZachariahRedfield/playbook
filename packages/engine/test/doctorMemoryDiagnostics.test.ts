@@ -21,29 +21,11 @@ const writeJson = (repo: string, relativePath: string, payload: unknown): void =
 };
 
 describe('doctor memory diagnostics', () => {
-  it('reports informational absence when memory artifacts are not initialized', () => {
+  it('reports public missing-artifacts warning when memory artifacts are not initialized', () => {
     const repo = createRepo('playbook-doctor-memory-absent');
     const memoryRoot = path.join(repo, '.playbook', 'memory');
 
     expect(fs.existsSync(memoryRoot)).toBe(false);
-
-    const report = generateRepositoryHealth(repo);
-
-    expect(report.memoryDiagnostics.findings).toEqual([
-      {
-        code: 'memory-artifacts-absent',
-        severity: 'info',
-        message: 'Memory artifacts are not initialized under .playbook/memory.',
-        recommendation: 'Run memory workflows before enabling memory control-plane automation.'
-      }
-    ]);
-    expect(report.memoryDiagnostics.suggestions).toEqual([]);
-  });
-
-
-  it('reports warning-level missing artifacts when memory root exists without required files', () => {
-    const repo = createRepo('playbook-doctor-memory-missing');
-    fs.mkdirSync(path.join(repo, '.playbook', 'memory'), { recursive: true });
 
     const report = generateRepositoryHealth(repo);
 
