@@ -189,6 +189,10 @@ pnpm playbook memory show <id> --json
 
 ## Knowledge inspection surfaces (`pnpm playbook knowledge ...`)
 
+Command boundary note:
+- `memory` = lifecycle/review/mutation surfaces over raw memory artifacts (events, candidates, promoted records).
+- `knowledge` = normalized, read-only inspection/query surface for governed knowledge retrieval and provenance.
+
 `pnpm playbook knowledge` is the read-only inspection surface for normalized knowledge records.
 
 - `knowledge list` enumerates all record types.

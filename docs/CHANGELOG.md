@@ -4,6 +4,8 @@
 
 ### Added
 
+- WHAT: Synced v0.9 roadmap feature metadata for Control Plane, PR Review Loop, Longitudinal State, Knowledge Query/Inspection, and Execution Orchestration to shipped Phase 14 / Wave 6-7 reality; refreshed Phase 14 architecture doc references and populated command/docs/tests/contracts arrays from current command surface. WHY: Keeps machine-readable roadmap contract truth aligned with implemented CLI/runtime surfaces and prevents stale architecture-only placeholders.
+
 - WHAT: Added read-only `pnpm playbook knowledge` inspection surfaces (`list`, `query`, `inspect`, `timeline`, `provenance`, `stale`) backed by a canonical normalized knowledge record schema, CLI contract coverage, and roadmap/docs updates for Phase 14. WHY: Makes evidence, candidate knowledge, promoted doctrine, and superseded knowledge queryable and auditable without introducing mutation into the inspection layer.
 
 - WHAT: Implemented first live `pnpm playbook orchestrate` as a deterministic control-plane lane-contract compiler that emits `orchestrator.json` plus lane prompt artifacts with explicit ownership, shared-file risk, wave/dependency ordering, and safe lane-count degradation. WHY: Turns orchestration from planned direction into a merge-safe governance surface for parallel Codex plan-mode execution without introducing autonomous worker/branch/PR behavior.

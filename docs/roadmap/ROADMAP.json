@@ -832,7 +832,7 @@
         "pnpm playbook verify --json",
         "pnpm playbook plan --json"
       ],
-      "status": "planned",
+      "status": "implemented-hardening",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine",
@@ -876,7 +876,7 @@
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "architecture-defined",
+      "status": "implemented-hardening",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine",
@@ -888,19 +888,27 @@
       "version": "v0.9",
       "title": "Repo Longitudinal State + Knowledge Promotion architecture",
       "goal": "Define governed repo-local longitudinal state and human-reviewed knowledge-promotion contracts (candidate extraction, clustering, provenance-preserving promotion/demotion/supersession) after Session + Evidence, Control Plane, and PR Review Loop.",
-      "commands": [],
+      "commands": [
+        "memory",
+        "learn"
+      ],
       "contracts": [
+        "docs/architecture/PLAYBOOK_REPO_LONGITUDINAL_STATE_AND_KNOWLEDGE_PROMOTION.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/ARCHITECTURE.md",
         "docs/roadmap/ROADMAP.json"
       ],
       "tests": [
+        "packages/core/test/memory-contract.test.ts",
+        "packages/engine/test/memoryKnowledge.test.ts",
+        "packages/engine/test/memoryInspection.test.ts",
         "scripts/validate-roadmap-contract.mjs"
       ],
       "docs": [
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/roadmap/README.md",
-        "docs/architecture/PLAYBOOK_REPO_LONGITUDINAL_STATE_AND_KNOWLEDGE_PROMOTION.md"
+        "docs/architecture/PLAYBOOK_REPO_LONGITUDINAL_STATE_AND_KNOWLEDGE_PROMOTION.md",
+        "docs/commands/memory.md"
       ],
       "dependencies": [
         "PB-V09-SESSION-EVIDENCE-001",
@@ -910,7 +918,7 @@
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "architecture-defined",
+      "status": "implemented-hardening",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine"
@@ -922,10 +930,13 @@
       "title": "Knowledge Query / Inspection Surfaces for Memory",
       "goal": "Define deterministic, read-only, provenance-preserving inspection surfaces for repo-local memory and promoted knowledge before broader automation consumption.",
       "commands": [
-        "knowledge"
+        "knowledge",
+        "memory"
       ],
       "contracts": [
-        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md",
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md",
+        "docs/commands/knowledge.md",
+        "docs/commands/memory.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/roadmap/ROADMAP.json"
       ],
@@ -936,8 +947,9 @@
         "scripts/validate-roadmap-contract.mjs"
       ],
       "docs": [
-        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md",
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md",
         "docs/commands/knowledge.md",
+        "docs/commands/memory.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/roadmap/IMPROVEMENTS_BACKLOG.md",
         "docs/CONSUMER_INTEGRATION_CONTRACT.md",
@@ -953,7 +965,7 @@
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "in-progress",
+      "status": "implemented-hardening",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-core",
@@ -965,19 +977,33 @@
       "version": "v0.9",
       "title": "Execution orchestration hardening",
       "goal": "Extend the current verify/plan/apply runtime into broader policy-gated orchestration only after control-plane foundations exist, without broadening the current 4-week implementation scope.",
-      "commands": [],
+      "commands": [
+        "orchestrate",
+        "agent",
+        "analyze-pr",
+        "verify",
+        "plan",
+        "apply"
+      ],
       "contracts": [
+        "docs/architecture/CONTROL_PLANE_AND_AGENT_RUNTIME_V1.md",
+        "docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/ARCHITECTURE.md",
         "docs/roadmap/ROADMAP.json"
       ],
       "tests": [
+        "packages/engine/test/orchestrator.compiler.test.ts",
+        "packages/engine/test/analyzePrFormatter.test.ts",
+        "packages/engine/test/verify.plan.apply.workflow.test.ts",
         "scripts/validate-roadmap-contract.mjs"
       ],
       "docs": [
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
         "docs/roadmap/README.md",
-        "docs/roadmap/IMPLEMENTATION_PLAN_NEXT_4_WEEKS.md"
+        "docs/roadmap/IMPLEMENTATION_PLAN_NEXT_4_WEEKS.md",
+        "docs/commands/orchestrate.md",
+        "docs/commands/agent.md"
       ],
       "dependencies": [
         "PB-V09-CONTROL-PLANE-001",
@@ -988,7 +1014,7 @@
         "pnpm playbook docs audit --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "backlog",
+      "status": "in-progress",
       "package_ownership": [
         "@fawxzzy/playbook",
         "@zachariahredfield/playbook-engine",

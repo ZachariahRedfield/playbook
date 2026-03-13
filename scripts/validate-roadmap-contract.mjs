@@ -8,6 +8,18 @@ const enforcePrFeatureId = args.has('--enforce-pr-feature-id');
 const repoRoot = process.cwd();
 const roadmapPath = path.join(repoRoot, 'docs', 'roadmap', 'ROADMAP.json');
 const prMetadataPath = path.join(repoRoot, '.playbook', 'pr-metadata.json');
+const shippedStatuses = new Set(['implemented-hardening', 'in-progress']);
+const enforcedVersionForStrictValidation = 'v0.9';
+
+const validateReferencedPath = (candidatePath, context) => {
+  if (typeof candidatePath !== 'string' || !candidatePath.trim()) return;
+  if (candidatePath.startsWith('schema://')) return;
+  const resolved = path.join(repoRoot, candidatePath);
+  if (!fs.existsSync(resolved)) {
+    fail(`${context} references missing path: ${candidatePath}`);
+  }
+};
+
 
 const fail = (message) => {
   console.error(`roadmap-contract: ${message}`);
@@ -95,9 +107,33 @@ for (const [index, feature] of (roadmap.features ?? []).entries()) {
     }
   }
 
+  if (feature.version === enforcedVersionForStrictValidation && shippedStatuses.has(feature.status)) {
+    for (const [fieldName, values] of [['contracts', feature.contracts], ['docs', feature.docs]]) {
+      for (const value of values) {
+        validateReferencedPath(value, `features[${index}].${fieldName}`);
+      }
+    }
+  }
+
   if (feature.package_ownership.some((entry) => typeof entry !== 'string' || !entry.trim())) {
     fail(`features[${index}].package_ownership must contain non-empty package names`);
   }
+  if (feature.version === enforcedVersionForStrictValidation && shippedStatuses.has(feature.status)) {
+    const docCommandFamilies = new Set(
+      feature.docs
+        .filter((entry) => typeof entry === 'string' && entry.startsWith('docs/commands/') && entry.endsWith('.md'))
+        .map((entry) => path.basename(entry, '.md').trim())
+        .filter((entry) => entry)
+    );
+    for (const commandFamily of docCommandFamilies) {
+      if (!feature.commands.includes(commandFamily)) {
+        fail(
+          `features[${index}] shipped status requires commands metadata to include "${commandFamily}" when docs include docs/commands/${commandFamily}.md`
+        );
+      }
+    }
+  }
+
 }
 
 if (isCi && enforcePrFeatureId) {

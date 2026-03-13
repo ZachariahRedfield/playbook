@@ -2,6 +2,10 @@
 
 Inspect normalized knowledge artifacts through read-only deterministic surfaces.
 
+Command boundary:
+- `pnpm playbook memory ...` is the raw lifecycle/review/mutation surface for memory artifacts.
+- `pnpm playbook knowledge ...` is the normalized read-only inspection/query surface.
+
 ## Subcommands
 
 ### `knowledge list`

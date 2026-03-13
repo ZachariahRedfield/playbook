@@ -1174,7 +1174,7 @@ Use a layered phase model so each phase compounds directly on the previous one:
    First-class policy/approval/mutation-boundary architecture that gates privileged execution and keeps agents above (not inside) the deterministic substrate.
 13. **Phase 13 â€” Review + Execution Orchestration**  
    Policy-gated orchestration that consumes repository intelligence + AI contracts + session/evidence + control-plane checks while preserving deterministic mutation workflow.
-14. **Phase 14 â€” Knowledge Query / Inspection Surfaces (Read Runtime) - in progress**  
+14. **Phase 14 â€” Knowledge Query / Inspection Surfaces (Read Runtime) - implemented (hardening)**  
    Deterministic, provenance-preserving read-runtime inspection of repository memory and promoted knowledge so humans/CI can query, compare, and audit candidate/promoted/stale states before broader automation consumption.
 15. **Phase 15 â€” Automation Synthesis (Governed Knowledge Consumption)**  
    Future controlled synthesis that consumes only governed/promoted, inspectable, provenance-linked knowledge artifacts after knowledge query/inspection surfaces are in place. This phase explicitly excludes raw chat memory, unreviewed candidate knowledge, and undocumented inference as automation-grade input.
