@@ -298,6 +298,32 @@ If coverage appears near-perfect while blind spots remain large, the system will
 Failure Mode — Telemetry Too Thin to Optimize
 If telemetry only records top-level command calls, the system cannot meaningfully optimize scan strategy, cache behavior, or internal execution flow.
 
+## Research track: Pattern Meaning and Knowledge-Graph Evolution (framing)
+
+Status: **Research framing published; not a claim of fully implemented runtime capability.**
+
+This roadmap track formalizes conceptual doctrine for:
+
+- pattern meaning,
+- attractor dynamics of meaning stabilization,
+- evolutionary dynamics of knowledge graphs.
+
+Canonical artifacts:
+
+- `docs/research/THEORY_OF_PATTERN_MEANING.md`
+- `docs/research/ATTRACTOR_MODEL_OF_MEANING.md`
+- `docs/architecture/EVOLUTIONARY_DYNAMICS_OF_KNOWLEDGE_GRAPHS.md`
+
+Why this matters:
+
+- strengthens long-horizon architecture coherence for memory/knowledge evolution,
+- provides a shared vocabulary for future compaction and promotion features,
+- reduces roadmap confusion by explicitly separating theory from implemented command/runtime truth.
+
+Rule: Treat research doctrine and implemented runtime capability as separate layers.
+Pattern: Use research docs for conceptual models and architecture docs for runtime mapping.
+Failure Mode: Mixing speculative theory with implemented feature claims creates roadmap confusion and weakens trust.
+
 ## Next defining capabilities for reasoning-engine maturity
 
 ### Meta-Playbook introspection

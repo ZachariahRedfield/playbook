@@ -4,6 +4,10 @@ This document describes **current-state architecture**. Future-state initiatives
 
 Toroidal Flow is documented as an additive architecture overlay in [docs/architecture/TOROIDAL_FLOW.md](./architecture/TOROIDAL_FLOW.md). It preserves current command/runtime contracts and frames how execution and intelligence-return phases form a closed loop.
 
+Research/theory bridge: pattern-meaning doctrine and attractor theory are captured in [docs/research/THEORY_OF_PATTERN_MEANING.md](./research/THEORY_OF_PATTERN_MEANING.md) and [docs/research/ATTRACTOR_MODEL_OF_MEANING.md](./research/ATTRACTOR_MODEL_OF_MEANING.md), with architecture mapping in [docs/architecture/EVOLUTIONARY_DYNAMICS_OF_KNOWLEDGE_GRAPHS.md](./architecture/EVOLUTIONARY_DYNAMICS_OF_KNOWLEDGE_GRAPHS.md).
+
+Boundary rule: research docs describe conceptual models; architecture/runtime docs describe current or explicitly staged capability only.
+
 ## Toroidal Flow and Knowledge Compaction artifact set
 
 The Toroidal Flow + Knowledge Compaction architecture is also represented in compact reusable artifacts:
