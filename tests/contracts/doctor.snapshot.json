@@ -4,8 +4,8 @@
   "status": "error",
   "summary": {
     "errors": 13,
-    "warnings": 13,
-    "info": 0
+    "warnings": 10,
+    "info": 2
   },
   "findings": [
     {
@@ -101,12 +101,6 @@
     {
       "category": "Architecture",
       "severity": "warning",
-      "id": "doctor.architecture.audit.artifact.schema-versioning",
-      "message": "Artifact schema versioning: Run `playbook index` and ensure persisted artifacts include a top-level `schemaVersion` field."
-    },
-    {
-      "category": "Architecture",
-      "severity": "warning",
       "id": "doctor.architecture.audit.docs.roadmap-coverage",
       "message": "Roadmap/docs coverage for hardening controls: Add roadmap hardening coverage for artifact versioning/evolution, SCM normalization context, remediation trust scope boundaries, context/token efficiency, and repeatable architecture audit controls."
     },
@@ -135,22 +129,10 @@
       "message": "SCM/git context normalization layer: Centralize SCM normalization in shared git-context utilities and document boundaries in docs/architecture/SCM_CONTEXT_LAYER.md."
     },
     {
-      "category": "Architecture",
-      "severity": "warning",
-      "id": "doctor.architecture.repo-index.missing",
-      "message": "Repository intelligence index is missing. Run `playbook index`."
-    },
-    {
       "category": "Memory",
       "severity": "warning",
       "id": "doctor.memory.memory-artifacts-missing",
       "message": "Missing required memory artifacts: .playbook/memory/index.json, .playbook/memory/candidates.json Regenerate missing memory artifacts before relying on replay or promotion diagnostics."
-    },
-    {
-      "category": "Risk",
-      "severity": "warning",
-      "id": "doctor.risk.skipped.repo-index-missing",
-      "message": "Risk analysis skipped because repository index is missing."
     },
     {
       "category": "Testing",
@@ -163,6 +145,18 @@
       "severity": "warning",
       "id": "doctor.testing.verify.warning.config-missing",
       "message": "playbook.config.json not found; using defaults (this is not an error). Add playbook.config.json for explicit settings and .playbookignore to tune scan scope."
+    },
+    {
+      "category": "Architecture",
+      "severity": "info",
+      "id": "doctor.architecture.repo-index.present",
+      "message": "Repository intelligence index is present."
+    },
+    {
+      "category": "Risk",
+      "severity": "info",
+      "id": "doctor.risk.module.features",
+      "message": "features risk is low (0.00)."
     }
   ],
   "artifactHygiene": {
