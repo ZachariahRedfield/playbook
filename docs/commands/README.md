@@ -45,7 +45,7 @@ Do not hand-edit entries inside the managed markers.
 | `explain` | Explain rules, modules, or architecture from repository intelligence | canonical | repo-intelligence | primary | 6 | Current (implemented) | `pnpm playbook explain architecture --json` |
 | `route` | Classify tasks into deterministic execution vs bounded model reasoning routes | canonical | repo-intelligence | primary | — | Current (implemented) | `pnpm playbook route "summarize current repo state" --json` |
 | `learn` | Draft deterministic knowledge candidates from local diff and repository intelligence | utility | utility | secondary | — | Current (implemented) | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
-| `memory` | Replay, promote, and prune repository memory artifacts with explicit human-reviewed doctrine promotion | utility | utility | secondary | — | Current (implemented) | `pnpm playbook memory promote --from-candidate <id> --json` |
+| `memory` | Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion | utility | utility | secondary | — | Current (implemented) | `pnpm playbook memory events --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
 ## Command docs index
@@ -165,20 +165,23 @@ Artifact intent:
 - `.playbook/knowledge/**` is runtime draft state and should stay gitignored by default.
 - Promote/commit knowledge artifacts only when intentionally reviewed for upstream inclusion.
 
-## Memory replay (`pnpm playbook memory replay`)
+## Memory inspection surfaces (`pnpm playbook memory ...`)
 
-`pnpm playbook memory replay` replays episodic memory events into deterministic candidate knowledge artifacts for human review.
+`pnpm playbook memory` exposes thin operator review surfaces for repo-local memory artifacts.
 
-- Reads `.playbook/memory/index.json` and referenced memory event files.
-- Clusters by `fingerprint/module/rule/failure shape`.
-- Applies deterministic salience scoring from explicit event inputs only.
-- Emits `.playbook/memory/candidates.json` with provenance references to source events.
-- Replay is read-only with respect to source/rules/docs files.
+- `memory events` lists episodic events with deterministic filters.
+- `memory candidates` lists replay candidates for review.
+- `memory knowledge` lists promoted knowledge records.
+- `memory show <id>` resolves either a candidate id or knowledge id, including provenance expansion for candidates.
+- `memory promote <candidate-id>` and `memory retire <knowledge-id>` provide explicit, human-driven lifecycle actions.
 
-Example:
+Examples:
 
 ```bash
-pnpm playbook memory replay --json
+pnpm playbook memory events --json
+pnpm playbook memory candidates --json
+pnpm playbook memory knowledge --json
+pnpm playbook memory show <id> --json
 ```
 
 ## Internal knowledge compaction status (no public command surface yet)

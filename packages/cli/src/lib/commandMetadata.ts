@@ -464,7 +464,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'memory',
-    description: 'Replay, promote, and prune repository memory artifacts with explicit human-reviewed doctrine promotion',
+    description: 'Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion',
     category: 'Utility',
     role: 'utility',
     lifecycle: 'utility',
@@ -472,7 +472,7 @@ export const commandMetadata: CommandMetadata[] = [
     onboardingPriority: null,
     canonicalSequence: null,
     productFacing: true,
-    exampleArgs: 'memory promote --from-candidate <id> --json',
+    exampleArgs: 'memory events --json',
     machineReadable: true
   }
 ];

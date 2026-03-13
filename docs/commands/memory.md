@@ -1,14 +1,29 @@
 # `pnpm playbook memory`
 
-Manage replay, promotion, and pruning for repository memory artifacts.
+Inspect and review repository memory artifacts using thin, deterministic CLI surfaces.
 
 ## Subcommands
 
-### `memory replay`
+### `memory events`
 
-Replay episodic repository memory from `.playbook/memory/index.json` and referenced event files into deterministic candidate knowledge artifacts.
+List episodic events from `.playbook/memory/events` with optional filters (`--module`, `--rule`, `--fingerprint`, `--limit`, `--order`).
 
-### `memory promote --from-candidate <id>`
+### `memory candidates`
+
+List replay candidates from `.playbook/memory/candidates.json` for operator review.
+
+### `memory knowledge`
+
+List promoted knowledge artifacts from `.playbook/memory/knowledge/*.json`.
+
+### `memory show <id>`
+
+Show one memory candidate or promoted knowledge entry by id.
+
+- Candidate responses include expanded event provenance when available.
+- Knowledge responses preserve retirement/supersession state.
+
+### `memory promote <candidate-id>`
 
 Promote a reviewed replay candidate into local semantic memory artifacts:
 
@@ -17,32 +32,24 @@ Promote a reviewed replay candidate into local semantic memory artifacts:
 - `.playbook/memory/knowledge/failure-modes.json`
 - `.playbook/memory/knowledge/invariants.json`
 
-Promotion preserves provenance and writes `supersedes` / `supersededBy` links when fingerprint-equivalent active knowledge already exists.
+### `memory retire <knowledge-id>`
 
-### `memory prune`
-
-Prune memory artifacts without mutating governance doctrine files (rules/docs/contracts):
-
-- prune stale candidates (expiration by `lastSeenAt`)
-- remove superseded knowledge entries
-- collapse duplicates by fingerprint
+Retire an existing promoted knowledge record without deleting provenance.
 
 ## Guarantees
 
 - Pattern: **Fast Episodic Store, Slow Doctrine Store**.
-- Pattern: **Replay Before Promotion**.
-- Pattern: **Human-Reviewed Knowledge Promotion**.
-- Rule: **Retrieval Must Return Provenance**.
 - Rule: **Working Memory Is Not Doctrine**.
+- Rule: **Retrieval Must Return Provenance**.
 - Failure Mode: **Memory Hoarding**.
-- Failure Mode: **Premature Canonicalization**.
-
-Promotion into local semantic memory artifacts is not automatic mutation of committed governance docs/rules.
 
 ## Examples
 
 ```bash
-pnpm playbook memory replay --json
-pnpm playbook memory promote --from-candidate 9fd4a8be8c3f7d10 --json
-pnpm playbook memory prune --json
+pnpm playbook memory events --json
+pnpm playbook memory candidates --json
+pnpm playbook memory knowledge --json
+pnpm playbook memory show <id> --json
+pnpm playbook memory promote <candidate-id> --json
+pnpm playbook memory retire <knowledge-id> --json
 ```

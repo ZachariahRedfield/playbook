@@ -126,6 +126,8 @@ export { runDocsAudit } from './docs/audit.js';
 
 export { captureMemoryEvent, captureMemoryEventSafe, computeMemoryEventFingerprint } from './memory/index.js';
 export type { MemoryEvent, MemoryEventInput, MemoryIndex, MemoryEventKind, MemoryOutcome, MemoryRiskSummary } from './memory/types.js';
+export { lookupMemoryEventTimeline, lookupMemoryCandidateKnowledge, lookupPromotedMemoryKnowledge, expandMemoryProvenance } from './memory/inspection.js';
+export type { MemoryTimelineLookupOptions, MemoryCandidateLookupOptions, MemoryKnowledgeLookupOptions, ExpandedMemoryProvenance } from './memory/inspection.js';
 export type { DocsAuditResult, DocsAuditFinding, DocsAuditStatus, DocsAuditLevel } from './docs/audit.js';
 
 export { buildContractRegistry } from './contracts/contractRegistry.js';

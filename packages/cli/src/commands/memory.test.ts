@@ -1,38 +1,60 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 
-const replayMemoryToCandidates = vi.fn();
+const lookupMemoryEventTimeline = vi.fn();
+const lookupMemoryCandidateKnowledge = vi.fn();
+const lookupPromotedMemoryKnowledge = vi.fn();
+const expandMemoryProvenance = vi.fn();
+const loadCandidateKnowledgeById = vi.fn();
 const promoteMemoryCandidate = vi.fn();
-const pruneMemoryKnowledge = vi.fn();
+const retirePromotedKnowledge = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ replayMemoryToCandidates, promoteMemoryCandidate, pruneMemoryKnowledge }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({
+  lookupMemoryEventTimeline,
+  lookupMemoryCandidateKnowledge,
+  lookupPromotedMemoryKnowledge,
+  expandMemoryProvenance,
+  loadCandidateKnowledgeById,
+  promoteMemoryCandidate,
+  retirePromotedKnowledge
+}));
 
 describe('runMemory', () => {
-  it('supports replay subcommand and emits json output', async () => {
+  it('supports events subcommand and emits json output', async () => {
     const { runMemory } = await import('./memory.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    replayMemoryToCandidates.mockReturnValue({
-      schemaVersion: '1.0',
-      command: 'memory-replay',
-      sourceIndex: '.playbook/memory/index.json',
-      generatedAt: '1970-01-01T00:00:00.000Z',
-      totalEvents: 2,
-      clustersEvaluated: 1,
-      candidates: []
-    });
+    lookupMemoryEventTimeline.mockReturnValue([{ eventInstanceId: 'evt-1' }]);
 
-    const exitCode = await runMemory('/repo', ['replay'], { format: 'json', quiet: false });
+    const exitCode = await runMemory('/repo', ['events', '--limit', '1'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.command).toBe('memory-replay');
-    expect(payload.totalEvents).toBe(2);
+    expect(payload.command).toBe('memory-events');
+    expect(payload.events).toHaveLength(1);
 
     logSpy.mockRestore();
   });
 
-  it('supports promote subcommand with from-candidate', async () => {
+  it('supports show for candidate ids', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    lookupMemoryCandidateKnowledge.mockReturnValue([
+      { candidateId: 'cand-1', title: 'Candidate 1', provenance: [{ eventId: 'evt-1', sourcePath: 'events/evt-1.json', fingerprint: 'f' }] }
+    ]);
+    expandMemoryProvenance.mockReturnValue([{ eventId: 'evt-1', sourcePath: 'events/evt-1.json', fingerprint: 'f', event: { eventInstanceId: 'evt-1' } }]);
+
+    const exitCode = await runMemory('/repo', ['show', 'cand-1'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-show');
+    expect(payload.type).toBe('candidate');
+    logSpy.mockRestore();
+  });
+
+  it('supports promote subcommand with positional candidate id', async () => {
     const { runMemory } = await import('./memory.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -44,8 +66,9 @@ describe('runMemory', () => {
       artifactPath: '.playbook/memory/knowledge/decisions.json'
     });
 
-    const exitCode = await runMemory('/repo', ['promote', '--from-candidate', 'cand-1'], { format: 'json', quiet: false });
+    const exitCode = await runMemory('/repo', ['promote', 'cand-1'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
+    expect(loadCandidateKnowledgeById).toHaveBeenCalledWith('/repo', 'cand-1');
     expect(promoteMemoryCandidate).toHaveBeenCalledWith('/repo', 'cand-1');
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
@@ -53,25 +76,22 @@ describe('runMemory', () => {
     logSpy.mockRestore();
   });
 
-  it('supports prune subcommand', async () => {
+  it('supports retire subcommand', async () => {
     const { runMemory } = await import('./memory.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    pruneMemoryKnowledge.mockReturnValue({
+    retirePromotedKnowledge.mockReturnValue({
       schemaVersion: '1.0',
-      command: 'memory-prune',
-      staleCandidatesPruned: 1,
-      supersededKnowledgePruned: 1,
-      duplicateKnowledgeCollapsed: 2,
-      duplicateCandidatesCollapsed: 1,
-      updatedArtifacts: []
+      command: 'memory-retire',
+      retired: { knowledgeId: 'decision-1' },
+      artifactPath: '.playbook/memory/knowledge/decisions.json'
     });
 
-    const exitCode = await runMemory('/repo', ['prune'], { format: 'json', quiet: false });
+    const exitCode = await runMemory('/repo', ['retire', 'decision-1'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.command).toBe('memory-prune');
+    expect(payload.command).toBe('memory-retire');
     logSpy.mockRestore();
   });
 });
