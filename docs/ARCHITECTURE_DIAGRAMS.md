@@ -24,6 +24,7 @@ flowchart TB
   n_fawxzzy_playbook --> n_zachariahredfield_playbook_core
   n_fawxzzy_playbook --> n_zachariahredfield_playbook_engine
   n_fawxzzy_playbook --> n_zachariahredfield_playbook_node
+  n_zachariahredfield_playbook_engine --> n_zachariahredfield_playbook_core
 ```
 
 ## Legend
