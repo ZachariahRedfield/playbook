@@ -112,6 +112,11 @@
         "path": "packages/contracts/src/knowledge.schema.json"
       },
       {
+        "id": "pattern-graph",
+        "version": "1.0",
+        "path": "packages/contracts/src/pattern-graph.schema.json"
+      },
+      {
         "id": "explain.memoryKnowledge",
         "version": "1.0",
         "path": "schema://cli/explain"

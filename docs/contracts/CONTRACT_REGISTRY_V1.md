@@ -28,6 +28,14 @@ Top-level object fields:
   - `schemaVersion`: roadmap schema version when available, otherwise `null`
   - `trackedFeatures`: deterministic subset of tracked roadmap features (`featureId`, `status`)
 
+
+## Schema registrations
+
+The `schemas.commandOutputs` array includes additive command-output schema registrations. Current file-backed entries include:
+
+- `packages/contracts/src/knowledge.schema.json`
+- `packages/contracts/src/pattern-graph.schema.json`
+
 ## Determinism guarantees
 
 The contract registry is deterministic by design.

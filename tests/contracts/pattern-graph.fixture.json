@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "pattern-graph",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "patterns": [
+    {
+      "id": "pattern.recursion",
+      "title": "Recursion",
+      "description": "A process calls itself through bounded reduction and base cases.",
+      "source": "research-conceptual",
+      "layer": "layer.execution",
+      "mechanism_refs": ["mechanism.self-reference", "mechanism.base-case"],
+      "evidence_refs": ["evidence.recursion.note"],
+      "instance_refs": ["instance.recursion.cli"],
+      "relation_edges": ["relation.recursion.symmetry"],
+      "scores": [
+        {
+          "id": "score.recursion.attractor",
+          "signal": "attractor-strength",
+          "value": 0.72,
+          "updatedAt": "2026-03-13T00:00:00.000Z",
+          "notes": "Research-backed conceptual score."
+        }
+      ],
+      "status": "observed"
+    },
+    {
+      "id": "pattern.symmetry",
+      "title": "Symmetry",
+      "description": "Balanced structure where transformations preserve intent.",
+      "source": "research-conceptual",
+      "layer": "layer.design",
+      "mechanism_refs": ["mechanism.invariance"],
+      "evidence_refs": ["evidence.symmetry.note"],
+      "instance_refs": ["instance.symmetry.schemas"],
+      "relation_edges": ["relation.recursion.symmetry"],
+      "scores": [
+        {
+          "id": "score.symmetry.attractor",
+          "signal": "attractor-strength",
+          "value": 0.65,
+          "updatedAt": "2026-03-13T00:00:00.000Z"
+        }
+      ],
+      "status": "observed"
+    },
+    {
+      "id": "pattern.chunking",
+      "title": "Chunking",
+      "description": "Split complex systems into bounded, composable units.",
+      "source": "repository-native",
+      "layer": "layer.architecture",
+      "mechanism_refs": ["mechanism.segmented-modeling"],
+      "evidence_refs": ["evidence.chunking.repo"],
+      "instance_refs": ["instance.chunking.packages"],
+      "relation_edges": ["relation.chunking.modularity"],
+      "scores": [
+        {
+          "id": "score.chunking.attractor",
+          "signal": "attractor-strength",
+          "value": 0.88,
+          "updatedAt": "2026-03-13T00:00:00.000Z"
+        }
+      ],
+      "status": "promoted"
+    },
+    {
+      "id": "pattern.modularity",
+      "title": "Modularity",
+      "description": "Independent modules interact through stable interfaces.",
+      "source": "repository-native",
+      "layer": "layer.architecture",
+      "mechanism_refs": ["mechanism.interface-boundary"],
+      "evidence_refs": ["evidence.modularity.repo"],
+      "instance_refs": ["instance.modularity.workspaces"],
+      "relation_edges": ["relation.chunking.modularity", "relation.modularity.layering"],
+      "scores": [
+        {
+          "id": "score.modularity.attractor",
+          "signal": "attractor-strength",
+          "value": 0.91,
+          "updatedAt": "2026-03-13T00:00:00.000Z"
+        }
+      ],
+      "status": "promoted"
+    },
+    {
+      "id": "pattern.layering",
+      "title": "Layering",
+      "description": "Arrange responsibilities into ordered levels with clear boundaries.",
+      "source": "repository-native",
+      "layer": "layer.architecture",
+      "mechanism_refs": ["mechanism.abstraction-levels"],
+      "evidence_refs": ["evidence.layering.repo"],
+      "instance_refs": ["instance.layering.packages"],
+      "relation_edges": ["relation.modularity.layering"],
+      "scores": [
+        {
+          "id": "score.layering.attractor",
+          "signal": "attractor-strength",
+          "value": 0.9,
+          "updatedAt": "2026-03-13T00:00:00.000Z"
+        }
+      ],
+      "status": "promoted"
+    }
+  ],
+  "mechanisms": [
+    { "id": "mechanism.self-reference", "title": "Self-reference", "description": "A unit references itself to continue reduction." },
+    { "id": "mechanism.base-case", "title": "Base case", "description": "A deterministic stop condition for recursion." },
+    { "id": "mechanism.invariance", "title": "Invariance", "description": "Transformations preserve core structure." },
+    { "id": "mechanism.segmented-modeling", "title": "Segmented modeling", "description": "Represent systems as cohesive chunks." },
+    { "id": "mechanism.interface-boundary", "title": "Interface boundary", "description": "Boundary contracts isolate module internals." },
+    { "id": "mechanism.abstraction-levels", "title": "Abstraction levels", "description": "Stack responsibilities from base to orchestration." }
+  ],
+  "layers": [
+    { "id": "layer.design", "title": "Design", "description": "Conceptual pattern definition layer.", "order": 0 },
+    { "id": "layer.execution", "title": "Execution", "description": "Runtime behavior and flow control.", "order": 1 },
+    { "id": "layer.architecture", "title": "Architecture", "description": "Repository module and contract structure.", "order": 2 }
+  ],
+  "evidence": [
+    {
+      "id": "evidence.recursion.note",
+      "title": "Recursion literature note",
+      "description": "Reference note describing recursive decomposition.",
+      "kind": "research",
+      "source": { "path": "docs/contracts/PATTERN_GRAPH.md" }
+    },
+    {
+      "id": "evidence.symmetry.note",
+      "title": "Symmetry literature note",
+      "description": "Reference note for symmetry and invariant transforms.",
+      "kind": "research",
+      "source": { "path": "docs/contracts/PATTERN_GRAPH.md" }
+    },
+    {
+      "id": "evidence.chunking.repo",
+      "title": "Repository package segmentation",
+      "description": "Package boundaries show chunking in practice.",
+      "kind": "code",
+      "source": { "path": "packages/", "lineStart": 1, "lineEnd": 1 }
+    },
+    {
+      "id": "evidence.modularity.repo",
+      "title": "Workspace modular interfaces",
+      "description": "Module boundaries expose interface-first design.",
+      "kind": "code",
+      "source": { "path": "packages/core/src/contracts/schemaRegistry.ts", "lineStart": 1, "lineEnd": 30 }
+    },
+    {
+      "id": "evidence.layering.repo",
+      "title": "Layered command structure",
+      "description": "CLI, engine, and core package layers are explicitly separated.",
+      "kind": "code",
+      "source": { "path": "packages/", "lineStart": 1, "lineEnd": 1 }
+    }
+  ],
+  "instances": [
+    {
+      "id": "instance.recursion.cli",
+      "pattern_id": "pattern.recursion",
+      "title": "Recursive workflow loop",
+      "description": "verify -> plan -> apply -> verify flow revisits states deterministically.",
+      "evidence_refs": ["evidence.recursion.note"]
+    },
+    {
+      "id": "instance.symmetry.schemas",
+      "pattern_id": "pattern.symmetry",
+      "title": "Schema symmetry",
+      "description": "Command output contracts mirror consistent id/version/path tuples.",
+      "evidence_refs": ["evidence.symmetry.note"]
+    },
+    {
+      "id": "instance.chunking.packages",
+      "pattern_id": "pattern.chunking",
+      "title": "Monorepo package chunks",
+      "description": "Packages split core behavior into independent units.",
+      "evidence_refs": ["evidence.chunking.repo"]
+    },
+    {
+      "id": "instance.modularity.workspaces",
+      "pattern_id": "pattern.modularity",
+      "title": "Workspace modularity",
+      "description": "Package workspace boundaries preserve module autonomy.",
+      "evidence_refs": ["evidence.modularity.repo"]
+    },
+    {
+      "id": "instance.layering.packages",
+      "pattern_id": "pattern.layering",
+      "title": "Layered package topology",
+      "description": "CLI depends on engine and core while keeping layer boundaries explicit.",
+      "evidence_refs": ["evidence.layering.repo"]
+    }
+  ],
+  "relations": [
+    {
+      "id": "relation.recursion.symmetry",
+      "from_pattern": "pattern.recursion",
+      "to_pattern": "pattern.symmetry",
+      "type": "reinforces",
+      "description": "Recursive systems often rely on symmetry across recursive steps.",
+      "evidence_refs": ["evidence.recursion.note", "evidence.symmetry.note"],
+      "status": "observed"
+    },
+    {
+      "id": "relation.chunking.modularity",
+      "from_pattern": "pattern.chunking",
+      "to_pattern": "pattern.modularity",
+      "type": "reinforces",
+      "description": "Chunking supports modular boundaries and local reasoning.",
+      "evidence_refs": ["evidence.chunking.repo", "evidence.modularity.repo"],
+      "status": "promoted"
+    },
+    {
+      "id": "relation.modularity.layering",
+      "from_pattern": "pattern.modularity",
+      "to_pattern": "pattern.layering",
+      "type": "depends-on",
+      "description": "Stable layering clarifies modular contracts across levels.",
+      "evidence_refs": ["evidence.modularity.repo", "evidence.layering.repo"],
+      "status": "promoted"
+    }
+  ]
+}

@@ -81,6 +81,8 @@ export const memoryArtifactSchemaRegistry: RegisteredSchemaContract[] = [
 
 export const additiveCommandFieldSchemaRegistry: RegisteredSchemaContract[] = [
   { id: 'query.memoryKnowledge', version: '1.0', path: 'schema://cli/query', kind: 'command-output' },
+  { id: 'knowledge', version: '1.0', path: 'packages/contracts/src/knowledge.schema.json', kind: 'command-output' },
+  { id: 'pattern-graph', version: '1.0', path: 'packages/contracts/src/pattern-graph.schema.json', kind: 'command-output' },
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain', kind: 'command-output' },
   { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan', kind: 'command-output' },
   { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr', kind: 'command-output' },
