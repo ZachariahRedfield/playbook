@@ -46,7 +46,37 @@ export const memoryArtifactSchemaRegistry: RegisteredSchemaContract[] = [
     path: `${controlPlaneRuntimePaths.runs}/*/policy-decisions/*.json`,
     kind: 'memory-artifact'
   },
-  { id: 'runtime-log-envelope', version: CONTROL_PLANE_RUNTIME_SCHEMA_VERSION, path: `${controlPlaneRuntimePaths.logs}/*.jsonl`, kind: 'memory-artifact' }
+  { id: 'runtime-log-envelope', version: CONTROL_PLANE_RUNTIME_SCHEMA_VERSION, path: `${controlPlaneRuntimePaths.logs}/*.jsonl`, kind: 'memory-artifact' },
+  {
+    id: 'compiled-runtime-task-input',
+    version: CONTROL_PLANE_RUNTIME_SCHEMA_VERSION,
+    path: `${controlPlaneRuntimePaths.compiledTasks}/*.json`,
+    kind: 'memory-artifact'
+  },
+  {
+    id: 'plan-runtime-compilation-metadata',
+    version: CONTROL_PLANE_RUNTIME_SCHEMA_VERSION,
+    path: `${controlPlaneRuntimePaths.dryRuns}/*/metadata.json`,
+    kind: 'memory-artifact'
+  },
+  {
+    id: 'dry-run-summary-envelope',
+    version: CONTROL_PLANE_RUNTIME_SCHEMA_VERSION,
+    path: `${controlPlaneRuntimePaths.dryRuns}/*/summary.json`,
+    kind: 'memory-artifact'
+  },
+  {
+    id: 'approval-requirement-summary',
+    version: CONTROL_PLANE_RUNTIME_SCHEMA_VERSION,
+    path: `${controlPlaneRuntimePaths.dryRuns}/*/approval.json`,
+    kind: 'memory-artifact'
+  },
+  {
+    id: 'scheduling-preview-record',
+    version: CONTROL_PLANE_RUNTIME_SCHEMA_VERSION,
+    path: `${controlPlaneRuntimePaths.dryRuns}/*/schedule/*.json`,
+    kind: 'memory-artifact'
+  },
 ] as const;
 
 export const additiveCommandFieldSchemaRegistry: RegisteredSchemaContract[] = [

@@ -19,18 +19,26 @@ export type {
 export type {
   AgentDescriptor,
   AgentRecord,
+  CompiledRuntimeTaskInput,
+  ApprovalRequirementSummary,
   ApprovalState,
   ControlPlaneArtifactKind,
   ControlPlaneSchemaMetadata,
+  DryRunSummaryEnvelope,
   PolicyDecisionRecord,
   PolicyState,
   QueueItem,
   RunRecord,
   RunState,
   RuntimeLogEnvelope,
+  RuntimeTaskKind,
+  RuntimeTaskMutabilityClass,
   TaskDependencyEdge,
   TaskRecord,
-  TaskState
+  TaskState,
+  PlanRuntimeCompilationMetadata,
+  PlanTaskContractInput,
+  SchedulingPreviewRecord
 } from './contracts/controlPlaneRuntime.js';
 export type Severity = 'WARN' | 'RECOMMEND' | 'INFO';
 
@@ -61,11 +69,16 @@ export {
   assertTaskStateTransition,
   controlPlaneArtifactKinds,
   controlPlaneRuntimePaths,
+  compilePlanTaskToRuntimeTask,
+  compilePlanToRuntimeDryRun,
   createAgentId,
   createControlPlaneSchemaMetadata,
+  createPlanTaskId,
   createRunId,
   createTaskId,
   policyStates,
+  runtimeTaskKinds,
+  runtimeTaskMutabilityClasses,
   runStates,
   taskStates
 } from './contracts/controlPlaneRuntime.js';

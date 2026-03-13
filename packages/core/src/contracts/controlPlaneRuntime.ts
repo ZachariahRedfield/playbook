@@ -7,7 +7,12 @@ export const controlPlaneArtifactKinds = [
   'task-dependency-edge',
   'queue-item',
   'policy-decision-record',
-  'runtime-log-envelope'
+  'runtime-log-envelope',
+  'compiled-runtime-task-input',
+  'plan-runtime-compilation-metadata',
+  'dry-run-summary-envelope',
+  'approval-requirement-summary',
+  'scheduling-preview-record'
 ] as const;
 
 export type ControlPlaneArtifactKind = (typeof controlPlaneArtifactKinds)[number];
@@ -91,13 +96,79 @@ export type RuntimeLogEnvelope = ControlPlaneSchemaMetadata<'runtime-log-envelop
   message: string;
 };
 
+export type PlanTaskContractInput = {
+  ruleId: string;
+  file: string | null;
+  action: string;
+  autoFix: boolean;
+};
+
+export const runtimeTaskKinds = ['apply-fix', 'manual-remediation', 'observe-only'] as const;
+export type RuntimeTaskKind = (typeof runtimeTaskKinds)[number];
+
+export const runtimeTaskMutabilityClasses = ['mutating', 'read-only'] as const;
+export type RuntimeTaskMutabilityClass = (typeof runtimeTaskMutabilityClasses)[number];
+
+export type CompiledRuntimeTaskInput = ControlPlaneSchemaMetadata<'compiled-runtime-task-input'> & {
+  runId: string;
+  runtimeTaskId: string;
+  sourcePlanTaskId: string;
+  sourcePlanTaskIndex: number;
+  ruleId: string;
+  file: string | null;
+  action: string;
+  taskKind: RuntimeTaskKind;
+  mutabilityClass: RuntimeTaskMutabilityClass;
+  dependencies: string[];
+  provenance: {
+    planTaskId: string;
+    planTaskIndex: number;
+  };
+};
+
+export type PlanRuntimeCompilationMetadata = ControlPlaneSchemaMetadata<'plan-runtime-compilation-metadata'> & {
+  runId: string;
+  planDigest: string;
+  planTaskCount: number;
+  compiledTaskCount: number;
+  derivedDependencyEdgeCount: number;
+  createdAt: number;
+};
+
+export type ApprovalRequirementSummary = ControlPlaneSchemaMetadata<'approval-requirement-summary'> & {
+  runId: string;
+  approvalRequired: boolean;
+  approvalRequiredTaskIds: string[];
+  approvalRequiredTaskCount: number;
+  reason: 'manual-remediation-tasks-present' | 'none';
+};
+
+export type SchedulingPreviewRecord = ControlPlaneSchemaMetadata<'scheduling-preview-record'> & {
+  runId: string;
+  runtimeTaskId: string;
+  sequence: number;
+  dependencyCount: number;
+  blockedByTaskIds: string[];
+  ready: boolean;
+};
+
+export type DryRunSummaryEnvelope = ControlPlaneSchemaMetadata<'dry-run-summary-envelope'> & {
+  runId: string;
+  metadata: PlanRuntimeCompilationMetadata;
+  approval: ApprovalRequirementSummary;
+  scheduling: SchedulingPreviewRecord[];
+  tasks: CompiledRuntimeTaskInput[];
+};
+
 export const controlPlaneRuntimePaths = {
   root: '.playbook/runtime',
   agents: '.playbook/runtime/agents',
   runs: '.playbook/runtime/runs',
   tasks: '.playbook/runtime/tasks',
+  compiledTasks: '.playbook/runtime/tasks/compiled',
   logs: '.playbook/runtime/logs',
-  queue: '.playbook/runtime/queue'
+  queue: '.playbook/runtime/queue',
+  dryRuns: '.playbook/runtime/dry-runs'
 } as const;
 
 const stableSerialize = (value: unknown): string => {
@@ -142,6 +213,114 @@ export const createRunId = (input: { agentId: string; repoId: string; objective:
   `run_${stableHash(stableSerialize(input))}`;
 
 export const createTaskId = (input: { runId: string; label: string }): string => `tsk_${stableHash(stableSerialize(input))}`;
+
+export const createPlanTaskId = (input: { task: PlanTaskContractInput; index: number }): string =>
+  `plt_${stableHash(stableSerialize({ index: input.index, ...input.task }))}`;
+
+const classifyRuntimeTaskKind = (task: PlanTaskContractInput): RuntimeTaskKind => {
+  if (task.autoFix) return 'apply-fix';
+  const normalizedAction = task.action.trim().toLowerCase();
+  if (normalizedAction.startsWith('verify') || normalizedAction.startsWith('audit') || normalizedAction.startsWith('inspect')) {
+    return 'observe-only';
+  }
+
+  return 'manual-remediation';
+};
+
+const classifyMutability = (task: PlanTaskContractInput): RuntimeTaskMutabilityClass => (task.autoFix ? 'mutating' : 'read-only');
+
+export const compilePlanTaskToRuntimeTask = (input: {
+  runId: string;
+  task: PlanTaskContractInput;
+  taskIndex: number;
+  dependencyTaskIds: string[];
+}): CompiledRuntimeTaskInput => {
+  const sourcePlanTaskId = createPlanTaskId({ task: input.task, index: input.taskIndex });
+
+  return {
+    ...createControlPlaneSchemaMetadata('compiled-runtime-task-input'),
+    runId: input.runId,
+    runtimeTaskId: createTaskId({ runId: input.runId, label: sourcePlanTaskId }),
+    sourcePlanTaskId,
+    sourcePlanTaskIndex: input.taskIndex,
+    ruleId: input.task.ruleId,
+    file: input.task.file,
+    action: input.task.action,
+    taskKind: classifyRuntimeTaskKind(input.task),
+    mutabilityClass: classifyMutability(input.task),
+    dependencies: [...new Set(input.dependencyTaskIds)].sort(),
+    provenance: {
+      planTaskId: sourcePlanTaskId,
+      planTaskIndex: input.taskIndex
+    }
+  };
+};
+
+export const compilePlanToRuntimeDryRun = (input: {
+  runId: string;
+  planTasks: PlanTaskContractInput[];
+  createdAt: number;
+}): DryRunSummaryEnvelope => {
+  const planTaskIdsByFile = new Map<string, string>();
+  const compiledTasks: CompiledRuntimeTaskInput[] = input.planTasks.map((task, index) => {
+    const priorDependency = task.file ? planTaskIdsByFile.get(task.file) : undefined;
+    const compiledTask = compilePlanTaskToRuntimeTask({
+      runId: input.runId,
+      task,
+      taskIndex: index,
+      dependencyTaskIds: priorDependency ? [priorDependency] : []
+    });
+
+    if (task.file) {
+      planTaskIdsByFile.set(task.file, compiledTask.runtimeTaskId);
+    }
+
+    return compiledTask;
+  });
+
+  const approvalRequiredTaskIds = compiledTasks
+    .filter((task) => task.taskKind === 'manual-remediation')
+    .map((task) => task.runtimeTaskId)
+    .sort();
+
+  const scheduling = compiledTasks.map((task, index) => ({
+    ...createControlPlaneSchemaMetadata('scheduling-preview-record'),
+    runId: input.runId,
+    runtimeTaskId: task.runtimeTaskId,
+    sequence: index,
+    dependencyCount: task.dependencies.length,
+    blockedByTaskIds: [...task.dependencies],
+    ready: task.dependencies.length === 0
+  }));
+
+  const metadata: PlanRuntimeCompilationMetadata = {
+    ...createControlPlaneSchemaMetadata('plan-runtime-compilation-metadata'),
+    runId: input.runId,
+    planDigest: `pln_${stableHash(stableSerialize(input.planTasks))}`,
+    planTaskCount: input.planTasks.length,
+    compiledTaskCount: compiledTasks.length,
+    derivedDependencyEdgeCount: compiledTasks.reduce((total, task) => total + task.dependencies.length, 0),
+    createdAt: input.createdAt
+  };
+
+  const approval: ApprovalRequirementSummary = {
+    ...createControlPlaneSchemaMetadata('approval-requirement-summary'),
+    runId: input.runId,
+    approvalRequired: approvalRequiredTaskIds.length > 0,
+    approvalRequiredTaskIds,
+    approvalRequiredTaskCount: approvalRequiredTaskIds.length,
+    reason: approvalRequiredTaskIds.length > 0 ? 'manual-remediation-tasks-present' : 'none'
+  };
+
+  return {
+    ...createControlPlaneSchemaMetadata('dry-run-summary-envelope'),
+    runId: input.runId,
+    metadata,
+    approval,
+    scheduling,
+    tasks: compiledTasks
+  };
+};
 
 const validRunStateTransitions: Record<RunState, ReadonlySet<RunState>> = {
   pending: new Set(['queued', 'cancelled']),
