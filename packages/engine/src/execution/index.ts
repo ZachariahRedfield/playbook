@@ -73,7 +73,7 @@ export const runRuleExecution = (repoRoot: string) => {
 
 export const generateExecutionPlan = (repoRoot: string): { tasks: PlanTask[] } => {
   const findings = runRuleExecution(repoRoot);
-  const planner = new PlanGenerator();
+  const planner = new PlanGenerator({ projectRoot: repoRoot });
   const plan = planner.generate(findings.failures);
 
   captureMemoryRuntimeEventSafe(
@@ -93,7 +93,7 @@ export const generateExecutionPlan = (repoRoot: string): { tasks: PlanTask[] } =
 
 export const generatePlanContract = (repoRoot: string): PlanContract => {
   const verify = verifyRepo(repoRoot);
-  const planner = new PlanGenerator();
+  const planner = new PlanGenerator({ projectRoot: repoRoot });
   const plan = planner.generate(verify.failures);
   const tasks = [...plan.tasks, ...buildArtifactHygieneTasks(repoRoot)];
 
@@ -220,7 +220,10 @@ export const parsePlanArtifact = (payload: unknown): { tasks: PlanTask[] } => {
       ruleId: typedTask.ruleId,
       file: typedTask.file ?? null,
       action: typedTask.action,
-      autoFix: typedTask.autoFix
+      autoFix: typedTask.autoFix,
+      ...(typedTask.advisory && typeof typedTask.advisory === 'object'
+        ? { advisory: typedTask.advisory as PlanTask['advisory'] }
+        : {})
     } as PlanTask;
   });
 

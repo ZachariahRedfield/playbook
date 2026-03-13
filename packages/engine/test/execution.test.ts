@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import type { Rule } from '../src/execution/types.js';
 import { FixExecutor, HandlerResolver } from '../src/execution/fixExecutor.js';
 import { PlanGenerator } from '../src/execution/planGenerator.js';
@@ -52,6 +55,111 @@ describe('execution pipeline units', () => {
     ]);
   });
 
+  it('PlanGenerator baseline ordering is unchanged when no promoted outcome knowledge matches', () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-plan-baseline-'));
+    const planner = new PlanGenerator({ projectRoot: repoRoot });
+
+    const plan = planner.generate([
+      { id: 'B', message: 'second' },
+      { id: 'A', message: 'first' }
+    ]);
+
+    expect(plan.tasks.map((task) => task.ruleId)).toEqual(['A', 'B']);
+    expect(plan.tasks.every((task) => task.advisory?.outcomeLearning === undefined)).toBe(true);
+  });
+
+  it('PlanGenerator deterministically prioritizes findings using matching promoted outcome knowledge', () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-plan-ranking-'));
+    const knowledgePath = path.join(repoRoot, '.playbook/memory/knowledge/decisions.json');
+    fs.mkdirSync(path.dirname(knowledgePath), { recursive: true });
+    fs.writeFileSync(knowledgePath, JSON.stringify({
+      schemaVersion: '1.0',
+      artifact: 'memory-knowledge',
+      kind: 'decision',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      entries: [
+        {
+          knowledgeId: 'decision-k1',
+          candidateId: 'cand-1',
+          sourceCandidateIds: ['cand-1'],
+          sourceEventFingerprints: ['fp-1'],
+          kind: 'decision',
+          title: 'Prefer remediating A first',
+          summary: 'Rule A has stronger outcome signal.',
+          fingerprint: 'f-1',
+          module: 'docs',
+          ruleId: 'A',
+          failureShape: 'A:fixable',
+          promotedAt: '2026-01-01T00:00:00.000Z',
+          provenance: [{ eventId: 'evt-1', sourcePath: 'events/1.json', fingerprint: 'fp-1', runId: 'run-1' }],
+          status: 'active',
+          supersedes: [],
+          supersededBy: []
+        }
+      ]
+    }, null, 2));
+
+    const planner = new PlanGenerator({ projectRoot: repoRoot });
+    const findings = [
+      { id: 'B', message: 'second', evidence: 'src/file.ts', fix: 'fix b' },
+      { id: 'A', message: 'first', evidence: 'docs/file.md', fix: 'fix a' }
+    ];
+
+    const first = planner.generate(findings);
+    const second = planner.generate(findings);
+
+    expect(first.tasks.map((task) => task.ruleId)).toEqual(['A', 'B']);
+    expect(first.tasks.map((task) => task.ruleId)).toEqual(second.tasks.map((task) => task.ruleId));
+    expect(first.tasks[0]?.advisory?.outcomeLearning?.influencedByKnowledgeIds).toEqual(['decision-k1']);
+  });
+
+  it('PlanGenerator emits advisory provenance without expanding mutation authority', () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-plan-provenance-'));
+    const knowledgePath = path.join(repoRoot, '.playbook/memory/knowledge/decisions.json');
+    fs.mkdirSync(path.dirname(knowledgePath), { recursive: true });
+    fs.writeFileSync(knowledgePath, JSON.stringify({
+      schemaVersion: '1.0',
+      artifact: 'memory-knowledge',
+      kind: 'decision',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      entries: [
+        {
+          knowledgeId: 'decision-k2',
+          candidateId: 'cand-2',
+          sourceCandidateIds: ['cand-2', 'cand-3'],
+          sourceEventFingerprints: ['fp-2', 'fp-3'],
+          kind: 'decision',
+          title: 'Use prior outcome',
+          summary: 'Carry forward successful ordering rationale.',
+          fingerprint: 'f-2',
+          module: 'docs',
+          ruleId: 'PB001',
+          failureShape: 'PB001:fixable',
+          promotedAt: '2026-01-02T00:00:00.000Z',
+          provenance: [{ eventId: 'evt-2', sourcePath: 'events/2.json', fingerprint: 'fp-2', runId: 'run-2' }],
+          status: 'active',
+          supersedes: [],
+          supersededBy: []
+        }
+      ]
+    }, null, 2));
+
+    const planner = new PlanGenerator({ projectRoot: repoRoot });
+    const plan = planner.generate([{ id: 'PB001', message: 'missing docs', evidence: 'docs/ARCHITECTURE.md', fix: 'update docs' }]);
+
+    expect(plan.tasks[0]?.autoFix).toBe(true);
+    expect(plan.tasks[0]?.advisory?.outcomeLearning).toMatchObject({
+      influencedByKnowledgeIds: ['decision-k2'],
+      support: {
+        sourceCandidateCount: 2,
+        provenanceCount: 1,
+        eventFingerprintCount: 2
+      }
+    });
+    expect(plan.tasks[0]?.advisory?.outcomeLearning?.confidence).toBeGreaterThan(0);
+    expect(plan.tasks[0]?.advisory?.outcomeLearning?.confidence).toBeLessThanOrEqual(1);
+  });
+
 
 
   it('PlanGenerator task ids are deterministic for equivalent findings', () => {
@@ -70,13 +178,43 @@ describe('execution pipeline units', () => {
       command: 'plan',
       tasks: [
         { id: 'task-2', ruleId: 'B', file: null, action: 'second', autoFix: false },
-        { id: 'task-1', ruleId: 'A', file: 'docs/PLAYBOOK_NOTES.md', action: 'first', autoFix: true }
+        {
+          id: 'task-1',
+          ruleId: 'A',
+          file: 'docs/PLAYBOOK_NOTES.md',
+          action: 'first',
+          autoFix: true,
+          advisory: {
+            outcomeLearning: {
+              influencedByKnowledgeIds: ['decision-k9'],
+              rationale: 'Ranked using promoted outcome knowledge.',
+              scope: { ruleIdMatched: true, moduleMatched: true, failureShapeMatched: false },
+              support: { sourceCandidateCount: 1, provenanceCount: 1, eventFingerprintCount: 1 },
+              confidence: 0.3
+            }
+          }
+        }
       ]
     });
 
     expect(parsed.tasks).toEqual([
       { id: 'task-2', ruleId: 'B', file: null, action: 'second', autoFix: false },
-      { id: 'task-1', ruleId: 'A', file: 'docs/PLAYBOOK_NOTES.md', action: 'first', autoFix: true }
+      {
+        id: 'task-1',
+        ruleId: 'A',
+        file: 'docs/PLAYBOOK_NOTES.md',
+        action: 'first',
+        autoFix: true,
+        advisory: {
+          outcomeLearning: {
+            influencedByKnowledgeIds: ['decision-k9'],
+            rationale: 'Ranked using promoted outcome knowledge.',
+            scope: { ruleIdMatched: true, moduleMatched: true, failureShapeMatched: false },
+            support: { sourceCandidateCount: 1, provenanceCount: 1, eventFingerprintCount: 1 },
+            confidence: 0.3
+          }
+        }
+      }
     ]);
   });
 

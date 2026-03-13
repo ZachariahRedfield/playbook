@@ -17,6 +17,23 @@ export type PlanTask = {
   file: string | null;
   action: string;
   autoFix: boolean;
+  advisory?: {
+    outcomeLearning?: {
+      influencedByKnowledgeIds: string[];
+      rationale: string;
+      scope: {
+        ruleIdMatched: boolean;
+        moduleMatched: boolean;
+        failureShapeMatched: boolean;
+      };
+      support: {
+        sourceCandidateCount: number;
+        provenanceCount: number;
+        eventFingerprintCount: number;
+      };
+      confidence: number;
+    };
+  };
 };
 
 export type FixHandlerContext = {
