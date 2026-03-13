@@ -65,5 +65,66 @@
     },
     "schemaVersion": null,
     "trackedFeatures": []
+  },
+  "schemas": {
+    "memoryArtifacts": [
+      {
+        "id": "memory-event",
+        "version": "1.0.0",
+        "path": ".playbook/memory/events/runtime/*.json"
+      },
+      {
+        "id": "candidate-knowledge-record",
+        "version": "1.0.0",
+        "path": ".playbook/memory/knowledge/candidates/*.json"
+      },
+      {
+        "id": "promoted-knowledge-record",
+        "version": "1.0.0",
+        "path": ".playbook/memory/knowledge/promoted/*.json"
+      },
+      {
+        "id": "retired-knowledge-record",
+        "version": "1.0.0",
+        "path": ".playbook/memory/knowledge/promoted/*.json"
+      },
+      {
+        "id": "memory-replay-result",
+        "version": "1.0",
+        "path": ".playbook/memory/replay/*.json"
+      },
+      {
+        "id": "knowledge-candidate-output",
+        "version": "1.0",
+        "path": ".playbook/knowledge/candidates.json"
+      }
+    ],
+    "commandOutputs": [
+      {
+        "id": "query.memoryKnowledge",
+        "version": "1.0",
+        "path": "schema://cli/query"
+      },
+      {
+        "id": "explain.memoryKnowledge",
+        "version": "1.0",
+        "path": "schema://cli/explain"
+      },
+      {
+        "id": "plan.tasks[].advisory.outcomeLearning",
+        "version": "1.0",
+        "path": "schema://cli/plan"
+      },
+      {
+        "id": "analyze-pr.preventionGuidance",
+        "version": "1.0",
+        "path": "schema://cli/analyze-pr"
+      },
+      {
+        "id": "analyze-pr.context.sources[].promoted-knowledge",
+        "version": "1.0",
+        "path": "schema://cli/analyze-pr"
+      }
+    ]
   }
 }
