@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0",
+  "artifact": "memory-knowledge",
+  "kind": "pattern",
+  "generatedAt": "2026-02-04T00:00:00.000Z",
+  "entries": [
+    {
+      "knowledgeId": "pattern-live",
+      "candidateId": "cand-live",
+      "sourceCandidateIds": [
+        "cand-live"
+      ],
+      "sourceEventFingerprints": [
+        "fp-1"
+      ],
+      "kind": "pattern",
+      "title": "Promoted pattern",
+      "summary": "Reusable guidance",
+      "fingerprint": "fp-1",
+      "module": "module-a",
+      "ruleId": "RULE-1",
+      "failureShape": "shape-a",
+      "promotedAt": "2026-02-04T00:00:00.000Z",
+      "provenance": [
+        {
+          "eventId": "event-1",
+          "sourcePath": ".playbook/memory/events/event-1.json",
+          "fingerprint": "fp-1",
+          "runId": "run-1"
+        }
+      ],
+      "status": "active",
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "knowledgeId": "pattern-old",
+      "candidateId": "cand-stale",
+      "sourceCandidateIds": [
+        "cand-stale"
+      ],
+      "sourceEventFingerprints": [
+        "fp-2"
+      ],
+      "kind": "pattern",
+      "title": "Superseded pattern",
+      "summary": "Old guidance",
+      "fingerprint": "fp-2",
+      "module": "module-b",
+      "ruleId": "RULE-2",
+      "failureShape": "shape-b",
+      "promotedAt": "2025-01-01T00:00:00.000Z",
+      "provenance": [
+        {
+          "eventId": "event-2",
+          "sourcePath": ".playbook/memory/events/event-2.json",
+          "fingerprint": "fp-2",
+          "runId": "run-2"
+        }
+      ],
+      "status": "superseded",
+      "supersedes": [],
+      "supersededBy": [
+        "pattern-live"
+      ]
+    }
+  ]
+}

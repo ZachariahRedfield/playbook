@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "verify_run",
+  "eventInstanceId": "event-1",
+  "eventFingerprint": "fp-1",
+  "createdAt": "2026-02-01T00:00:00.000Z",
+  "repoRevision": "r1",
+  "sources": [
+    {
+      "type": "verify",
+      "reference": "verify-1"
+    }
+  ],
+  "subjectModules": [
+    "module-a"
+  ],
+  "ruleIds": [
+    "RULE-1"
+  ],
+  "riskSummary": {
+    "level": "low",
+    "signals": []
+  },
+  "outcome": {
+    "status": "success",
+    "summary": "ok"
+  },
+  "salienceInputs": {}
+}

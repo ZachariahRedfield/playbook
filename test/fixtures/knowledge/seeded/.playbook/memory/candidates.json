@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "command": "memory-replay",
+  "generatedAt": "2026-02-03T00:00:00.000Z",
+  "candidates": [
+    {
+      "candidateId": "cand-live",
+      "kind": "pattern",
+      "title": "Live candidate",
+      "summary": "Needs review",
+      "clusterKey": "cluster-live",
+      "salienceScore": 8,
+      "salienceFactors": {
+        "severity": 1
+      },
+      "fingerprint": "fp-1",
+      "module": "module-a",
+      "ruleId": "RULE-1",
+      "failureShape": "shape-a",
+      "eventCount": 1,
+      "provenance": [
+        {
+          "eventId": "event-1",
+          "sourcePath": ".playbook/memory/events/event-1.json",
+          "fingerprint": "fp-1",
+          "runId": "run-1"
+        }
+      ],
+      "lastSeenAt": "2026-02-03T00:00:00.000Z",
+      "supersession": {
+        "evolutionOrdinal": 1,
+        "priorCandidateIds": [],
+        "supersedesCandidateIds": []
+      }
+    },
+    {
+      "candidateId": "cand-stale",
+      "kind": "decision",
+      "title": "Stale candidate",
+      "summary": "Old evidence",
+      "clusterKey": "cluster-stale",
+      "salienceScore": 3,
+      "salienceFactors": {
+        "severity": 1
+      },
+      "fingerprint": "fp-2",
+      "module": "module-b",
+      "ruleId": "RULE-2",
+      "failureShape": "shape-b",
+      "eventCount": 1,
+      "provenance": [
+        {
+          "eventId": "event-2",
+          "sourcePath": ".playbook/memory/events/event-2.json",
+          "fingerprint": "fp-2",
+          "runId": "run-2"
+        }
+      ],
+      "lastSeenAt": "2025-01-01T00:00:00.000Z",
+      "supersession": {
+        "evolutionOrdinal": 1,
+        "priorCandidateIds": [],
+        "supersedesCandidateIds": []
+      }
+    }
+  ]
+}

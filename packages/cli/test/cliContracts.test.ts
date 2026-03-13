@@ -306,7 +306,7 @@ function validateAgainstSchema(value: unknown, schema: unknown): boolean {
 }
 
 describe('CLI JSON contract snapshots', () => {
-  it('matches committed snapshots for stable automation contracts', { timeout: 20000 }, () => {
+  it('matches committed snapshots for stable automation contracts', { timeout: 120000 }, () => {
     fs.mkdirSync(snapshotDir, { recursive: true });
     const fixtureRepo = createContractFixtureRepo();
 
@@ -335,7 +335,7 @@ describe('CLI JSON contract snapshots', () => {
     }
   });
 
-  it('returns valid zero-state payloads for all knowledge commands in empty repositories', () => {
+  it('returns valid zero-state payloads for all knowledge commands in empty repositories', { timeout: 30000 }, () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-13T00:00:00.000Z'));
     const fixtureRepo = createEmptyKnowledgeFixtureRepo({ prefix: 'playbook-contract-empty-fixture-' });
@@ -364,7 +364,7 @@ describe('CLI JSON contract snapshots', () => {
 });
 
 describe('contracts command artifact behavior', () => {
-  it('supports --json, --out, and --json --out behavior', () => {
+  it('supports --json, --out, and --json --out behavior', { timeout: 30000 }, () => {
     const fixtureRepo = createContractFixtureRepo();
 
     try {

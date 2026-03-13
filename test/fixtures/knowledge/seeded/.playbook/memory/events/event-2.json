@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "plan_run",
+  "eventInstanceId": "event-2",
+  "eventFingerprint": "fp-2",
+  "createdAt": "2026-02-02T00:00:00.000Z",
+  "repoRevision": "r2",
+  "sources": [
+    {
+      "type": "plan",
+      "reference": "plan-1"
+    }
+  ],
+  "subjectModules": [
+    "module-b"
+  ],
+  "ruleIds": [
+    "RULE-2"
+  ],
+  "riskSummary": {
+    "level": "medium",
+    "signals": []
+  },
+  "outcome": {
+    "status": "success",
+    "summary": "ok"
+  },
+  "salienceInputs": {}
+}

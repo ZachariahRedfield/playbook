@@ -21,7 +21,10 @@ describe('knowledge query services', () => {
     const root = createSeededKnowledgeFixtureRepo({ prefix: 'playbook-knowledge-query-' });
 
     try {
-      expect(knowledgeList(root).command).toBe('knowledge-list');
+      const listed = knowledgeList(root);
+      expect(listed.command).toBe('knowledge-list');
+      expect(listed.summary.byType).toEqual({ evidence: 2, candidate: 2, promoted: 1, superseded: 1 });
+      expect(listed.summary.byStatus).toEqual({ observed: 2, active: 2, stale: 1, retired: 0, superseded: 1 });
       expect(knowledgeQuery(root, { type: 'candidate' }).knowledge.map((record) => record.id)).toEqual(['cand-live', 'cand-stale']);
       expect(knowledgeTimeline(root, { order: 'asc', limit: 4 }).knowledge.map((record) => record.id)).toEqual([
         'cand-stale',
@@ -45,11 +48,16 @@ describe('knowledge query services', () => {
       expect(inspected.type).toBe('promoted');
       expect(inspected.metadata.summary).toBe('Reusable guidance');
       expect(inspected.provenance.relatedRecordIds).toEqual(['cand-live']);
+      expect(inspected.status).toBe('active');
 
       const provenance = knowledgeProvenance(root, 'pattern-live');
       expect(provenance.provenance.record.id).toBe('pattern-live');
       expect(provenance.provenance.evidence.map((record) => record.id)).toEqual(['event-1']);
       expect(provenance.provenance.relatedRecords.map((record) => record.id)).toEqual(['cand-live']);
+
+      const supersededProvenance = knowledgeProvenance(root, 'pattern-old');
+      expect(supersededProvenance.provenance.record.type).toBe('superseded');
+      expect(supersededProvenance.provenance.relatedRecords.map((record) => record.id)).toEqual(['pattern-live', 'cand-stale']);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
