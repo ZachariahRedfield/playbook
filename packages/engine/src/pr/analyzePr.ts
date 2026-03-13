@@ -122,6 +122,55 @@ const resolveChangedLineMap = (projectRoot: string, baseRef: string, changedFile
 
 const uniqueSorted = (values: string[]): string[] => Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 
+const classifyFinding = (finding: AnalyzePullRequestResult['findings'][number]): string => {
+  if (finding.ruleId === 'playbook.pr.risk.module') {
+    return 'module-risk';
+  }
+
+  if (finding.ruleId.startsWith('PLAYBOOK_DOCS_') || finding.ruleId.startsWith('PB007') || finding.ruleId.startsWith('PB009')) {
+    return 'documentation';
+  }
+
+  if (finding.ruleId.startsWith('PB')) {
+    return 'governance-rule';
+  }
+
+  return 'general-review';
+};
+
+const toActionClass = (message: string): string => {
+  if (message.includes('playbook verify')) return 'run-verify';
+  if (message.includes('playbook plan') || message.includes('playbook apply')) return 'plan-apply-remediation';
+  if (message.includes('playbook doctor')) return 'risk-investigation';
+  if (message.includes('playbook query impact')) return 'module-impact-review';
+  if (message.toLowerCase().includes('docs')) return 'documentation-review';
+  if (message.toLowerCase().includes('ownership')) return 'ownership-review';
+  if (message.toLowerCase().includes('architecture')) return 'architecture-review';
+  return 'general-review';
+};
+
+const summarizeActionClasses = (reviewGuidance: string[], findings: AnalyzePullRequestResult['findings']): string[] => {
+  const counts = new Map<string, number>();
+
+  for (const message of reviewGuidance) {
+    const actionClass = toActionClass(message);
+    counts.set(actionClass, (counts.get(actionClass) ?? 0) + 1);
+  }
+
+  for (const finding of findings) {
+    if (!finding.recommendation) {
+      continue;
+    }
+
+    const actionClass = toActionClass(finding.recommendation);
+    counts.set(actionClass, (counts.get(actionClass) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([actionClass, count]) => `${actionClass}:${count}`);
+};
+
 const toAnalyzePrError = (message: string): Error => {
   const normalized = message
     .replace('playbook ask --diff-context', 'playbook analyze-pr')
@@ -434,7 +483,10 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
     kind: 'pr_analysis',
     sources: [
       { type: 'command', reference: 'analyze-pr' },
-      { type: 'artifact', reference: '.playbook/repo-index.json' }
+      { type: 'artifact', reference: '.playbook/repo-index.json' },
+      { type: 'artifact', reference: '.playbook/module-owners.json' },
+      { type: 'artifact', reference: '.playbook/memory/events' },
+      { type: 'artifact', reference: '.playbook/analyze-pr.json' }
     ],
     subjectModules: result.affectedModules,
     ruleIds: result.rules.related,
@@ -455,7 +507,22 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
       command: 'analyze-pr',
       baseRef: result.baseRef,
       boundariesTouched: result.architecture.boundariesTouched,
-      docsChangedCount: result.docs.changed.length
+      docsChangedCount: result.docs.changed.length,
+      trigger: `analyze-pr:${result.baseRef}`,
+      triggerChangedFileCount: result.changedFiles.length,
+      triggerAffectedModuleCount: result.affectedModules.length,
+      findingClasses: uniqueSorted(result.findings.map((finding) => classifyFinding(finding))),
+      actionClassSummary: summarizeActionClasses(result.reviewGuidance, result.findings),
+      evidenceRefs: uniqueSorted([
+        '.playbook/analyze-pr.json',
+        '.playbook/repo-index.json',
+        '.playbook/module-owners.json',
+        ...result.changedFiles.map((filePath) => `git:${filePath}`),
+        ...result.findings
+          .map((finding) => finding.file)
+          .filter((filePath): filePath is string => typeof filePath === 'string' && filePath.length > 0)
+          .map((filePath) => `git:${filePath}`)
+      ])
     }
   });
 

@@ -21,6 +21,13 @@ import { verifyMemoryEventFixture } from './__fixtures__/memoryEvent.fixture.js'
 
 const readJson = <T>(filePath: string): T => JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 
+const classifyFindingForTest = (ruleId: string): string => {
+  if (ruleId === 'playbook.pr.risk.module') return 'module-risk';
+  if (ruleId.startsWith('PLAYBOOK_DOCS_') || ruleId.startsWith('PB007') || ruleId.startsWith('PB009')) return 'documentation';
+  if (ruleId.startsWith('PB')) return 'governance-rule';
+  return 'general-review';
+};
+
 const initGitRepo = (root: string): void => {
   const run = (cmd: string) => {
     execSync(cmd, { cwd: root, stdio: 'ignore' });
@@ -167,5 +174,87 @@ describe('memory event capture', () => {
     const events = fs.readdirSync(eventsDir).filter((entry) => entry.endsWith('.json'));
     const payloads = events.map((entry) => readJson<{ kind: string }>(path.join(eventsDir, entry)));
     expect(payloads.some((entry) => entry.kind === 'failure_ingest')).toBe(true);
+  });
+
+  it('captures analyze-pr evidence-oriented pr_analysis events with stable fingerprints', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-analyze-pr-success-'));
+    fs.mkdirSync(path.join(root, 'src', 'workouts'), { recursive: true });
+    fs.mkdirSync(path.join(root, '.playbook'), { recursive: true });
+
+    fs.writeFileSync(path.join(root, 'src', 'workouts', 'index.ts'), 'export const workouts = 1;\n');
+    fs.writeFileSync(
+      path.join(root, '.playbook', 'repo-index.json'),
+      JSON.stringify(
+        {
+          schemaVersion: '1.0',
+          framework: 'node',
+          language: 'typescript',
+          architecture: 'modular-monolith',
+          modules: [{ name: 'workouts', dependencies: [] }],
+          dependencies: [],
+          workspace: [],
+          tests: [],
+          configs: [],
+          database: 'none',
+          rules: ['PB001']
+        },
+        null,
+        2
+      )
+    );
+
+    initGitRepo(root);
+    fs.writeFileSync(path.join(root, 'src', 'workouts', 'index.ts'), 'export const workouts = 2;\n');
+
+    const analysisA = analyzePullRequest(root, { baseRef: 'HEAD' });
+    expect(analysisA.command).toBe('analyze-pr');
+
+    const firstEventsDir = path.join(root, '.playbook', 'memory', 'events');
+    const firstPrEvent = fs
+      .readdirSync(firstEventsDir)
+      .filter((entry) => entry.endsWith('.json'))
+      .map((entry) => readJson<Record<string, unknown>>(path.join(firstEventsDir, entry)))
+      .find((entry) => entry.kind === 'pr_analysis') as { eventFingerprint: string } | undefined;
+    expect(firstPrEvent?.eventFingerprint).toBeTruthy();
+
+    fs.rmSync(path.join(root, '.playbook', 'memory'), { recursive: true, force: true });
+
+    const analysisB = analyzePullRequest(root, { baseRef: 'HEAD' });
+    expect(analysisB.command).toBe('analyze-pr');
+
+    const eventsDir = path.join(root, '.playbook', 'memory', 'events');
+    const events = fs
+      .readdirSync(eventsDir)
+      .filter((entry) => entry.endsWith('.json'))
+      .map((entry) => readJson<Record<string, unknown>>(path.join(eventsDir, entry)))
+      .filter((entry) => entry.kind === 'pr_analysis');
+
+    expect(events.length).toBe(1);
+
+    const latest = events[events.length - 1] as {
+      sources: Array<{ type: string; reference: string }>;
+      salienceInputs: Record<string, unknown>;
+      outcome: { status: string };
+      eventFingerprint: string;
+    };
+
+    expect(latest.outcome.status).toBe('success');
+    expect(latest.sources).toEqual(
+      expect.arrayContaining([
+        { type: 'artifact', reference: '.playbook/analyze-pr.json' },
+        { type: 'artifact', reference: '.playbook/repo-index.json' },
+        { type: 'artifact', reference: '.playbook/memory/events' }
+      ])
+    );
+
+    const salience = latest.salienceInputs;
+    expect(salience.trigger).toBe('analyze-pr:HEAD');
+    expect(salience.evidenceRefs).toEqual(expect.arrayContaining(['.playbook/analyze-pr.json', '.playbook/repo-index.json']));
+    const expectedFindingClasses = [...new Set(analysisA.findings.map((finding) => classifyFindingForTest(finding.ruleId)))].sort();
+    expect(salience.findingClasses).toEqual(expectedFindingClasses);
+    expect(salience.actionClassSummary).toEqual(expect.arrayContaining(['run-verify:2', 'module-impact-review:1']));
+
+    const fingerprints = events.map((entry) => entry.eventFingerprint).filter((value): value is string => typeof value === 'string');
+    expect(fingerprints[0]).toBe(firstPrEvent?.eventFingerprint);
   });
 });
