@@ -37,6 +37,34 @@ describe('doctor memory diagnostics', () => {
     expect(report.memoryDiagnostics.suggestions).toEqual([]);
   });
 
+
+  it('reports warning-level missing artifacts when memory root exists without required files', () => {
+    const repo = createRepo('playbook-doctor-memory-missing');
+    fs.mkdirSync(path.join(repo, '.playbook', 'memory'), { recursive: true });
+
+    const report = generateRepositoryHealth(repo);
+
+    expect(report.memoryDiagnostics.findings).toEqual([
+      {
+        code: 'memory-artifacts-missing',
+        severity: 'warning',
+        message: 'Missing required memory artifacts: .playbook/memory/index.json, .playbook/memory/candidates.json',
+        recommendation: 'Regenerate missing memory artifacts before relying on replay or promotion diagnostics.'
+      }
+    ]);
+    expect(report.memoryDiagnostics.suggestions).toEqual([
+      {
+        id: 'PB015',
+        title: 'Repair memory artifact integrity',
+        actions: [
+          'Rebuild .playbook/memory/index.json',
+          'Regenerate .playbook/memory/candidates.json',
+          'Validate JSON artifacts before commit'
+        ]
+      }
+    ]);
+  });
+
   it('reports healthy lifecycle with deterministic code when artifacts are valid', () => {
     const repo = createRepo('playbook-doctor-memory-healthy');
 

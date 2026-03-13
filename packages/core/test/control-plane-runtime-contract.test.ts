@@ -107,7 +107,7 @@ describe('control plane runtime contracts', () => {
       createdAt: 1710000001111,
       planTasks: [
         { ruleId: 'rule-1', file: 'src/a.ts', action: 'Apply deterministic fix', autoFix: true },
-        { ruleId: 'rule-2', file: 'src/a.ts', action: 'Inspect dependency', autoFix: false },
+        { ruleId: 'rule-2', file: 'src/a.ts', action: 'Update dependency settings', autoFix: false },
         { ruleId: 'rule-3', file: null, action: 'Verify result', autoFix: false }
       ]
     });
@@ -117,7 +117,7 @@ describe('control plane runtime contracts', () => {
       createdAt: 1710000001111,
       planTasks: [
         { ruleId: 'rule-1', file: 'src/a.ts', action: 'Apply deterministic fix', autoFix: true },
-        { ruleId: 'rule-2', file: 'src/a.ts', action: 'Inspect dependency', autoFix: false },
+        { ruleId: 'rule-2', file: 'src/a.ts', action: 'Update dependency settings', autoFix: false },
         { ruleId: 'rule-3', file: null, action: 'Verify result', autoFix: false }
       ]
     });
@@ -127,6 +127,7 @@ describe('control plane runtime contracts', () => {
     expect(dryRunA.metadata.compiledTaskCount).toBe(3);
     expect(dryRunA.metadata.derivedDependencyEdgeCount).toBe(1);
     expect(dryRunA.tasks[0]?.taskKind).toBe('apply-fix');
+    expect(dryRunA.tasks[1]?.taskKind).toBe('manual-remediation');
     expect(dryRunA.tasks[1]?.dependencies.length).toBe(1);
     expect(dryRunA.tasks[2]?.taskKind).toBe('observe-only');
     expect(dryRunA.approval.approvalRequired).toBe(true);

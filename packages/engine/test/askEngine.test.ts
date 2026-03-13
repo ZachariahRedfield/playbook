@@ -264,7 +264,10 @@ describe('answerRepositoryQuestion', () => {
       framework: 'nextjs',
       language: 'typescript',
       architecture: 'modular-monolith',
-      modules: ['users', 'workouts'],
+      modules: [
+        { name: 'users', dependencies: [] },
+        { name: 'workouts', dependencies: ['users'] }
+      ],
       database: 'supabase',
       rules: ['requireNotesOnChanges']
     });
@@ -439,7 +442,7 @@ describe('answerRepositoryQuestion', () => {
     });
     writeMemoryFixtures(repo);
 
-    const result = answerRepositoryQuestion(repo, 'what modules exist?', { withRepoContextMemory: true });
+    const result = answerRepositoryQuestion(repo, 'what do we know about workouts PB001 missing-tests patterns?', { withRepoContextMemory: true });
     const memoryKnowledge = (result.context as { memoryKnowledge?: Array<{ source: string; title: string; provenance: Array<{ event: unknown }> }> }).memoryKnowledge;
 
     expect(Array.isArray(result.context.knowledgeHits)).toBe(true);
@@ -457,7 +460,10 @@ describe('answerRepositoryQuestion', () => {
       framework: 'node',
       language: 'typescript',
       architecture: 'modular-monolith',
-      modules: ['users', 'workouts'],
+      modules: [
+        { name: 'users', dependencies: [] },
+        { name: 'workouts', dependencies: ['users'] }
+      ],
       database: 'postgres',
       rules: []
     });

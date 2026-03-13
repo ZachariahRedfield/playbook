@@ -35,7 +35,7 @@
     "validate:roadmap": "node scripts/validate-roadmap-contract.mjs",
     "pr:sync-metadata": "node scripts/sync-pr-metadata.mjs",
     "pilot": "node scripts/run-pilot.mjs",
-    "test:targeted": "pnpm test -- ask && pnpm test -- ai-contract && pnpm test -- schema && pnpm test -- doctor"
+    "test:targeted": "pnpm test -- ask && pnpm test -- ai-contract && pnpm test -- schema && pnpm test -- doctor && pnpm test -- policy && pnpm test -- runtime && pnpm test -- scheduler && pnpm test -- agent"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
