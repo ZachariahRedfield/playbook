@@ -27,6 +27,159 @@ const writeModuleOwners = (repo: string, payload: Record<string, unknown>): void
   fs.writeFileSync(ownersPath, JSON.stringify(payload, null, 2));
 };
 
+
+const writeMemoryFixtures = (repo: string): void => {
+  const memoryDir = path.join(repo, '.playbook', 'memory');
+  fs.mkdirSync(path.join(memoryDir, 'knowledge'), { recursive: true });
+  fs.mkdirSync(path.join(memoryDir, 'events'), { recursive: true });
+
+  fs.writeFileSync(
+    path.join(memoryDir, 'knowledge', 'patterns.json'),
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        artifact: 'memory-knowledge',
+        kind: 'pattern',
+        generatedAt: '2026-01-03T00:00:00.000Z',
+        entries: [
+          {
+            knowledgeId: 'mk-promoted-1',
+            candidateId: 'candidate-workouts-knowledge',
+            sourceCandidateIds: ['candidate-workouts-knowledge'],
+            sourceEventFingerprints: ['fp-workouts'],
+            kind: 'pattern',
+            title: 'Workouts pattern stabilization',
+            summary: 'Workouts reliability pattern promoted from repeated evidence.',
+            fingerprint: 'fp-workouts',
+            module: 'workouts',
+            ruleId: 'PB-V08-GRAPH-MEMORY-001',
+            failureShape: 'query-retrieval',
+            promotedAt: '2026-01-02T00:00:00.000Z',
+            provenance: [
+              { eventId: 'evt-workouts', sourcePath: 'events/evt-workouts.json', fingerprint: 'fp-workouts', runId: null }
+            ],
+            status: 'active',
+            supersedes: [],
+            supersededBy: []
+          },
+          {
+            knowledgeId: 'mk-superseded',
+            candidateId: 'candidate-stale',
+            sourceCandidateIds: ['candidate-stale'],
+            sourceEventFingerprints: ['fp-stale'],
+            kind: 'pattern',
+            title: 'Superseded knowledge',
+            summary: 'This should be filtered.',
+            fingerprint: 'fp-stale',
+            module: 'workouts',
+            ruleId: 'PB-V08-GRAPH-MEMORY-001',
+            failureShape: 'query-retrieval',
+            promotedAt: '2025-01-01T00:00:00.000Z',
+            provenance: [
+              { eventId: 'evt-stale', sourcePath: 'events/evt-stale.json', fingerprint: 'fp-stale', runId: null }
+            ],
+            status: 'superseded',
+            supersedes: [],
+            supersededBy: ['mk-promoted-1']
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+
+  fs.writeFileSync(
+    path.join(memoryDir, 'candidates.json'),
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        command: 'memory-replay',
+        sourceIndex: '.playbook/memory/index.json',
+        generatedAt: '2026-01-03T00:00:00.000Z',
+        totalEvents: 2,
+        clustersEvaluated: 2,
+        candidates: [
+          {
+            candidateId: 'candidate-workouts-knowledge',
+            kind: 'pattern',
+            title: 'Workouts candidate duplicate',
+            summary: 'Should be suppressed when promoted candidate exists.',
+            clusterKey: 'workouts',
+            salienceScore: 0.9,
+            salienceFactors: {
+              severity: 1, recurrenceCount: 1, blastRadius: 1, crossModuleSpread: 1, ownershipDocsGap: 0, novelSuccessfulRemediationSignal: 0
+            },
+            fingerprint: 'fp-workouts',
+            module: 'workouts',
+            ruleId: 'PB-V08-GRAPH-MEMORY-001',
+            failureShape: 'query-retrieval',
+            eventCount: 1,
+            provenance: [
+              { eventId: 'evt-workouts', sourcePath: 'events/evt-workouts.json', fingerprint: 'fp-workouts', runId: null }
+            ],
+            lastSeenAt: '2099-01-02T00:00:00.000Z',
+            supersession: { evolutionOrdinal: 1, priorCandidateIds: [], supersedesCandidateIds: [] }
+          },
+          {
+            candidateId: 'candidate-auth-knowledge',
+            kind: 'decision',
+            title: 'Auth memory candidate',
+            summary: 'Candidate-only memory entry.',
+            clusterKey: 'auth',
+            salienceScore: 0.7,
+            salienceFactors: {
+              severity: 1, recurrenceCount: 1, blastRadius: 1, crossModuleSpread: 1, ownershipDocsGap: 0, novelSuccessfulRemediationSignal: 0
+            },
+            fingerprint: 'fp-auth',
+            module: 'auth',
+            ruleId: 'PB-V08-MEMORY-SYSTEM-001',
+            failureShape: 'docs-gap',
+            eventCount: 1,
+            provenance: [
+              { eventId: 'evt-auth', sourcePath: 'events/evt-auth.json', fingerprint: 'fp-auth', runId: null }
+            ],
+            lastSeenAt: '2099-01-02T00:00:00.000Z',
+            supersession: { evolutionOrdinal: 1, priorCandidateIds: [], supersedesCandidateIds: [] }
+          },
+          {
+            candidateId: 'candidate-very-old',
+            kind: 'pattern',
+            title: 'Old stale candidate',
+            summary: 'Should be excluded as stale.',
+            clusterKey: 'old',
+            salienceScore: 0.1,
+            salienceFactors: {
+              severity: 0, recurrenceCount: 0, blastRadius: 0, crossModuleSpread: 0, ownershipDocsGap: 0, novelSuccessfulRemediationSignal: 0
+            },
+            fingerprint: 'fp-old',
+            module: 'workouts',
+            ruleId: 'PB-V08-GRAPH-MEMORY-001',
+            failureShape: 'old-shape',
+            eventCount: 1,
+            provenance: [
+              { eventId: 'evt-old', sourcePath: 'events/evt-old.json', fingerprint: 'fp-old', runId: null }
+            ],
+            lastSeenAt: '2000-01-01T00:00:00.000Z',
+            supersession: { evolutionOrdinal: 1, priorCandidateIds: [], supersedesCandidateIds: [] }
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+
+  fs.writeFileSync(path.join(memoryDir, 'events', 'evt-workouts.json'), JSON.stringify({
+    schemaVersion: '1.0', eventInstanceId: 'evt-workouts', eventFingerprint: 'fp-workouts', kind: 'verify-failure', createdAt: '2026-01-02T00:00:00.000Z',
+    subjectModules: ['workouts'], ruleIds: ['PB-V08-GRAPH-MEMORY-001'], evidenceRefs: []
+  }));
+  fs.writeFileSync(path.join(memoryDir, 'events', 'evt-auth.json'), JSON.stringify({
+    schemaVersion: '1.0', eventInstanceId: 'evt-auth', eventFingerprint: 'fp-auth', kind: 'verify-failure', createdAt: '2026-01-02T00:00:00.000Z',
+    subjectModules: ['auth'], ruleIds: ['PB-V08-MEMORY-SYSTEM-001'], evidenceRefs: []
+  }));
+};
+
 describe('queryRepositoryIndex', () => {
   it('reads .playbook/repo-index.json and returns requested fields', () => {
     const repo = createRepo('playbook-repo-query');
@@ -82,6 +235,60 @@ describe('queryRepositoryIndex', () => {
     });
 
     expect(queryRepositoryIndex(repo, 'list modules')).toEqual({ field: 'modules', result: [{ name: 'api', dependencies: [] }] });
+  });
+
+
+  it('keeps default query output unchanged when memory is not requested', () => {
+    const repo = createRepo('playbook-repo-query-default-no-memory');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [{ name: 'auth', dependencies: [] }, { name: 'workouts', dependencies: ['auth'] }],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
+      database: 'none',
+      rules: []
+    });
+    writeMemoryFixtures(repo);
+
+    expect(queryRepositoryIndex(repo, 'modules')).toEqual({
+      field: 'modules',
+      result: [{ name: 'auth', dependencies: [] }, { name: 'workouts', dependencies: ['auth'] }]
+    });
+  });
+
+  it('returns memory knowledge only when withMemory is enabled and prioritizes promoted entries with provenance', () => {
+    const repo = createRepo('playbook-repo-query-with-memory-knowledge');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'node',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: [{ name: 'auth', dependencies: [] }, { name: 'workouts', dependencies: ['auth'] }],
+      dependencies: [],
+      workspace: [],
+      tests: [],
+      configs: [],
+      database: 'none',
+      rules: []
+    });
+    writeMemoryFixtures(repo);
+
+    const result = queryRepositoryIndex(repo, 'modules', { withMemory: true });
+
+    expect(result.memoryKnowledge?.length).toBeGreaterThan(0);
+    expect(result.memoryKnowledge?.[0]?.source).toBe('promoted');
+    expect(result.memoryKnowledge?.some((entry) => entry.source === 'candidate' && entry.candidateId === 'candidate-auth-knowledge')).toBe(true);
+    expect(result.memoryKnowledge?.some((entry) => entry.candidateId === 'candidate-workouts-knowledge' && entry.source === 'candidate')).toBe(false);
+    expect(result.memoryKnowledge?.some((entry) => entry.candidateId === 'candidate-stale')).toBe(false);
+
+    const promoted = result.memoryKnowledge?.find((entry) => entry.source === 'promoted');
+    expect(promoted?.knowledgeId).toBe('mk-promoted-1');
+    expect(promoted?.provenance[0]?.event?.eventInstanceId).toBe('evt-workouts');
   });
 
   it('returns dependencies query payloads', () => {

@@ -11,6 +11,12 @@ import type {
 import { readRepositoryGraph, summarizeGraphNeighborhood, type GraphNeighborhoodSummary } from '../graph/repoGraph.js';
 import { readJsonArtifact } from '../artifacts/artifactIO.js';
 import { readRuntimeMemoryEnvelope, type RuntimeMemoryEnvelope } from '../intelligence/runtimeMemory.js';
+import {
+  expandMemoryProvenance,
+  lookupMemoryCandidateKnowledge,
+  lookupPromotedMemoryKnowledge,
+  type ExpandedMemoryProvenance
+} from '../memory/inspection.js';
 
 export const SUPPORTED_QUERY_FIELDS = [
   'architecture',
@@ -35,6 +41,20 @@ export type RepositoryQueryResult = {
   memorySources?: RuntimeMemoryEnvelope['memorySources'];
   knowledgeHits?: RuntimeMemoryEnvelope['knowledgeHits'];
   recentRelevantEvents?: RuntimeMemoryEnvelope['recentRelevantEvents'];
+  memoryKnowledge?: MemoryKnowledgeResult[];
+};
+
+type MemoryKnowledgeResult = {
+  source: 'promoted' | 'candidate';
+  knowledgeId?: string;
+  candidateId: string;
+  kind: string;
+  title: string;
+  summary: string;
+  module: string;
+  ruleId: string;
+  failureShape: string;
+  provenance: ExpandedMemoryProvenance[];
 };
 
 type QueryRepositoryIndexOptions = {
@@ -99,6 +119,69 @@ const readGraphNeighborhood = (projectRoot: string, nodeId: string): GraphNeighb
   }
 };
 
+const normalizeTokens = (value: string): string[] =>
+  value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 3);
+
+const scoreMemoryRelevance = (tokens: string[], values: string[]): number => {
+  if (tokens.length === 0) {
+    return 0;
+  }
+
+  const haystack = values.join(' ').toLowerCase();
+  return tokens.reduce((score, token) => (haystack.includes(token) ? score + 1 : score), 0);
+};
+
+const buildMemoryKnowledge = (projectRoot: string, resolvedField: RepositoryQueryField, result: RepositoryQueryResult['result']): MemoryKnowledgeResult[] => {
+  const tokens = normalizeTokens([resolvedField, JSON.stringify(result)].join(' '));
+
+  const promoted = lookupPromotedMemoryKnowledge(projectRoot)
+    .map((entry) => ({
+      source: 'promoted' as const,
+      knowledgeId: entry.knowledgeId,
+      candidateId: entry.candidateId,
+      kind: entry.kind,
+      title: entry.title,
+      summary: entry.summary,
+      module: entry.module,
+      ruleId: entry.ruleId,
+      failureShape: entry.failureShape,
+      provenance: expandMemoryProvenance(projectRoot, entry.provenance),
+      relevance: scoreMemoryRelevance(tokens, [entry.title, entry.summary, entry.module, entry.ruleId, entry.failureShape])
+    }))
+    .filter((entry) => tokens.length === 0 || entry.relevance > 0);
+
+  const promotedCandidateIds = new Set(promoted.map((entry) => entry.candidateId));
+
+  const candidates = lookupMemoryCandidateKnowledge(projectRoot)
+    .filter((entry) => !promotedCandidateIds.has(entry.candidateId))
+    .map((entry) => ({
+      source: 'candidate' as const,
+      candidateId: entry.candidateId,
+      kind: entry.kind,
+      title: entry.title,
+      summary: entry.summary,
+      module: entry.module,
+      ruleId: entry.ruleId,
+      failureShape: entry.failureShape,
+      provenance: expandMemoryProvenance(projectRoot, entry.provenance),
+      relevance: scoreMemoryRelevance(tokens, [entry.title, entry.summary, entry.module, entry.ruleId, entry.failureShape])
+    }))
+    .filter((entry) => tokens.length === 0 || entry.relevance > 0);
+
+  return [...promoted, ...candidates]
+    .sort((left, right) => {
+      if (left.source !== right.source) {
+        return left.source === 'promoted' ? -1 : 1;
+      }
+      return right.relevance - left.relevance || left.candidateId.localeCompare(right.candidateId);
+    })
+    .slice(0, 10)
+    .map(({ relevance: _relevance, ...entry }) => entry);
+};
+
 export const queryRepositoryIndex = (projectRoot: string, field: string, options?: QueryRepositoryIndexOptions): RepositoryQueryResult => {
   const resolvedField = normalizeRepositoryQueryField(field);
   if (!resolvedField) {
@@ -121,6 +204,7 @@ export const queryRepositoryIndex = (projectRoot: string, field: string, options
     queryResult.memorySources = memory.memorySources;
     queryResult.knowledgeHits = memory.knowledgeHits;
     queryResult.recentRelevantEvents = memory.recentRelevantEvents;
+    queryResult.memoryKnowledge = buildMemoryKnowledge(projectRoot, resolvedField, queryResult.result);
   }
 
   return queryResult;

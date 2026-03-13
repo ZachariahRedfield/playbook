@@ -43,6 +43,7 @@ type QueryResult = {
   memorySources?: Array<Record<string, unknown>>;
   knowledgeHits?: Array<Record<string, unknown>>;
   recentRelevantEvents?: Array<Record<string, unknown>>;
+  memoryKnowledge?: Array<Record<string, unknown>>;
 };
 
 const firstPositionalArg = (args: string[]): string | undefined => args.find((arg) => !arg.startsWith('-'));
@@ -758,7 +759,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
       memorySummary: query.memorySummary,
       memorySources: query.memorySources as Array<Record<string, unknown>> | undefined,
       knowledgeHits: query.knowledgeHits as Array<Record<string, unknown>> | undefined,
-      recentRelevantEvents: query.recentRelevantEvents as Array<Record<string, unknown>> | undefined
+      recentRelevantEvents: query.recentRelevantEvents as Array<Record<string, unknown>> | undefined,
+      memoryKnowledge: query.memoryKnowledge as Array<Record<string, unknown>> | undefined
     };
 
     if (options.format === 'json') {

@@ -243,6 +243,7 @@ describe('runQuery', () => {
     expect(Array.isArray(withMemoryPayload.memorySources)).toBe(true);
     expect(Array.isArray(withMemoryPayload.knowledgeHits)).toBe(true);
     expect(Array.isArray(withMemoryPayload.recentRelevantEvents)).toBe(true);
+    expect(Array.isArray(withMemoryPayload.memoryKnowledge)).toBe(true);
 
     logSpy.mockClear();
     const legacyExit = await runQuery(repo, ['modules'], { format: 'json', quiet: false });
@@ -250,6 +251,7 @@ describe('runQuery', () => {
     const legacyPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(legacyPayload.memorySummary).toBeUndefined();
     expect(legacyPayload.memorySources).toBeUndefined();
+    expect(legacyPayload.memoryKnowledge).toBeUndefined();
 
     logSpy.mockRestore();
   });
