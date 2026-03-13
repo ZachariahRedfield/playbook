@@ -265,7 +265,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "pnpm playbook memory promote --from-candidate <id> --json"
+      "example": "pnpm playbook memory events --json"
     },
     {
       "name": "orchestrate",

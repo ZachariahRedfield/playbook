@@ -1,21 +1,34 @@
 # `pnpm playbook explain`
 
-Explain deterministic repository intelligence targets from `.playbook/repo-index.json`, `.playbook/repo-graph.json`, and the rule registry.
+Explain deterministic intelligence targets from repository artifacts and the rule registry.
 
 ## Usage
 
 - `pnpm playbook explain PB001`
-- `pnpm playbook explain users`
 - `pnpm playbook explain workouts`
 - `pnpm playbook explain architecture`
 - `pnpm playbook explain workouts --json`
 - `pnpm playbook explain workouts --with-memory --json`
 
-## Supported target types
+## Supported targets
 
-- rule ids (for example `PB001`)
-- indexed modules (`pnpm playbook query modules`)
+- Verify/analyze rule IDs (for example `PB001`)
+- Indexed module names (for example `workouts`)
 - `architecture`
+
+## Implemented behavior
+
+- Missing `<target>` returns a deterministic CLI error.
+- Unknown targets return an `unknown` explanation type and a non-zero exit code.
+- `--with-memory` adds deterministic memory descriptors without changing default output.
+
+Memory-aware responses may include:
+
+- `memorySummary`
+- `memorySources`
+- `knowledgeHits`
+- `recentRelevantEvents`
+- `memoryKnowledge` (promoted knowledge + replay candidates with provenance)
 
 ## JSON contract
 
@@ -25,6 +38,11 @@ Explain deterministic repository intelligence targets from `.playbook/repo-index
   "target": "workouts",
   "type": "module",
   "explanation": {
+    "resolvedTarget": {
+      "kind": "module",
+      "selector": "workouts",
+      "input": "workouts"
+    },
     "name": "workouts",
     "responsibilities": [
       "Owns workouts feature behavior and boundaries.",
@@ -40,9 +58,3 @@ Explain deterministic repository intelligence targets from `.playbook/repo-index
   }
 }
 ```
-
-## Memory-aware mode
-
-Use `--with-memory` to add deterministic memory descriptors to explanation payloads without changing legacy output by default.
-
-When enabled, `explanation` may include: `memorySummary`, `memorySources`, `knowledgeHits`, and `recentRelevantEvents`.
