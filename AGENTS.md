@@ -231,8 +231,8 @@ Do not hand-edit entries inside the managed markers.
 
 - `learn`: Draft deterministic knowledge candidates from local diff and repository intelligence
   - Example: `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json`
-- `memory`: Replay, promote, and prune repository memory artifacts with explicit human-reviewed doctrine promotion
-  - Example: `pnpm playbook memory promote --from-candidate <id> --json`
+- `memory`: Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion
+  - Example: `pnpm playbook memory events --json`
 
 - `demo`: Show the official Playbook demo repository and guided first-run workflow
 - `init`: Initialize playbook docs/config
@@ -279,5 +279,5 @@ Do not hand-edit entries inside the managed markers.
 | `explain` | `pnpm playbook explain architecture --json` |
 | `route` | `pnpm playbook route "summarize current repo state" --json` |
 | `learn` | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
-| `memory` | `pnpm playbook memory promote --from-candidate <id> --json` |
+| `memory` | `pnpm playbook memory events --json` |
 <!-- PLAYBOOK:EXAMPLES_END -->
