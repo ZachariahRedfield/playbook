@@ -12,6 +12,8 @@ import path from 'node:path';
 import { ExitCode } from '../lib/cliContract.js';
 import { collectVerifyReport } from './verify.js';
 
+type RepositoryHealthSnapshot = ReturnType<typeof generateRepositoryHealth>;
+
 type DoctorOptions = {
   format: 'text' | 'json';
   quiet: boolean;
@@ -20,7 +22,7 @@ type DoctorOptions = {
 };
 
 export type DoctorFinding = {
-  category: 'Architecture' | 'Docs' | 'Testing' | 'Risk';
+  category: 'Architecture' | 'Docs' | 'Testing' | 'Risk' | 'Memory';
   severity: 'error' | 'warning' | 'info';
   id: string;
   message: string;
@@ -37,6 +39,7 @@ export type DoctorReport = {
   };
   findings: DoctorFinding[];
   artifactHygiene: ArtifactHygieneReport;
+  memoryDiagnostics: RepositoryHealthSnapshot['memoryDiagnostics'];
 };
 
 const severityRank: Record<DoctorFinding['severity'], number> = {
@@ -206,6 +209,15 @@ export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> =>
     });
   }
 
+  for (const finding of repositoryHealth.memoryDiagnostics.findings) {
+    findings.push({
+      category: 'Memory',
+      severity: finding.severity,
+      id: `doctor.memory.${finding.code}`,
+      message: `${finding.message} ${finding.recommendation}`
+    });
+  }
+
   if (!hasRepoIndex) {
     findings.push({
       category: 'Risk',
@@ -258,7 +270,8 @@ export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> =>
     status: toReportStatus(summary),
     summary,
     findings: orderedFindings,
-    artifactHygiene: repositoryHealth.artifactHygiene
+    artifactHygiene: repositoryHealth.artifactHygiene,
+    memoryDiagnostics: repositoryHealth.memoryDiagnostics
   };
 };
 
@@ -286,6 +299,7 @@ const printHumanReport = (report: DoctorReport): void => {
   printCategory('Docs', report.findings);
   printCategory('Testing', report.findings);
   printCategory('Risk', report.findings);
+  printCategory('Memory', report.findings);
 
   console.log(`Status: ${report.status.toUpperCase()}`);
   console.log(`Summary: errors=${report.summary.errors}, warnings=${report.summary.warnings}, info=${report.summary.info}`);

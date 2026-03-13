@@ -62,6 +62,37 @@ export type RepositoryHealth = {
   suggestedActions: string[];
   issues: string[];
   artifactHygiene: ArtifactHygieneReport;
+  memoryDiagnostics: MemoryDiagnosticsReport;
+};
+
+export type MemoryDiagnosticSeverity = 'info' | 'warning';
+
+export type MemoryDiagnosticCode =
+  | 'memory-artifacts-absent'
+  | 'memory-artifacts-missing'
+  | 'memory-artifacts-malformed'
+  | 'candidate-hoarding-risk'
+  | 'superseded-knowledge-lingering'
+  | 'replay-output-inconsistent'
+  | 'promoted-knowledge-provenance-gap'
+  | 'memory-lifecycle-healthy';
+
+export type MemoryDiagnosticFinding = {
+  code: MemoryDiagnosticCode;
+  severity: MemoryDiagnosticSeverity;
+  message: string;
+  recommendation: string;
+};
+
+export type MemoryDiagnosticSuggestion = {
+  id: 'PB015' | 'PB016' | 'PB017' | 'PB018';
+  title: string;
+  actions: string[];
+};
+
+export type MemoryDiagnosticsReport = {
+  findings: MemoryDiagnosticFinding[];
+  suggestions: MemoryDiagnosticSuggestion[];
 };
 
 const ARTIFACT_CLASSIFICATION: ArtifactClassificationModel = {
@@ -73,6 +104,242 @@ const ARTIFACT_CLASSIFICATION: ArtifactClassificationModel = {
 const LARGE_JSON_THRESHOLD_BYTES = 500_000;
 const LARGE_REPO_FILE_THRESHOLD = 200;
 const FREQUENT_ARTIFACT_MODIFICATION_THRESHOLD = 5;
+const MEMORY_STALE_DAYS = 30;
+const MEMORY_CANDIDATE_HOARDING_THRESHOLD = 25;
+const MEMORY_STALE_CANDIDATE_THRESHOLD = 10;
+
+type MemoryReplayIndexPayload = {
+  events?: Array<{ eventId?: string; relativePath?: string }>;
+};
+
+type MemoryCandidatePayload = {
+  candidateId?: string;
+  lastSeenAt?: string;
+  provenance?: Array<{ eventId?: string; sourcePath?: string; fingerprint?: string }>;
+};
+
+type MemoryCandidatesArtifact = {
+  candidates?: MemoryCandidatePayload[];
+};
+
+type MemoryKnowledgeEntryPayload = {
+  status?: string;
+  supersededBy?: string[];
+  provenance?: Array<{ eventId?: string; sourcePath?: string; fingerprint?: string }>;
+};
+
+type MemoryKnowledgeArtifactPayload = {
+  entries?: MemoryKnowledgeEntryPayload[];
+};
+
+const readJsonSafe = <T>(filePath: string): { payload: T | null; malformed: boolean } => {
+  if (!fs.existsSync(filePath)) {
+    return { payload: null, malformed: false };
+  }
+
+  try {
+    return {
+      payload: JSON.parse(fs.readFileSync(filePath, 'utf8')) as T,
+      malformed: false
+    };
+  } catch {
+    return { payload: null, malformed: true };
+  }
+};
+
+const collectMemoryDiagnostics = (repoRoot: string): MemoryDiagnosticsReport => {
+  const findings: MemoryDiagnosticFinding[] = [];
+  const suggestions = new Set<MemoryDiagnosticSuggestion['id']>();
+  const memoryRoot = path.join(repoRoot, '.playbook', 'memory');
+
+  if (!fs.existsSync(memoryRoot)) {
+    findings.push({
+      code: 'memory-artifacts-absent',
+      severity: 'info',
+      message: 'Memory artifacts are not initialized under .playbook/memory.',
+      recommendation: 'Run memory workflows before enabling memory control-plane automation.'
+    });
+
+    return {
+      findings,
+      suggestions: []
+    };
+  }
+
+  const indexPath = path.join(memoryRoot, 'index.json');
+  const candidatesPath = path.join(memoryRoot, 'candidates.json');
+  const knowledgePaths = [
+    path.join(memoryRoot, 'knowledge', 'decisions.json'),
+    path.join(memoryRoot, 'knowledge', 'patterns.json'),
+    path.join(memoryRoot, 'knowledge', 'failure-modes.json'),
+    path.join(memoryRoot, 'knowledge', 'invariants.json')
+  ];
+
+  const missingPaths = [indexPath, candidatesPath].filter((artifactPath) => !fs.existsSync(artifactPath));
+  if (missingPaths.length > 0) {
+    findings.push({
+      code: 'memory-artifacts-missing',
+      severity: 'warning',
+      message: `Missing required memory artifacts: ${missingPaths.map((entry) => path.relative(repoRoot, entry)).join(', ')}`,
+      recommendation: 'Regenerate missing memory artifacts before relying on replay or promotion diagnostics.'
+    });
+    suggestions.add('PB015');
+  }
+
+  const index = readJsonSafe<MemoryReplayIndexPayload>(indexPath);
+  const candidates = readJsonSafe<MemoryCandidatesArtifact>(candidatesPath);
+  const malformedArtifacts: string[] = [];
+  if (index.malformed) {
+    malformedArtifacts.push(path.relative(repoRoot, indexPath));
+  }
+  if (candidates.malformed) {
+    malformedArtifacts.push(path.relative(repoRoot, candidatesPath));
+  }
+
+  const parsedKnowledge = knowledgePaths.map((knowledgePath) => ({
+    path: knowledgePath,
+    parsed: readJsonSafe<MemoryKnowledgeArtifactPayload>(knowledgePath)
+  }));
+
+  for (const artifact of parsedKnowledge) {
+    if (artifact.parsed.malformed) {
+      malformedArtifacts.push(path.relative(repoRoot, artifact.path));
+    }
+  }
+
+  if (malformedArtifacts.length > 0) {
+    findings.push({
+      code: 'memory-artifacts-malformed',
+      severity: 'warning',
+      message: `Malformed memory artifacts detected: ${[...new Set(malformedArtifacts)].sort((a, b) => a.localeCompare(b)).join(', ')}`,
+      recommendation: 'Repair malformed JSON memory artifacts to restore deterministic replay and lifecycle diagnostics.'
+    });
+    suggestions.add('PB015');
+  }
+
+  const candidateEntries = Array.isArray(candidates.payload?.candidates) ? candidates.payload?.candidates ?? [] : [];
+  const staleCutoff = Date.now() - MEMORY_STALE_DAYS * 24 * 60 * 60 * 1000;
+  const staleCandidates = candidateEntries.filter((candidate) => {
+    if (typeof candidate.lastSeenAt !== 'string') {
+      return false;
+    }
+    const parsed = Date.parse(candidate.lastSeenAt);
+    return !Number.isNaN(parsed) && parsed < staleCutoff;
+  });
+
+  if (candidateEntries.length >= MEMORY_CANDIDATE_HOARDING_THRESHOLD || staleCandidates.length >= MEMORY_STALE_CANDIDATE_THRESHOLD) {
+    findings.push({
+      code: 'candidate-hoarding-risk',
+      severity: 'warning',
+      message: `Candidate accumulation risk detected (${candidateEntries.length} candidates, ${staleCandidates.length} stale).`,
+      recommendation: 'Prune stale candidates and promote only high-signal replay outcomes to avoid memory hoarding.'
+    });
+    suggestions.add('PB016');
+  }
+
+  const knowledgeEntries = parsedKnowledge.flatMap((entry) => (Array.isArray(entry.parsed.payload?.entries) ? entry.parsed.payload?.entries ?? [] : []));
+  const lingeringSuperseded = knowledgeEntries.filter((entry) => entry.status === 'superseded' && (entry.supersededBy?.length ?? 0) === 0).length;
+  if (lingeringSuperseded > 0) {
+    findings.push({
+      code: 'superseded-knowledge-lingering',
+      severity: 'warning',
+      message: `Superseded promoted knowledge is lingering without retirement linkage (${lingeringSuperseded} entries).`,
+      recommendation: 'Retire or relink superseded knowledge entries so lifecycle state remains explicit.'
+    });
+    suggestions.add('PB017');
+  }
+
+  const replayEventRefs = new Map<string, string>();
+  for (const eventRef of Array.isArray(index.payload?.events) ? index.payload?.events ?? [] : []) {
+    if (typeof eventRef.eventId === 'string' && typeof eventRef.relativePath === 'string') {
+      replayEventRefs.set(eventRef.eventId, eventRef.relativePath);
+    }
+  }
+
+  const missingReplayEvents = Array.from(replayEventRefs.values()).filter((relativePath) => !fs.existsSync(path.join(repoRoot, relativePath)));
+  let candidateReplayMismatches = 0;
+  for (const candidate of candidateEntries) {
+    for (const provenance of Array.isArray(candidate.provenance) ? candidate.provenance : []) {
+      if (typeof provenance.eventId !== 'string' || typeof provenance.sourcePath !== 'string') {
+        candidateReplayMismatches += 1;
+        continue;
+      }
+
+      const indexedRelativePath = replayEventRefs.get(provenance.eventId);
+      if (!indexedRelativePath || indexedRelativePath !== provenance.sourcePath) {
+        candidateReplayMismatches += 1;
+      }
+    }
+  }
+
+  if (missingReplayEvents.length > 0 || candidateReplayMismatches > 0) {
+    findings.push({
+      code: 'replay-output-inconsistent',
+      severity: 'warning',
+      message: `Replay output inconsistencies detected (${missingReplayEvents.length} missing indexed events, ${candidateReplayMismatches} provenance mismatches).`,
+      recommendation: 'Regenerate replay outputs from a valid memory index and event set before promotion.'
+    });
+    suggestions.add('PB018');
+  }
+
+  const provenanceGaps = knowledgeEntries.filter((entry) =>
+    !Array.isArray(entry.provenance) ||
+    entry.provenance.length === 0 ||
+    entry.provenance.some(
+      (provenance) =>
+        typeof provenance.eventId !== 'string' ||
+        typeof provenance.sourcePath !== 'string' ||
+        typeof provenance.fingerprint !== 'string'
+    )
+  ).length;
+
+  if (provenanceGaps > 0) {
+    findings.push({
+      code: 'promoted-knowledge-provenance-gap',
+      severity: 'warning',
+      message: `Promoted knowledge provenance gaps detected (${provenanceGaps} entries).`,
+      recommendation: 'Ensure promoted knowledge retains complete candidate/event provenance before downstream automation consumes it.'
+    });
+    suggestions.add('PB017');
+  }
+
+  if (findings.length === 0) {
+    findings.push({
+      code: 'memory-lifecycle-healthy',
+      severity: 'info',
+      message: 'Memory replay and promoted-knowledge lifecycle diagnostics are healthy.',
+      recommendation: 'Continue replay-before-promotion and salience-gated promotion workflows.'
+    });
+  }
+
+  const suggestionList: Record<MemoryDiagnosticSuggestion['id'], MemoryDiagnosticSuggestion> = {
+    PB015: {
+      id: 'PB015',
+      title: 'Repair memory artifact integrity',
+      actions: ['Rebuild .playbook/memory/index.json', 'Regenerate .playbook/memory/candidates.json', 'Validate JSON artifacts before commit']
+    },
+    PB016: {
+      id: 'PB016',
+      title: 'Reduce memory candidate hoarding',
+      actions: ['Prune stale candidates', 'Promote only high-salience candidates', 'Schedule periodic memory-prune checks']
+    },
+    PB017: {
+      id: 'PB017',
+      title: 'Retire or relink superseded promoted knowledge',
+      actions: ['Retire superseded records explicitly', 'Preserve provenance on promoted entries', 'Keep supersession lineage bidirectional']
+    },
+    PB018: {
+      id: 'PB018',
+      title: 'Regenerate replay outputs for deterministic consistency',
+      actions: ['Refresh memory index events', 'Re-run memory replay', 'Revalidate candidate provenance against index events']
+    }
+  };
+
+  return {
+    findings,
+    suggestions: [...suggestions].sort((a, b) => a.localeCompare(b)).map((id) => suggestionList[id])
+  };
+};
 
 const parseRepoIndex = (repoRoot: string): { payload: RepoIndexPayload | null; exists: boolean; outdated: boolean } => {
   const indexPath = path.join(repoRoot, '.playbook', 'repo-index.json');
@@ -277,6 +544,7 @@ export const generateRepositoryHealth = (repoRoot: string): RepositoryHealth => 
   const repoIndex = parseRepoIndex(repoRoot);
   const verify = verifyRepo(repoRoot);
   const artifactHygiene = collectArtifactHygiene(repoRoot);
+  const memoryDiagnostics = collectMemoryDiagnostics(repoRoot);
 
   const architectureDocsPresent = fs.existsSync(path.join(repoRoot, config.docs.architecturePath));
   const hasChecklistVerifyStep = checklistHasVerifyStep(repoRoot, config.docs.checklistPath);
@@ -308,6 +576,11 @@ export const generateRepositoryHealth = (repoRoot: string): RepositoryHealth => 
   for (const finding of artifactHygiene.findings) {
     issues.push(finding.message);
   }
+  for (const finding of memoryDiagnostics.findings) {
+    if (finding.severity === 'warning') {
+      issues.push(finding.message);
+    }
+  }
 
   const suggestedActions = new Set<string>();
 
@@ -323,6 +596,10 @@ export const generateRepositoryHealth = (repoRoot: string): RepositoryHealth => 
     suggestedActions.add('playbook doctor --json');
   }
 
+  if (memoryDiagnostics.findings.some((finding) => finding.severity === 'warning')) {
+    suggestedActions.add('playbook memory replay --json');
+  }
+
   return {
     framework: resolveFramework(repoRoot, repoIndex.payload?.framework),
     language: normalizeLanguage(repoIndex.payload?.language ?? 'unknown'),
@@ -335,6 +612,7 @@ export const generateRepositoryHealth = (repoRoot: string): RepositoryHealth => 
     },
     suggestedActions: [...suggestedActions],
     issues,
-    artifactHygiene
+    artifactHygiene,
+    memoryDiagnostics
   };
 };

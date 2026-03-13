@@ -45,6 +45,17 @@ describe('runDoctor', () => {
         classification: { runtime: [], automation: [], contract: [] },
         findings: [],
         suggestions: []
+      },
+      memoryDiagnostics: {
+        findings: [
+          {
+            code: 'memory-lifecycle-healthy',
+            severity: 'info',
+            message: 'Memory replay and promoted-knowledge lifecycle diagnostics are healthy.',
+            recommendation: 'Continue replay-before-promotion and salience-gated promotion workflows.'
+          }
+        ],
+        suggestions: []
       }
     });
     collectVerifyReport.mockResolvedValue({
@@ -99,6 +110,7 @@ describe('runDoctor', () => {
     expect(output).toContain('Docs');
     expect(output).toContain('Testing');
     expect(output).toContain('Risk');
+    expect(output).toContain('Memory');
 
     logSpy.mockRestore();
   });
@@ -121,6 +133,15 @@ describe('runDoctor', () => {
     expect(payload.artifactHygiene).toMatchObject({
       classification: { runtime: [], automation: [], contract: [] },
       findings: [],
+      suggestions: []
+    });
+    expect(payload.memoryDiagnostics).toMatchObject({
+      findings: [
+        {
+          code: 'memory-lifecycle-healthy',
+          severity: 'info'
+        }
+      ],
       suggestions: []
     });
 
@@ -162,6 +183,10 @@ describe('runDoctor', () => {
           { id: 'PB013', title: 'Update .gitignore for runtime artifacts', entries: ['.playbook/repo-index.json'] },
           { id: 'PB014', title: 'Move generated artifacts to .playbook runtime storage' }
         ]
+      },
+      memoryDiagnostics: {
+        findings: [],
+        suggestions: []
       }
     });
 
