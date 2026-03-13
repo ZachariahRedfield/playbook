@@ -315,7 +315,9 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
       repoContext: parseFlag(commandArgs, '--repo-context'),
       module: parseOptionValue(commandArgs, '--module'),
       diffContext: parseFlag(commandArgs, '--diff-context'),
-      base: parseOptionValue(commandArgs, '--base')
+      base: parseOptionValue(commandArgs, '--base'),
+      withRepoContextMemory: parseFlag(commandArgs, '--with-repo-context-memory'),
+      withDiffContextMemory: parseFlag(commandArgs, '--with-diff-context-memory')
     });
   },
   deps: async ({ cwd, commandArgs, format, quiet }) => {

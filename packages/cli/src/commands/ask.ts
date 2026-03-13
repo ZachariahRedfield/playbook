@@ -11,6 +11,8 @@ type AskOptions = {
   module?: string;
   diffContext?: boolean;
   base?: string;
+  withRepoContextMemory?: boolean;
+  withDiffContextMemory?: boolean;
 };
 
 type AskResult = {
@@ -36,6 +38,11 @@ type AskResult = {
     };
   };
   context: {
+    memorySummary?: string;
+    memorySources?: unknown;
+    knowledgeHits?: unknown;
+    recentRelevantEvents?: unknown;
+    memoryKnowledge?: unknown;
     architecture: string;
     framework: string;
     modules: string[];
@@ -47,7 +54,18 @@ type AskResult = {
 };
 
 type ContextSource = {
-  type: 'repo-index' | 'repo-graph' | 'architecture-metadata' | 'rule-registry' | 'module' | 'module-digest' | 'diff' | 'docs' | 'ai-contract';
+  type:
+    | 'repo-index'
+    | 'repo-graph'
+    | 'architecture-metadata'
+    | 'rule-registry'
+    | 'module'
+    | 'module-digest'
+    | 'diff'
+    | 'docs'
+    | 'ai-contract'
+    | 'memory-knowledge'
+    | 'memory-event';
   path?: string;
   name?: string;
   files?: string[];
@@ -71,6 +89,43 @@ const toUniqueSortedStrings = (values: unknown): string[] => {
   }
 
   return Array.from(unique).sort((left, right) => left.localeCompare(right));
+};
+
+const appendMemorySources = (context: AskContextSnapshot, sources: ContextSource[]): ContextSource[] => {
+  const nextSources = [...sources];
+
+  if (Array.isArray((context as { memoryKnowledge?: unknown }).memoryKnowledge)) {
+    nextSources.push({ type: 'memory-knowledge', path: '.playbook/memory/knowledge/*' });
+
+    const seen = new Set<string>();
+    const knowledge = (context as { memoryKnowledge: Array<{ provenance?: unknown }> }).memoryKnowledge;
+    for (const hit of knowledge) {
+      if (!Array.isArray(hit.provenance)) {
+        continue;
+      }
+
+      for (const provenanceEntry of hit.provenance) {
+        if (!provenanceEntry || typeof provenanceEntry !== 'object' || Array.isArray(provenanceEntry)) {
+          continue;
+        }
+
+        const sourcePath = (provenanceEntry as { sourcePath?: unknown }).sourcePath;
+        if (typeof sourcePath !== 'string' || sourcePath.length === 0) {
+          continue;
+        }
+
+        const memoryPath = sourcePath.startsWith('.playbook/memory/') ? sourcePath : `.playbook/memory/${sourcePath.replace(/^\/+/, '')}`;
+        if (seen.has(memoryPath)) {
+          continue;
+        }
+
+        seen.add(memoryPath);
+        nextSources.push({ type: 'memory-event', path: memoryPath });
+      }
+    }
+  }
+
+  return nextSources;
 };
 
 const buildContextSources = (context: AskContextSnapshot, repoContextSources: string[], moduleName?: string): ContextSource[] => {
@@ -111,7 +166,7 @@ const buildContextSources = (context: AskContextSnapshot, repoContextSources: st
     }
   }
 
-  return sources;
+  return appendMemorySources(context, sources);
 };
 
 type ParsedAskInput = {
@@ -181,6 +236,8 @@ Options:
   --diff-context             Scope ask reasoning to changed files mapped through
                              .playbook/repo-index.json (requires git diff + index)
   --base <ref>               Optional git base ref used with --diff-context
+  --with-repo-context-memory Opt in to memory-aware hydration for --repo-context prompts
+  --with-diff-context-memory Opt in to memory-aware hydration for --diff-context prompts
   --help                     Show help`);
 };
 
@@ -217,7 +274,8 @@ export const runAsk = async (cwd: string, commandArgs: string[], options: AskOpt
       module: options.module,
       diffContext: options.diffContext,
       baseRef: options.base,
-      withMemory: Boolean(options.repoContext || options.diffContext)
+      withRepoContextMemory: options.withRepoContextMemory ?? false,
+      withDiffContextMemory: options.withDiffContextMemory ?? false
     });
     const modeInstruction = getResponseModeInstruction(mode);
     const answerForMode = formatAnswerForMode(answer.answer, answer.reason, mode);

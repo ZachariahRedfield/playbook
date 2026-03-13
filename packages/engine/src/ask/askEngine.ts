@@ -6,6 +6,12 @@ import { buildModuleAskContext, resolveIndexedModuleContext, type IndexedModuleC
 import { readModuleContextDigest, type ModuleContextDigest } from '../context/moduleContext.js';
 import { resolveDiffAskContext, type DiffAskContext } from './diffContext.js';
 import { readRuntimeMemoryEnvelope, type RuntimeMemoryEnvelope } from '../intelligence/runtimeMemory.js';
+import {
+  expandMemoryProvenance,
+  lookupMemoryCandidateKnowledge,
+  lookupPromotedMemoryKnowledge,
+  type ExpandedMemoryProvenance
+} from '../memory/inspection.js';
 
 type AskContext = {
   architecture: string;
@@ -29,6 +35,7 @@ export type AskEngineResult = {
     memorySources?: RuntimeMemoryEnvelope['memorySources'];
     knowledgeHits?: RuntimeMemoryEnvelope['knowledgeHits'];
     recentRelevantEvents?: RuntimeMemoryEnvelope['recentRelevantEvents'];
+    memoryKnowledge?: AskMemoryKnowledgeHit[];
     architecture: string;
     framework: string;
     modules: string[];
@@ -38,11 +45,25 @@ export type AskEngineResult = {
   };
 };
 
+type AskMemoryKnowledgeHit = {
+  source: 'promoted' | 'candidate';
+  knowledgeId?: string;
+  candidateId: string;
+  kind: string;
+  title: string;
+  summary: string;
+  module: string;
+  ruleId: string;
+  failureShape: string;
+  provenance: ExpandedMemoryProvenance[];
+};
+
 type AskEngineOptions = {
   module?: string;
   diffContext?: boolean;
   baseRef?: string;
-  withMemory?: boolean;
+  withRepoContextMemory?: boolean;
+  withDiffContextMemory?: boolean;
 };
 
 const AI_CONTRACT_PATH = '.playbook/ai-contract.json' as const;
@@ -73,6 +94,69 @@ const extractUserQuestion = (question: string): string => {
 };
 
 const normalizeQuestion = (question: string): string => extractUserQuestion(question).trim().toLowerCase();
+
+const normalizeTokens = (value: string): string[] =>
+  value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 3);
+
+const scoreMemoryRelevance = (tokens: string[], values: string[]): number => {
+  if (tokens.length === 0) {
+    return 0;
+  }
+
+  const normalized = values.join(' ').toLowerCase();
+  return tokens.reduce((score, token) => (normalized.includes(token) ? score + 1 : score), 0);
+};
+
+const buildMemoryKnowledgeHits = (projectRoot: string, target: 'repo-context' | 'diff-context', question: string): AskMemoryKnowledgeHit[] => {
+  const relevanceTokens = normalizeTokens(`${target} ${question}`.trim());
+  const promoted = lookupPromotedMemoryKnowledge(projectRoot)
+    .map((entry) => ({
+      source: 'promoted' as const,
+      knowledgeId: entry.knowledgeId,
+      candidateId: entry.candidateId,
+      kind: entry.kind,
+      title: entry.title,
+      summary: entry.summary,
+      module: entry.module,
+      ruleId: entry.ruleId,
+      failureShape: entry.failureShape,
+      provenance: expandMemoryProvenance(projectRoot, entry.provenance),
+      relevance: scoreMemoryRelevance(relevanceTokens, [entry.title, entry.summary, entry.module, entry.ruleId, entry.failureShape])
+    }))
+    .filter((entry) => relevanceTokens.length === 0 || entry.relevance > 0);
+
+  const promotedCandidateIds = new Set(promoted.map((entry) => entry.candidateId));
+
+  const candidates = lookupMemoryCandidateKnowledge(projectRoot)
+    .filter((entry) => !promotedCandidateIds.has(entry.candidateId))
+    .map((entry) => ({
+      source: 'candidate' as const,
+      candidateId: entry.candidateId,
+      kind: entry.kind,
+      title: entry.title,
+      summary: entry.summary,
+      module: entry.module,
+      ruleId: entry.ruleId,
+      failureShape: entry.failureShape,
+      provenance: expandMemoryProvenance(projectRoot, entry.provenance),
+      relevance: scoreMemoryRelevance(relevanceTokens, [entry.title, entry.summary, entry.module, entry.ruleId, entry.failureShape])
+    }))
+    .filter((entry) => relevanceTokens.length === 0 || entry.relevance > 0);
+
+  return [...promoted, ...candidates]
+    .sort((left, right) => {
+      if (left.source !== right.source) {
+        return left.source === 'promoted' ? -1 : 1;
+      }
+
+      return right.relevance - left.relevance || left.candidateId.localeCompare(right.candidateId);
+    })
+    .slice(0, 10)
+    .map(({ relevance: _relevance, ...entry }) => entry);
+};
 
 const gatherContext = (projectRoot: string): AskContext => {
   const architecture = queryRepositoryIndex(projectRoot, 'architecture').result as string;
@@ -173,19 +257,26 @@ export const answerRepositoryQuestion = (projectRoot: string, question: string, 
     ? resolveIndexedModuleContext(projectRoot, options.module, { unknownModulePrefix: 'playbook ask --module' })
     : undefined;
   const diffContext = options?.diffContext ? resolveDiffAskContext(projectRoot, { baseRef: options.baseRef }) : undefined;
-  const memoryEnvelope = options?.withMemory
+  const memoryTarget = options?.diffContext ? 'diff-context' : 'repo-context';
+  const shouldHydrateMemory =
+    (memoryTarget === 'repo-context' && options?.withRepoContextMemory === true) ||
+    (memoryTarget === 'diff-context' && options?.withDiffContextMemory === true);
+
+  const memoryEnvelope = shouldHydrateMemory
     ? readRuntimeMemoryEnvelope(projectRoot, {
         question: userQuestion,
-        target: options.module ?? (options.diffContext ? 'diff-context' : 'repo-context')
+        target: options.module ?? memoryTarget
       })
     : undefined;
+  const memoryKnowledge = shouldHydrateMemory ? buildMemoryKnowledgeHits(projectRoot, memoryTarget, userQuestion) : undefined;
 
   const memoryContext = memoryEnvelope
     ? {
         memorySummary: memoryEnvelope.memorySummary,
         memorySources: memoryEnvelope.memorySources,
         knowledgeHits: memoryEnvelope.knowledgeHits,
-        recentRelevantEvents: memoryEnvelope.recentRelevantEvents
+        recentRelevantEvents: memoryEnvelope.recentRelevantEvents,
+        memoryKnowledge
       }
     : {};
 
@@ -428,6 +519,7 @@ export const answerRepositoryQuestion = (projectRoot: string, question: string, 
       state: 'unsupported-question'
     },
     context: {
+      ...memoryContext,
       architecture: context.architecture,
       framework: context.framework,
       modules: context.modules,
