@@ -266,11 +266,13 @@ export {
   listRuntimeLogRecords,
   listRuntimeRuns,
   listRuntimeTasks,
+  readRuntimeControlPlaneStatus,
   readRuntimeRun,
   readRuntimeTask,
   runtimeLifecyclePaths,
   transitionRuntimeRunState,
-  transitionRuntimeTaskState
+  transitionRuntimeTaskState,
+  type RuntimeControlPlaneStatus
 } from './runtime/index.js';
 
 export { createExecutionRun, createExecutionIntent } from './execution/createExecutionRun.js';

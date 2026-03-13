@@ -49,6 +49,18 @@ type AppendRuntimeLogInput = {
 };
 
 const stringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
+
+export type RuntimeControlPlaneStatus = {
+  schemaVersion: '1.0';
+  command: 'agent-status';
+  runtimeRootExists: boolean;
+  runCount: number;
+  taskCount: number;
+  logCount: number;
+  latestRunId: string | null;
+  latestRunState: RunState | null;
+};
+
 const normalize = (value: string): string => value.split(path.sep).join('/');
 
 const runtimeRootPath = (repoRoot: string): string => path.join(repoRoot, controlPlaneRuntimePaths.root);
@@ -261,6 +273,26 @@ export const listRuntimeLogRecords = (repoRoot: string, runId: string): RuntimeL
   }
 
   return parseJsonl<RuntimeLogEnvelope>(fs.readFileSync(filePath, 'utf8')).sort(compareLogs);
+};
+
+
+export const readRuntimeControlPlaneStatus = (repoRoot: string): RuntimeControlPlaneStatus => {
+  const runs = listRuntimeRuns(repoRoot);
+  const runCount = runs.length;
+  const taskCount = runs.reduce((sum, run) => sum + listRuntimeTasks(repoRoot, run.runId).length, 0);
+  const logCount = runs.reduce((sum, run) => sum + listRuntimeLogRecords(repoRoot, run.runId).length, 0);
+  const latestRun = runCount > 0 ? runs[runCount - 1] : null;
+
+  return {
+    schemaVersion: '1.0',
+    command: 'agent-status',
+    runtimeRootExists: fs.existsSync(runtimeRootPath(repoRoot)),
+    runCount,
+    taskCount,
+    logCount,
+    latestRunId: latestRun?.runId ?? null,
+    latestRunState: latestRun?.state ?? null
+  };
 };
 
 export const runtimeLifecyclePaths = {
