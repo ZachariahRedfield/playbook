@@ -52,6 +52,20 @@ export type RuntimeMemoryEnvelope = {
   knowledgeHits: RuntimeKnowledgeHit[];
   recentRelevantEvents: RuntimeRecentRelevantEvent[];
   runtimeTaskProvenance: RuntimeTaskMemoryProvenanceExpanded[];
+  dryRunEvidence: RuntimeDryRunEvidenceSummary[];
+};
+
+export type RuntimeDryRunEvidenceSummary = {
+  runId: string;
+  stepId: string;
+  taskId: string;
+  status: 'passed' | 'failed' | 'skipped';
+  sourcePlanTaskId: string | null;
+  runtimeTaskId: string | null;
+  policyDecision: string | null;
+  evidenceRefs: string[];
+  knowledgeIds: string[];
+  provenanceSummary: string;
 };
 
 type RuntimeMemoryOptions = {
@@ -105,6 +119,8 @@ const normalizeTokens = (value: string): string[] =>
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length >= 3);
+
+const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort((left, right) => left.localeCompare(right));
 
 const scoreRelevance = (tokens: string[], content: string): number => {
   if (tokens.length === 0) {
@@ -175,6 +191,42 @@ const asTaskId = (value: unknown): string | null => {
   return normalized.length > 0 ? normalized : null;
 };
 
+const asString = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const asStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => asString(entry))
+    .filter((entry): entry is string => entry !== null)
+    .sort((left, right) => left.localeCompare(right));
+};
+
+const asPolicyDecision = (value: unknown): string | null => {
+  if (typeof value === 'string') {
+    return asString(value);
+  }
+
+  const record = asRecord(value);
+  return asString(record.policyState) ?? asString(record.classification) ?? asString(record.code);
+};
+
+
+const extractInfluencedKnowledgeIds = (value: unknown): string[] => {
+  const advisoryRecord = asRecord(value);
+  const outcomeLearning = asRecord(advisoryRecord.outcomeLearning);
+  return asStringArray(outcomeLearning.influencedByKnowledgeIds);
+};
+
 const collectRuntimeStepRecords = (runs: RuntimeExecutionRun[]): RuntimeStepRecord[] =>
   runs.flatMap((run) => {
     const runId = run.id;
@@ -208,6 +260,83 @@ const collectRuntimeStepRecords = (runs: RuntimeExecutionRun[]): RuntimeStepReco
       })
       .filter((entry): entry is RuntimeStepRecord => entry !== null);
   });
+
+const buildRuntimeDryRunEvidence = (runs: RuntimeExecutionRun[]): RuntimeDryRunEvidenceSummary[] => {
+  const dedupe = new Map<string, RuntimeDryRunEvidenceSummary>();
+
+  for (const run of runs) {
+    if (!run.id) {
+      continue;
+    }
+
+    for (const step of run.steps ?? []) {
+      if (!step?.id || (step.status !== 'passed' && step.status !== 'failed' && step.status !== 'skipped')) {
+        continue;
+      }
+
+      const inputs = asRecord(step.inputs);
+      const outputs = asRecord(step.outputs);
+      const dryRun = inputs.dryRun === true || outputs.dryRun === true;
+      if (!dryRun) {
+        continue;
+      }
+
+      const taskId = asTaskId(outputs.taskId) ?? asTaskId(inputs.taskId);
+      if (!taskId) {
+        continue;
+      }
+
+      const sourcePlanTaskId = asString(outputs.planTaskId) ?? asString(inputs.planTaskId) ?? asString(inputs.sourcePlanTaskId) ?? null;
+      const runtimeTaskId = asString(outputs.runtimeTaskId) ?? asString(inputs.runtimeTaskId) ?? null;
+      const policyDecision = asPolicyDecision(outputs.policyDecision) ?? asPolicyDecision(inputs.policyDecision) ?? null;
+      const evidenceRefs = (step.evidence ?? [])
+        .map((evidence) => asString(evidence.ref))
+        .filter((entry): entry is string => entry !== null)
+        .sort((left, right) => left.localeCompare(right));
+      const outputTask = asRecord(outputs.task);
+      const inputTask = asRecord(inputs.task);
+      const knowledgeIds = uniqueSorted([
+        ...asStringArray(outputs.knowledgeIds),
+        ...asStringArray(inputs.knowledgeIds),
+        ...extractInfluencedKnowledgeIds(outputs.taskAdvisory),
+        ...extractInfluencedKnowledgeIds(outputs.advisory),
+        ...extractInfluencedKnowledgeIds(outputTask.advisory),
+        ...extractInfluencedKnowledgeIds(inputs.taskAdvisory),
+        ...extractInfluencedKnowledgeIds(inputs.advisory),
+        ...extractInfluencedKnowledgeIds(inputTask.advisory)
+      ]);
+
+      const provenanceSummary = [
+        `dry-run run=${run.id}`,
+        `step=${step.id}`,
+        `task=${taskId}`,
+        sourcePlanTaskId ? `planTask=${sourcePlanTaskId}` : 'planTask=unknown',
+        runtimeTaskId ? `runtimeTask=${runtimeTaskId}` : 'runtimeTask=unknown',
+        policyDecision ? `policy=${policyDecision}` : 'policy=unknown'
+      ].join('; ');
+
+      const record: RuntimeDryRunEvidenceSummary = {
+        runId: run.id,
+        stepId: step.id,
+        taskId,
+        status: step.status,
+        sourcePlanTaskId,
+        runtimeTaskId,
+        policyDecision,
+        evidenceRefs,
+        knowledgeIds,
+        provenanceSummary
+      };
+
+      const key = `${record.runId}|${record.stepId}|${record.taskId}|${record.sourcePlanTaskId ?? ''}|${record.runtimeTaskId ?? ''}|${record.policyDecision ?? ''}`;
+      dedupe.set(key, record);
+    }
+  }
+
+  return [...dedupe.values()].sort((left, right) =>
+    left.runId.localeCompare(right.runId) || left.stepId.localeCompare(right.stepId) || left.taskId.localeCompare(right.taskId)
+  );
+};
 
 const buildKnowledgeReferencesByFingerprint = (projectRoot: string): Map<string, string[]> => {
   const references = new Map<string, Set<string>>();
@@ -341,7 +470,9 @@ export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: Runtime
     .map(({ relevance: _relevance, ...hit }) => hit);
 
   const session = readSession(projectRoot);
+  const runs = readExecutionRuns(projectRoot);
   const runtimeTaskProvenance = expandRuntimeTaskMemoryProvenance(projectRoot, buildRuntimeTaskMemoryProvenance(projectRoot));
+  const dryRunEvidence = buildRuntimeDryRunEvidence(runs);
   const recentRelevantEvents: RuntimeRecentRelevantEvent[] = [];
   if (session) {
     recentRelevantEvents.push({
@@ -383,6 +514,13 @@ export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: Runtime
     });
   }
 
+  for (const entry of dryRunEvidence.slice(0, maxEntries)) {
+    recentRelevantEvents.push({
+      kind: 'runtime-task',
+      summary: `Dry-run provenance ${entry.runId}/${entry.stepId} task ${entry.taskId} policy ${entry.policyDecision ?? 'unknown'}`
+    });
+  }
+
   const knowledgeHits = [...promotedHits, ...candidateHits].slice(0, maxEntries * 2);
   const memorySources: RuntimeMemorySource[] = [
     {
@@ -416,6 +554,7 @@ export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: Runtime
     memorySources,
     knowledgeHits,
     recentRelevantEvents: recentRelevantEvents.slice(0, maxEntries * 2),
-    runtimeTaskProvenance
+    runtimeTaskProvenance,
+    dryRunEvidence
   };
 };

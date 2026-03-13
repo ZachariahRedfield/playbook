@@ -21,8 +21,18 @@ const setupRuntimeMemoryBridgeRepo = (): string => {
         id: 'step-1',
         kind: 'apply',
         status: 'passed',
-        inputs: { taskId: 'task-1' },
-        outputs: {},
+        inputs: {
+          taskId: 'task-1',
+          dryRun: true,
+          planTaskId: 'plan-task-1',
+          policyDecision: { policyState: 'allow' },
+          task: { advisory: { outcomeLearning: { influencedByKnowledgeIds: ['cand-1'] } } }
+        },
+        outputs: {
+          dryRun: true,
+          runtimeTaskId: 'runtime-task-1',
+          knowledgeIds: ['knowledge-1']
+        },
         evidence: [{ id: 'ev-1', kind: 'artifact', ref: '.playbook/plan.json' }]
       }
     ],
@@ -140,6 +150,18 @@ describe('runtime memory bridge', () => {
         eventKind: 'apply_run'
       })
     ]);
+    expect(envelope.dryRunEvidence).toEqual([
+      expect.objectContaining({
+        runId: 'run-1',
+        stepId: 'step-1',
+        taskId: 'task-1',
+        sourcePlanTaskId: 'plan-task-1',
+        runtimeTaskId: 'runtime-task-1',
+        policyDecision: 'allow',
+        knowledgeIds: ['cand-1', 'knowledge-1'],
+        evidenceRefs: ['.playbook/plan.json']
+      })
+    ]);
   });
 
   it('expands task provenance through memory helpers', () => {
@@ -173,6 +195,8 @@ describe('runtime memory bridge', () => {
 
     expect(first.runtimeTaskProvenance).toEqual(second.runtimeTaskProvenance);
     expect(second.runtimeTaskProvenance).toHaveLength(1);
+    expect(first.dryRunEvidence).toEqual(second.dryRunEvidence);
+    expect(second.dryRunEvidence).toHaveLength(1);
   });
 
   it('keeps bridge reads additive without auto-promotion side effects', () => {
@@ -184,5 +208,6 @@ describe('runtime memory bridge', () => {
     const after = fs.readFileSync(path.join(root, '.playbook/memory/knowledge/patterns.json'), 'utf8');
     expect(after).toBe(before);
     expect(fs.existsSync(path.join(root, '.playbook/memory/knowledge/decisions.json'))).toBe(false);
+    expect(fs.readdirSync(path.join(root, '.playbook/memory/events')).sort()).toEqual(['event-1.json']);
   });
 });
