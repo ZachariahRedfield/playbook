@@ -45,6 +45,12 @@ type AiContextResult = {
     authorityRule: string;
     localExecutionRule: string;
     failureMode: string;
+    memoryCommandFamily: {
+      available: boolean;
+      preferredCommands: ['memory events --json', 'memory knowledge --json', 'memory candidates --json'];
+    };
+    promotedKnowledgeGuidance: string;
+    candidateKnowledgeGuidance: string;
   };
 };
 
@@ -104,7 +110,13 @@ const buildAiContextResult = (cwd: string): AiContextResult => {
       preferPlaybookCommands: true,
       authorityRule: 'Playbook command outputs are authoritative over ad-hoc repository inference when command coverage exists.',
       localExecutionRule: 'Inside the Playbook repository, use local built CLI entrypoints for branch-accurate validation.',
-      failureMode: 'Agent drift occurs when AI tools bypass Playbook command outputs and reason directly from stale or incomplete file inspection.'
+      failureMode: 'Agent drift occurs when AI tools bypass Playbook command outputs and reason directly from stale or incomplete file inspection.',
+      memoryCommandFamily: {
+        available: true,
+        preferredCommands: ['memory events --json', 'memory knowledge --json', 'memory candidates --json']
+      },
+      promotedKnowledgeGuidance: 'Prefer promoted knowledge for retrieval and planning support because it is reviewed and stable doctrine.',
+      candidateKnowledgeGuidance: 'Treat candidates as advisory-only signals until reviewed promotion; never treat candidate artifacts as authoritative doctrine.'
     }
   };
 };
@@ -132,6 +144,12 @@ const printText = (result: AiContextResult): void => {
   console.log('');
   console.log('Canonical Remediation Workflow');
   console.log(result.operatingLadder.remediationWorkflow.join(' -> '));
+  console.log('');
+  console.log('Memory Guidance');
+  console.log(`Memory command family available: ${result.guidance.memoryCommandFamily.available ? 'yes' : 'no'}`);
+  console.log(`Preferred commands: ${result.guidance.memoryCommandFamily.preferredCommands.join(', ')}`);
+  console.log(`Promoted knowledge: ${result.guidance.promotedKnowledgeGuidance}`);
+  console.log(`Candidate knowledge: ${result.guidance.candidateKnowledgeGuidance}`);
 };
 
 export const runAiContext = async (cwd: string, options: { format: 'text' | 'json'; quiet: boolean }): Promise<number> => {

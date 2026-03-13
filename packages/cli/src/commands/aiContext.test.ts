@@ -35,10 +35,30 @@ describe('runAiContext', () => {
 
     const guidance = payload.guidance as Record<string, unknown>;
     expect(guidance.preferPlaybookCommands).toBe(true);
+    expect((guidance.memoryCommandFamily as Record<string, unknown>).available).toBe(true);
+    expect(guidance.promotedKnowledgeGuidance).toBeTruthy();
+    expect(guidance.candidateKnowledgeGuidance).toBeTruthy();
 
     logSpy.mockRestore();
   });
 
+
+  it('produces deterministic JSON ordering/stability', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const firstExit = await runAiContext('/repo', { format: 'json', quiet: false });
+    const first = String(logSpy.mock.calls[0]?.[0]);
+
+    logSpy.mockClear();
+    const secondExit = await runAiContext('/repo', { format: 'json', quiet: false });
+    const second = String(logSpy.mock.calls[0]?.[0]);
+
+    expect(firstExit).toBe(ExitCode.Success);
+    expect(secondExit).toBe(ExitCode.Success);
+    expect(second).toBe(first);
+
+    logSpy.mockRestore();
+  });
   it('registers the ai-context command', () => {
     const command = listRegisteredCommands().find((entry) => entry.name === 'ai-context');
 
