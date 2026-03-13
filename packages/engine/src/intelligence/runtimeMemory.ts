@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { readPromotedPatterns } from '../compaction/promotionQueue.js';
+import { expandMemoryProvenance, lookupPromotedMemoryKnowledge, lookupMemoryCandidateKnowledge } from '../memory/inspection.js';
+import type { MemoryReplayCandidateProvenance } from '../schema/memoryReplay.js';
 import { readSession, SESSION_ARTIFACT_RELATIVE_PATH } from '../session/sessionStore.js';
 
 type KnowledgeHitSource = 'promoted-pattern' | 'knowledge-candidate';
 
-type MemorySourceKind = 'promoted-patterns' | 'knowledge-candidates' | 'session';
+type MemorySourceKind = 'promoted-patterns' | 'knowledge-candidates' | 'session' | 'runtime-runs';
 
 export type RuntimeMemorySource = {
   kind: MemorySourceKind;
@@ -22,9 +24,26 @@ export type RuntimeKnowledgeHit = {
 };
 
 export type RuntimeRecentRelevantEvent = {
-  kind: 'session-step' | 'pinned-artifact' | 'constraint' | 'unresolved-question';
+  kind: 'session-step' | 'pinned-artifact' | 'constraint' | 'unresolved-question' | 'runtime-task';
   summary: string;
   occurredAt?: string;
+};
+
+export type RuntimeTaskMemoryProvenance = {
+  runId: string;
+  taskId: string;
+  stepId: string;
+  status: 'passed' | 'failed' | 'skipped';
+  memoryEventId: string;
+  memoryFingerprint: string;
+  memorySourcePath: string;
+  knowledgeIds: string[];
+};
+
+export type RuntimeTaskMemoryProvenanceExpanded = RuntimeTaskMemoryProvenance & {
+  eventKind: string | null;
+  eventSummary: string | null;
+  eventCreatedAt: string | null;
 };
 
 export type RuntimeMemoryEnvelope = {
@@ -32,6 +51,7 @@ export type RuntimeMemoryEnvelope = {
   memorySources: RuntimeMemorySource[];
   knowledgeHits: RuntimeKnowledgeHit[];
   recentRelevantEvents: RuntimeRecentRelevantEvent[];
+  runtimeTaskProvenance: RuntimeTaskMemoryProvenanceExpanded[];
 };
 
 type RuntimeMemoryOptions = {
@@ -49,6 +69,36 @@ type KnowledgeCandidatesArtifact = {
 };
 
 const KNOWLEDGE_CANDIDATES_RELATIVE_PATH = '.playbook/knowledge/candidates.json' as const;
+const EXECUTION_RUNS_DIR_RELATIVE_PATH = '.playbook/runs' as const;
+
+type RuntimeStepRecord = {
+  runId: string;
+  stepId: string;
+  status: 'passed' | 'failed' | 'skipped';
+  createdAt: string;
+  taskId: string;
+  evidenceRefs: string[];
+};
+
+type RuntimeExecutionRun = {
+  id?: string;
+  created_at?: string;
+  steps?: Array<{
+    id?: string;
+    status?: string;
+    evidence?: Array<{ ref?: string }>;
+    inputs?: Record<string, unknown>;
+    outputs?: Record<string, unknown>;
+  }>;
+};
+
+type RuntimeMemoryEventRecord = {
+  eventInstanceId: string;
+  eventFingerprint: string;
+  eventType?: string;
+  summary?: string;
+  evidence?: Array<{ artifactPath?: string }>;
+};
 
 const normalizeTokens = (value: string): string[] =>
   value
@@ -78,6 +128,177 @@ const summarizeMemory = (input: { sources: RuntimeMemorySource[]; knowledgeHits:
   const available = input.sources.filter((source) => source.available).map((source) => source.kind);
   const sourceSummary = available.length > 0 ? available.join(', ') : 'none';
   return `Memory-aware retrieval consulted sources: ${sourceSummary}. knowledgeHits=${input.knowledgeHits.length}; recentRelevantEvents=${input.events.length}.`;
+};
+
+const readExecutionRuns = (projectRoot: string): RuntimeExecutionRun[] => {
+  const runsPath = path.join(projectRoot, EXECUTION_RUNS_DIR_RELATIVE_PATH);
+  if (!fs.existsSync(runsPath)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(runsPath)
+    .filter((entry) => entry.endsWith('.json'))
+    .sort((left, right) => left.localeCompare(right))
+    .map((entry) => {
+      const raw = fs.readFileSync(path.join(runsPath, entry), 'utf8');
+      return JSON.parse(raw) as RuntimeExecutionRun;
+    })
+    .filter((run) => Boolean(run?.id));
+};
+
+const readRuntimeMemoryEvents = (projectRoot: string): RuntimeMemoryEventRecord[] => {
+  const eventsPath = path.join(projectRoot, '.playbook', 'memory', 'events');
+  if (!fs.existsSync(eventsPath)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(eventsPath)
+    .filter((entry) => entry.endsWith('.json'))
+    .sort((left, right) => left.localeCompare(right))
+    .map((entry) => {
+      const raw = fs.readFileSync(path.join(eventsPath, entry), 'utf8');
+      return JSON.parse(raw) as RuntimeMemoryEventRecord;
+    })
+    .filter((event) => typeof event.eventInstanceId === 'string' && typeof event.eventFingerprint === 'string');
+};
+
+const asRecord = (value: unknown): Record<string, unknown> => (value && typeof value === 'object' ? (value as Record<string, unknown>) : {});
+
+const asTaskId = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const collectRuntimeStepRecords = (runs: RuntimeExecutionRun[]): RuntimeStepRecord[] =>
+  runs.flatMap((run) => {
+    const runId = run.id;
+    if (!runId) {
+      return [];
+    }
+
+    return (run.steps ?? [])
+      .filter((step): step is NonNullable<RuntimeExecutionRun['steps']>[number] => Boolean(step && step.id))
+      .filter((step) => step.status === 'passed' || step.status === 'failed' || step.status === 'skipped')
+      .map((step) => {
+        const inputs = asRecord(step.inputs);
+        const outputs = asRecord(step.outputs);
+        const taskId = asTaskId(outputs.taskId) ?? asTaskId(inputs.taskId);
+        if (!taskId) {
+          return null;
+        }
+
+        const evidenceRefs = (step.evidence ?? [])
+          .map((evidence) => (typeof evidence.ref === 'string' ? evidence.ref.trim() : ''))
+          .filter((ref) => ref.length > 0);
+
+        return {
+          runId,
+          stepId: step.id ?? 'unknown-step',
+          status: step.status,
+          taskId,
+          evidenceRefs,
+          createdAt: run.created_at ?? ''
+        };
+      })
+      .filter((entry): entry is RuntimeStepRecord => entry !== null);
+  });
+
+const buildKnowledgeReferencesByFingerprint = (projectRoot: string): Map<string, string[]> => {
+  const references = new Map<string, Set<string>>();
+  const collect = (fingerprint: string, id: string): void => {
+    const key = fingerprint.trim();
+    if (key.length === 0) {
+      return;
+    }
+
+    if (!references.has(key)) {
+      references.set(key, new Set<string>());
+    }
+    references.get(key)?.add(id);
+  };
+
+  for (const entry of lookupPromotedMemoryKnowledge(projectRoot, { includeSuperseded: true })) {
+    collect(entry.fingerprint, entry.knowledgeId);
+  }
+
+  for (const entry of lookupMemoryCandidateKnowledge(projectRoot, { includeStale: true })) {
+    collect(entry.fingerprint, entry.candidateId);
+  }
+
+  return new Map(
+    [...references.entries()].map(([fingerprint, ids]) => [fingerprint, [...ids].sort((left, right) => left.localeCompare(right))])
+  );
+};
+
+const buildRuntimeTaskMemoryProvenance = (projectRoot: string): RuntimeTaskMemoryProvenance[] => {
+  const runs = readExecutionRuns(projectRoot);
+  const steps = collectRuntimeStepRecords(runs);
+  const events = readRuntimeMemoryEvents(projectRoot);
+  const eventsByEvidence = new Map<string, RuntimeMemoryEventRecord[]>();
+  const knowledgeReferencesByFingerprint = buildKnowledgeReferencesByFingerprint(projectRoot);
+
+  for (const event of events) {
+    for (const artifactPath of (event.evidence ?? []).map((evidence) => evidence.artifactPath).filter((entry): entry is string => typeof entry === 'string')) {
+      const normalized = artifactPath.trim();
+      if (normalized.length === 0) {
+        continue;
+      }
+
+      const existing = eventsByEvidence.get(normalized) ?? [];
+      existing.push(event);
+      eventsByEvidence.set(normalized, existing);
+    }
+  }
+
+  const dedupe = new Map<string, RuntimeTaskMemoryProvenance>();
+  for (const step of steps) {
+    const linkedEvents = step.evidenceRefs.flatMap((ref) => eventsByEvidence.get(ref) ?? []);
+    for (const event of linkedEvents) {
+      const provenance: RuntimeTaskMemoryProvenance = {
+        runId: step.runId,
+        taskId: step.taskId,
+        stepId: step.stepId,
+        status: step.status,
+        memoryEventId: event.eventInstanceId,
+        memoryFingerprint: event.eventFingerprint,
+        memorySourcePath: `.playbook/memory/events/${event.eventInstanceId}.json`,
+        knowledgeIds: knowledgeReferencesByFingerprint.get(event.eventFingerprint) ?? []
+      };
+      const key = `${provenance.runId}|${provenance.taskId}|${provenance.memoryEventId}`;
+      dedupe.set(key, provenance);
+    }
+  }
+
+  return [...dedupe.values()].sort((left, right) =>
+    left.runId.localeCompare(right.runId) || left.taskId.localeCompare(right.taskId) || left.memoryEventId.localeCompare(right.memoryEventId)
+  );
+};
+
+export const expandRuntimeTaskMemoryProvenance = (
+  projectRoot: string,
+  provenance: RuntimeTaskMemoryProvenance[]
+): RuntimeTaskMemoryProvenanceExpanded[] => {
+  const baseProvenance: MemoryReplayCandidateProvenance[] = provenance.map((entry) => ({
+    eventId: entry.memoryEventId,
+    sourcePath: entry.memorySourcePath,
+    fingerprint: entry.memoryFingerprint,
+    runId: entry.runId
+  }));
+
+  const expanded = expandMemoryProvenance(projectRoot, baseProvenance);
+
+  return provenance.map((entry, index) => ({
+    ...entry,
+    eventKind: expanded[index]?.event?.kind ?? null,
+    eventSummary: expanded[index]?.event?.outcome?.summary ?? null,
+    eventCreatedAt: expanded[index]?.event?.createdAt ?? null
+  }));
 };
 
 export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: RuntimeMemoryOptions): RuntimeMemoryEnvelope => {
@@ -120,6 +341,7 @@ export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: Runtime
     .map(({ relevance: _relevance, ...hit }) => hit);
 
   const session = readSession(projectRoot);
+  const runtimeTaskProvenance = expandRuntimeTaskMemoryProvenance(projectRoot, buildRuntimeTaskMemoryProvenance(projectRoot));
   const recentRelevantEvents: RuntimeRecentRelevantEvent[] = [];
   if (session) {
     recentRelevantEvents.push({
@@ -153,6 +375,14 @@ export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: Runtime
     }
   }
 
+  for (const entry of runtimeTaskProvenance.slice(0, maxEntries)) {
+    recentRelevantEvents.push({
+      kind: 'runtime-task',
+      summary: `Run ${entry.runId} task ${entry.taskId} (${entry.status}) linked to memory event ${entry.memoryEventId}`,
+      occurredAt: entry.eventCreatedAt ?? undefined
+    });
+  }
+
   const knowledgeHits = [...promotedHits, ...candidateHits].slice(0, maxEntries * 2);
   const memorySources: RuntimeMemorySource[] = [
     {
@@ -172,6 +402,12 @@ export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: Runtime
       artifact: SESSION_ARTIFACT_RELATIVE_PATH,
       available: session !== null,
       records: session ? 1 + session.pinnedArtifacts.length + session.constraints.length + session.unresolvedQuestions.length : 0
+    },
+    {
+      kind: 'runtime-runs',
+      artifact: EXECUTION_RUNS_DIR_RELATIVE_PATH,
+      available: runtimeTaskProvenance.length > 0,
+      records: runtimeTaskProvenance.length
     }
   ];
 
@@ -179,6 +415,7 @@ export const readRuntimeMemoryEnvelope = (projectRoot: string, options?: Runtime
     memorySummary: summarizeMemory({ sources: memorySources, knowledgeHits, events: recentRelevantEvents }),
     memorySources,
     knowledgeHits,
-    recentRelevantEvents: recentRelevantEvents.slice(0, maxEntries * 2)
+    recentRelevantEvents: recentRelevantEvents.slice(0, maxEntries * 2),
+    runtimeTaskProvenance
   };
 };
