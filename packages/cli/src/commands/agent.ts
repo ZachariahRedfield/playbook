@@ -3,7 +3,8 @@ import {
   listRuntimeRuns,
   listRuntimeTasks,
   readRuntimeControlPlaneStatus,
-  readRuntimeRun
+  readRuntimeRun,
+  runAgentPlanDryRun
 } from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { ExitCode } from '../lib/cliContract.js';
@@ -20,6 +21,8 @@ Read-only control-plane runtime surfaces.
 
 Subcommands:
   runs                           List runtime runs
+  run --from-plan <path> --dry-run
+                                 Compile a plan and preview dry-run scheduling/policy output
   show <run-id>                  Show one runtime run
   tasks --run-id <run-id>        List tasks for one run
   logs --run-id <run-id>         List log records for one run
@@ -27,6 +30,8 @@ Subcommands:
 
 Options:
   --run-id <id>              Run identifier for tasks/logs
+  --from-plan <path>         Plan artifact path for agent run dry-run
+  --dry-run                  Required for agent run (live execution is not available)
   --json                     Print machine-readable JSON output
   --help                     Show help`);
 };
@@ -107,6 +112,36 @@ export const runAgent = async (cwd: string, args: string[], options: AgentOption
       return ExitCode.Success;
     }
 
+    if (subcommand === 'run') {
+      const fromPlan = readOptionValue(args, '--from-plan');
+      if (!fromPlan) {
+        throw new Error('playbook agent run: missing required --from-plan <path> option');
+      }
+
+      if (!args.includes('--dry-run')) {
+        throw new Error('playbook agent run: --dry-run is required in this release; live execution is not available');
+      }
+
+      const payload = {
+        schemaVersion: '1.0',
+        command: 'agent-run',
+        dryRun: true,
+        ...runAgentPlanDryRun({
+          repoRoot: cwd,
+          fromPlanPath: fromPlan
+        })
+      };
+
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'agent run', payload });
+      } else if (!options.quiet) {
+        console.log(
+          `Dry-run compiled ${payload.compiledTaskCount} tasks (ready=${payload.readyBlockedSummary.readyCount}, blocked=${payload.readyBlockedSummary.blockedCount}).`
+        );
+      }
+      return ExitCode.Success;
+    }
+
     if (subcommand === 'tasks') {
       const runId = requireRunId(args, 'tasks');
       const payload = {
@@ -152,7 +187,7 @@ export const runAgent = async (cwd: string, args: string[], options: AgentOption
       return ExitCode.Success;
     }
 
-    throw new Error('playbook agent: unsupported subcommand. Use runs, show, tasks, logs, or status.');
+    throw new Error('playbook agent: unsupported subcommand. Use runs, run, show, tasks, logs, or status.');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (options.format === 'json') {

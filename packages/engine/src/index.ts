@@ -269,11 +269,14 @@ export {
   readRuntimeControlPlaneStatus,
   readRuntimeRun,
   readRuntimeTask,
+  runAgentPlanDryRun,
   runtimeLifecyclePaths,
   transitionRuntimeRunState,
   transitionRuntimeTaskState,
   type RuntimeControlPlaneStatus
 } from './runtime/index.js';
+
+export type { AgentRunPlanDryRunInput, AgentRunPlanDryRunResult } from './runtime/index.js';
 
 export { createExecutionRun, createExecutionIntent } from './execution/createExecutionRun.js';
 export { initializeSession, readSession, updateSession, pinSessionArtifact, clearSession, resumeSession, attachSessionRunState, sessionArtifactPath, SESSION_ARTIFACT_RELATIVE_PATH } from './session/sessionStore.js';

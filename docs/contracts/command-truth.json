@@ -13,7 +13,7 @@
       "canonicalSequence": null,
       "productFacing": true,
       "machineReadable": true,
-      "example": "pnpm playbook agent runs --json"
+      "example": "pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json"
     },
     {
       "name": "ai-context",

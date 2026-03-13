@@ -13,3 +13,6 @@ export {
   transitionRuntimeTaskState,
   type RuntimeControlPlaneStatus
 } from './lifecycleStore.js';
+
+export { runAgentPlanDryRun } from './agentRunDryRun.js';
+export type { AgentRunPlanDryRunInput, AgentRunPlanDryRunResult } from './agentRunDryRun.js';

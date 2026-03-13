@@ -233,8 +233,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json`
 - `memory`: Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion
   - Example: `pnpm playbook memory events --json`
-- `agent`: Read runtime control-plane records for agent visibility
-  - Example: `pnpm playbook agent runs --json`
+- `agent`: Read runtime control-plane records and run plan-backed dry-run previews
+  - Example: `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json`
 
 - `demo`: Show the official Playbook demo repository and guided first-run workflow
 - `init`: Initialize playbook docs/config
@@ -282,5 +282,5 @@ Do not hand-edit entries inside the managed markers.
 | `route` | `pnpm playbook route "summarize current repo state" --json` |
 | `learn` | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 | `memory` | `pnpm playbook memory events --json` |
-| `agent` | `pnpm playbook agent runs --json` |
+| `agent` | `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json` |
 <!-- PLAYBOOK:EXAMPLES_END -->

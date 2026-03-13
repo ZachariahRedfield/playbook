@@ -8,6 +8,26 @@ Read-only runtime control-plane surfaces for inspecting agent lifecycle records.
 
 List run records from `.playbook/runtime/runs/*.json`.
 
+### `agent run --from-plan <path> --dry-run`
+
+Compile a plan artifact into runtime tasks and return a deterministic dry-run control-plane preview.
+
+This surface is intentionally read-only in this PR:
+
+- `--dry-run` is required.
+- Live/background execution is rejected.
+- No mutation execution is performed.
+
+The output includes:
+
+- run metadata
+- compiled task count
+- ready/blocked summary
+- approval-required summary
+- denied-task summary
+- scheduling preview
+- provenance to the source plan artifact
+
 ### `agent show <run-id>`
 
 Show one run record by id.
@@ -27,13 +47,14 @@ Return deterministic control-plane status counts (runs, tasks, logs) and latest 
 ## Scope
 
 - Read-only visibility only.
-- No `agent run` execution command.
+- `agent run` supports dry-run preview only.
 - No autonomous/background runtime execution.
 
 ## Examples
 
 ```bash
 pnpm playbook agent runs --json
+pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json
 pnpm playbook agent show <run-id> --json
 pnpm playbook agent tasks --run-id <run-id> --json
 pnpm playbook agent logs --run-id <run-id> --json

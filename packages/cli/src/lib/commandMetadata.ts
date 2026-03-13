@@ -477,7 +477,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'agent',
-    description: 'Read runtime control-plane records for agent visibility',
+    description: 'Read runtime control-plane records and run plan-backed dry-run previews',
     category: 'Utility',
     role: 'utility',
     lifecycle: 'utility',
@@ -485,7 +485,7 @@ export const commandMetadata: CommandMetadata[] = [
     onboardingPriority: null,
     canonicalSequence: null,
     productFacing: true,
-    exampleArgs: 'agent runs --json',
+    exampleArgs: 'agent run --from-plan .playbook/plan.json --dry-run --json',
     machineReadable: true
   }
 ];

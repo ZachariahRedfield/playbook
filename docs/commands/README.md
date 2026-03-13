@@ -46,7 +46,7 @@ Do not hand-edit entries inside the managed markers.
 | `route` | Classify tasks into deterministic execution vs bounded model reasoning routes | canonical | repo-intelligence | primary | — | Current (implemented) | `pnpm playbook route "summarize current repo state" --json` |
 | `learn` | Draft deterministic knowledge candidates from local diff and repository intelligence | utility | utility | secondary | — | Current (implemented) | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 | `memory` | Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion | utility | utility | secondary | — | Current (implemented) | `pnpm playbook memory events --json` |
-| `agent` | Read runtime control-plane records for agent visibility | utility | utility | secondary | — | Current (implemented) | `pnpm playbook agent runs --json` |
+| `agent` | Read runtime control-plane records and run plan-backed dry-run previews | utility | utility | secondary | — | Current (implemented) | `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
 ## Command docs index
