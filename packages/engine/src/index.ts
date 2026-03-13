@@ -48,8 +48,24 @@ export type { RepositoryGraph, RepositoryGraphNode, RepositoryGraphEdge, Reposit
 
 export { queryRepositoryIndex, SUPPORTED_QUERY_FIELDS } from './query/repoQuery.js';
 export { queryPatterns } from './query/patterns.js';
+export {
+  listPatternKnowledgePatterns,
+  getPatternKnowledgePatternById,
+  listPatternKnowledgeRelatedPatterns,
+  listPatternKnowledgeInstances,
+  listPatternKnowledgeEvidence,
+  readPatternKnowledgeGraphArtifact,
+  PATTERN_KNOWLEDGE_GRAPH_RELATIVE_PATH
+} from './query/patternKnowledgeGraph.js';
 export { queryPatternReviewQueue, queryPromotedPatterns } from './query/patternPromotion.js';
 export type { RepositoryQueryField, RepositoryQueryResult } from './query/repoQuery.js';
+export type {
+  PatternKnowledgeLayer,
+  PatternKnowledgePattern,
+  PatternKnowledgeRelation,
+  PatternKnowledgeInstance,
+  PatternKnowledgeGraphArtifact
+} from './schema/patternKnowledgeGraph.js';
 export { answerRepositoryQuestion } from './ask/askEngine.js';
 export type { AskEngineResult } from './ask/askEngine.js';
 export { resolveDiffAskContext } from './ask/diffContext.js';

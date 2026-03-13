@@ -24,6 +24,8 @@ Query deterministic repository intelligence contracts from `.playbook/repo-index
 
 `pnpm playbook query` is read-only. It does not regenerate repository intelligence artifacts.
 
+Pattern knowledge graph support is currently exposed as engine query utilities for deterministic artifact reads (`read/list/get/filter/related/instances/evidence`) over `.playbook/pattern-knowledge-graph.json`; no mutation path is introduced in this phase.
+
 Base fields (read from `.playbook/repo-index.json`):
 
 - `architecture`
@@ -45,6 +47,7 @@ Specialized fields/subqueries:
 - `patterns`
 - `pattern-review`
 - `promoted-patterns`
+- `pattern-graph` (engine read-only artifact query plane for `.playbook/pattern-knowledge-graph.json`; currently library-level)
 - `runs`
 - `run` (`pnpm playbook query run --id <run-id>`)
 
