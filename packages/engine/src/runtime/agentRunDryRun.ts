@@ -49,12 +49,26 @@ const stableTempRoot = (repoRoot: string): string => {
 
 const normalizePath = (value: string): string => value.split(path.sep).join('/');
 
+const resolvePlanArtifactPath = (repoRoot: string, fromPlanPath: string): string => {
+  const absolutePlanPath = path.isAbsolute(fromPlanPath) ? fromPlanPath : path.join(repoRoot, fromPlanPath);
+
+  if (!fs.existsSync(absolutePlanPath)) {
+    throw new Error(`playbook agent run: plan artifact not found: ${normalizePath(fromPlanPath)}`);
+  }
+
+  if (!fs.statSync(absolutePlanPath).isFile()) {
+    throw new Error(`playbook agent run: plan artifact path must be a file: ${normalizePath(fromPlanPath)}`);
+  }
+
+  return absolutePlanPath;
+};
+
 export const runAgentPlanDryRun = (input: AgentRunPlanDryRunInput): AgentRunPlanDryRunResult => {
   const tempRoot = stableTempRoot(input.repoRoot);
   fs.rmSync(tempRoot, { recursive: true, force: true });
   fs.mkdirSync(tempRoot, { recursive: true });
 
-  const planArtifactPath = path.isAbsolute(input.fromPlanPath) ? input.fromPlanPath : path.join(input.repoRoot, input.fromPlanPath);
+  const planArtifactPath = resolvePlanArtifactPath(input.repoRoot, input.fromPlanPath);
   const sourcePlanArtifactPath = normalizePath(path.relative(input.repoRoot, planArtifactPath));
 
   const compiled = compilePlanArtifactToRuntime({

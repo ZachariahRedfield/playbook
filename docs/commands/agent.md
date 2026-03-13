@@ -26,7 +26,13 @@ The output includes:
 - approval-required summary
 - denied-task summary
 - scheduling preview
+- `nextTaskId` when at least one task is ready
 - provenance to the source plan artifact
+
+Deterministic error behavior:
+
+- missing or malformed `--from-plan` path returns nonzero error.
+- policy-denied or approval-required tasks still return zero exit in dry-run mode with structured summaries.
 
 ### `agent show <run-id>`
 

@@ -147,4 +147,85 @@ describe('runAgent', () => {
 
     logSpy.mockRestore();
   });
+
+  it('requires --from-plan for run subcommand', async () => {
+    const { runAgent } = await import('./agent.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runAgent('/repo', ['run', '--dry-run'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(String(payload.error)).toContain('missing required --from-plan');
+
+    logSpy.mockRestore();
+  });
+
+  it('returns deterministic nonzero error payload when plan path is missing', async () => {
+    const { runAgent } = await import('./agent.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    runAgentPlanDryRun.mockImplementation(() => {
+      throw new Error('playbook agent run: plan artifact not found: .playbook/missing-plan.json');
+    });
+
+    const exitCode = await runAgent('/repo', ['run', '--from-plan', '.playbook/missing-plan.json', '--dry-run'], {
+      format: 'json',
+      quiet: false
+    });
+    expect(exitCode).toBe(ExitCode.Failure);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('agent-run');
+    expect(String(payload.error)).toContain('plan artifact not found');
+
+    logSpy.mockRestore();
+  });
+
+  it('includes denied/approval-required summaries without execution for dry-run', async () => {
+    const { runAgent } = await import('./agent.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    runAgentPlanDryRun.mockReturnValue({
+      runMetadata: {
+        runId: 'run-2',
+        agentId: 'playbook-agent',
+        repoId: 'playbook',
+        objective: 'plan-backed-agent-dry-run',
+        mode: 'dry-run',
+        createdAt: 456
+      },
+      compiledTaskCount: 3,
+      readyBlockedSummary: { readyCount: 1, blockedCount: 2, completedCount: 0 },
+      approvalRequiredSummary: { taskCount: 1, taskIds: ['rt-2'] },
+      deniedTaskSummary: { taskCount: 1, taskIds: ['rt-3'] },
+      schedulingPreview: {
+        runId: 'run-2',
+        deterministicNextTaskOrder: ['rt-1'],
+        nextTaskId: 'rt-1',
+        ready: [],
+        blocked: [],
+        completed: [],
+        blockedReasonSummary: {
+          'approval-required': 1,
+          'dependency-pending': 0,
+          'retry-budget-exhausted': 1
+        }
+      },
+      provenance: {
+        sourcePlanArtifactPath: '.playbook/plan.json',
+        sourcePlanArtifactId: 'plan_456'
+      }
+    });
+
+    const exitCode = await runAgent('/repo', ['run', '--from-plan', '.playbook/plan.json', '--dry-run'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.dryRun).toBe(true);
+    expect(payload.approvalRequiredSummary).toEqual({ taskCount: 1, taskIds: ['rt-2'] });
+    expect(payload.deniedTaskSummary).toEqual({ taskCount: 1, taskIds: ['rt-3'] });
+
+    logSpy.mockRestore();
+  });
 });
