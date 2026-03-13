@@ -73,6 +73,21 @@ describe('runSchema', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
     expect(payload.title).toBe('PlaybookAiContextOutput');
 
+    const guidance = ((payload.properties as Record<string, unknown>).guidance as Record<string, unknown>);
+    expect(guidance.required).toEqual([
+      'preferPlaybookCommands',
+      'authorityRule',
+      'localExecutionRule',
+      'failureMode',
+      'memoryCommandFamily',
+      'promotedKnowledgeGuidance',
+      'candidateKnowledgeGuidance'
+    ]);
+
+    const guidanceProps = guidance.properties as Record<string, unknown>;
+    const memoryFamily = guidanceProps.memoryCommandFamily as Record<string, unknown>;
+    expect((memoryFamily.required as string[])).toEqual(['available', 'preferredCommands']);
+
     logSpy.mockRestore();
   });
 

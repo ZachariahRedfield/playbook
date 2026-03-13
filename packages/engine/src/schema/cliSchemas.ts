@@ -1259,13 +1259,14 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           preferredCommandOrder: {
             type: 'array',
             items: { type: 'string' },
-            minItems: 8,
-            maxItems: 8
+            minItems: 10,
+            maxItems: 10
           },
           recommendedBootstrap: {
             type: 'array',
             items: { type: 'string' },
-            minItems: 2
+            minItems: 3,
+            maxItems: 3
           },
           remediationWorkflow: {
             type: 'array',
@@ -1291,12 +1292,41 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       guidance: {
         type: 'object',
         additionalProperties: false,
-        required: ['preferPlaybookCommands', 'authorityRule', 'localExecutionRule', 'failureMode'],
+        required: [
+          'preferPlaybookCommands',
+          'authorityRule',
+          'localExecutionRule',
+          'failureMode',
+          'memoryCommandFamily',
+          'promotedKnowledgeGuidance',
+          'candidateKnowledgeGuidance'
+        ],
         properties: {
           preferPlaybookCommands: { const: true },
           authorityRule: { type: 'string' },
           localExecutionRule: { type: 'string' },
-          failureMode: { type: 'string' }
+          failureMode: { type: 'string' },
+          memoryCommandFamily: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['available', 'preferredCommands'],
+            properties: {
+              available: { type: 'boolean' },
+              preferredCommands: {
+                type: 'array',
+                prefixItems: [
+                  { const: 'memory events --json' },
+                  { const: 'memory knowledge --json' },
+                  { const: 'memory candidates --json' }
+                ],
+                items: false,
+                minItems: 3,
+                maxItems: 3
+              }
+            }
+          },
+          promotedKnowledgeGuidance: { type: 'string' },
+          candidateKnowledgeGuidance: { type: 'string' }
         }
       }
     }

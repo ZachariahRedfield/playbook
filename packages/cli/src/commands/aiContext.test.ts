@@ -35,7 +35,13 @@ describe('runAiContext', () => {
 
     const guidance = payload.guidance as Record<string, unknown>;
     expect(guidance.preferPlaybookCommands).toBe(true);
-    expect((guidance.memoryCommandFamily as Record<string, unknown>).available).toBe(true);
+    const memoryCommandFamily = guidance.memoryCommandFamily as Record<string, unknown>;
+    expect(memoryCommandFamily.available).toBe(true);
+    expect(memoryCommandFamily.preferredCommands).toEqual([
+      'memory events --json',
+      'memory knowledge --json',
+      'memory candidates --json'
+    ]);
     expect(guidance.promotedKnowledgeGuidance).toBeTruthy();
     expect(guidance.candidateKnowledgeGuidance).toBeTruthy();
 
