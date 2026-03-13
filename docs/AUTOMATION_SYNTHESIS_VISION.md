@@ -11,6 +11,7 @@ This track should align with the long-term platform layering in `docs/architectu
 Control-plane architecture reference: `docs/architecture/PLAYBOOK_CONTROL_PLANE_ARCHITECTURE.md`.
 
 Governed knowledge-consumption architecture reference: `docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md`.
+Phase 14 prerequisite reference: `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md`.
 
 ## Problem statement
 
@@ -53,6 +54,7 @@ Governed cross-repo transfer reference: `docs/architecture/PLAYBOOK_GOVERNED_CRO
 ## Governed knowledge-consumption contract
 
 Automation Synthesis is downstream of governed knowledge and must consume approved, inspectable artifacts instead of opaque conversational memory.
+Rule: **Phase 15 consumes promoted, inspectable, provenance-linked knowledge only.**
 
 Phase 15 implementation boundary (thin slice):
 
@@ -62,7 +64,7 @@ Phase 15 implementation boundary (thin slice):
 
 Required input constraints:
 
-- trigger classification, template selection, and context packaging must consume approved knowledge artifacts
+- trigger classification, template selection, and context packaging must consume promoted, inspectable, provenance-linked knowledge artifacts
 - candidate vs promoted knowledge classes must remain explicit
 - provenance for all synthesis inputs must be inspectable before operationalization
 
@@ -78,6 +80,11 @@ Rule: automation synthesis may only consume governed/promoted knowledge artifact
 Rule: candidate knowledge is not automation-grade input until explicit review/promotion.
 Rule: raw evidence artifacts are traceability inputs, not direct automation-grade synthesis inputs.
 Rule: initial Phase 15 output contract is reviewable suggestion artifacts only, never direct autonomous mutation actions.
+
+Concise examples (Phase 15 boundary):
+
+- Allowed: a promoted knowledge record retrieved through deterministic knowledge query/inspection surfaces, with provenance and freshness metadata attached, used to synthesize a reviewer-facing suggestion package.
+- Forbidden: unreviewed candidate memory or raw chat transcript snippets used directly to synthesize mutation-ready actions.
 
 ## Candidate trigger sources
 

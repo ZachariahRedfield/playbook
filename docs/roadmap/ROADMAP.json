@@ -934,7 +934,7 @@
         "memory"
       ],
       "contracts": [
-        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md",
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md",
         "docs/commands/knowledge.md",
         "docs/commands/memory.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
@@ -947,7 +947,7 @@
         "scripts/validate-roadmap-contract.mjs"
       ],
       "docs": [
-        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md",
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md",
         "docs/commands/knowledge.md",
         "docs/commands/memory.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
@@ -1312,13 +1312,14 @@
       "feature_id": "PB-V09-AUTOMATION-SYNTHESIS-001",
       "version": "v0.9",
       "title": "Automation synthesis governed knowledge-consumption contract shell (Phase 15 thin slice)",
-      "goal": "Define the Phase 15 architecture/contract shell for governed automation synthesis: promoted-knowledge-only inputs, suggestion-generation boundary, and policy/provenance/rollback accountability hooks without mutation-heavy runtime behavior.",
+      "goal": "Define the Phase 15 architecture/contract shell for governed automation synthesis: Phase 15 consumes promoted, inspectable, provenance-linked knowledge only, remains suggestion-generation only, and attaches policy/provenance/rollback accountability hooks without autonomous mutation/deployment behavior.",
       "commands": [],
       "contracts": [
         "docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md",
         "docs/AUTOMATION_SYNTHESIS_VISION.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
-        "docs/roadmap/ROADMAP.json"
+        "docs/roadmap/ROADMAP.json",
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md"
       ],
       "tests": [
         "scripts/validate-roadmap-contract.mjs"
@@ -1327,7 +1328,8 @@
         "docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md",
         "docs/AUTOMATION_SYNTHESIS_VISION.md",
         "docs/PLAYBOOK_PRODUCT_ROADMAP.md",
-        "docs/roadmap/README.md"
+        "docs/roadmap/README.md",
+        "docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md"
       ],
       "dependencies": [
         "PB-V09-KNOWLEDGE-QUERY-INSPECTION-001",

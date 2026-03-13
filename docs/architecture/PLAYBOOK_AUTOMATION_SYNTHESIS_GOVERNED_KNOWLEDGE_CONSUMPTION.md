@@ -27,6 +27,8 @@ This architecture is directional and contract-oriented. It does **not** permit b
 
 Automation Synthesis may only consume governed, inspectable, provenance-linked knowledge inputs.
 
+Rule: **Phase 15 consumes promoted, inspectable, provenance-linked knowledge only.**
+
 Phase 15 contract boundary: the first implementation slice is **suggestion synthesis only**.
 
 - allowed: deterministic generation of candidate suggestions/packages for human review
@@ -38,6 +40,20 @@ Automation Synthesis must not rely on:
 - opaque prompt memory
 - unreviewed candidate knowledge
 - undocumented ad-hoc repository inference
+
+## Concise input examples (Phase 15)
+
+Allowed inputs (review-safe and synthesis-safe):
+
+- promoted knowledge records with auditable provenance (`knowledgeId`, `eventId`, source path, fingerprint)
+- approved templates/patterns that declare required knowledge classes and policy metadata
+- deterministic query/inspection outputs from `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md`
+
+Forbidden inputs (not synthesis-safe):
+
+- raw chat transcripts or opaque prompt-memory fragments
+- unreviewed candidate knowledge artifacts
+- provenance-free inferred rules or stale/superseded knowledge without an explicit audited override
 
 ## Allowed synthesis input classes
 
@@ -186,6 +202,6 @@ Cross-repo synthesis requires explicit governance paths over sanitized, intentio
 - `docs/architecture/PLAYBOOK_CONTROL_PLANE_ARCHITECTURE.md`
 - `docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md`
 - `docs/architecture/PLAYBOOK_REPO_LONGITUDINAL_STATE_AND_KNOWLEDGE_PROMOTION.md`
-- `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_AND_INSPECTION_SURFACES.md`
+- `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md`
 - `docs/architecture/PLAYBOOK_OUTCOME_FEEDBACK_AND_AUTOMATION_RUNTIME_LEARNING.md`
 - `docs/architecture/PLAYBOOK_GOVERNED_CROSS_REPO_PATTERN_PROMOTION_AND_TRANSFER.md`
