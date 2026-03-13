@@ -23,11 +23,56 @@ export type AiContract = {
     preferPlaybookCommandsOverAdHocInspection: true;
     allowDirectEditsWithoutPlan: false;
   };
+  memory: {
+    artifactLocations: {
+      events: '.playbook/memory/events';
+      candidates: '.playbook/memory/candidates.json';
+      promotedKnowledge: [
+        '.playbook/memory/knowledge/decisions.json',
+        '.playbook/memory/knowledge/patterns.json',
+        '.playbook/memory/knowledge/failure-modes.json',
+        '.playbook/memory/knowledge/invariants.json'
+      ];
+    };
+    promotedKnowledgePolicy: {
+      preferPromotedKnowledgeForRetrieval: true;
+      candidatesAreAdvisoryOnlyUntilReviewedPromotion: true;
+      reviewedPromotionRequired: true;
+      noHiddenMutation: true;
+    };
+    retrieval: {
+      requireProvenance: true;
+      provenanceFields: ['knowledgeId', 'eventId', 'sourcePath', 'fingerprint'];
+    };
+  };
   ownership?: {
     ruleOwnersQuery: 'query rule-owners';
     moduleOwnersQuery: 'query module-owners';
   };
 };
+
+const defaultMemoryContract = (): AiContract['memory'] => ({
+  artifactLocations: {
+    events: '.playbook/memory/events',
+    candidates: '.playbook/memory/candidates.json',
+    promotedKnowledge: [
+      '.playbook/memory/knowledge/decisions.json',
+      '.playbook/memory/knowledge/patterns.json',
+      '.playbook/memory/knowledge/failure-modes.json',
+      '.playbook/memory/knowledge/invariants.json'
+    ]
+  },
+  promotedKnowledgePolicy: {
+    preferPromotedKnowledgeForRetrieval: true,
+    candidatesAreAdvisoryOnlyUntilReviewedPromotion: true,
+    reviewedPromotionRequired: true,
+    noHiddenMutation: true
+  },
+  retrieval: {
+    requireProvenance: true,
+    provenanceFields: ['knowledgeId', 'eventId', 'sourcePath', 'fingerprint']
+  }
+});
 
 export type AiContractSource = 'file' | 'generated';
 
@@ -56,6 +101,7 @@ const defaultAiContract = (): AiContract => ({
     preferPlaybookCommandsOverAdHocInspection: true,
     allowDirectEditsWithoutPlan: false
   },
+  memory: defaultMemoryContract(),
   ownership: {
     ruleOwnersQuery: 'query rule-owners',
     moduleOwnersQuery: 'query module-owners'
@@ -115,6 +161,7 @@ export const validateAiContract = (value: unknown): AiContract => {
   const queries = ensureStringArray(record.queries, 'queries');
   const remediation = record.remediation;
   const rules = record.rules;
+  const memory = record.memory;
 
   if (!intelligenceSources || typeof intelligenceSources !== 'object' || Array.isArray(intelligenceSources)) {
     throw new Error('AI contract field "intelligence_sources" must be an object.');
@@ -128,9 +175,18 @@ export const validateAiContract = (value: unknown): AiContract => {
     throw new Error('AI contract field "rules" must be an object.');
   }
 
+  if (memory !== undefined && (!memory || typeof memory !== 'object' || Array.isArray(memory))) {
+    throw new Error('AI contract field "memory" must be an object when present.');
+  }
+
   const intelligenceSourcesRecord = intelligenceSources as Record<string, unknown>;
   const remediationRecord = remediation as Record<string, unknown>;
   const rulesRecord = rules as Record<string, unknown>;
+  const defaultMemory = defaultMemoryContract();
+  const memoryRecord = memory as Record<string, unknown> | undefined;
+  const artifactLocationsRecord = memoryRecord?.artifactLocations as Record<string, unknown> | undefined;
+  const promotedKnowledgePolicyRecord = memoryRecord?.promotedKnowledgePolicy as Record<string, unknown> | undefined;
+  const retrievalRecord = memoryRecord?.retrieval as Record<string, unknown> | undefined;
 
   const contract: AiContract = {
     schemaVersion: AI_CONTRACT_SCHEMA_VERSION,
@@ -162,6 +218,62 @@ export const validateAiContract = (value: unknown): AiContract => {
         rulesRecord.allowDirectEditsWithoutPlan,
         'rules.allowDirectEditsWithoutPlan'
       ) as false
+    },
+    memory: {
+      artifactLocations: {
+        events:
+          (artifactLocationsRecord
+            ? ensureString(artifactLocationsRecord.events, 'memory.artifactLocations.events')
+            : defaultMemory.artifactLocations.events) as '.playbook/memory/events',
+        candidates:
+          (artifactLocationsRecord
+            ? ensureString(artifactLocationsRecord.candidates, 'memory.artifactLocations.candidates')
+            : defaultMemory.artifactLocations.candidates) as '.playbook/memory/candidates.json',
+        promotedKnowledge:
+          (artifactLocationsRecord
+            ? ensureStringArray(
+                artifactLocationsRecord.promotedKnowledge,
+                'memory.artifactLocations.promotedKnowledge'
+              )
+            : defaultMemory.artifactLocations.promotedKnowledge) as AiContract['memory']['artifactLocations']['promotedKnowledge']
+      },
+      promotedKnowledgePolicy: {
+        preferPromotedKnowledgeForRetrieval:
+          (promotedKnowledgePolicyRecord
+            ? ensureBoolean(
+                promotedKnowledgePolicyRecord.preferPromotedKnowledgeForRetrieval,
+                'memory.promotedKnowledgePolicy.preferPromotedKnowledgeForRetrieval'
+              )
+            : defaultMemory.promotedKnowledgePolicy.preferPromotedKnowledgeForRetrieval) as true,
+        candidatesAreAdvisoryOnlyUntilReviewedPromotion:
+          (promotedKnowledgePolicyRecord
+            ? ensureBoolean(
+                promotedKnowledgePolicyRecord.candidatesAreAdvisoryOnlyUntilReviewedPromotion,
+                'memory.promotedKnowledgePolicy.candidatesAreAdvisoryOnlyUntilReviewedPromotion'
+              )
+            : defaultMemory.promotedKnowledgePolicy.candidatesAreAdvisoryOnlyUntilReviewedPromotion) as true,
+        reviewedPromotionRequired:
+          (promotedKnowledgePolicyRecord
+            ? ensureBoolean(
+                promotedKnowledgePolicyRecord.reviewedPromotionRequired,
+                'memory.promotedKnowledgePolicy.reviewedPromotionRequired'
+              )
+            : defaultMemory.promotedKnowledgePolicy.reviewedPromotionRequired) as true,
+        noHiddenMutation:
+          (promotedKnowledgePolicyRecord
+            ? ensureBoolean(promotedKnowledgePolicyRecord.noHiddenMutation, 'memory.promotedKnowledgePolicy.noHiddenMutation')
+            : defaultMemory.promotedKnowledgePolicy.noHiddenMutation) as true
+      },
+      retrieval: {
+        requireProvenance:
+          (retrievalRecord
+            ? ensureBoolean(retrievalRecord.requireProvenance, 'memory.retrieval.requireProvenance')
+            : defaultMemory.retrieval.requireProvenance) as true,
+        provenanceFields:
+          (retrievalRecord
+            ? ensureStringArray(retrievalRecord.provenanceFields, 'memory.retrieval.provenanceFields')
+            : defaultMemory.retrieval.provenanceFields) as AiContract['memory']['retrieval']['provenanceFields']
+      }
     }
   };
 

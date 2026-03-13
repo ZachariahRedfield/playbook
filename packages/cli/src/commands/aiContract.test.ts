@@ -24,10 +24,29 @@ describe('runAiContract', () => {
     expect(contract.schemaVersion).toBe('1.0');
     expect(contract.kind).toBe('playbook-ai-contract');
     expect(contract.ai_runtime).toBe('playbook-agent');
+    expect((contract.memory as Record<string, unknown>).retrieval).toBeDefined();
 
     logSpy.mockRestore();
   });
 
+
+  it('produces deterministic JSON ordering for generated output', async () => {
+    const repo = createRepo('playbook-cli-ai-contract-stable');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const firstExit = await runAiContract(repo, { format: 'json', quiet: false });
+    const first = String(logSpy.mock.calls[0]?.[0]);
+
+    logSpy.mockClear();
+    const secondExit = await runAiContract(repo, { format: 'json', quiet: false });
+    const second = String(logSpy.mock.calls[0]?.[0]);
+
+    expect(firstExit).toBe(ExitCode.Success);
+    expect(secondExit).toBe(ExitCode.Success);
+    expect(second).toBe(first);
+
+    logSpy.mockRestore();
+  });
   it('loads file-backed AI contract payload in JSON mode when contract file exists', async () => {
     const repo = createRepo('playbook-cli-ai-contract-file');
     const filePath = path.join(repo, '.playbook', 'ai-contract.json');
