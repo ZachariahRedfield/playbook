@@ -2,18 +2,36 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+
+
+const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
+const tempRoots: string[] = [];
+
+const createTempRoot = (prefix: string): string => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  tempRoots.push(root);
+  return root;
+};
 
 describe('runtime observability artifacts', () => {
+  afterEach(() => {
+    while (tempRoots.length > 0) {
+      const root = tempRoots.pop();
+      if (root) {
+        fs.rmSync(root, { recursive: true, force: true });
+      }
+    }
+  });
+
   it('writes current, cycle, and history runtime artifacts for target repos', () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-runtime-observability-'));
+    const tempRoot = createTempRoot('playbook-runtime-observability-');
     const targetRepo = path.join(tempRoot, 'consumer-repo');
     fs.mkdirSync(path.join(targetRepo, 'src', 'feature'), { recursive: true });
     fs.writeFileSync(path.join(targetRepo, 'package.json'), JSON.stringify({ name: 'consumer', version: '0.0.1' }, null, 2), 'utf8');
     fs.writeFileSync(path.join(targetRepo, 'src', 'index.ts'), 'import { x } from "./feature/missing";\nexport const ok = true;\n', 'utf8');
     fs.writeFileSync(path.join(targetRepo, 'README.md'), '# consumer\n', 'utf8');
 
-    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
 
     execFileSync('node', [scriptPath, '--repo', targetRepo, 'index', '--json'], {
       cwd: process.cwd(),
@@ -92,7 +110,7 @@ describe('runtime observability artifacts', () => {
   });
 
   it('records pilot as one top-level cycle with child phases', () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-pilot-runtime-'));
+    const tempRoot = createTempRoot('playbook-pilot-runtime-');
     const targetRepo = path.join(tempRoot, 'pilot-target');
     fs.mkdirSync(path.join(targetRepo, 'src', 'features'), { recursive: true });
     fs.writeFileSync(
@@ -107,7 +125,6 @@ describe('runtime observability artifacts', () => {
     fs.writeFileSync(path.join(targetRepo, 'playwright-report', 'index.html'), '<html>report</html>\n', 'utf8');
     fs.writeFileSync(path.join(targetRepo, 'tmp_file.txt'), 'temporary output\n', 'utf8');
 
-    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
     const pilotRaw = execFileSync('node', [scriptPath, 'pilot', '--repo', targetRepo, '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8'
@@ -159,7 +176,7 @@ describe('runtime observability artifacts', () => {
   });
 
   it('classifies low-value paths and exposes ignore candidates in coverage artifacts', () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-runtime-boundary-'));
+    const tempRoot = createTempRoot('playbook-runtime-boundary-');
     const targetRepo = path.join(tempRoot, 'consumer-repo');
     fs.mkdirSync(path.join(targetRepo, 'src'), { recursive: true });
     fs.writeFileSync(path.join(targetRepo, 'package.json'), JSON.stringify({ name: 'consumer', version: '0.0.1' }, null, 2), 'utf8');
@@ -172,7 +189,6 @@ describe('runtime observability artifacts', () => {
     fs.writeFileSync(path.join(targetRepo, 'playwright-report', 'index.html'), '<html/>', 'utf8');
     fs.writeFileSync(path.join(targetRepo, 'tmp_file.txt'), 'tmp', 'utf8');
 
-    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
     execFileSync('node', [scriptPath, '--repo', targetRepo, 'index', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8'
@@ -205,7 +221,7 @@ describe('runtime observability artifacts', () => {
   });
 
   it('honors explicit .playbookignore entries when collecting runtime coverage', () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-runtime-ignore-'));
+    const tempRoot = createTempRoot('playbook-runtime-ignore-');
     const targetRepo = path.join(tempRoot, 'consumer-repo');
     fs.mkdirSync(path.join(targetRepo, 'src'), { recursive: true });
     fs.writeFileSync(path.join(targetRepo, 'package.json'), JSON.stringify({ name: 'consumer', version: '0.0.1' }, null, 2), 'utf8');
@@ -214,7 +230,6 @@ describe('runtime observability artifacts', () => {
     fs.writeFileSync(path.join(targetRepo, 'playwright-report', 'index.html'), '<html/>', 'utf8');
     fs.writeFileSync(path.join(targetRepo, '.playbookignore'), 'playwright-report/\n', 'utf8');
 
-    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
     execFileSync('node', [scriptPath, '--repo', targetRepo, 'index', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8'
@@ -238,7 +253,7 @@ describe('runtime observability artifacts', () => {
   });
 
   it('normalizes nested wrapper recommendation paths for runtime artifacts and pilot summary', () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-runtime-wrapper-'));
+    const tempRoot = createTempRoot('playbook-runtime-wrapper-');
     const targetRepo = path.join(tempRoot, 'nat1-games');
     const wrapperRoot = path.join(targetRepo, 'nat1-games');
     fs.mkdirSync(path.join(wrapperRoot, 'playwright-report'), { recursive: true });
@@ -248,7 +263,6 @@ describe('runtime observability artifacts', () => {
     fs.writeFileSync(path.join(wrapperRoot, 'tmp_file.txt'), 'temporary output\n', 'utf8');
     fs.writeFileSync(path.join(wrapperRoot, 'tmp_patch.diff'), 'tmp patch diff\n', 'utf8');
 
-    const scriptPath = path.resolve(process.cwd(), '..', '..', 'scripts', 'run-playbook.mjs');
     execFileSync('node', [scriptPath, 'pilot', '--repo', targetRepo, '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8'

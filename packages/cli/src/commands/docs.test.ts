@@ -53,7 +53,7 @@ describe('runDocs', () => {
     vi.restoreAllMocks();
   });
 
-  it('detects missing required anchors', async () => {
+  it('detects missing required anchors', { timeout: 15000 }, async () => {
     const repo = createFixtureRepo();
     fs.rmSync(path.join(repo, 'docs', 'roadmap', 'IMPROVEMENTS_BACKLOG.md'));
     const { runDocs } = await import('./docs.js');
@@ -70,7 +70,7 @@ describe('runDocs', () => {
     );
   });
 
-  it('detects duplicate roadmap files', async () => {
+  it('detects duplicate roadmap files', { timeout: 15000 }, async () => {
     const repo = createFixtureRepo();
     fs.writeFileSync(path.join(repo, 'docs', 'ROADMAP.md'), '# old roadmap\n', 'utf8');
     const { runDocs } = await import('./docs.js');

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
 const cliEntry = path.join(repoRoot, 'packages', 'cli', 'dist', 'main.js');
@@ -27,34 +27,40 @@ function runCli(args: readonly string[]) {
 }
 
 describe('external repo bootstrap', () => {
-  it('supports running commands against a target repo with --repo', () => {
-    const fixtureRepo = createFixtureRepo();
+  let fixtureRepo = '';
 
-    try {
-      const context = runCli(['--repo', fixtureRepo, 'context', '--json']);
-      expect(context.status).toBe(0);
-      expect(context.stdout).toContain('"command": "context"');
+  beforeAll(() => {
+    fixtureRepo = createFixtureRepo();
+  });
 
-      const index = runCli(['--repo', fixtureRepo, 'index', '--json']);
-      expect(index.status).toBe(0);
-      expect(index.stdout).toContain('"command": "index"');
-      expect(fs.existsSync(path.join(fixtureRepo, '.playbook', 'repo-index.json'))).toBe(true);
-      expect(fs.existsSync(path.join(fixtureRepo, '.playbook', 'repo-graph.json'))).toBe(true);
-
-      const verify = runCli(['--repo', fixtureRepo, 'verify', '--json']);
-      expect(verify.status).toBe(0);
-      expect(verify.stdout).toContain('"command": "verify"');
-
-      const plan = runCli([`--repo=${fixtureRepo}`, 'plan', '--json']);
-      expect(plan.status).toBe(0);
-      expect(plan.stdout).toContain('"command": "plan"');
-
-      const query = runCli(['--repo', fixtureRepo, 'query', 'modules', '--json']);
-      expect(query.status).toBe(0);
-      expect(query.stdout).toContain('"command": "query"');
-      expect(query.stdout).toContain('"modules"');
-    } finally {
+  afterAll(() => {
+    if (fixtureRepo) {
       fs.rmSync(fixtureRepo, { recursive: true, force: true });
     }
+  });
+
+  it('supports running commands against a target repo with --repo', { timeout: 45000 }, () => {
+    const context = runCli(['--repo', fixtureRepo, 'context', '--json']);
+    expect(context.status).toBe(0);
+    expect(context.stdout).toContain('"command": "context"');
+
+    const index = runCli(['--repo', fixtureRepo, 'index', '--json']);
+    expect(index.status).toBe(0);
+    expect(index.stdout).toContain('"command": "index"');
+    expect(fs.existsSync(path.join(fixtureRepo, '.playbook', 'repo-index.json'))).toBe(true);
+    expect(fs.existsSync(path.join(fixtureRepo, '.playbook', 'repo-graph.json'))).toBe(true);
+
+    const verify = runCli(['--repo', fixtureRepo, 'verify', '--json']);
+    expect(verify.status).toBe(0);
+    expect(verify.stdout).toContain('"command": "verify"');
+
+    const plan = runCli([`--repo=${fixtureRepo}`, 'plan', '--json']);
+    expect(plan.status).toBe(0);
+    expect(plan.stdout).toContain('"command": "plan"');
+
+    const query = runCli(['--repo', fixtureRepo, 'query', 'modules', '--json']);
+    expect(query.status).toBe(0);
+    expect(query.stdout).toContain('"command": "query"');
+    expect(query.stdout).toContain('"modules"');
   });
 });

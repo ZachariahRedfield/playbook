@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createEmptyKnowledgeFixtureRepo, createSeededKnowledgeFixtureRepo } from '../../../test/fixtures/knowledge/seededKnowledgeFixture.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
@@ -306,33 +306,45 @@ function validateAgainstSchema(value: unknown, schema: unknown): boolean {
 }
 
 describe('CLI JSON contract snapshots', () => {
-  it('matches committed snapshots for stable automation contracts', { timeout: 120000 }, () => {
-    fs.mkdirSync(snapshotDir, { recursive: true });
-    const fixtureRepo = createContractFixtureRepo();
+  let fixtureRepo = '';
 
-    try {
-      for (const contract of commandContracts) {
-        fs.rmSync(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'runtime'), { recursive: true, force: true });
-        const snapshotPath = path.join(snapshotDir, contract.file);
-        const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
-        const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
+  beforeAll(() => {
+    fixtureRepo = createContractFixtureRepo();
+  });
 
-        const schema = runCliJsonContract(['schema', contract.schemaCommand, '--json'], fixtureRepo);
-        expect(
-          validateAgainstSchema(actualPayload, schema),
-          `Schema validation failed for ${contract.args.join(' ')}`
-        ).toBe(true);
-
-        if (shouldUpdateSnapshots || !fs.existsSync(snapshotPath)) {
-          fs.writeFileSync(snapshotPath, actualJson, 'utf8');
-        }
-
-        const expectedJson = fs.readFileSync(snapshotPath, 'utf8');
-        expect(normalizeLineEndings(actualJson)).toBe(normalizeLineEndings(expectedJson));
-      }
-    } finally {
+  afterAll(() => {
+    if (fixtureRepo) {
       fs.rmSync(fixtureRepo, { recursive: true, force: true });
     }
+  });
+
+  it('matches committed snapshots for stable automation contracts', { timeout: 120000 }, () => {
+    fs.mkdirSync(snapshotDir, { recursive: true });
+    const schemaByCommand = new Map<CommandContract['schemaCommand'], unknown>();
+
+    for (const contract of commandContracts) {
+      fs.rmSync(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'runtime'), { recursive: true, force: true });
+      const snapshotPath = path.join(snapshotDir, contract.file);
+      const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
+      const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
+
+      let schema = schemaByCommand.get(contract.schemaCommand);
+      if (!schema) {
+        schema = runCliJsonContract(['schema', contract.schemaCommand, '--json'], fixtureRepo);
+        schemaByCommand.set(contract.schemaCommand, schema);
+      }
+      expect(
+        validateAgainstSchema(actualPayload, schema),
+        `Schema validation failed for ${contract.args.join(' ')}`
+      ).toBe(true);
+
+      if (shouldUpdateSnapshots || !fs.existsSync(snapshotPath)) {
+        fs.writeFileSync(snapshotPath, actualJson, 'utf8');
+      }
+
+      const expectedJson = fs.readFileSync(snapshotPath, 'utf8');
+      expect(normalizeLineEndings(actualJson)).toBe(normalizeLineEndings(expectedJson));
+      }
   });
 
   it('returns valid zero-state payloads for all knowledge commands in empty repositories', { timeout: 30000 }, () => {
@@ -364,29 +376,38 @@ describe('CLI JSON contract snapshots', () => {
 });
 
 describe('contracts command artifact behavior', () => {
-  it('supports --json, --out, and --json --out behavior', { timeout: 30000 }, () => {
-    const fixtureRepo = createContractFixtureRepo();
+  let fixtureRepo = '';
 
-    try {
-      const defaultOutPath = path.join(fixtureRepo, '.playbook', 'contracts-registry.json');
-      const customOutPath = path.join(fixtureRepo, '.playbook', 'custom-contracts.json');
+  beforeAll(() => {
+    fixtureRepo = createContractFixtureRepo();
+  });
 
-      const jsonOnly = runCli(['contracts', '--json'], fixtureRepo);
-      expect(jsonOnly.status).toBe(0);
-      expect(jsonOnly.stdout).toContain('"command": "contracts"');
-      expect(fs.existsSync(defaultOutPath)).toBe(false);
-
-      const outOnly = runCli(['contracts', '--out', '.playbook/custom-contracts.json'], fixtureRepo);
-      expect(outOnly.status).toBe(0);
-      expect(fs.existsSync(customOutPath)).toBe(true);
-
-      const jsonAndOut = runCli(['contracts', '--json', '--out', '.playbook/contracts-registry.json'], fixtureRepo);
-      expect(jsonAndOut.status).toBe(0);
-      expect(jsonAndOut.stdout).toContain('"command": "contracts"');
-      expect(fs.existsSync(defaultOutPath)).toBe(true);
-    } finally {
+  afterAll(() => {
+    if (fixtureRepo) {
       fs.rmSync(fixtureRepo, { recursive: true, force: true });
     }
+  });
+
+  it('supports --json, --out, and --json --out behavior', { timeout: 30000 }, () => {
+    fs.rmSync(path.join(fixtureRepo, '.playbook', 'custom-contracts.json'), { force: true });
+    fs.rmSync(path.join(fixtureRepo, '.playbook', 'contracts-registry.json'), { force: true });
+
+    const defaultOutPath = path.join(fixtureRepo, '.playbook', 'contracts-registry.json');
+    const customOutPath = path.join(fixtureRepo, '.playbook', 'custom-contracts.json');
+
+    const jsonOnly = runCli(['contracts', '--json'], fixtureRepo);
+    expect(jsonOnly.status).toBe(0);
+    expect(jsonOnly.stdout).toContain('"command": "contracts"');
+    expect(fs.existsSync(defaultOutPath)).toBe(false);
+
+    const outOnly = runCli(['contracts', '--out', '.playbook/custom-contracts.json'], fixtureRepo);
+    expect(outOnly.status).toBe(0);
+    expect(fs.existsSync(customOutPath)).toBe(true);
+
+    const jsonAndOut = runCli(['contracts', '--json', '--out', '.playbook/contracts-registry.json'], fixtureRepo);
+    expect(jsonAndOut.status).toBe(0);
+    expect(jsonAndOut.stdout).toContain('"command": "contracts"');
+    expect(fs.existsSync(defaultOutPath)).toBe(true);
   });
 
 });
