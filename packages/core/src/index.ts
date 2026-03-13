@@ -16,6 +16,22 @@ export type {
   SessionEvidenceReference,
   SupersessionRetirementMetadata
 } from './contracts/memory.js';
+export type {
+  AgentDescriptor,
+  AgentRecord,
+  ApprovalState,
+  ControlPlaneArtifactKind,
+  ControlPlaneSchemaMetadata,
+  PolicyDecisionRecord,
+  PolicyState,
+  QueueItem,
+  RunRecord,
+  RunState,
+  RuntimeLogEnvelope,
+  TaskDependencyEdge,
+  TaskRecord,
+  TaskState
+} from './contracts/controlPlaneRuntime.js';
 export type Severity = 'WARN' | 'RECOMMEND' | 'INFO';
 
 export {
@@ -35,6 +51,26 @@ export {
   promoteCandidateKnowledgeRecord,
   retirePromotedKnowledgeRecord
 } from './contracts/memory.js';
+
+
+export {
+  CONTROL_PLANE_RUNTIME_SCHEMA_VERSION,
+  approvalStates,
+  assertApprovalStateTransition,
+  assertRunStateTransition,
+  assertTaskStateTransition,
+  controlPlaneArtifactKinds,
+  controlPlaneRuntimePaths,
+  createAgentId,
+  createControlPlaneSchemaMetadata,
+  createRunId,
+  createTaskId,
+  policyStates,
+  runStates,
+  taskStates
+} from './contracts/controlPlaneRuntime.js';
+
+export { additiveCommandFieldSchemaRegistry, getContractsSchemaRegistry, memoryArtifactSchemaRegistry } from './contracts/schemaRegistry.js';
 
 export { runArchitectureAudit } from './audit/architecture.js';
 export { decideKnowledgeCompaction } from './knowledge/compaction/compaction-engine.js';
