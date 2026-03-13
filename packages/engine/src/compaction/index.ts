@@ -1,18 +1,13 @@
 export { compactPatterns, readCompactedPatterns } from './compactPatterns.js';
 import type { RepositoryGraph } from '../graph/repoGraph.js';
 import type { RepositoryIndex } from '../indexer/repoIndexer.js';
-import { assessImportance } from './assessImportance.js';
-import { assessRelation } from './assessRelation.js';
 import { bucketCompactionCandidates } from './bucketCandidates.js';
 import { buildPatternCardsFromBuckets } from './patternCardFromBucket.js';
-import { decideBucket } from './bucketDecision.js';
-import { compactionBucketArtifactSchema } from './bucketSchema.js';
 import { extractCompactionCandidates } from './extractCandidates.js';
 import { buildCompactionBucketArtifact, COMPACTION_BUCKET_ARTIFACT_RELATIVE_PATH, writeCompactionBucketArtifact } from './writeBucketArtifact.js';
 import { COMPACTION_CANDIDATE_ARTIFACT_RELATIVE_PATH, buildCompactionCandidateArtifact, writeCompactionCandidateArtifact } from './writeCandidateArtifact.js';
 import { readPatternCards, toExistingPatternTargets, writePatternCards } from './patternCardStore.js';
 import { COMPACTION_REVIEW_DRAFT_RELATIVE_PATH, writeCompactionReviewDraftArtifact } from './reviewDraftWriter.js';
-import { buildCandidatePatterns } from './buildCandidatePatterns.js';
 
 export const generateCompactionCandidateArtifact = (input: { repoRoot: string; index?: RepositoryIndex; graph?: RepositoryGraph }) => {
   const candidates = extractCompactionCandidates(input);

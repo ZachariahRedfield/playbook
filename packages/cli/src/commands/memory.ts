@@ -158,7 +158,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         throw new Error('playbook memory show: missing required <id> argument');
       }
 
-      const candidate = lookupMemoryCandidateKnowledge(cwd, { includeStale: true }).find((entry: any) => entry.candidateId === id);
+      const candidate = lookupMemoryCandidateKnowledge(cwd, { includeStale: true }).find((entry) => entry.candidateId === id);
       if (candidate) {
         const payload = {
           schemaVersion: '1.0',
@@ -179,7 +179,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         return ExitCode.Success;
       }
 
-      const knowledge = lookupPromotedMemoryKnowledge(cwd, { includeSuperseded: true }).find((entry: any) => entry.knowledgeId === id);
+      const knowledge = lookupPromotedMemoryKnowledge(cwd, { includeSuperseded: true }).find((entry) => entry.knowledgeId === id);
       if (!knowledge) {
         throw new Error(`playbook memory show: record not found: ${id}`);
       }

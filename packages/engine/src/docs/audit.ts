@@ -72,7 +72,6 @@ const COMPATIBILITY_STUB_PATHS = new Set([
   'docs/PLAYBOOK_IMPROVEMENTS.md'
 ]);
 
-const ARCHIVE_PATH_PREFIXES = ['docs/archive/'] as const;
 const HISTORY_PATH_PREFIXES = ['docs/archive/'] as const;
 const HISTORY_PATHS = new Set(['CHANGELOG.md']);
 

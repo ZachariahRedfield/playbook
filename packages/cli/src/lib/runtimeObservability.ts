@@ -460,7 +460,6 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
 
   let scannedFiles = 0;
   let eligibleFiles = 0;
-  let skippedFiles = 0;
   let oversizedFiles = 0;
   let unsupportedFiles = 0;
   let binaryFiles = 0;
@@ -533,7 +532,7 @@ const collectCoverage = (repoRoot: string, cycleId: string): CoverageArtifact =>
     eligibleFiles += 1;
 
     if (stat.size > DEFAULT_MAX_SCAN_BYTES) {
-      skippedFiles += 1;
+      oversizedFiles += 1;
       pushLowValueSample(lowValuePathSamples, { path: relativePath, path_class: pathClass, handling: 'skipped', reason: 'oversized-file' });
       continue;
     }
