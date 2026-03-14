@@ -1,6 +1,9 @@
 import { bucketCompactionCandidates, extractCompactionCandidates, readPatternCards, toExistingPatternTargets, type BucketedCandidateEntry } from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../../../lib/jsonArtifact.js';
 import { ExitCode } from '../../../lib/cliContract.js';
+import { runPatternsCandidatesCrossRepo } from '../candidatesCrossRepo.js';
+import { runPatternsCandidatesGeneralized } from '../candidatesGeneralized.js';
+import { runPatternsCandidatesPortability } from '../candidatesPortability.js';
 
 type PatternsOptions = {
   format: 'text' | 'json';
@@ -183,5 +186,17 @@ export const runPatternsCandidates = (cwd: string, commandArgs: string[], option
     return ExitCode.Success;
   }
 
-  return emitError(cwd, options, 'playbook patterns candidates: unsupported subcommand. Use show <id>, unmatched, or link.');
+  if (action === 'cross-repo') {
+    return runPatternsCandidatesCrossRepo(cwd, options);
+  }
+
+  if (action === 'generalized') {
+    return runPatternsCandidatesGeneralized(cwd, options);
+  }
+
+  if (action === 'portability') {
+    return runPatternsCandidatesPortability(cwd, options);
+  }
+
+  return emitError(cwd, options, 'playbook patterns candidates: unsupported subcommand. Use show <id>, unmatched, link, cross-repo, generalized, or portability.');
 };

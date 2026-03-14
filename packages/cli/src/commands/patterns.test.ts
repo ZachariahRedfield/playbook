@@ -543,6 +543,70 @@ describe('runPatterns', () => {
     logSpy.mockRestore();
   });
 
+  it('lists cross-repo candidate families through candidates inspection', async () => {
+    const repo = createRepo('playbook-cli-patterns-candidates-cross-repo');
+    writeCrossRepoPatternsArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['candidates', 'cross-repo'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('candidates-cross-repo');
+    expect(payload.families[0].pattern_id).toBe('pattern.modularity');
+    expect(payload.families[0].repo_count).toBe(2);
+
+    logSpy.mockRestore();
+  });
+
+  it('lists generalized candidate families appearing in multiple repositories', async () => {
+    const repo = createRepo('playbook-cli-patterns-candidates-generalized');
+    writeCrossRepoPatternsArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['candidates', 'generalized'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('candidates-generalized');
+    expect(payload.generalized).toHaveLength(2);
+    expect(payload.generalized[0].repo_count).toBeGreaterThan(1);
+
+    logSpy.mockRestore();
+  });
+
+  it('computes candidate portability score with stable weighted formula', async () => {
+    const repo = createRepo('playbook-cli-patterns-candidates-portability');
+    writeCrossRepoPatternsArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['candidates', 'portability'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('candidates-portability');
+    expect(payload.formula.portability).toContain('0.35 * repo_count_signal');
+    expect(payload.portability[0]).toMatchObject({
+      pattern_id: 'pattern.modularity',
+      repo_count_signal: 1,
+      outcome_consistency_signal: 0.95,
+      instance_diversity_signal: 1,
+      governance_stability_signal: 1,
+      portability_score: 0.9875
+    });
+
+    logSpy.mockRestore();
+  });
+
   it('reports repo delta for shared patterns', async () => {
     const repo = createRepo('playbook-cli-patterns-repo-delta');
     writeCrossRepoPatternsArtifact(repo);

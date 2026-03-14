@@ -73,6 +73,18 @@ List extracted candidates without a deterministic link target.
 
 List extracted candidates with deterministic link targets.
 
+### `patterns candidates cross-repo`
+
+List candidate families aggregated across repositories from `.playbook/cross-repo-patterns.json`.
+
+### `patterns candidates generalized`
+
+List candidate families that appear in more than one repository.
+
+### `patterns candidates portability`
+
+Compute and show candidate portability scores with signal breakdowns.
+
 ### `patterns cross-repo`
 
 Compute cross-repository aggregates and write `.playbook/cross-repo-patterns.json`.
@@ -158,6 +170,9 @@ pnpm playbook patterns candidates --json
 pnpm playbook patterns candidates show <id> --json
 pnpm playbook patterns candidates unmatched --json
 pnpm playbook patterns candidates link --json
+pnpm playbook patterns candidates cross-repo --json
+pnpm playbook patterns candidates generalized --json
+pnpm playbook patterns candidates portability --json
 
 pnpm playbook patterns cross-repo --json
 pnpm playbook patterns portability
@@ -166,6 +181,24 @@ pnpm playbook patterns repo-delta repo-a repo-b --json
 pnpm playbook patterns promote --id <pattern-id> --decision approve --json
 ```
 
+
+
+## Cross-repo candidate portability scoring
+
+`patterns candidates portability` computes deterministic scores using:
+
+```text
+portability =
+0.35 * repo_count_signal
+0.25 * outcome_consistency_signal
+0.20 * instance_diversity_signal
+0.20 * governance_stability_signal
+```
+
+Signals are normalized and rows are deterministically sorted by descending portability score, then `pattern_id`.
+
+- Pattern: Inspection-first CLI surfaces allow safe experimentation before automated promotion.
+- Failure Mode: Mutation-capable commands too early collapse observation and governance layers.
 
 ## Attractor scoring methodology
 
