@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "cross-repo-candidates",
+  "generatedAt": "2026-03-14T00:00:00.000Z",
+  "repositories": [
+    "ZachariahRedfield/fawxzzy-fitness",
+    "ZachariahRedfield/playbook"
+  ],
+  "families": [
+    {
+      "pattern_family": "deterministic-contracts",
+      "repo_count": 2,
+      "candidate_count": 3,
+      "mean_confidence": 0.8,
+      "repos": [
+        "ZachariahRedfield/fawxzzy-fitness",
+        "ZachariahRedfield/playbook"
+      ],
+      "first_seen": "2026-02-28T00:00:00.000Z",
+      "last_seen": "2026-03-14T00:00:00.000Z"
+    },
+    {
+      "pattern_family": "layering",
+      "repo_count": 2,
+      "candidate_count": 5,
+      "mean_confidence": 0.83,
+      "repos": [
+        "ZachariahRedfield/fawxzzy-fitness",
+        "ZachariahRedfield/playbook"
+      ],
+      "first_seen": "2026-03-01T00:00:00.000Z",
+      "last_seen": "2026-03-14T00:00:00.000Z"
+    }
+  ]
+}

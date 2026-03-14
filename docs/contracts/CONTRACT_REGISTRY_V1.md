@@ -35,6 +35,7 @@ The `schemas.commandOutputs` array includes additive command-output schema regis
 
 - `packages/contracts/src/knowledge.schema.json`
 - `packages/contracts/src/pattern-graph.schema.json`
+- `packages/contracts/src/cross-repo-candidates.schema.json`
 
 ## Determinism guarantees
 
