@@ -51,6 +51,14 @@ const writePatternReviewQueue = (repo: string): void => {
   );
 };
 
+
+const writeContractPatternGraph = (repo: string): void => {
+  const source = path.join(process.cwd(), '..', '..', 'tests', 'contracts', 'pattern-graph.fixture.json');
+  const target = path.join(repo, '.playbook', 'pattern-graph.json');
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.copyFileSync(source, target);
+};
+
 const writePatternKnowledge = (repo: string): void => {
   const filePath = path.join(repo, '.playbook', 'memory', 'knowledge', 'patterns.json');
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -211,6 +219,44 @@ describe('runPatterns', () => {
     expect(payload.action).toBe('promote');
     expect(payload.reviewRecord.decision.decision).toBe('approve');
     expect(fs.existsSync(path.join(repo, '.playbook', 'patterns-promoted.json'))).toBe(true);
+
+    logSpy.mockRestore();
+  });
+
+
+  it('scores pattern graph with appended attractor entries', async () => {
+    const repo = createRepo('playbook-cli-patterns-score');
+    writeContractPatternGraph(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['score'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('score');
+    const first = payload.graph.patterns[0];
+    expect(first.scores.length).toBeGreaterThan(1);
+
+    logSpy.mockRestore();
+  });
+
+  it('returns top ranked patterns by attractor score', async () => {
+    const repo = createRepo('playbook-cli-patterns-top');
+    writeContractPatternGraph(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['top', '--limit', '2'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('top');
+    expect(payload.patterns).toHaveLength(2);
 
     logSpy.mockRestore();
   });

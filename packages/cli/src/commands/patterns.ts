@@ -1,7 +1,7 @@
-import { promotePatternCandidate } from '@zachariahredfield/playbook-engine';
+import { listTopPatterns, promotePatternCandidate, scorePatternGraph } from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { ExitCode } from '../lib/cliContract.js';
-import { findPatternNode, findRelatedPatterns, readPatternKnowledgeGraph, summarizePatternLayers } from './patterns/graph.js';
+import { findPatternNode, findRelatedPatterns, readContractPatternGraph, readPatternKnowledgeGraph, summarizePatternLayers } from './patterns/graph.js';
 
 type PatternsOptions = {
   format: 'text' | 'json';
@@ -24,7 +24,55 @@ const emitError = (cwd: string, options: PatternsOptions, message: string): numb
 };
 
 const printHelp = (): void => {
-  console.log('playbook patterns subcommands: list | show <id> | related <id> | layers | promote --id <pattern-id> --decision approve|reject');
+  console.log('playbook patterns subcommands: list | show <id> | related <id> | layers | score | top [--limit <n>] | promote --id <pattern-id> --decision approve|reject');
+};
+
+
+const runScore = (cwd: string, options: PatternsOptions): number => {
+  const graph = readContractPatternGraph(cwd);
+  const scored = scorePatternGraph(graph);
+  const payload = { schemaVersion: '1.0', command: 'patterns', action: 'score', graph: scored };
+
+  if (options.format === 'json') {
+    emitJsonOutput({ cwd, command: 'patterns', payload, outFile: options.outFile });
+    return ExitCode.Success;
+  }
+
+  if (!options.quiet) {
+    console.log('Pattern attractor scores computed.');
+    for (const pattern of scored.patterns) {
+      const latest = pattern.scores[pattern.scores.length - 1];
+      console.log(`${pattern.id}: ${latest?.value ?? 0} (${pattern.status})`);
+    }
+  }
+
+  return ExitCode.Success;
+};
+
+const runTop = (cwd: string, commandArgs: string[], options: PatternsOptions): number => {
+  const graph = readContractPatternGraph(cwd);
+  const limitRaw = readOptionValue(commandArgs, '--limit');
+  const parsedLimit = limitRaw ? Number.parseInt(limitRaw, 10) : 5;
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 5;
+  const top = listTopPatterns(graph, limit);
+
+  const payload = { schemaVersion: '1.0', command: 'patterns', action: 'top', limit, patterns: top };
+
+  if (options.format === 'json') {
+    emitJsonOutput({ cwd, command: 'patterns', payload, outFile: options.outFile });
+    return ExitCode.Success;
+  }
+
+  if (!options.quiet) {
+    console.log(`Top ${limit} patterns by attractor score`);
+    console.log('────────────────────────────────');
+    for (const pattern of top) {
+      const latest = pattern.scores[pattern.scores.length - 1];
+      console.log(`${pattern.id}: ${latest?.value ?? 0} (${pattern.status})`);
+    }
+  }
+
+  return ExitCode.Success;
 };
 
 const runPromote = (cwd: string, commandArgs: string[], options: PatternsOptions): number => {
@@ -60,7 +108,7 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
           payload: {
             schemaVersion: '1.0',
             command: 'patterns',
-            subcommands: ['list', 'show', 'related', 'layers', 'promote']
+            subcommands: ['list', 'show', 'related', 'layers', 'score', 'top', 'promote']
           },
           outFile: options.outFile
         });
@@ -72,6 +120,14 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
 
     if (subcommand === 'promote') {
       return runPromote(cwd, commandArgs, options);
+    }
+
+    if (subcommand === 'score') {
+      return runScore(cwd, options);
+    }
+
+    if (subcommand === 'top') {
+      return runTop(cwd, commandArgs, options);
     }
 
     const graph = readPatternKnowledgeGraph(cwd);
@@ -152,7 +208,7 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
     return emitError(
       cwd,
       options,
-      'playbook patterns: unsupported subcommand. Use list, show <id>, related <id>, layers, or promote --id <pattern-id> --decision approve|reject.'
+      'playbook patterns: unsupported subcommand. Use list, show <id>, related <id>, layers, score, top [--limit <n>], or promote --id <pattern-id> --decision approve|reject.'
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

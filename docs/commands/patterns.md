@@ -26,6 +26,14 @@ Show patterns connected to a pattern id through deterministic relations:
 
 Summarize graph layers (status, module, rule, and failure-shape distributions).
 
+### `patterns score`
+
+Compute deterministic attractor scores for `.playbook/pattern-graph.json` and append a new `AttractorScore` entry per pattern. Existing score history is preserved.
+
+### `patterns top`
+
+Show highest-ranked patterns by the latest attractor score (`--limit <n>` optional, default `5`).
+
 ### `patterns promote --id <pattern-id> --decision approve|reject`
 
 Apply explicit local promotion decisions for compacted pattern candidates.
@@ -43,6 +51,8 @@ pnpm playbook patterns list --json
 pnpm playbook patterns show <id> --json
 pnpm playbook patterns related <id> --json
 pnpm playbook patterns layers --json
+pnpm playbook patterns score --json
+pnpm playbook patterns top --limit 10 --json
 pnpm playbook patterns promote --id <pattern-id> --decision approve --json
 ```
 

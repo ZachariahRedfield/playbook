@@ -44,3 +44,49 @@ Separate structural node types from scoring metadata so read models stay stable 
 ## Failure mode
 
 Embedding evolving heuristic logic directly into base schemas makes versioning brittle and breaks downstream consumers.
+
+
+## Attractor scoring engine
+
+Attractor scores model **structural persistence**, not truth.
+
+### Signals
+
+Each pattern is scored with deterministic, bounded signals (`0..1`):
+
+- `recurrence`: instance recurrence density
+- `cross_domain_reuse`: reuse across repository-native and research-conceptual neighborhoods
+- `evidence_strength`: evidence count and evidence-kind diversity
+- `repository_impact`: repository footprint from instances, edges, and source type
+- `governance_alignment`: alignment with governance-relevant layers and evidence presence
+
+### Weighted formula
+
+```
+attractor_score =
+  recurrence * 0.30 +
+  cross_domain_reuse * 0.20 +
+  evidence_strength * 0.20 +
+  repository_impact * 0.20 +
+  governance_alignment * 0.10
+```
+
+### Promotion thresholds
+
+- `< 0.30` → `observed`
+- `>= 0.30` → `candidate`
+- `>= 0.65` → `promoted`
+- `>= 0.85` → `canonical`
+
+### Governance safeguards
+
+- New scores are appended as additional `AttractorScore` entries; historical scores are never overwritten.
+- Promotion transitions are deterministic and threshold-based.
+- Multiple weak signals are intentionally aggregated to avoid over-trusting single heuristics.
+- Patterns without evidence or instances are penalized to reduce graph hallucination risk and preserve trust.
+
+Rule: Pattern scores represent structural persistence, not truth.
+
+Pattern: Multiple weak signals aggregated are safer than a single strong heuristic.
+
+Failure Mode: Allowing patterns without evidence or instances creates graph hallucination and undermines trust in the knowledge model.

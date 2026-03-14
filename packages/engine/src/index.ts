@@ -258,6 +258,29 @@ export { appendPatternVersion, markPatternSuperseded } from './patternCards/vers
 
 export { buildPatternTopologySignature, buildPatternTopologySignatures } from './topology/buildPatternTopology.js';
 export { detectPatternEquivalenceClasses, buildPatternEquivalenceArtifact, writePatternEquivalenceArtifact } from './topology/detectEquivalence.js';
+
+export {
+  calculateRecurrenceScore,
+  calculateCrossDomainScore,
+  calculateEvidenceScore,
+  calculateRepositoryImpactScore,
+  calculateGovernanceAlignmentScore,
+  computeAttractorScore,
+  appendAttractorScore,
+  evaluatePromotionState,
+  scorePatternGraph,
+  listTopPatterns
+} from './scoring/patternAttractorScore.js';
+export type {
+  PromotionState as PatternGraphPromotionState,
+  AttractorScore as PatternGraphAttractorScore,
+  PatternGraphPattern,
+  PatternGraphEvidence,
+  PatternGraphRelation,
+  PatternGraphArtifact,
+  PatternAttractorScoreSignals,
+  PatternAttractorScoreResult
+} from './scoring/patternAttractorScore.js';
 export type { PatternTopologySignature, PatternEquivalenceClass, PatternVariant, PatternTopologyTelemetry, PatternEquivalenceArtifact } from './schema/patternTopology.js';
 
 export { buildStateSpaceSnapshot } from './stateSpace/buildStateSpaceSnapshot.js';
