@@ -10,14 +10,21 @@ export const PATTERN_CANDIDATES_RELATIVE_PATH = '.playbook/pattern-candidates.js
 
 type PatternCandidateArtifact = {
   schemaVersion: '1.0';
-  kind: 'playbook-pattern-candidates';
-  generatedAt: 'deterministic';
-  summary: {
-    total: number;
-    byDetector: Record<string, number>;
-    avgConfidence: number;
-  };
-  candidates: PatternCandidate[];
+  kind: 'pattern-candidates';
+  generatedAt: string;
+  candidates: PatternCandidateRecord[];
+};
+
+type PatternCandidateRecord = {
+  id: string;
+  pattern_family: string;
+  title: string;
+  description: string;
+  source_artifact: string;
+  signals: string[];
+  confidence: number;
+  evidence_refs: string[];
+  status: 'observed';
 };
 
 type ExtractPatternCandidatesInput = {
@@ -100,25 +107,31 @@ const normalizeCandidate = (candidate: PatternCandidate): PatternCandidate => ({
 const compareCandidate = (left: PatternCandidate, right: PatternCandidate): number =>
   left.detector.localeCompare(right.detector) || left.id.localeCompare(right.id) || left.title.localeCompare(right.title);
 
-export const buildPatternCandidateArtifact = (candidates: PatternCandidate[]): PatternCandidateArtifact => {
-  const ordered = [...candidates].sort(compareCandidate);
-  const byDetector = ordered.reduce<Record<string, number>>((acc, candidate) => {
-    acc[candidate.detector] = (acc[candidate.detector] ?? 0) + 1;
-    return acc;
-  }, {});
+const toPatternCandidateRecord = (candidate: PatternCandidate): PatternCandidateRecord => {
+  const sourceArtifact = candidate.evidence[0]?.artifact ?? '.playbook/repo-graph.json';
+  const evidenceRefs = candidate.evidence.map((entry) => `${entry.artifact}#${entry.pointer}`);
 
-  const totalConfidence = ordered.reduce((acc, candidate) => acc + candidate.confidence, 0);
+  return {
+    id: candidate.id,
+    pattern_family: candidate.detector,
+    title: candidate.title,
+    description: candidate.summary,
+    source_artifact: sourceArtifact,
+    signals: [...candidate.related],
+    confidence: candidate.confidence,
+    evidence_refs: evidenceRefs,
+    status: 'observed'
+  };
+};
+
+export const buildPatternCandidateArtifact = (candidates: PatternCandidate[], generatedAt = '1970-01-01T00:00:00.000Z'): PatternCandidateArtifact => {
+  const ordered = [...candidates].sort(compareCandidate);
 
   return {
     schemaVersion: '1.0',
-    kind: 'playbook-pattern-candidates',
-    generatedAt: 'deterministic',
-    summary: {
-      total: ordered.length,
-      byDetector: Object.fromEntries(Object.entries(byDetector).sort((left, right) => left[0].localeCompare(right[0]))),
-      avgConfidence: ordered.length === 0 ? 0 : Number((totalConfidence / ordered.length).toFixed(2))
-    },
-    candidates: ordered
+    kind: 'pattern-candidates',
+    generatedAt,
+    candidates: ordered.map((candidate) => toPatternCandidateRecord(candidate))
   };
 };
 
@@ -135,17 +148,18 @@ export const extractPatternCandidates = (input: ExtractPatternCandidatesInput): 
   return candidates;
 };
 
-export const writePatternCandidateArtifact = (repoRoot: string, candidates: PatternCandidate[]): string => {
+export const writePatternCandidateArtifact = (repoRoot: string, artifact: PatternCandidateArtifact): string => {
   const artifactPath = path.join(repoRoot, PATTERN_CANDIDATES_RELATIVE_PATH);
   fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
-  fs.writeFileSync(artifactPath, `${JSON.stringify(buildPatternCandidateArtifact(candidates), null, 2)}\n`, 'utf8');
+  fs.writeFileSync(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
   return artifactPath;
 };
 
 export const generatePatternCandidateArtifact = (input: ExtractPatternCandidatesInput): { artifactPath: string; artifact: PatternCandidateArtifact } => {
+  const artifacts = readArtifacts(input);
   const candidates = extractPatternCandidates(input);
-  const artifact = buildPatternCandidateArtifact(candidates);
-  const artifactPath = writePatternCandidateArtifact(input.repoRoot, candidates);
+  const artifact = buildPatternCandidateArtifact(candidates, artifacts.graph.generatedAt);
+  const artifactPath = writePatternCandidateArtifact(input.repoRoot, artifact);
   return { artifactPath, artifact };
 };
 

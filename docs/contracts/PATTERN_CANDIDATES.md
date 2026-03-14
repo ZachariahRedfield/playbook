@@ -16,7 +16,7 @@ Top-level fields:
 
 - `schemaVersion`: fixed schema version (`1.0`)
 - `kind`: fixed artifact kind (`pattern-candidates`)
-- `generatedAt`: generation timestamp (ISO date-time)
+- `generatedAt`: deterministic ISO date-time for the extraction run (mirrors the repository graph run timestamp when available)
 - `candidates`: additive list of extracted candidate observations
 
 Each `candidates[]` entry contains:
@@ -36,6 +36,7 @@ Each `candidates[]` entry contains:
 - Candidate records are extraction outputs and must remain read-only from downstream consumers.
 - Candidate IDs must be stable across runs for the same structural observation.
 - Candidate arrays should be emitted in deterministic order (lexicographic `id` ordering recommended).
+- The artifact omits aggregate summary blocks; downstream consumers should compute rollups from `candidates` to avoid schema drift.
 - Candidate observations must remain separate from canonical pattern graph nodes.
 - Promotion into canonical knowledge requires explicit governance review; candidates are never doctrine by default.
 

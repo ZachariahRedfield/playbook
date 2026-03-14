@@ -99,7 +99,7 @@ describe('pattern candidate extraction', () => {
     expect(once).toEqual(twice);
   });
 
-  it('writes .playbook/pattern-candidates.json with deterministic marker', () => {
+  it('writes .playbook/pattern-candidates.json with schema-aligned fields', () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-pattern-candidates-'));
     const result = generatePatternCandidateArtifact({
       repoRoot: tempRoot,
@@ -110,7 +110,9 @@ describe('pattern candidate extraction', () => {
       }
     });
 
-    expect(result.artifact.generatedAt).toBe('deterministic');
+    expect(result.artifact.generatedAt).toBe(fixtureGraph.generatedAt);
+    expect(result.artifact.kind).toBe('pattern-candidates');
+    expect(result.artifact.candidates.every((candidate) => 'pattern_family' in candidate && !("summary" in (candidate as Record<string, unknown>)))).toBe(true);
     const artifactPath = path.join(tempRoot, PATTERN_CANDIDATES_RELATIVE_PATH);
     expect(result.artifactPath).toBe(artifactPath);
     expect(fs.existsSync(artifactPath)).toBe(true);
