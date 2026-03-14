@@ -1,3 +1,4 @@
+import type { PatternGraphArtifact } from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -36,6 +37,19 @@ export type PatternGraph = {
 };
 
 const PATTERNS_PATH = ['.playbook', 'memory', 'knowledge', 'patterns.json'] as const;
+
+
+const CONTRACT_PATTERN_GRAPH_PATH = ['.playbook', 'pattern-graph.json'] as const;
+
+export const readContractPatternGraph = (cwd: string): PatternGraphArtifact => {
+  const artifactPath = path.join(cwd, ...CONTRACT_PATTERN_GRAPH_PATH);
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error('playbook patterns: missing artifact at .playbook/pattern-graph.json.');
+  }
+
+  return JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as PatternGraphArtifact;
+};
+
 
 export const readPatternKnowledgeGraph = (cwd: string): PatternGraph => {
   const artifactPath = path.join(cwd, ...PATTERNS_PATH);

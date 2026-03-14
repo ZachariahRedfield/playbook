@@ -17,32 +17,51 @@
     "relations"
   ],
   "properties": {
-    "schemaVersion": { "const": "1.0" },
-    "kind": { "const": "pattern-graph" },
-    "generatedAt": { "type": "string", "format": "date-time" },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "pattern-graph"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
     "patterns": {
       "type": "array",
-      "items": { "$ref": "#/$defs/Pattern" }
+      "items": {
+        "$ref": "#/$defs/Pattern"
+      }
     },
     "mechanisms": {
       "type": "array",
-      "items": { "$ref": "#/$defs/Mechanism" }
+      "items": {
+        "$ref": "#/$defs/Mechanism"
+      }
     },
     "layers": {
       "type": "array",
-      "items": { "$ref": "#/$defs/Layer" }
+      "items": {
+        "$ref": "#/$defs/Layer"
+      }
     },
     "evidence": {
       "type": "array",
-      "items": { "$ref": "#/$defs/Evidence" }
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      }
     },
     "instances": {
       "type": "array",
-      "items": { "$ref": "#/$defs/PatternInstance" }
+      "items": {
+        "$ref": "#/$defs/PatternInstance"
+      }
     },
     "relations": {
       "type": "array",
-      "items": { "$ref": "#/$defs/PatternRelation" }
+      "items": {
+        "$ref": "#/$defs/PatternRelation"
+      }
     }
   },
   "$defs": {
@@ -53,18 +72,43 @@
     },
     "PromotionState": {
       "type": "string",
-      "enum": ["candidate", "observed", "promoted", "retired"]
+      "enum": [
+        "candidate",
+        "observed",
+        "promoted",
+        "retired",
+        "canonical"
+      ]
     },
     "AttractorScore": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "signal", "value", "updatedAt"],
+      "required": [
+        "id",
+        "signal",
+        "value",
+        "updatedAt"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/RefId" },
-        "signal": { "type": "string", "minLength": 1 },
-        "value": { "type": "number", "minimum": 0, "maximum": 1 },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "notes": { "type": "string" }
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "signal": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "Pattern": {
@@ -84,58 +128,168 @@
         "status"
       ],
       "properties": {
-        "id": { "$ref": "#/$defs/RefId" },
-        "title": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 },
-        "source": { "type": "string", "enum": ["repository-native", "research-conceptual"] },
-        "layer": { "$ref": "#/$defs/RefId" },
-        "mechanism_refs": { "type": "array", "items": { "$ref": "#/$defs/RefId" }, "uniqueItems": true },
-        "evidence_refs": { "type": "array", "items": { "$ref": "#/$defs/RefId" }, "uniqueItems": true },
-        "instance_refs": { "type": "array", "items": { "$ref": "#/$defs/RefId" }, "uniqueItems": true },
-        "relation_edges": { "type": "array", "items": { "$ref": "#/$defs/RefId" }, "uniqueItems": true },
-        "scores": { "type": "array", "items": { "$ref": "#/$defs/AttractorScore" } },
-        "status": { "$ref": "#/$defs/PromotionState" }
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "repository-native",
+            "research-conceptual"
+          ]
+        },
+        "layer": {
+          "$ref": "#/$defs/RefId"
+        },
+        "mechanism_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefId"
+          },
+          "uniqueItems": true
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefId"
+          },
+          "uniqueItems": true
+        },
+        "instance_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefId"
+          },
+          "uniqueItems": true
+        },
+        "relation_edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefId"
+          },
+          "uniqueItems": true
+        },
+        "scores": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AttractorScore"
+          }
+        },
+        "status": {
+          "$ref": "#/$defs/PromotionState"
+        }
       }
     },
     "Mechanism": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "description"],
+      "required": [
+        "id",
+        "title",
+        "description"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/RefId" },
-        "title": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 }
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "Layer": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "description", "order"],
+      "required": [
+        "id",
+        "title",
+        "description",
+        "order"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/RefId" },
-        "title": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 },
-        "order": { "type": "integer", "minimum": 0 }
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "Evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "description", "kind", "source"],
+      "required": [
+        "id",
+        "title",
+        "description",
+        "kind",
+        "source"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/RefId" },
-        "title": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 },
-        "kind": { "type": "string", "enum": ["code", "document", "observation", "research"] },
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "code",
+            "document",
+            "observation",
+            "research"
+          ]
+        },
         "source": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["path"],
+          "required": [
+            "path"
+          ],
           "properties": {
-            "path": { "type": "string" },
-            "lineStart": { "type": "integer", "minimum": 1 },
-            "lineEnd": { "type": "integer", "minimum": 1 },
-            "url": { "type": "string", "format": "uri" }
+            "path": {
+              "type": "string"
+            },
+            "lineStart": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "lineEnd": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
           }
         }
       }
@@ -143,27 +297,82 @@
     "PatternInstance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "pattern_id", "title", "description", "evidence_refs"],
+      "required": [
+        "id",
+        "pattern_id",
+        "title",
+        "description",
+        "evidence_refs"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/RefId" },
-        "pattern_id": { "$ref": "#/$defs/RefId" },
-        "title": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 },
-        "evidence_refs": { "type": "array", "items": { "$ref": "#/$defs/RefId" }, "uniqueItems": true }
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "pattern_id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefId"
+          },
+          "uniqueItems": true
+        }
       }
     },
     "PatternRelation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "from_pattern", "to_pattern", "type", "description", "evidence_refs", "status"],
+      "required": [
+        "id",
+        "from_pattern",
+        "to_pattern",
+        "type",
+        "description",
+        "evidence_refs",
+        "status"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/RefId" },
-        "from_pattern": { "$ref": "#/$defs/RefId" },
-        "to_pattern": { "$ref": "#/$defs/RefId" },
-        "type": { "type": "string", "enum": ["reinforces", "depends-on", "conflicts-with", "composes"] },
-        "description": { "type": "string", "minLength": 1 },
-        "evidence_refs": { "type": "array", "items": { "$ref": "#/$defs/RefId" }, "uniqueItems": true },
-        "status": { "$ref": "#/$defs/PromotionState" }
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "from_pattern": {
+          "$ref": "#/$defs/RefId"
+        },
+        "to_pattern": {
+          "$ref": "#/$defs/RefId"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "reinforces",
+            "depends-on",
+            "conflicts-with",
+            "composes"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefId"
+          },
+          "uniqueItems": true
+        },
+        "status": {
+          "$ref": "#/$defs/PromotionState"
+        }
       }
     }
   }
