@@ -193,6 +193,23 @@ export type {
 } from './schema/functor.js';
 
 export { validateRepoBoundary, validateRemediationPlan, redactSecretsForLogs } from './security/guards.js';
+export {
+  extractPatternCandidates,
+  buildPatternCandidateArtifact,
+  writePatternCandidateArtifact,
+  generatePatternCandidateArtifact,
+  PATTERN_CANDIDATES_RELATIVE_PATH
+} from './extract/patternCandidates.js';
+export {
+  layeringDetector,
+  modularityDetector,
+  workflowRecursionDetector,
+  contractSymmetryDetector,
+  queryBeforeMutationDetector,
+  DEFAULT_PATTERN_CANDIDATE_DETECTORS
+} from './extract/detectors/index.js';
+export type { PatternCandidateArtifact, ExtractPatternCandidatesInput } from './extract/patternCandidates.js';
+export type { PatternCandidate, Detector, ExtractionArtifacts, PatternEvidence } from './extract/detectors/index.js';
 
 export {
   compactPatterns,

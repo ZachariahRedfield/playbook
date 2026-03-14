@@ -77,6 +77,26 @@ List patterns with portability score `> 0.85` (portable doctrine candidates).
 Compare shared patterns between two repository ids in the cross-repo artifact and report strength/attractor/fitness deltas.
 
 
+
+## Pattern candidate extraction overview
+
+Automatic extraction emits `.playbook/pattern-candidates.json` from deterministic repository artifacts.
+
+Detectors are intentionally narrow and evidence-backed:
+
+- layering detector (repo graph dependency directionality)
+- modularity detector (module/governance graph structure)
+- workflow recursion detector (docs-audit workflow-loop findings)
+- contract symmetry detector (runtime contract metadata symmetry)
+- query-before-mutation detector (command registry + docs command-truth drift signals)
+
+Determinism guarantees:
+
+- stable candidate IDs from hashed detector evidence
+- stable ordering by `detector`, then `id`
+- normalized confidence in `[0,1]` with fixed 2-decimal precision
+- deterministic missing-artifact errors for absent required sources
+
 ## Guarantees
 
 - Rule: New CLI knowledge surfaces begin as inspection tools.
