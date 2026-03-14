@@ -348,6 +348,18 @@ export type {
   CrossRepoCandidateFamilyAggregate,
   CrossRepoCandidatesArtifact
 } from './learning/crossRepoCandidateAggregation.js';
+export {
+  buildPatternFamilyDiscoveryArtifact,
+  writePatternFamilyDiscoveryArtifact,
+  readPatternFamilyDiscoveryArtifact,
+  PATTERN_FAMILY_DISCOVERY_RELATIVE_PATH
+} from './learning/patternFamilyNormalization.js';
+export type {
+  PatternFamilyDiscoveryInput,
+  PatternFamilyDiscoveryFamily,
+  PatternFamilyAssignment,
+  PatternFamilyDiscoveryArtifact
+} from './learning/patternFamilyNormalization.js';
 
 export {
   buildPatternProposalArtifact,

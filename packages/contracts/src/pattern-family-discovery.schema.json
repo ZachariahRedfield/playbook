@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/pattern-family-discovery.schema.json",
+  "title": "Pattern Family Discovery Artifact",
+  "description": "Deterministic cross-repository clustering artifact that normalizes pattern candidate families without mutating source candidates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "repositories",
+    "families",
+    "assignments"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "const": "pattern-family-discovery"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "families": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/family"
+      }
+    },
+    "assignments": {
+      "type": "array",
+      "description": "Per-candidate normalization records used to preserve original candidate IDs while grouping into canonical families.",
+      "items": {
+        "$ref": "#/$defs/assignment"
+      }
+    }
+  },
+  "$defs": {
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pattern_family",
+        "repo_count",
+        "candidate_count",
+        "mean_confidence",
+        "candidate_ids"
+      ],
+      "properties": {
+        "pattern_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "candidate_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mean_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "repo_id",
+        "source_pattern_family",
+        "pattern_family"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_pattern_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pattern_family": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
