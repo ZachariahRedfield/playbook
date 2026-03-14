@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "pattern-candidates",
+  "generatedAt": "2026-03-14T00:00:00.000Z",
+  "candidates": [
+    {
+      "id": "candidate.boundary-layering.001",
+      "pattern_family": "layering",
+      "title": "Boundary checks cluster at execution ingress",
+      "description": "Static extraction observed repeated boundary validation around execution and plan application entrypoints.",
+      "source_artifact": "packages/engine/src/security/guards.ts",
+      "signals": [
+        "repeated guard function invocations",
+        "ingress-focused enforcement points"
+      ],
+      "confidence": 0.86,
+      "evidence_refs": [
+        "evidence.security.guards.validateRepoBoundary",
+        "evidence.security.guards.validateRemediationPlan"
+      ],
+      "status": "observed"
+    },
+    {
+      "id": "candidate.contract-registry.001",
+      "pattern_family": "deterministic-contracts",
+      "title": "Schema registries isolate contract metadata",
+      "description": "Extraction identified a distinct registry layer that keeps contract identifiers and artifact paths deterministic and additive.",
+      "source_artifact": "packages/core/src/contracts/schemaRegistry.ts",
+      "signals": [
+        "centralized schema registry list",
+        "stable id+path mapping"
+      ],
+      "confidence": 0.82,
+      "evidence_refs": [
+        "evidence.contracts.schemaRegistry.memoryArtifactSchemaRegistry",
+        "evidence.contracts.schemaRegistry.commandOutputSchemaRegistry"
+      ],
+      "status": "triaged"
+    }
+  ]
+}
