@@ -76,13 +76,16 @@ export type { SynthesizePatternCardDraftsInput } from './synthesizePatternCardDr
 
 export {
   buildPatternReviewQueue,
+  buildDoctrineCandidatesArtifact,
   writePatternReviewQueue,
+  writeDoctrineCandidatesArtifact,
   readPatternReviewQueue,
   readPromotedPatterns,
   promotePatternCandidate,
   PATTERN_REVIEW_QUEUE_RELATIVE_PATH,
-  PROMOTED_PATTERNS_ARTIFACT_RELATIVE_PATH
+  PROMOTED_PATTERNS_ARTIFACT_RELATIVE_PATH,
+  DOCTRINE_CANDIDATES_ARTIFACT_RELATIVE_PATH
 } from './promotionQueue.js';
 export { scorePatternCandidate } from './scorePatternCandidate.js';
 export type { PatternCandidateScore, AttractorScoreBreakdown } from './scorePatternCandidate.js';
-export type { PatternReviewQueueArtifact, PromotedPatternsArtifact } from './promotionQueue.js';
+export type { PatternReviewQueueArtifact, PromotedPatternsArtifact, DoctrineCandidate, DoctrineCandidatesArtifact } from './promotionQueue.js';

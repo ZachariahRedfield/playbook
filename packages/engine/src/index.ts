@@ -215,7 +215,9 @@ export {
   buildCandidatePatterns,
   synthesizePatternCardDrafts,
   buildPatternReviewQueue,
+  buildDoctrineCandidatesArtifact,
   writePatternReviewQueue,
+  writeDoctrineCandidatesArtifact,
   readPatternReviewQueue,
   readPromotedPatterns,
   promotePatternCandidate,
@@ -242,7 +244,9 @@ export type {
   SynthesizePatternCardDraftsInput,
   PatternCandidateScore,
   PatternReviewQueueArtifact,
-  PromotedPatternsArtifact
+  PromotedPatternsArtifact,
+  DoctrineCandidate,
+  DoctrineCandidatesArtifact
 } from './compaction/index.js';
 
 export { scorePromotionReadiness } from './promotion/scorePromotionReadiness.js';

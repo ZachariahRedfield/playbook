@@ -54,8 +54,14 @@ type PromotedPattern = {
 
 const REVIEW_QUEUE_RELATIVE_PATH = '.playbook/pattern-review-queue.json' as const;
 const PROMOTED_PATTERNS_RELATIVE_PATH = '.playbook/patterns-promoted.json' as const;
+const DOCTRINE_CANDIDATES_RELATIVE_PATH = '.playbook/doctrine-candidates.json' as const;
 const MIN_RECURRENCE_FOR_REVIEW = 2;
 const MIN_SCORE_FOR_REVIEW = 0.55;
+
+const DOCTRINE_MIN_STRENGTH = 0.85;
+const DOCTRINE_MIN_EVIDENCE_REFS = 3;
+const DOCTRINE_MIN_INSTANCES = 3;
+const DOCTRINE_MIN_OUTCOME_CONFIDENCE = 0.6;
 
 export type PatternReviewQueueArtifact = {
   schemaVersion: '1.0';
@@ -68,6 +74,35 @@ export type PromotedPatternsArtifact = {
   schemaVersion: '1.0';
   kind: 'playbook-promoted-patterns';
   promotedPatterns: PromotedPattern[];
+};
+
+export type DoctrineCandidate = {
+  candidateId: string;
+  sourcePatternId: string;
+  title: string;
+  guidance: string;
+  metrics: {
+    strength: number;
+    evidence_refs: number;
+    instances: number;
+    outcome_confidence: number;
+  };
+  evidenceRefs: string[];
+  reviewState: 'review_required';
+};
+
+export type DoctrineCandidatesArtifact = {
+  schemaVersion: '1.0';
+  kind: 'playbook-doctrine-candidates';
+  generatedAt: string;
+  promotionCriteria: {
+    strength: number;
+    evidence_refs: number;
+    instances: number;
+    outcome_confidence: number;
+  };
+  reviewOnly: true;
+  candidates: DoctrineCandidate[];
 };
 
 const readJsonIfExists = <T>(filePath: string): T | null => {
@@ -122,6 +157,59 @@ export const buildPatternReviewQueue = (patternsArtifact: PatternCompactionArtif
 
 export const writePatternReviewQueue = (repoRoot: string, artifact: PatternReviewQueueArtifact): string => {
   const outputPath = path.join(repoRoot, REVIEW_QUEUE_RELATIVE_PATH);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+  return outputPath;
+};
+
+export const buildDoctrineCandidatesArtifact = (queue: PatternReviewQueueArtifact): DoctrineCandidatesArtifact => {
+  const candidates: DoctrineCandidate[] = queue.candidates
+    .filter((candidate) => {
+      const strength = candidate.attractorScoreBreakdown.attractor_score;
+      const evidenceRefs = candidate.examples.length;
+      const instances = candidate.recurrenceCount;
+      const outcomeConfidence = candidate.confidence;
+
+      return (
+        strength >= DOCTRINE_MIN_STRENGTH &&
+        evidenceRefs >= DOCTRINE_MIN_EVIDENCE_REFS &&
+        instances >= DOCTRINE_MIN_INSTANCES &&
+        outcomeConfidence >= DOCTRINE_MIN_OUTCOME_CONFIDENCE
+      );
+    })
+    .map((candidate) => ({
+      candidateId: candidate.id,
+      sourcePatternId: candidate.sourcePatternId,
+      title: candidate.canonicalPatternName,
+      guidance: candidate.reusableEngineeringMeaning,
+      metrics: {
+        strength: candidate.attractorScoreBreakdown.attractor_score,
+        evidence_refs: candidate.examples.length,
+        instances: candidate.recurrenceCount,
+        outcome_confidence: candidate.confidence
+      },
+      evidenceRefs: [...candidate.examples],
+      reviewState: 'review_required' as const
+    }))
+    .sort((left, right) => right.metrics.strength - left.metrics.strength || left.candidateId.localeCompare(right.candidateId));
+
+  return {
+    schemaVersion: '1.0',
+    kind: 'playbook-doctrine-candidates',
+    generatedAt: queue.generatedAt,
+    promotionCriteria: {
+      strength: DOCTRINE_MIN_STRENGTH,
+      evidence_refs: DOCTRINE_MIN_EVIDENCE_REFS,
+      instances: DOCTRINE_MIN_INSTANCES,
+      outcome_confidence: DOCTRINE_MIN_OUTCOME_CONFIDENCE
+    },
+    reviewOnly: true,
+    candidates
+  };
+};
+
+export const writeDoctrineCandidatesArtifact = (repoRoot: string, artifact: DoctrineCandidatesArtifact): string => {
+  const outputPath = path.join(repoRoot, DOCTRINE_CANDIDATES_RELATIVE_PATH);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
   return outputPath;
@@ -212,3 +300,4 @@ export const promotePatternCandidate = (
 
 export const PATTERN_REVIEW_QUEUE_RELATIVE_PATH = REVIEW_QUEUE_RELATIVE_PATH;
 export const PROMOTED_PATTERNS_ARTIFACT_RELATIVE_PATH = PROMOTED_PATTERNS_RELATIVE_PATH;
+export const DOCTRINE_CANDIDATES_ARTIFACT_RELATIVE_PATH = DOCTRINE_CANDIDATES_RELATIVE_PATH;
