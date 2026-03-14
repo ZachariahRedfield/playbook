@@ -42,6 +42,11 @@ declare module "@zachariahredfield/playbook-engine" {
   export const buildModuleContextDigests: (...args: any[]) => any;
   export const writeModuleContextDigests: (...args: any[]) => any;
   export const generateCompactionCandidateArtifact: (...args: any[]) => any;
+  export const extractCompactionCandidates: (...args: any[]) => any[];
+  export const bucketCompactionCandidates: (...args: any[]) => any[];
+  export const readPatternCards: (...args: any[]) => any[];
+  export const toExistingPatternTargets: (...args: any[]) => any[];
+  export type BucketedCandidateEntry = any;
   export const readModuleContextDigest: (...args: any[]) => any;
   export const readRepositoryGraph: (...args: any[]) => any;
   export const summarizeRepositoryGraph: (...args: any[]) => any;

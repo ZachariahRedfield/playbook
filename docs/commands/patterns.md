@@ -57,6 +57,22 @@ List promoted/high-strength patterns as doctrine candidates ranked by strength.
 Show anti-pattern risk signals inferred from low-strength patterns.
 
 
+### `patterns candidates`
+
+List extraction candidates derived from deterministic artifacts (`verify`, `plan`, `apply`, `analyze-pr`, and `docs-audit`).
+
+### `patterns candidates show <id>`
+
+Show one extracted candidate by candidate id, including deterministic link/bucket details.
+
+### `patterns candidates unmatched`
+
+List extracted candidates without a deterministic link target.
+
+### `patterns candidates link`
+
+List extracted candidates with deterministic link targets.
+
 ### `patterns cross-repo`
 
 Compute cross-repository aggregates and write `.playbook/cross-repo-patterns.json`.
@@ -95,6 +111,10 @@ pnpm playbook patterns top --limit 10 --json
 pnpm playbook patterns outcomes pattern.modularity
 pnpm playbook patterns doctrine-candidates --json
 pnpm playbook patterns anti-patterns --json
+pnpm playbook patterns candidates --json
+pnpm playbook patterns candidates show <id> --json
+pnpm playbook patterns candidates unmatched --json
+pnpm playbook patterns candidates link --json
 
 pnpm playbook patterns cross-repo --json
 pnpm playbook patterns portability

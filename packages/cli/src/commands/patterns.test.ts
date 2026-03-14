@@ -135,6 +135,90 @@ const writeRepoPatternArtifacts = (repo: string): void => {
   writePatternOutcomes(repo);
 };
 
+const writeCompactionCandidateArtifacts = (repo: string): void => {
+  const verifyPath = path.join(repo, '.playbook', 'verify.json');
+  fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
+  fs.writeFileSync(
+    verifyPath,
+    JSON.stringify(
+      {
+        failures: [
+          {
+            id: 'module.tests.required',
+            message: 'Module lacks deterministic tests.',
+            fix: 'Add deterministic test coverage.'
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+
+  const planPath = path.join(repo, '.playbook', 'plan.json');
+  fs.writeFileSync(
+    planPath,
+    JSON.stringify(
+      {
+        tasks: [
+          {
+            id: 'task-1',
+            ruleId: 'module.tests.required',
+            action: 'Add tests for module.',
+            file: 'packages/cli/src/commands/patterns.ts',
+            autoFix: false
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+};
+
+const writePatternCard = (repo: string): void => {
+  const cardPath = path.join(repo, '.playbook', 'patterns', 'pattern-tests.json');
+  fs.mkdirSync(path.dirname(cardPath), { recursive: true });
+  fs.writeFileSync(
+    cardPath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'playbook-pattern-card',
+        patternId: 'pattern-tests',
+        title: 'Pattern tests',
+        trigger: 'module.tests.required',
+        context: 'packages/cli/src/commands/patterns.ts',
+        mechanism: 'module lacks deterministic tests',
+        invariant: '',
+        implication: '',
+        response: 'add deterministic tests',
+        examples: ['module lacks deterministic tests'],
+        evidence: ['verify finding: module lacks deterministic tests'],
+        sourceKinds: ['verify'],
+        sourceRefs: ['.playbook/verify.json'],
+        relatedModules: [],
+        relatedRules: ['module.tests.required'],
+        relatedDocs: [],
+        relatedOwners: [],
+        relatedTests: [],
+        relatedRiskSignals: [],
+        relatedGraphNodes: [],
+        relatedPatterns: [],
+        supersedes: [],
+        supersededBy: [],
+        confidence: null,
+        status: 'candidate',
+        createdFromBucket: 'add',
+        reviewState: 'pending-review',
+        promotionState: 'not-promoted'
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writePatternKnowledge = (repo: string): void => {
   const filePath = path.join(repo, '.playbook', 'memory', 'knowledge', 'patterns.json');
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -473,6 +557,89 @@ describe('runPatterns', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.action).toBe('repo-delta');
     expect(payload.deltas[0]).toHaveProperty('strength_delta');
+
+    logSpy.mockRestore();
+  });
+
+  it('lists extracted candidates with deterministic ordering', async () => {
+    const repo = createRepo('playbook-cli-patterns-candidates-list');
+    writeCompactionCandidateArtifacts(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['candidates'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('candidates');
+    expect(payload.candidates.length).toBe(2);
+    const ids = payload.candidates.map((entry: { candidateId: string }) => entry.candidateId);
+    expect(ids).toEqual([...ids].sort((left, right) => left.localeCompare(right)));
+
+    logSpy.mockRestore();
+  });
+
+  it('shows one extracted candidate by id', async () => {
+    const repo = createRepo('playbook-cli-patterns-candidates-show');
+    writeCompactionCandidateArtifacts(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runPatterns(repo, ['candidates'], {
+      format: 'json',
+      quiet: false
+    });
+    const listPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    const candidateId = listPayload.candidates[0].candidateId as string;
+
+    logSpy.mockClear();
+    const exitCode = await runPatterns(repo, ['candidates', 'show', candidateId], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('candidates-show');
+    expect(payload.candidate.candidateId).toBe(candidateId);
+
+    logSpy.mockRestore();
+  });
+
+  it('lists unmatched extracted candidates', async () => {
+    const repo = createRepo('playbook-cli-patterns-candidates-unmatched');
+    writeCompactionCandidateArtifacts(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['candidates', 'unmatched'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('candidates-unmatched');
+    expect(payload.candidates.length).toBeGreaterThan(0);
+
+    logSpy.mockRestore();
+  });
+
+  it('lists linked extracted candidates', async () => {
+    const repo = createRepo('playbook-cli-patterns-candidates-link');
+    writeCompactionCandidateArtifacts(repo);
+    writePatternCard(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['candidates', 'link'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('candidates-link');
+    expect(payload.links.length).toBeGreaterThan(0);
 
     logSpy.mockRestore();
   });
