@@ -271,6 +271,12 @@ export {
   scorePatternGraph,
   listTopPatterns
 } from './scoring/patternAttractorScore.js';
+export {
+  computePatternFitness,
+  appendFitnessStrengthScore,
+  computePatternStrength,
+  rankPatternStrength
+} from './scoring/patternFitnessScore.js';
 export type {
   PromotionState as PatternGraphPromotionState,
   AttractorScore as PatternGraphAttractorScore,
@@ -281,6 +287,7 @@ export type {
   PatternAttractorScoreSignals,
   PatternAttractorScoreResult
 } from './scoring/patternAttractorScore.js';
+export type { PatternFitnessSignals, PatternFitnessScoreResult, PatternOutcomeLinks, RankedPatternStrength } from './scoring/patternFitnessScore.js';
 export type { PatternTopologySignature, PatternEquivalenceClass, PatternVariant, PatternTopologyTelemetry, PatternEquivalenceArtifact } from './schema/patternTopology.js';
 
 export { buildStateSpaceSnapshot } from './stateSpace/buildStateSpaceSnapshot.js';
