@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/pattern-outcomes.schema.json",
+  "title": "PlaybookPatternOutcomes",
+  "description": "Deterministic additive contract linking patterns to system outcome signals.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "links"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "pattern-outcomes"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PatternOutcomeLink"
+      }
+    }
+  },
+  "$defs": {
+    "RefId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9._:/-]*$"
+    },
+    "OutcomeSignal": {
+      "type": "string",
+      "enum": [
+        "low-blast-radius",
+        "stable-contract-surface",
+        "low-plan-churn",
+        "low-governance-violations",
+        "deterministic-artifacts",
+        "high-test-pass-stability"
+      ]
+    },
+    "Direction": {
+      "type": "string",
+      "enum": [
+        "positive",
+        "negative",
+        "mixed"
+      ]
+    },
+    "PatternOutcomeLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "pattern_id",
+        "outcome_signal",
+        "direction",
+        "confidence",
+        "evidence_refs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "pattern_id": {
+          "$ref": "#/$defs/RefId"
+        },
+        "outcome_signal": {
+          "$ref": "#/$defs/OutcomeSignal"
+        },
+        "direction": {
+          "$ref": "#/$defs/Direction"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefId"
+          },
+          "uniqueItems": true
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

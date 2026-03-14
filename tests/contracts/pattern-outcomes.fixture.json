@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "pattern-outcomes",
+  "generatedAt": "2026-03-14T00:00:00.000Z",
+  "links": [
+    {
+      "id": "outcome.modularity.low-blast-radius",
+      "pattern_id": "pattern.modularity",
+      "outcome_signal": "low-blast-radius",
+      "direction": "positive",
+      "confidence": 0.72,
+      "evidence_refs": [
+        "evidence.modularity.repo"
+      ]
+    },
+    {
+      "id": "outcome.layering.stable-contract-surface",
+      "pattern_id": "pattern.layering",
+      "outcome_signal": "stable-contract-surface",
+      "direction": "positive",
+      "confidence": 0.76,
+      "evidence_refs": [
+        "evidence.layering.repo",
+        "evidence.contracts.registry"
+      ]
+    },
+    {
+      "id": "outcome.recursion.low-plan-churn",
+      "pattern_id": "pattern.recursion",
+      "outcome_signal": "low-plan-churn",
+      "direction": "positive",
+      "confidence": 0.61,
+      "evidence_refs": [
+        "evidence.recursion.note"
+      ],
+      "notes": "Deterministic verify -> plan -> apply loops reduce rerun churn."
+    },
+    {
+      "id": "outcome.symmetry.low-governance-violations",
+      "pattern_id": "pattern.symmetry",
+      "outcome_signal": "low-governance-violations",
+      "direction": "positive",
+      "confidence": 0.58,
+      "evidence_refs": [
+        "evidence.symmetry.note"
+      ]
+    },
+    {
+      "id": "outcome.modularity.deterministic-artifacts",
+      "pattern_id": "pattern.modularity",
+      "outcome_signal": "deterministic-artifacts",
+      "direction": "positive",
+      "confidence": 0.67,
+      "evidence_refs": [
+        "evidence.modularity.repo"
+      ]
+    },
+    {
+      "id": "outcome.chunking.high-test-pass-stability",
+      "pattern_id": "pattern.chunking",
+      "outcome_signal": "high-test-pass-stability",
+      "direction": "positive",
+      "confidence": 0.64,
+      "evidence_refs": [
+        "evidence.chunking.repo"
+      ]
+    }
+  ]
+}
