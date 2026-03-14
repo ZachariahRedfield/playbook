@@ -52,9 +52,21 @@ jobs:
             --output-file artifacts/sbom.json
 
       - name: Step 3.1 — SBOM Vulnerability Scan
+        id: grype_scan
         uses: anchore/scan-action@v3
         with:
           sbom: artifacts/sbom.json
+          output-format: sarif
+          severity-cutoff: medium
+          fail-build: ${{ github.event_name != 'pull_request' }}
+
+      - name: Step 3.2 — Upload vulnerability scan artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grype-scan-results
+          path: ${{ steps.grype_scan.outputs.sarif }}
+          if-no-files-found: warn
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.0.0
