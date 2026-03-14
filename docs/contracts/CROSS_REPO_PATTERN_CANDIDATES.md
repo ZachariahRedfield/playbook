@@ -10,6 +10,25 @@ Artifact path:
 
 Cross-repo candidates represent normalized candidate families across repositories, **not canonical patterns**.
 
+## Aggregation and normalization overview
+
+Cross-repo candidate aggregation reads each repository-local `.playbook/pattern-candidates.json` artifact as immutable input evidence.
+
+The aggregation flow is deterministic:
+
+1. Load candidate artifacts per repository without mutating repo-local files.
+2. Normalize each candidate `pattern_family` into a canonical family key before grouping.
+3. Merge grouped families across repositories.
+4. Compute aggregate family metrics:
+   - `repo_count`
+   - `candidate_count`
+   - `mean_confidence`
+   - `first_seen`
+   - `last_seen`
+5. Emit `.playbook/cross-repo-candidates.json` with lexicographically sorted `pattern_family` entries and deterministic repo lists.
+
+This preserves repository-local provenance while producing stable cross-repo evidence summaries for downstream review.
+
 ## Contract shape
 
 Top-level fields:
@@ -42,10 +61,16 @@ Each `families[]` entry contains:
 
 Cross-repo artifacts must remain deterministic and append-only.
 
+Cross-repo learning must aggregate evidence without mutating per-repo artifacts.
+
 ## Pattern
 
 Separate per-repo observations from cross-repo aggregates.
 
+Normalize candidate families before computing cross-repo metrics.
+
 ## Failure mode
 
 Mixing repo-local signals directly into doctrine candidates introduces architecture bias.
+
+Directly merging candidate IDs across repos causes duplicate abstractions and unstable doctrine proposals.
