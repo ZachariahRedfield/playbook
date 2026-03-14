@@ -85,6 +85,10 @@ List candidate families that appear in more than one repository.
 
 Compute and show candidate portability scores with signal breakdowns.
 
+### `patterns proposals`
+
+Build governance-safe enrichment proposals from `.playbook/cross-repo-candidates.json` and write `.playbook/pattern-proposals.json`.
+
 ### `patterns cross-repo`
 
 Compute cross-repository aggregates and write `.playbook/cross-repo-patterns.json`.
@@ -174,6 +178,7 @@ pnpm playbook patterns candidates cross-repo --json
 pnpm playbook patterns candidates generalized --json
 pnpm playbook patterns candidates portability --json
 
+pnpm playbook patterns proposals --json
 pnpm playbook patterns cross-repo --json
 pnpm playbook patterns portability
 pnpm playbook patterns generalized --json
@@ -182,6 +187,26 @@ pnpm playbook patterns promote --id <pattern-id> --decision approve --json
 ```
 
 
+
+
+## Proposal lifecycle governance
+
+`patterns proposals` is an explicit bridge between automated cross-repo discovery and governed doctrine updates.
+
+Lifecycle:
+
+1. Extraction and aggregation produce candidate-family observations (`.playbook/cross-repo-candidates.json`).
+2. Proposal bridge emits deterministic enrichment proposals (`.playbook/pattern-proposals.json`).
+3. Human/governance review decides if proposals should be promoted into canonical pattern knowledge.
+
+Hard guarantees:
+
+- Automatic extraction may propose enrichment but must never mutate canonical pattern knowledge automatically.
+- Proposals require `repo_count >= 2` and `portability_score >= 0.65` before they can be emitted.
+- Deterministic sorting ensures stable proposal ordering for review and audit.
+
+- Pattern: Use proposal artifacts to bridge automated discovery and governed doctrine.
+- Failure Mode: Direct pattern graph mutation from extraction logic causes irreversible architecture drift.
 
 ## Cross-repo candidate portability scoring
 

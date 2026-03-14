@@ -135,6 +135,45 @@ const writeRepoPatternArtifacts = (repo: string): void => {
   writePatternOutcomes(repo);
 };
 
+
+const writeCrossRepoCandidatesArtifact = (repo: string): void => {
+  const filePath = path.join(repo, '.playbook', 'cross-repo-candidates.json');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'cross-repo-candidates',
+        generatedAt: '2026-01-03T00:00:00.000Z',
+        repositories: ['playbook', 'fawxzzy-fitness'],
+        families: [
+          {
+            pattern_family: 'layering',
+            repo_count: 2,
+            candidate_count: 6,
+            mean_confidence: 0.84,
+            repos: ['fawxzzy-fitness', 'playbook'],
+            first_seen: '2026-01-01T00:00:00.000Z',
+            last_seen: '2026-01-03T00:00:00.000Z'
+          },
+          {
+            pattern_family: 'query-before-mutation',
+            repo_count: 1,
+            candidate_count: 2,
+            mean_confidence: 0.98,
+            repos: ['playbook'],
+            first_seen: '2026-01-02T00:00:00.000Z',
+            last_seen: '2026-01-03T00:00:00.000Z'
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeCompactionCandidateArtifacts = (repo: string): void => {
   const verifyPath = path.join(repo, '.playbook', 'verify.json');
   fs.mkdirSync(path.dirname(verifyPath), { recursive: true });
@@ -603,6 +642,37 @@ describe('runPatterns', () => {
       governance_stability_signal: 1,
       portability_score: 0.9875
     });
+
+    logSpy.mockRestore();
+  });
+
+
+  it('builds governance-safe enrichment proposals from cross-repo candidate families', async () => {
+    const repo = createRepo('playbook-cli-patterns-proposals');
+    writeCrossRepoCandidatesArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['proposals'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('proposals');
+    expect(payload.proposals).toHaveLength(1);
+    expect(payload.proposals[0]).toMatchObject({
+      proposal_id: 'proposal.layering.generalization',
+      pattern_family: 'layering',
+      proposed_action: 'append_instance',
+      target_pattern: 'pattern.layering'
+    });
+
+    const artifactPath = path.join(repo, '.playbook', 'pattern-proposals.json');
+    expect(fs.existsSync(artifactPath)).toBe(true);
+    const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+    expect(artifact.kind).toBe('pattern-proposals');
+    expect(artifact.proposals).toHaveLength(1);
 
     logSpy.mockRestore();
   });

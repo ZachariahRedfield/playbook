@@ -339,6 +339,15 @@ export type {
   CrossRepoCandidateFamilyAggregate,
   CrossRepoCandidatesArtifact
 } from './learning/crossRepoCandidateAggregation.js';
+
+export {
+  buildPatternProposalArtifact,
+  generatePatternProposalArtifact,
+  writePatternProposalArtifact,
+  readPatternProposalArtifact,
+  PATTERN_PROPOSALS_RELATIVE_PATH
+} from './learning/patternProposalBridge.js';
+export type { PatternProposal, PatternProposalArtifact } from './learning/patternProposalBridge.js';
 export type { PatternTopologySignature, PatternEquivalenceClass, PatternVariant, PatternTopologyTelemetry, PatternEquivalenceArtifact } from './schema/patternTopology.js';
 
 export { buildStateSpaceSnapshot } from './stateSpace/buildStateSpaceSnapshot.js';

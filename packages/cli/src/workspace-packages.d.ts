@@ -174,6 +174,11 @@ declare module "@zachariahredfield/playbook-engine" {
   export const readCrossRepoPatternsArtifact: (...args: any[]) => any;
   export type CrossRepoInput = any;
   export type CrossRepoPatternsArtifact = any;
+  export const buildPatternProposalArtifact: (...args: any[]) => any;
+  export const generatePatternProposalArtifact: (...args: any[]) => any;
+  export const writePatternProposalArtifact: (...args: any[]) => string;
+  export const readPatternProposalArtifact: (...args: any[]) => any;
+  export type PatternProposalArtifact = any;
   export const explainTarget: (...args: any[]) => any;
   export type ExplainTargetResult = any;
   export const SUPPORTED_QUERY_FIELDS: readonly string[];

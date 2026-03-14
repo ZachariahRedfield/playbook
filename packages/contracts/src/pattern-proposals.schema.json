@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/pattern-proposals.schema.json",
+  "title": "Pattern Proposal Bridge Artifact",
+  "description": "Governance-safe proposal artifact for cross-repo candidate family enrichment recommendations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "proposals"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "const": "pattern-proposals"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "proposals": {
+      "type": "array",
+      "description": "Deterministically ordered proposals that remain governance candidates until explicit review.",
+      "items": {
+        "$ref": "#/$defs/patternProposal"
+      }
+    }
+  },
+  "$defs": {
+    "patternProposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proposal_id",
+        "pattern_family",
+        "candidate_repos",
+        "mean_confidence",
+        "portability_score",
+        "proposed_action",
+        "target_pattern"
+      ],
+      "properties": {
+        "proposal_id": {
+          "type": "string",
+          "pattern": "^proposal\\.[a-z0-9-]+\\.generalization$"
+        },
+        "pattern_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidate_repos": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "mean_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "portability_score": {
+          "type": "number",
+          "minimum": 0.65,
+          "maximum": 1
+        },
+        "proposed_action": {
+          "type": "string",
+          "const": "append_instance"
+        },
+        "target_pattern": {
+          "type": "string",
+          "pattern": "^pattern\\.[a-z0-9-]+$"
+        }
+      }
+    }
+  }
+}
