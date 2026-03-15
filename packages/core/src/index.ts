@@ -1,5 +1,5 @@
 export type { SessionContract, SessionPinnedArtifact, SessionPinnedArtifactKind, SessionStep, ResumeSessionResult } from './contracts/session.js';
-export type { ArchitectureRegistry, ArtifactLineage, ArtifactOwnership, Subsystem } from './architecture/types.js';
+export type { ArchitectureRegistry, ArtifactLineage, ArtifactOwnership, Subsystem, SubsystemDependencies } from './architecture/types.js';
 export type { ArtifactOwnershipDetails, SubsystemOwnership } from './architecture/introspection.js';
 export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './contracts/execution.js';
 export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';

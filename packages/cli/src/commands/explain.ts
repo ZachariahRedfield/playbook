@@ -54,6 +54,13 @@ const toOutput = (target: string, explanation: ExplainTargetResult): ExplainOutp
     };
   }
 
+  if (explanation.type === 'subsystem') {
+    payload.subsystem_dependencies = {
+      upstream: explanation.upstream ?? [],
+      downstream: explanation.downstream ?? []
+    };
+  }
+
   return {
     command: 'explain',
     target,
@@ -126,11 +133,32 @@ const printText = (target: string, explanation: ExplainTargetResult): void => {
     console.log('Owned artifacts');
     if (explanation.artifacts.length === 0) {
       console.log('- none');
-      return;
+    } else {
+      for (const artifact of explanation.artifacts) {
+        console.log(`- ${artifact}`);
+      }
     }
 
-    for (const artifact of explanation.artifacts) {
-      console.log(`- ${artifact}`);
+    console.log('');
+    console.log('Upstream');
+    const upstream = explanation.upstream ?? [];
+    if (upstream.length === 0) {
+      console.log('- none');
+    } else {
+      for (const subsystem of upstream) {
+        console.log(`- ${subsystem}`);
+      }
+    }
+
+    console.log('');
+    console.log('Downstream');
+    const downstream = explanation.downstream ?? [];
+    if (downstream.length === 0) {
+      console.log('- none');
+    } else {
+      for (const subsystem of downstream) {
+        console.log(`- ${subsystem}`);
+      }
     }
     return;
   }

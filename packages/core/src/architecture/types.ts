@@ -1,4 +1,9 @@
-export type Subsystem = {
+export type SubsystemDependencies = {
+  upstream?: string[];
+  downstream?: string[];
+};
+
+export type Subsystem = SubsystemDependencies & {
   name: string;
   purpose: string;
   commands: string[];
