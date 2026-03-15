@@ -36,12 +36,25 @@ export type ProcessTelemetryRecord = {
   id: string;
   recordedAt: string;
   task_family: string;
+  task_profile_id?: string;
+  route_id?: string;
   task_duration_ms: number;
   files_touched: string[];
   validators_run: string[];
+  rule_packs_selected?: string[];
+  required_validations_selected?: string[];
+  optional_validations_selected?: string[];
+  validation_duration_ms?: number;
+  planning_duration_ms?: number;
+  apply_duration_ms?: number;
   retry_count: number;
   merge_conflict_risk: number;
+  actual_merge_conflict?: boolean;
   first_pass_success: boolean;
+  human_intervention_required?: boolean;
+  parallel_lane_count?: number;
+  over_validation_signal?: boolean;
+  under_validation_signal?: boolean;
   prompt_size: number;
   reasoning_scope: ProcessReasoningScope;
 };
@@ -58,6 +71,19 @@ export type ProcessTelemetrySummary = {
   task_family_counts: Record<string, number>;
   validators_run_counts: Record<string, number>;
   reasoning_scope_counts: Record<ProcessReasoningScope, number>;
+  route_id_counts: Record<string, number>;
+  task_profile_id_counts: Record<string, number>;
+  rule_packs_selected_counts: Record<string, number>;
+  required_validations_selected_counts: Record<string, number>;
+  optional_validations_selected_counts: Record<string, number>;
+  total_validation_duration_ms: number;
+  total_planning_duration_ms: number;
+  total_apply_duration_ms: number;
+  human_intervention_required_count: number;
+  actual_merge_conflict_count: number;
+  average_parallel_lane_count: number;
+  over_validation_signal_count: number;
+  under_validation_signal_count: number;
 };
 
 export type ProcessTelemetryArtifact = {
@@ -78,17 +104,83 @@ const compareRecords = <T extends { recordedAt: string; id: string }>(left: T, r
 
 const round4 = (value: number): number => Number(value.toFixed(4));
 
+const normalizeDuration = (value: number | undefined): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.round(value) : undefined;
+
+const normalizePositiveInteger = (value: number | undefined, minimum: number): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) && value >= minimum ? Math.round(value) : undefined;
+
 const normalizeOutcomeRecord = (record: OutcomeTelemetryRecord): OutcomeTelemetryRecord => ({
   ...record,
   ci_failure_categories: sortStrings(record.ci_failure_categories)
 });
 
-const normalizeProcessRecord = (record: ProcessTelemetryRecord): ProcessTelemetryRecord => ({
-  ...record,
-  files_touched: sortStrings(record.files_touched),
-  validators_run: sortStrings(record.validators_run),
-  merge_conflict_risk: round4(record.merge_conflict_risk)
-});
+const normalizeProcessRecord = (record: ProcessTelemetryRecord): ProcessTelemetryRecord => {
+  const normalized: ProcessTelemetryRecord = {
+    ...record,
+    files_touched: sortStrings(record.files_touched),
+    validators_run: sortStrings(record.validators_run),
+    merge_conflict_risk: round4(record.merge_conflict_risk)
+  };
+
+  if (typeof record.task_profile_id === 'string' && record.task_profile_id.length > 0) {
+    normalized.task_profile_id = record.task_profile_id;
+  }
+  if (typeof record.route_id === 'string' && record.route_id.length > 0) {
+    normalized.route_id = record.route_id;
+  }
+
+  const normalizedRulePacks = record.rule_packs_selected ? sortStrings(record.rule_packs_selected) : undefined;
+  if (normalizedRulePacks) {
+    normalized.rule_packs_selected = normalizedRulePacks;
+  }
+
+  const normalizedRequired = record.required_validations_selected ? sortStrings(record.required_validations_selected) : undefined;
+  if (normalizedRequired) {
+    normalized.required_validations_selected = normalizedRequired;
+  }
+
+  const normalizedOptional = record.optional_validations_selected ? sortStrings(record.optional_validations_selected) : undefined;
+  if (normalizedOptional) {
+    normalized.optional_validations_selected = normalizedOptional;
+  }
+
+  const validationDuration = normalizeDuration(record.validation_duration_ms);
+  if (validationDuration !== undefined) {
+    normalized.validation_duration_ms = validationDuration;
+  }
+
+  const planningDuration = normalizeDuration(record.planning_duration_ms);
+  if (planningDuration !== undefined) {
+    normalized.planning_duration_ms = planningDuration;
+  }
+
+  const applyDuration = normalizeDuration(record.apply_duration_ms);
+  if (applyDuration !== undefined) {
+    normalized.apply_duration_ms = applyDuration;
+  }
+
+  if (typeof record.actual_merge_conflict === 'boolean') {
+    normalized.actual_merge_conflict = record.actual_merge_conflict;
+  }
+  if (typeof record.human_intervention_required === 'boolean') {
+    normalized.human_intervention_required = record.human_intervention_required;
+  }
+
+  const parallelLaneCount = normalizePositiveInteger(record.parallel_lane_count, 1);
+  if (parallelLaneCount !== undefined) {
+    normalized.parallel_lane_count = parallelLaneCount;
+  }
+
+  if (typeof record.over_validation_signal === 'boolean') {
+    normalized.over_validation_signal = record.over_validation_signal;
+  }
+  if (typeof record.under_validation_signal === 'boolean') {
+    normalized.under_validation_signal = record.under_validation_signal;
+  }
+
+  return normalized;
+};
 
 export const summarizeOutcomeTelemetry = (records: OutcomeTelemetryRecord[]): OutcomeTelemetrySummary => {
   const ciFailureCategoryCounts = new Map<string, number>();
@@ -113,6 +205,11 @@ export const summarizeOutcomeTelemetry = (records: OutcomeTelemetryRecord[]): Ou
 export const summarizeProcessTelemetry = (records: ProcessTelemetryRecord[]): ProcessTelemetrySummary => {
   const taskFamilyCounts = new Map<string, number>();
   const validatorsRunCounts = new Map<string, number>();
+  const routeIdCounts = new Map<string, number>();
+  const taskProfileIdCounts = new Map<string, number>();
+  const rulePackCounts = new Map<string, number>();
+  const requiredValidationCounts = new Map<string, number>();
+  const optionalValidationCounts = new Map<string, number>();
   const filesTouched = new Set<string>();
   const validatorsTouched = new Set<string>();
 
@@ -126,6 +223,15 @@ export const summarizeProcessTelemetry = (records: ProcessTelemetryRecord[]): Pr
   for (const record of records) {
     taskFamilyCounts.set(record.task_family, (taskFamilyCounts.get(record.task_family) ?? 0) + 1);
     reasoningScopeCounts[record.reasoning_scope] += 1;
+
+    if (record.route_id) {
+      routeIdCounts.set(record.route_id, (routeIdCounts.get(record.route_id) ?? 0) + 1);
+    }
+
+    if (record.task_profile_id) {
+      taskProfileIdCounts.set(record.task_profile_id, (taskProfileIdCounts.get(record.task_profile_id) ?? 0) + 1);
+    }
+
     for (const file of record.files_touched) {
       filesTouched.add(file);
     }
@@ -133,13 +239,30 @@ export const summarizeProcessTelemetry = (records: ProcessTelemetryRecord[]): Pr
       validatorsTouched.add(validator);
       validatorsRunCounts.set(validator, (validatorsRunCounts.get(validator) ?? 0) + 1);
     }
+
+    for (const rulePack of record.rule_packs_selected ?? []) {
+      rulePackCounts.set(rulePack, (rulePackCounts.get(rulePack) ?? 0) + 1);
+    }
+
+    for (const validation of record.required_validations_selected ?? []) {
+      requiredValidationCounts.set(validation, (requiredValidationCounts.get(validation) ?? 0) + 1);
+    }
+
+    for (const validation of record.optional_validations_selected ?? []) {
+      optionalValidationCounts.set(validation, (optionalValidationCounts.get(validation) ?? 0) + 1);
+    }
   }
 
   const totalTaskDurationMs = records.reduce((sum, record) => sum + record.task_duration_ms, 0);
   const totalRetryCount = records.reduce((sum, record) => sum + record.retry_count, 0);
   const mergeConflictRiskTotal = records.reduce((sum, record) => sum + record.merge_conflict_risk, 0);
+  const totalValidationDurationMs = records.reduce((sum, record) => sum + (record.validation_duration_ms ?? 0), 0);
+  const totalPlanningDurationMs = records.reduce((sum, record) => sum + (record.planning_duration_ms ?? 0), 0);
+  const totalApplyDurationMs = records.reduce((sum, record) => sum + (record.apply_duration_ms ?? 0), 0);
   const averageTaskDuration = records.length === 0 ? 0 : totalTaskDurationMs / records.length;
   const averageMergeConflictRisk = records.length === 0 ? 0 : mergeConflictRiskTotal / records.length;
+  const averageParallelLaneCount =
+    records.length === 0 ? 0 : records.reduce((sum, record) => sum + (record.parallel_lane_count ?? 1), 0) / records.length;
 
   return {
     total_records: records.length,
@@ -152,7 +275,20 @@ export const summarizeProcessTelemetry = (records: ProcessTelemetryRecord[]): Pr
     total_validators_run_unique: validatorsTouched.size,
     task_family_counts: sortCountMap(Object.fromEntries(taskFamilyCounts)),
     validators_run_counts: sortCountMap(Object.fromEntries(validatorsRunCounts)),
-    reasoning_scope_counts: reasoningScopeCounts
+    reasoning_scope_counts: reasoningScopeCounts,
+    route_id_counts: sortCountMap(Object.fromEntries(routeIdCounts)),
+    task_profile_id_counts: sortCountMap(Object.fromEntries(taskProfileIdCounts)),
+    rule_packs_selected_counts: sortCountMap(Object.fromEntries(rulePackCounts)),
+    required_validations_selected_counts: sortCountMap(Object.fromEntries(requiredValidationCounts)),
+    optional_validations_selected_counts: sortCountMap(Object.fromEntries(optionalValidationCounts)),
+    total_validation_duration_ms: totalValidationDurationMs,
+    total_planning_duration_ms: totalPlanningDurationMs,
+    total_apply_duration_ms: totalApplyDurationMs,
+    human_intervention_required_count: records.filter((record) => record.human_intervention_required).length,
+    actual_merge_conflict_count: records.filter((record) => record.actual_merge_conflict).length,
+    average_parallel_lane_count: round4(averageParallelLaneCount),
+    over_validation_signal_count: records.filter((record) => record.over_validation_signal).length,
+    under_validation_signal_count: records.filter((record) => record.under_validation_signal).length
   };
 };
 

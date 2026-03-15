@@ -31,6 +31,7 @@ Required metrics:
 - `first_pass_yield`
 - `retry_pressure`
 - `validation_load_ratio`
+- route-quality evidence from process telemetry route selections and validation/intervention signals
 - `route_efficiency_score`
 - `smallest_sufficient_route_score`
 - `pattern_family_effectiveness_score`
