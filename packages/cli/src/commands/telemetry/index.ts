@@ -78,6 +78,10 @@ const renderTextLearningState = (artifact: LearningStateSnapshotArtifact): void 
   console.log(`First-pass yield: ${artifact.metrics.first_pass_yield}`);
   console.log(`Validation load ratio: ${artifact.metrics.validation_load_ratio}`);
   console.log(`Smallest sufficient route score: ${artifact.metrics.smallest_sufficient_route_score}`);
+  console.log(`Router fit score: ${artifact.metrics.router_fit_score}`);
+  console.log(`Reasoning scope efficiency: ${artifact.metrics.reasoning_scope_efficiency}`);
+  console.log(`Parallel safety realized: ${artifact.metrics.parallel_safety_realized}`);
+  console.log(`Validation cost pressure: ${artifact.metrics.validation_cost_pressure}`);
   console.log(`Portability confidence: ${artifact.metrics.portability_confidence}`);
   console.log(`Overall confidence: ${artifact.confidenceSummary.overall_confidence}`);
 };

@@ -4,7 +4,7 @@ import {
   type OutcomeTelemetryArtifact,
   type ProcessTelemetryArtifact
 } from './outcomeTelemetry.js';
-import type { TaskExecutionProfileArtifact } from '../routing/executionRouter.js';
+import type { TaskExecutionProfileArtifact, TaskExecutionProfileProposal } from '../routing/executionRouter.js';
 
 export const LEARNING_STATE_SCHEMA_VERSION = '1.0';
 
@@ -31,6 +31,10 @@ export type LearningStateSnapshotArtifact = {
     validation_load_ratio: number;
     route_efficiency_score: Record<string, number>;
     smallest_sufficient_route_score: number;
+    parallel_safety_realized: number;
+    router_fit_score: number;
+    reasoning_scope_efficiency: number;
+    validation_cost_pressure: number;
     pattern_family_effectiveness_score: Record<string, number>;
     portability_confidence: number;
   };
@@ -51,20 +55,26 @@ export type DeriveLearningStateInput = {
 };
 
 const round4 = (value: number): number => Number(value.toFixed(4));
-
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
-
 const sortEntriesByKey = (values: Record<string, number>): Record<string, number> =>
   Object.fromEntries(Object.entries(values).sort((left, right) => left[0].localeCompare(right[0])));
 
 const computeRouteEfficiency = (records: ProcessTelemetryArtifact['records']): Record<string, number> => {
-  const byFamily = new Map<string, { count: number; totalRetry: number; firstPass: number }>();
+  const byFamily = new Map<string, { count: number; totalRetry: number; firstPass: number; validationPressure: number; intervention: number }>();
 
   for (const record of records) {
-    const aggregate = byFamily.get(record.task_family) ?? { count: 0, totalRetry: 0, firstPass: 0 };
+    const aggregate = byFamily.get(record.task_family) ?? {
+      count: 0,
+      totalRetry: 0,
+      firstPass: 0,
+      validationPressure: 0,
+      intervention: 0
+    };
     aggregate.count += 1;
     aggregate.totalRetry += record.retry_count;
     aggregate.firstPass += record.first_pass_success ? 1 : 0;
+    aggregate.validationPressure += record.over_validation_signal ? 1 : 0;
+    aggregate.intervention += record.human_intervention_required ? 1 : 0;
     byFamily.set(record.task_family, aggregate);
   }
 
@@ -72,7 +82,9 @@ const computeRouteEfficiency = (records: ProcessTelemetryArtifact['records']): R
   for (const [family, aggregate] of byFamily.entries()) {
     const firstPass = aggregate.count === 0 ? 0 : aggregate.firstPass / aggregate.count;
     const retryPenalty = aggregate.count === 0 ? 0 : aggregate.totalRetry / aggregate.count;
-    scores[family] = round4(clamp01(firstPass - retryPenalty * 0.2));
+    const validationPenalty = aggregate.count === 0 ? 0 : aggregate.validationPressure / aggregate.count;
+    const interventionPenalty = aggregate.count === 0 ? 0 : aggregate.intervention / aggregate.count;
+    scores[family] = round4(clamp01(firstPass - retryPenalty * 0.2 - validationPenalty * 0.15 - interventionPenalty * 0.1));
   }
 
   return sortEntriesByKey(scores);
@@ -88,7 +100,6 @@ export const deriveLearningStateSnapshot = (input: DeriveLearningStateInput): Le
 
   const firstPassCount = processRecords.filter((record) => record.first_pass_success).length;
   const totalValidatorsRun = processRecords.reduce((sum, record) => sum + record.validators_run.length, 0);
-  const totalRetryCount = processRecords.reduce((sum, record) => sum + record.retry_count, 0);
 
   const retryPressureByTaskFamily = sortEntriesByKey(
     processRecords.reduce<Record<string, number>>((accumulator, record) => {
@@ -104,11 +115,109 @@ export const deriveLearningStateSnapshot = (input: DeriveLearningStateInput): Le
   const smallestSufficientRouteScore =
     totalProcessRecords === 0
       ? 0
+      : round4(clamp01(docsOnlyScore * 0.6 + (1 - (routeEfficiency.engine_scoring ?? 0)) * 0.2 + (1 - contractsSchemaScore) * 0.2));
+
+  const recordsWithLaneEvidence = processRecords.filter((record) => typeof record.parallel_lane_count === 'number' && record.parallel_lane_count > 0);
+  const safeParallelRecords = recordsWithLaneEvidence.filter(
+    (record) => (record.parallel_lane_count ?? 0) > 1 && record.actual_merge_conflict === false
+  );
+  const parallelSafetyRealized =
+    recordsWithLaneEvidence.length === 0 ? 0 : round4(clamp01(safeParallelRecords.length / recordsWithLaneEvidence.length));
+
+  const recordsWithValidationDuration = processRecords.filter((record) => typeof record.validation_duration_ms === 'number');
+  const totalValidationDuration = recordsWithValidationDuration.reduce((sum, record) => sum + (record.validation_duration_ms ?? 0), 0);
+  const totalTaskDuration = processRecords.reduce((sum, record) => sum + record.task_duration_ms, 0);
+  const validationDurationRatio =
+    totalTaskDuration === 0 || recordsWithValidationDuration.length === 0 ? 0 : clamp01(totalValidationDuration / totalTaskDuration);
+  const overValidationCount = processRecords.filter((record) => record.over_validation_signal).length;
+  const underValidationCount = processRecords.filter((record) => record.under_validation_signal).length;
+  const validationCostPressure =
+    totalProcessRecords === 0
+      ? 0
       : round4(
           clamp01(
-            docsOnlyScore * 0.55 +
-              (1 - Math.min(1, (routeEfficiency.engine_scoring ?? 0) * 0.5)) * 0.15 +
-              (1 - Math.min(1, contractsSchemaScore * 0.5)) * 0.3
+            validationDurationRatio * 0.55 +
+              (overValidationCount / totalProcessRecords) * 0.35 +
+              (underValidationCount / totalProcessRecords) * 0.1
+          )
+        );
+
+  const repoScopeRecords = processRecords.filter((record) => record.reasoning_scope === 'repository' || record.reasoning_scope === 'cross-repo').length;
+  const crossRepoCount = processRecords.filter((record) => record.reasoning_scope === 'cross-repo').length;
+  const reasoningScopeEfficiency =
+    totalProcessRecords === 0
+      ? 0
+      : round4(
+          clamp01(
+            firstPassCount / totalProcessRecords -
+              (crossRepoCount / totalProcessRecords) * 0.2 -
+              (repoScopeRecords / totalProcessRecords) * 0.1 +
+              (process ? 0.1 : 0)
+          )
+        );
+
+  const profileByFamily = new Map<string, TaskExecutionProfileProposal>((profiles?.profiles ?? []).map((profile) => [profile.task_family, profile]));
+  const recordsWithRouteSignals = processRecords.filter((record) =>
+    Boolean(
+      record.task_profile_id ||
+        record.route_id ||
+        record.rule_packs_selected ||
+        record.required_validations_selected ||
+        record.optional_validations_selected ||
+        typeof record.validation_duration_ms === 'number' ||
+        typeof record.planning_duration_ms === 'number' ||
+        typeof record.apply_duration_ms === 'number'
+    )
+  );
+  const routeFitEvidenceScore =
+    recordsWithRouteSignals.length === 0
+      ? 0
+      : recordsWithRouteSignals.reduce((sum, record) => {
+          const profile = profileByFamily.get(record.task_family);
+          let recordScore = 0.35;
+          if (record.route_id) {
+            recordScore += 0.1;
+          }
+          if (record.rule_packs_selected && record.rule_packs_selected.length > 0) {
+            recordScore += 0.1;
+          }
+          if (record.required_validations_selected && record.required_validations_selected.length > 0) {
+            recordScore += 0.1;
+          }
+          if (record.first_pass_success) {
+            recordScore += 0.15;
+          }
+          if ((record.retry_count ?? 0) === 0) {
+            recordScore += 0.1;
+          }
+
+          if (profile) {
+            const requiredSelected = new Set(record.required_validations_selected ?? []);
+            const requiredCoverage =
+              profile.required_validations.length === 0
+                ? 1
+                : profile.required_validations.filter((validation) => requiredSelected.has(validation)).length /
+                  profile.required_validations.length;
+            const rulePackSelected = new Set(record.rule_packs_selected ?? []);
+            const rulePackCoverage =
+              profile.rule_packs.length === 0
+                ? 1
+                : profile.rule_packs.filter((rulePack) => rulePackSelected.has(rulePack)).length / profile.rule_packs.length;
+            recordScore += requiredCoverage * 0.1 + rulePackCoverage * 0.1;
+          }
+
+          return sum + clamp01(recordScore);
+        }, 0) / recordsWithRouteSignals.length;
+
+  const routerFitScore =
+    totalProcessRecords === 0
+      ? 0
+      : round4(
+          clamp01(
+            routeFitEvidenceScore * 0.55 +
+              smallestSufficientRouteScore * 0.2 +
+              parallelSafetyRealized * 0.1 +
+              (1 - validationCostPressure) * 0.15
           )
         );
 
@@ -123,20 +232,28 @@ export const deriveLearningStateSnapshot = (input: DeriveLearningStateInput): Le
     )
   );
 
-  const crossRepoCount = processRecords.filter((record) => record.reasoning_scope === 'cross-repo').length;
   const profileCoverage = profiles?.profiles.length ?? 0;
   const portabilityConfidence =
     totalProcessRecords === 0
       ? 0
-      : round4(
-          clamp01(crossRepoCount / totalProcessRecords * 0.6 + (profileCoverage > 0 ? 0.25 : 0) + (outcome ? 0.15 : 0))
-        );
+      : round4(clamp01(crossRepoCount / totalProcessRecords * 0.5 + (profileCoverage > 0 ? 0.2 : 0) + (outcome ? 0.15 : 0) + reasoningScopeEfficiency * 0.15));
 
   const availableSourceCount = [Boolean(outcome), Boolean(process), Boolean(profiles)].filter(Boolean).length;
   const sampleSizeScore = round4(clamp01(totalProcessRecords / 10));
   const coverageScore = round4(clamp01(Object.keys(routeEfficiency).length / 5));
-  const evidenceCompletenessScore = round4(clamp01(availableSourceCount / 3));
-  const overallConfidence = round4(clamp01(sampleSizeScore * 0.4 + coverageScore * 0.3 + evidenceCompletenessScore * 0.3));
+
+  const enrichedSignalCount = [
+    recordsWithRouteSignals.length > 0,
+    recordsWithValidationDuration.length > 0,
+    recordsWithLaneEvidence.length > 0,
+    processRecords.some((record) => record.over_validation_signal || record.under_validation_signal),
+    Boolean(outcome?.summary.task_family_counts && Object.keys(outcome.summary.task_family_counts).length > 0)
+  ].filter(Boolean).length;
+
+  const evidenceCompletenessScore = round4(clamp01(availableSourceCount / 3 * 0.7 + (enrichedSignalCount / 5) * 0.3));
+  const overallConfidence = round4(
+    clamp01(sampleSizeScore * 0.3 + coverageScore * 0.2 + evidenceCompletenessScore * 0.3 + routerFitScore * 0.2)
+  );
 
   const openQuestions = new Set<string>();
   if (!outcome) {
@@ -153,6 +270,15 @@ export const deriveLearningStateSnapshot = (input: DeriveLearningStateInput): Le
   }
   if (Object.keys(routeEfficiency).length < 2) {
     openQuestions.add('Limited route coverage: compare at least two task families before policy proposals.');
+  }
+  if (recordsWithRouteSignals.length < Math.max(1, Math.floor(totalProcessRecords * 0.5))) {
+    openQuestions.add('Limited enriched route signals: collect route/profile/validation-selection telemetry before adjusting router policy.');
+  }
+  if (recordsWithValidationDuration.length === 0) {
+    openQuestions.add('Validation duration evidence missing: validation_cost_pressure currently relies on coarse validator counts.');
+  }
+  if (recordsWithLaneEvidence.length === 0) {
+    openQuestions.add('Parallel lane evidence missing: parallel_safety_realized remains low-confidence.');
   }
 
   const generatedAtCandidates = [input.generatedAt, outcome?.generatedAt, process?.generatedAt, profiles?.generatedAt].filter(
@@ -188,6 +314,10 @@ export const deriveLearningStateSnapshot = (input: DeriveLearningStateInput): Le
       validation_load_ratio: totalProcessRecords === 0 ? 0 : round4(totalValidatorsRun / totalProcessRecords),
       route_efficiency_score: routeEfficiency,
       smallest_sufficient_route_score: smallestSufficientRouteScore,
+      parallel_safety_realized: parallelSafetyRealized,
+      router_fit_score: routerFitScore,
+      reasoning_scope_efficiency: reasoningScopeEfficiency,
+      validation_cost_pressure: validationCostPressure,
       pattern_family_effectiveness_score: patternEffectiveness,
       portability_confidence: portabilityConfidence
     },

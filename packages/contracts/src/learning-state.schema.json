@@ -5,20 +5,47 @@
   "description": "Deterministic compacted learning snapshot derived from telemetry evidence for proposal-only evolution workflows.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "generatedAt", "proposalOnly", "sourceArtifacts", "metrics", "confidenceSummary"],
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "proposalOnly",
+    "sourceArtifacts",
+    "metrics",
+    "confidenceSummary"
+  ],
   "properties": {
-    "schemaVersion": { "const": "1.0" },
-    "kind": { "const": "learning-state-snapshot" },
-    "generatedAt": { "type": "string", "format": "date-time" },
-    "proposalOnly": { "const": true },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "learning-state-snapshot"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "proposalOnly": {
+      "const": true
+    },
     "sourceArtifacts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["outcomeTelemetry", "processTelemetry", "taskExecutionProfile"],
+      "required": [
+        "outcomeTelemetry",
+        "processTelemetry",
+        "taskExecutionProfile"
+      ],
       "properties": {
-        "outcomeTelemetry": { "$ref": "#/$defs/ArtifactAvailability" },
-        "processTelemetry": { "$ref": "#/$defs/ArtifactAvailability" },
-        "taskExecutionProfile": { "$ref": "#/$defs/ArtifactAvailability" }
+        "outcomeTelemetry": {
+          "$ref": "#/$defs/ArtifactAvailability"
+        },
+        "processTelemetry": {
+          "$ref": "#/$defs/ArtifactAvailability"
+        },
+        "taskExecutionProfile": {
+          "$ref": "#/$defs/ArtifactAvailability"
+        }
       }
     },
     "metrics": {
@@ -31,41 +58,119 @@
         "validation_load_ratio",
         "route_efficiency_score",
         "smallest_sufficient_route_score",
+        "parallel_safety_realized",
+        "router_fit_score",
+        "reasoning_scope_efficiency",
+        "validation_cost_pressure",
         "pattern_family_effectiveness_score",
         "portability_confidence"
       ],
       "properties": {
-        "sample_size": { "type": "integer", "minimum": 0 },
-        "first_pass_yield": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sample_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "first_pass_yield": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
         "retry_pressure": {
           "type": "object",
-          "additionalProperties": { "type": "number", "minimum": 0 }
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
         },
-        "validation_load_ratio": { "type": "number", "minimum": 0 },
+        "validation_load_ratio": {
+          "type": "number",
+          "minimum": 0
+        },
         "route_efficiency_score": {
           "type": "object",
-          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
         },
-        "smallest_sufficient_route_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "smallest_sufficient_route_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
         "pattern_family_effectiveness_score": {
           "type": "object",
-          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
         },
-        "portability_confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        "portability_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "parallel_safety_realized": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "router_fit_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reasoning_scope_efficiency": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "validation_cost_pressure": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       }
     },
     "confidenceSummary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sample_size_score", "coverage_score", "evidence_completeness_score", "overall_confidence", "open_questions"],
+      "required": [
+        "sample_size_score",
+        "coverage_score",
+        "evidence_completeness_score",
+        "overall_confidence",
+        "open_questions"
+      ],
       "properties": {
-        "sample_size_score": { "type": "number", "minimum": 0, "maximum": 1 },
-        "coverage_score": { "type": "number", "minimum": 0, "maximum": 1 },
-        "evidence_completeness_score": { "type": "number", "minimum": 0, "maximum": 1 },
-        "overall_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sample_size_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "coverage_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_completeness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "overall_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
         "open_questions": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         }
       }
@@ -75,11 +180,23 @@
     "ArtifactAvailability": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["available", "recordCount", "artifactPath"],
+      "required": [
+        "available",
+        "recordCount",
+        "artifactPath"
+      ],
       "properties": {
-        "available": { "type": "boolean" },
-        "recordCount": { "type": "integer", "minimum": 0 },
-        "artifactPath": { "type": "string", "minLength": 1 }
+        "available": {
+          "type": "boolean"
+        },
+        "recordCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifactPath": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }

@@ -31,24 +31,28 @@ Required metrics:
 - `first_pass_yield`
 - `retry_pressure`
 - `validation_load_ratio`
-- route-quality evidence from process telemetry route selections and validation/intervention signals
 - `route_efficiency_score`
 - `smallest_sufficient_route_score`
+- `parallel_safety_realized`
+- `router_fit_score`
+- `reasoning_scope_efficiency`
+- `validation_cost_pressure`
 - `pattern_family_effectiveness_score`
 - `portability_confidence`
 
 ## Rule
 
-Learning snapshots are compacted interpretations, not raw evidence.
+Learning metrics must stay grounded in observable execution evidence.
 
 ## Pattern
 
-Evidence -> Snapshot -> Proposal.
+Enriched telemetry increases learning quality without requiring autonomous mutation.
 
 ## Failure modes
 
 - Self-evolution from unsegmented telemetry.
 - Goodhart router.
+- Compaction logic becomes misleading if richer evidence exists but is ignored.
 
 ## Determinism and safety
 

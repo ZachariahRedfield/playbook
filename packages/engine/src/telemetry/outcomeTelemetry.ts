@@ -129,10 +129,6 @@ const normalizeDuration = (value: number | undefined): number | undefined =>
 const normalizePositiveInteger = (value: number | undefined, minimum: number): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) && value >= minimum ? Math.round(value) : undefined;
 
-const normalizeOutcomeRecord = (record: OutcomeTelemetryRecord): OutcomeTelemetryRecord => ({
-  ...record,
-  ci_failure_categories: sortStrings(record.ci_failure_categories)
-});
 const asNonNegativeNumber = (value: unknown): number => {
   if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
     return 0;
