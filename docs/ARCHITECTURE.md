@@ -281,3 +281,21 @@ The command reports a deterministic architecture integrity verdict:
 
 - `Architecture integrity: PASS`
 - `Architecture integrity: FAIL`
+
+## Execution Supervisor
+
+Execution Supervisor is the runtime subsystem positioned between orchestration planning and worker coordination.
+
+Flow position:
+
+`Orchestration Planner -> Execution Supervisor -> Workers`
+
+Runtime responsibilities:
+
+- start deterministic execution runs from `.playbook/workset-plan.json`
+- initialize and update `.playbook/execution-state.json`
+- track lane lifecycle transitions (`ready`, `running`, `completed`, `failed`, `blocked`)
+- record worker execution outcomes and retries
+- emit deterministic telemetry signals to `.playbook/process-telemetry.json`
+
+Execution artifact contract (`.playbook/execution-state.json`) stores run-level status, lane runtime state, and worker metadata so execution remains auditable and deterministic across invocations.

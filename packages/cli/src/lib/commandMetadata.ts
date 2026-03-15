@@ -109,6 +109,20 @@ export const commandMetadata: CommandMetadata[] = [
     exampleArgs: 'orchestrate --goal "ship capability" --lanes 3 --format both',
     machineReadable: true
   },
+
+  {
+    name: 'execute',
+    description: 'Execute orchestration lanes through the execution supervisor runtime',
+    category: 'Core',
+    role: 'remediation',
+    lifecycle: 'canonical',
+    discoverability: 'primary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'execute --json',
+    machineReadable: true
+  },
   {
     name: 'apply',
     description: 'Execute deterministic auto-fixable plan tasks',

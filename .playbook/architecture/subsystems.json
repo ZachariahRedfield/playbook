@@ -4,8 +4,15 @@
     {
       "name": "bootstrap_contract_surface",
       "purpose": "Machine-readable interface for humans and agents",
-      "commands": ["context", "ai-context", "ai-contract", "contracts"],
-      "artifacts": [".playbook/ai-contract.json"]
+      "commands": [
+        "context",
+        "ai-context",
+        "ai-contract",
+        "contracts"
+      ],
+      "artifacts": [
+        ".playbook/ai-contract.json"
+      ]
     },
     {
       "name": "observation_engine",
@@ -20,54 +27,89 @@
         "analyze-pr",
         "doctor"
       ],
-      "artifacts": [".playbook/repo-index.json", ".playbook/repo-graph.json"]
+      "artifacts": [
+        ".playbook/repo-index.json",
+        ".playbook/repo-graph.json"
+      ]
     },
     {
       "name": "governance_kernel",
       "purpose": "Rules, CI enforcement, fail-closed guarantees",
-      "commands": ["verify", "docs", "audit", "rules"],
+      "commands": [
+        "verify",
+        "docs",
+        "audit",
+        "rules"
+      ],
       "artifacts": []
     },
     {
       "name": "change_bridge",
       "purpose": "Governed mutation flow",
-      "commands": ["plan", "apply"],
-      "artifacts": [".playbook/plan.json"]
+      "commands": [
+        "plan",
+        "apply"
+      ],
+      "artifacts": [
+        ".playbook/plan.json"
+      ]
     },
     {
       "name": "routing_engine",
       "purpose": "Task classification and execution strategy",
-      "commands": ["route"],
-      "artifacts": [".playbook/execution-plan.json"]
+      "commands": [
+        "route"
+      ],
+      "artifacts": [
+        ".playbook/execution-plan.json"
+      ]
     },
     {
       "name": "orchestration_planner",
       "purpose": "Parallel work decomposition",
-      "commands": ["orchestrate"],
-      "artifacts": [".playbook/workset-plan.json"]
+      "commands": [
+        "orchestrate"
+      ],
+      "artifacts": [
+        ".playbook/workset-plan.json"
+      ]
     },
     {
       "name": "lane_lifecycle",
       "purpose": "Track orchestration progress",
-      "commands": ["lanes"],
-      "artifacts": [".playbook/lane-state.json"]
+      "commands": [
+        "lanes"
+      ],
+      "artifacts": [
+        ".playbook/lane-state.json"
+      ]
     },
     {
       "name": "execution_supervisor",
       "purpose": "Run workers and monitor execution",
-      "commands": [],
-      "artifacts": [".playbook/execution-state.json"]
+      "commands": [
+        "execute"
+      ],
+      "artifacts": [
+        ".playbook/execution-state.json"
+      ]
     },
     {
       "name": "worker_coordination",
       "purpose": "Worker assignment and prompt materialization",
-      "commands": ["workers"],
-      "artifacts": [".playbook/worker-assignments.json"]
+      "commands": [
+        "workers"
+      ],
+      "artifacts": [
+        ".playbook/worker-assignments.json"
+      ]
     },
     {
       "name": "telemetry_learning",
       "purpose": "Execution telemetry and learning state",
-      "commands": ["telemetry"],
+      "commands": [
+        "telemetry"
+      ],
       "artifacts": [
         ".playbook/outcome-telemetry.json",
         ".playbook/process-telemetry.json",
@@ -77,13 +119,19 @@
     {
       "name": "repository_memory",
       "purpose": "Persistent execution history",
-      "commands": ["memory"],
-      "artifacts": [".playbook/memory/index.json"]
+      "commands": [
+        "memory"
+      ],
+      "artifacts": [
+        ".playbook/memory/index.json"
+      ]
     },
     {
       "name": "improvement_engine",
       "purpose": "Detect recurring inefficiencies",
-      "commands": ["improve"],
+      "commands": [
+        "improve"
+      ],
       "artifacts": [
         ".playbook/improvement-candidates.json",
         ".playbook/router-improvement-proposals.json"
@@ -92,7 +140,11 @@
     {
       "name": "knowledge_lifecycle",
       "purpose": "Promote durable patterns",
-      "commands": ["learn", "knowledge", "patterns"],
+      "commands": [
+        "learn",
+        "knowledge",
+        "patterns"
+      ],
       "artifacts": []
     }
   ]

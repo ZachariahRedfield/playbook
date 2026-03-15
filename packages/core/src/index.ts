@@ -3,6 +3,7 @@ export type { ArchitectureRegistry, ArtifactOwnership, Subsystem } from './archi
 export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './contracts/execution.js';
 export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';
 export type { AttractorScoreBreakdown, CandidatePattern, PromotedPattern, PromotionDecision, PromotionReviewRecord } from './contracts/patternPromotion.js';
+export type { LaneRuntime, LaneRuntimeState } from './execution/types.js';
 export type {
   CandidateKnowledgeRecord,
   EventFingerprint,

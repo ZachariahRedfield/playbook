@@ -5,6 +5,10 @@
 
 ### Added
 
+- feat(execution): introduce execution supervisor runtime
+  - WHAT: Add the Execution Supervisor runtime subsystem, deterministic `.playbook/execution-state.json` artifact lifecycle, and new `playbook execute` command for lane execution tracking, worker coordination handoff, and execution telemetry emission.
+  - WHY: Enable Playbook to transition from planning-only orchestration to deterministic execution tracking across lanes and workers.
+
 - feat(architecture): introduce subsystem registry and architecture verification
   - WHAT: Add `.playbook/architecture/subsystems.json` as the canonical subsystem registry plus `playbook architecture verify` to validate artifact ownership and command mapping deterministically.
   - WHY: Make Playbook architecture machine-readable and enforceable to prevent artifact ownership drift.
@@ -192,6 +196,10 @@
 ## Unreleased
 
 ### Added
+
+- feat(execution): introduce execution supervisor runtime
+  - WHAT: Add the Execution Supervisor runtime subsystem, deterministic `.playbook/execution-state.json` artifact lifecycle, and new `playbook execute` command for lane execution tracking, worker coordination handoff, and execution telemetry emission.
+  - WHY: Enable Playbook to transition from planning-only orchestration to deterministic execution tracking across lanes and workers.
 
 - WHAT: Implemented the Phase 9 worker assignment slice with additive `worker-assignments` contract/schema (`packages/contracts/src/worker-assignments.schema.json`), deterministic `assignWorkersToLanes(laneState)` engine logic, and new `pnpm playbook workers` / `pnpm playbook workers assign` CLI surfaces that write `.playbook/worker-assignments.json` plus `.playbook/prompts/<lane_id>.md` for ready lanes only. WHY: Adds dependency-aware, proposal-only worker handoff infrastructure while preserving blocked lanes, deterministic ordering, and no worker/branch/PR automation.
 
