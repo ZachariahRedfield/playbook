@@ -37,5 +37,16 @@
   "warnings": [
     "learning-state artifact unavailable; skipping learning-state refinement and using deterministic baseline route defaults.",
     "task-execution-profile artifact unavailable; using deterministic built-in task profile catalog."
-  ]
+  ],
+  "expected_surfaces": [
+    "docs",
+    "governance"
+  ],
+  "likely_conflict_surfaces": [
+    "docs/CHANGELOG.md",
+    "docs/commands/README.md"
+  ],
+  "dependency_level": "low",
+  "recommended_pr_size": "small",
+  "worker_ready": true
 }

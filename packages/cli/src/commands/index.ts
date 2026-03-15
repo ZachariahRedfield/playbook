@@ -342,7 +342,7 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
   },
   route: async ({ cwd, commandArgs, format, quiet }) => {
     const { runRoute } = await import('./route.js');
-    return runRoute(cwd, commandArgs, { format, quiet });
+    return runRoute(cwd, commandArgs, { format, quiet, codexPrompt: parseFlag(commandArgs, '--codex-prompt') });
   },
   query: async ({ cwd, commandArgs, format, quiet }) => {
     const { runQuery } = await import('./query.js');

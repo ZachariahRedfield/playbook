@@ -401,6 +401,7 @@ export type { RouteDecision, RouteTaskInput, RouteTaskKind, RouteMutabilityLevel
 export { buildTaskExecutionProfile } from './routing/executionRouter.js';
 export { buildExecutionPlan } from './routing/executionPlan.js';
 export type { BuildExecutionPlanInput, ExecutionPlanArtifact, ExecutionPlanSourceArtifacts } from './routing/executionPlan.js';
+export { compileCodexPrompt } from './routing/codexPrompt.js';
 export type {
   ExecutionSurface,
   ExecutionScope,

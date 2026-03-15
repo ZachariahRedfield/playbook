@@ -4,6 +4,7 @@ import {
   buildExecutionPlan,
   routeTask,
   type ExecutionPlanArtifact,
+  compileCodexPrompt,
   type LearningStateSnapshotArtifact,
   type RouteDecision
 } from '@zachariahredfield/playbook-engine';
@@ -12,6 +13,7 @@ import { ExitCode } from '../lib/cliContract.js';
 type RouteOptions = {
   format: 'text' | 'json';
   quiet: boolean;
+  codexPrompt: boolean;
 };
 
 type RouteOutput = {
@@ -22,6 +24,7 @@ type RouteOutput = {
   why: string;
   requiredInputs: string[];
   executionPlan: ExecutionPlanArtifact;
+  codexPrompt?: string;
 };
 
 const EXECUTION_PLAN_PATH = '.playbook/execution-plan.json';
@@ -46,17 +49,23 @@ const tryReadJsonArtifact = <T>(cwd: string, artifactPath: string): T | undefine
   return JSON.parse(fs.readFileSync(absolutePath, 'utf8')) as T;
 };
 
-const toOutput = (task: string, decision: RouteDecision, executionPlan: ExecutionPlanArtifact): RouteOutput => ({
+const toOutput = (
+  task: string,
+  decision: RouteDecision,
+  executionPlan: ExecutionPlanArtifact,
+  codexPrompt: string | undefined
+): RouteOutput => ({
   schemaVersion: '1.0',
   command: 'route',
   task,
   selectedRoute: decision.route,
   why: decision.why,
   requiredInputs: decision.requiredInputs,
-  executionPlan
+  executionPlan,
+  codexPrompt
 });
 
-const printText = (payload: RouteOutput): void => {
+const printText = (payload: RouteOutput, options: RouteOptions): void => {
   console.log('Route');
   console.log('─────');
   console.log(`Task: ${payload.task}`);
@@ -112,6 +121,13 @@ const printText = (payload: RouteOutput): void => {
       console.log(`- ${warning}`);
     }
   }
+
+  if (options.codexPrompt && payload.codexPrompt) {
+    console.log('');
+    console.log('Codex worker prompt');
+    console.log('───────────────────');
+    console.log(payload.codexPrompt.trimEnd());
+  }
 };
 
 export const runRoute = async (cwd: string, commandArgs: string[], options: RouteOptions): Promise<number> => {
@@ -140,7 +156,8 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     }
   });
 
-  const output = toOutput(task, decision, executionPlan);
+  const codexPrompt = options.codexPrompt ? compileCodexPrompt(task, decision, executionPlan) : undefined;
+  const output = toOutput(task, decision, executionPlan, codexPrompt);
 
   fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
   fs.writeFileSync(path.join(cwd, EXECUTION_PLAN_PATH), `${JSON.stringify(executionPlan, null, 2)}\n`, 'utf8');
@@ -151,7 +168,7 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
   }
 
   if (!options.quiet) {
-    printText(output);
+    printText(output, options);
     console.log('');
     console.log(`Wrote proposal artifact: ${EXECUTION_PLAN_PATH}`);
   }

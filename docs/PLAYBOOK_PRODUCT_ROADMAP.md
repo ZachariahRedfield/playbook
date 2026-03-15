@@ -1199,6 +1199,7 @@ Use a layered phase model so each phase compounds directly on the previous one:
    Machine-readable AI-operability contract and enforcement rules.
    - Router Lane 1 (implemented): additive deterministic `execution-plan` proposal contract (`.playbook/execution-plan.json`) and `playbook route` inspection surface that stays proposal-only, uses task-execution-profile baselines, optionally refines with learning-state evidence, and degrades safely when optional artifacts are missing.
    - Router Lane 3 (implemented): learning-state metrics now conservatively refine route proposals (retry pressure, route efficiency, parallel safety, router fit, validation-cost pressure) with additive `learning_state_available`, `route_confidence`, `open_questions`, and warnings while preserving required validations and deterministic output ordering.
+   - Router Lane 4 (implemented): execution-plan outputs are now Codex-worker-ready with additive route fields (`expected_surfaces`, `likely_conflict_surfaces`, `dependency_level`, `recommended_pr_size`, `worker_ready`) and deterministic `playbook route --codex-prompt` compilation into PR-sized proposal-only worker prompts (objective, implementation plan, surfaces, verification, docs updates, and governance block).
 9. **Phase 9 â€” Repository Memory System**  
    Establish the temporal memory substrate (session/episodic evidence) while keeping repository structural intelligence (`index`/`graph`) as a distinct deterministic layer.
 10. **Phase 10 â€” Replay / Consolidation / Promotion**  

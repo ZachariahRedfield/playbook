@@ -36,6 +36,11 @@ export type ExecutionPlanArtifact = {
   sourceArtifacts: ExecutionPlanSourceArtifacts;
   learning_state_available: boolean;
   route_confidence: number;
+  expected_surfaces: string[];
+  likely_conflict_surfaces: string[];
+  dependency_level: 'low' | 'medium' | 'high';
+  recommended_pr_size: 'small' | 'medium' | 'large';
+  worker_ready: boolean;
   open_questions: string[];
   warnings: string[];
 };
@@ -47,6 +52,22 @@ const STRICT_OPTIONAL_VALIDATIONS = ['pnpm playbook verify --ci --json'];
 const HIGH_COST_OPTIONAL_VALIDATIONS = ['pnpm -r build', 'pnpm playbook verify --ci --json'];
 
 const round4 = (value: number): number => Number(value.toFixed(4));
+
+const DEPENDENCY_LEVEL_BY_FAMILY: Record<string, 'low' | 'medium' | 'high'> = {
+  docs_only: 'low',
+  contracts_schema: 'high',
+  cli_command: 'medium',
+  engine_scoring: 'medium',
+  pattern_learning: 'high'
+};
+
+const LIKELY_CONFLICT_SURFACES_BY_FAMILY: Record<string, string[]> = {
+  docs_only: ['docs/commands/README.md', 'docs/CHANGELOG.md'],
+  contracts_schema: ['packages/contracts/src', 'packages/core/src/contracts/schemaRegistry.ts', 'docs/contracts'],
+  cli_command: ['packages/cli/src/commands', 'packages/cli/src/lib/commandMetadata.ts', 'docs/commands'],
+  engine_scoring: ['packages/engine/src/scoring', 'packages/engine/test'],
+  pattern_learning: ['packages/engine/src/learning', 'packages/engine/src/extract', 'packages/engine/test']
+};
 
 export const buildExecutionPlan = (input: BuildExecutionPlanInput): ExecutionPlanArtifact => {
   const resolved = resolveDeterministicTaskRoute(input.task);
@@ -90,6 +111,11 @@ export const buildExecutionPlan = (input: BuildExecutionPlanInput): ExecutionPla
       sourceArtifacts: input.sourceArtifacts,
       learning_state_available: learningStateAvailable,
       route_confidence: round4(clamp01(learningStateConfidence * 0.3 + 0.2)),
+      expected_surfaces: [],
+      likely_conflict_surfaces: ['.playbook/execution-plan.json'],
+      dependency_level: 'high',
+      recommended_pr_size: 'small',
+      worker_ready: false,
       open_questions: [...openQuestions].sort((a, b) => a.localeCompare(b)),
       warnings: sortUnique(warnings)
     };
@@ -178,6 +204,11 @@ export const buildExecutionPlan = (input: BuildExecutionPlanInput): ExecutionPla
     sourceArtifacts: input.sourceArtifacts,
     learning_state_available: learningStateAvailable,
     route_confidence: routeConfidence,
+    expected_surfaces: sortUnique(input.decision.affectedSurfaces),
+    likely_conflict_surfaces: sortUnique(LIKELY_CONFLICT_SURFACES_BY_FAMILY[resolved.taskFamily] ?? []),
+    dependency_level: DEPENDENCY_LEVEL_BY_FAMILY[resolved.taskFamily] ?? 'high',
+    recommended_pr_size: input.decision.estimatedChangeSurface,
+    worker_ready: input.decision.route === 'deterministic_local' && input.decision.missingPrerequisites.length === 0,
     open_questions: [...openQuestions].sort((a, b) => a.localeCompare(b)),
     warnings: sortUnique(warnings)
   };

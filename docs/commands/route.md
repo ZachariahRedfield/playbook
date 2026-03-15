@@ -9,6 +9,7 @@ pnpm playbook route "summarize current repo state"
 pnpm playbook route "summarize current repo state" --json
 pnpm playbook route "propose fix for failing tests"
 pnpm playbook route "update command docs"
+pnpm playbook route "update command docs" --codex-prompt
 ```
 
 ## Output contract
@@ -23,7 +24,9 @@ Execution plan fields include:
 - `task_family`, `route_id`
 - `rule_packs`, `required_validations`, `optional_validations`
 - `parallel_lanes`, `mutation_allowed`, `missing_prerequisites`
-- `sourceArtifacts`, `learning_state_available`, `route_confidence`, `open_questions`, `warnings`
+- `sourceArtifacts`, `learning_state_available`, `route_confidence`
+- `expected_surfaces`, `likely_conflict_surfaces`, `dependency_level`, `recommended_pr_size`, `worker_ready`
+- `open_questions`, `warnings`
 
 ## Deterministic classification rules
 
@@ -67,3 +70,22 @@ Rule: Learning-state may refine routes, but it must not erase baseline governanc
 Pattern: Evidence-aware routing improves efficiency when optimization is bounded by required validations.
 
 Failure Mode: Speed-optimized routing that removes baseline governance creates invisible fragility.
+
+## Codex worker prompt compilation
+
+Use `--codex-prompt` to compile the deterministic execution plan into a PR-sized, proposal-only worker prompt.
+
+```bash
+pnpm playbook route "update command docs" --codex-prompt
+```
+
+Compiled prompt sections are deterministic and include:
+
+- Objective
+- Implementation plan
+- Files / surfaces to modify
+- Verification steps
+- Documentation updates
+- Rule / Pattern / Failure Mode
+
+The compiled prompt is guidance-only. It does **not** launch workers, create branches, open PRs, or mutate the repository autonomously.

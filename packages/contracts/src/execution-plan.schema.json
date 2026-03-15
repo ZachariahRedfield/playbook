@@ -21,6 +21,11 @@
     "sourceArtifacts",
     "learning_state_available",
     "route_confidence",
+    "expected_surfaces",
+    "likely_conflict_surfaces",
+    "dependency_level",
+    "recommended_pr_size",
+    "worker_ready",
     "open_questions",
     "warnings"
   ],
@@ -123,6 +128,41 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1
+    },
+    "expected_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "likely_conflict_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "dependency_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "recommended_pr_size": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ]
+    },
+    "worker_ready": {
+      "type": "boolean"
     },
     "open_questions": {
       "type": "array",

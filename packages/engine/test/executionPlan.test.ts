@@ -65,8 +65,13 @@ describe('buildExecutionPlan', () => {
       task_family: 'docs_only',
       route_id: 'deterministic_local:docs_only',
       mutation_allowed: false,
-      learning_state_available: false
+      learning_state_available: false,
+      dependency_level: 'low',
+      recommended_pr_size: 'small',
+      worker_ready: true
     });
+    expect(plan.expected_surfaces).toEqual(['docs', 'governance']);
+    expect(plan.likely_conflict_surfaces).toEqual(['docs/CHANGELOG.md', 'docs/commands/README.md']);
     expect(plan.warnings).toEqual([
       'learning-state artifact unavailable; skipping learning-state refinement and using deterministic baseline route defaults.',
       'task-execution-profile artifact unavailable; using deterministic built-in task profile catalog.'

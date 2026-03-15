@@ -6,8 +6,9 @@ import { ExitCode } from '../lib/cliContract.js';
 
 const routeTask = vi.fn();
 const buildExecutionPlan = vi.fn();
+const compileCodexPrompt = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ routeTask, buildExecutionPlan }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ routeTask, buildExecutionPlan, compileCodexPrompt }));
 
 describe('runRoute', () => {
   it('emits deterministic json route output with execution plan proposal', async () => {
@@ -48,10 +49,17 @@ describe('runRoute', () => {
       learning_state_available: false,
       route_confidence: 0.6,
       open_questions: [],
-      warnings: []
+      warnings: [],
+      expected_surfaces: ['docs', 'governance'],
+      likely_conflict_surfaces: ['docs/CHANGELOG.md', 'docs/commands/README.md'],
+      dependency_level: 'low',
+      recommended_pr_size: 'small',
+      worker_ready: true
     });
 
-    const exitCode = await runRoute(repo, ['update', 'command', 'docs'], { format: 'json', quiet: false });
+    compileCodexPrompt.mockReturnValue('compiled prompt');
+
+    const exitCode = await runRoute(repo, ['update', 'command', 'docs'], { format: 'json', quiet: false, codexPrompt: true });
 
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
@@ -59,6 +67,7 @@ describe('runRoute', () => {
     expect(payload.selectedRoute).toBe('deterministic_local');
     expect(payload.task).toBe('update command docs');
     expect(payload.executionPlan.kind).toBe('execution-plan');
+    expect(payload.codexPrompt).toBe('compiled prompt');
 
     expect(buildExecutionPlan).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -69,6 +78,8 @@ describe('runRoute', () => {
 
     const persisted = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'execution-plan.json'), 'utf8'));
     expect(persisted.kind).toBe('execution-plan');
+
+    expect(compileCodexPrompt).toHaveBeenCalled();
 
     logSpy.mockRestore();
     fs.rmSync(repo, { recursive: true, force: true });
