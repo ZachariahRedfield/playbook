@@ -43,8 +43,17 @@ const toOutput = (target: string, explanation: ExplainTargetResult): ExplainOutp
     };
   }
 
-  const payload = { ...explanation };
+  const payload = { ...explanation } as Record<string, unknown>;
   delete (payload as { type?: string }).type;
+
+  if (explanation.type === 'artifact') {
+    payload.artifact_lineage = {
+      ownerSubsystem: explanation.ownerSubsystem,
+      upstreamSubsystem: explanation.upstreamSubsystem,
+      downstreamConsumers: explanation.downstreamConsumers
+    };
+  }
+
   return {
     command: 'explain',
     target,
@@ -129,14 +138,20 @@ const printText = (target: string, explanation: ExplainTargetResult): void => {
   if (explanation.type === 'artifact') {
     console.log(`Artifact: ${explanation.artifact}`);
     console.log('');
-    console.log(`Owning subsystem: ${explanation.subsystem}`);
+    console.log('Owner Subsystem:');
+    console.log(explanation.ownerSubsystem);
     console.log('');
-    console.log('Subsystem purpose');
-    console.log(explanation.purpose);
+    console.log('Upstream:');
+    console.log(explanation.upstreamSubsystem ?? 'none');
     console.log('');
-    console.log('Subsystem commands');
-    for (const command of explanation.commands) {
-      console.log(`- ${command}`);
+    console.log('Consumers:');
+    if (explanation.downstreamConsumers.length === 0) {
+      console.log('- none');
+      return;
+    }
+
+    for (const consumer of explanation.downstreamConsumers) {
+      console.log(`- ${consumer}`);
     }
     return;
   }

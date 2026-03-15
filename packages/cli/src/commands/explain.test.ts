@@ -68,6 +68,36 @@ const writeArchitectureRegistry = (repo: string): void => {
             artifacts: ['.playbook/repo-index.json']
           },
           {
+            name: 'orchestration_planner',
+            purpose: 'Parallel work decomposition',
+            commands: ['orchestrate'],
+            artifacts: ['.playbook/workset-plan.json']
+          },
+          {
+            name: 'lane_lifecycle',
+            purpose: 'Track orchestration progress',
+            commands: ['lanes'],
+            artifacts: ['.playbook/lane-state.json']
+          },
+          {
+            name: 'worker_coordination',
+            purpose: 'Worker assignment and prompt materialization',
+            commands: ['workers'],
+            artifacts: ['.playbook/worker-assignments.json']
+          },
+          {
+            name: 'telemetry_learning',
+            purpose: 'Execution telemetry and learning state',
+            commands: ['telemetry'],
+            artifacts: ['.playbook/outcome-telemetry.json', '.playbook/learning-state.json']
+          },
+          {
+            name: 'knowledge_lifecycle',
+            purpose: 'Promote durable patterns',
+            commands: ['learn', 'knowledge', 'patterns'],
+            artifacts: []
+          },
+          {
             name: 'execution_supervisor',
             purpose: 'Run workers and monitor execution',
             commands: ['execute'],
@@ -274,11 +304,34 @@ describe('runExplain', () => {
           matched: true
         },
         artifact: '.playbook/execution-state.json',
-        subsystem: 'execution_supervisor',
+        ownerSubsystem: 'execution_supervisor',
         purpose: 'Run workers and monitor execution',
-        commands: ['execute']
+        upstreamSubsystem: 'orchestration_planner',
+        downstreamConsumers: ['telemetry_learning', 'lane_lifecycle', 'worker_coordination'],
+        artifact_lineage: {
+          ownerSubsystem: 'execution_supervisor',
+          upstreamSubsystem: 'orchestration_planner',
+          downstreamConsumers: ['telemetry_learning', 'lane_lifecycle', 'worker_coordination']
+        }
       }
     });
+
+    logSpy.mockRestore();
+  });
+
+
+  it('renders artifact lineage in text mode', async () => {
+    const repo = createRepo('playbook-cli-explain-artifact-text');
+    writeArchitectureRegistry(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runExplain(repo, ['artifact', '.playbook/execution-state.json'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const lines = logSpy.mock.calls.map((call) => String(call[0]));
+    expect(lines).toContain('Owner Subsystem:');
+    expect(lines).toContain('orchestration_planner');
+    expect(lines).toContain('- telemetry_learning');
 
     logSpy.mockRestore();
   });

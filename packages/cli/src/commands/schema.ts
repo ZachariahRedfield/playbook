@@ -74,6 +74,16 @@ const withExplainMemoryKnowledgeFields = (schema: Record<string, unknown>): void
     if (explanation.type === 'object') {
       explanation.properties = {
         ...(asRecord(explanation.properties ?? {})),
+        artifact_lineage: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['ownerSubsystem', 'upstreamSubsystem', 'downstreamConsumers'],
+          properties: {
+            ownerSubsystem: { type: 'string' },
+            upstreamSubsystem: { type: ['string', 'null'] },
+            downstreamConsumers: { type: 'array', items: { type: 'string' } }
+          }
+        },
         memoryKnowledge: {
           type: 'object',
           additionalProperties: false,

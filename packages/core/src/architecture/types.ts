@@ -14,3 +14,9 @@ export type ArtifactOwnership = {
   artifact: string;
   subsystem: string;
 };
+
+export type ArtifactLineage = {
+  ownerSubsystem: string;
+  upstreamSubsystem: string | null;
+  downstreamConsumers: string[];
+};

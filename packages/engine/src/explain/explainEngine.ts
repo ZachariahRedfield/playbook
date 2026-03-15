@@ -106,9 +106,10 @@ export type ArtifactExplanation = ExplainMemoryFields & {
   type: 'artifact';
   resolvedTarget: ResolvedTarget;
   artifact: string;
-  subsystem: string;
+  ownerSubsystem: string;
   purpose: string;
-  commands: string[];
+  upstreamSubsystem: string | null;
+  downstreamConsumers: string[];
 };
 
 export type UnknownExplanation = ExplainMemoryFields & {
@@ -189,7 +190,7 @@ const explainRule = (projectRoot: string, context: ExplainContext, resolvedTarge
   };
 };
 
-type ExplainTargetOptions = {
+export type ExplainTargetOptions = {
   withMemory?: boolean;
 };
 
@@ -346,9 +347,10 @@ const explainArtifact = (projectRoot: string, target: string): ArtifactExplanati
       matched: true
     },
     artifact: details.artifact,
-    subsystem: details.subsystem.name,
+    ownerSubsystem: details.lineage.ownerSubsystem,
     purpose: details.subsystem.purpose,
-    commands: details.subsystem.commands
+    upstreamSubsystem: details.lineage.upstreamSubsystem,
+    downstreamConsumers: details.lineage.downstreamConsumers
   };
 };
 
