@@ -1,11 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  deriveLearningStateSnapshot,
   normalizeOutcomeTelemetryArtifact,
   normalizeProcessTelemetryArtifact,
   summarizeStructuralTelemetry,
+  type LearningStateSnapshotArtifact,
   type OutcomeTelemetryArtifact,
-  type ProcessTelemetryArtifact
+  type ProcessTelemetryArtifact,
+  type TaskExecutionProfileArtifact
 } from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../../lib/jsonArtifact.js';
 import { ExitCode } from '../../lib/cliContract.js';
@@ -17,6 +20,7 @@ type TelemetryCommandOptions = {
 
 const OUTCOME_TELEMETRY_PATH = ['.playbook', 'outcome-telemetry.json'] as const;
 const PROCESS_TELEMETRY_PATH = ['.playbook', 'process-telemetry.json'] as const;
+const TASK_EXECUTION_PROFILE_PATH = ['.playbook', 'task-execution-profile.json'] as const;
 
 const readJsonArtifact = <T>(cwd: string, segments: readonly string[], artifactLabel: string): T => {
   const artifactPath = path.join(cwd, ...segments);
@@ -27,8 +31,18 @@ const readJsonArtifact = <T>(cwd: string, segments: readonly string[], artifactL
   return JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as T;
 };
 
+
+const tryReadJsonArtifact = <T>(cwd: string, segments: readonly string[]): T | undefined => {
+  const artifactPath = path.join(cwd, ...segments);
+  if (!fs.existsSync(artifactPath)) {
+    return undefined;
+  }
+
+  return JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as T;
+};
+
 const printTelemetryHelp = (): void => {
-  console.log(`Usage: playbook telemetry <subcommand> [--json]\n\nSubcommands:\n  outcomes                     Inspect .playbook/outcome-telemetry.json\n  process                      Inspect .playbook/process-telemetry.json\n  summary                      Show combined deterministic telemetry summary`);
+  console.log(`Usage: playbook telemetry <subcommand> [--json]\n\nSubcommands:\n  outcomes                     Inspect .playbook/outcome-telemetry.json\n  process                      Inspect .playbook/process-telemetry.json\n  learning-state               Show compacted deterministic learning snapshot\n  summary                      Show combined deterministic telemetry summary`);
 };
 
 const renderTextOutcome = (artifact: OutcomeTelemetryArtifact): void => {
@@ -53,6 +67,19 @@ const renderTextProcess = (artifact: ProcessTelemetryArtifact): void => {
   console.log(`Total retry count: ${artifact.summary.total_retry_count}`);
   console.log(`First-pass success count: ${artifact.summary.first_pass_success_count}`);
   console.log(`Average merge conflict risk: ${artifact.summary.average_merge_conflict_risk}`);
+};
+
+
+const renderTextLearningState = (artifact: LearningStateSnapshotArtifact): void => {
+  console.log('Learning-state snapshot');
+  console.log('───────────────────────');
+  console.log(`Generated at: ${artifact.generatedAt}`);
+  console.log(`Sample size: ${artifact.metrics.sample_size}`);
+  console.log(`First-pass yield: ${artifact.metrics.first_pass_yield}`);
+  console.log(`Validation load ratio: ${artifact.metrics.validation_load_ratio}`);
+  console.log(`Smallest sufficient route score: ${artifact.metrics.smallest_sufficient_route_score}`);
+  console.log(`Portability confidence: ${artifact.metrics.portability_confidence}`);
+  console.log(`Overall confidence: ${artifact.confidenceSummary.overall_confidence}`);
 };
 
 export const runTelemetry = async (
@@ -101,6 +128,34 @@ export const runTelemetry = async (
     return ExitCode.Success;
   }
 
+  if (subcommand === 'learning-state') {
+    const outcomeArtifact = tryReadJsonArtifact<OutcomeTelemetryArtifact>(cwd, OUTCOME_TELEMETRY_PATH);
+    const processArtifact = tryReadJsonArtifact<ProcessTelemetryArtifact>(cwd, PROCESS_TELEMETRY_PATH);
+    const taskExecutionProfile = tryReadJsonArtifact<TaskExecutionProfileArtifact>(cwd, TASK_EXECUTION_PROFILE_PATH);
+    const learningState = deriveLearningStateSnapshot({
+      outcomeTelemetry: outcomeArtifact,
+      processTelemetry: processArtifact,
+      taskExecutionProfile
+    });
+
+    if (options.format === 'json') {
+      emitJsonOutput({ cwd, command: 'telemetry', payload: learningState });
+      return ExitCode.Success;
+    }
+
+    if (!options.quiet) {
+      renderTextLearningState(learningState);
+      if (learningState.confidenceSummary.open_questions.length > 0) {
+        console.log('Open questions:');
+        for (const question of learningState.confidenceSummary.open_questions) {
+          console.log(`- ${question}`);
+        }
+      }
+    }
+
+    return ExitCode.Success;
+  }
+
   if (subcommand === 'summary') {
     const outcomeArtifact = readJsonArtifact<OutcomeTelemetryArtifact>(cwd, OUTCOME_TELEMETRY_PATH, 'outcome telemetry');
     const processArtifact = readJsonArtifact<ProcessTelemetryArtifact>(cwd, PROCESS_TELEMETRY_PATH, 'process telemetry');
@@ -122,7 +177,7 @@ export const runTelemetry = async (
     return ExitCode.Success;
   }
 
-  const message = 'playbook telemetry: unsupported subcommand. Use "playbook telemetry outcomes|process|summary".';
+  const message = 'playbook telemetry: unsupported subcommand. Use "playbook telemetry outcomes|process|learning-state|summary".';
   if (options.format === 'json') {
     console.log(JSON.stringify({ schemaVersion: '1.0', command: 'telemetry', error: message }, null, 2));
   } else {

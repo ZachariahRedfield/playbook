@@ -48,7 +48,7 @@ Do not hand-edit entries inside the managed markers.
 | `memory` | Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion | utility | utility | secondary | — | Current (implemented) | `pnpm playbook memory events --json` |
 | `knowledge` | Inspect read-only knowledge artifacts and provenance surfaces | canonical | repo-intelligence | secondary | — | Current (implemented) | `pnpm playbook knowledge list --json` |
 | `security` | Inspect deterministic security baseline findings and summary | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook security baseline summary --json` |
-| `telemetry` | Inspect deterministic repository and process outcome telemetry artifacts | utility | utility | secondary | — | Current (implemented) | `pnpm playbook telemetry summary --json` |
+| `telemetry` | Inspect deterministic repository/process telemetry and compact learning-state snapshots | utility | utility | secondary | — | Current (implemented) | `pnpm playbook telemetry learning-state --json` |
 | `agent` | Read runtime control-plane records and run plan-backed dry-run previews | utility | utility | secondary | — | Current (implemented) | `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 

@@ -33,6 +33,7 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'pattern-graph', version: '1.0', path: 'packages/contracts/src/pattern-graph.schema.json' },
   { id: 'cross-repo-candidates', version: '1.0', path: 'packages/contracts/src/cross-repo-candidates.schema.json' },
   { id: 'task-execution-profile', version: '1.0', path: 'packages/contracts/src/task-execution-profile.schema.json' },
+  { id: 'learning-state', version: '1.0', path: 'packages/contracts/src/learning-state.schema.json' },
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
   { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
   { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },

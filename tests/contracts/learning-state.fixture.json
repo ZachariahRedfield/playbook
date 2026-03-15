@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "learning-state-fixture-set",
+  "generatedAt": "2026-03-20T00:00:00.000Z",
+  "snapshots": [
+    {
+      "name": "strong_docs_only_route_efficiency",
+      "schemaVersion": "1.0",
+      "kind": "learning-state-snapshot",
+      "generatedAt": "2026-03-20T00:00:00.000Z",
+      "proposalOnly": true,
+      "sourceArtifacts": {
+        "outcomeTelemetry": { "available": true, "recordCount": 6, "artifactPath": ".playbook/outcome-telemetry.json" },
+        "processTelemetry": { "available": true, "recordCount": 6, "artifactPath": ".playbook/process-telemetry.json" },
+        "taskExecutionProfile": { "available": true, "recordCount": 1, "artifactPath": ".playbook/task-execution-profile.json" }
+      },
+      "metrics": {
+        "sample_size": 6,
+        "first_pass_yield": 0.8333,
+        "retry_pressure": { "docs_only": 1 },
+        "validation_load_ratio": 1.3333,
+        "route_efficiency_score": { "docs_only": 0.8 },
+        "smallest_sufficient_route_score": 0.59,
+        "pattern_family_effectiveness_score": { "docs_only": 0.8 },
+        "portability_confidence": 0.4
+      },
+      "confidenceSummary": {
+        "sample_size_score": 0.6,
+        "coverage_score": 0.2,
+        "evidence_completeness_score": 1,
+        "overall_confidence": 0.6,
+        "open_questions": [
+          "Limited route coverage: compare at least two task families before policy proposals."
+        ]
+      }
+    },
+    {
+      "name": "weak_contracts_schema_retry_pressure",
+      "schemaVersion": "1.0",
+      "kind": "learning-state-snapshot",
+      "generatedAt": "2026-03-20T00:00:00.000Z",
+      "proposalOnly": true,
+      "sourceArtifacts": {
+        "outcomeTelemetry": { "available": true, "recordCount": 5, "artifactPath": ".playbook/outcome-telemetry.json" },
+        "processTelemetry": { "available": true, "recordCount": 5, "artifactPath": ".playbook/process-telemetry.json" },
+        "taskExecutionProfile": { "available": true, "recordCount": 1, "artifactPath": ".playbook/task-execution-profile.json" }
+      },
+      "metrics": {
+        "sample_size": 5,
+        "first_pass_yield": 0.2,
+        "retry_pressure": { "contracts_schema": 9 },
+        "validation_load_ratio": 3,
+        "route_efficiency_score": { "contracts_schema": 0 },
+        "smallest_sufficient_route_score": 0.7,
+        "pattern_family_effectiveness_score": { "contracts_schema": 0 },
+        "portability_confidence": 0.4
+      },
+      "confidenceSummary": {
+        "sample_size_score": 0.5,
+        "coverage_score": 0.2,
+        "evidence_completeness_score": 1,
+        "overall_confidence": 0.56,
+        "open_questions": [
+          "Limited route coverage: compare at least two task families before policy proposals."
+        ]
+      }
+    },
+    {
+      "name": "engine_scoring_high_validation_good_outcome",
+      "schemaVersion": "1.0",
+      "kind": "learning-state-snapshot",
+      "generatedAt": "2026-03-20T00:00:00.000Z",
+      "proposalOnly": true,
+      "sourceArtifacts": {
+        "outcomeTelemetry": { "available": true, "recordCount": 4, "artifactPath": ".playbook/outcome-telemetry.json" },
+        "processTelemetry": { "available": true, "recordCount": 4, "artifactPath": ".playbook/process-telemetry.json" },
+        "taskExecutionProfile": { "available": true, "recordCount": 1, "artifactPath": ".playbook/task-execution-profile.json" }
+      },
+      "metrics": {
+        "sample_size": 4,
+        "first_pass_yield": 0.75,
+        "retry_pressure": { "engine_scoring": 2 },
+        "validation_load_ratio": 4.5,
+        "route_efficiency_score": { "engine_scoring": 0.65 },
+        "smallest_sufficient_route_score": 0.6513,
+        "pattern_family_effectiveness_score": { "engine_scoring": 0.65 },
+        "portability_confidence": 0.4
+      },
+      "confidenceSummary": {
+        "sample_size_score": 0.4,
+        "coverage_score": 0.2,
+        "evidence_completeness_score": 1,
+        "overall_confidence": 0.52,
+        "open_questions": [
+          "Limited route coverage: compare at least two task families before policy proposals."
+        ]
+      }
+    },
+    {
+      "name": "pattern_learning_cross_repo_low_confidence",
+      "schemaVersion": "1.0",
+      "kind": "learning-state-snapshot",
+      "generatedAt": "2026-03-20T00:00:00.000Z",
+      "proposalOnly": true,
+      "sourceArtifacts": {
+        "outcomeTelemetry": { "available": true, "recordCount": 2, "artifactPath": ".playbook/outcome-telemetry.json" },
+        "processTelemetry": { "available": true, "recordCount": 2, "artifactPath": ".playbook/process-telemetry.json" },
+        "taskExecutionProfile": { "available": false, "recordCount": 0, "artifactPath": ".playbook/task-execution-profile.json" }
+      },
+      "metrics": {
+        "sample_size": 2,
+        "first_pass_yield": 0.5,
+        "retry_pressure": { "pattern_learning": 2 },
+        "validation_load_ratio": 2,
+        "route_efficiency_score": { "pattern_learning": 0.3 },
+        "smallest_sufficient_route_score": 0.7,
+        "pattern_family_effectiveness_score": { "pattern_learning": 0.45 },
+        "portability_confidence": 0.75
+      },
+      "confidenceSummary": {
+        "sample_size_score": 0.2,
+        "coverage_score": 0.2,
+        "evidence_completeness_score": 0.6667,
+        "overall_confidence": 0.34,
+        "open_questions": [
+          "Low sample size: expand telemetry window before promoting routing proposals.",
+          "Task execution profile missing: route suitability confidence remains conservative.",
+          "Limited route coverage: compare at least two task families before policy proposals."
+        ]
+      }
+    },
+    {
+      "name": "low_sample_size_with_open_questions",
+      "schemaVersion": "1.0",
+      "kind": "learning-state-snapshot",
+      "generatedAt": "2026-03-20T00:00:00.000Z",
+      "proposalOnly": true,
+      "sourceArtifacts": {
+        "outcomeTelemetry": { "available": false, "recordCount": 0, "artifactPath": ".playbook/outcome-telemetry.json" },
+        "processTelemetry": { "available": true, "recordCount": 1, "artifactPath": ".playbook/process-telemetry.json" },
+        "taskExecutionProfile": { "available": false, "recordCount": 0, "artifactPath": ".playbook/task-execution-profile.json" }
+      },
+      "metrics": {
+        "sample_size": 1,
+        "first_pass_yield": 1,
+        "retry_pressure": { "docs_only": 0 },
+        "validation_load_ratio": 1,
+        "route_efficiency_score": { "docs_only": 1 },
+        "smallest_sufficient_route_score": 1,
+        "pattern_family_effectiveness_score": { "docs_only": 1 },
+        "portability_confidence": 0.6
+      },
+      "confidenceSummary": {
+        "sample_size_score": 0.1,
+        "coverage_score": 0.2,
+        "evidence_completeness_score": 0.3333,
+        "overall_confidence": 0.2,
+        "open_questions": [
+          "Low sample size: expand telemetry window before promoting routing proposals.",
+          "Outcome telemetry missing: cannot cross-check efficiency against verified outcomes.",
+          "Task execution profile missing: route suitability confidence remains conservative.",
+          "Limited route coverage: compare at least two task families before policy proposals."
+        ]
+      }
+    }
+  ]
+}

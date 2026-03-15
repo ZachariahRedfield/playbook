@@ -8,6 +8,8 @@ export {
   normalizeProcessTelemetryArtifact
 } from './outcomeTelemetry.js';
 
+export { LEARNING_STATE_SCHEMA_VERSION, deriveLearningStateSnapshot } from './learningState.js';
+
 export type {
   OutcomeTelemetryRecord,
   OutcomeTelemetrySummary,
@@ -17,3 +19,5 @@ export type {
   ProcessTelemetrySummary,
   ProcessTelemetryArtifact
 } from './outcomeTelemetry.js';
+
+export type { DeriveLearningStateInput, LearningStateSnapshotArtifact } from './learningState.js';

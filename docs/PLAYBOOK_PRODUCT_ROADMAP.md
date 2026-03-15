@@ -1191,6 +1191,7 @@ Use a layered phase model so each phase compounds directly on the previous one:
    Deterministic remediation orchestration with explicit plan contracts and mutation boundaries.
 7. **Phase 7 â€” Risk-Aware Execution**  
    Risk signals, impact-aware sequencing, and risk-shaped remediation prioritization.
+   - Wave 1 (implemented): deterministic `learning-state-snapshot` layering over outcome/process telemetry and optional task-execution-profile evidence (`Evidence -> Snapshot -> Proposal`) for compact reviewable learning summaries without autonomous mutation.
 8. **Phase 8 â€” AI Repository Contract**  
    Machine-readable AI-operability contract and enforcement rules.
 9. **Phase 9 â€” Repository Memory System**  

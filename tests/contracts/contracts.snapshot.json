@@ -127,6 +127,11 @@
         "path": "packages/contracts/src/task-execution-profile.schema.json"
       },
       {
+        "id": "learning-state",
+        "version": "1.0",
+        "path": "packages/contracts/src/learning-state.schema.json"
+      },
+      {
         "id": "explain.memoryKnowledge",
         "version": "1.0",
         "path": "schema://cli/explain"

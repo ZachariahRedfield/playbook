@@ -220,14 +220,15 @@ declare module "@zachariahredfield/playbook-engine" {
     repoMutationAllowed: boolean;
   };
   export const routeTask: (...args: any[]) => RouteDecision;
-
+  export type TaskExecutionProfileArtifact = any;
 
   export type OutcomeTelemetryArtifact = any;
   export type ProcessTelemetryArtifact = any;
   export const normalizeOutcomeTelemetryArtifact: (...args: any[]) => OutcomeTelemetryArtifact;
   export const normalizeProcessTelemetryArtifact: (...args: any[]) => ProcessTelemetryArtifact;
   export const summarizeStructuralTelemetry: (...args: any[]) => any;
-
+  export type LearningStateSnapshotArtifact = any;
+  export const deriveLearningStateSnapshot: (...args: any[]) => LearningStateSnapshotArtifact;
 
   export const listRuntimeRuns: (...args: any[]) => any[];
   export const readRuntimeRun: (...args: any[]) => any;

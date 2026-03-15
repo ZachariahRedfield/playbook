@@ -94,6 +94,33 @@ const writeTelemetryArtifacts = (repo: string): void => {
       2
     )
   );
+
+  fs.writeFileSync(
+    path.join(repo, '.playbook', 'task-execution-profile.json'),
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'task-execution-profile',
+        generatedAt: '2026-03-16T00:00:00.000Z',
+        proposalOnly: true,
+        profiles: [
+          {
+            task_family: 'docs_only',
+            scope: 'single-file',
+            affected_surfaces: ['docs'],
+            rule_packs: ['docs-governance'],
+            required_validations: ['pnpm playbook docs audit --json'],
+            optional_validations: ['pnpm -r build'],
+            docs_requirements: ['docs/CHANGELOG.md'],
+            parallel_safe: true,
+            estimated_change_surface: 'small'
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
 };
 
 describe('runTelemetry', () => {
@@ -112,6 +139,26 @@ describe('runTelemetry', () => {
 
     logSpy.mockRestore();
   });
+
+
+  it('prints learning-state snapshot as json and degrades when optional profile is missing', async () => {
+    const repo = createRepo('playbook-learning-state');
+    writeTelemetryArtifacts(repo);
+    fs.rmSync(path.join(repo, '.playbook', 'task-execution-profile.json'));
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runTelemetry(repo, ['learning-state'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+    expect(payload.kind).toBe('learning-state-snapshot');
+    expect((payload.metrics as Record<string, unknown>).first_pass_yield).toBe(1);
+    const sources = payload.sourceArtifacts as Record<string, Record<string, unknown>>;
+    expect(sources.taskExecutionProfile.available).toBe(false);
+
+    logSpy.mockRestore();
+  });
+
 });
 
 describe('command registry', () => {
@@ -119,6 +166,6 @@ describe('command registry', () => {
     const command = listRegisteredCommands().find((entry) => entry.name === 'telemetry');
 
     expect(command).toBeDefined();
-    expect(command?.description).toBe('Inspect deterministic repository and process outcome telemetry artifacts');
+    expect(command?.description).toBe('Inspect deterministic repository/process telemetry and compact learning-state snapshots');
   });
 });

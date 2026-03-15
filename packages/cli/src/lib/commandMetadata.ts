@@ -504,7 +504,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'telemetry',
-    description: 'Inspect deterministic repository and process outcome telemetry artifacts',
+    description: 'Inspect deterministic repository/process telemetry and compact learning-state snapshots',
     category: 'Utility',
     role: 'utility',
     lifecycle: 'utility',
@@ -512,7 +512,7 @@ export const commandMetadata: CommandMetadata[] = [
     onboardingPriority: null,
     canonicalSequence: null,
     productFacing: true,
-    exampleArgs: 'telemetry summary --json',
+    exampleArgs: 'telemetry learning-state --json',
     machineReadable: true
   },
   {
