@@ -26,6 +26,8 @@ const parseSubsystem = (value: unknown, index: number): Subsystem => {
   const purpose = asNonEmptyString(candidate.purpose);
   const commands = asStringArray(candidate.commands);
   const artifacts = asStringArray(candidate.artifacts);
+  const upstream = candidate.upstream === undefined ? undefined : asStringArray(candidate.upstream);
+  const downstream = candidate.downstream === undefined ? undefined : asStringArray(candidate.downstream);
 
   if (!name) {
     throw new Error(`Invalid architecture registry: subsystems[${index}].name must be a non-empty string.`);
@@ -43,7 +45,15 @@ const parseSubsystem = (value: unknown, index: number): Subsystem => {
     throw new Error(`Invalid architecture registry: subsystems[${index}].artifacts must be an array of non-empty strings.`);
   }
 
-  return { name, purpose, commands, artifacts };
+  if (candidate.upstream !== undefined && !upstream) {
+    throw new Error(`Invalid architecture registry: subsystems[${index}].upstream must be an array of non-empty strings when provided.`);
+  }
+
+  if (candidate.downstream !== undefined && !downstream) {
+    throw new Error(`Invalid architecture registry: subsystems[${index}].downstream must be an array of non-empty strings when provided.`);
+  }
+
+  return { name, purpose, commands, artifacts, upstream, downstream };
 };
 
 export const loadArchitecture = (repoRoot: string): ArchitectureRegistry => {
