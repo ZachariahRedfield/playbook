@@ -196,6 +196,18 @@
       "example": "pnpm playbook doctor --fix --dry-run"
     },
     {
+      "name": "execute",
+      "category": "Core",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "primary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook execute --json"
+    },
+    {
       "name": "explain",
       "category": "Repository intelligence",
       "role": "repo-intelligence",
@@ -532,6 +544,7 @@
     "deps",
     "docs",
     "doctor",
+    "execute",
     "explain",
     "graph",
     "ignore",

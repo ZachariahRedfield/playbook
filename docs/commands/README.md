@@ -24,6 +24,7 @@ Do not hand-edit entries inside the managed markers.
 | `lanes` | Derive deterministic lane-state from .playbook/workset-plan.json | canonical | remediation | primary | — | Current (implemented) | `pnpm playbook lanes --json` |
 | `workers` | Assign deterministic proposal-only workers to ready lanes from .playbook/lane-state.json | canonical | remediation | primary | — | Current (implemented) | `pnpm playbook workers assign --json` |
 | `orchestrate` | Generate deterministic orchestration lane artifacts for a goal or tasks-file workset | canonical | remediation | primary | — | Current (implemented) | `pnpm playbook orchestrate --goal "ship capability" --lanes 3 --format both` |
+| `execute` | Execute orchestration lanes through the execution supervisor runtime | canonical | remediation | primary | — | Current (implemented) | `pnpm playbook execute --json` |
 | `apply` | Execute deterministic auto-fixable plan tasks | canonical | remediation | primary | 10 | Current (implemented) | `pnpm playbook apply --from-plan .playbook/plan.json` |
 | `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | canonical | repo-intelligence | secondary | — | Current (implemented) | `pnpm playbook analyze-pr --json` |
 | `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook doctor --fix --dry-run` |

@@ -29,6 +29,7 @@
       "orchestrate",
       "lanes",
       "workers",
+      "execute",
       "apply",
       "fix",
       "doctor",
