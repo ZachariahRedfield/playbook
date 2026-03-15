@@ -4,8 +4,7 @@ import {
   buildExecutionPlan,
   routeTask,
   type ExecutionPlanArtifact,
-  type RouteDecision,
-  type TaskExecutionProfileArtifact
+  type RouteDecision
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
@@ -112,12 +111,11 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
   }
 
   const decision = routeTask(cwd, task);
-  const taskExecutionProfile = tryReadJsonArtifact<TaskExecutionProfileArtifact>(cwd, TASK_EXECUTION_PROFILE_PATH);
+  const taskExecutionProfile = tryReadJsonArtifact(cwd, TASK_EXECUTION_PROFILE_PATH);
   const learningState = tryReadJsonArtifact(cwd, LEARNING_STATE_PATH);
   const executionPlan = buildExecutionPlan({
     task,
     decision,
-    taskExecutionProfile,
     sourceArtifacts: {
       taskExecutionProfile: {
         available: taskExecutionProfile !== undefined,

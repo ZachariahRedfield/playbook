@@ -1,6 +1,6 @@
 # `playbook route`
 
-Classify a task into deterministic local execution, bounded model reasoning, hybrid execution, or unsupported, and emit a deterministic proposal-only execution plan artifact.
+Classify a task into a deterministic task family, resolve a task-execution-profile, and emit a deterministic proposal-only execution plan artifact.
 
 ## Usage
 
@@ -8,12 +8,12 @@ Classify a task into deterministic local execution, bounded model reasoning, hyb
 pnpm playbook route "summarize current repo state"
 pnpm playbook route "summarize current repo state" --json
 pnpm playbook route "propose fix for failing tests"
-pnpm playbook route "apply approved remediation plan"
+pnpm playbook route "update command docs"
 ```
 
 ## Output contract
 
-Routing now returns command metadata plus an `executionPlan` payload and writes:
+Routing returns command metadata plus an `executionPlan` payload and writes:
 
 - `.playbook/execution-plan.json`
 
@@ -25,19 +25,26 @@ Execution plan fields include:
 - `parallel_lanes`, `mutation_allowed`, `missing_prerequisites`
 - `sourceArtifacts`, `warnings`
 
-## Execution router overview
+## Deterministic classification rules
 
-The execution router uses a layered proposal flow:
+`playbook route` deterministically classifies the task into one of these initial families:
 
-1. classify task intent
-2. consume baseline `task-execution-profile` governance signals when available
-3. refine with optional `learning-state` evidence when available
-4. emit deterministic proposal-only execution plan
+- `docs_only`
+- `contracts_schema`
+- `cli_command`
+- `engine_scoring`
+- `pattern_learning`
 
-Safe degradation is explicit: missing `task-execution-profile` or `learning-state` artifacts produce deterministic warnings and route defaults instead of autonomous mutation.
+It then resolves a matching built-in task-execution-profile to populate rule packs, validations, and parallel lane strategy.
 
-Rule: Execution profiles define baseline governance; execution plans choose task-specific routes.
+### Conservative fallback behavior
 
-Pattern: Classify -> profile -> refine with learning-state -> emit deterministic execution plan.
+- If no matching profile exists, route output is `unsupported` with explicit `missing_prerequisites`.
+- If multiple family signals match, the router chooses the conservative family (highest safety-first priority) and emits an explicit warning.
+- `mutation_allowed` remains `false` for this phase (proposal-only routing).
 
-Failure Mode: Treating execution profiles as final routes prevents the router from learning from evidence.
+Rule: Router classification must prefer conservative correctness over aggressive optimization.
+
+Pattern: Deterministic task-family classification reduces routing ambiguity and review burden.
+
+Failure Mode: Ambiguous tasks routed optimistically will under-scope validation and create fragile plans.

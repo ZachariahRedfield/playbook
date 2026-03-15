@@ -1,10 +1,17 @@
-export type TaskRoute = 'deterministic_local' | 'model_reasoning' | 'hybrid' | 'unsupported';
+import type { ExecutionSurface } from './executionRouter.js';
+
+export type TaskRoute = 'deterministic_local' | 'unsupported';
 
 export type RouteTaskKind =
   | 'artifact_read'
   | 'graph_query_report'
   | 'remediation_proposal'
   | 'patch_execution'
+  | 'docs_only'
+  | 'contracts_schema'
+  | 'cli_command'
+  | 'engine_scoring'
+  | 'pattern_learning'
   | 'ambiguous'
   | 'unknown';
 
@@ -32,4 +39,8 @@ export type RouteDecision = {
   requiredInputs: string[];
   missingPrerequisites: string[];
   repoMutationAllowed: boolean;
+  taskFamily: 'docs_only' | 'contracts_schema' | 'cli_command' | 'engine_scoring' | 'pattern_learning' | 'unknown';
+  affectedSurfaces: ExecutionSurface[];
+  estimatedChangeSurface: 'small' | 'medium' | 'large';
+  warnings: string[];
 };

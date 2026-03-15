@@ -10,70 +10,28 @@ const buildBaseDecision = (input: RouteTaskInput): Omit<RouteDecision, 'route' |
     'mutability level'
   ],
   missingPrerequisites: [],
-  repoMutationAllowed: input.safetyConstraints.allowRepositoryMutation
+  repoMutationAllowed: false,
+  taskFamily: ['docs_only','contracts_schema','cli_command','engine_scoring','pattern_learning'].includes(input.taskKind) ? (input.taskKind as RouteDecision['taskFamily']) : 'unknown',
+  affectedSurfaces: [],
+  estimatedChangeSurface: 'small',
+  warnings: []
 });
 
 export const applyRoutingRules = (input: RouteTaskInput): RouteDecision => {
   const base = buildBaseDecision(input);
 
-  if (input.taskKind === 'artifact_read') {
+  if (input.taskKind === 'unknown' || input.taskKind === 'ambiguous') {
     return {
       ...base,
-      route: 'deterministic_local',
-      why: 'Artifact read tasks are fully deterministic and should be executed locally.'
-    };
-  }
-
-  if (input.taskKind === 'graph_query_report') {
-    return {
-      ...base,
-      route: 'deterministic_local',
-      why: 'Graph/query/report generation is deterministic and should stay in local execution.'
-    };
-  }
-
-  if (input.taskKind === 'remediation_proposal') {
-    return {
-      ...base,
-      route: 'model_reasoning',
-      why: 'Remediation proposal synthesis benefits from bounded model reasoning over deterministic evidence.'
-    };
-  }
-
-  if (input.taskKind === 'patch_execution') {
-    if (input.safetyConstraints.requiresApprovedPlan && !input.hasApprovedPlan) {
-      return {
-        ...base,
-        route: 'unsupported',
-        why: 'Patch execution requires an approved remediation plan before mutation is allowed.',
-        missingPrerequisites: ['approved remediation plan']
-      };
-    }
-
-    return {
-      ...base,
-      route: 'hybrid',
-      why: 'Patch execution should use model reasoning for bounded decisions and deterministic local execution for mutation.'
-    };
-  }
-
-  if (input.confidence < 0.5 || input.taskKind === 'ambiguous' || (input.requiredRepoContext && input.availableArtifacts.length === 0)) {
-    return {
-      ...base,
-      route: input.availableArtifacts.length === 0 ? 'unsupported' : 'model_reasoning',
-      why:
-        input.availableArtifacts.length === 0
-          ? 'Request is ambiguous and missing deterministic evidence artifacts required for safe routing.'
-          : 'Request is ambiguous; bounded model reasoning is allowed with the currently available artifacts.',
-      missingPrerequisites:
-        input.availableArtifacts.length === 0 ? ['deterministic repository artifacts (.playbook/repo-index.json or .playbook/repo-graph.json)'] : []
+      route: 'unsupported',
+      why: 'Task does not match a supported deterministic routing heuristic.',
+      missingPrerequisites: ['task must specify one supported family: docs_only, contracts_schema, cli_command, engine_scoring, pattern_learning']
     };
   }
 
   return {
     ...base,
-    route: 'unsupported',
-    why: 'Task does not match a supported deterministic routing heuristic.',
-    missingPrerequisites: ['explicit task intent and supporting artifacts']
+    route: 'deterministic_local',
+    why: 'Task matched a deterministic routing family.'
   };
 };

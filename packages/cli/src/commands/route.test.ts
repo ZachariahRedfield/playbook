@@ -18,10 +18,14 @@ describe('runRoute', () => {
 
     routeTask.mockReturnValue({
       route: 'deterministic_local',
-      why: 'Artifact read tasks are deterministic.',
-      requiredInputs: ['task kind'],
+      why: 'Task family classification matched a deterministic task-execution-profile.',
+      requiredInputs: ['task input'],
       missingPrerequisites: [],
-      repoMutationAllowed: false
+      repoMutationAllowed: false,
+      taskFamily: 'docs_only',
+      affectedSurfaces: ['docs', 'governance'],
+      estimatedChangeSurface: 'small',
+      warnings: []
     });
 
     buildExecutionPlan.mockReturnValue({
@@ -29,12 +33,12 @@ describe('runRoute', () => {
       kind: 'execution-plan',
       generatedAt: '1970-01-01T00:00:00.000Z',
       proposalOnly: true,
-      task_family: 'artifact_read',
-      route_id: 'deterministic_local:artifact_read',
-      rule_packs: ['route-deterministic-local'],
-      required_validations: ['pnpm -r build'],
-      optional_validations: ['pnpm playbook route "<task>" --json'],
-      parallel_lanes: ['deterministic-inspection'],
+      task_family: 'docs_only',
+      route_id: 'deterministic_local:docs_only',
+      rule_packs: ['docs-governance'],
+      required_validations: ['pnpm playbook docs audit --json'],
+      optional_validations: ['pnpm -r build'],
+      parallel_lanes: ['parallel-safe-validation'],
       mutation_allowed: false,
       missing_prerequisites: [],
       sourceArtifacts: {
@@ -44,13 +48,13 @@ describe('runRoute', () => {
       warnings: []
     });
 
-    const exitCode = await runRoute(repo, ['summarize', 'current', 'repo', 'state'], { format: 'json', quiet: false });
+    const exitCode = await runRoute(repo, ['update', 'command', 'docs'], { format: 'json', quiet: false });
 
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.command).toBe('route');
     expect(payload.selectedRoute).toBe('deterministic_local');
-    expect(payload.task).toBe('summarize current repo state');
+    expect(payload.task).toBe('update command docs');
     expect(payload.executionPlan.kind).toBe('execution-plan');
 
     const persisted = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'execution-plan.json'), 'utf8'));
