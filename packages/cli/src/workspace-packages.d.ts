@@ -247,6 +247,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const normalizeOutcomeTelemetryArtifact: (...args: any[]) => OutcomeTelemetryArtifact;
   export const normalizeProcessTelemetryArtifact: (...args: any[]) => ProcessTelemetryArtifact;
   export const summarizeStructuralTelemetry: (...args: any[]) => any;
+  export const summarizeLaneOutcomeScores: (...args: any[]) => any;
   export type LearningStateSnapshotArtifact = any;
   export const deriveLearningStateSnapshot: (...args: any[]) => LearningStateSnapshotArtifact;
   export const validateArtifacts: (...args: any[]) => any;

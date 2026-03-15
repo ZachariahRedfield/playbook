@@ -59,5 +59,9 @@ describe('execution supervisor', () => {
       'retry_pressure',
       'worker_success_rate'
     ]);
+
+    const outcomeTelemetry = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'outcome-telemetry.json'), 'utf8')) as { lane_scores: Array<{ lane_id: string; score: number }> };
+    expect(outcomeTelemetry.lane_scores[0]?.lane_id).toBe('lane-1');
+    expect(outcomeTelemetry.lane_scores[0]?.score).toBeGreaterThanOrEqual(0);
   });
 });

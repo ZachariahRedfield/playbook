@@ -3,11 +3,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { WorksetPlanArtifact } from '../orchestration/worksetPlan.js';
 import { readJsonArtifact, writeJsonArtifact } from '../artifacts/artifactIO.js';
-import { normalizeProcessTelemetryArtifact, type ProcessTelemetryArtifact, type ProcessTelemetryRecord } from '../telemetry/outcomeTelemetry.js';
+import {
+  normalizeOutcomeTelemetryArtifact,
+  normalizeProcessTelemetryArtifact,
+  type OutcomeTelemetryArtifact,
+  type ProcessTelemetryArtifact,
+  type ProcessTelemetryRecord
+} from '../telemetry/outcomeTelemetry.js';
+import { computeLaneOutcomeScore } from '../telemetry/laneScoring.js';
 import type { LaneRuntime, LaneRuntimeState } from '@zachariahredfield/playbook-core';
 
 const EXECUTION_STATE_PATH = '.playbook/execution-state.json';
 const PROCESS_TELEMETRY_PATH = '.playbook/process-telemetry.json';
+const OUTCOME_TELEMETRY_PATH = '.playbook/outcome-telemetry.json';
 
 export type WorkerResult = {
   status: 'completed' | 'failed';
@@ -147,6 +155,45 @@ const emitSignalRecords = (repoRoot: string, laneId: string, signalValues: { lan
   fs.writeFileSync(telemetryPath, `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
 };
 
+
+const emitLaneOutcomeScore = (repoRoot: string, laneId: string, signalValues: { laneExecutionDurationMs: number; workerSuccessRate: number; retryPressure: number }): void => {
+  const telemetryPath = path.join(repoRoot, OUTCOME_TELEMETRY_PATH);
+  const existing: OutcomeTelemetryArtifact = fs.existsSync(telemetryPath)
+    ? (JSON.parse(fs.readFileSync(telemetryPath, 'utf8')) as OutcomeTelemetryArtifact)
+    : {
+        schemaVersion: '1.0',
+        kind: 'outcome-telemetry',
+        generatedAt: new Date(0).toISOString(),
+        records: [],
+        lane_scores: [],
+        summary: {
+          total_records: 0,
+          sum_plan_churn: 0,
+          sum_apply_retries: 0,
+          sum_dependency_drift: 0,
+          sum_contract_breakage: 0,
+          docs_mismatch_count: 0,
+          ci_failure_category_counts: {}
+        }
+      };
+
+  const laneScore = computeLaneOutcomeScore({
+    laneId,
+    executionDurationMs: signalValues.laneExecutionDurationMs,
+    retryCount: signalValues.retryPressure,
+    successRate: signalValues.workerSuccessRate
+  });
+
+  const merged = normalizeOutcomeTelemetryArtifact({
+    ...existing,
+    lane_scores: [...(existing.lane_scores ?? []), laneScore],
+    generatedAt: deterministicIso(`outcome:${laneId}:${laneScore.score}`)
+  });
+
+  fs.mkdirSync(path.dirname(telemetryPath), { recursive: true });
+  fs.writeFileSync(telemetryPath, `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
+};
+
 export async function startExecution(worksetPlan: WorksetPlanArtifact, repoRoot = process.cwd()): Promise<ExecutionRun> {
   const runId = nextRunId(repoRoot);
   const startedAt = deterministicIso(runId);
@@ -212,11 +259,14 @@ export async function recordWorkerResult(laneId: string, workerId: string, resul
   };
 
   const durationMs = toDurationMs(startedAt, finishedAt);
-  emitSignalRecords(repoRoot, laneId, {
+  const scoreSignals = {
     laneExecutionDurationMs: durationMs,
     workerSuccessRate: finalState === 'completed' ? 1 : 0,
     retryPressure: Math.max(0, Math.trunc(result.retries ?? 0))
-  });
+  };
+
+  emitSignalRecords(repoRoot, laneId, scoreSignals);
+  emitLaneOutcomeScore(repoRoot, laneId, scoreSignals);
 
   writeExecutionState(repoRoot, execution);
 }

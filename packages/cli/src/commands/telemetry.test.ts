@@ -39,6 +39,15 @@ const writeTelemetryArtifacts = (repo: string): void => {
             ci_failure_categories: ['lint']
           }
         ],
+        lane_scores: [
+          {
+            lane_id: 'lane-1',
+            execution_duration: 10000,
+            retry_count: 0,
+            success_rate: 1,
+            score: 0.8333
+          }
+        ],
         summary: {
           total_records: 999,
           sum_plan_churn: 999,
@@ -137,6 +146,7 @@ describe('runTelemetry', () => {
     expect((payload.process as Record<string, unknown>).total_records).toBe(1);
     expect((payload.process as Record<string, unknown>).route_id_counts).toEqual({});
     expect((payload.outcomes as Record<string, unknown>).sum_plan_churn).toBe(3);
+    expect((payload.lane_scores as Record<string, unknown>).total_records).toBe(1);
 
     logSpy.mockRestore();
   });

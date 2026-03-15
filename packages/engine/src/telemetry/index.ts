@@ -21,3 +21,5 @@ export type {
 } from './outcomeTelemetry.js';
 
 export type { DeriveLearningStateInput, LearningStateSnapshotArtifact } from './learningState.js';
+
+export { computeLaneOutcomeScore, summarizeLaneOutcomeScores } from './laneScoring.js';

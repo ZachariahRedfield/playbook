@@ -4,6 +4,7 @@ import {
   deriveLearningStateSnapshot,
   normalizeOutcomeTelemetryArtifact,
   normalizeProcessTelemetryArtifact,
+  summarizeLaneOutcomeScores,
   summarizeStructuralTelemetry,
   type LearningStateSnapshotArtifact,
   type OutcomeTelemetryArtifact,
@@ -55,6 +56,9 @@ const renderTextOutcome = (artifact: OutcomeTelemetryArtifact): void => {
   console.log(`Dependency drift (sum): ${artifact.summary.sum_dependency_drift}`);
   console.log(`Contract breakage (sum): ${artifact.summary.sum_contract_breakage}`);
   console.log(`Docs mismatch (count): ${artifact.summary.docs_mismatch_count}`);
+  const laneScoreSummary = summarizeLaneOutcomeScores(artifact.lane_scores ?? []);
+  console.log(`Lane scores (records): ${laneScoreSummary.total_lanes}`);
+  console.log(`Lane scores (avg): ${laneScoreSummary.average_score}`);
 };
 
 const renderTextProcess = (artifact: ProcessTelemetryArtifact): void => {
@@ -176,6 +180,10 @@ export const runTelemetry = async (
       console.log(`Generated at: ${summary.generatedAt}`);
       console.log(`Outcome records: ${summary.outcomes.total_records}`);
       console.log(`Process records: ${summary.process.total_records}`);
+      if ('lane_scores' in summary) {
+        console.log(`Lane score records: ${summary.lane_scores.total_records}`);
+        console.log(`Lane score average: ${summary.lane_scores.average_score}`);
+      }
     }
 
     return ExitCode.Success;

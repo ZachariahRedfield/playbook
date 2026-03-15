@@ -31,6 +31,12 @@
     },
     "summary": {
       "$ref": "#/$defs/OutcomeSummary"
+    },
+    "lane_scores": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LaneOutcomeScore"
+      }
     }
   },
   "$defs": {
@@ -226,6 +232,41 @@
         "sum_files_changed_count": {
           "type": "integer",
           "minimum": 0
+        }
+      }
+    },
+    "LaneOutcomeScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane_id",
+        "execution_duration",
+        "retry_count",
+        "success_rate",
+        "score"
+      ],
+      "properties": {
+        "lane_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "execution_duration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "retry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "success_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
         }
       }
     }

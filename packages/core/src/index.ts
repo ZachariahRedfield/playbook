@@ -5,6 +5,7 @@ export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, E
 export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';
 export type { AttractorScoreBreakdown, CandidatePattern, PromotedPattern, PromotionDecision, PromotionReviewRecord } from './contracts/patternPromotion.js';
 export type { LaneRuntime, LaneRuntimeState } from './execution/types.js';
+export type { LaneOutcomeScore } from './telemetry/types.js';
 export type {
   CandidateKnowledgeRecord,
   EventFingerprint,

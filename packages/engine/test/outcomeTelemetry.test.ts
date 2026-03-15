@@ -298,6 +298,7 @@ describe('outcomeTelemetry', () => {
     expect(summary.generatedAt).toBe('2026-03-15T00:00:00.000Z');
     expect(summary.process.total_records).toBe(2);
     expect(summary.outcomes.total_records).toBe(0);
+    expect(summary.lane_scores.total_records).toBe(0);
   });
 
   it('degrades safely for partial records missing optional route details', () => {

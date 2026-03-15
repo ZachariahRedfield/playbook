@@ -1,3 +1,5 @@
+import type { LaneOutcomeScore } from '@zachariahredfield/playbook-core';
+
 export const OUTCOME_TELEMETRY_SCHEMA_VERSION = '1.0';
 export const PROCESS_TELEMETRY_SCHEMA_VERSION = '1.0';
 
@@ -46,6 +48,7 @@ export type OutcomeTelemetryArtifact = {
   kind: 'outcome-telemetry';
   generatedAt: string;
   records: OutcomeTelemetryRecord[];
+  lane_scores?: LaneOutcomeScore[];
   summary: OutcomeTelemetrySummary;
 };
 
@@ -188,6 +191,14 @@ const normalizeOutcomeRecord = (record: Partial<OutcomeTelemetryRecord>): Outcom
     pattern_families_implicated: sortStrings(asStringArray(record.pattern_families_implicated))
   };
 };
+
+const normalizeLaneOutcomeScore = (record: Partial<LaneOutcomeScore>): LaneOutcomeScore => ({
+  lane_id: asNonEmptyString(record.lane_id) ?? 'unknown-lane',
+  execution_duration: Math.round(asNonNegativeNumber(record.execution_duration)),
+  retry_count: asInteger(record.retry_count),
+  success_rate: round4(Math.min(1, asNonNegativeNumber(record.success_rate))),
+  score: round4(Math.min(1, asNonNegativeNumber(record.score)))
+});
 
 const normalizeProcessRecord = (record: ProcessTelemetryRecord): ProcessTelemetryRecord => {
   const normalized: ProcessTelemetryRecord = {
@@ -409,11 +420,27 @@ export const summarizeProcessTelemetry = (records: ProcessTelemetryRecord[]): Pr
 
 export const normalizeOutcomeTelemetryArtifact = (artifact: OutcomeTelemetryArtifact): OutcomeTelemetryArtifact => {
   const records = (artifact.records ?? []).map((record) => normalizeOutcomeRecord(record)).sort(compareRecords);
+  const laneScores = (artifact.lane_scores ?? [])
+    .map((record) => normalizeLaneOutcomeScore(record))
+    .sort((left, right) => left.lane_id.localeCompare(right.lane_id) || left.execution_duration - right.execution_duration);
+
   return {
     ...artifact,
     generatedAt: asNonEmptyString(artifact.generatedAt) ?? new Date(0).toISOString(),
     records,
+    ...(laneScores.length > 0 ? { lane_scores: laneScores } : {}),
     summary: summarizeOutcomeTelemetry(records)
+  };
+};
+
+const summarizeLaneScores = (scores: LaneOutcomeScore[]): { total_records: number; average_score: number } => {
+  if (scores.length === 0) {
+    return { total_records: 0, average_score: 0 };
+  }
+
+  return {
+    total_records: scores.length,
+    average_score: round4(scores.reduce((sum, score) => sum + score.score, 0) / scores.length)
   };
 };
 
@@ -427,10 +454,15 @@ export const normalizeProcessTelemetryArtifact = (artifact: ProcessTelemetryArti
   };
 };
 
-export const summarizeStructuralTelemetry = (outcomes: OutcomeTelemetryArtifact, process: ProcessTelemetryArtifact) => ({
-  schemaVersion: '1.0',
-  kind: 'telemetry-summary' as const,
-  generatedAt: [outcomes.generatedAt, process.generatedAt].sort((left, right) => right.localeCompare(left))[0] ?? new Date(0).toISOString(),
-  outcomes: normalizeOutcomeTelemetryArtifact(outcomes).summary,
-  process: normalizeProcessTelemetryArtifact(process).summary
-});
+export const summarizeStructuralTelemetry = (outcomes: OutcomeTelemetryArtifact, process: ProcessTelemetryArtifact) => {
+  const normalizedOutcomes = normalizeOutcomeTelemetryArtifact(outcomes);
+
+  return {
+    schemaVersion: '1.0',
+    kind: 'telemetry-summary' as const,
+    generatedAt: [outcomes.generatedAt, process.generatedAt].sort((left, right) => right.localeCompare(left))[0] ?? new Date(0).toISOString(),
+    outcomes: normalizedOutcomes.summary,
+    process: normalizeProcessTelemetryArtifact(process).summary,
+    lane_scores: summarizeLaneScores(normalizedOutcomes.lane_scores ?? [])
+  };
+};
