@@ -70,6 +70,16 @@
   "schemas": {
     "memoryArtifacts": [
       {
+        "id": "repository-memory-event",
+        "version": "1.0",
+        "path": ".playbook/memory/events/*.json"
+      },
+      {
+        "id": "repository-memory-index",
+        "version": "1.0",
+        "path": ".playbook/memory/index.json"
+      },
+      {
         "id": "memory-event",
         "version": "1.0.0",
         "path": ".playbook/memory/events/runtime/*.json"
@@ -155,6 +165,11 @@
         "id": "worker-assignments",
         "version": "1.0",
         "path": "packages/contracts/src/worker-assignments.schema.json"
+      },
+      {
+        "id": "repository-events",
+        "version": "1.0",
+        "path": "packages/contracts/src/repository-events.schema.json"
       },
       {
         "id": "explain.memoryKnowledge",

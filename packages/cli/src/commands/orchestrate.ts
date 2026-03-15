@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { compileOrchestratorArtifacts } from '@zachariahredfield/playbook-engine';
+import { compileOrchestratorArtifacts, recordLaneTransition, safeRecordRepositoryEvent } from '@zachariahredfield/playbook-engine';
 import { emitResult, ExitCode } from '../lib/cliContract.js';
 
 type OrchestrateArtifactFormat = 'md' | 'json' | 'both';
@@ -121,6 +121,20 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
     fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
     fs.writeFileSync(path.join(cwd, WORKSET_PLAN_PATH), `${JSON.stringify(worksetPlan, null, 2)}\n`, 'utf8');
     fs.writeFileSync(path.join(cwd, LANE_STATE_PATH), `${JSON.stringify(laneState, null, 2)}\n`, 'utf8');
+
+    const blockedLaneIds = new Set((laneState.blocked_lanes as Array<{ lane_id?: string }>).map((lane) => String(lane.lane_id ?? '')).filter(Boolean));
+    const readyLaneIds = new Set((laneState.ready_lanes as Array<{ lane_id?: string }>).map((lane) => String(lane.lane_id ?? '')).filter(Boolean));
+
+    for (const laneId of [...new Set([...blockedLaneIds, ...readyLaneIds])].sort((left, right) => left.localeCompare(right))) {
+      safeRecordRepositoryEvent(() => {
+        recordLaneTransition(cwd, {
+          lane_id: laneId,
+          from_state: 'planned',
+          to_state: blockedLaneIds.has(laneId) ? 'blocked' : 'ready',
+          reason: blockedLaneIds.has(laneId) ? 'missing-prerequisites' : 'dependencies-satisfied'
+        });
+      });
+    }
 
     emitResult({
       format: options.format,

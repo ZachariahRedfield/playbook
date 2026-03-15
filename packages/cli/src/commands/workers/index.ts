@@ -1,6 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { assignWorkersToLanes, buildAssignedPrompt, deriveLaneState, type LaneStateArtifact, type WorksetPlanArtifact } from '@zachariahredfield/playbook-engine';
+import {
+  assignWorkersToLanes,
+  buildAssignedPrompt,
+  deriveLaneState,
+  recordLaneOutcome,
+  recordWorkerAssignment,
+  safeRecordRepositoryEvent,
+  type LaneStateArtifact,
+  type WorksetPlanArtifact
+} from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../../lib/cliContract.js';
 
 const WORKSET_PLAN_PATH = '.playbook/workset-plan.json';
@@ -91,6 +100,23 @@ export const runWorkers = async (cwd: string, options: WorkersOptions): Promise<
   const assignments = assignWorkersToLanes(laneState, worksetPlan) as WorkerAssignmentsArtifactView;
   const promptPaths = writeAssignedPrompts(cwd, assignments, worksetPlan);
   writeJsonArtifact(cwd, WORKER_ASSIGNMENTS_PATH, assignments);
+
+  safeRecordRepositoryEvent(() => {
+    for (const lane of [...assignments.lanes].sort((left, right) => left.lane_id.localeCompare(right.lane_id))) {
+      recordWorkerAssignment(cwd, {
+        lane_id: lane.lane_id,
+        worker_id: `worker-${lane.lane_id}`,
+        assignment_status: lane.status,
+        ...(lane.assigned_prompt ? { assigned_prompt: lane.assigned_prompt } : {})
+      });
+
+      recordLaneOutcome(cwd, {
+        lane_id: lane.lane_id,
+        outcome: lane.status === 'assigned' ? 'success' : lane.status === 'blocked' ? 'blocked' : 'partial',
+        summary: lane.status === 'assigned' ? 'worker assigned and prompt emitted' : lane.status === 'blocked' ? 'lane blocked from worker assignment' : 'lane skipped during deterministic assignment'
+      });
+    }
+  });
 
   if (options.format === 'json') {
     console.log(

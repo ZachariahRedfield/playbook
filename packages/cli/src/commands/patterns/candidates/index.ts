@@ -1,4 +1,12 @@
-import { bucketCompactionCandidates, extractCompactionCandidates, readPatternCards, toExistingPatternTargets, type BucketedCandidateEntry } from '@zachariahredfield/playbook-engine';
+import {
+  bucketCompactionCandidates,
+  extractCompactionCandidates,
+  readPatternCards,
+  recordImprovementCandidate,
+  safeRecordRepositoryEvent,
+  toExistingPatternTargets,
+  type BucketedCandidateEntry
+} from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../../../lib/jsonArtifact.js';
 import { ExitCode } from '../../../lib/cliContract.js';
 import { runPatternsCandidatesCrossRepo } from '../candidatesCrossRepo.js';
@@ -130,6 +138,16 @@ export const runPatternsCandidates = (cwd: string, commandArgs: string[], option
   const { candidates, links } = loadCandidateContext(cwd);
 
   if (action === 'list') {
+    safeRecordRepositoryEvent(() => {
+      for (const candidate of candidates) {
+        recordImprovementCandidate(cwd, {
+          candidate_id: candidate.candidateId,
+          source: 'patterns.candidates',
+          summary: `${candidate.sourceKind}/${candidate.subjectKind}: ${candidate.trigger} -> ${candidate.response}`
+        });
+      }
+    });
+
     const payload = { schemaVersion: '1.0', command: 'patterns', action: 'candidates', candidates };
     if (options.format === 'json') {
       emitJsonOutput({ cwd, command: 'patterns', payload, outFile: options.outFile });

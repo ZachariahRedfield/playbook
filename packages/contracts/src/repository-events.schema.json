@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/repository-events.schema.json",
+  "title": "PlaybookRepositoryMemoryEvent",
+  "description": "Append-only deterministic repository memory events emitted from routing, orchestration, worker assignment, and improvement detection workflows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "event_type",
+    "event_id",
+    "timestamp"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "event_type": {
+      "enum": [
+        "route_decision",
+        "lane_transition",
+        "worker_assignment",
+        "lane_outcome",
+        "improvement_candidate"
+      ]
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "task_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "route_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "lane_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_state": {
+      "type": "string",
+      "minLength": 1
+    },
+    "to_state": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worker_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assignment_status": {
+      "enum": [
+        "assigned",
+        "blocked",
+        "skipped"
+      ]
+    },
+    "assigned_prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "failure",
+        "blocked",
+        "partial"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "route_decision"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "task_text",
+          "task_family",
+          "route_id",
+          "confidence"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "lane_transition"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "lane_id",
+          "from_state",
+          "to_state"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "worker_assignment"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "lane_id",
+          "worker_id",
+          "assignment_status"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "lane_outcome"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "lane_id",
+          "outcome",
+          "summary"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "improvement_candidate"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "candidate_id",
+          "source",
+          "summary"
+        ]
+      }
+    }
+  ]
+}

@@ -19,6 +19,8 @@ type RegisteredSchema = {
 };
 
 const memoryArtifactSchemas: RegisteredSchema[] = [
+  { id: 'repository-memory-event', version: '1.0', path: '.playbook/memory/events/*.json' },
+  { id: 'repository-memory-index', version: '1.0', path: '.playbook/memory/index.json' },
   { id: 'memory-event', version: '1.0.0', path: '.playbook/memory/events/runtime/*.json' },
   { id: 'candidate-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/candidates/*.json' },
   { id: 'promoted-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
@@ -39,6 +41,7 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'learning-state', version: '1.0', path: 'packages/contracts/src/learning-state.schema.json' },
   { id: 'lane-state', version: '1.0', path: 'packages/contracts/src/lane-state.schema.json' },
   { id: 'worker-assignments', version: '1.0', path: 'packages/contracts/src/worker-assignments.schema.json' },
+  { id: 'repository-events', version: '1.0', path: 'packages/contracts/src/repository-events.schema.json' },
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
   { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
   { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },
