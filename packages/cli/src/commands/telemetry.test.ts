@@ -135,6 +135,7 @@ describe('runTelemetry', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
     expect(payload.kind).toBe('telemetry-summary');
     expect((payload.process as Record<string, unknown>).total_records).toBe(1);
+    expect((payload.process as Record<string, unknown>).route_id_counts).toEqual({});
     expect((payload.outcomes as Record<string, unknown>).sum_plan_churn).toBe(3);
 
     logSpy.mockRestore();

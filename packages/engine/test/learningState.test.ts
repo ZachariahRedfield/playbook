@@ -73,7 +73,20 @@ describe('deriveLearningStateSnapshot', () => {
           total_validators_run_unique: 0,
           task_family_counts: {},
           validators_run_counts: {},
-          reasoning_scope_counts: { narrow: 0, module: 0, repository: 0, 'cross-repo': 0 }
+          reasoning_scope_counts: { narrow: 0, module: 0, repository: 0, 'cross-repo': 0 },
+          route_id_counts: {},
+          task_profile_id_counts: {},
+          rule_packs_selected_counts: {},
+          required_validations_selected_counts: {},
+          optional_validations_selected_counts: {},
+          total_validation_duration_ms: 0,
+          total_planning_duration_ms: 0,
+          total_apply_duration_ms: 0,
+          human_intervention_required_count: 0,
+          actual_merge_conflict_count: 0,
+          average_parallel_lane_count: 0,
+          over_validation_signal_count: 0,
+          under_validation_signal_count: 0
         }
       },
       taskExecutionProfile: {

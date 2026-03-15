@@ -175,7 +175,7 @@ describe('outcomeTelemetry', () => {
     expect(artifact.summary.ci_failure_category_counts).toEqual({ lint: 1 });
   });
 
-  it('computes process and combined telemetry summaries', () => {
+  it('computes process and combined telemetry summaries with route evidence fields', () => {
     const process = normalizeProcessTelemetryArtifact({
       schemaVersion: '1.0',
       kind: 'process-telemetry',
@@ -184,26 +184,52 @@ describe('outcomeTelemetry', () => {
         {
           id: 'run-2',
           recordedAt: '2026-03-14T02:00:00.000Z',
-          task_family: 'docs',
+          task_family: 'docs_only',
+          task_profile_id: 'docs-small',
+          route_id: 'route.docs.v1',
           task_duration_ms: 500,
           files_touched: ['README.md', 'README.md'],
-          validators_run: ['pnpm test'],
+          validators_run: ['pnpm playbook docs audit --json'],
+          rule_packs_selected: ['docs-governance'],
+          required_validations_selected: ['pnpm playbook docs audit --json'],
+          optional_validations_selected: ['pnpm -r build'],
+          validation_duration_ms: 100,
+          planning_duration_ms: 60,
+          apply_duration_ms: 200,
           retry_count: 1,
           merge_conflict_risk: 0.35234,
+          actual_merge_conflict: false,
           first_pass_success: false,
+          human_intervention_required: false,
+          parallel_lane_count: 1,
+          over_validation_signal: false,
+          under_validation_signal: false,
           prompt_size: 300,
           reasoning_scope: 'module'
         },
         {
           id: 'run-1',
           recordedAt: '2026-03-14T01:00:00.000Z',
-          task_family: 'governance',
+          task_family: 'contracts_schema',
+          task_profile_id: 'contracts-heavy',
+          route_id: 'route.contracts.v2',
           task_duration_ms: 1500,
           files_touched: ['docs/contracts/OUTCOME_TELEMETRY.md'],
           validators_run: ['pnpm -r build', 'pnpm test'],
+          rule_packs_selected: ['contracts', 'schema'],
+          required_validations_selected: ['pnpm -r build', 'pnpm test'],
+          optional_validations_selected: ['pnpm playbook contracts --json'],
+          validation_duration_ms: 600,
+          planning_duration_ms: 120,
+          apply_duration_ms: 700,
           retry_count: 0,
           merge_conflict_risk: 0.1,
+          actual_merge_conflict: false,
           first_pass_success: true,
+          human_intervention_required: true,
+          parallel_lane_count: 3,
+          over_validation_signal: true,
+          under_validation_signal: false,
           prompt_size: 512,
           reasoning_scope: 'repository'
         }
@@ -219,7 +245,20 @@ describe('outcomeTelemetry', () => {
         total_validators_run_unique: 0,
         task_family_counts: {},
         validators_run_counts: {},
-        reasoning_scope_counts: { narrow: 0, module: 0, repository: 0, 'cross-repo': 0 }
+        reasoning_scope_counts: { narrow: 0, module: 0, repository: 0, 'cross-repo': 0 },
+        route_id_counts: {},
+        task_profile_id_counts: {},
+        rule_packs_selected_counts: {},
+        required_validations_selected_counts: {},
+        optional_validations_selected_counts: {},
+        total_validation_duration_ms: 0,
+        total_planning_duration_ms: 0,
+        total_apply_duration_ms: 0,
+        human_intervention_required_count: 0,
+        actual_merge_conflict_count: 0,
+        average_parallel_lane_count: 0,
+        over_validation_signal_count: 0,
+        under_validation_signal_count: 0
       }
     });
 
@@ -227,8 +266,17 @@ describe('outcomeTelemetry', () => {
     expect(process.summary.average_merge_conflict_risk).toBe(0.2262);
     expect(process.summary.validators_run_counts).toEqual({
       'pnpm -r build': 1,
-      'pnpm test': 2
+      'pnpm playbook docs audit --json': 1,
+      'pnpm test': 1
     });
+    expect(process.summary.route_id_counts).toEqual({
+      'route.contracts.v2': 1,
+      'route.docs.v1': 1
+    });
+    expect(process.summary.total_validation_duration_ms).toBe(700);
+    expect(process.summary.human_intervention_required_count).toBe(1);
+    expect(process.summary.average_parallel_lane_count).toBe(2);
+    expect(process.summary.over_validation_signal_count).toBe(1);
 
     const outcome = normalizeOutcomeTelemetryArtifact({
       schemaVersion: '1.0',
@@ -250,5 +298,59 @@ describe('outcomeTelemetry', () => {
     expect(summary.generatedAt).toBe('2026-03-15T00:00:00.000Z');
     expect(summary.process.total_records).toBe(2);
     expect(summary.outcomes.total_records).toBe(0);
+  });
+
+  it('degrades safely for partial records missing optional route details', () => {
+    const process = normalizeProcessTelemetryArtifact({
+      schemaVersion: '1.0',
+      kind: 'process-telemetry',
+      generatedAt: '2026-03-15T00:00:00.000Z',
+      records: [
+        {
+          id: 'run-1',
+          recordedAt: '2026-03-14T01:00:00.000Z',
+          task_family: 'docs_only',
+          task_duration_ms: 100,
+          files_touched: ['docs/README.md'],
+          validators_run: ['pnpm playbook docs audit --json'],
+          retry_count: 0,
+          merge_conflict_risk: 0,
+          first_pass_success: true,
+          prompt_size: 10,
+          reasoning_scope: 'narrow'
+        }
+      ],
+      summary: {
+        total_records: 0,
+        total_task_duration_ms: 0,
+        average_task_duration_ms: 0,
+        total_retry_count: 0,
+        first_pass_success_count: 0,
+        average_merge_conflict_risk: 0,
+        total_files_touched_unique: 0,
+        total_validators_run_unique: 0,
+        task_family_counts: {},
+        validators_run_counts: {},
+        reasoning_scope_counts: { narrow: 0, module: 0, repository: 0, 'cross-repo': 0 },
+        route_id_counts: {},
+        task_profile_id_counts: {},
+        rule_packs_selected_counts: {},
+        required_validations_selected_counts: {},
+        optional_validations_selected_counts: {},
+        total_validation_duration_ms: 0,
+        total_planning_duration_ms: 0,
+        total_apply_duration_ms: 0,
+        human_intervention_required_count: 0,
+        actual_merge_conflict_count: 0,
+        average_parallel_lane_count: 0,
+        over_validation_signal_count: 0,
+        under_validation_signal_count: 0
+      }
+    });
+
+    expect(process.summary.route_id_counts).toEqual({});
+    expect(process.summary.rule_packs_selected_counts).toEqual({});
+    expect(process.summary.total_validation_duration_ms).toBe(0);
+    expect(process.summary.average_parallel_lane_count).toBe(1);
   });
 });

@@ -37,6 +37,8 @@
         "id": { "type": "string", "minLength": 1 },
         "recordedAt": { "type": "string", "format": "date-time" },
         "task_family": { "type": "string", "minLength": 1 },
+        "task_profile_id": { "type": "string", "minLength": 1 },
+        "route_id": { "type": "string", "minLength": 1 },
         "task_duration_ms": { "type": "integer", "minimum": 0 },
         "files_touched": {
           "type": "array",
@@ -48,9 +50,32 @@
           "items": { "type": "string", "minLength": 1 },
           "uniqueItems": true
         },
+        "rule_packs_selected": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "required_validations_selected": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "optional_validations_selected": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "validation_duration_ms": { "type": "integer", "minimum": 0 },
+        "planning_duration_ms": { "type": "integer", "minimum": 0 },
+        "apply_duration_ms": { "type": "integer", "minimum": 0 },
         "retry_count": { "type": "integer", "minimum": 0 },
         "merge_conflict_risk": { "type": "number", "minimum": 0, "maximum": 1 },
+        "actual_merge_conflict": { "type": "boolean" },
         "first_pass_success": { "type": "boolean" },
+        "human_intervention_required": { "type": "boolean" },
+        "parallel_lane_count": { "type": "integer", "minimum": 1 },
+        "over_validation_signal": { "type": "boolean" },
+        "under_validation_signal": { "type": "boolean" },
         "prompt_size": { "type": "integer", "minimum": 0 },
         "reasoning_scope": { "type": "string", "enum": ["narrow", "module", "repository", "cross-repo"] }
       }
@@ -80,7 +105,20 @@
         "total_validators_run_unique",
         "task_family_counts",
         "validators_run_counts",
-        "reasoning_scope_counts"
+        "reasoning_scope_counts",
+        "route_id_counts",
+        "task_profile_id_counts",
+        "rule_packs_selected_counts",
+        "required_validations_selected_counts",
+        "optional_validations_selected_counts",
+        "total_validation_duration_ms",
+        "total_planning_duration_ms",
+        "total_apply_duration_ms",
+        "human_intervention_required_count",
+        "actual_merge_conflict_count",
+        "average_parallel_lane_count",
+        "over_validation_signal_count",
+        "under_validation_signal_count"
       ],
       "properties": {
         "total_records": { "type": "integer", "minimum": 0 },
@@ -93,7 +131,20 @@
         "total_validators_run_unique": { "type": "integer", "minimum": 0 },
         "task_family_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
         "validators_run_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
-        "reasoning_scope_counts": { "$ref": "#/$defs/ReasoningScopeCounts" }
+        "reasoning_scope_counts": { "$ref": "#/$defs/ReasoningScopeCounts" },
+        "route_id_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "task_profile_id_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "rule_packs_selected_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "required_validations_selected_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "optional_validations_selected_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "total_validation_duration_ms": { "type": "integer", "minimum": 0 },
+        "total_planning_duration_ms": { "type": "integer", "minimum": 0 },
+        "total_apply_duration_ms": { "type": "integer", "minimum": 0 },
+        "human_intervention_required_count": { "type": "integer", "minimum": 0 },
+        "actual_merge_conflict_count": { "type": "integer", "minimum": 0 },
+        "average_parallel_lane_count": { "type": "number", "minimum": 0 },
+        "over_validation_signal_count": { "type": "integer", "minimum": 0 },
+        "under_validation_signal_count": { "type": "integer", "minimum": 0 }
       }
     }
   }

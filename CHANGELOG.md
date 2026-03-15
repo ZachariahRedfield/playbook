@@ -8,6 +8,7 @@
 - Added Phase 7 Wave 1 deterministic learning-state snapshots (`learning-state-snapshot`) with required compact metrics (`first_pass_yield`, `retry_pressure`, `validation_load_ratio`, `route_efficiency_score`, `smallest_sufficient_route_score`, `pattern_family_effectiveness_score`, `portability_confidence`) derived from outcome telemetry, process telemetry, and optional task-execution-profile evidence.
 - Added `pnpm playbook telemetry learning-state` inspection surface with JSON/text output and safe degradation when telemetry artifacts are partially or fully missing.
 - Registered the additive `learning-state` contract in schema registries/contracts output and added deterministic fixture/test coverage for strong docs-only efficiency, weak contracts-schema retry pressure, high-validation engine scoring, low-confidence cross-repo pattern learning, and low-sample open-question scenarios.
+- Implemented Phase 7 Wave 2B additive process telemetry enrichment with route/profile identifiers, selected rule-pack and validation fields, validation/planning/apply durations, intervention and over/under-validation signals, plus realized parallel-safety evidence and deterministic rollups.
 - Strengthened `pnpm playbook apply --from-plan` plan loading to decode UTF-8 (with/without BOM) and UTF-16 (LE/BE BOM) artifacts, including conservative UTF-16 detection when shell redirection emits NUL-patterned output.
 - Improved invalid plan JSON diagnostics to preserve file path context and provide actionable shell-encoding guidance when payload bytes suggest PowerShell-style encoding artifacts.
 - Updated workflow docs with explicit PowerShell-safe plan capture examples and branch-local `node packages/cli/dist/main.js` commands for deterministic local validation.
@@ -29,6 +30,7 @@
 - Preserves structural task context in outcome evidence so learning snapshots avoid false signals from decontextualized event counts.
 - Establishes a compact, deterministic, reviewable learning layer between raw evidence and future routing/meta-evolution proposals while preserving proposal-only posture and preventing autonomous mutation from unsegmented telemetry.
 - Reduces Goodhart-router risk by exposing explicit confidence/open-question summaries tied to sample size, coverage, and evidence completeness rather than raw log replay.
+- Improves router-quality evaluation by making validation cost, intervention pressure, and realized parallel safety explicit evidence for learning-state analysis.
 - Prevent Windows/PowerShell plan redirection encoding differences from breaking deterministic `apply --from-plan` workflows while keeping plan contract validation strict.
 - Prevent CI/local failures caused by missing `@rollup/rollup-linux-x64-gnu` under frozen lockfile installs.
 - Eliminate ESLint v9 flat-config warnings caused by `.eslintignore`.

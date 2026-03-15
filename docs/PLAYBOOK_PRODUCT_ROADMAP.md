@@ -1192,6 +1192,7 @@ Use a layered phase model so each phase compounds directly on the previous one:
 7. **Phase 7 â€” Risk-Aware Execution**  
    Risk signals, impact-aware sequencing, and risk-shaped remediation prioritization.
    - Wave 1 (implemented): deterministic `learning-state-snapshot` layering over outcome/process telemetry and optional task-execution-profile evidence (`Evidence -> Snapshot -> Proposal`) for compact reviewable learning summaries without autonomous mutation.
+   - Wave 2B (implemented): additive process telemetry route-learning evidence (`task_profile_id`, `route_id`, selected rule packs/validations, validation/planning/apply durations, intervention and over/under-validation signals, and realized parallel safety indicators) with deterministic normalization + bounded rollups for Learning State Snapshot evaluation quality.
    - Wave 2A (implemented): additive outcome-telemetry structural context (`task_profile_id`, `task_family`, `affected_surfaces`, estimated/actual change surface, post-apply verify/CI status, regression categories, pattern families implicated) with deterministic normalization and backward-compatible safe degradation for partial legacy records.
 8. **Phase 8 â€” AI Repository Contract**  
    Machine-readable AI-operability contract and enforcement rules.
