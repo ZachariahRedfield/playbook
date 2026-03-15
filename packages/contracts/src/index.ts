@@ -4,5 +4,6 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   laneState: 'packages/contracts/src/lane-state.schema.json',
   workerAssignments: 'packages/contracts/src/worker-assignments.schema.json',
   taskExecutionProfile: 'packages/contracts/src/task-execution-profile.schema.json',
-  learningState: 'packages/contracts/src/learning-state.schema.json'
+  learningState: 'packages/contracts/src/learning-state.schema.json',
+  repositoryEvents: 'packages/contracts/src/repository-events.schema.json'
 } as const;

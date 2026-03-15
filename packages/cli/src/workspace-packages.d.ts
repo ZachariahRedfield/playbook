@@ -222,6 +222,12 @@ declare module "@zachariahredfield/playbook-engine" {
   export const routeTask: (...args: any[]) => RouteDecision;
   export const buildExecutionPlan: (...args: any[]) => any;
   export const compileCodexPrompt: (...args: any[]) => string;
+  export const safeRecordRepositoryEvent: (callback: () => void) => void;
+  export const recordRouteDecision: (...args: any[]) => any;
+  export const recordLaneTransition: (...args: any[]) => any;
+  export const recordWorkerAssignment: (...args: any[]) => any;
+  export const recordLaneOutcome: (...args: any[]) => any;
+  export const recordImprovementCandidate: (...args: any[]) => any;
   export type TaskExecutionProfileArtifact = any;
   export type ExecutionPlanArtifact = any;
 

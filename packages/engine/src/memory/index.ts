@@ -172,3 +172,24 @@ export const captureMemoryEventSafe = (repoRoot: string, input: MemoryEventInput
 export const computeMemoryEventFingerprint = toEventFingerprint;
 
 export type { MemoryEvent, MemoryEventInput, MemoryIndex } from './types.js';
+
+export {
+  recordRouteDecision,
+  recordLaneTransition,
+  recordWorkerAssignment,
+  recordLaneOutcome,
+  recordImprovementCandidate,
+  safeRecordRepositoryEvent,
+  REPOSITORY_EVENTS_SCHEMA_VERSION
+} from './events.js';
+
+export type {
+  RepositoryEvent,
+  RepositoryEventIndex,
+  RepositoryEventType,
+  RouteDecisionEvent,
+  LaneTransitionEvent,
+  WorkerAssignmentEvent,
+  LaneOutcomeEvent,
+  ImprovementCandidateEvent
+} from './events.js';

@@ -6,7 +6,9 @@ import {
   type ExecutionPlanArtifact,
   compileCodexPrompt,
   type LearningStateSnapshotArtifact,
-  type RouteDecision
+  type RouteDecision,
+  recordRouteDecision,
+  safeRecordRepositoryEvent
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
@@ -161,6 +163,15 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
 
   fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
   fs.writeFileSync(path.join(cwd, EXECUTION_PLAN_PATH), `${JSON.stringify(executionPlan, null, 2)}\n`, 'utf8');
+
+  safeRecordRepositoryEvent(() => {
+    recordRouteDecision(cwd, {
+      task_text: task,
+      task_family: executionPlan.task_family,
+      route_id: executionPlan.route_id,
+      confidence: executionPlan.route_confidence
+    });
+  });
 
   if (options.format === 'json') {
     console.log(JSON.stringify(output, null, 2));

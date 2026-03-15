@@ -51,8 +51,20 @@ const listAllEventPaths = (projectRoot: string): string[] => {
 };
 
 const readEventByRelativePath = (projectRoot: string, relativePath: string): MemoryEvent | null => {
-  const payload = readJsonIfExists<MemoryEvent>(resolveEventPath(projectRoot, relativePath));
-  return payload;
+  const payload = readJsonIfExists<unknown>(resolveEventPath(projectRoot, relativePath));
+  return isLegacyMemoryEvent(payload) ? payload : null;
+};
+
+const isLegacyMemoryEvent = (value: unknown): value is MemoryEvent => {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.eventInstanceId === 'string' &&
+    typeof candidate.createdAt === 'string' &&
+    typeof candidate.eventFingerprint === 'string' &&
+    Array.isArray(candidate.subjectModules) &&
+    Array.isArray(candidate.ruleIds)
+  );
 };
 
 const sortTimeline = (events: MemoryEvent[], order: 'asc' | 'desc'): MemoryEvent[] => {

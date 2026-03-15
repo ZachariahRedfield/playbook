@@ -153,8 +153,29 @@ export type {
 
 export { runDocsAudit } from './docs/audit.js';
 
-export { captureMemoryEvent, captureMemoryEventSafe, computeMemoryEventFingerprint } from './memory/index.js';
+export {
+  captureMemoryEvent,
+  captureMemoryEventSafe,
+  computeMemoryEventFingerprint,
+  recordRouteDecision,
+  recordLaneTransition,
+  recordWorkerAssignment,
+  recordLaneOutcome,
+  recordImprovementCandidate,
+  safeRecordRepositoryEvent,
+  REPOSITORY_EVENTS_SCHEMA_VERSION
+} from './memory/index.js';
 export type { MemoryEvent, MemoryEventInput, MemoryIndex, MemoryEventKind, MemoryOutcome, MemoryRiskSummary } from './memory/types.js';
+export type {
+  RepositoryEvent,
+  RepositoryEventIndex,
+  RepositoryEventType,
+  RouteDecisionEvent,
+  LaneTransitionEvent,
+  WorkerAssignmentEvent,
+  LaneOutcomeEvent,
+  ImprovementCandidateEvent
+} from './memory/events.js';
 export { lookupMemoryEventTimeline, lookupMemoryCandidateKnowledge, lookupPromotedMemoryKnowledge, expandMemoryProvenance } from './memory/inspection.js';
 export type { MemoryTimelineLookupOptions, MemoryCandidateLookupOptions, MemoryKnowledgeLookupOptions, ExpandedMemoryProvenance } from './memory/inspection.js';
 export type { DocsAuditResult, DocsAuditFinding, DocsAuditStatus, DocsAuditLevel } from './docs/audit.js';

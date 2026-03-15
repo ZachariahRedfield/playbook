@@ -7,8 +7,16 @@ import { ExitCode } from '../lib/cliContract.js';
 const routeTask = vi.fn();
 const buildExecutionPlan = vi.fn();
 const compileCodexPrompt = vi.fn();
+const recordRouteDecision = vi.fn();
+const safeRecordRepositoryEvent = vi.fn((callback: () => void) => callback());
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ routeTask, buildExecutionPlan, compileCodexPrompt }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({
+  routeTask,
+  buildExecutionPlan,
+  compileCodexPrompt,
+  recordRouteDecision,
+  safeRecordRepositoryEvent
+}));
 
 describe('runRoute', () => {
   it('emits deterministic json route output with execution plan proposal', async () => {
