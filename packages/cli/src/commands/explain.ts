@@ -13,7 +13,20 @@ type ExplainOutput = {
   explanation: Record<string, unknown>;
 };
 
-const firstPositionalArg = (args: string[]): string | undefined => args.find((arg) => !arg.startsWith('-'));
+const positionalArgs = (args: string[]): string[] => args.filter((arg) => !arg.startsWith('-'));
+
+const toExplainTarget = (args: string[]): string | undefined => {
+  const positional = positionalArgs(args);
+  if (positional.length === 0) {
+    return undefined;
+  }
+
+  if ((positional[0] === 'subsystem' || positional[0] === 'artifact') && positional.length >= 2) {
+    return `${positional[0]} ${positional.slice(1).join(' ')}`;
+  }
+
+  return positional[0];
+};
 
 const hasWithMemoryFlag = (args: string[]): boolean => args.includes('--with-memory');
 
@@ -90,13 +103,51 @@ const printText = (target: string, explanation: ExplainTargetResult): void => {
     return;
   }
 
+  if (explanation.type === 'subsystem') {
+    console.log(`Subsystem: ${explanation.name}`);
+    console.log('');
+    console.log('Purpose');
+    console.log(explanation.purpose);
+    console.log('');
+    console.log('Owned commands');
+    for (const command of explanation.commands) {
+      console.log(`- ${command}`);
+    }
+    console.log('');
+    console.log('Owned artifacts');
+    if (explanation.artifacts.length === 0) {
+      console.log('- none');
+      return;
+    }
+
+    for (const artifact of explanation.artifacts) {
+      console.log(`- ${artifact}`);
+    }
+    return;
+  }
+
+  if (explanation.type === 'artifact') {
+    console.log(`Artifact: ${explanation.artifact}`);
+    console.log('');
+    console.log(`Owning subsystem: ${explanation.subsystem}`);
+    console.log('');
+    console.log('Subsystem purpose');
+    console.log(explanation.purpose);
+    console.log('');
+    console.log('Subsystem commands');
+    for (const command of explanation.commands) {
+      console.log(`- ${command}`);
+    }
+    return;
+  }
+
   console.log(`Target: ${target}`);
   console.log('');
   console.log(explanation.message);
 };
 
 export const runExplain = async (cwd: string, commandArgs: string[], options: ExplainOptions): Promise<number> => {
-  const target = firstPositionalArg(commandArgs);
+  const target = toExplainTarget(commandArgs);
   if (!target) {
     console.error('playbook explain: missing required <target> argument');
     return ExitCode.Failure;

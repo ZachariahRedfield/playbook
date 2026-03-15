@@ -79,6 +79,15 @@ Playbook operates as **private-first by default**:
 
 Any future export, sync, telemetry, or cloud-backed intelligence behavior must be explicit and opt-in.
 
+## Architecture introspection commands
+
+Playbook explain supports architecture-registry-backed ownership introspection:
+
+- `pnpm playbook explain subsystem <name>` resolves subsystem ownership by canonical subsystem name.
+- `pnpm playbook explain artifact <path>` resolves artifact ownership by exact artifact path.
+
+Both commands source ownership data from `.playbook/architecture/subsystems.json` as the canonical architecture registry, return deterministic failures for missing lookups, and support `--json` machine-readable output for automation.
+
 ## CLI command architecture
 
 - CLI command handlers live in `packages/cli/src/commands/`.

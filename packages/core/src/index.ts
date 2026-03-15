@@ -1,5 +1,6 @@
 export type { SessionContract, SessionPinnedArtifact, SessionPinnedArtifactKind, SessionStep, ResumeSessionResult } from './contracts/session.js';
 export type { ArchitectureRegistry, ArtifactOwnership, Subsystem } from './architecture/types.js';
+export type { ArtifactOwnershipDetails, SubsystemOwnership } from './architecture/introspection.js';
 export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, ExecutionOutcome, ExecutionCheckpoint, ExecutionStepKind, ExecutionStepStatus, ExecutionRequestedBy } from './contracts/execution.js';
 export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';
 export type { AttractorScoreBreakdown, CandidatePattern, PromotedPattern, PromotionDecision, PromotionReviewRecord } from './contracts/patternPromotion.js';
@@ -89,6 +90,7 @@ export { additiveCommandFieldSchemaRegistry, getContractsSchemaRegistry, memoryA
 
 export { runArchitectureAudit } from './audit/architecture.js';
 export { ARCHITECTURE_REGISTRY_PATH, loadArchitecture } from './architecture/loadArchitecture.js';
+export { explainArtifactOwnership, explainSubsystemOwnership } from './architecture/introspection.js';
 export { decideKnowledgeCompaction } from './knowledge/compaction/compaction-engine.js';
 export { canonicalizeCanonicalKey, canonicalizeKnowledgeRecord, canonicalizeKnowledgeShape } from './knowledge/compaction/canonicalize.js';
 export { compareCanonicalKnowledge } from './knowledge/compaction/compare.js';

@@ -172,7 +172,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
         properties: {
           command: { const: 'explain' },
           target: { type: 'string' },
-          type: { enum: ['rule', 'module', 'architecture', 'unknown'] },
+          type: { enum: ['rule', 'module', 'architecture', 'subsystem', 'artifact', 'unknown'] },
           explanation: {
             type: 'object',
             minProperties: 1,

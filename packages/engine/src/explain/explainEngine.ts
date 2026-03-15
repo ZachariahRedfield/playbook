@@ -1,4 +1,5 @@
 import { readRepositoryGraph, summarizeGraphNeighborhood, type GraphNeighborhoodSummary } from '../graph/repoGraph.js';
+import { explainArtifactFromArchitecture, explainSubsystemFromArchitecture } from '../architecture/introspection.js';
 import { queryRepositoryIndex } from '../query/repoQuery.js';
 import type { RepositoryModule } from '../indexer/repoIndexer.js';
 import { getRuleMetadata } from './ruleRegistry.js';
@@ -92,6 +93,24 @@ export type ArchitectureExplanation = ExplainMemoryFields & {
   graphNeighborhood?: GraphNeighborhoodSummary;
 };
 
+export type SubsystemExplanation = ExplainMemoryFields & {
+  type: 'subsystem';
+  resolvedTarget: ResolvedTarget;
+  name: string;
+  purpose: string;
+  commands: string[];
+  artifacts: string[];
+};
+
+export type ArtifactExplanation = ExplainMemoryFields & {
+  type: 'artifact';
+  resolvedTarget: ResolvedTarget;
+  artifact: string;
+  subsystem: string;
+  purpose: string;
+  commands: string[];
+};
+
 export type UnknownExplanation = ExplainMemoryFields & {
   type: 'unknown';
   resolvedTarget: ResolvedTarget;
@@ -99,7 +118,7 @@ export type UnknownExplanation = ExplainMemoryFields & {
   message: string;
 };
 
-export type ExplainTargetResult = RuleExplanation | ModuleExplanation | ArchitectureExplanation | UnknownExplanation;
+export type ExplainTargetResult = RuleExplanation | ModuleExplanation | ArchitectureExplanation | SubsystemExplanation | ArtifactExplanation | UnknownExplanation;
 
 const normalizeTarget = (target: string): string => target.trim().toLowerCase();
 
@@ -297,7 +316,61 @@ const resolveMemoryKnowledge = (projectRoot: string, target: string | undefined)
   };
 };
 
+const explainSubsystem = (projectRoot: string, target: string): SubsystemExplanation => {
+  const details = explainSubsystemFromArchitecture(projectRoot, target);
+  return {
+    type: 'subsystem',
+    resolvedTarget: {
+      input: `subsystem ${target}`,
+      kind: 'unknown',
+      selector: target,
+      canonical: `subsystem:${target}`,
+      matched: true
+    },
+    name: details.subsystem.name,
+    purpose: details.subsystem.purpose,
+    commands: details.subsystem.commands,
+    artifacts: details.subsystem.artifacts
+  };
+};
+
+const explainArtifact = (projectRoot: string, target: string): ArtifactExplanation => {
+  const details = explainArtifactFromArchitecture(projectRoot, target);
+  return {
+    type: 'artifact',
+    resolvedTarget: {
+      input: `artifact ${target}`,
+      kind: 'unknown',
+      selector: target,
+      canonical: `artifact:${target}`,
+      matched: true
+    },
+    artifact: details.artifact,
+    subsystem: details.subsystem.name,
+    purpose: details.subsystem.purpose,
+    commands: details.subsystem.commands
+  };
+};
+
 export const explainTarget = (projectRoot: string, target: string, options?: ExplainTargetOptions): ExplainTargetResult => {
+  const trimmed = target.trim();
+  const subsystemMatch = trimmed.match(/^subsystem\s+(.+)$/i);
+  if (subsystemMatch) {
+    const subsystemName = subsystemMatch[1].trim();
+    if (!subsystemName) {
+      throw new Error('playbook explain subsystem: missing required <name> argument');
+    }
+    return withMemory(projectRoot, options?.withMemory, explainSubsystem(projectRoot, subsystemName), { target: subsystemName });
+  }
+
+  const artifactMatch = trimmed.match(/^artifact\s+(.+)$/i);
+  if (artifactMatch) {
+    const artifactPath = artifactMatch[1].trim();
+    if (!artifactPath) {
+      throw new Error('playbook explain artifact: missing required <path> argument');
+    }
+    return withMemory(projectRoot, options?.withMemory, explainArtifact(projectRoot, artifactPath), { target: artifactPath });
+  }
   const context = gatherContext(projectRoot);
   const resolvedTarget = resolveRepositoryTarget(projectRoot, normalizeTarget(target));
 

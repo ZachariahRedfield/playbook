@@ -51,6 +51,36 @@ const writePromotedPatterns = (repo: string): void => {
   );
 };
 
+
+const writeArchitectureRegistry = (repo: string): void => {
+  const registryPath = path.join(repo, '.playbook', 'architecture', 'subsystems.json');
+  fs.mkdirSync(path.dirname(registryPath), { recursive: true });
+  fs.writeFileSync(
+    registryPath,
+    JSON.stringify(
+      {
+        version: 1,
+        subsystems: [
+          {
+            name: 'observation_engine',
+            purpose: 'Deterministic repository understanding',
+            commands: ['index', 'query', 'explain'],
+            artifacts: ['.playbook/repo-index.json']
+          },
+          {
+            name: 'execution_supervisor',
+            purpose: 'Run workers and monitor execution',
+            commands: ['execute'],
+            artifacts: ['.playbook/execution-state.json']
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeRepoIndex = (repo: string): void => {
   const indexPath = path.join(repo, '.playbook', 'repo-index.json');
   fs.mkdirSync(path.dirname(indexPath), { recursive: true });
@@ -167,6 +197,106 @@ describe('runExplain', () => {
     expect(Array.isArray(payload.explanation.memorySources)).toBe(true);
     expect(Array.isArray(payload.explanation.knowledgeHits)).toBe(true);
     expect(Array.isArray(payload.explanation.recentRelevantEvents)).toBe(true);
+
+    logSpy.mockRestore();
+  });
+
+
+
+  it('returns subsystem ownership details for registered subsystem lookups', async () => {
+    const repo = createRepo('playbook-cli-explain-subsystem-json');
+    writeArchitectureRegistry(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runExplain(repo, ['subsystem', 'observation_engine'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      command: 'explain',
+      target: 'subsystem observation_engine',
+      type: 'subsystem',
+      explanation: {
+        resolvedTarget: {
+          input: 'subsystem observation_engine',
+          kind: 'unknown',
+          selector: 'observation_engine',
+          canonical: 'subsystem:observation_engine',
+          matched: true
+        },
+        name: 'observation_engine',
+        purpose: 'Deterministic repository understanding',
+        commands: ['index', 'query', 'explain'],
+        artifacts: ['.playbook/repo-index.json']
+      }
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('fails deterministically for missing subsystem lookups', async () => {
+    const repo = createRepo('playbook-cli-explain-subsystem-missing');
+    writeArchitectureRegistry(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runExplain(repo, ['subsystem', 'missing_subsystem'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      command: 'explain',
+      target: 'subsystem missing_subsystem',
+      error: 'playbook explain subsystem: unknown subsystem "missing_subsystem".'
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('returns artifact ownership details for registered artifacts', async () => {
+    const repo = createRepo('playbook-cli-explain-artifact-json');
+    writeArchitectureRegistry(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runExplain(repo, ['artifact', '.playbook/execution-state.json'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      command: 'explain',
+      target: 'artifact .playbook/execution-state.json',
+      type: 'artifact',
+      explanation: {
+        resolvedTarget: {
+          input: 'artifact .playbook/execution-state.json',
+          kind: 'unknown',
+          selector: '.playbook/execution-state.json',
+          canonical: 'artifact:.playbook/execution-state.json',
+          matched: true
+        },
+        artifact: '.playbook/execution-state.json',
+        subsystem: 'execution_supervisor',
+        purpose: 'Run workers and monitor execution',
+        commands: ['execute']
+      }
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('fails deterministically for missing artifact ownership lookups', async () => {
+    const repo = createRepo('playbook-cli-explain-artifact-missing');
+    writeArchitectureRegistry(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runExplain(repo, ['artifact', '.playbook/unknown.json'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      command: 'explain',
+      target: 'artifact .playbook/unknown.json',
+      error: 'playbook explain artifact: unknown artifact ".playbook/unknown.json".'
+    });
 
     logSpy.mockRestore();
   });

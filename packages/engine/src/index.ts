@@ -84,8 +84,9 @@ export type { AnalyzePrOutputFormat } from './formatters/analyzePrFormatter.js';
 export { resolveRepositoryTarget } from './intelligence/targetResolver.js';
 export type { ResolvedTarget, TargetKind } from './intelligence/targetResolver.js';
 
+export { explainArtifactFromArchitecture, explainSubsystemFromArchitecture } from './architecture/introspection.js';
 export { explainTarget } from './explain/explainEngine.js';
-export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, UnknownExplanation } from './explain/explainEngine.js';
+export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, SubsystemExplanation, ArtifactExplanation, UnknownExplanation } from './explain/explainEngine.js';
 
 export { loadAiContract, validateAiContract, getDefaultAiContract, AI_CONTRACT_FILE, AI_CONTRACT_SCHEMA_VERSION } from './ai/aiContract.js';
 

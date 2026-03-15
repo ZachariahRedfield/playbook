@@ -5,6 +5,8 @@
 
 ### Added
 
+- WHAT: Added architecture introspection to `playbook explain` with `subsystem <name>` and `artifact <path>` targets backed by `.playbook/architecture/subsystems.json`, including deterministic missing-lookup failures and stable `--json` output contracts. WHY: Makes subsystem/artifact ownership directly explainable from the canonical registry and prevents split-brain ownership docs.
+
 - feat(execution): introduce execution supervisor runtime
   - WHAT: Add the Execution Supervisor runtime subsystem, deterministic `.playbook/execution-state.json` artifact lifecycle, and new `playbook execute` command for lane execution tracking, worker coordination handoff, and execution telemetry emission.
   - WHY: Enable Playbook to transition from planning-only orchestration to deterministic execution tracking across lanes and workers.
