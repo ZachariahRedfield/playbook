@@ -1,5 +1,6 @@
-import { evaluateImprovementPolicy, type PolicyEvaluationArtifact } from '@zachariahredfield/playbook-engine';
-import { emitJsonOutput } from '../../lib/jsonArtifact.js';
+import path from 'node:path';
+import { evaluateImprovementPolicy, POLICY_EVALUATION_RELATIVE_PATH, type PolicyEvaluationArtifact } from '@zachariahredfield/playbook-engine';
+import { emitJsonOutput, writeJsonArtifactAbsolute } from '../../lib/jsonArtifact.js';
 import { ExitCode } from '../../lib/cliContract.js';
 import { emitCommandFailure, printCommandHelp } from '../../lib/commandSurface.js';
 import { createCommandQualityTracker } from '../../lib/commandQuality.js';
@@ -65,12 +66,14 @@ export const runPolicy = async (cwd: string, args: string[], options: PolicyOpti
   }
 
   const artifact = evaluateImprovementPolicy(cwd);
+  writeJsonArtifactAbsolute(path.join(cwd, POLICY_EVALUATION_RELATIVE_PATH), artifact as Record<string, unknown>, 'policy', { envelope: false });
 
   if (options.format === 'json') {
     emitJsonOutput({ cwd, command: 'policy', payload: artifact });
     tracker.finish({
       inputsSummary: 'subcommand=evaluate',
       artifactsRead: ['.playbook/improvement-candidates.json', '.playbook/cycle-history.json'],
+      artifactsWritten: [POLICY_EVALUATION_RELATIVE_PATH],
       successStatus: 'success'
     });
     return ExitCode.Success;
@@ -83,6 +86,7 @@ export const runPolicy = async (cwd: string, args: string[], options: PolicyOpti
   tracker.finish({
     inputsSummary: 'subcommand=evaluate',
     artifactsRead: ['.playbook/improvement-candidates.json', '.playbook/cycle-history.json'],
+    artifactsWritten: [POLICY_EVALUATION_RELATIVE_PATH],
     successStatus: 'success'
   });
 

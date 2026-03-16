@@ -15,9 +15,10 @@ const createExecutionRun = vi.fn();
 const appendExecutionStep = vi.fn();
 const executionRunPath = vi.fn();
 const attachSessionRunState = vi.fn();
+const buildPolicyPreflight = vi.fn();
 const loadVerifyRules = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
 
@@ -51,6 +52,7 @@ describe('runApply', () => {
     appendExecutionStep.mockReset();
     executionRunPath.mockReset();
     attachSessionRunState.mockReset();
+    buildPolicyPreflight.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });
@@ -115,6 +117,88 @@ describe('runApply', () => {
     });
 
     logSpy.mockRestore();
+  });
+
+
+  it('emits policy-check json output without execution', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-policy-check-json-'));
+    const policyPath = path.join(tmpRoot, '.playbook', 'policy-evaluation.json');
+    fs.mkdirSync(path.dirname(policyPath), { recursive: true });
+    fs.writeFileSync(
+      policyPath,
+      JSON.stringify({ evaluations: [{ proposal_id: 'proposal-2', decision: 'safe', reason: 'ok' }] })
+    );
+
+    buildPolicyPreflight.mockReturnValue({
+      schemaVersion: '1.0',
+      eligible: [{ proposal_id: 'proposal-2', decision: 'safe', reason: 'ok' }],
+      requires_review: [],
+      blocked: [],
+      summary: { eligible: 1, requires_review: 0, blocked: 0, total: 1 }
+    });
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runApply(tmpRoot, { format: 'json', ci: false, quiet: false, policyCheck: true });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(buildPolicyPreflight).toHaveBeenCalledWith([{ proposal_id: 'proposal-2', decision: 'safe', reason: 'ok' }]);
+    expect(applyExecutionPlan).not.toHaveBeenCalled();
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      schemaVersion: '1.0',
+      command: 'apply',
+      mode: 'policy-check',
+      ok: true,
+      exitCode: ExitCode.Success,
+      eligible: [{ proposal_id: 'proposal-2', decision: 'safe', reason: 'ok' }],
+      requires_review: [],
+      blocked: [],
+      summary: { eligible: 1, requires_review: 0, blocked: 0, total: 1 }
+    });
+
+    logSpy.mockRestore();
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('renders policy-check text output', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-policy-check-text-'));
+    const policyPath = path.join(tmpRoot, '.playbook', 'policy-evaluation.json');
+    fs.mkdirSync(path.dirname(policyPath), { recursive: true });
+    fs.writeFileSync(
+      policyPath,
+      JSON.stringify({ evaluations: [{ proposal_id: 'proposal-a', decision: 'requires_review', reason: 'needs review' }] })
+    );
+
+    buildPolicyPreflight.mockReturnValue({
+      schemaVersion: '1.0',
+      eligible: [],
+      requires_review: [{ proposal_id: 'proposal-a', decision: 'requires_review', reason: 'needs review' }],
+      blocked: [],
+      summary: { eligible: 0, requires_review: 1, blocked: 0, total: 1 }
+    });
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runApply(tmpRoot, { format: 'text', ci: false, quiet: false, policyCheck: true });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
+    expect(output).toContain('Apply policy preflight (read-only)');
+    expect(output).toContain('Requires review: 1');
+    expect(output).toContain('proposal-a: needs review');
+
+    logSpy.mockRestore();
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('fails policy-check when combined with --from-plan', async () => {
+    const { runApply } = await import('./apply.js');
+
+    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policyCheck: true, fromPlan: 'plan.json' })).rejects.toThrow(
+      'The --policy-check flag is read-only and cannot be combined with --from-plan.'
+    );
   });
 
   it('loads serialized plan tasks from --from-plan input', async () => {
@@ -332,6 +416,7 @@ describe('runApply remediation status preconditions', () => {
     appendExecutionStep.mockReset();
     executionRunPath.mockReset();
     attachSessionRunState.mockReset();
+    buildPolicyPreflight.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });
@@ -407,6 +492,7 @@ describe('runApply warning-only remediation handling', () => {
     appendExecutionStep.mockReset();
     executionRunPath.mockReset();
     attachSessionRunState.mockReset();
+    buildPolicyPreflight.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });

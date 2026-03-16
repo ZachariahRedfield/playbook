@@ -258,8 +258,13 @@ declare module "@zachariahredfield/playbook-engine" {
   export type CycleHistoryArtifact = any;
   export type CycleStateArtifact = any;
   export type LearningStateSnapshotArtifact = any;
+  export const POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json';
   export const evaluateImprovementPolicy: (...args: any[]) => any;
+  export type PolicyEvaluationEntry = any;
   export type PolicyEvaluationArtifact = any;
+  export const buildPolicyPreflight: (...args: any[]) => any;
+  export type PolicyPreflightProposal = any;
+  export type PolicyPreflightArtifact = any;
   export const deriveLearningStateSnapshot: (...args: any[]) => LearningStateSnapshotArtifact;
   export type LearningCompactionArtifact = any;
   export const generateLearningCompactionArtifact: (...args: any[]) => LearningCompactionArtifact;

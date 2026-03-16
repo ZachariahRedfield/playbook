@@ -16,6 +16,7 @@ type ApplyOptions = {
   ci: boolean;
   quiet: boolean;
   help?: boolean;
+  policyCheck?: boolean;
   fromPlan?: string;
   tasks?: string[];
   runId?: string;
@@ -58,6 +59,23 @@ type PlanTask = {
 type PlanSelection = {
   tasks: PlanTask[];
   remediation: PlanRemediation;
+};
+
+type PolicyCheckJsonResult = {
+  schemaVersion: '1.0';
+  command: 'apply';
+  mode: 'policy-check';
+  ok: true;
+  exitCode: number;
+  eligible: engine.PolicyPreflightProposal[];
+  requires_review: engine.PolicyPreflightProposal[];
+  blocked: engine.PolicyPreflightProposal[];
+  summary: {
+    eligible: number;
+    requires_review: number;
+    blocked: number;
+    total: number;
+  };
 };
 
 type DecodedPlanPayload = {
@@ -174,6 +192,63 @@ const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
   };
 };
 
+const loadPolicyEvaluationArtifact = (cwd: string): engine.PolicyEvaluationEntry[] => {
+  const policyPath = path.resolve(cwd, engine.POLICY_EVALUATION_RELATIVE_PATH);
+
+  let payload: unknown;
+  try {
+    const rawText = fs.readFileSync(policyPath, 'utf8');
+    payload = JSON.parse(rawText);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Unable to read policy evaluation artifact at ${policyPath}: ${message}. Run \`pnpm playbook policy evaluate --json\` first.`
+    );
+  }
+
+  const normalizedPayload =
+    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+      ? ((payload as Record<string, unknown>).data as Record<string, unknown>)
+      : (payload as Record<string, unknown>);
+
+  const evaluations = normalizedPayload?.evaluations;
+  if (!Array.isArray(evaluations)) {
+    throw new Error(
+      `Invalid policy evaluation artifact at ${policyPath}: expected \`evaluations\` array. Run \`pnpm playbook policy evaluate --json\` to regenerate.`
+    );
+  }
+
+  return evaluations.map((entry) => {
+    if (!entry || typeof entry !== 'object') {
+      throw new Error(`Invalid policy evaluation artifact at ${policyPath}: evaluations must contain objects.`);
+    }
+
+    const proposalId = (entry as Record<string, unknown>).proposal_id;
+    const decision = (entry as Record<string, unknown>).decision;
+    const reason = (entry as Record<string, unknown>).reason;
+
+    if (typeof proposalId !== 'string' || typeof reason !== 'string') {
+      throw new Error(
+        `Invalid policy evaluation artifact at ${policyPath}: each evaluation must include string proposal_id and reason.`
+      );
+    }
+
+    if (decision !== 'safe' && decision !== 'requires_review' && decision !== 'blocked') {
+      throw new Error(
+        `Invalid policy evaluation artifact at ${policyPath}: unsupported decision \`${String(decision)}\` for proposal ${proposalId}.`
+      );
+    }
+
+    return {
+      proposal_id: proposalId,
+      decision,
+      reason
+    };
+  });
+};
+
+
+
 
 const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | undefined): PlanTask[] => {
   if (!selectedTaskIds) {
@@ -218,12 +293,39 @@ const renderTextApply = (result: ApplyJsonResult): void => {
   }
 };
 
+const renderTextPolicyCheck = (result: PolicyCheckJsonResult): void => {
+  console.log('Apply policy preflight (read-only)');
+  console.log('────────────────────────────────');
+  console.log(`Eligible: ${result.summary.eligible}`);
+  console.log(`Requires review: ${result.summary.requires_review}`);
+  console.log(`Blocked: ${result.summary.blocked}`);
+  console.log(`Total: ${result.summary.total}`);
+
+  const printGroup = (title: string, entries: engine.PolicyPreflightProposal[]): void => {
+    console.log('');
+    console.log(`${title}:`);
+    if (entries.length === 0) {
+      console.log('  (none)');
+      return;
+    }
+
+    for (const entry of entries) {
+      console.log(`  - ${entry.proposal_id}: ${entry.reason}`);
+    }
+  };
+
+  printGroup('eligible', result.eligible);
+  printGroup('requires_review', result.requires_review);
+  printGroup('blocked', result.blocked);
+};
+
 const printApplyHelp = (): void => {
   console.log('Usage: playbook apply [options]');
   console.log('');
   console.log('Execute deterministic auto-fixable plan tasks from generated or saved plan artifacts.');
   console.log('');
   console.log('Options:');
+  console.log('  --policy-check             Read-only preflight of policy-evaluated proposal eligibility');
   console.log('  --from-plan <path>         Apply tasks from a previously saved `playbook plan --json` artifact');
   console.log('  --task <id>                Apply only selected task ID (repeatable; requires --from-plan)');
   console.log('  --json                     Alias for --format=json');
@@ -250,6 +352,37 @@ const resolveRunId = (cwd: string, requestedRunId: string | undefined): string =
 export const runApply = async (cwd: string, options: ApplyOptions): Promise<number> => {
   if (options.help) {
     printApplyHelp();
+    return ExitCode.Success;
+  }
+
+  if (options.policyCheck) {
+    if (options.fromPlan) {
+      throw new Error('The --policy-check flag is read-only and cannot be combined with --from-plan.');
+    }
+
+    if ((options.tasks?.length ?? 0) > 0) {
+      throw new Error('The --policy-check flag is read-only and cannot be combined with --task.');
+    }
+
+    const evaluations = loadPolicyEvaluationArtifact(cwd);
+    const preflight = engine.buildPolicyPreflight(evaluations);
+    const payload: PolicyCheckJsonResult = {
+      ...preflight,
+      command: 'apply',
+      mode: 'policy-check',
+      ok: true,
+      exitCode: ExitCode.Success
+    };
+
+    if (options.format === 'json') {
+      console.log(JSON.stringify(payload, null, 2));
+      return ExitCode.Success;
+    }
+
+    if (!options.quiet) {
+      renderTextPolicyCheck(payload);
+    }
+
     return ExitCode.Success;
   }
 

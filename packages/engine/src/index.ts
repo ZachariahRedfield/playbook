@@ -258,6 +258,10 @@ export type {
   PolicyEvaluationArtifact
 } from './policy/proposalEvaluator.js';
 
+
+export { POLICY_PREFLIGHT_SCHEMA_VERSION, buildPolicyPreflight } from './policy/preflight.js';
+export type { PolicyPreflightArtifact, PolicyPreflightProposal } from './policy/preflight.js';
+
 export {
   captureMemoryEvent,
   captureMemoryEventSafe,
