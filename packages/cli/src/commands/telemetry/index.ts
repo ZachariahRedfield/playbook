@@ -8,11 +8,14 @@ import {
   normalizeProcessTelemetryArtifact,
   summarizeLaneOutcomeScores,
   summarizeStructuralTelemetry,
+  summarizeCycleTelemetry,
   type LearningStateSnapshotArtifact,
   type LearningCompactionArtifact,
   type OutcomeTelemetryArtifact,
   type ProcessTelemetryArtifact,
   type TaskExecutionProfileArtifact,
+  type CycleHistoryArtifact,
+  type CycleStateArtifact,
   writeLearningCompactionArtifact
 } from '@zachariahredfield/playbook-engine';
 import type { CommandExecutionQualityArtifact } from '@zachariahredfield/playbook-core';
@@ -31,6 +34,8 @@ const OUTCOME_TELEMETRY_PATH = ['.playbook', 'outcome-telemetry.json'] as const;
 const PROCESS_TELEMETRY_PATH = ['.playbook', 'process-telemetry.json'] as const;
 const TASK_EXECUTION_PROFILE_PATH = ['.playbook', 'task-execution-profile.json'] as const;
 const COMMAND_QUALITY_PATH = ['.playbook', 'telemetry', 'command-quality.json'] as const;
+const CYCLE_HISTORY_PATH = ['.playbook', 'cycle-history.json'] as const;
+const CYCLE_STATE_PATH = ['.playbook', 'cycle-state.json'] as const;
 
 const readJsonArtifact = <T>(cwd: string, segments: readonly string[]): T | undefined => {
   const artifactPath = path.join(cwd, ...segments);
@@ -130,8 +135,8 @@ export const runTelemetry = async (
     printCommandHelp({
       usage: 'playbook telemetry <subcommand> [options]',
       description: 'Inspect deterministic telemetry artifacts and cross-run learning summaries.',
-      options: ['outcomes                  Inspect .playbook/outcome-telemetry.json', 'process                   Inspect .playbook/process-telemetry.json', 'learning-state            Show compacted deterministic learning snapshot', 'learning                  Compact cross-run learning signals and write artifact', 'summary                   Show combined deterministic telemetry summary', 'commands                  Show command-quality summary for core execution commands', '--json                    Alias for --format=json', '--format <text|json>      Output format', '--quiet                   Suppress success output in text mode', '--help                    Show help'],
-      artifacts: ['.playbook/outcome-telemetry.json (read)', '.playbook/process-telemetry.json (read)', '.playbook/task-execution-profile.json (optional read)', '.playbook/telemetry/command-quality.json (read for commands)', '.playbook/learning-compaction.json (write for learning)']
+      options: ['outcomes                  Inspect .playbook/outcome-telemetry.json', 'process                   Inspect .playbook/process-telemetry.json', 'learning-state            Show compacted deterministic learning snapshot', 'learning                  Compact cross-run learning signals and write artifact', 'summary                   Show combined deterministic telemetry summary', 'cycle                     Show cycle runtime summary from governed cycle artifacts', 'commands                  Show command-quality summary for core execution commands', '--json                    Alias for --format=json', '--format <text|json>      Output format', '--quiet                   Suppress success output in text mode', '--help                    Show help'],
+      artifacts: ['.playbook/outcome-telemetry.json (read)', '.playbook/process-telemetry.json (read)', '.playbook/task-execution-profile.json (optional read)', '.playbook/telemetry/command-quality.json (read for commands)', '.playbook/cycle-history.json (read for cycle)', '.playbook/cycle-state.json (optional read for cycle)', '.playbook/learning-compaction.json (write for learning)']
     });
     const exitCode = options.help || hasHelpFlag(args) ? ExitCode.Success : ExitCode.Failure;
     tracker.finish({ inputsSummary: `subcommand=${subcommand ?? 'none'}`, successStatus: exitCode === ExitCode.Success ? 'success' : 'failure', warningsCount: exitCode === ExitCode.Success ? 0 : 1 });
@@ -276,6 +281,67 @@ export const runTelemetry = async (
     return ExitCode.Success;
   }
 
+
+  if (subcommand === 'cycle') {
+    const cycleHistory = readJsonArtifact<CycleHistoryArtifact>(cwd, CYCLE_HISTORY_PATH);
+    const cycleState = readJsonArtifact<CycleStateArtifact>(cwd, CYCLE_STATE_PATH);
+
+    const summary = summarizeCycleTelemetry({
+      cycleHistory,
+      cycleState
+    });
+
+    if (options.format === 'json') {
+      emitJsonOutput({ cwd, command: 'telemetry', payload: summary });
+      tracker.finish({
+        inputsSummary: 'subcommand=cycle',
+        artifactsRead: ['.playbook/cycle-history.json', '.playbook/cycle-state.json'],
+        successStatus: 'success'
+      });
+      return ExitCode.Success;
+    }
+
+    if (!options.quiet) {
+      console.log('Cycle telemetry');
+      console.log('───────────────');
+      console.log(`Cycles total: ${summary.cycles_total}`);
+      console.log(`Cycles success: ${summary.cycles_success}`);
+      console.log(`Cycles failed: ${summary.cycles_failed}`);
+      console.log(`Success rate: ${summary.success_rate}`);
+      console.log(`Average duration (ms): ${summary.average_duration_ms}`);
+      console.log(`Most common failed step: ${summary.most_common_failed_step ?? 'none'}`);
+      console.log('Failure distribution:');
+      const failureEntries = Object.entries(summary.failure_distribution);
+      if (failureEntries.length === 0) {
+        console.log('- none');
+      } else {
+        for (const [step, count] of failureEntries) {
+          console.log(`- ${step}: ${count}`);
+        }
+      }
+      console.log('Recent cycles:');
+      if (summary.recent_cycles.length === 0) {
+        console.log('- none');
+      } else {
+        for (const cycle of summary.recent_cycles) {
+          const failedSuffix = cycle.failed_step ? `, failed_step=${cycle.failed_step}` : '';
+          console.log(`- ${cycle.started_at} ${cycle.cycle_id} (${cycle.result}, duration_ms=${cycle.duration_ms}${failedSuffix})`);
+        }
+      }
+      if (summary.latest_cycle_state) {
+        const failedSuffix = summary.latest_cycle_state.failed_step ? `, failed_step=${summary.latest_cycle_state.failed_step}` : '';
+        console.log(`Latest cycle-state: ${summary.latest_cycle_state.cycle_id} (${summary.latest_cycle_state.result}, duration_ms=${summary.latest_cycle_state.duration_ms}${failedSuffix})`);
+      }
+    }
+
+    tracker.finish({
+      inputsSummary: 'subcommand=cycle',
+      artifactsRead: ['.playbook/cycle-history.json', '.playbook/cycle-state.json'],
+      successStatus: 'success'
+    });
+    return ExitCode.Success;
+  }
+
   if (subcommand === 'learning') {
     const learningCompaction = generateLearningCompactionArtifact(cwd);
     writeLearningCompactionArtifact(cwd, learningCompaction);
@@ -346,7 +412,7 @@ export const runTelemetry = async (
   const exitCode = emitCommandFailure('telemetry', options, {
     summary: 'Telemetry failed: unsupported subcommand.',
     findingId: 'telemetry.subcommand.unsupported',
-    message: 'Unsupported subcommand. Use outcomes|process|learning-state|learning|summary|commands.',
+    message: 'Unsupported subcommand. Use outcomes|process|learning-state|learning|summary|cycle|commands.',
     nextActions: ['Run `playbook telemetry --help` for supported command surfaces.']
   });
   tracker.finish({ inputsSummary: `subcommand=${subcommand}`, successStatus: 'failure', warningsCount: 1 });

@@ -45,4 +45,14 @@ export {
   appendCommandExecutionQualityRecord
 } from './commandQuality.js';
 
+export { summarizeCycleTelemetry } from './cycleSummary.js';
+
+export type {
+  CycleHistoryRecord,
+  CycleHistoryArtifact,
+  CycleStateArtifact,
+  CycleTelemetryRecentCycle,
+  CycleTelemetrySummary
+} from './cycleSummary.js';
+
 export type { CommandExecutionQualityInput } from './commandQuality.js';

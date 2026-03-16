@@ -288,6 +288,63 @@ const writeTelemetryArtifacts = (repo: string): void => {
     )
   );
 
+
+  fs.writeFileSync(
+    path.join(repo, '.playbook', 'cycle-history.json'),
+    JSON.stringify(
+      {
+        history_version: 1,
+        repo,
+        cycles: [
+          {
+            cycle_id: 'cycle-001',
+            started_at: '2026-03-16T00:00:00.000Z',
+            result: 'success',
+            duration_ms: 200
+          },
+          {
+            cycle_id: 'cycle-002',
+            started_at: '2026-03-16T01:00:00.000Z',
+            result: 'failed',
+            failed_step: 'verify',
+            duration_ms: 300
+          },
+          {
+            cycle_id: 'cycle-003',
+            started_at: '2026-03-16T02:00:00.000Z',
+            result: 'failed',
+            failed_step: 'execute',
+            duration_ms: 500
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+
+  fs.writeFileSync(
+    path.join(repo, '.playbook', 'cycle-state.json'),
+    JSON.stringify(
+      {
+        cycle_version: 1,
+        repo,
+        cycle_id: 'cycle-003',
+        started_at: '2026-03-16T02:00:00.000Z',
+        result: 'failed',
+        failed_step: 'execute',
+        steps: [
+          { name: 'verify', status: 'success', duration_ms: 100 },
+          { name: 'route', status: 'success', duration_ms: 100 },
+          { name: 'execute', status: 'failure', duration_ms: 300 }
+        ],
+        artifacts_written: ['.playbook/cycle-state.json', '.playbook/cycle-history.json']
+      },
+      null,
+      2
+    )
+  );
+
   fs.writeFileSync(
     path.join(repo, '.playbook', 'memory', 'index.json'),
     JSON.stringify(
@@ -419,6 +476,52 @@ describe('runTelemetry', () => {
 
     logSpy.mockRestore();
   });
+
+
+it('summarizes cycle telemetry as json from governed cycle artifacts', async () => {
+  const repo = createRepo('playbook-telemetry-cycle-json');
+  writeTelemetryArtifacts(repo);
+  const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+  const exitCode = await runTelemetry(repo, ['cycle'], { format: 'json', quiet: false });
+
+  expect(exitCode).toBe(ExitCode.Success);
+  const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+  expect(payload.cycles_total).toBe(3);
+  expect(payload.cycles_success).toBe(1);
+  expect(payload.cycles_failed).toBe(2);
+  expect(payload.success_rate).toBeCloseTo(0.3333, 4);
+  expect(payload.average_duration_ms).toBe(333.33);
+  expect(payload.most_common_failed_step).toBe('execute');
+  expect(payload.failure_distribution).toEqual({ execute: 1, verify: 1 });
+  expect((payload.recent_cycles as Array<Record<string, unknown>>)[0]?.cycle_id).toBe('cycle-003');
+  expect((payload.latest_cycle_state as Record<string, unknown>).cycle_id).toBe('cycle-003');
+
+  logSpy.mockRestore();
+});
+
+it('returns safe deterministic empty cycle telemetry when history artifact is missing', async () => {
+  const repo = createRepo('playbook-telemetry-cycle-missing');
+  fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+  const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+  const exitCode = await runTelemetry(repo, ['cycle'], { format: 'json', quiet: false });
+
+  expect(exitCode).toBe(ExitCode.Success);
+  const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+  expect(payload).toEqual({
+    cycles_total: 0,
+    cycles_success: 0,
+    cycles_failed: 0,
+    success_rate: 0,
+    average_duration_ms: 0,
+    most_common_failed_step: null,
+    failure_distribution: {},
+    recent_cycles: []
+  });
+
+  logSpy.mockRestore();
+});
 
 describe('command registry', () => {
   it('registers the telemetry command', () => {
