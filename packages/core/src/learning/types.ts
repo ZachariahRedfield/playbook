@@ -55,3 +55,23 @@ export interface PatternPortabilityScore {
   governance_risk: number;
   confidence_score: number;
 }
+
+export type PortabilityDecisionStatus = 'proposed' | 'reviewed' | 'accepted' | 'rejected' | 'superseded';
+
+export type PortabilityAdoptionStatus = 'adopted' | 'not-adopted' | 'superseded';
+
+export type PortabilityObservedOutcome = 'successful' | 'unsuccessful' | 'inconclusive';
+
+export interface PortabilityOutcomeRecord {
+  record_id: string;
+  recommendation_id: string;
+  pattern_id: string;
+  source_repo: string;
+  target_repo: string;
+  decision_status: PortabilityDecisionStatus;
+  decision_reason?: string;
+  adoption_status?: PortabilityAdoptionStatus;
+  observed_outcome?: PortabilityObservedOutcome;
+  outcome_confidence?: number;
+  timestamp: string;
+}

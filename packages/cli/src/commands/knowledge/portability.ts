@@ -1,4 +1,4 @@
-import { readCrossRepoPatternsArtifact } from '@zachariahredfield/playbook-engine';
+import { findPortabilityOutcomes, getPortabilityOutcomeSummary, readCrossRepoPatternsArtifact } from '@zachariahredfield/playbook-engine';
 
 type PortabilityRiskSignal = 'dependency mismatch' | 'outcome volatility' | 'low instance diversity' | 'governance instability';
 
@@ -9,6 +9,14 @@ type PortabilityRecord = {
   evidence_runs: number;
   compatible_subsystems: string[];
   risk_signals: PortabilityRiskSignal[];
+  portability_outcomes: {
+    total_records: number;
+    accepted: number;
+    rejected: number;
+    successful: number;
+    unsuccessful: number;
+    inconclusive: number;
+  };
 };
 
 type CrossRepoAggregate = {
@@ -23,6 +31,11 @@ type CrossRepoAggregate = {
 type CrossRepoRepository = {
   id: string;
   patterns: Array<{ pattern_id: string; strength: number; instance_count: number }>;
+};
+
+type PortabilityOutcomeEntry = {
+  decision_status?: string;
+  observed_outcome?: string;
 };
 
 const inferCompatibleSubsystems = (patternId: string): string[] => {
@@ -78,15 +91,27 @@ const resolveSourceRepo = (repositories: CrossRepoRepository[], patternId: strin
 
 export const runKnowledgePortability = (cwd: string): { schemaVersion: '1.0'; command: 'knowledge-portability'; portability: PortabilityRecord[] } => {
   const artifact = readCrossRepoPatternsArtifact(cwd) as { aggregates: CrossRepoAggregate[]; repositories: CrossRepoRepository[] };
+  const outcomes = getPortabilityOutcomeSummary(cwd);
 
-  const portability = artifact.aggregates.map((entry) => ({
-    pattern_id: entry.pattern_id,
-    source_repo: resolveSourceRepo(artifact.repositories, entry.pattern_id),
-    portability_score: entry.portability_score,
-    evidence_runs: entry.repo_count,
-    compatible_subsystems: inferCompatibleSubsystems(entry.pattern_id),
-    risk_signals: inferRiskSignals(entry)
-  }));
+  const portability = artifact.aggregates.map((entry) => {
+    const patternOutcomes = findPortabilityOutcomes(cwd, { pattern_id: entry.pattern_id }) as PortabilityOutcomeEntry[];
+    return {
+      pattern_id: entry.pattern_id,
+      source_repo: resolveSourceRepo(artifact.repositories, entry.pattern_id),
+      portability_score: entry.portability_score,
+      evidence_runs: entry.repo_count,
+      compatible_subsystems: inferCompatibleSubsystems(entry.pattern_id),
+      risk_signals: inferRiskSignals(entry),
+      portability_outcomes: {
+        total_records: outcomes.by_pattern[entry.pattern_id] ?? 0,
+        accepted: patternOutcomes.filter((record) => record.decision_status === 'accepted').length,
+        rejected: patternOutcomes.filter((record) => record.decision_status === 'rejected').length,
+        successful: patternOutcomes.filter((record) => record.observed_outcome === 'successful').length,
+        unsuccessful: patternOutcomes.filter((record) => record.observed_outcome === 'unsuccessful').length,
+        inconclusive: patternOutcomes.filter((record) => record.observed_outcome === 'inconclusive').length
+      }
+    };
+  });
 
   return {
     schemaVersion: '1.0',

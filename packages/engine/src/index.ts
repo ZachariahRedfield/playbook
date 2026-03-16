@@ -81,6 +81,16 @@ export {
   writePatternPortabilityArtifact
 } from './learning/patternPortability.js';
 export type { PatternPortabilityArtifact, PatternPortabilityRun } from './learning/patternPortability.js';
+export {
+  PORTABILITY_OUTCOMES_SCHEMA_VERSION,
+  PORTABILITY_OUTCOMES_RELATIVE_PATH,
+  listPortabilityOutcomes,
+  summarizePortabilityOutcomes,
+  writePortabilityOutcomeRecord,
+  getPortabilityOutcomeSummary,
+  findPortabilityOutcomes
+} from './learning/portabilityOutcomes.js';
+export type { PortabilityOutcomesArtifact, PortabilityOutcomeSummary, PortabilityOutcomeInput } from './learning/portabilityOutcomes.js';
 export { replayMemoryToCandidates, MEMORY_CANDIDATES_RELATIVE_PATH } from './memory/replay.js';
 export { listCandidateKnowledge, loadCandidateKnowledgeById, promoteMemoryCandidate, retirePromotedKnowledge, supersedePromotedKnowledge, pruneMemoryKnowledge } from './memory/knowledge.js';
 export type { MemoryKnowledgeKind, MemoryKnowledgeEntry, MemoryKnowledgeArtifact, MemoryPromotionResult, MemoryRetireResult, MemorySupersedeResult, MemoryPruneResult } from './memory/knowledge.js';

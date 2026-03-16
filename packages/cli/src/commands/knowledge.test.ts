@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 
 const knowledgeList = vi.fn();
@@ -8,6 +8,8 @@ const knowledgeTimeline = vi.fn();
 const knowledgeProvenance = vi.fn();
 const knowledgeStale = vi.fn();
 const readCrossRepoPatternsArtifact = vi.fn();
+const getPortabilityOutcomeSummary = vi.fn();
+const findPortabilityOutcomes = vi.fn();
 
 vi.mock('@zachariahredfield/playbook-engine', () => ({
   knowledgeList,
@@ -16,9 +18,19 @@ vi.mock('@zachariahredfield/playbook-engine', () => ({
   knowledgeTimeline,
   knowledgeProvenance,
   knowledgeStale,
-  readCrossRepoPatternsArtifact
+  readCrossRepoPatternsArtifact,
+  getPortabilityOutcomeSummary,
+  findPortabilityOutcomes
 }));
 
+
+beforeEach(() => {
+  getPortabilityOutcomeSummary.mockReturnValue({
+    decision_status_counts: { accepted: 0, proposed: 0, reviewed: 0, rejected: 0, superseded: 0 },
+    by_pattern: {}
+  });
+  findPortabilityOutcomes.mockReturnValue([]);
+});
 describe('runKnowledge', () => {
   it('supports list and emits json output', async () => {
     const { runKnowledge } = await import('./knowledge.js');
@@ -99,6 +111,8 @@ describe('runKnowledge', () => {
     const { runKnowledge } = await import('./knowledge.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
+    getPortabilityOutcomeSummary.mockReturnValue({ decision_status_counts: { accepted: 0, proposed: 0, reviewed: 0, rejected: 0, superseded: 0 }, by_pattern: { 'lane-split-validation': 1 } });
+    findPortabilityOutcomes.mockReturnValue([{ decision_status: 'accepted', observed_outcome: 'successful' }]);
     readCrossRepoPatternsArtifact.mockReturnValue({
       schemaVersion: '1.0',
       kind: 'cross-repo-patterns',
@@ -168,6 +182,8 @@ describe('runKnowledge', () => {
     const { runKnowledge } = await import('./knowledge.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
+    getPortabilityOutcomeSummary.mockReturnValue({ decision_status_counts: { accepted: 0, proposed: 0, reviewed: 0, rejected: 0, superseded: 0 }, by_pattern: { 'lane-split-validation': 1 } });
+    findPortabilityOutcomes.mockReturnValue([{ decision_status: 'accepted', observed_outcome: 'successful' }]);
     readCrossRepoPatternsArtifact.mockReturnValue({
       schemaVersion: '1.0',
       kind: 'cross-repo-patterns',
@@ -215,7 +231,15 @@ describe('runKnowledge', () => {
       portability_score: 0.82,
       evidence_runs: 7,
       compatible_subsystems: ['routing_engine'],
-      risk_signals: ['dependency mismatch']
+      risk_signals: ['dependency mismatch'],
+      portability_outcomes: {
+        total_records: 1,
+        accepted: 1,
+        rejected: 0,
+        successful: 1,
+        unsuccessful: 0,
+        inconclusive: 0
+      }
     });
 
     logSpy.mockRestore();

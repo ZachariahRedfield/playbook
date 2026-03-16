@@ -403,6 +403,7 @@ Canonical ownership highlights:
 
 - `.playbook/execution-state.json` → `execution_supervisor`
 - `.playbook/process-telemetry.json` / `.playbook/outcome-telemetry.json` / `.playbook/learning-compaction.json` → `telemetry_learning`
+- `.playbook/portability-outcomes.json` → `telemetry_learning` (recorded portability recommendation review/adoption/outcome signals consumed by `knowledge_lifecycle` and `repository_memory` readers)
 - `.playbook/memory/events/*` / `.playbook/memory/index.json` → `repository_memory`
 - `.playbook/router-recommendations.json` / `.playbook/improvement-candidates.json` → `improvement_engine`
 

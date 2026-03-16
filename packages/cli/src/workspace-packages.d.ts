@@ -253,6 +253,11 @@ declare module "@zachariahredfield/playbook-engine" {
   export type LearningCompactionArtifact = any;
   export const generateLearningCompactionArtifact: (...args: any[]) => LearningCompactionArtifact;
   export const writeLearningCompactionArtifact: (...args: any[]) => string;
+  export const listPortabilityOutcomes: (...args: any[]) => any[];
+  export const summarizePortabilityOutcomes: (...args: any[]) => any;
+  export const writePortabilityOutcomeRecord: (...args: any[]) => { artifactPath: string; record: any };
+  export const getPortabilityOutcomeSummary: (...args: any[]) => any;
+  export const findPortabilityOutcomes: (...args: any[]) => any[];
   export const validateArtifacts: (...args: any[]) => any;
 
   export type ImprovementCandidatesArtifact = any;
