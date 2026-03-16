@@ -44,3 +44,14 @@ export interface CompactedLearningSummary {
   confidence: number;
   open_questions: string[];
 }
+
+export interface PatternPortabilityScore {
+  pattern_id: string;
+  source_repo: string;
+  target_repo: string;
+  evidence_runs: number;
+  structural_similarity: number;
+  dependency_compatibility: number;
+  governance_risk: number;
+  confidence_score: number;
+}

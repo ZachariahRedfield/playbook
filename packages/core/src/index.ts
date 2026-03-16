@@ -6,7 +6,7 @@ export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, Route
 export type { AttractorScoreBreakdown, CandidatePattern, PromotedPattern, PromotionDecision, PromotionReviewRecord } from './contracts/patternPromotion.js';
 export type { LaneRuntime, LaneRuntimeState } from './execution/types.js';
 export type { LaneOutcomeScore, RouterAccuracyMetric } from './telemetry/types.js';
-export type { CompactedLearningSummary, LearningCompactionTimeWindow, LearningLanePattern, LearningRecurringSignal, LearningRoutePattern, LearningValidationPattern } from './learning/types.js';
+export type { CompactedLearningSummary, LearningCompactionTimeWindow, LearningLanePattern, LearningRecurringSignal, LearningRoutePattern, LearningValidationPattern, PatternPortabilityScore } from './learning/types.js';
 export type {
   CandidateKnowledgeRecord,
   EventFingerprint,

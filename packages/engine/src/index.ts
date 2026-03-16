@@ -73,6 +73,14 @@ export type { DiffAskContext } from './ask/diffContext.js';
 export { generateKnowledgeCandidatesDraft } from './learn/draft.js';
 export { LEARNING_COMPACTION_SCHEMA_VERSION, LEARNING_COMPACTION_RELATIVE_PATH, generateLearningCompactionArtifact, writeLearningCompactionArtifact } from './learning/learningCompaction.js';
 export type { LearningCompactionArtifact } from './learning/learningCompaction.js';
+export {
+  PATTERN_PORTABILITY_SCHEMA_VERSION,
+  PATTERN_PORTABILITY_RELATIVE_PATH,
+  generatePatternPortabilityRun,
+  scorePatternPortability,
+  writePatternPortabilityArtifact
+} from './learning/patternPortability.js';
+export type { PatternPortabilityArtifact, PatternPortabilityRun } from './learning/patternPortability.js';
 export { replayMemoryToCandidates, MEMORY_CANDIDATES_RELATIVE_PATH } from './memory/replay.js';
 export { listCandidateKnowledge, loadCandidateKnowledgeById, promoteMemoryCandidate, retirePromotedKnowledge, supersedePromotedKnowledge, pruneMemoryKnowledge } from './memory/knowledge.js';
 export type { MemoryKnowledgeKind, MemoryKnowledgeEntry, MemoryKnowledgeArtifact, MemoryPromotionResult, MemoryRetireResult, MemorySupersedeResult, MemoryPruneResult } from './memory/knowledge.js';
