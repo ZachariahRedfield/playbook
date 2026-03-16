@@ -1,5 +1,5 @@
 import { readRepositoryGraph, summarizeGraphNeighborhood, type GraphNeighborhoodSummary } from '../graph/repoGraph.js';
-import { explainArtifactFromArchitecture, explainSubsystemFromArchitecture } from '../architecture/introspection.js';
+import { explainArtifactFromArchitecture, explainCommandFromArchitecture, explainSubsystemFromArchitecture } from '../architecture/introspection.js';
 import { queryRepositoryIndex } from '../query/repoQuery.js';
 import type { RepositoryModule } from '../indexer/repoIndexer.js';
 import { getRuleMetadata } from './ruleRegistry.js';
@@ -104,6 +104,18 @@ export type SubsystemExplanation = ExplainMemoryFields & {
   downstream?: string[];
 };
 
+export type CommandExplanation = ExplainMemoryFields & {
+  type: 'command';
+  resolvedTarget: ResolvedTarget;
+  command: string;
+  subsystemOwnership: string;
+  artifactsRead: string[];
+  artifactsWritten: string[];
+  rationaleSummary: string;
+  downstreamConsumers: string[];
+  commonFailurePrerequisites: string[];
+};
+
 export type ArtifactExplanation = ExplainMemoryFields & {
   type: 'artifact';
   resolvedTarget: ResolvedTarget;
@@ -121,7 +133,7 @@ export type UnknownExplanation = ExplainMemoryFields & {
   message: string;
 };
 
-export type ExplainTargetResult = RuleExplanation | ModuleExplanation | ArchitectureExplanation | SubsystemExplanation | ArtifactExplanation | UnknownExplanation;
+export type ExplainTargetResult = RuleExplanation | ModuleExplanation | ArchitectureExplanation | SubsystemExplanation | CommandExplanation | ArtifactExplanation | UnknownExplanation;
 
 const normalizeTarget = (target: string): string => target.trim().toLowerCase();
 
@@ -339,6 +351,27 @@ const explainSubsystem = (projectRoot: string, target: string): SubsystemExplana
   };
 };
 
+const explainCommand = (projectRoot: string, target: string): CommandExplanation => {
+  const details = explainCommandFromArchitecture(projectRoot, target);
+  return {
+    type: 'command',
+    resolvedTarget: {
+      input: `command ${target}`,
+      kind: 'unknown',
+      selector: target,
+      canonical: `command:${target}`,
+      matched: true
+    },
+    command: details.command,
+    subsystemOwnership: details.inspection.subsystem,
+    artifactsRead: details.inspection.artifactsRead,
+    artifactsWritten: details.inspection.artifactsWritten,
+    rationaleSummary: details.inspection.rationaleSummary,
+    downstreamConsumers: details.inspection.downstreamConsumers,
+    commonFailurePrerequisites: details.inspection.commonFailurePrerequisites
+  };
+};
+
 const explainArtifact = (projectRoot: string, target: string): ArtifactExplanation => {
   const details = explainArtifactFromArchitecture(projectRoot, target);
   return {
@@ -377,6 +410,15 @@ export const explainTarget = (projectRoot: string, target: string, options?: Exp
     }
     return withMemory(projectRoot, options?.withMemory, explainArtifact(projectRoot, artifactPath), { target: artifactPath });
   }
+  const commandMatch = trimmed.match(/^command\s+(.+)$/i);
+  if (commandMatch) {
+    const commandName = commandMatch[1].trim();
+    if (!commandName) {
+      throw new Error('playbook explain command: missing required <name> argument');
+    }
+    return withMemory(projectRoot, options?.withMemory, explainCommand(projectRoot, commandName), { target: commandName });
+  }
+
   const context = gatherContext(projectRoot);
   const resolvedTarget = resolveRepositoryTarget(projectRoot, normalizeTarget(target));
 

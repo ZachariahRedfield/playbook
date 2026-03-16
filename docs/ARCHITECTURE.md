@@ -85,8 +85,15 @@ Playbook explain supports architecture-registry-backed ownership introspection:
 
 - `pnpm playbook explain subsystem <name>` resolves subsystem ownership by canonical subsystem name.
 - `pnpm playbook explain artifact <path>` resolves artifact ownership by exact artifact path.
+- `pnpm playbook explain command <name>` resolves deterministic command inspection details for execution-oriented commands.
 
-Both commands source ownership data from `.playbook/architecture/subsystems.json` as the canonical architecture registry, return deterministic failures for missing lookups, and support `--json` machine-readable output for automation.
+These explain surfaces are registry-backed and lineage-backed:
+
+- subsystem ownership comes from `.playbook/architecture/subsystems.json`
+- artifact and command downstream relationships come from architecture dependencies and artifact lineage mappings
+- command inspection emits deterministic text/JSON fields for subsystem ownership, artifacts read, artifacts written, rationale summary, downstream consumers, and common failure prerequisites
+
+All lookups fail deterministically for unknown targets and support `--json` machine-readable output for automation.
 
 
 ## Portability confidence recalibration loop

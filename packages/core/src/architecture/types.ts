@@ -25,3 +25,13 @@ export type ArtifactLineage = {
   upstreamSubsystem: string | null;
   downstreamConsumers: string[];
 };
+
+export type CommandInspection = {
+  command: string;
+  subsystem: string;
+  artifactsRead: string[];
+  artifactsWritten: string[];
+  rationaleSummary: string;
+  downstreamConsumers: string[];
+  commonFailurePrerequisites: string[];
+};

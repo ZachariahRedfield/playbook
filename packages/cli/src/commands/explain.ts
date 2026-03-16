@@ -21,7 +21,7 @@ const toExplainTarget = (args: string[]): string | undefined => {
     return undefined;
   }
 
-  if ((positional[0] === 'subsystem' || positional[0] === 'artifact') && positional.length >= 2) {
+  if ((positional[0] === 'subsystem' || positional[0] === 'artifact' || positional[0] === 'command') && positional.length >= 2) {
     return `${positional[0]} ${positional.slice(1).join(' ')}`;
   }
 
@@ -58,6 +58,17 @@ const toOutput = (target: string, explanation: ExplainTargetResult): ExplainOutp
     payload.subsystem_dependencies = {
       upstream: explanation.upstream ?? [],
       downstream: explanation.downstream ?? []
+    };
+  }
+
+  if (explanation.type === 'command') {
+    payload.command_inspection = {
+      subsystemOwnership: explanation.subsystemOwnership,
+      artifactsRead: explanation.artifactsRead,
+      artifactsWritten: explanation.artifactsWritten,
+      rationaleSummary: explanation.rationaleSummary,
+      downstreamConsumers: explanation.downstreamConsumers,
+      commonFailurePrerequisites: explanation.commonFailurePrerequisites
     };
   }
 
@@ -158,6 +169,53 @@ const printText = (target: string, explanation: ExplainTargetResult): void => {
     } else {
       for (const subsystem of downstream) {
         console.log(`- ${subsystem}`);
+      }
+    }
+    return;
+  }
+
+  if (explanation.type === 'command') {
+    console.log(`Command: ${explanation.command}`);
+    console.log('');
+    console.log('Subsystem ownership');
+    console.log(explanation.subsystemOwnership);
+    console.log('');
+    console.log('Artifacts read');
+    if (explanation.artifactsRead.length === 0) {
+      console.log('- none');
+    } else {
+      for (const artifact of explanation.artifactsRead) {
+        console.log(`- ${artifact}`);
+      }
+    }
+    console.log('');
+    console.log('Artifacts written');
+    if (explanation.artifactsWritten.length === 0) {
+      console.log('- none');
+    } else {
+      for (const artifact of explanation.artifactsWritten) {
+        console.log(`- ${artifact}`);
+      }
+    }
+    console.log('');
+    console.log('Rationale summary');
+    console.log(explanation.rationaleSummary);
+    console.log('');
+    console.log('Downstream consumers');
+    if (explanation.downstreamConsumers.length === 0) {
+      console.log('- none');
+    } else {
+      for (const consumer of explanation.downstreamConsumers) {
+        console.log(`- ${consumer}`);
+      }
+    }
+    console.log('');
+    console.log('Common failure prerequisites');
+    if (explanation.commonFailurePrerequisites.length === 0) {
+      console.log('- none');
+    } else {
+      for (const prerequisite of explanation.commonFailurePrerequisites) {
+        console.log(`- ${prerequisite}`);
       }
     }
     return;

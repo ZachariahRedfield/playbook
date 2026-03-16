@@ -87,6 +87,13 @@ const writeArchitectureRegistry = (repo: string): void => {
             artifacts: ['.playbook/worker-assignments.json']
           },
           {
+            name: 'routing_engine',
+            purpose: 'Task classification and execution strategy',
+            commands: ['route'],
+            artifacts: ['.playbook/execution-plan.json'],
+            downstream: ['orchestration_planner']
+          },
+          {
             name: 'telemetry_learning',
             purpose: 'Execution telemetry and learning state',
             commands: ['telemetry'],
@@ -375,6 +382,73 @@ describe('runExplain', () => {
       command: 'explain',
       target: 'artifact .playbook/unknown.json',
       error: 'playbook explain artifact: unknown artifact ".playbook/unknown.json".'
+    });
+
+    logSpy.mockRestore();
+  });
+
+
+  it('returns command inspection details for known command lookups', async () => {
+    const repo = createRepo('playbook-cli-explain-command-json');
+    writeArchitectureRegistry(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runExplain(repo, ['command', 'route'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      command: 'explain',
+      target: 'command route',
+      type: 'command',
+      explanation: {
+        resolvedTarget: {
+          input: 'command route',
+          kind: 'unknown',
+          selector: 'route',
+          canonical: 'command:route',
+          matched: true
+        },
+        command: 'route',
+        subsystemOwnership: 'routing_engine',
+        artifactsRead: [],
+        artifactsWritten: ['.playbook/execution-plan.json'],
+        rationaleSummary: 'Task classification and execution strategy',
+        downstreamConsumers: ['orchestration_planner'],
+        commonFailurePrerequisites: [
+          'Architecture registry contains subsystem "routing_engine" and command mappings.',
+          'Required artifact available: .playbook/execution-plan.json.'
+        ],
+        command_inspection: {
+          subsystemOwnership: 'routing_engine',
+          artifactsRead: [],
+          artifactsWritten: ['.playbook/execution-plan.json'],
+          rationaleSummary: 'Task classification and execution strategy',
+          downstreamConsumers: ['orchestration_planner'],
+          commonFailurePrerequisites: [
+            'Architecture registry contains subsystem "routing_engine" and command mappings.',
+            'Required artifact available: .playbook/execution-plan.json.'
+          ]
+        }
+      }
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('fails deterministically for missing command lookups', async () => {
+    const repo = createRepo('playbook-cli-explain-command-missing');
+    writeArchitectureRegistry(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runExplain(repo, ['command', 'unknown'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toEqual({
+      command: 'explain',
+      target: 'command unknown',
+      error: 'playbook explain command: unknown command "unknown".'
     });
 
     logSpy.mockRestore();

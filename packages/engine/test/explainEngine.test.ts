@@ -12,6 +12,38 @@ const writeRepoIndex = (repo: string, payload: Record<string, unknown>): void =>
   fs.writeFileSync(indexPath, JSON.stringify(payload, null, 2));
 };
 
+
+const writeArchitectureRegistry = (repo: string): void => {
+  const registryPath = path.join(repo, '.playbook', 'architecture', 'subsystems.json');
+  fs.mkdirSync(path.dirname(registryPath), { recursive: true });
+  fs.writeFileSync(
+    registryPath,
+    JSON.stringify(
+      {
+        version: 1,
+        subsystems: [
+          {
+            name: 'routing_engine',
+            purpose: 'Task classification and execution strategy',
+            commands: ['route'],
+            artifacts: ['.playbook/execution-plan.json'],
+            downstream: ['orchestration_planner']
+          },
+          {
+            name: 'orchestration_planner',
+            purpose: 'Parallel work decomposition',
+            commands: ['orchestrate'],
+            artifacts: ['.playbook/workset-plan.json'],
+            upstream: ['routing_engine']
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeMemoryFixtures = (repo: string): void => {
   const memoryRoot = path.join(repo, '.playbook', 'memory');
   fs.mkdirSync(path.join(memoryRoot, 'knowledge'), { recursive: true });
@@ -393,4 +425,83 @@ describe('explainTarget', () => {
 
     expect(first).toEqual(second);
   });
+  it('inspects known command ownership with deterministic JSON shape', () => {
+    const repo = createRepo('playbook-explain-engine-command-known');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'nextjs',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: ['workouts'],
+      database: 'supabase',
+      rules: []
+    });
+    writeArchitectureRegistry(repo);
+
+    const result = explainTarget(repo, 'command route');
+    expect(result.type).toBe('command');
+    if (result.type !== 'command') return;
+
+    expect(result).toEqual({
+      type: 'command',
+      resolvedTarget: {
+        input: 'command route',
+        kind: 'unknown',
+        selector: 'route',
+        canonical: 'command:route',
+        matched: true
+      },
+      command: 'route',
+      subsystemOwnership: 'routing_engine',
+      artifactsRead: [],
+      artifactsWritten: ['.playbook/execution-plan.json'],
+      rationaleSummary: 'Task classification and execution strategy',
+      downstreamConsumers: ['orchestration_planner'],
+      commonFailurePrerequisites: [
+        'Architecture registry contains subsystem "routing_engine" and command mappings.',
+        'Required artifact available: .playbook/execution-plan.json.'
+      ]
+    });
+  });
+
+
+  it('keeps command ownership consistent with subsystem explain surface', () => {
+    const repo = createRepo('playbook-explain-engine-command-consistency');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'nextjs',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: ['workouts'],
+      database: 'supabase',
+      rules: []
+    });
+    writeArchitectureRegistry(repo);
+
+    const commandResult = explainTarget(repo, 'command route');
+    const subsystemResult = explainTarget(repo, 'subsystem routing_engine');
+
+    expect(commandResult.type).toBe('command');
+    expect(subsystemResult.type).toBe('subsystem');
+    if (commandResult.type !== 'command' || subsystemResult.type !== 'subsystem') return;
+
+    expect(commandResult.subsystemOwnership).toBe(subsystemResult.name);
+  });
+
+  it('fails deterministically for missing command lookup', () => {
+    const repo = createRepo('playbook-explain-engine-command-missing');
+    writeRepoIndex(repo, {
+      schemaVersion: '1.0',
+      framework: 'nextjs',
+      language: 'typescript',
+      architecture: 'modular-monolith',
+      modules: ['workouts'],
+      database: 'supabase',
+      rules: []
+    });
+    writeArchitectureRegistry(repo);
+
+    expect(() => explainTarget(repo, 'command missing')).toThrowError('playbook explain command: unknown command "missing".');
+  });
+
 });
