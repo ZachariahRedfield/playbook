@@ -159,6 +159,15 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
+  cycle: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runCycle } = await import('./cycle.js');
+    return runCycle(cwd, {
+      format,
+      quiet,
+      stopOnError: !parseFlag(commandArgs, '--no-stop-on-error'),
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   workers: async ({ cwd, commandArgs, format, quiet }) => {
     const { runWorkers } = await import('./workers.js');
     const action = commandArgs[0];
@@ -428,6 +437,7 @@ const commandOrder = [
   'lanes',
   'workers',
   'execute',
+  'cycle',
   'apply',
   'fix',
   'doctor',

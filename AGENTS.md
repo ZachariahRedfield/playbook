@@ -182,6 +182,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook orchestrate --goal "ship capability" --lanes 3 --format both`
 - `execute`: Execute orchestration lanes through the execution supervisor runtime
   - Example: `pnpm playbook execute --json`
+- `cycle`: Run the hardened execution primitives as one deterministic cycle orchestration pass
+  - Example: `pnpm playbook cycle --json`
 - `apply`: Execute deterministic auto-fixable plan tasks
   - Example: `pnpm playbook apply --from-plan .playbook/plan.json`
 
@@ -277,6 +279,7 @@ Do not hand-edit entries inside the managed markers.
 | `workers` | `pnpm playbook workers assign --json` |
 | `orchestrate` | `pnpm playbook orchestrate --goal "ship capability" --lanes 3 --format both` |
 | `execute` | `pnpm playbook execute --json` |
+| `cycle` | `pnpm playbook cycle --json` |
 | `apply` | `pnpm playbook apply --from-plan .playbook/plan.json` |
 | `analyze-pr` | `pnpm playbook analyze-pr --json` |
 | `doctor` | `pnpm playbook doctor --fix --dry-run` |

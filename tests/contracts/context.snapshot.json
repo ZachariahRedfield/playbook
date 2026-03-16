@@ -30,6 +30,7 @@
       "lanes",
       "workers",
       "execute",
+      "cycle",
       "apply",
       "fix",
       "doctor",

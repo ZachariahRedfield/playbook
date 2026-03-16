@@ -136,6 +136,18 @@
       "example": "pnpm playbook contracts --json"
     },
     {
+      "name": "cycle",
+      "category": "Core",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "primary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook cycle --json"
+    },
+    {
       "name": "demo",
       "category": "Utility",
       "role": "utility",
@@ -541,6 +553,7 @@
     "ask",
     "audit",
     "context",
+    "cycle",
     "deps",
     "docs",
     "doctor",

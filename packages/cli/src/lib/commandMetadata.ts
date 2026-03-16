@@ -124,6 +124,19 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'cycle',
+    description: 'Run the hardened execution primitives as one deterministic cycle orchestration pass',
+    category: 'Core',
+    role: 'remediation',
+    lifecycle: 'canonical',
+    discoverability: 'primary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'cycle --json',
+    machineReadable: true
+  },
+  {
     name: 'apply',
     description: 'Execute deterministic auto-fixable plan tasks',
     category: 'Core',

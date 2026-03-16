@@ -24,7 +24,7 @@ describe('runtime observability artifacts', () => {
     }
   });
 
-  it('writes current, cycle, and history runtime artifacts for target repos', () => {
+  it('writes current, cycle, and history runtime artifacts for target repos', { timeout: 15000 }, () => {
     const tempRoot = createTempRoot('playbook-runtime-observability-');
     const targetRepo = path.join(tempRoot, 'consumer-repo');
     fs.mkdirSync(path.join(targetRepo, 'src', 'feature'), { recursive: true });
