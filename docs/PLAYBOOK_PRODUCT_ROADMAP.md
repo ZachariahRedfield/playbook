@@ -2113,6 +2113,7 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Added deterministic `workset-plan` compilation from `orchestrate --tasks-file`.
 - Execution-plan to lane-plan compilation now happens before any autonomous orchestration concerns.
 - Worker-ready prompts are emitted per lane while unsupported/ambiguous tasks remain explicitly blocked.
+- Added `playbook cycle` as the live thin runtime orchestrator over existing primitives (`verify -> route -> orchestrate -> execute -> telemetry -> improve`) with deterministic `.playbook/cycle-state.json` status artifacts.
 - Added deterministic `lane-state` derivation at `.playbook/lane-state.json` so planned lanes become explicit tracked lifecycle state (`blocked`, `ready`, `running`, `completed`, `merge_ready`) with conservative merge and verification posture before any autonomous execution concerns.
 - Added proposal-only lane lifecycle transition commands (`pnpm playbook lanes start <lane_id>`, `pnpm playbook lanes complete <lane_id>`) with strict dependency gating and conservative merge-ready recomputation.
 - Rule — Lane lifecycle transitions must stay stricter than eventual automation behavior.

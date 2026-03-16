@@ -4,6 +4,7 @@
 ### CLI
 
 - Added `playbook cycle` as a thin orchestration command that runs `verify -> route -> orchestrate -> execute -> telemetry -> improve` via existing handlers and writes deterministic `.playbook/cycle-state.json` summaries (step status, duration, artifacts, overall status) without duplicating primitive logic.
+- WHAT: Hardened `playbook cycle` failure reporting so thrown primitive exceptions deterministically persist `failed_step` in `.playbook/cycle-state.json`, aligned help text with the implemented `--no-stop-on-error` flag contract, and added focused cycle contract tests for thrown failures, success-shape omission of `failed_step`, and continuation semantics. WHY: Preserves thin-orchestrator architecture while improving failure specificity, operator UX clarity, and automation-facing artifact reliability.
 - Added deterministic `playbook telemetry commands` summaries that aggregate existing command-quality telemetry into stable per-command health metrics for `verify`, `route`, `orchestrate`, `execute`, `telemetry`, and `improve` in both text and JSON modes, including sparse-evidence zero-value rows and deterministic ordering.
 - Normalized command-surface contracts for `verify`, `route`, `orchestrate`, `execute`, `telemetry`, and `improve` around side-effect-free help, deterministic missing-artifact failures, stable JSON/text semantics, and explicit owned-artifact declarations.
 - Added shared command-surface helpers for help rendering and standardized deterministic failure envelopes.

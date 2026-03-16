@@ -146,7 +146,7 @@ export const runCycle = async (cwd: string, options: CycleOptions): Promise<numb
     printCommandHelp({
       usage: 'playbook cycle [options]',
       description: 'Run the deterministic execution cycle by orchestrating primitive command handlers.',
-      options: ['--stop-on-error            Stop at first failing step (default: true)', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
+      options: ['--no-stop-on-error         Continue running steps after a failure (default: stop on first failure)', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
       artifacts: [CYCLE_STATE_PATH]
     });
     return ExitCode.Success;
@@ -161,9 +161,11 @@ export const runCycle = async (cwd: string, options: CycleOptions): Promise<numb
   let result: 'success' | 'failed' = 'success';
   let failedStep: StepName | undefined;
   let failureExitCode: number | null = null;
+  let activeStep: StepName | undefined;
 
   try {
     for (const step of STEP_ORDER) {
+      activeStep = step;
       const startedMs = nowMs();
       const exitCode = await runStep(cwd, step, options.stepRunners);
       const durationMs = nowMs() - startedMs;
@@ -188,6 +190,7 @@ export const runCycle = async (cwd: string, options: CycleOptions): Promise<numb
     }
   } catch (error) {
     result = 'failed';
+    failedStep = failedStep ?? activeStep;
     const artifact = toCycleArtifact(cwd, cycleId, startedAt, steps, [...new Set(artifactsWritten)], result, failedStep);
     writeCycleState(cwd, artifact);
     tracker.finish({

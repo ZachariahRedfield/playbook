@@ -103,6 +103,89 @@ describe('runCycle', { timeout: 30000 }, () => {
       artifacts_written: expect.any(Array),
       result: 'success'
     });
+    expect(payload).not.toHaveProperty('failed_step');
+
+    logSpy.mockRestore();
+  });
+
+  it('continues running when stopOnError=false and still returns failure', async () => {
+    const { runCycle } = await import('./cycle.js');
+    const repo = createRepo('playbook-cycle-continue-on-error');
+    const routeRunner = vi.fn(async () => ExitCode.Success);
+    const orchestrateRunner = vi.fn(async () => ExitCode.Success);
+    const executeRunner = vi.fn(async () => ExitCode.Success);
+    const telemetryRunner = vi.fn(async () => ExitCode.Success);
+    const improveRunner = vi.fn(async () => ExitCode.Success);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const code = await runCycle(repo, {
+      format: 'json',
+      quiet: false,
+      stopOnError: false,
+      stepRunners: {
+        ...successStepRunners,
+        verify: async () => ExitCode.Failure,
+        route: routeRunner,
+        orchestrate: orchestrateRunner,
+        execute: executeRunner,
+        telemetry: telemetryRunner,
+        improve: improveRunner
+      }
+    });
+
+    expect(code).toBe(ExitCode.Failure);
+    expect(routeRunner).toHaveBeenCalledTimes(1);
+    expect(orchestrateRunner).toHaveBeenCalledTimes(1);
+    expect(executeRunner).toHaveBeenCalledTimes(1);
+    expect(telemetryRunner).toHaveBeenCalledTimes(1);
+    expect(improveRunner).toHaveBeenCalledTimes(1);
+
+    const artifact = readCycleArtifact(repo);
+    expect(artifact.steps.map((step) => step.name)).toEqual(['verify', 'route', 'orchestrate', 'execute', 'telemetry', 'improve']);
+    expect(artifact.result).toBe('failed');
+    expect(artifact.failed_step).toBe('verify');
+
+    logSpy.mockRestore();
+  });
+
+  it('records failed_step when a primitive throws', async () => {
+    const { runCycle } = await import('./cycle.js');
+    const repo = createRepo('playbook-cycle-throw-fail');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await expect(
+      runCycle(repo, {
+        format: 'json',
+        quiet: false,
+        stopOnError: true,
+        stepRunners: {
+          ...successStepRunners,
+          orchestrate: async () => {
+            throw new Error('boom');
+          }
+        }
+      })
+    ).rejects.toThrow('boom');
+
+    const artifact = readCycleArtifact(repo);
+    expect(artifact.result).toBe('failed');
+    expect(artifact.failed_step).toBe('orchestrate');
+    expect(artifact.steps.map((step) => step.name)).toEqual(['verify', 'route']);
+
+    logSpy.mockRestore();
+  });
+
+  it('help text documents --no-stop-on-error flag', async () => {
+    const { runCycle } = await import('./cycle.js');
+    const repo = createRepo('playbook-cycle-help-flags');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const code = await runCycle(repo, { format: 'text', quiet: false, stopOnError: true, help: true });
+
+    expect(code).toBe(ExitCode.Success);
+    const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
+    expect(output).toContain('--no-stop-on-error');
+    expect(output).not.toContain('--stop-on-error            Stop at first failing step');
 
     logSpy.mockRestore();
   });
