@@ -4,7 +4,7 @@
   "status": "error",
   "summary": {
     "errors": 13,
-    "warnings": 11,
+    "warnings": 10,
     "info": 2
   },
   "findings": [
@@ -131,12 +131,6 @@
     {
       "category": "Memory",
       "severity": "warning",
-      "id": "doctor.memory.memory-artifacts-missing",
-      "message": "Missing required memory artifacts: .playbook/memory/index.json Regenerate missing memory artifacts before relying on replay or promotion diagnostics."
-    },
-    {
-      "category": "Memory",
-      "severity": "warning",
       "id": "doctor.memory.replay-output-inconsistent",
       "message": "Replay output inconsistencies detected (0 missing indexed events, 2 provenance mismatches). Regenerate replay outputs from a valid memory index and event set before promotion."
     },
@@ -191,12 +185,6 @@
   "memoryDiagnostics": {
     "findings": [
       {
-        "code": "memory-artifacts-missing",
-        "severity": "warning",
-        "message": "Missing required memory artifacts: .playbook/memory/index.json",
-        "recommendation": "Regenerate missing memory artifacts before relying on replay or promotion diagnostics."
-      },
-      {
         "code": "replay-output-inconsistent",
         "severity": "warning",
         "message": "Replay output inconsistencies detected (0 missing indexed events, 2 provenance mismatches).",
@@ -204,15 +192,6 @@
       }
     ],
     "suggestions": [
-      {
-        "id": "PB015",
-        "title": "Repair memory artifact integrity",
-        "actions": [
-          "Rebuild .playbook/memory/index.json",
-          "Regenerate .playbook/memory/candidates.json",
-          "Validate JSON artifacts before commit"
-        ]
-      },
       {
         "id": "PB018",
         "title": "Regenerate replay outputs for deterministic consistency",

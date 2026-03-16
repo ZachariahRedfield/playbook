@@ -16,8 +16,11 @@ const appendExecutionStep = vi.fn();
 const executionRunPath = vi.fn();
 const attachSessionRunState = vi.fn();
 const completeExecutionRun = vi.fn();
+const appendCommandExecutionQualityRecord = vi.fn();
+const safeRecordRepositoryEvent = vi.fn((callback: () => void) => callback());
+const recordCommandQuality = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ verifyRepo, loadConfig, formatHuman, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, completeExecutionRun, executionRunPath, attachSessionRunState }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ verifyRepo, loadConfig, formatHuman, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, completeExecutionRun, executionRunPath, attachSessionRunState, appendCommandExecutionQualityRecord, safeRecordRepositoryEvent, recordCommandQuality }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
 describe('runVerify policy mode', () => {

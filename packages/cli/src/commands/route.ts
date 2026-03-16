@@ -11,6 +11,7 @@ import {
   safeRecordRepositoryEvent
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
+import { createCommandQualityTracker } from '../lib/commandQuality.js';
 import { emitCommandFailure, printCommandHelp } from '../lib/commandSurface.js';
 
 type RouteOptions = {
@@ -145,14 +146,22 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     return ExitCode.Success;
   }
 
+  const tracker = createCommandQualityTracker(cwd, 'route');
+
   const task = extractTask(commandArgs);
   if (!task) {
-    return emitCommandFailure('route', options, {
+    const exitCode = emitCommandFailure('route', options, {
       summary: 'Route failed: missing required task argument.',
       findingId: 'route.task.required',
       message: 'Missing required argument: <task>.',
       nextActions: ['Run `playbook route "<task>"` with a deterministic task statement.']
     });
+    tracker.finish({
+      inputsSummary: 'missing task argument',
+      successStatus: 'failure',
+      warningsCount: 1
+    });
+    return exitCode;
   }
 
   const decision = routeTask(cwd, task);
@@ -192,7 +201,18 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
 
   if (options.format === 'json') {
     console.log(JSON.stringify(output, null, 2));
-    return decision.route === 'unsupported' ? ExitCode.Failure : ExitCode.Success;
+    const exitCode = decision.route === 'unsupported' ? ExitCode.Failure : ExitCode.Success;
+    tracker.finish({
+      inputsSummary: `task=${task}`,
+      artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH],
+      artifactsWritten: [EXECUTION_PLAN_PATH],
+      downstreamArtifactsProduced: [EXECUTION_PLAN_PATH],
+      successStatus: decision.route === 'unsupported' ? 'partial' : 'success',
+      warningsCount: output.executionPlan.warnings.length,
+      openQuestionsCount: output.executionPlan.open_questions.length,
+      confidenceScore: output.executionPlan.route_confidence
+    });
+    return exitCode;
   }
 
   if (!options.quiet) {
@@ -205,8 +225,28 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     if (output.executionPlan.missing_prerequisites.length > 0) {
       console.error(`Next steps: provide ${output.executionPlan.missing_prerequisites.join(', ')} and retry.`);
     }
+    tracker.finish({
+      inputsSummary: `task=${task}`,
+      artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH],
+      artifactsWritten: [EXECUTION_PLAN_PATH],
+      downstreamArtifactsProduced: [EXECUTION_PLAN_PATH],
+      successStatus: 'partial',
+      warningsCount: output.executionPlan.warnings.length,
+      openQuestionsCount: output.executionPlan.open_questions.length,
+      confidenceScore: output.executionPlan.route_confidence
+    });
     return ExitCode.Failure;
   }
 
+  tracker.finish({
+    inputsSummary: `task=${task}`,
+    artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH],
+    artifactsWritten: [EXECUTION_PLAN_PATH],
+    downstreamArtifactsProduced: [EXECUTION_PLAN_PATH],
+    successStatus: 'success',
+    warningsCount: output.executionPlan.warnings.length,
+    openQuestionsCount: output.executionPlan.open_questions.length,
+    confidenceScore: output.executionPlan.route_confidence
+  });
   return ExitCode.Success;
 };

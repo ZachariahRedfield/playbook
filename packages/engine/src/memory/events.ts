@@ -15,6 +15,7 @@ export type RepositoryEventType =
   | 'worker_assignment'
   | 'execution_outcome'
   | 'improvement_signal'
+  | 'command_quality'
   | 'lane_outcome'
   | 'improvement_candidate';
 
@@ -124,12 +125,31 @@ export type ImprovementCandidateLegacyEvent = Omit<ImprovementSignalEvent, 'even
   event_type: 'improvement_candidate';
 };
 
+export type CommandQualityEvent = RepositoryEventBase & {
+  event_type: 'command_quality';
+  subsystem: 'repository_memory';
+  subject: string;
+  payload: {
+    command_name: string;
+    success_status: 'success' | 'failure' | 'partial';
+    confidence_score: number;
+    warnings_count: number;
+    open_questions_count: number;
+  };
+  command_name: string;
+  success_status: 'success' | 'failure' | 'partial';
+  confidence_score: number;
+  warnings_count: number;
+  open_questions_count: number;
+};
+
 export type RepositoryEvent =
   | RouteDecisionEvent
   | LaneTransitionEvent
   | WorkerAssignmentEvent
   | ExecutionOutcomeEvent
   | ImprovementSignalEvent
+  | CommandQualityEvent
   | LaneOutcomeLegacyEvent
   | ImprovementCandidateLegacyEvent;
 
@@ -197,6 +217,7 @@ const emptyIndex = (): RepositoryEventIndex => ({
     lane_transition: { count: 0, latest_timestamp: null },
     route_decision: { count: 0, latest_timestamp: null },
     worker_assignment: { count: 0, latest_timestamp: null },
+    command_quality: { count: 0, latest_timestamp: null },
     lane_outcome: { count: 0, latest_timestamp: null },
     improvement_candidate: { count: 0, latest_timestamp: null }
   }
@@ -432,6 +453,42 @@ export const recordImprovementSignal = (
     summary: input.summary,
     confidence: typeof input.confidence === 'number' ? Number(input.confidence.toFixed(6)) : 0
   }) as ImprovementSignalEvent;
+
+
+
+export const recordCommandQuality = (
+  repoRoot: string,
+  input: {
+    timestamp?: string;
+    run_id?: string;
+    command_name: string;
+    success_status: 'success' | 'failure' | 'partial';
+    confidence_score: number;
+    warnings_count: number;
+    open_questions_count: number;
+    related_artifacts?: RepositoryEventRelatedArtifact[];
+  }
+): CommandQualityEvent =>
+  appendEvent(repoRoot, {
+    event_type: 'command_quality',
+    ...(input.timestamp ? { timestamp: input.timestamp } : {}),
+    ...(input.run_id ? { run_id: input.run_id } : {}),
+    subsystem: 'repository_memory',
+    subject: input.command_name,
+    related_artifacts: [...(input.related_artifacts ?? [])],
+    payload: {
+      command_name: input.command_name,
+      success_status: input.success_status,
+      confidence_score: Number(input.confidence_score.toFixed(6)),
+      warnings_count: Math.max(0, Math.trunc(input.warnings_count)),
+      open_questions_count: Math.max(0, Math.trunc(input.open_questions_count))
+    },
+    command_name: input.command_name,
+    success_status: input.success_status,
+    confidence_score: Number(input.confidence_score.toFixed(6)),
+    warnings_count: Math.max(0, Math.trunc(input.warnings_count)),
+    open_questions_count: Math.max(0, Math.trunc(input.open_questions_count))
+  }) as CommandQualityEvent;
 
 export type RepositoryEventLookupOptions = {
   eventType?: RepositoryEventType;

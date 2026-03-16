@@ -181,6 +181,7 @@ export {
   recordExecutionOutcome,
   recordImprovementCandidate,
   recordImprovementSignal,
+  recordCommandQuality,
   queryRepositoryEvents,
   listRecentRouteDecisions,
   listLaneTransitionsForRun,
@@ -202,6 +203,7 @@ export type {
   WorkerAssignmentEvent,
   ExecutionOutcomeEvent,
   ImprovementSignalEvent,
+  CommandQualityEvent,
   RepositoryEventLookupOptions,
   RepositoryEventQueryOptions
 } from './events.js';

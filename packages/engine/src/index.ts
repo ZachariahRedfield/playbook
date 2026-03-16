@@ -245,6 +245,7 @@ export {
   recordExecutionOutcome,
   recordImprovementCandidate,
   recordImprovementSignal,
+  recordCommandQuality,
   queryRepositoryEvents,
   listRecentRouteDecisions,
   listLaneTransitionsForRun,
@@ -267,7 +268,8 @@ export type {
   LaneTransitionEvent,
   WorkerAssignmentEvent,
   ExecutionOutcomeEvent,
-  ImprovementSignalEvent
+  ImprovementSignalEvent,
+  CommandQualityEvent
 } from './memory/events.js';
 export { lookupMemoryEventTimeline, lookupMemoryCandidateKnowledge, lookupPromotedMemoryKnowledge, expandMemoryProvenance } from './memory/inspection.js';
 export type { MemoryTimelineLookupOptions, MemoryCandidateLookupOptions, MemoryKnowledgeLookupOptions, ExpandedMemoryProvenance } from './memory/inspection.js';
@@ -582,3 +584,5 @@ export * from './telemetry/index.js';
 
 export { validateArtifacts } from "./architecture/validateArtifacts.js";
 export type { ArchitectureValidationResult, ValidateArtifactsOptions } from "./architecture/validateArtifacts.js";
+
+export { appendCommandExecutionQualityRecord, readCommandExecutionQualityArtifact, summarizeCommandExecutionQuality } from './telemetry/commandQuality.js';

@@ -3,6 +3,7 @@ import { buildResult, emitResult, ExitCode } from '../lib/cliContract.js';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { printCommandHelp } from '../lib/commandSurface.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
+import { createCommandQualityTracker } from '../lib/commandQuality.js';
 
 export type VerifyReport = {
   ok: boolean;
@@ -65,6 +66,8 @@ export const runVerify = async (
     });
     return ExitCode.Success;
   }
+
+  const tracker = createCommandQualityTracker(cwd, 'verify');
 
   const verifyRules = await loadVerifyRules(cwd);
   const report = await collectVerifyReport(cwd);
@@ -151,6 +154,14 @@ export const runVerify = async (
 
   if (options.format === 'text' && !options.ci && !options.explain && !inPolicyMode) {
     console.log(engine.formatHuman(report));
+    tracker.finish({
+      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+      artifactsWritten: options.outFile ? [options.outFile] : [],
+      downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
+      successStatus: ok ? 'success' : 'failure',
+      warningsCount: report.warnings.length,
+      confidenceScore: ok ? 0.9 : 0.3
+    });
     return exitCode;
   }
 
@@ -158,6 +169,14 @@ export const runVerify = async (
     if (!options.quiet || !ok) {
       console.log(ok ? 'playbook verify: PASS' : 'playbook verify: FAIL');
     }
+    tracker.finish({
+      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+      artifactsWritten: options.outFile ? [options.outFile] : [],
+      downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
+      successStatus: ok ? 'success' : 'failure',
+      warningsCount: report.warnings.length,
+      confidenceScore: ok ? 0.9 : 0.3
+    });
     return exitCode;
   }
 
@@ -187,6 +206,14 @@ export const runVerify = async (
 
   if (options.format === 'json' && options.outFile) {
     emitJsonOutput({ cwd, command: 'verify', payload: buildResult(resultPayload), outFile: options.outFile });
+    tracker.finish({
+      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+      artifactsWritten: options.outFile ? [options.outFile] : [],
+      downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
+      successStatus: ok ? 'success' : 'failure',
+      warningsCount: report.warnings.length,
+      confidenceScore: ok ? 0.9 : 0.3
+    });
     return exitCode;
   }
 
@@ -197,5 +224,13 @@ export const runVerify = async (
     ...resultPayload
   });
 
+  tracker.finish({
+    inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+    artifactsWritten: options.outFile ? [options.outFile] : [],
+    downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
+    successStatus: ok ? 'success' : 'failure',
+    warningsCount: report.warnings.length,
+    confidenceScore: ok ? 0.9 : 0.3
+  });
   return exitCode;
 };
