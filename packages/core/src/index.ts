@@ -5,6 +5,7 @@ export type { ExecutionIntent, ExecutionRun, ExecutionStep, ExecutionEvidence, E
 export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, RouteTaskInput, RouteTaskKind, TaskRoute } from './contracts/routing.js';
 export type { AttractorScoreBreakdown, CandidatePattern, PromotedPattern, PromotionDecision, PromotionReviewRecord } from './contracts/patternPromotion.js';
 export type { CrossRepoPatternEvidenceArtifact, PatternPortabilityContract, PatternPortabilityEntry, PortabilityArtifactInput } from './contracts/patternPortabilityContract.js';
+export type { TransferReadinessArtifact, TransferReadinessEntry, TransferReadinessGovernanceAlignment, TransferReadinessPresence, TransferReadinessRecommendation, TransferReadinessValidationCoverage } from './contracts/transferReadinessContract.js';
 export type { LaneRuntime, LaneRuntimeState } from './execution/types.js';
 export type { LaneOutcomeScore, RouterAccuracyMetric } from './telemetry/types.js';
 export type { CompactedLearningSummary, LearningCompactionTimeWindow, LearningLanePattern, LearningRecurringSignal, LearningRoutePattern, LearningValidationPattern, PatternPortabilityScore, PortabilityConfidenceRecalibrationSummary, PortabilityDecisionStatus, PortabilityAdoptionStatus, PortabilityObservedOutcome, PortabilityOutcomeTelemetryRecord } from './learning/types.js';
@@ -90,6 +91,7 @@ export {
 } from './contracts/controlPlaneRuntime.js';
 
 export { createPatternPortabilityContract, toCrossRepoPatternEvidenceArtifact, validatePatternPortabilityContract, writeCrossRepoPatternEvidenceArtifact } from './contracts/patternPortabilityContract.js';
+export { normalizeTransferReadinessArtifact } from './contracts/transferReadinessContract.js';
 
 export { additiveCommandFieldSchemaRegistry, getContractsSchemaRegistry, memoryArtifactSchemaRegistry } from './contracts/schemaRegistry.js';
 

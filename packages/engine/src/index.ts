@@ -83,6 +83,14 @@ export {
 export type { PatternPortabilityArtifact, PatternPortabilityRun } from './learning/patternPortability.js';
 
 export {
+  TRANSFER_READINESS_SCHEMA_VERSION,
+  TRANSFER_READINESS_RELATIVE_PATH,
+  generateTransferReadinessArtifact,
+  writeTransferReadinessArtifact
+} from './learning/transferReadiness.js';
+export type { TransferReadinessArtifact, TransferReadinessEntry } from '@zachariahredfield/playbook-core';
+
+export {
   PORTABILITY_CONFIDENCE_SCHEMA_VERSION,
   PORTABILITY_CONFIDENCE_RELATIVE_PATH,
   generatePortabilityConfidenceArtifact,
