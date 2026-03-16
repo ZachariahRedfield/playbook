@@ -34,19 +34,23 @@ export const createCommandQualityTracker = (cwd: string, commandName: string): C
       const artifactsWritten = input.artifactsWritten ?? [];
       const downstreamArtifactsProduced = input.downstreamArtifactsProduced ?? [];
 
-      appendCommandExecutionQualityRecord(cwd, {
-        command_name: commandName,
-        run_id: runId,
-        inputs_summary: input.inputsSummary,
-        artifacts_read: artifactsRead,
-        artifacts_written: artifactsWritten,
-        success_status: input.successStatus,
-        duration_ms: durationMs,
-        warnings_count: warningsCount,
-        open_questions_count: openQuestionsCount,
-        confidence_score: confidenceScore,
-        downstream_artifacts_produced: downstreamArtifactsProduced
-      });
+      try {
+        appendCommandExecutionQualityRecord(cwd, {
+          command_name: commandName,
+          run_id: runId,
+          inputs_summary: input.inputsSummary,
+          artifacts_read: artifactsRead,
+          artifacts_written: artifactsWritten,
+          success_status: input.successStatus,
+          duration_ms: durationMs,
+          warnings_count: warningsCount,
+          open_questions_count: openQuestionsCount,
+          confidence_score: confidenceScore,
+          downstream_artifacts_produced: downstreamArtifactsProduced
+        });
+      } catch {
+        // Command-quality telemetry is best-effort and must never mask command outcomes.
+      }
 
       safeRecordRepositoryEvent(() => {
         recordCommandExecution(cwd, {

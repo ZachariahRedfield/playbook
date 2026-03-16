@@ -44,4 +44,24 @@ describe('createCommandQualityTracker', () => {
     expect(commandExecutionEvent).toBeDefined();
     expect(commandExecutionEvent?.payload.command_name).toBe('telemetry');
   });
+
+  it('does not throw when command-quality artifact append fails', () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-command-quality-readonly-'));
+    const telemetryDir = path.join(repo, '.playbook', 'telemetry');
+    fs.mkdirSync(telemetryDir, { recursive: true });
+    fs.chmodSync(telemetryDir, 0o555);
+
+    const tracker = createCommandQualityTracker(repo, 'telemetry');
+
+    expect(() =>
+      tracker.finish({
+        inputsSummary: 'subcommand=summary',
+        successStatus: 'failure',
+        warningsCount: 1
+      })
+    ).not.toThrow();
+
+    fs.chmodSync(telemetryDir, 0o755);
+  });
+
 });

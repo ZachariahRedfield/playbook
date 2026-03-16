@@ -6,8 +6,6 @@ import { ExitCode } from '../lib/cliContract.js';
 import { runOrchestrate } from './orchestrate.js';
 
 describe('runOrchestrate', () => {
-
-
   it('prints help side-effect-free', async () => {
     const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-orchestrate-help-'));
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -46,6 +44,42 @@ describe('runOrchestrate', () => {
     expect(payload.exitCode).toBe(ExitCode.Failure);
 
     logSpy.mockRestore();
+  });
+
+  it('preserves deterministic missing --goal failure in a non-writable cwd', async () => {
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-orchestrate-missing-goal-readonly-'));
+    const telemetryDir = path.join(repoDir, '.playbook', 'telemetry');
+    fs.mkdirSync(telemetryDir, { recursive: true });
+    fs.chmodSync(telemetryDir, 0o555);
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runOrchestrate(repoDir, {
+      format: 'json',
+      quiet: false,
+      lanes: 3,
+      outDir: '.playbook/orchestrator',
+      artifactFormat: 'both'
+    });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as {
+      command: string;
+      ok: boolean;
+      exitCode: number;
+      summary: string;
+      findings: Array<{ id: string }>;
+    };
+
+    expect(payload.command).toBe('orchestrate');
+    expect(payload.ok).toBe(false);
+    expect(payload.exitCode).toBe(ExitCode.Failure);
+    expect(payload.summary).toBe('Orchestration failed: --goal is required when --tasks-file is not provided.');
+    expect(payload.findings[0]?.id).toBe('orchestrate.goal.required');
+
+    logSpy.mockRestore();
+    fs.chmodSync(telemetryDir, 0o755);
   });
 
   it('writes deterministic artifacts and returns success', async () => {
