@@ -26,12 +26,29 @@ pnpm playbook improve --json
 - `validation_efficiency`
 - `ontology`
 
-## Thresholds
+## Baseline thresholds
 
-Candidates are emitted only when both thresholds are met:
+Candidates are emitted only when both baseline thresholds are met:
 
 - `minimum_recurrence = 3`
 - `minimum_confidence = 0.6`
+
+## Deterministic evidence gating tiers
+
+Each candidate is annotated with:
+
+- `evidence_count`
+- `supporting_runs`
+- `confidence_score`
+- `gating_tier`
+- `required_review`
+- `blocking_reasons`
+
+Tier rules:
+
+- `AUTO-SAFE`: high repeated evidence + run diversity + high confidence + no governance/doctrine risk.
+- `CONVERSATIONAL`: reviewable non-sensitive proposals that pass baseline thresholds but are not AUTO-SAFE.
+- `GOVERNANCE`: doctrine/trust-boundary sensitive proposals and proposals requiring explicit governance adjudication.
 
 ## Text summary sections
 

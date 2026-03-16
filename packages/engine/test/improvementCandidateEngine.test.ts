@@ -104,8 +104,8 @@ describe('improvement candidate engine', () => {
     expect(artifact.thresholds.minimum_recurrence).toBe(3);
     expect(artifact.thresholds.minimum_confidence).toBe(0.6);
     expect(artifact.candidates.some((candidate) => candidate.candidate_id === 'routing_docs_overvalidation')).toBe(true);
-    expect(artifact.summary.AUTO_SAFE).toBeGreaterThan(0);
     expect(artifact.summary.CONVERSATIONAL).toBeGreaterThan(0);
+    expect(artifact.candidates.every((candidate) => typeof candidate.evidence_count === 'number')).toBe(true);
 
     const outputPath = writeImprovementCandidatesArtifact(repo, artifact);
     expect(outputPath.endsWith('.playbook/improvement-candidates.json')).toBe(true);
@@ -147,6 +147,19 @@ describe('improvement candidate engine', () => {
         source: 'ontology-observer',
         summary: 'Ontology drift in route taxonomy',
         confidence: 0.9
+      });
+    }
+
+
+    for (let i = 0; i < 8; i += 1) {
+      writeEvent(repo, `worker-${i}`, {
+        schemaVersion: '1.0',
+        event_type: 'worker_assignment',
+        event_id: `worker-${i}`,
+        timestamp: `2026-02-0${(i % 4) + 1}T00:00:00.000Z`,
+        lane_id: `lane-worker-${i}`,
+        worker_id: 'worker-a',
+        assignment_status: 'blocked'
       });
     }
 

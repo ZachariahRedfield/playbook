@@ -28,15 +28,19 @@ const renderText = (artifact: ImprovementCandidatesArtifact): void => {
   console.log('');
 
   if (artifact.candidates.length === 0) {
-    console.log('No candidates met recurrence/confidence thresholds.');
+    console.log('No candidates met deterministic evidence thresholds.');
     return;
   }
 
   for (const candidate of artifact.candidates) {
-    console.log(`- [${candidate.improvement_tier}] ${candidate.candidate_id} (${candidate.category})`);
+    console.log(`- [${candidate.gating_tier}] ${candidate.candidate_id} (${candidate.category})`);
     console.log(`  observation: ${candidate.observation}`);
-    console.log(`  recurrence: ${candidate.recurrence_count}, confidence: ${candidate.confidence}`);
+    console.log(`  evidence: count=${candidate.evidence_count}, supporting_runs=${candidate.supporting_runs}`);
+    console.log(`  confidence: ${candidate.confidence_score}`);
     console.log(`  action: ${candidate.suggested_action}`);
+    if (candidate.blocking_reasons.length > 0) {
+      console.log(`  why gated: ${candidate.blocking_reasons.join('; ')}`);
+    }
   }
 };
 

@@ -104,10 +104,12 @@ describe('runImprove', () => {
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
     expect(payload.kind).toBe('improvement-candidates');
-    expect((payload.summary as Record<string, number>).AUTO_SAFE).toBeGreaterThan(0);
+    expect((payload.summary as Record<string, number>).CONVERSATIONAL).toBeGreaterThan(0);
 
-    const candidates = payload.candidates as Array<{ improvement_tier: string }>;
+    const candidates = payload.candidates as Array<{ improvement_tier: string; gating_tier: string; evidence_count: number }>;
     expect(candidates.some((candidate) => ['auto_safe', 'conversation', 'governance'].includes(candidate.improvement_tier))).toBe(true);
+    expect(candidates.every((candidate) => candidate.gating_tier === candidate.improvement_tier)).toBe(true);
+    expect(candidates.every((candidate) => candidate.evidence_count >= 3)).toBe(true);
 
     const artifactPath = path.join(repo, '.playbook', 'improvement-candidates.json');
     expect(fs.existsSync(artifactPath)).toBe(true);

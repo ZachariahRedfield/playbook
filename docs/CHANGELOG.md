@@ -1,5 +1,6 @@
 # Changelog
 
+- WHAT: Strengthened `playbook improve` with deterministic evidence-gated proposal tiers by adding `evidence_count`, `supporting_runs`, `confidence_score`, `gating_tier`, `required_review`, and `blocking_reasons`, and by deriving gating from telemetry + repository memory evidence. WHY: Enforces explicit AUTO-SAFE vs CONVERSATIONAL vs GOVERNANCE promotion boundaries and prevents ungated self-modification noise.
 - WHAT: Implemented Phase 8 Router Lane 1 with additive deterministic `execution-plan` contract/schema and upgraded `pnpm playbook route` to emit/write proposal-only execution plans at `.playbook/execution-plan.json` with explicit task-family route metadata, validation bundles, source artifact availability, and warnings. WHY: Adds task-specific routing inspection that remains non-mutating while preserving deterministic governance boundaries.
 ## Unreleased
 

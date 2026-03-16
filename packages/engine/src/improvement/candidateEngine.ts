@@ -26,9 +26,15 @@ export type ImprovementCandidate = {
   category: ImprovementCandidateCategory;
   observation: string;
   recurrence_count: number;
+  evidence_count: number;
+  supporting_runs: number;
+  confidence_score: number;
   confidence: number;
   suggested_action: string;
+  gating_tier: ImprovementTier;
   improvement_tier: ImprovementTier;
+  required_review: boolean;
+  blocking_reasons: string[];
   evidence: {
     event_ids: string[];
   };
@@ -79,6 +85,11 @@ export type ImprovementGovernanceApprovalArtifact = {
 
 const MINIMUM_RECURRENCE = 3;
 const MINIMUM_CONFIDENCE = 0.6;
+const AUTO_SAFE_MIN_EVIDENCE_COUNT = 5;
+const AUTO_SAFE_MIN_SUPPORTING_RUNS = 3;
+const AUTO_SAFE_MIN_CONFIDENCE = 0.78;
+const CONVERSATIONAL_MIN_EVIDENCE_COUNT = 3;
+const CONVERSATIONAL_MIN_SUPPORTING_RUNS = 2;
 
 const round4 = (value: number): number => Number(value.toFixed(4));
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
@@ -122,27 +133,87 @@ const readRepositoryEvents = (repoRoot: string): RepositoryEvent[] => {
   return events;
 };
 
-const buildTier = (input: { category: ImprovementCandidateCategory; suggestedAction: string }): ImprovementTier => {
-  const suggestedAction = input.suggestedAction.toLowerCase();
-
-  if (
-    input.category === 'ontology' ||
-    suggestedAction.includes('required validation') ||
-    suggestedAction.includes('mutation scope') ||
-    suggestedAction.includes('schema')
-  ) {
-    return 'governance';
-  }
-
-  if (input.category === 'routing' || suggestedAction.includes('classifier') || suggestedAction.includes('task family')) {
-    return 'conversation';
-  }
-
-  return 'auto_safe';
-};
-
 const buildConfidence = (recurrenceCount: number, signalScore: number, learningConfidence: number): number =>
   round4(clamp01(Math.min(1, recurrenceCount / 10) * 0.45 + signalScore * 0.4 + learningConfidence * 0.15));
+
+const summarizeSupportingRuns = (timestamps: string[]): number => {
+  const runKeys = new Set<string>();
+  for (const timestamp of timestamps) {
+    const parsed = new Date(timestamp);
+    if (Number.isNaN(parsed.getTime())) {
+      continue;
+    }
+
+    runKeys.add(parsed.toISOString().slice(0, 10));
+  }
+
+  return runKeys.size;
+};
+
+const hasGovernanceRisk = (input: { category: ImprovementCandidateCategory; observation: string; suggestedAction: string }): boolean => {
+  const signal = `${input.observation} ${input.suggestedAction}`.toLowerCase();
+  return (
+    input.category === 'ontology' ||
+    signal.includes('schema') ||
+    signal.includes('trust boundary') ||
+    signal.includes('doctrine') ||
+    signal.includes('governance') ||
+    signal.includes('taxonomy')
+  );
+};
+
+const evaluateGatingTier = (input: {
+  category: ImprovementCandidateCategory;
+  observation: string;
+  suggestedAction: string;
+  evidenceCount: number;
+  supportingRuns: number;
+  confidenceScore: number;
+}): { gatingTier: ImprovementTier; requiredReview: boolean; blockingReasons: string[] } => {
+  const governanceRisk = hasGovernanceRisk(input);
+  const blockingReasons: string[] = [];
+
+  if (governanceRisk) {
+    blockingReasons.push('trust-boundary or doctrine-sensitive change requires governance review');
+    return { gatingTier: 'governance', requiredReview: true, blockingReasons };
+  }
+
+  if (input.evidenceCount < AUTO_SAFE_MIN_EVIDENCE_COUNT) {
+    blockingReasons.push(`insufficient repeated evidence for AUTO-SAFE (needs >= ${AUTO_SAFE_MIN_EVIDENCE_COUNT})`);
+  }
+  if (input.supportingRuns < AUTO_SAFE_MIN_SUPPORTING_RUNS) {
+    blockingReasons.push(`insufficient run diversity for AUTO-SAFE (needs >= ${AUTO_SAFE_MIN_SUPPORTING_RUNS})`);
+  }
+  if (input.confidenceScore < AUTO_SAFE_MIN_CONFIDENCE) {
+    blockingReasons.push(`confidence below AUTO-SAFE threshold (${AUTO_SAFE_MIN_CONFIDENCE})`);
+  }
+
+  if (blockingReasons.length === 0) {
+    return { gatingTier: 'auto_safe', requiredReview: false, blockingReasons: [] };
+  }
+
+  if (input.evidenceCount < CONVERSATIONAL_MIN_EVIDENCE_COUNT) {
+    blockingReasons.push(`insufficient evidence for CONVERSATIONAL (needs >= ${CONVERSATIONAL_MIN_EVIDENCE_COUNT})`);
+  }
+  if (input.supportingRuns < CONVERSATIONAL_MIN_SUPPORTING_RUNS) {
+    blockingReasons.push(`insufficient run diversity for CONVERSATIONAL (needs >= ${CONVERSATIONAL_MIN_SUPPORTING_RUNS})`);
+  }
+
+  const conversationalEligible =
+    input.evidenceCount >= CONVERSATIONAL_MIN_EVIDENCE_COUNT &&
+    input.supportingRuns >= CONVERSATIONAL_MIN_SUPPORTING_RUNS &&
+    input.confidenceScore >= MINIMUM_CONFIDENCE;
+
+  if (conversationalEligible) {
+    return { gatingTier: 'conversation', requiredReview: true, blockingReasons };
+  }
+
+  return {
+    gatingTier: 'governance',
+    requiredReview: true,
+    blockingReasons: [...blockingReasons, 'proposal failed deterministic evidence thresholds; governance adjudication required']
+  };
+};
 
 const emitCandidate = (input: {
   candidateId: string;
@@ -153,20 +224,39 @@ const emitCandidate = (input: {
   learningConfidence: number;
   suggestedAction: string;
   eventIds: string[];
+  eventTimestamps: string[];
 }): ImprovementCandidate | null => {
-  const confidence = buildConfidence(input.recurrenceCount, input.signalScore, input.learningConfidence);
-  if (input.recurrenceCount < MINIMUM_RECURRENCE || confidence < MINIMUM_CONFIDENCE) {
+  const confidenceScore = buildConfidence(input.recurrenceCount, input.signalScore, input.learningConfidence);
+  const evidenceCount = input.eventIds.length;
+  const supportingRuns = summarizeSupportingRuns(input.eventTimestamps);
+
+  if (input.recurrenceCount < MINIMUM_RECURRENCE || confidenceScore < MINIMUM_CONFIDENCE) {
     return null;
   }
+
+  const gating = evaluateGatingTier({
+    category: input.category,
+    observation: input.observation,
+    suggestedAction: input.suggestedAction,
+    evidenceCount,
+    supportingRuns,
+    confidenceScore
+  });
 
   return {
     candidate_id: input.candidateId,
     category: input.category,
     observation: input.observation,
     recurrence_count: input.recurrenceCount,
-    confidence,
+    evidence_count: evidenceCount,
+    supporting_runs: supportingRuns,
+    confidence_score: confidenceScore,
+    confidence: confidenceScore,
     suggested_action: input.suggestedAction,
-    improvement_tier: buildTier({ category: input.category, suggestedAction: input.suggestedAction }),
+    gating_tier: gating.gatingTier,
+    improvement_tier: gating.gatingTier,
+    required_review: gating.requiredReview,
+    blocking_reasons: gating.blockingReasons,
     evidence: {
       event_ids: [...input.eventIds].sort((left, right) => left.localeCompare(right))
     }
@@ -210,7 +300,8 @@ const generateRoutingCandidates = (
       signalScore,
       learningConfidence,
       suggestedAction,
-      eventIds: group.map((event) => event.event_id)
+      eventIds: group.map((event) => event.event_id),
+      eventTimestamps: group.map((event) => event.timestamp)
     });
 
     if (candidate) {
@@ -244,7 +335,8 @@ const generateOrchestrationCandidates = (
         signalScore: clamp01(0.7 + (learning?.metrics.parallel_safety_realized ?? 0) * 0.15),
         learningConfidence,
         suggestedAction: `add deterministic unblock playbook for ${reason}`,
-        eventIds: group.map((event) => event.event_id)
+        eventIds: group.map((event) => event.event_id),
+        eventTimestamps: group.map((event) => event.timestamp)
       })
     )
     .filter((candidate): candidate is ImprovementCandidate => Boolean(candidate));
@@ -273,7 +365,8 @@ const generateWorkerPromptCandidates = (
         signalScore: clamp01(0.68 + (1 - (learning?.metrics.reasoning_scope_efficiency ?? 0)) * 0.2),
         learningConfidence,
         suggestedAction: `tighten ${workerId} prompt contract with explicit acceptance checklist`,
-        eventIds: group.map((event) => event.event_id)
+        eventIds: group.map((event) => event.event_id),
+        eventTimestamps: group.map((event) => event.timestamp)
       })
     )
     .filter((candidate): candidate is ImprovementCandidate => Boolean(candidate));
@@ -297,7 +390,8 @@ const generateValidationEfficiencyCandidates = (
     signalScore: clamp01(validationPressure),
     learningConfidence,
     suggestedAction: 'reduce optional validation for docs_only family unless risk signals are present',
-    eventIds: overValidationRoutes.map((event) => event.event_id)
+    eventIds: overValidationRoutes.map((event) => event.event_id),
+    eventTimestamps: overValidationRoutes.map((event) => event.timestamp)
   });
 
   return candidate ? [candidate] : [];
@@ -332,7 +426,8 @@ const generateOntologyCandidates = (
         signalScore: clamp01(averageEventConfidence),
         learningConfidence,
         suggestedAction: 'promote normalized ontology terms into governance dictionary and route prompts',
-        eventIds: group.map((event) => event.event_id)
+        eventIds: group.map((event) => event.event_id),
+        eventTimestamps: group.map((event) => event.timestamp)
       });
     })
     .filter((candidate): candidate is ImprovementCandidate => Boolean(candidate));
@@ -355,8 +450,8 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     ...generateValidationEfficiencyCandidates(events, learning),
     ...generateOntologyCandidates(improvementEvents, learning)
   ].sort((left, right) => {
-    if (right.confidence !== left.confidence) {
-      return right.confidence - left.confidence;
+    if (right.confidence_score !== left.confidence_score) {
+      return right.confidence_score - left.confidence_score;
     }
 
     return left.candidate_id.localeCompare(right.candidate_id);

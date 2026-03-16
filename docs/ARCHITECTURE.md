@@ -165,6 +165,16 @@ This contract layer maps each guarantee to a concrete runtime guard and test exp
 - Rule: **Secret Redaction** — sensitive values must never appear in logs.
 - Failure Mode: **Boundary Escape** — path traversal or symlink attacks attempting to escape repo root.
 
+## Improvement proposal evidence gating
+
+`playbook improve` uses deterministic tiered gating based on telemetry + normalized memory evidence.
+
+- **AUTO-SAFE**: requires strong repeated evidence (`evidence_count` and `supporting_runs`) with high confidence and no doctrine/trust-boundary risk.
+- **CONVERSATIONAL**: allows reviewable non-sensitive proposals that pass baseline evidence thresholds but do not clear AUTO-SAFE thresholds.
+- **GOVERNANCE**: required for doctrine/trust-boundary-sensitive proposals (for example ontology/schema/governance semantics) and for proposals that fail baseline evidence thresholds.
+
+The improvement artifact includes explicit gating fields (`evidence_count`, `supporting_runs`, `confidence_score`, `gating_tier`, `required_review`, `blocking_reasons`) so review tools can explain exactly why a proposal was promoted or gated.
+
 ## Long-Term Direction: Automation Synthesis
 
 Automation Synthesis is a future platform direction that extends Playbook's `verify -> plan -> apply` philosophy into recurring-work automation, while preserving deterministic governance.
