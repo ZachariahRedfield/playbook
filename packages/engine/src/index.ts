@@ -90,6 +90,15 @@ export {
 } from './learning/portabilityConfidence.js';
 export type { PortabilityConfidenceArtifact } from './learning/portabilityConfidence.js';
 
+
+export {
+  TRANSFER_PLANS_SCHEMA_VERSION,
+  TRANSFER_PLANS_RELATIVE_PATH,
+  generateTransferPlansArtifact,
+  writeTransferPlansArtifact
+} from './learning/transferPlanning.js';
+export type { TransferPlanArtifact, TransferPlanRecord } from '@zachariahredfield/playbook-core';
+
 export {
   PORTABILITY_OUTCOMES_SCHEMA_VERSION,
   PORTABILITY_OUTCOMES_RELATIVE_PATH,

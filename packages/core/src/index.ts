@@ -7,7 +7,7 @@ export type { AttractorScoreBreakdown, CandidatePattern, PromotedPattern, Promot
 export type { CrossRepoPatternEvidenceArtifact, PatternPortabilityContract, PatternPortabilityEntry, PortabilityArtifactInput } from './contracts/patternPortabilityContract.js';
 export type { LaneRuntime, LaneRuntimeState } from './execution/types.js';
 export type { LaneOutcomeScore, RouterAccuracyMetric } from './telemetry/types.js';
-export type { CompactedLearningSummary, LearningCompactionTimeWindow, LearningLanePattern, LearningRecurringSignal, LearningRoutePattern, LearningValidationPattern, PatternPortabilityScore, PortabilityConfidenceRecalibrationSummary, PortabilityDecisionStatus, PortabilityAdoptionStatus, PortabilityObservedOutcome, PortabilityOutcomeTelemetryRecord } from './learning/types.js';
+export type { CompactedLearningSummary, LearningCompactionTimeWindow, LearningLanePattern, LearningRecurringSignal, LearningRoutePattern, LearningValidationPattern, PatternPortabilityScore, PortabilityConfidenceRecalibrationSummary, PortabilityDecisionStatus, PortabilityAdoptionStatus, PortabilityObservedOutcome, PortabilityOutcomeTelemetryRecord, TransferPlanGatingTier, TransferPlanRecord, TransferPlanArtifact } from './learning/types.js';
 export type {
   CandidateKnowledgeRecord,
   EventFingerprint,

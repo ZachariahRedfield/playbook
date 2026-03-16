@@ -86,3 +86,39 @@ export interface PortabilityOutcomeTelemetryRecord {
   outcome_confidence?: number;
   timestamp: string;
 }
+
+
+export type TransferPlanGatingTier = 'CONVERSATIONAL' | 'GOVERNANCE';
+
+export interface TransferPlanRecord {
+  transfer_plan_id: string;
+  pattern_id: string;
+  source_repo: string;
+  target_repo: string;
+  portability_confidence: number;
+  target_readiness: number;
+  touched_subsystems: string[];
+  required_artifacts: string[];
+  required_validations: string[];
+  adoption_steps: string[];
+  risk_signals: string[];
+  blockers: string[];
+  open_questions: string[];
+  gating_tier: TransferPlanGatingTier;
+}
+
+export interface TransferPlanArtifact {
+  schemaVersion: '1.0';
+  kind: 'transfer-plans';
+  generatedAt: string;
+  proposalOnly: true;
+  nonAutonomous: true;
+  sourceArtifacts: {
+    patternPortabilityPath: string;
+    crossRepoPatternsPath: string;
+    portabilityConfidencePath: string;
+    routerRecommendationsPath: string;
+    learningCompactionPath: string;
+  };
+  plans: TransferPlanRecord[];
+}
