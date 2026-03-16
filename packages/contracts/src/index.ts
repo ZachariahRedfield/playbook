@@ -9,5 +9,6 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   improvementCandidates: 'packages/contracts/src/improvement-candidates.schema.json',
   patternPortability: 'packages/contracts/src/pattern-portability.schema.json',
   transferPlans: 'packages/contracts/src/transfer-plans.schema.json',
-  transferReadiness: 'packages/contracts/src/transfer-readiness.schema.json'
+  transferReadiness: 'packages/contracts/src/transfer-readiness.schema.json',
+  cycleState: 'packages/contracts/src/cycle-state.schema.json'
 } as const;

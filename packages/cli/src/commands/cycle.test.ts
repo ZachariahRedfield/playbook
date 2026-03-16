@@ -15,6 +15,37 @@ const readCycleArtifact = (repo: string): {
   artifacts_written: string[];
 } => JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'cycle-state.json'), 'utf8'));
 
+
+const validateCycleStateShape = (artifact: ReturnType<typeof readCycleArtifact>): string[] => {
+  const errors: string[] = [];
+
+  if (typeof artifact.cycle_version !== 'number') errors.push('cycle_version');
+  if (typeof artifact.repo !== 'string') errors.push('repo');
+  if (!Array.isArray(artifact.steps)) errors.push('steps');
+  if (artifact.result !== 'success' && artifact.result !== 'failed') errors.push('result');
+  if (!Array.isArray(artifact.artifacts_written) || artifact.artifacts_written.some((entry) => typeof entry !== 'string')) {
+    errors.push('artifacts_written');
+  }
+
+  if (Array.isArray(artifact.steps)) {
+    for (const step of artifact.steps) {
+      if (typeof step.name !== 'string') errors.push('steps[].name');
+      if (step.status !== 'success' && step.status !== 'failure') errors.push('steps[].status');
+      if (typeof step.duration_ms !== 'number') errors.push('steps[].duration_ms');
+    }
+  }
+
+  if (artifact.result === 'success' && Object.prototype.hasOwnProperty.call(artifact, 'failed_step')) {
+    errors.push('failed_step-for-success');
+  }
+
+  if (artifact.result === 'failed' && typeof artifact.failed_step !== 'string') {
+    errors.push('failed_step-for-failed');
+  }
+
+  return errors;
+};
+
 const successStepRunners = {
   verify: async () => ExitCode.Success,
   route: async () => ExitCode.Success,
@@ -60,6 +91,18 @@ describe('runCycle', { timeout: 30000 }, () => {
     ]);
 
     logSpy.mockRestore();
+  });
+
+
+  it('emits a cycle-state artifact that matches the governed schema shape', async () => {
+    const { runCycle } = await import('./cycle.js');
+    const repo = createRepo('playbook-cycle-schema-shape');
+
+    const code = await runCycle(repo, { format: 'json', quiet: false, stopOnError: true, stepRunners: successStepRunners });
+
+    expect(code).toBe(ExitCode.Success);
+    const artifact = readCycleArtifact(repo);
+    expect(validateCycleStateShape(artifact)).toEqual([]);
   });
 
   it('verify failure stops cycle', async () => {

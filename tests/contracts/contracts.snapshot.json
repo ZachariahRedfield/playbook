@@ -33,6 +33,10 @@
         "producer": "contracts"
       },
       {
+        "path": ".playbook/cycle-state.json",
+        "producer": "cycle"
+      },
+      {
         "path": ".playbook/repo-graph.json",
         "producer": "index"
       },
@@ -175,6 +179,11 @@
         "id": "repository-events",
         "version": "1.0",
         "path": "packages/contracts/src/repository-events.schema.json"
+      },
+      {
+        "id": "cycle-state",
+        "version": "1.0",
+        "path": "packages/contracts/src/cycle-state.schema.json"
       },
       {
         "id": "explain.memoryKnowledge",

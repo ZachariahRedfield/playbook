@@ -11,6 +11,7 @@ import { runOrchestrate } from '../orchestrate.js';
 import { runExecution } from '../execute.js';
 import { runTelemetry } from '../telemetry.js';
 import { runImprove } from '../improve.js';
+import { warn } from '../../lib/output.js';
 
 export type CycleOptions = {
   format: 'text' | 'json';
@@ -39,6 +40,61 @@ type CycleStateArtifact = {
   artifacts_written: string[];
   result: 'success' | 'failed';
   failed_step?: StepName;
+};
+
+const isStepName = (value: unknown): value is StepName =>
+  typeof value === 'string' && (STEP_ORDER as string[]).includes(value);
+
+const validateCycleStateArtifact = (artifact: CycleStateArtifact): string[] => {
+  const errors: string[] = [];
+
+  if (typeof artifact.cycle_version !== 'number') {
+    errors.push('cycle_version must be a number');
+  }
+  if (typeof artifact.repo !== 'string') {
+    errors.push('repo must be a string');
+  }
+  if (typeof artifact.cycle_id !== 'string') {
+    errors.push('cycle_id must be a string');
+  }
+  if (typeof artifact.started_at !== 'string') {
+    errors.push('started_at must be a string');
+  }
+  if (artifact.result !== 'success' && artifact.result !== 'failed') {
+    errors.push('result must be either success or failed');
+  }
+
+  if (!Array.isArray(artifact.steps)) {
+    errors.push('steps must be an array');
+  } else {
+    for (const step of artifact.steps) {
+      if (!isStepName(step.name)) {
+        errors.push('steps[].name must be a valid cycle step');
+      }
+      if (step.status !== 'success' && step.status !== 'failure') {
+        errors.push('steps[].status must be either success or failure');
+      }
+      if (typeof step.duration_ms !== 'number' || Number.isNaN(step.duration_ms)) {
+        errors.push('steps[].duration_ms must be a number');
+      }
+    }
+  }
+
+  if (!Array.isArray(artifact.artifacts_written) || artifact.artifacts_written.some((entry) => typeof entry !== 'string')) {
+    errors.push('artifacts_written must be an array of strings');
+  }
+
+  if (artifact.result === 'success' && artifact.failed_step !== undefined) {
+    errors.push('failed_step must be omitted when result is success');
+  }
+
+  if (artifact.result === 'failed') {
+    if (!artifact.failed_step || !isStepName(artifact.failed_step)) {
+      errors.push('failed_step must be a valid cycle step when result is failed');
+    }
+  }
+
+  return errors;
 };
 
 const CYCLE_STATE_PATH = '.playbook/cycle-state.json';
@@ -79,6 +135,11 @@ const toCycleArtifact = (
 });
 
 const writeCycleState = (cwd: string, artifact: CycleStateArtifact): void => {
+  const validationErrors = validateCycleStateArtifact(artifact);
+  if (validationErrors.length > 0) {
+    warn(`playbook cycle: warning: cycle-state artifact failed schema validation: ${validationErrors.join('; ')}`);
+  }
+
   const targetPath = path.join(cwd, CYCLE_STATE_PATH);
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
   writeJsonArtifactAbsolute(targetPath, artifact, 'cycle', { envelope: false });

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/cycle-state.schema.json",
+  "title": "PlaybookCycleState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cycle_version",
+    "repo",
+    "cycle_id",
+    "started_at",
+    "result",
+    "steps"
+  ],
+  "properties": {
+    "cycle_version": { "type": "number" },
+    "repo": { "type": "string" },
+    "cycle_id": { "type": "string" },
+    "started_at": { "type": "string" },
+    "result": {
+      "type": "string",
+      "enum": ["success", "failed"]
+    },
+    "failed_step": { "type": "string" },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "duration_ms"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["success", "failure"]
+          },
+          "duration_ms": { "type": "number" }
+        }
+      }
+    },
+    "artifacts_written": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "result": { "const": "success" } },
+        "required": ["result"]
+      },
+      "then": {
+        "not": {
+          "required": ["failed_step"]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "result": { "const": "failed" } },
+        "required": ["result"]
+      },
+      "then": {
+        "required": ["failed_step"]
+      }
+    }
+  ]
+}
