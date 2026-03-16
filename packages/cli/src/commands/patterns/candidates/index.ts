@@ -143,7 +143,8 @@ export const runPatternsCandidates = (cwd: string, commandArgs: string[], option
         recordImprovementCandidate(cwd, {
           candidate_id: candidate.candidateId,
           source: 'patterns.candidates',
-          summary: `${candidate.sourceKind}/${candidate.subjectKind}: ${candidate.trigger} -> ${candidate.response}`
+          summary: `${candidate.sourceKind}/${candidate.subjectKind}: ${candidate.trigger} -> ${candidate.response}`,
+          related_artifacts: ['.playbook/improvement-candidates.json']
         });
       }
     });

@@ -5,6 +5,8 @@
 
 ### Added
 
+- WHAT: Normalized repository memory event recording for route decisions, lane transitions, worker assignments, execution outcomes, and improvement signals to a single deterministic envelope (`event_id`, `event_type`, `timestamp`, `subsystem`, `subject`, `related_artifacts`, `payload`, optional `run_id`) with stable index updates and query helpers. WHY: Prevents memory-shape drift so downstream learning, compaction, and promotion flows can consume one canonical event stream.
+
 - WHAT: Added architecture introspection to `playbook explain` with `subsystem <name>` and `artifact <path>` targets backed by `.playbook/architecture/subsystems.json`, including deterministic missing-lookup failures and stable `--json` output contracts. WHY: Makes subsystem/artifact ownership directly explainable from the canonical registry and prevents split-brain ownership docs.
 
 - feat(execution): introduce execution supervisor runtime

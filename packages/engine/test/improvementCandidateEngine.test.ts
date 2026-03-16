@@ -76,27 +76,37 @@ describe('improvement candidate engine', () => {
 
     for (let i = 0; i < 4; i += 1) {
       writeEvent(repo, `route-${i}`, {
-        schemaVersion: '1.0',
+        schemaVersion: '1.1',
         event_type: 'route_decision',
         event_id: `route-${i}`,
         timestamp: `2026-01-0${i + 1}T00:00:00.000Z`,
-        task_text: 'update docs',
-        task_family: 'docs_only',
-        route_id: 'docs_default',
-        confidence: 0.92
+        subsystem: 'repository_memory',
+        subject: { kind: 'task', id: `task-${i}` },
+        related_artifacts: [],
+        payload: {
+          task_text: 'update docs',
+          task_family: 'docs_only',
+          route_id: 'docs_default',
+          confidence: 0.92
+        }
       });
     }
 
     for (let i = 0; i < 3; i += 1) {
       writeEvent(repo, `lane-${i}`, {
-        schemaVersion: '1.0',
+        schemaVersion: '1.1',
         event_type: 'lane_transition',
         event_id: `lane-${i}`,
         timestamp: `2026-01-0${i + 1}T00:00:00.000Z`,
-        lane_id: `lane-${i}`,
-        from_state: 'assigned',
-        to_state: 'blocked',
-        reason: 'waiting_on_contract'
+        subsystem: 'repository_memory',
+        subject: { kind: 'lane', id: `lane-${i}` },
+        related_artifacts: [],
+        payload: {
+          lane_id: `lane-${i}`,
+          from_state: 'assigned',
+          to_state: 'blocked',
+          reason: 'waiting_on_contract'
+        }
       });
     }
 
@@ -120,33 +130,49 @@ describe('improvement candidate engine', () => {
 
     for (let i = 0; i < 3; i += 1) {
       writeEvent(repo, `route-${i}`, {
-        schemaVersion: '1.0',
+        schemaVersion: '1.1',
         event_type: 'route_decision',
         event_id: `route-${i}`,
         timestamp: `2026-01-0${i + 1}T00:00:00.000Z`,
-        task_text: 'update docs',
-        task_family: 'docs_only',
-        route_id: 'docs_default',
-        confidence: 0.92
+        subsystem: 'repository_memory',
+        subject: { kind: 'task', id: `task-${i}` },
+        related_artifacts: [],
+        payload: {
+          task_text: 'update docs',
+          task_family: 'docs_only',
+          route_id: 'docs_default',
+          confidence: 0.92
+        }
       });
       writeEvent(repo, `lane-${i}`, {
-        schemaVersion: '1.0',
+        schemaVersion: '1.1',
         event_type: 'lane_transition',
         event_id: `lane-${i}`,
         timestamp: `2026-01-1${i}T00:00:00.000Z`,
-        lane_id: `lane-${i}`,
-        from_state: 'assigned',
-        to_state: 'blocked',
-        reason: 'waiting_on_contract'
+        subsystem: 'repository_memory',
+        subject: { kind: 'lane', id: `lane-${i}` },
+        related_artifacts: [],
+        payload: {
+          lane_id: `lane-${i}`,
+          from_state: 'assigned',
+          to_state: 'blocked',
+          reason: 'waiting_on_contract'
+        }
       });
       writeEvent(repo, `ontology-${i}`, {
-        schemaVersion: '1.0',
-        event_type: 'improvement_candidate',
+        schemaVersion: '1.1',
+        event_type: 'improvement_signal',
         event_id: `ontology-${i}`,
         timestamp: `2026-01-2${i}T00:00:00.000Z`,
-        source: 'ontology-observer',
-        summary: 'Ontology drift in route taxonomy',
-        confidence: 0.9
+        subsystem: 'knowledge_lifecycle',
+        subject: { kind: 'improvement-candidate', id: `ontology-${i}` },
+        related_artifacts: [],
+        payload: {
+          source: 'ontology-observer',
+          summary: 'Ontology drift in route taxonomy',
+          confidence: 0.9,
+          candidate_id: `ontology-${i}`
+        }
       });
     }
 
@@ -163,13 +189,19 @@ describe('improvement candidate engine', () => {
 
     for (let i = 0; i < 3; i += 1) {
       writeEvent(repo, `ontology-${i}`, {
-        schemaVersion: '1.0',
-        event_type: 'improvement_candidate',
+        schemaVersion: '1.1',
+        event_type: 'improvement_signal',
         event_id: `ontology-${i}`,
         timestamp: `2026-01-2${i}T00:00:00.000Z`,
-        source: 'ontology-observer',
-        summary: 'Ontology drift in route taxonomy',
-        confidence: 0.9
+        subsystem: 'knowledge_lifecycle',
+        subject: { kind: 'improvement-candidate', id: `ontology-${i}` },
+        related_artifacts: [],
+        payload: {
+          source: 'ontology-observer',
+          summary: 'Ontology drift in route taxonomy',
+          confidence: 0.9,
+          candidate_id: `ontology-${i}`
+        }
       });
     }
 
@@ -185,14 +217,19 @@ describe('improvement candidate engine', () => {
     const repo = createRepo();
     writeLearning(repo, learningSnapshot);
     writeEvent(repo, 'route-1', {
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
       event_type: 'route_decision',
       event_id: 'route-1',
       timestamp: '2026-01-01T00:00:00.000Z',
-      task_text: 'update docs',
-      task_family: 'docs_only',
-      route_id: 'docs_default',
-      confidence: 0.92
+      subsystem: 'repository_memory',
+      subject: { kind: 'task', id: 'route-1-task' },
+      related_artifacts: [],
+      payload: {
+        task_text: 'update docs',
+        task_family: 'docs_only',
+        route_id: 'docs_default',
+        confidence: 0.92
+      }
     });
 
     const artifact = generateImprovementCandidates(repo);

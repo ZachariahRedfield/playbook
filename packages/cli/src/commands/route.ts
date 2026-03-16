@@ -169,7 +169,8 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
       task_text: task,
       task_family: executionPlan.task_family,
       route_id: executionPlan.route_id,
-      confidence: executionPlan.route_confidence
+      confidence: executionPlan.route_confidence,
+      related_artifacts: [EXECUTION_PLAN_PATH]
     });
   });
 

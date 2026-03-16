@@ -58,14 +58,19 @@ const seedRepo = (repo: string): void => {
       path.join(eventsDir, `event-${i}.json`),
       JSON.stringify(
         {
-          schemaVersion: '1.0',
+          schemaVersion: '1.1',
           event_type: 'route_decision',
           event_id: `event-${i}`,
           timestamp: `2026-01-0${i + 1}T00:00:00.000Z`,
-          task_text: 'docs task',
-          task_family: 'docs_only',
-          route_id: 'docs_default',
-          confidence: 0.92
+          subsystem: 'repository_memory',
+          subject: { kind: 'task', id: `task-${i}` },
+          related_artifacts: [],
+          payload: {
+            task_text: 'docs task',
+            task_family: 'docs_only',
+            route_id: 'docs_default',
+            confidence: 0.92
+          }
         },
         null,
         2
@@ -78,13 +83,19 @@ const seedRepo = (repo: string): void => {
       path.join(eventsDir, `ontology-${i}.json`),
       JSON.stringify(
         {
-          schemaVersion: '1.0',
-          event_type: 'improvement_candidate',
+          schemaVersion: '1.1',
+          event_type: 'improvement_signal',
           event_id: `ontology-${i}`,
           timestamp: `2026-01-1${i}T00:00:00.000Z`,
-          source: 'ontology-observer',
-          summary: 'Ontology drift in route taxonomy',
-          confidence: 0.9
+          subsystem: 'knowledge_lifecycle',
+          subject: { kind: 'improvement-candidate', id: `ontology-${i}` },
+          related_artifacts: [],
+          payload: {
+            source: 'ontology-observer',
+            summary: 'Ontology drift in route taxonomy',
+            confidence: 0.9,
+            candidate_id: `ontology-${i}`
+          }
         },
         null,
         2

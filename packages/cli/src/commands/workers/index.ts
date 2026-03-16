@@ -107,13 +107,15 @@ export const runWorkers = async (cwd: string, options: WorkersOptions): Promise<
         lane_id: lane.lane_id,
         worker_id: `worker-${lane.lane_id}`,
         assignment_status: lane.status,
-        ...(lane.assigned_prompt ? { assigned_prompt: lane.assigned_prompt } : {})
+        ...(lane.assigned_prompt ? { assigned_prompt: lane.assigned_prompt } : {}),
+        related_artifacts: [WORKER_ASSIGNMENTS_PATH, ...(lane.assigned_prompt ? [lane.assigned_prompt] : [])]
       });
 
       recordLaneOutcome(cwd, {
         lane_id: lane.lane_id,
         outcome: lane.status === 'assigned' ? 'success' : lane.status === 'blocked' ? 'blocked' : 'partial',
-        summary: lane.status === 'assigned' ? 'worker assigned and prompt emitted' : lane.status === 'blocked' ? 'lane blocked from worker assignment' : 'lane skipped during deterministic assignment'
+        summary: lane.status === 'assigned' ? 'worker assigned and prompt emitted' : lane.status === 'blocked' ? 'lane blocked from worker assignment' : 'lane skipped during deterministic assignment',
+        related_artifacts: [WORKER_ASSIGNMENTS_PATH]
       });
     }
   });

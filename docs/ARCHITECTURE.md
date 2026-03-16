@@ -231,7 +231,7 @@ Layering stance:
 
 - structural intelligence: `.playbook/repo-index.json`, `.playbook/repo-graph.json`
 - working context: `.playbook/context/*`
-- episodic memory: `.playbook/memory/events/*.json`, `.playbook/memory/index.json`
+- episodic memory: `.playbook/memory/events/*.json`, `.playbook/memory/index.json` (normalized event envelope with `event_id`, `event_type`, `timestamp`, `subsystem`, `subject`, `related_artifacts`, `payload`, optional `run_id`)
 - replay/consolidation: `.playbook/memory/candidates.json`
 - doctrine/policy memory: rules, contracts, docs, remediation templates
 

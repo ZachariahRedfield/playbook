@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { LearningStateSnapshotArtifact } from '../telemetry/learningState.js';
+import { readRepositoryEvents as queryRepositoryEvents } from '../memory/events.js';
 import type {
   ImprovementCandidateEvent,
   LaneTransitionEvent,
@@ -93,35 +94,6 @@ const readJsonFileIfExists = <T>(filePath: string): T | undefined => {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 };
 
-const readRepositoryEvents = (repoRoot: string): RepositoryEvent[] => {
-  const eventsDir = path.join(repoRoot, '.playbook', 'memory', 'events');
-  if (!fs.existsSync(eventsDir)) {
-    return [];
-  }
-
-  const files = fs
-    .readdirSync(eventsDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
-    .map((entry) => entry.name)
-    .sort((left, right) => left.localeCompare(right));
-
-  const events: RepositoryEvent[] = [];
-
-  for (const fileName of files) {
-    const eventPath = path.join(eventsDir, fileName);
-    try {
-      const parsed = JSON.parse(fs.readFileSync(eventPath, 'utf8')) as RepositoryEvent;
-      if (parsed && typeof parsed.event_type === 'string' && typeof parsed.event_id === 'string') {
-        events.push(parsed);
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return events;
-};
-
 const buildTier = (input: { category: ImprovementCandidateCategory; suggestedAction: string }): ImprovementTier => {
   const suggestedAction = input.suggestedAction.toLowerCase();
 
@@ -179,7 +151,7 @@ const generateRoutingCandidates = (
 ): ImprovementCandidate[] => {
   const grouped = new Map<string, RouteDecisionEvent[]>();
   for (const event of events) {
-    const key = `${event.task_family}::${event.route_id}`;
+    const key = `${String(event.payload.task_family ?? "")}::${String(event.payload.route_id ?? "")}`;
     grouped.set(key, [...(grouped.get(key) ?? []), event]);
   }
 
@@ -189,7 +161,7 @@ const generateRoutingCandidates = (
   const candidates: ImprovementCandidate[] = [];
   for (const [key, group] of [...grouped.entries()].sort((left, right) => left[0].localeCompare(right[0]))) {
     const [taskFamily, routeId] = key.split('::');
-    const averageConfidence = group.reduce((sum, event) => sum + event.confidence, 0) / Math.max(1, group.length);
+    const averageConfidence = group.reduce((sum, event) => sum + (typeof event.payload.confidence === "number" ? event.payload.confidence : 0), 0) / Math.max(1, group.length);
     const signalScore = clamp01(averageConfidence * 0.65 + validationPressure * 0.35);
 
     const isDocsValidationCandidate = taskFamily === 'docs_only' && validationPressure >= 0.6;
@@ -225,10 +197,10 @@ const generateOrchestrationCandidates = (
   events: LaneTransitionEvent[],
   learning: LearningStateSnapshotArtifact | undefined
 ): ImprovementCandidate[] => {
-  const blocked = events.filter((event) => event.to_state === 'blocked');
+  const blocked = events.filter((event) => String(event.payload.to_state) === 'blocked');
   const grouped = new Map<string, LaneTransitionEvent[]>();
   for (const event of blocked) {
-    const reason = event.reason?.trim() || 'unknown';
+    const reason = String(event.payload.reason ?? 'unknown').trim() || 'unknown';
     grouped.set(reason, [...(grouped.get(reason) ?? []), event]);
   }
 
@@ -254,10 +226,10 @@ const generateWorkerPromptCandidates = (
   events: WorkerAssignmentEvent[],
   learning: LearningStateSnapshotArtifact | undefined
 ): ImprovementCandidate[] => {
-  const degraded = events.filter((event) => event.assignment_status === 'blocked' || event.assignment_status === 'skipped');
+  const degraded = events.filter((event) => String(event.payload.assignment_status) === 'blocked' || String(event.payload.assignment_status) === 'skipped');
   const grouped = new Map<string, WorkerAssignmentEvent[]>();
   for (const event of degraded) {
-    grouped.set(event.worker_id, [...(grouped.get(event.worker_id) ?? []), event]);
+    grouped.set(String(event.payload.worker_id), [...(grouped.get(String(event.payload.worker_id)) ?? []), event]);
   }
 
   const learningConfidence = learning?.confidenceSummary.overall_confidence ?? 0;
@@ -286,7 +258,7 @@ const generateValidationEfficiencyCandidates = (
   const learningConfidence = learning?.confidenceSummary.overall_confidence ?? 0;
   const validationPressure = learning?.metrics.validation_cost_pressure ?? 0;
   const overValidationRoutes = events.filter(
-    (event): event is RouteDecisionEvent => event.event_type === 'route_decision' && event.task_family === 'docs_only'
+    (event): event is RouteDecisionEvent => event.event_type === 'route_decision' && String(event.payload.task_family ?? "") === 'docs_only'
   );
 
   const candidate = emitCandidate({
@@ -308,14 +280,14 @@ const generateOntologyCandidates = (
   learning: LearningStateSnapshotArtifact | undefined
 ): ImprovementCandidate[] => {
   const ontologyRelated = events.filter((event) => {
-    const source = event.source.toLowerCase();
-    const summary = event.summary.toLowerCase();
+    const source = String(event.payload.source ?? "").toLowerCase();
+    const summary = String(event.payload.summary ?? "").toLowerCase();
     return source.includes('ontology') || summary.includes('ontology') || summary.includes('taxonomy');
   });
 
   const grouped = new Map<string, ImprovementCandidateEvent[]>();
   for (const event of ontologyRelated) {
-    const key = event.summary.trim().toLowerCase();
+    const key = String(event.payload.summary ?? "").trim().toLowerCase();
     grouped.set(key, [...(grouped.get(key) ?? []), event]);
   }
 
@@ -323,7 +295,7 @@ const generateOntologyCandidates = (
   return [...grouped.entries()]
     .sort((left, right) => left[0].localeCompare(right[0]))
     .map(([summary, group]) => {
-      const averageEventConfidence = group.reduce((sum, event) => sum + (event.confidence ?? 0.7), 0) / Math.max(1, group.length);
+      const averageEventConfidence = group.reduce((sum, event) => sum + ((typeof event.payload.confidence === 'number' ? event.payload.confidence : 0.7)), 0) / Math.max(1, group.length);
       return emitCandidate({
         candidateId: `ontology_${summary}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase(),
         category: 'ontology',
@@ -339,14 +311,14 @@ const generateOntologyCandidates = (
 };
 
 export const generateImprovementCandidates = (repoRoot: string): ImprovementCandidatesArtifact => {
-  const events = readRepositoryEvents(repoRoot);
+  const events = queryRepositoryEvents(repoRoot);
   const learningStatePath = path.join(repoRoot, '.playbook', 'learning-state.json');
   const learning = readJsonFileIfExists<LearningStateSnapshotArtifact>(learningStatePath);
 
   const routeEvents = events.filter((event): event is RouteDecisionEvent => event.event_type === 'route_decision');
   const laneTransitionEvents = events.filter((event): event is LaneTransitionEvent => event.event_type === 'lane_transition');
   const workerAssignmentEvents = events.filter((event): event is WorkerAssignmentEvent => event.event_type === 'worker_assignment');
-  const improvementEvents = events.filter((event): event is ImprovementCandidateEvent => event.event_type === 'improvement_candidate');
+  const improvementEvents = events.filter((event): event is ImprovementCandidateEvent => event.event_type === 'improvement_signal');
 
   const candidates = [
     ...generateRoutingCandidates(routeEvents, learning),

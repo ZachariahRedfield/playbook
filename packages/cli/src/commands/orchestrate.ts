@@ -131,7 +131,8 @@ export const runOrchestrate = async (cwd: string, options: OrchestrateOptions): 
           lane_id: laneId,
           from_state: 'planned',
           to_state: blockedLaneIds.has(laneId) ? 'blocked' : 'ready',
-          reason: blockedLaneIds.has(laneId) ? 'missing-prerequisites' : 'dependencies-satisfied'
+          reason: blockedLaneIds.has(laneId) ? 'missing-prerequisites' : 'dependencies-satisfied',
+          related_artifacts: [WORKSET_PLAN_PATH, LANE_STATE_PATH]
         });
       });
     }
