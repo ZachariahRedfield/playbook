@@ -41,13 +41,14 @@ List stale candidates plus retired and superseded promoted knowledge.
 
 ### `knowledge portability`
 
-Inspect deterministic cross-repo pattern portability scoring evidence, including:
+Inspect deterministic cross-repo portability review surfaces.
 
-- `source_repo`
-- `portability_score`
-- `evidence_runs`
-- `compatible_subsystems`
-- `risk_signals`
+Views:
+
+- `overview` (default): portability scoring evidence (`source_repo`, `portability_score`, `evidence_runs`, compatible subsystems, risk signals)
+- `recommendations`: transfer recommendations (`pattern`, `source_repo`, `target_repo`, `initial_portability_score`, `decision_status`, `evidence_count`)
+- `outcomes`: decision/adoption outcomes (`pattern`, `source_repo`, `target_repo`, `initial_portability_score`, `adoption_status`, `observed_outcome`, `sample_size`)
+- `recalibration`: confidence updates (`pattern`, `source_repo`, `target_repo`, `initial_portability_score`, `recalibrated_confidence`, `evidence_count`, `sample_size`)
 
 ## Examples
 
@@ -58,7 +59,9 @@ pnpm playbook knowledge inspect <id> --json
 pnpm playbook knowledge provenance <id> --json
 pnpm playbook knowledge stale --json
 pnpm playbook knowledge portability
-pnpm playbook knowledge portability --json
+pnpm playbook knowledge portability --view recommendations
+pnpm playbook knowledge portability --view outcomes --json
+pnpm playbook knowledge portability --view recalibration --json
 ```
 
 ## Guarantees

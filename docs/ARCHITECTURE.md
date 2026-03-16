@@ -392,6 +392,9 @@ Query/inspection surface:
 - JSON mode remains contract-stable for automation and agent consumption.
 
 
+- `playbook knowledge portability` provides deterministic cross-repo portability inspection views (`overview`, `recommendations`, `outcomes`, `recalibration`) so transfer recommendations, adoption outcomes, and confidence recalibration remain auditable.
+- Portability views expose `pattern`, `source_repo`, `target_repo`, `initial_portability_score`, decision/adoption status, observed outcome, recalibrated confidence, and evidence/sample sizing fields for human + automation review.
+
 
 ## Learning evidence loop ownership and determinism
 

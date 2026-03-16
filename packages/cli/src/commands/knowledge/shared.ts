@@ -38,6 +38,23 @@ Options:
   --help                       Show help`);
 };
 
+export const printKnowledgePortabilityHelp = (): void => {
+  console.log(`Usage: playbook knowledge portability [--view <view>] [--json]
+
+Inspect cross-repo portability records through deterministic read-only views.
+
+Views:
+  overview                      Baseline portability scoring evidence (default)
+  recommendations               Pattern transfer recommendations by source/target repo
+  outcomes                      Adoption decisions and observed outcomes
+  recalibration                 Confidence recalibration records with evidence/sample sizes
+
+Options:
+  --view <view>                 Select portability view (overview|recommendations|outcomes|recalibration)
+  --json                        Print machine-readable JSON output
+  --help                        Show help`);
+};
+
 export const readOptionValue = (args: string[], optionName: string): string | null => {
   const exactIndex = args.findIndex((arg) => arg === optionName);
   if (exactIndex >= 0) {
