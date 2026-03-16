@@ -27,6 +27,11 @@ const renderText = (artifact: ImprovementCandidatesArtifact): void => {
   console.log(`- ${artifact.summary.GOVERNANCE}`);
   console.log('');
 
+  console.log('Doctrine lifecycle proposals (recommendation-first)');
+  console.log(`- candidates: ${artifact.doctrine_candidates.candidates.length}`);
+  console.log(`- transitions: ${artifact.doctrine_promotions.transitions.length}`);
+  console.log('');
+
   console.log('Router recommendations (non-autonomous)');
   console.log(`- accepted: ${artifact.router_recommendations.recommendations.length}`);
   console.log(`- rejected: ${artifact.router_recommendations.rejected_recommendations.length}`);
@@ -37,18 +42,15 @@ const renderText = (artifact: ImprovementCandidatesArtifact): void => {
     if (artifact.rejected_candidates.length > 0) {
       console.log(`Rejected candidates: ${artifact.rejected_candidates.length}`);
     }
-    return;
-  }
-
-  for (const candidate of artifact.candidates) {
-    console.log(`- [${candidate.gating_tier}] ${candidate.candidate_id} (${candidate.category})`);
-    console.log(`  observation: ${candidate.observation}`);
-    console.log(
-      `  evidence: ${candidate.evidence_count} events across ${candidate.supporting_runs} runs, confidence: ${candidate.confidence_score}`
-    );
-    console.log(`  required review: ${candidate.required_review ? 'yes' : 'no'}`);
-    console.log(`  why gated: ${candidate.blocking_reasons.length === 0 ? 'meets deterministic thresholds' : candidate.blocking_reasons.join(', ')}`);
-    console.log(`  action: ${candidate.suggested_action}`);
+  } else {
+    for (const candidate of artifact.candidates) {
+      console.log(`- [${candidate.gating_tier}] ${candidate.candidate_id} (${candidate.category})`);
+      console.log(`  observation: ${candidate.observation}`);
+      console.log(`  evidence: ${candidate.evidence_count} events across ${candidate.supporting_runs} runs, confidence: ${candidate.confidence_score}`);
+      console.log(`  required review: ${candidate.required_review ? 'yes' : 'no'}`);
+      console.log(`  why gated: ${candidate.blocking_reasons.length === 0 ? 'meets deterministic thresholds' : candidate.blocking_reasons.join(', ')}`);
+      console.log(`  action: ${candidate.suggested_action}`);
+    }
   }
 
   if (artifact.router_recommendations.recommendations.length > 0) {
@@ -57,10 +59,18 @@ const renderText = (artifact: ImprovementCandidatesArtifact): void => {
     for (const recommendation of artifact.router_recommendations.recommendations) {
       console.log(`- [${recommendation.gating_tier}] ${recommendation.recommendation_id} (${recommendation.task_family})`);
       console.log(`  strategy: ${recommendation.current_strategy} -> ${recommendation.recommended_strategy}`);
-      console.log(
-        `  evidence: ${recommendation.evidence_count} events across ${recommendation.supporting_runs} runs, confidence: ${recommendation.confidence_score}`
-      );
+      console.log(`  evidence: ${recommendation.evidence_count} events across ${recommendation.supporting_runs} runs, confidence: ${recommendation.confidence_score}`);
       console.log(`  rationale: ${recommendation.rationale}`);
+    }
+  }
+
+  if (artifact.doctrine_promotions.transitions.length > 0) {
+    console.log('');
+    console.log('Doctrine transitions');
+    for (const transition of artifact.doctrine_promotions.transitions) {
+      console.log(`- ${transition.candidate_id}: ${transition.from_stage} -> ${transition.to_stage}`);
+      console.log(`  governance gated: ${transition.governance_gated ? 'yes' : 'no'}, approved: ${transition.approved ? 'yes' : 'no'}`);
+      console.log(`  rationale: ${transition.rationale}`);
     }
   }
 

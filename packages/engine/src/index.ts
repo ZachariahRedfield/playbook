@@ -159,12 +159,15 @@ export {
   IMPROVEMENT_CANDIDATES_SCHEMA_VERSION,
   IMPROVEMENT_CANDIDATES_RELATIVE_PATH,
   ROUTER_RECOMMENDATIONS_RELATIVE_PATH,
+  KNOWLEDGE_CANDIDATES_RELATIVE_PATH,
+  KNOWLEDGE_PROMOTIONS_RELATIVE_PATH,
   generateImprovementCandidates,
   writeImprovementCandidatesArtifact,
   writeRouterRecommendationsArtifact,
   applyAutoSafeImprovements,
   approveGovernanceImprovement
 } from './improvement/candidateEngine.js';
+export { generateDoctrinePromotionArtifacts, writeDoctrinePromotionArtifacts } from './improvement/doctrinePromotion.js';
 export type {
   ImprovementCandidateCategory,
   ImprovementTier,
@@ -179,6 +182,14 @@ export type {
   ImprovementActionArtifact,
   ImprovementGovernanceApprovalArtifact
 } from './improvement/candidateEngine.js';
+export type {
+  DoctrineLifecycleStage,
+  DoctrineGatingTier,
+  DoctrinePromotionCandidate,
+  DoctrinePromotionDecision,
+  DoctrinePromotionCandidatesArtifact,
+  DoctrinePromotionsArtifact
+} from './improvement/doctrinePromotion.js';
 
 export {
   captureMemoryEvent,

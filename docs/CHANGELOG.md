@@ -5,6 +5,9 @@
 - WHAT: Implemented Phase 8 Router Lane 1 with additive deterministic `execution-plan` contract/schema and upgraded `pnpm playbook route` to emit/write proposal-only execution plans at `.playbook/execution-plan.json` with explicit task-family route metadata, validation bundles, source artifact availability, and warnings. WHY: Adds task-specific routing inspection that remains non-mutating while preserving deterministic governance boundaries.
 ## Unreleased
 
+- Added deterministic doctrine promotion generation for governed knowledge lifecycle transitions (`candidate`, `compacted`, `promoted`, `retired`) with persisted artifacts at `.playbook/knowledge-candidates.json` and `.playbook/knowledge-promotions.json`.
+- Wired doctrine lifecycle visibility into `playbook improve` output while keeping promotions recommendation-first and governance-gated.
+- Added engine tests for candidate creation, promotion transitions, insufficient evidence handling, retirement proposals, and governance-gated promotions.
 ### Added
 
 - WHAT: Added deterministic normalized repository memory query surfaces in `repository_memory`/`bootstrap_contract_surface` via engine query helpers and `pnpm playbook memory query` (filtering by `event_type`, `subsystem`, `run_id`, `subject`, `related_artifact`, plus summary views for recent routes, run lane transitions, run worker assignments, and artifact-scoped improvement signals) with stable JSON/text output contracts and targeted filter/empty/stability tests. WHY: Makes operational memory inspectable for humans and agents so events become actionable intelligence rather than opaque archival clutter.

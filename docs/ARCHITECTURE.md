@@ -390,3 +390,14 @@ Query/inspection surface:
 - `playbook memory query` provides deterministic normalized filtering by `event_type`, `subsystem`, `run_id`, `subject`, and `related_artifact`.
 - deterministic summary views expose recent route decisions, lane transitions for a run, worker assignments for a run, and artifact-scoped improvement signals.
 - JSON mode remains contract-stable for automation and agent consumption.
+
+
+## Deterministic doctrine promotion pipeline
+
+Playbook now includes a deterministic, recommendation-first doctrine pipeline that composes compacted learning summaries, router recommendations, improvement proposals, and normalized repository memory evidence into governed knowledge lifecycle candidates.
+
+- Artifact: `.playbook/knowledge-candidates.json`
+- Artifact: `.playbook/knowledge-promotions.json`
+- Lifecycle stages: `candidate -> compacted -> promoted -> retired`
+- Governance behavior: governance-tier promotion remains gated and never mutates doctrine autonomously.
+

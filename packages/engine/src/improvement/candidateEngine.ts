@@ -11,6 +11,16 @@ import type {
   RouteDecisionEvent,
   WorkerAssignmentEvent
 } from '../memory/events.js';
+import {
+  generateDoctrinePromotionArtifacts,
+  writeDoctrinePromotionArtifacts,
+  KNOWLEDGE_CANDIDATES_RELATIVE_PATH,
+  KNOWLEDGE_PROMOTIONS_RELATIVE_PATH,
+  type DoctrinePromotionCandidatesArtifact,
+  type DoctrinePromotionsArtifact
+} from './doctrinePromotion.js';
+
+export { KNOWLEDGE_CANDIDATES_RELATIVE_PATH, KNOWLEDGE_PROMOTIONS_RELATIVE_PATH } from './doctrinePromotion.js';
 
 export const IMPROVEMENT_CANDIDATES_SCHEMA_VERSION = '1.0' as const;
 export const IMPROVEMENT_CANDIDATES_RELATIVE_PATH = '.playbook/improvement-candidates.json' as const;
@@ -118,6 +128,8 @@ export type ImprovementCandidatesArtifact = {
     total: number;
   };
   router_recommendations: RouterRecommendationsArtifact;
+  doctrine_candidates: DoctrinePromotionCandidatesArtifact;
+  doctrine_promotions: DoctrinePromotionsArtifact;
   candidates: ImprovementCandidate[];
   rejected_candidates: RejectedImprovementCandidate[];
 };
@@ -758,6 +770,13 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     compactedLearning
   });
 
+  const doctrineArtifacts = generateDoctrinePromotionArtifacts({
+    repoRoot,
+    improvementCandidates: candidates,
+    routerRecommendations,
+    compactedLearning
+  });
+
   const summary = {
     AUTO_SAFE: candidates.filter((candidate) => candidate.improvement_tier === 'auto_safe').length,
     CONVERSATIONAL: candidates.filter((candidate) => candidate.improvement_tier === 'conversation').length,
@@ -781,6 +800,8 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     },
     summary,
     router_recommendations: routerRecommendations,
+    doctrine_candidates: doctrineArtifacts.candidatesArtifact,
+    doctrine_promotions: doctrineArtifacts.promotionsArtifact,
     candidates,
     rejected_candidates: rejectedCandidates
   };
@@ -802,6 +823,10 @@ export const writeImprovementCandidatesArtifact = (
   artifact: ImprovementCandidatesArtifact,
   artifactPath = IMPROVEMENT_CANDIDATES_RELATIVE_PATH
 ): string => {
+  writeDoctrinePromotionArtifacts(repoRoot, {
+    candidatesArtifact: artifact.doctrine_candidates,
+    promotionsArtifact: artifact.doctrine_promotions
+  });
   writeRouterRecommendationsArtifact(repoRoot, artifact.router_recommendations);
   const resolvedPath = path.resolve(repoRoot, artifactPath);
   fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
