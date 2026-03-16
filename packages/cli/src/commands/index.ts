@@ -310,9 +310,13 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
     });
   },
   improve: async ({ cwd, commandArgs, format, quiet }) => {
-    const { runImprove, runImproveApplySafe, runImproveApprove } = await import('./improve.js');
+    const { runImprove, runImproveCommands, runImproveApplySafe, runImproveApprove } = await import('./improve.js');
     const help = parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h');
     const subcommand = commandArgs.find((arg) => !arg.startsWith('-'));
+
+    if (subcommand === 'commands') {
+      return runImproveCommands(cwd, { format, quiet, help });
+    }
 
     if (subcommand === 'apply-safe') {
       return runImproveApplySafe(cwd, { format, quiet, help });

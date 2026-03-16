@@ -18,10 +18,10 @@ type ImproveOptions = {
 
 const printImproveHelp = (): void => {
   printCommandHelp({
-    usage: 'playbook improve [apply-safe|approve <proposal_id>] [options]',
+    usage: 'playbook improve [commands|apply-safe|approve <proposal_id>] [options]',
     description: 'Generate, apply, and approve deterministic improvement proposals.',
-    options: ['apply-safe                Apply auto-safe improvement proposals', 'approve <proposal_id>      Approve governance-gated proposal', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
-    artifacts: ['.playbook/improvement-candidates.json (write/read)', '.playbook/improvement-approvals.json (write for approve)']
+    options: ['commands                  Emit command improvement recommendations', 'apply-safe                Apply auto-safe improvement proposals', 'approve <proposal_id>      Approve governance-gated proposal', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
+    artifacts: ['.playbook/improvement-candidates.json (write/read)', '.playbook/command-improvements.json (write/read via improve commands)', '.playbook/improvement-approvals.json (write for approve)']
   });
 };
 
@@ -107,6 +107,82 @@ const printConversationPrompts = (artifact: ImprovementCandidatesArtifact): void
   }
 };
 
+
+const renderCommandImprovementsText = (artifact: {
+  generatedAt: string;
+  proposals: Array<{
+    gating_tier: string;
+    proposal_id: string;
+    command_name: string;
+    issue_type: string;
+    evidence_count: number;
+    supporting_runs: number;
+    average_failure_rate: number;
+    average_confidence_score: number;
+    average_duration_ms: number;
+    rationale: string;
+    proposed_improvement: string;
+  }>;
+  rejected_proposals: Array<{ proposal_id: string; blocking_reasons: string[] }>;
+}): void => {
+  console.log('Command improvement proposals (recommendation-first)');
+  console.log('──────────────────────────────────────────────────────');
+  console.log(`Generated at: ${artifact.generatedAt}`);
+  console.log(`Accepted proposals: ${artifact.proposals.length}`);
+  console.log(`Rejected proposals: ${artifact.rejected_proposals.length}`);
+
+  for (const proposal of artifact.proposals) {
+    console.log(`- [${proposal.gating_tier}] ${proposal.proposal_id} (${proposal.command_name})`);
+    console.log(`  issue: ${proposal.issue_type}`);
+    console.log(`  evidence: ${proposal.evidence_count} records across ${proposal.supporting_runs} runs`);
+    console.log(`  rates: failure=${proposal.average_failure_rate}, confidence=${proposal.average_confidence_score}, duration_ms=${proposal.average_duration_ms}`);
+    console.log(`  rationale: ${proposal.rationale}`);
+    console.log(`  proposed improvement: ${proposal.proposed_improvement}`);
+  }
+
+  if (artifact.rejected_proposals.length > 0) {
+    console.log('');
+    console.log('Rejected command proposals');
+    for (const proposal of artifact.rejected_proposals) {
+      console.log(`- ${proposal.proposal_id}: ${proposal.blocking_reasons.join(', ')}`);
+    }
+  }
+};
+
+export const runImproveCommands = async (cwd: string, options: ImproveOptions): Promise<number> => {
+  if (options.help) {
+    printImproveHelp();
+    return ExitCode.Success;
+  }
+
+  const tracker = createCommandQualityTracker(cwd, 'improve-commands');
+  const artifact = generateImprovementCandidates(cwd).command_improvements;
+
+  if (options.format === 'json') {
+    emitJsonOutput({ cwd, command: 'improve-commands', payload: artifact });
+    tracker.finish({
+      inputsSummary: 'mode=commands',
+      artifactsWritten: ['.playbook/command-improvements.json'],
+      downstreamArtifactsProduced: ['.playbook/command-improvements.json'],
+      successStatus: 'success',
+      warningsCount: artifact.rejected_proposals.length
+    });
+    return ExitCode.Success;
+  }
+
+  if (!options.quiet) {
+    renderCommandImprovementsText(artifact);
+  }
+
+  tracker.finish({
+    inputsSummary: 'mode=commands',
+    artifactsWritten: ['.playbook/command-improvements.json'],
+    downstreamArtifactsProduced: ['.playbook/command-improvements.json'],
+    successStatus: 'success',
+    warningsCount: artifact.rejected_proposals.length
+  });
+  return ExitCode.Success;
+};
 export const runImprove = async (cwd: string, options: ImproveOptions): Promise<number> => {
   if (options.help) {
     printImproveHelp();
@@ -122,8 +198,8 @@ export const runImprove = async (cwd: string, options: ImproveOptions): Promise<
     emitJsonOutput({ cwd, command: 'improve', payload: artifact });
     tracker.finish({
       inputsSummary: 'mode=generate',
-      artifactsWritten: ['.playbook/improvement-candidates.json'],
-      downstreamArtifactsProduced: ['.playbook/improvement-candidates.json'],
+      artifactsWritten: ['.playbook/improvement-candidates.json', '.playbook/command-improvements.json'],
+      downstreamArtifactsProduced: ['.playbook/improvement-candidates.json', '.playbook/command-improvements.json'],
       successStatus: 'success',
       warningsCount: artifact.rejected_candidates.length,
       openQuestionsCount: artifact.open_questions?.length ?? 0
@@ -138,8 +214,8 @@ export const runImprove = async (cwd: string, options: ImproveOptions): Promise<
 
   tracker.finish({
     inputsSummary: 'mode=generate',
-    artifactsWritten: ['.playbook/improvement-candidates.json'],
-    downstreamArtifactsProduced: ['.playbook/improvement-candidates.json'],
+    artifactsWritten: ['.playbook/improvement-candidates.json', '.playbook/command-improvements.json'],
+    downstreamArtifactsProduced: ['.playbook/improvement-candidates.json', '.playbook/command-improvements.json'],
     successStatus: 'success',
     warningsCount: artifact.rejected_candidates.length,
     openQuestionsCount: artifact.open_questions?.length ?? 0

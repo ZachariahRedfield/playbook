@@ -204,12 +204,18 @@ export {
   ROUTER_RECOMMENDATIONS_RELATIVE_PATH,
   KNOWLEDGE_CANDIDATES_RELATIVE_PATH,
   KNOWLEDGE_PROMOTIONS_RELATIVE_PATH,
+  COMMAND_IMPROVEMENTS_RELATIVE_PATH,
   generateImprovementCandidates,
   writeImprovementCandidatesArtifact,
   writeRouterRecommendationsArtifact,
   applyAutoSafeImprovements,
   approveGovernanceImprovement
 } from './improvement/candidateEngine.js';
+export {
+  COMMAND_IMPROVEMENTS_SCHEMA_VERSION,
+  generateCommandImprovementProposals,
+  writeCommandImprovementArtifact
+} from './improvement/commandProposals.js';
 export { generateDoctrinePromotionArtifacts, writeDoctrinePromotionArtifacts } from './improvement/doctrinePromotion.js';
 export type {
   ImprovementCandidateCategory,
@@ -225,6 +231,12 @@ export type {
   ImprovementActionArtifact,
   ImprovementGovernanceApprovalArtifact
 } from './improvement/candidateEngine.js';
+export type {
+  CommandImprovementIssueType,
+  CommandImprovementProposal,
+  RejectedCommandImprovementProposal,
+  CommandImprovementsArtifact
+} from './improvement/commandProposals.js';
 export type {
   DoctrineLifecycleStage,
   DoctrineGatingTier,

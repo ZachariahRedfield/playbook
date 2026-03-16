@@ -111,6 +111,8 @@ Portability scoring remains recommendation-first and now has an explicit recalib
 
 Core execution commands (`verify`, `route`, `orchestrate`, `execute`, `telemetry`, `improve`) emit deterministic command-quality records to `.playbook/telemetry/command-quality.json` and append repository-memory `command_execution` events that capture command name, run id, artifact IO, duration, and completion status.
 
+`improvement_engine` now derives recommendation-first command hardening proposals from command-quality telemetry, optional command-quality summary artifacts, and normalized repository memory events. The governed result is persisted at `.playbook/command-improvements.json` and surfaced via `playbook improve commands`, with explicit evidence gating and no autonomous command mutation.
+
 This keeps command-level self-observation complete across execution surfaces and avoids partial observability bias in downstream learning and improvement analysis.
 
 `playbook telemetry commands` now provides deterministic operator/automation summaries sourced from `.playbook/telemetry/command-quality.json`, exposing stable per-command rates for success/failure/partial outcomes, average duration/confidence, warning/open-question frequency, and downstream artifact frequency across `verify`, `route`, `orchestrate`, `execute`, `telemetry`, and `improve`.

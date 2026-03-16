@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 import { listRegisteredCommands } from './index.js';
-import { runImprove, runImproveApplySafe, runImproveApprove } from './improve.js';
+import { runImprove, runImproveCommands, runImproveApplySafe, runImproveApprove } from './improve.js';
 
 const createRepo = (): string => fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-improve-cli-'));
 
@@ -114,6 +114,23 @@ describe('runImprove', () => {
 
     const artifactPath = path.join(repo, '.playbook', 'improvement-candidates.json');
     expect(fs.existsSync(artifactPath)).toBe(true);
+
+    logSpy.mockRestore();
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+
+
+  it('supports command improvement subview', async () => {
+    const repo = createRepo();
+    seedRepo(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runImproveCommands(repo, { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+    expect(payload.kind).toBe('command-improvements');
+    expect(Array.isArray(payload.proposals)).toBe(true);
 
     logSpy.mockRestore();
     fs.rmSync(repo, { recursive: true, force: true });

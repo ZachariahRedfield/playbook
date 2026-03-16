@@ -19,6 +19,12 @@ import {
   type DoctrinePromotionCandidatesArtifact,
   type DoctrinePromotionsArtifact
 } from './doctrinePromotion.js';
+import {
+  generateCommandImprovementProposals,
+  writeCommandImprovementArtifact,
+  COMMAND_IMPROVEMENTS_RELATIVE_PATH as COMMAND_IMPROVEMENTS_ARTIFACT_RELATIVE_PATH,
+  type CommandImprovementsArtifact
+} from './commandProposals.js';
 import { readJsonIfExists, writeDeterministicJsonAtomic } from '../learning/io.js';
 
 export { KNOWLEDGE_CANDIDATES_RELATIVE_PATH, KNOWLEDGE_PROMOTIONS_RELATIVE_PATH } from './doctrinePromotion.js';
@@ -26,6 +32,7 @@ export { KNOWLEDGE_CANDIDATES_RELATIVE_PATH, KNOWLEDGE_PROMOTIONS_RELATIVE_PATH 
 export const IMPROVEMENT_CANDIDATES_SCHEMA_VERSION = '1.0' as const;
 export const IMPROVEMENT_CANDIDATES_RELATIVE_PATH = '.playbook/improvement-candidates.json' as const;
 export const ROUTER_RECOMMENDATIONS_RELATIVE_PATH = '.playbook/router-recommendations.json' as const;
+export const COMMAND_IMPROVEMENTS_RELATIVE_PATH = COMMAND_IMPROVEMENTS_ARTIFACT_RELATIVE_PATH;
 
 export type ImprovementCandidateCategory =
   | 'routing'
@@ -131,6 +138,7 @@ export type ImprovementCandidatesArtifact = {
   router_recommendations: RouterRecommendationsArtifact;
   doctrine_candidates: DoctrinePromotionCandidatesArtifact;
   doctrine_promotions: DoctrinePromotionsArtifact;
+  command_improvements: CommandImprovementsArtifact;
   candidates: ImprovementCandidate[];
   rejected_candidates: RejectedImprovementCandidate[];
 };
@@ -738,6 +746,7 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     routerRecommendations,
     compactedLearning
   });
+  const commandImprovements = generateCommandImprovementProposals(repoRoot, events);
 
   const summary = {
     AUTO_SAFE: candidates.filter((candidate) => candidate.improvement_tier === 'auto_safe').length,
@@ -764,6 +773,7 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     router_recommendations: routerRecommendations,
     doctrine_candidates: doctrineArtifacts.candidatesArtifact,
     doctrine_promotions: doctrineArtifacts.promotionsArtifact,
+    command_improvements: commandImprovements,
     candidates,
     rejected_candidates: rejectedCandidates
   };
@@ -788,6 +798,7 @@ export const writeImprovementCandidatesArtifact = (
     candidatesArtifact: artifact.doctrine_candidates,
     promotionsArtifact: artifact.doctrine_promotions
   });
+  writeCommandImprovementArtifact(repoRoot, artifact.command_improvements, COMMAND_IMPROVEMENTS_RELATIVE_PATH);
   writeRouterRecommendationsArtifact(repoRoot, artifact.router_recommendations);
   const resolvedPath = path.resolve(repoRoot, artifactPath);
   writeDeterministicJsonAtomic(resolvedPath, artifact);
