@@ -246,6 +246,18 @@ export type {
   DoctrinePromotionsArtifact
 } from './improvement/doctrinePromotion.js';
 
+
+export {
+  POLICY_EVALUATION_SCHEMA_VERSION,
+  POLICY_EVALUATION_RELATIVE_PATH,
+  evaluateImprovementPolicy
+} from './policy/proposalEvaluator.js';
+export type {
+  PolicyEvaluateDecision,
+  PolicyEvaluationEntry,
+  PolicyEvaluationArtifact
+} from './policy/proposalEvaluator.js';
+
 export {
   captureMemoryEvent,
   captureMemoryEventSafe,

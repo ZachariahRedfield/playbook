@@ -412,6 +412,18 @@
       "example": "pnpm playbook plan --json"
     },
     {
+      "name": "policy",
+      "category": "Utility",
+      "role": "governance",
+      "lifecycle": "canonical",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook policy evaluate --json"
+    },
+    {
       "name": "query",
       "category": "Repository intelligence",
       "role": "repo-intelligence",
@@ -569,6 +581,7 @@
     "pilot",
     "pilot",
     "plan",
+    "policy",
     "query",
     "route",
     "rules",

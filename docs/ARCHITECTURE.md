@@ -122,6 +122,11 @@ This keeps command-level self-observation complete across execution surfaces and
 
 `playbook telemetry commands` now provides deterministic operator/automation summaries sourced from `.playbook/telemetry/command-quality.json`, exposing stable per-command rates for success/failure/partial outcomes, average duration/confidence, warning/open-question frequency, and downstream artifact frequency across `verify`, `route`, `orchestrate`, `execute`, `telemetry`, and `improve`.
 
+
+`playbook policy evaluate` adds a read-only governance classification layer over improve proposals. It consumes governed proposal metadata and runtime evidence (`.playbook/improvement-candidates.json`, optional cycle regression evidence from `.playbook/cycle-history.json`) and deterministically classifies each proposal as `safe`, `requires_review`, or `blocked` without executing remediation.
+
+Pattern: introduce evaluation before execution — proposals must pass deterministic policy classification before any action workflow.
+
 ## Router accuracy telemetry feedback loop
 
 Routing quality is treated as a measurable architecture contract inside `routing_engine` + `telemetry_learning`.

@@ -251,6 +251,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook security baseline summary --json`
 - `telemetry`: Inspect deterministic repository/process telemetry and compact cross-run learning summaries
   - Example: `pnpm playbook telemetry learning --json`
+- `policy`: Evaluate improvement proposals against governed runtime evidence (read-only control-plane)
+  - Example: `pnpm playbook policy evaluate --json`
 - `agent`: Read runtime control-plane records and run plan-backed dry-run previews
   - Example: `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json`
 
@@ -309,5 +311,6 @@ Do not hand-edit entries inside the managed markers.
 | `knowledge` | `pnpm playbook knowledge list --json` |
 | `security` | `pnpm playbook security baseline summary --json` |
 | `telemetry` | `pnpm playbook telemetry learning --json` |
+| `policy` | `pnpm playbook policy evaluate --json` |
 | `agent` | `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json` |
 <!-- PLAYBOOK:EXAMPLES_END -->

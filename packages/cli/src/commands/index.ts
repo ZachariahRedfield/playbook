@@ -318,6 +318,14 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
+  policy: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runPolicy } = await import('./policy.js');
+    return runPolicy(cwd, commandArgs, {
+      format,
+      quiet,
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   improve: async ({ cwd, commandArgs, format, quiet }) => {
     const { runImprove, runImproveCommands, runImproveApplySafe, runImproveApprove } = await import('./improve.js');
     const help = parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h');
@@ -468,6 +476,7 @@ const commandOrder = [
   'knowledge',
   'security',
   'telemetry',
+  'policy',
   'agent'
 ] as const;
 

@@ -55,6 +55,7 @@ Do not hand-edit entries inside the managed markers.
 | `knowledge` | Inspect read-only knowledge artifacts and provenance surfaces | canonical | repo-intelligence | secondary | — | Current (implemented) | `pnpm playbook knowledge list --json` |
 | `security` | Inspect deterministic security baseline findings and summary | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook security baseline summary --json` |
 | `telemetry` | Inspect deterministic repository/process telemetry and compact cross-run learning summaries | utility | utility | secondary | — | Current (implemented) | `pnpm playbook telemetry learning --json` |
+| `policy` | Evaluate improvement proposals against governed runtime evidence (read-only control-plane) | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook policy evaluate --json` |
 | `agent` | Read runtime control-plane records and run plan-backed dry-run previews | utility | utility | secondary | — | Current (implemented) | `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
