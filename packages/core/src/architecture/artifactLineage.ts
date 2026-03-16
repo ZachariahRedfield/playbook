@@ -14,6 +14,9 @@ const KNOWN_CONSUMER_SUBSYSTEMS_BY_ARTIFACT: Record<string, string[]> = {
   '.playbook/outcome-telemetry.json': ['telemetry_learning', 'knowledge_lifecycle'],
   '.playbook/process-telemetry.json': ['telemetry_learning'],
   '.playbook/learning-state.json': ['routing_engine', 'orchestration_planner', 'improvement_engine'],
+  '.playbook/learning-compaction.json': ['improvement_engine', 'knowledge_lifecycle'],
+  '.playbook/router-recommendations.json': ['knowledge_lifecycle'],
+  '.playbook/memory/events/*': ['telemetry_learning', 'improvement_engine', 'knowledge_lifecycle'],
   '.playbook/memory/index.json': ['knowledge_lifecycle', 'improvement_engine', 'observation_engine'],
   '.playbook/repo-index.json': ['observation_engine', 'knowledge_lifecycle']
 };

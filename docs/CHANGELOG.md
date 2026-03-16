@@ -10,6 +10,8 @@
 - Added engine tests for candidate creation, promotion transitions, insufficient evidence handling, retirement proposals, and governance-gated promotions.
 ### Added
 
+- WHAT: Consolidated the post-merge learning loop by enforcing singular artifact ownership for execution/telemetry/memory/compaction/recommendation artifacts, removing duplicate learning-file IO paths in favor of shared learning utilities, and switching learning-compaction, router-recommendation, and memory-index writes to deterministic atomic writes. WHY: Hardens telemetry→memory→compaction→improvement→knowledge integration so CLI/docs/contracts reflect one deterministic runtime path without ownership ambiguity or write-race drift.
+
 - WHAT: Added deterministic normalized repository memory query surfaces in `repository_memory`/`bootstrap_contract_surface` via engine query helpers and `pnpm playbook memory query` (filtering by `event_type`, `subsystem`, `run_id`, `subject`, `related_artifact`, plus summary views for recent routes, run lane transitions, run worker assignments, and artifact-scoped improvement signals) with stable JSON/text output contracts and targeted filter/empty/stability tests. WHY: Makes operational memory inspectable for humans and agents so events become actionable intelligence rather than opaque archival clutter.
 
 - WHAT: Added a deterministic router recommendation engine across `routing_engine`, `telemetry_learning`, and `improvement_engine` that derives conservative non-autonomous routing recommendations from process router-accuracy telemetry, lane-outcome evidence, compacted learning summaries, and normalized memory events; persists recommendations in `.playbook/router-recommendations.json`; and surfaces them in `playbook improve` output with explicit governance tiers and evidence thresholds, plus tests for over-fragmentation, under-fragmentation, insufficient evidence, and governance-gated validation-posture recommendations. WHY: Prevents silent router drift by requiring inspectable, evidence-backed recommendation-first routing refinement before any behavior change.
@@ -213,6 +215,8 @@
 ## Unreleased
 
 ### Added
+
+- WHAT: Consolidated the post-merge learning loop by enforcing singular artifact ownership for execution/telemetry/memory/compaction/recommendation artifacts, removing duplicate learning-file IO paths in favor of shared learning utilities, and switching learning-compaction, router-recommendation, and memory-index writes to deterministic atomic writes. WHY: Hardens telemetry→memory→compaction→improvement→knowledge integration so CLI/docs/contracts reflect one deterministic runtime path without ownership ambiguity or write-race drift.
 
 - WHAT: Added a deterministic router recommendation engine across `routing_engine`, `telemetry_learning`, and `improvement_engine` that derives conservative non-autonomous routing recommendations from process router-accuracy telemetry, lane-outcome evidence, compacted learning summaries, and normalized memory events; persists recommendations in `.playbook/router-recommendations.json`; and surfaces them in `playbook improve` output with explicit governance tiers and evidence thresholds, plus tests for over-fragmentation, under-fragmentation, insufficient evidence, and governance-gated validation-posture recommendations. WHY: Prevents silent router drift by requiring inspectable, evidence-backed recommendation-first routing refinement before any behavior change.
 

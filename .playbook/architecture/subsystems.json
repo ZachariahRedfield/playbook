@@ -126,9 +126,10 @@
         "telemetry"
       ],
       "artifacts": [
+        ".playbook/learning-compaction.json",
+        ".playbook/learning-state.json",
         ".playbook/outcome-telemetry.json",
-        ".playbook/process-telemetry.json",
-        ".playbook/learning-state.json"
+        ".playbook/process-telemetry.json"
       ]
     },
     {
@@ -138,6 +139,7 @@
         "memory"
       ],
       "artifacts": [
+        ".playbook/memory/events/*",
         ".playbook/memory/index.json"
       ]
     },
@@ -149,7 +151,8 @@
       ],
       "artifacts": [
         ".playbook/improvement-candidates.json",
-        ".playbook/router-improvement-proposals.json"
+        ".playbook/router-improvement-proposals.json",
+        ".playbook/router-recommendations.json"
       ]
     },
     {

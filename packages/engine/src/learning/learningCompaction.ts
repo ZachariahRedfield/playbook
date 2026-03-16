@@ -10,6 +10,7 @@ import type {
 } from '@zachariahredfield/playbook-core';
 import { type ProcessTelemetryArtifact, type OutcomeTelemetryArtifact, normalizeOutcomeTelemetryArtifact, normalizeProcessTelemetryArtifact } from '../telemetry/outcomeTelemetry.js';
 import { type RepositoryEvent, readRepositoryEvents, type RepositoryEventIndex, REPOSITORY_EVENTS_SCHEMA_VERSION } from '../memory/events.js';
+import { readJsonIfExists, writeDeterministicJsonAtomic } from './io.js';
 
 export const LEARNING_COMPACTION_SCHEMA_VERSION = '1.0' as const;
 export const LEARNING_COMPACTION_RELATIVE_PATH = '.playbook/learning-compaction.json' as const;
@@ -36,17 +37,6 @@ export type LearningCompactionArtifact = {
 const round4 = (value: number): number => Number(value.toFixed(4));
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
-const readJsonIfExists = <T>(filePath: string): T | undefined => {
-  if (!fs.existsSync(filePath)) {
-    return undefined;
-  }
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
-  } catch {
-    return undefined;
-  }
-};
 
 const stableSort = <T>(values: T[], compare: (left: T, right: T) => number): T[] =>
   [...values].sort(compare);
@@ -380,7 +370,6 @@ export const generateLearningCompactionArtifact = (repoRoot: string): LearningCo
 
 export const writeLearningCompactionArtifact = (repoRoot: string, artifact: LearningCompactionArtifact): string => {
   const artifactPath = path.join(repoRoot, LEARNING_COMPACTION_RELATIVE_PATH);
-  fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
-  fs.writeFileSync(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+  writeDeterministicJsonAtomic(artifactPath, artifact);
   return artifactPath;
 };

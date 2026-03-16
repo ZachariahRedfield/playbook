@@ -143,6 +143,9 @@ Why this matters
 Playbook is a deterministic engineering intelligence runtime, not an unbounded memory accumulator. Uncontrolled pattern accumulation degrades determinism, retrieval quality, and operator trust.
 
 Rule: Treat extracted knowledge as evidence first, reusable knowledge second.
+
+Status update: telemetry → repository memory → learning compaction → improvement recommendations → knowledge inspection is now implemented as a deterministic runtime pipeline; current roadmap focus is hardening, governance quality, and promotion policy depth rather than introducing a parallel learning path.
+
 Rule: Promotion must only happen after canonicalization, deterministic comparison, and compaction.
 Pattern: Internal-first knowledge lifecycle before public command expansion.
 Pattern: Compaction is the trust-preserving bridge between extraction and promotion.

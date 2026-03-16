@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { writeDeterministicJsonAtomic } from '../learning/io.js';
 
 const MEMORY_ROOT = ['.playbook', 'memory'] as const;
 const EVENTS_DIR = [...MEMORY_ROOT, 'events'] as const;
@@ -161,7 +162,6 @@ const canonicalize = (value: unknown): unknown => {
   return value;
 };
 
-const deterministicStringify = (value: unknown): string => `${JSON.stringify(canonicalize(value), null, 2)}\n`;
 
 const hash = (value: unknown, size = 12): string =>
   createHash('sha256').update(JSON.stringify(canonicalize(value)), 'utf8').digest('hex').slice(0, size);
@@ -223,8 +223,7 @@ const readIndex = (repoRoot: string): RepositoryEventIndex => {
 };
 
 const writeDeterministicJson = (filePath: string, payload: unknown): void => {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, deterministicStringify(payload), 'utf8');
+  writeDeterministicJsonAtomic(filePath, canonicalize(payload));
 };
 
 const allocateEventPath = (repoRoot: string, eventType: RepositoryEventType, timestamp: string, payload: unknown): { eventId: string; eventPath: string } => {

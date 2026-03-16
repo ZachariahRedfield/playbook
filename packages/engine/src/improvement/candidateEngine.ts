@@ -1,15 +1,15 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import type { CompactedLearningSummary } from '@zachariahredfield/playbook-core';
 import type { LearningStateSnapshotArtifact } from '../telemetry/learningState.js';
 import type { OutcomeTelemetryArtifact, ProcessTelemetryArtifact } from '../telemetry/outcomeTelemetry.js';
-import type {
-  ExecutionOutcomeEvent,
-  ImprovementCandidateEvent,
-  LaneTransitionEvent,
-  RepositoryEvent,
-  RouteDecisionEvent,
-  WorkerAssignmentEvent
+import {
+  readRepositoryEvents,
+  type ExecutionOutcomeEvent,
+  type ImprovementCandidateEvent,
+  type LaneTransitionEvent,
+  type RepositoryEvent,
+  type RouteDecisionEvent,
+  type WorkerAssignmentEvent
 } from '../memory/events.js';
 import {
   generateDoctrinePromotionArtifacts,
@@ -19,6 +19,7 @@ import {
   type DoctrinePromotionCandidatesArtifact,
   type DoctrinePromotionsArtifact
 } from './doctrinePromotion.js';
+import { readJsonIfExists, writeDeterministicJsonAtomic } from '../learning/io.js';
 
 export { KNOWLEDGE_CANDIDATES_RELATIVE_PATH, KNOWLEDGE_PROMOTIONS_RELATIVE_PATH } from './doctrinePromotion.js';
 
@@ -168,45 +169,6 @@ const round4 = (value: number): number => Number(value.toFixed(4));
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 const getRunKey = (timestamp: string): string => timestamp.slice(0, 10);
-
-const deterministicStringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
-
-const readJsonFileIfExists = <T>(filePath: string): T | undefined => {
-  if (!fs.existsSync(filePath)) {
-    return undefined;
-  }
-
-  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
-};
-
-const readRepositoryEvents = (repoRoot: string): RepositoryEvent[] => {
-  const eventsDir = path.join(repoRoot, '.playbook', 'memory', 'events');
-  if (!fs.existsSync(eventsDir)) {
-    return [];
-  }
-
-  const files = fs
-    .readdirSync(eventsDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
-    .map((entry) => entry.name)
-    .sort((left, right) => left.localeCompare(right));
-
-  const events: RepositoryEvent[] = [];
-
-  for (const fileName of files) {
-    const eventPath = path.join(eventsDir, fileName);
-    try {
-      const parsed = JSON.parse(fs.readFileSync(eventPath, 'utf8')) as RepositoryEvent;
-      if (parsed && typeof parsed.event_type === 'string' && typeof parsed.event_id === 'string') {
-        events.push(parsed);
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return events;
-};
 
 type LearningCompactionArtifact = {
   summary?: CompactedLearningSummary;
@@ -732,10 +694,10 @@ const generateOntologyCandidates = (
 export const generateImprovementCandidates = (repoRoot: string): ImprovementCandidatesArtifact => {
   const events = readRepositoryEvents(repoRoot);
   const learningStatePath = path.join(repoRoot, '.playbook', 'learning-state.json');
-  const learning = readJsonFileIfExists<LearningStateSnapshotArtifact>(learningStatePath);
-  const compactedLearning = readJsonFileIfExists<LearningCompactionArtifact>(path.join(repoRoot, '.playbook', 'learning-compaction.json'))?.summary;
-  const processTelemetry = readJsonFileIfExists<ProcessTelemetryArtifact>(path.join(repoRoot, '.playbook', 'process-telemetry.json'));
-  const outcomeTelemetry = readJsonFileIfExists<OutcomeTelemetryArtifact>(path.join(repoRoot, '.playbook', 'outcome-telemetry.json'));
+  const learning = readJsonIfExists<LearningStateSnapshotArtifact>(learningStatePath);
+  const compactedLearning = readJsonIfExists<LearningCompactionArtifact>(path.join(repoRoot, '.playbook', 'learning-compaction.json'))?.summary;
+  const processTelemetry = readJsonIfExists<ProcessTelemetryArtifact>(path.join(repoRoot, '.playbook', 'process-telemetry.json'));
+  const outcomeTelemetry = readJsonIfExists<OutcomeTelemetryArtifact>(path.join(repoRoot, '.playbook', 'outcome-telemetry.json'));
 
   const routeEvents = events.filter((event): event is RouteDecisionEvent => event.event_type === 'route_decision');
   const laneTransitionEvents = events.filter((event): event is LaneTransitionEvent => event.event_type === 'lane_transition');
@@ -813,8 +775,7 @@ export const writeRouterRecommendationsArtifact = (
   artifactPath = ROUTER_RECOMMENDATIONS_RELATIVE_PATH
 ): string => {
   const resolvedPath = path.resolve(repoRoot, artifactPath);
-  fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
-  fs.writeFileSync(resolvedPath, deterministicStringify(artifact), 'utf8');
+  writeDeterministicJsonAtomic(resolvedPath, artifact);
   return resolvedPath;
 };
 
@@ -829,8 +790,7 @@ export const writeImprovementCandidatesArtifact = (
   });
   writeRouterRecommendationsArtifact(repoRoot, artifact.router_recommendations);
   const resolvedPath = path.resolve(repoRoot, artifactPath);
-  fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
-  fs.writeFileSync(resolvedPath, deterministicStringify(artifact), 'utf8');
+  writeDeterministicJsonAtomic(resolvedPath, artifact);
   return resolvedPath;
 };
 
@@ -855,8 +815,7 @@ export const applyAutoSafeImprovements = (repoRoot: string): ImprovementActionAr
   };
 
   const outputPath = path.join(repoRoot, '.playbook', 'improvement-actions.json');
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, deterministicStringify(actionArtifact), 'utf8');
+  writeDeterministicJsonAtomic(outputPath, actionArtifact);
   return actionArtifact;
 };
 
@@ -876,7 +835,7 @@ export const approveGovernanceImprovement = (
   }
 
   const approvalsPath = path.join(repoRoot, '.playbook', 'improvement-approvals.json');
-  const existing = readJsonFileIfExists<ImprovementGovernanceApprovalArtifact>(approvalsPath);
+  const existing = readJsonIfExists<ImprovementGovernanceApprovalArtifact>(approvalsPath);
 
   const approvals = existing?.approvals ?? [];
   if (!approvals.some((entry) => entry.proposal_id === proposalId)) {
@@ -890,7 +849,6 @@ export const approveGovernanceImprovement = (
     approvals: approvals.sort((left, right) => left.proposal_id.localeCompare(right.proposal_id))
   };
 
-  fs.mkdirSync(path.dirname(approvalsPath), { recursive: true });
-  fs.writeFileSync(approvalsPath, deterministicStringify(artifact), 'utf8');
+  writeDeterministicJsonAtomic(approvalsPath, artifact);
   return artifact;
 };

@@ -392,6 +392,27 @@ Query/inspection surface:
 - JSON mode remains contract-stable for automation and agent consumption.
 
 
+
+## Learning evidence loop ownership and determinism
+
+The implemented learning loop is deterministic and artifact-owned by one authoritative subsystem per artifact:
+
+`execution_supervisor` → `telemetry_learning` → `repository_memory` → `telemetry_learning` compaction → `improvement_engine` recommendations → `knowledge_lifecycle` inspection/promotion.
+
+Canonical ownership highlights:
+
+- `.playbook/execution-state.json` → `execution_supervisor`
+- `.playbook/process-telemetry.json` / `.playbook/outcome-telemetry.json` / `.playbook/learning-compaction.json` → `telemetry_learning`
+- `.playbook/memory/events/*` / `.playbook/memory/index.json` → `repository_memory`
+- `.playbook/router-recommendations.json` / `.playbook/improvement-candidates.json` → `improvement_engine`
+
+Determinism invariants for this loop:
+
+- JSON artifacts are written with stable key ordering.
+- Artifact writes use atomic replace semantics.
+- Memory events remain append-only while memory index is deterministic and rewrite-safe.
+- Missing upstream artifacts degrade gracefully rather than causing non-deterministic fallback behavior.
+
 ## Deterministic doctrine promotion pipeline
 
 Playbook now includes a deterministic, recommendation-first doctrine pipeline that composes compacted learning summaries, router recommendations, improvement proposals, and normalized repository memory evidence into governed knowledge lifecycle candidates.

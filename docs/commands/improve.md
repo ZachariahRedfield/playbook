@@ -1,6 +1,6 @@
 # `playbook improve`
 
-Generate deterministic improvement candidates from repository memory events and learning-state signals.
+Generate deterministic improvement candidates from repository memory events and compacted learning pipeline signals.
 
 ## Usage
 
@@ -13,10 +13,14 @@ pnpm playbook improve --json
 
 - `.playbook/memory/events/*`
 - `.playbook/learning-state.json`
+- `.playbook/learning-compaction.json` (when available)
+- `.playbook/process-telemetry.json` (when available)
+- `.playbook/outcome-telemetry.json` (when available)
 
-## Output artifact
+## Output artifacts
 
 - `.playbook/improvement-candidates.json`
+- `.playbook/router-recommendations.json`
 
 ## Categories
 
