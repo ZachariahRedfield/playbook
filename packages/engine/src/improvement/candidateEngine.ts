@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { CompactedLearningSummary } from '@zachariahredfield/playbook-core';
 import type { LearningStateSnapshotArtifact } from '../telemetry/learningState.js';
+import type { OutcomeTelemetryArtifact, ProcessTelemetryArtifact } from '../telemetry/outcomeTelemetry.js';
 import type {
+  ExecutionOutcomeEvent,
   ImprovementCandidateEvent,
   LaneTransitionEvent,
   RepositoryEvent,
@@ -11,6 +14,7 @@ import type {
 
 export const IMPROVEMENT_CANDIDATES_SCHEMA_VERSION = '1.0' as const;
 export const IMPROVEMENT_CANDIDATES_RELATIVE_PATH = '.playbook/improvement-candidates.json' as const;
+export const ROUTER_RECOMMENDATIONS_RELATIVE_PATH = '.playbook/router-recommendations.json' as const;
 
 export type ImprovementCandidateCategory =
   | 'routing'
@@ -27,6 +31,41 @@ type ProposalEvidence = {
   event_ids: string[];
   evidence_count: number;
   supporting_runs: number;
+};
+
+export type RouterRecommendationGatingTier = 'CONVERSATIONAL' | 'GOVERNANCE';
+
+export type RouterRecommendation = {
+  recommendation_id: string;
+  task_family: string;
+  current_strategy: string;
+  recommended_strategy: string;
+  evidence_count: number;
+  supporting_runs: number;
+  confidence_score: number;
+  rationale: string;
+  gating_tier: RouterRecommendationGatingTier;
+};
+
+export type RejectedRouterRecommendation = RouterRecommendation & {
+  blocking_reasons: string[];
+};
+
+export type RouterRecommendationsArtifact = {
+  schemaVersion: typeof IMPROVEMENT_CANDIDATES_SCHEMA_VERSION;
+  kind: 'router-recommendations';
+  generatedAt: string;
+  proposalOnly: true;
+  nonAutonomous: true;
+  sourceArtifacts: {
+    learningStatePath: string;
+    learningCompactionPath: string;
+    processTelemetryPath: string;
+    outcomeTelemetryPath: string;
+    memoryEventsPath: string;
+  };
+  recommendations: RouterRecommendation[];
+  rejected_recommendations: RejectedRouterRecommendation[];
 };
 
 export type ImprovementCandidate = {
@@ -78,6 +117,7 @@ export type ImprovementCandidatesArtifact = {
     GOVERNANCE: number;
     total: number;
   };
+  router_recommendations: RouterRecommendationsArtifact;
   candidates: ImprovementCandidate[];
   rejected_candidates: RejectedImprovementCandidate[];
 };
@@ -109,6 +149,8 @@ const AUTO_SAFE_MINIMUM_RUNS = 1;
 
 const CONVERSATIONAL_MINIMUM_EVIDENCE = 3;
 const GOVERNANCE_MINIMUM_EVIDENCE = 2;
+const ROUTER_RECOMMENDATION_MIN_EVIDENCE = 3;
+const ROUTER_RECOMMENDATION_MIN_CONFIDENCE = 0.65;
 
 const round4 = (value: number): number => Number(value.toFixed(4));
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
@@ -152,6 +194,185 @@ const readRepositoryEvents = (repoRoot: string): RepositoryEvent[] => {
   }
 
   return events;
+};
+
+type LearningCompactionArtifact = {
+  summary?: CompactedLearningSummary;
+};
+
+const buildRouterRecommendation = (input: {
+  recommendationId: string;
+  taskFamily: string;
+  currentStrategy: string;
+  recommendedStrategy: string;
+  evidenceEvents: Array<{ event_id: string; timestamp: string }>;
+  signalScore: number;
+  learningConfidence: number;
+  rationale: string;
+  gatingTier: RouterRecommendationGatingTier;
+}): { recommendation?: RouterRecommendation; rejected?: RejectedRouterRecommendation } => {
+  const evidence = buildEvidence(input.evidenceEvents);
+  const confidenceScore = buildConfidence(evidence.evidence_count, input.signalScore, input.learningConfidence);
+  const blockingReasons: string[] = [];
+
+  if (evidence.evidence_count < ROUTER_RECOMMENDATION_MIN_EVIDENCE) {
+    blockingReasons.push(`insufficient_evidence_count:${evidence.evidence_count}<${ROUTER_RECOMMENDATION_MIN_EVIDENCE}`);
+  }
+  if (confidenceScore < ROUTER_RECOMMENDATION_MIN_CONFIDENCE) {
+    blockingReasons.push(`confidence_below_threshold:${confidenceScore}<${ROUTER_RECOMMENDATION_MIN_CONFIDENCE}`);
+  }
+
+  const base = {
+    recommendation_id: input.recommendationId,
+    task_family: input.taskFamily,
+    current_strategy: input.currentStrategy,
+    recommended_strategy: input.recommendedStrategy,
+    evidence_count: evidence.evidence_count,
+    supporting_runs: evidence.supporting_runs,
+    confidence_score: confidenceScore,
+    rationale: input.rationale,
+    gating_tier: input.gatingTier
+  };
+
+  if (blockingReasons.length > 0) {
+    return { rejected: { ...base, blocking_reasons: blockingReasons } };
+  }
+
+  return { recommendation: base };
+};
+
+const generateRouterRecommendations = (input: {
+  events: RepositoryEvent[];
+  learning: LearningStateSnapshotArtifact | undefined;
+  processTelemetry: ProcessTelemetryArtifact | undefined;
+  outcomeTelemetry: OutcomeTelemetryArtifact | undefined;
+  compactedLearning: CompactedLearningSummary | undefined;
+}): RouterRecommendationsArtifact => {
+  const routeEvents = input.events.filter((event): event is RouteDecisionEvent => event.event_type === 'route_decision');
+  const outcomeEvents = input.events.filter(
+    (event): event is ExecutionOutcomeEvent => event.event_type === 'execution_outcome' || event.event_type === 'lane_outcome'
+  );
+
+  const recommendations: RouterRecommendation[] = [];
+  const rejected: RejectedRouterRecommendation[] = [];
+  const learningConfidence = input.learning?.confidenceSummary.overall_confidence ?? 0;
+
+  const processByFamily = new Map<string, ProcessTelemetryArtifact['records']>();
+  for (const record of input.processTelemetry?.records ?? []) {
+    processByFamily.set(record.task_family, [...(processByFamily.get(record.task_family) ?? []), record]);
+  }
+
+  for (const [taskFamily, records] of [...processByFamily.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const evidenceEvents = records.map((record) => ({ event_id: record.id, timestamp: record.recordedAt }));
+    const avgPredictedLanes = records.reduce((sum, record) => sum + (record.predicted_parallel_lanes ?? 1), 0) / Math.max(1, records.length);
+    const avgActualLanes = records.reduce((sum, record) => sum + (record.actual_parallel_lanes ?? 1), 0) / Math.max(1, records.length);
+    const avgRouterFit = records.reduce((sum, record) => sum + (record.router_fit_score ?? 0), 0) / Math.max(1, records.length);
+    const avgPredictedValidation = records.reduce((sum, record) => sum + (record.predicted_validation_cost ?? 0), 0) / Math.max(1, records.length);
+    const avgActualValidation = records.reduce((sum, record) => sum + (record.actual_validation_cost ?? 0), 0) / Math.max(1, records.length);
+
+    if (avgPredictedLanes - avgActualLanes >= 1) {
+      const built = buildRouterRecommendation({
+        recommendationId: `router_over_fragmented_${taskFamily}`,
+        taskFamily,
+        currentStrategy: 'aggressive-fragmentation',
+        recommendedStrategy: 'reduce-fragmentation-lanes',
+        evidenceEvents,
+        signalScore: clamp01(0.55 + (1 - avgRouterFit) * 0.35 + Math.min(2, avgPredictedLanes - avgActualLanes) * 0.05),
+        learningConfidence,
+        rationale:
+          'Repeated router telemetry shows predicted parallel lanes consistently exceeding realized lanes; prefer tighter task-family bundling.',
+        gatingTier: 'CONVERSATIONAL'
+      });
+      if (built.recommendation) recommendations.push(built.recommendation);
+      if (built.rejected) rejected.push(built.rejected);
+    }
+
+    if (avgActualLanes - avgPredictedLanes >= 1) {
+      const built = buildRouterRecommendation({
+        recommendationId: `router_under_fragmented_${taskFamily}`,
+        taskFamily,
+        currentStrategy: 'conservative-fragmentation',
+        recommendedStrategy: 'increase-fragmentation-lanes',
+        evidenceEvents,
+        signalScore: clamp01(0.55 + (1 - avgRouterFit) * 0.35 + Math.min(2, avgActualLanes - avgPredictedLanes) * 0.05),
+        learningConfidence,
+        rationale:
+          'Repeated router telemetry shows realized parallel lanes exceeding predicted lanes; suggest controlled additional lane decomposition for this task family.',
+        gatingTier: 'CONVERSATIONAL'
+      });
+      if (built.recommendation) recommendations.push(built.recommendation);
+      if (built.rejected) rejected.push(built.rejected);
+    }
+
+    if (Math.abs(avgPredictedValidation - avgActualValidation) >= 1) {
+      const overValidation = avgPredictedValidation > avgActualValidation;
+      const built = buildRouterRecommendation({
+        recommendationId: `router_validation_posture_${taskFamily}`,
+        taskFamily,
+        currentStrategy: overValidation ? 'high-validation-posture' : 'low-validation-posture',
+        recommendedStrategy: overValidation ? 'validation-rightsize-down' : 'validation-rightsize-up',
+        evidenceEvents,
+        signalScore: clamp01(0.6 + (input.learning?.metrics.validation_cost_pressure ?? 0) * 0.2 + Math.min(4, Math.abs(avgPredictedValidation - avgActualValidation)) * 0.05),
+        learningConfidence,
+        rationale:
+          'Validation-cost telemetry repeatedly diverges from predicted posture; recommend explicit task-family validation profile review before router policy updates.',
+        gatingTier: 'GOVERNANCE'
+      });
+      if (built.recommendation) recommendations.push(built.recommendation);
+      if (built.rejected) rejected.push(built.rejected);
+    }
+  }
+
+  const successfulOutcomesByFamily = new Map<string, number>();
+  for (const event of outcomeEvents) {
+    if (event.outcome !== 'success') continue;
+    const family = routeEvents.find((route) => route.run_id && route.run_id === event.run_id)?.task_family ?? 'unknown';
+    successfulOutcomesByFamily.set(family, (successfulOutcomesByFamily.get(family) ?? 0) + 1);
+  }
+  for (const [family, count] of Object.entries(input.outcomeTelemetry?.summary.task_family_counts ?? {}).sort((a, b) => a[0].localeCompare(b[0]))) {
+    successfulOutcomesByFamily.set(family, Math.max(successfulOutcomesByFamily.get(family) ?? 0, count));
+  }
+
+  for (const [family, successCount] of [...successfulOutcomesByFamily.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (successCount < ROUTER_RECOMMENDATION_MIN_EVIDENCE) continue;
+    const familyRoutes = routeEvents.filter((event) => event.task_family === family);
+    if (familyRoutes.length === 0) continue;
+    const routeCounts = familyRoutes.reduce<Record<string, number>>((acc, event) => {
+      acc[event.route_id] = (acc[event.route_id] ?? 0) + 1;
+      return acc;
+    }, {});
+    const preferredRoute = Object.entries(routeCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? 'unknown-route';
+    const built = buildRouterRecommendation({
+      recommendationId: `router_success_bias_${family}`,
+      taskFamily: family,
+      currentStrategy: 'family-neutral-route-selection',
+      recommendedStrategy: `prefer:${preferredRoute}`,
+      evidenceEvents: familyRoutes.map((event) => ({ event_id: event.event_id, timestamp: event.timestamp })),
+      signalScore: clamp01(0.58 + Math.min(10, successCount) / 20 + (input.compactedLearning?.route_patterns.length ?? 0) / 100),
+      learningConfidence,
+      rationale: `Task family ${family} has repeated successful lane outcomes with stable route evidence; biasing recommendations toward the winning route remains proposal-only and review-gated.`,
+      gatingTier: 'CONVERSATIONAL'
+    });
+    if (built.recommendation) recommendations.push(built.recommendation);
+    if (built.rejected) rejected.push(built.rejected);
+  }
+
+  return {
+    schemaVersion: IMPROVEMENT_CANDIDATES_SCHEMA_VERSION,
+    kind: 'router-recommendations',
+    generatedAt: new Date().toISOString(),
+    proposalOnly: true,
+    nonAutonomous: true,
+    sourceArtifacts: {
+      learningStatePath: '.playbook/learning-state.json',
+      learningCompactionPath: '.playbook/learning-compaction.json',
+      processTelemetryPath: '.playbook/process-telemetry.json',
+      outcomeTelemetryPath: '.playbook/outcome-telemetry.json',
+      memoryEventsPath: '.playbook/memory/events/*'
+    },
+    recommendations: recommendations.sort((a, b) => b.confidence_score - a.confidence_score || a.recommendation_id.localeCompare(b.recommendation_id)),
+    rejected_recommendations: rejected.sort((a, b) => a.recommendation_id.localeCompare(b.recommendation_id))
+  };
 };
 
 const buildTier = (input: { category: ImprovementCandidateCategory; suggestedAction: string }): ImprovementTier => {
@@ -500,6 +721,9 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
   const events = readRepositoryEvents(repoRoot);
   const learningStatePath = path.join(repoRoot, '.playbook', 'learning-state.json');
   const learning = readJsonFileIfExists<LearningStateSnapshotArtifact>(learningStatePath);
+  const compactedLearning = readJsonFileIfExists<LearningCompactionArtifact>(path.join(repoRoot, '.playbook', 'learning-compaction.json'))?.summary;
+  const processTelemetry = readJsonFileIfExists<ProcessTelemetryArtifact>(path.join(repoRoot, '.playbook', 'process-telemetry.json'));
+  const outcomeTelemetry = readJsonFileIfExists<OutcomeTelemetryArtifact>(path.join(repoRoot, '.playbook', 'outcome-telemetry.json'));
 
   const routeEvents = events.filter((event): event is RouteDecisionEvent => event.event_type === 'route_decision');
   const laneTransitionEvents = events.filter((event): event is LaneTransitionEvent => event.event_type === 'lane_transition');
@@ -526,6 +750,14 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     .flatMap((entry) => entry.rejected)
     .sort((left, right) => left.candidate_id.localeCompare(right.candidate_id));
 
+  const routerRecommendations = generateRouterRecommendations({
+    events,
+    learning,
+    processTelemetry,
+    outcomeTelemetry,
+    compactedLearning
+  });
+
   const summary = {
     AUTO_SAFE: candidates.filter((candidate) => candidate.improvement_tier === 'auto_safe').length,
     CONVERSATIONAL: candidates.filter((candidate) => candidate.improvement_tier === 'conversation').length,
@@ -548,9 +780,21 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
       learningStateAvailable: Boolean(learning)
     },
     summary,
+    router_recommendations: routerRecommendations,
     candidates,
     rejected_candidates: rejectedCandidates
   };
+};
+
+export const writeRouterRecommendationsArtifact = (
+  repoRoot: string,
+  artifact: RouterRecommendationsArtifact,
+  artifactPath = ROUTER_RECOMMENDATIONS_RELATIVE_PATH
+): string => {
+  const resolvedPath = path.resolve(repoRoot, artifactPath);
+  fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
+  fs.writeFileSync(resolvedPath, deterministicStringify(artifact), 'utf8');
+  return resolvedPath;
 };
 
 export const writeImprovementCandidatesArtifact = (
@@ -558,6 +802,7 @@ export const writeImprovementCandidatesArtifact = (
   artifact: ImprovementCandidatesArtifact,
   artifactPath = IMPROVEMENT_CANDIDATES_RELATIVE_PATH
 ): string => {
+  writeRouterRecommendationsArtifact(repoRoot, artifact.router_recommendations);
   const resolvedPath = path.resolve(repoRoot, artifactPath);
   fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
   fs.writeFileSync(resolvedPath, deterministicStringify(artifact), 'utf8');

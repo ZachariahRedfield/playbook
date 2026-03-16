@@ -52,6 +52,55 @@ const writeLearningState = (repo: string, validationCostPressure = 0.2): void =>
   );
 };
 
+
+const writeProcessTelemetry = (repo: string, records: Array<Record<string, unknown>>): void => {
+  const telemetryPath = path.join(repo, '.playbook', 'process-telemetry.json');
+  fs.mkdirSync(path.dirname(telemetryPath), { recursive: true });
+  fs.writeFileSync(
+    telemetryPath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'process-telemetry',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        records,
+        summary: {
+          total_records: records.length,
+          total_task_duration_ms: 1000,
+          average_task_duration_ms: 250,
+          total_retry_count: 0,
+          first_pass_success_count: records.length,
+          average_merge_conflict_risk: 0,
+          total_files_touched_unique: 1,
+          total_validators_run_unique: 1,
+          task_family_counts: { docs_only: records.length },
+          validators_run_counts: {},
+          reasoning_scope_counts: { narrow: records.length, module: 0, repository: 0, 'cross-repo': 0 },
+          route_id_counts: {},
+          task_profile_id_counts: {},
+          rule_packs_selected_counts: {},
+          required_validations_selected_counts: {},
+          optional_validations_selected_counts: {},
+          total_validation_duration_ms: 0,
+          total_planning_duration_ms: 0,
+          total_apply_duration_ms: 0,
+          human_intervention_required_count: 0,
+          actual_merge_conflict_count: 0,
+          average_parallel_lane_count: 1,
+          over_validation_signal_count: 0,
+          under_validation_signal_count: 0,
+          router_accuracy_records: records.length,
+          average_router_fit_score: 0.7,
+          average_lane_delta: 1,
+          average_validation_delta: 1
+        }
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeEvents = (repo: string, events: EventSeed[]): void => {
   const eventsDir = path.join(repo, '.playbook', 'memory', 'events');
   fs.mkdirSync(eventsDir, { recursive: true });
@@ -163,6 +212,137 @@ describe('improvement candidate evidence gating', () => {
     expect(artifact.rejected_candidates.length).toBeGreaterThan(0);
     expect(artifact.rejected_candidates[0]?.blocking_reasons.some((reason) => reason.includes('insufficient_evidence_count'))).toBe(true);
 
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+});
+
+
+describe('router recommendation engine', () => {
+  it('emits repeated over-fragmentation recommendation', () => {
+    const repo = createRepo();
+    writeLearningState(repo, 0.4);
+    writeProcessTelemetry(
+      repo,
+      Array.from({ length: 4 }, (_, index) => ({
+        id: `p-${index}`,
+        recordedAt: `2026-01-0${index + 1}T00:00:00.000Z`,
+        task_family: 'docs_only',
+        route_id: 'docs_default',
+        task_duration_ms: 100,
+        files_touched: ['docs/ARCHITECTURE.md'],
+        validators_run: ['pnpm -r build'],
+        retry_count: 0,
+        merge_conflict_risk: 0,
+        first_pass_success: true,
+        prompt_size: 100,
+        reasoning_scope: 'narrow',
+        predicted_parallel_lanes: 4,
+        actual_parallel_lanes: 1,
+        predicted_validation_cost: 2,
+        actual_validation_cost: 2,
+        router_fit_score: 0.4
+      }))
+    );
+
+    const artifact = generateImprovementCandidates(repo);
+    expect(artifact.router_recommendations.recommendations.some((entry) => entry.recommendation_id === 'router_over_fragmented_docs_only')).toBe(true);
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+
+  it('emits repeated under-fragmentation recommendation', () => {
+    const repo = createRepo();
+    writeLearningState(repo, 0.4);
+    writeProcessTelemetry(
+      repo,
+      Array.from({ length: 4 }, (_, index) => ({
+        id: `u-${index}`,
+        recordedAt: `2026-01-0${index + 1}T00:00:00.000Z`,
+        task_family: 'cli_command',
+        route_id: 'cli_default',
+        task_duration_ms: 100,
+        files_touched: ['packages/cli/src/commands/improve.ts'],
+        validators_run: ['pnpm -r build'],
+        retry_count: 0,
+        merge_conflict_risk: 0,
+        first_pass_success: true,
+        prompt_size: 100,
+        reasoning_scope: 'narrow',
+        predicted_parallel_lanes: 1,
+        actual_parallel_lanes: 3,
+        predicted_validation_cost: 2,
+        actual_validation_cost: 2,
+        router_fit_score: 0.45
+      }))
+    );
+
+    const artifact = generateImprovementCandidates(repo);
+    expect(artifact.router_recommendations.recommendations.some((entry) => entry.recommendation_id === 'router_under_fragmented_cli_command')).toBe(true);
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+
+  it('rejects recommendation with insufficient evidence', () => {
+    const repo = createRepo();
+    writeLearningState(repo, 0.4);
+    writeProcessTelemetry(repo, [
+      {
+        id: 'r-1',
+        recordedAt: '2026-01-01T00:00:00.000Z',
+        task_family: 'docs_only',
+        route_id: 'docs_default',
+        task_duration_ms: 100,
+        files_touched: ['docs/ARCHITECTURE.md'],
+        validators_run: ['pnpm -r build'],
+        retry_count: 0,
+        merge_conflict_risk: 0,
+        first_pass_success: true,
+        prompt_size: 100,
+        reasoning_scope: 'narrow',
+        predicted_parallel_lanes: 4,
+        actual_parallel_lanes: 1,
+        predicted_validation_cost: 2,
+        actual_validation_cost: 2,
+        router_fit_score: 0.5
+      }
+    ]);
+
+    const artifact = generateImprovementCandidates(repo);
+    expect(artifact.router_recommendations.recommendations).toHaveLength(0);
+    expect(artifact.router_recommendations.rejected_recommendations.some((entry) => entry.blocking_reasons.some((reason) => reason.includes('insufficient_evidence_count')))).toBe(true);
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+
+  it('gates mismatched validation posture as governance-tier', () => {
+    const repo = createRepo();
+    writeLearningState(repo, 0.9);
+    writeProcessTelemetry(
+      repo,
+      Array.from({ length: 3 }, (_, index) => ({
+        id: `g-${index}`,
+        recordedAt: `2026-01-0${index + 1}T00:00:00.000Z`,
+        task_family: 'contracts_schema',
+        route_id: 'contracts_default',
+        task_duration_ms: 100,
+        files_touched: ['packages/core/src/telemetry/types.ts'],
+        validators_run: ['pnpm -r build'],
+        retry_count: 0,
+        merge_conflict_risk: 0,
+        first_pass_success: true,
+        prompt_size: 100,
+        reasoning_scope: 'narrow',
+        predicted_parallel_lanes: 1,
+        actual_parallel_lanes: 1,
+        predicted_validation_cost: 5,
+        actual_validation_cost: 1,
+        router_fit_score: 0.7
+      }))
+    );
+
+    const artifact = generateImprovementCandidates(repo);
+    const recommendation = artifact.router_recommendations.recommendations.find(
+      (entry) => entry.recommendation_id === 'router_validation_posture_contracts_schema'
+    );
+    expect(recommendation).toBeDefined();
+    expect(recommendation?.gating_tier).toBe('GOVERNANCE');
     fs.rmSync(repo, { recursive: true, force: true });
   });
 });

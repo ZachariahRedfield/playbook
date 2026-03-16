@@ -158,8 +158,10 @@ export { runDocsAudit } from './docs/audit.js';
 export {
   IMPROVEMENT_CANDIDATES_SCHEMA_VERSION,
   IMPROVEMENT_CANDIDATES_RELATIVE_PATH,
+  ROUTER_RECOMMENDATIONS_RELATIVE_PATH,
   generateImprovementCandidates,
   writeImprovementCandidatesArtifact,
+  writeRouterRecommendationsArtifact,
   applyAutoSafeImprovements,
   approveGovernanceImprovement
 } from './improvement/candidateEngine.js';
@@ -169,6 +171,10 @@ export type {
   ImprovementGatingTier,
   ImprovementCandidate,
   RejectedImprovementCandidate,
+  RouterRecommendationGatingTier,
+  RouterRecommendation,
+  RejectedRouterRecommendation,
+  RouterRecommendationsArtifact,
   ImprovementCandidatesArtifact,
   ImprovementActionArtifact,
   ImprovementGovernanceApprovalArtifact

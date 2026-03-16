@@ -27,6 +27,11 @@ const renderText = (artifact: ImprovementCandidatesArtifact): void => {
   console.log(`- ${artifact.summary.GOVERNANCE}`);
   console.log('');
 
+  console.log('Router recommendations (non-autonomous)');
+  console.log(`- accepted: ${artifact.router_recommendations.recommendations.length}`);
+  console.log(`- rejected: ${artifact.router_recommendations.rejected_recommendations.length}`);
+  console.log('');
+
   if (artifact.candidates.length === 0) {
     console.log('No candidates met recurrence/confidence thresholds.');
     if (artifact.rejected_candidates.length > 0) {
@@ -44,6 +49,19 @@ const renderText = (artifact: ImprovementCandidatesArtifact): void => {
     console.log(`  required review: ${candidate.required_review ? 'yes' : 'no'}`);
     console.log(`  why gated: ${candidate.blocking_reasons.length === 0 ? 'meets deterministic thresholds' : candidate.blocking_reasons.join(', ')}`);
     console.log(`  action: ${candidate.suggested_action}`);
+  }
+
+  if (artifact.router_recommendations.recommendations.length > 0) {
+    console.log('');
+    console.log('Router recommendation details (proposal-only)');
+    for (const recommendation of artifact.router_recommendations.recommendations) {
+      console.log(`- [${recommendation.gating_tier}] ${recommendation.recommendation_id} (${recommendation.task_family})`);
+      console.log(`  strategy: ${recommendation.current_strategy} -> ${recommendation.recommended_strategy}`);
+      console.log(
+        `  evidence: ${recommendation.evidence_count} events across ${recommendation.supporting_runs} runs, confidence: ${recommendation.confidence_score}`
+      );
+      console.log(`  rationale: ${recommendation.rationale}`);
+    }
   }
 
   if (artifact.rejected_candidates.length > 0) {
