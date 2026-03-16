@@ -29,6 +29,11 @@ declare module "@zachariahredfield/playbook-engine" {
   export const expandMemoryProvenance: (...args: any[]) => any[];
   export const loadCandidateKnowledgeById: (...args: any[]) => any;
   export const promoteMemoryCandidate: (...args: any[]) => any;
+  export const queryRepositoryEvents: (...args: any[]) => any[];
+  export const summarizeRecentRouteDecisions: (...args: any[]) => { events: any[] };
+  export const summarizeLaneTransitionsForRun: (...args: any[]) => { events: any[] };
+  export const summarizeWorkerAssignmentsForRun: (...args: any[]) => { events: any[] };
+  export const summarizeImprovementSignalsForArtifact: (...args: any[]) => { events: any[] };
   export const retirePromotedKnowledge: (...args: any[]) => any;
   export const pruneMemoryKnowledge: (...args: any[]) => any;
   export type KnowledgeQueryOptions = any;

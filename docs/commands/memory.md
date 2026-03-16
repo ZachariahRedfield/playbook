@@ -8,6 +8,24 @@ Inspect and review repository memory artifacts using thin, deterministic CLI sur
 
 List episodic events from `.playbook/memory/events` with optional filters (`--module`, `--rule`, `--fingerprint`, `--limit`, `--order`).
 
+### `memory query`
+
+Query normalized operational repository events from `.playbook/memory/events` using deterministic filters:
+
+- `--event-type`
+- `--subsystem`
+- `--run-id`
+- `--subject`
+- `--related-artifact`
+- `--order` and `--limit`
+
+Summary views are available with `--summary`:
+
+- `recent-route-decisions`
+- `lane-transitions` (requires `--run-id`)
+- `worker-assignments` (requires `--run-id`)
+- `improvement-signals` (requires `--related-artifact`)
+
 ### `memory candidates`
 
 List replay candidates from `.playbook/memory/candidates.json` for operator review.
@@ -47,6 +65,8 @@ Retire an existing promoted knowledge record without deleting provenance.
 
 ```bash
 pnpm playbook memory events --json
+pnpm playbook memory query --event-type lane_transition --run-id run-123 --json
+pnpm playbook memory query --summary recent-route-decisions --json
 pnpm playbook memory candidates --json
 pnpm playbook memory knowledge --json
 pnpm playbook memory show <id> --json

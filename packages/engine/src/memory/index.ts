@@ -182,6 +182,16 @@ export {
   recordImprovementCandidate,
   recordImprovementSignal,
   readRepositoryEvents,
+  queryRepositoryEvents,
+  queryRepositoryEventsByType,
+  queryRepositoryEventsBySubsystem,
+  queryRepositoryEventsByRunId,
+  queryRepositoryEventsBySubject,
+  queryRepositoryEventsByRelatedArtifact,
+  summarizeRecentRouteDecisions,
+  summarizeLaneTransitionsForRun,
+  summarizeWorkerAssignmentsForRun,
+  summarizeImprovementSignalsForArtifact,
   safeRecordRepositoryEvent,
   REPOSITORY_EVENTS_SCHEMA_VERSION
 } from './events.js';
@@ -197,5 +207,7 @@ export type {
   WorkerAssignmentEvent,
   ExecutionOutcomeEvent,
   ImprovementSignalEvent,
-  RepositoryEventLookupOptions
+  RepositoryEventLookupOptions,
+  RepositoryEventSummaryKind,
+  RepositoryEventSummaryResult
 } from './events.js';

@@ -439,8 +439,23 @@ export type RepositoryEventLookupOptions = {
   subsystem?: RepositoryEventBase['subsystem'];
   subject?: string;
   runId?: string;
+  relatedArtifact?: string;
   order?: 'asc' | 'desc';
   limit?: number;
+};
+
+export type RepositoryEventSummaryKind =
+  | 'recent_route_decisions'
+  | 'lane_transitions_for_run'
+  | 'worker_assignments_for_run'
+  | 'improvement_signals_for_artifact';
+
+export type RepositoryEventSummaryResult = {
+  schemaVersion: typeof REPOSITORY_EVENTS_SCHEMA_VERSION;
+  summary: RepositoryEventSummaryKind;
+  generatedAt: string;
+  total: number;
+  events: RepositoryEvent[];
 };
 
 const sortEvents = (events: RepositoryEvent[], order: 'asc' | 'desc'): RepositoryEvent[] => {
@@ -471,7 +486,12 @@ export const readRepositoryEvents = (repoRoot: string, options: RepositoryEventL
     .filter((entry) => (options.eventType ? entry.event_type === options.eventType : true))
     .filter((entry) => (options.subsystem ? entry.subsystem === options.subsystem : true))
     .filter((entry) => (options.subject ? entry.subject === options.subject : true))
-    .filter((entry) => (options.runId ? entry.run_id === options.runId : true));
+    .filter((entry) => (options.runId ? entry.run_id === options.runId : true))
+    .filter((entry) =>
+      options.relatedArtifact
+        ? (entry.related_artifacts ?? []).some((artifact) => artifact.path === options.relatedArtifact)
+        : true
+    );
 
   const sorted = sortEvents(events, options.order ?? 'asc');
   if (typeof options.limit === 'number' && options.limit >= 0) {
@@ -479,6 +499,105 @@ export const readRepositoryEvents = (repoRoot: string, options: RepositoryEventL
   }
 
   return sorted;
+};
+
+export const queryRepositoryEvents = (repoRoot: string, options: RepositoryEventLookupOptions = {}): RepositoryEvent[] =>
+  readRepositoryEvents(repoRoot, options);
+
+export const queryRepositoryEventsByType = (
+  repoRoot: string,
+  eventType: RepositoryEventType,
+  options: Omit<RepositoryEventLookupOptions, 'eventType'> = {}
+): RepositoryEvent[] => readRepositoryEvents(repoRoot, { ...options, eventType });
+
+export const queryRepositoryEventsBySubsystem = (
+  repoRoot: string,
+  subsystem: RepositoryEventBase['subsystem'],
+  options: Omit<RepositoryEventLookupOptions, 'subsystem'> = {}
+): RepositoryEvent[] => readRepositoryEvents(repoRoot, { ...options, subsystem });
+
+export const queryRepositoryEventsByRunId = (
+  repoRoot: string,
+  runId: string,
+  options: Omit<RepositoryEventLookupOptions, 'runId'> = {}
+): RepositoryEvent[] => readRepositoryEvents(repoRoot, { ...options, runId });
+
+export const queryRepositoryEventsBySubject = (
+  repoRoot: string,
+  subject: string,
+  options: Omit<RepositoryEventLookupOptions, 'subject'> = {}
+): RepositoryEvent[] => readRepositoryEvents(repoRoot, { ...options, subject });
+
+export const queryRepositoryEventsByRelatedArtifact = (
+  repoRoot: string,
+  relatedArtifact: string,
+  options: Omit<RepositoryEventLookupOptions, 'relatedArtifact'> = {}
+): RepositoryEvent[] => readRepositoryEvents(repoRoot, { ...options, relatedArtifact });
+
+export const summarizeRecentRouteDecisions = (
+  repoRoot: string,
+  options: Pick<RepositoryEventLookupOptions, 'limit'> = {}
+): RepositoryEventSummaryResult => {
+  const events = readRepositoryEvents(repoRoot, {
+    eventType: 'route_decision',
+    order: 'desc',
+    limit: options.limit
+  });
+  return {
+    schemaVersion: REPOSITORY_EVENTS_SCHEMA_VERSION,
+    summary: 'recent_route_decisions',
+    generatedAt: new Date().toISOString(),
+    total: events.length,
+    events
+  };
+};
+
+export const summarizeLaneTransitionsForRun = (repoRoot: string, runId: string): RepositoryEventSummaryResult => {
+  const events = readRepositoryEvents(repoRoot, {
+    eventType: 'lane_transition',
+    runId,
+    order: 'asc'
+  });
+  return {
+    schemaVersion: REPOSITORY_EVENTS_SCHEMA_VERSION,
+    summary: 'lane_transitions_for_run',
+    generatedAt: new Date().toISOString(),
+    total: events.length,
+    events
+  };
+};
+
+export const summarizeWorkerAssignmentsForRun = (repoRoot: string, runId: string): RepositoryEventSummaryResult => {
+  const events = readRepositoryEvents(repoRoot, {
+    eventType: 'worker_assignment',
+    runId,
+    order: 'asc'
+  });
+  return {
+    schemaVersion: REPOSITORY_EVENTS_SCHEMA_VERSION,
+    summary: 'worker_assignments_for_run',
+    generatedAt: new Date().toISOString(),
+    total: events.length,
+    events
+  };
+};
+
+export const summarizeImprovementSignalsForArtifact = (
+  repoRoot: string,
+  relatedArtifact: string
+): RepositoryEventSummaryResult => {
+  const events = readRepositoryEvents(repoRoot, {
+    eventType: 'improvement_signal',
+    relatedArtifact,
+    order: 'desc'
+  });
+  return {
+    schemaVersion: REPOSITORY_EVENTS_SCHEMA_VERSION,
+    summary: 'improvement_signals_for_artifact',
+    generatedAt: new Date().toISOString(),
+    total: events.length,
+    events
+  };
 };
 
 export const recordLaneOutcome = recordExecutionOutcome;

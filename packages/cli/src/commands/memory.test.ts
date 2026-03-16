@@ -8,6 +8,11 @@ const expandMemoryProvenance = vi.fn();
 const loadCandidateKnowledgeById = vi.fn();
 const promoteMemoryCandidate = vi.fn();
 const retirePromotedKnowledge = vi.fn();
+const queryRepositoryEvents = vi.fn();
+const summarizeRecentRouteDecisions = vi.fn();
+const summarizeLaneTransitionsForRun = vi.fn();
+const summarizeWorkerAssignmentsForRun = vi.fn();
+const summarizeImprovementSignalsForArtifact = vi.fn();
 
 vi.mock('@zachariahredfield/playbook-engine', () => ({
   lookupMemoryEventTimeline,
@@ -16,6 +21,11 @@ vi.mock('@zachariahredfield/playbook-engine', () => ({
   expandMemoryProvenance,
   loadCandidateKnowledgeById,
   promoteMemoryCandidate,
+  queryRepositoryEvents,
+  summarizeRecentRouteDecisions,
+  summarizeLaneTransitionsForRun,
+  summarizeWorkerAssignmentsForRun,
+  summarizeImprovementSignalsForArtifact,
   retirePromotedKnowledge
 }));
 
@@ -33,6 +43,62 @@ describe('runMemory', () => {
     expect(payload.command).toBe('memory-events');
     expect(payload.events).toHaveLength(1);
 
+    logSpy.mockRestore();
+  });
+
+  it('supports query subcommand filtering by event type and run id', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    queryRepositoryEvents.mockReturnValue([{ event_id: 'evt-1', event_type: 'lane_transition', run_id: 'run-1' }]);
+
+    const exitCode = await runMemory(
+      '/repo',
+      ['query', '--event-type', 'lane_transition', '--run-id', 'run-1', '--related-artifact', '.playbook/plan.json'],
+      { format: 'json', quiet: false }
+    );
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(queryRepositoryEvents).toHaveBeenCalledWith(
+      '/repo',
+      expect.objectContaining({
+        eventType: 'lane_transition',
+        runId: 'run-1',
+        relatedArtifact: '.playbook/plan.json'
+      })
+    );
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-query');
+    expect(payload.events).toHaveLength(1);
+    logSpy.mockRestore();
+  });
+
+  it('supports query summary for route decisions', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    summarizeRecentRouteDecisions.mockReturnValue({ events: [{ event_id: 'route-1' }] });
+
+    const exitCode = await runMemory('/repo', ['query', '--summary', 'recent-route-decisions'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(summarizeRecentRouteDecisions).toHaveBeenCalled();
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.events[0].event_id).toBe('route-1');
+    logSpy.mockRestore();
+  });
+
+  it('returns failure when query summary requirements are missing', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runMemory('/repo', ['query', '--summary', 'lane-transitions'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.error).toContain('requires --run-id');
     logSpy.mockRestore();
   });
 

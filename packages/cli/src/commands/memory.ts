@@ -5,6 +5,11 @@ import {
   lookupMemoryEventTimeline,
   lookupPromotedMemoryKnowledge,
   promoteMemoryCandidate,
+  queryRepositoryEvents,
+  summarizeImprovementSignalsForArtifact,
+  summarizeLaneTransitionsForRun,
+  summarizeRecentRouteDecisions,
+  summarizeWorkerAssignmentsForRun,
   retirePromotedKnowledge
 } from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
@@ -22,6 +27,7 @@ Inspect and review repository memory artifacts.
 
 Subcommands:
   events                           List episodic memory events
+  query                            Query normalized operational repository events
   candidates                       List replayed memory candidates
   knowledge                        List promoted memory knowledge
   show <id>                        Show a candidate or knowledge record by id
@@ -34,6 +40,12 @@ Options:
   --rule <rule-id>             Filter events by rule id
   --fingerprint <value>        Filter events by event fingerprint
   --limit <n>                  Limit returned events
+  --event-type <type>          Filter memory query by event type
+  --subsystem <name>           Filter memory query by subsystem
+  --run-id <id>                Filter memory query by run id
+  --subject <subject>          Filter memory query by subject
+  --related-artifact <path>    Filter memory query by related artifact path
+  --summary <view>             Summary view: recent-route-decisions|lane-transitions|worker-assignments|improvement-signals
   --order <asc|desc>           Event ordering (default desc)
   --include-stale              Include stale candidates in memory candidates
   --include-superseded         Include superseded knowledge in memory knowledge
@@ -112,6 +124,84 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         emitJsonOutput({ cwd, command: 'memory events', payload });
       } else if (!options.quiet) {
         console.log(`Found ${payload.events.length} memory events.`);
+      }
+      return ExitCode.Success;
+    }
+
+
+    if (subcommand === 'query') {
+      const summary = readOptionValue(args, '--summary');
+      const runId = readOptionValue(args, '--run-id');
+      const relatedArtifact = readOptionValue(args, '--related-artifact');
+
+      const payload = {
+        schemaVersion: '1.0',
+        command: 'memory-query',
+        filters: {
+          event_type: readOptionValue(args, '--event-type') ?? null,
+          subsystem: readOptionValue(args, '--subsystem') ?? null,
+          run_id: runId ?? null,
+          subject: readOptionValue(args, '--subject') ?? null,
+          related_artifact: relatedArtifact ?? null,
+          order: parseOrderOption(readOptionValue(args, '--order')),
+          limit: parseIntegerOption(readOptionValue(args, '--limit'), '--limit') ?? null
+        },
+        summary: summary ?? null,
+        events:
+          summary === 'recent-route-decisions'
+            ? summarizeRecentRouteDecisions(cwd, {
+                limit: parseIntegerOption(readOptionValue(args, '--limit'), '--limit')
+              }).events
+            : summary === 'lane-transitions'
+              ? summarizeLaneTransitionsForRun(
+                  cwd,
+                  runId ?? (() => {
+                    throw new Error('playbook memory query: --summary lane-transitions requires --run-id');
+                  })()
+                ).events
+              : summary === 'worker-assignments'
+                ? summarizeWorkerAssignmentsForRun(
+                    cwd,
+                    runId ?? (() => {
+                      throw new Error('playbook memory query: --summary worker-assignments requires --run-id');
+                    })()
+                  ).events
+                : summary === 'improvement-signals'
+                  ? summarizeImprovementSignalsForArtifact(
+                      cwd,
+                      relatedArtifact ?? (() => {
+                        throw new Error('playbook memory query: --summary improvement-signals requires --related-artifact');
+                      })()
+                    ).events
+                  : summary
+                    ? (() => {
+                        throw new Error(
+                          `playbook memory query: invalid --summary value "${summary}"; expected recent-route-decisions, lane-transitions, worker-assignments, or improvement-signals`
+                        );
+                      })()
+                    : queryRepositoryEvents(cwd, {
+                        eventType: (readOptionValue(args, '--event-type') as
+                          | 'route_decision'
+                          | 'lane_transition'
+                          | 'worker_assignment'
+                          | 'execution_outcome'
+                          | 'improvement_signal'
+                          | 'lane_outcome'
+                          | 'improvement_candidate'
+                          | null) ?? undefined,
+                        subsystem: (readOptionValue(args, '--subsystem') as 'repository_memory' | 'knowledge_lifecycle' | null) ?? undefined,
+                        runId: runId ?? undefined,
+                        subject: readOptionValue(args, '--subject') ?? undefined,
+                        relatedArtifact: relatedArtifact ?? undefined,
+                        order: parseOrderOption(readOptionValue(args, '--order')),
+                        limit: parseIntegerOption(readOptionValue(args, '--limit'), '--limit')
+                      })
+      };
+
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'memory query', payload });
+      } else if (!options.quiet) {
+        console.log(`Found ${payload.events.length} repository memory events.`);
       }
       return ExitCode.Success;
     }
@@ -234,7 +324,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
       return ExitCode.Success;
     }
 
-    throw new Error('playbook memory: unsupported subcommand. Use events, candidates, knowledge, show, promote, or retire.');
+    throw new Error('playbook memory: unsupported subcommand. Use events, query, candidates, knowledge, show, promote, or retire.');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (options.format === 'json') {

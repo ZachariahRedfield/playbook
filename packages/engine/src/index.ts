@@ -184,6 +184,16 @@ export {
   recordImprovementCandidate,
   recordImprovementSignal,
   readRepositoryEvents,
+  queryRepositoryEvents,
+  queryRepositoryEventsByType,
+  queryRepositoryEventsBySubsystem,
+  queryRepositoryEventsByRunId,
+  queryRepositoryEventsBySubject,
+  queryRepositoryEventsByRelatedArtifact,
+  summarizeRecentRouteDecisions,
+  summarizeLaneTransitionsForRun,
+  summarizeWorkerAssignmentsForRun,
+  summarizeImprovementSignalsForArtifact,
   safeRecordRepositoryEvent,
   REPOSITORY_EVENTS_SCHEMA_VERSION
 } from './memory/index.js';
@@ -199,7 +209,9 @@ export type {
   LaneTransitionEvent,
   WorkerAssignmentEvent,
   ExecutionOutcomeEvent,
-  ImprovementSignalEvent
+  ImprovementSignalEvent,
+  RepositoryEventSummaryKind,
+  RepositoryEventSummaryResult
 } from './memory/events.js';
 export { lookupMemoryEventTimeline, lookupMemoryCandidateKnowledge, lookupPromotedMemoryKnowledge, expandMemoryProvenance } from './memory/inspection.js';
 export type { MemoryTimelineLookupOptions, MemoryCandidateLookupOptions, MemoryKnowledgeLookupOptions, ExpandedMemoryProvenance } from './memory/inspection.js';
