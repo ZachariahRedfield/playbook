@@ -4,6 +4,7 @@
 - WHAT: Implemented Phase 8 Router Lane 1 with additive deterministic `execution-plan` contract/schema and upgraded `pnpm playbook route` to emit/write proposal-only execution plans at `.playbook/execution-plan.json` with explicit task-family route metadata, validation bundles, source artifact availability, and warnings. WHY: Adds task-specific routing inspection that remains non-mutating while preserving deterministic governance boundaries.
 ## Unreleased
 
+- Normalized repository memory events to a canonical deterministic schema for route decisions, lane transitions, worker assignments, execution outcomes, and improvement signals; added normalized event readers and deterministic index compatibility mapping for legacy event types.
 ### Added
 
 - WHAT: Strengthened worker coordination readiness contracts by extending `workset-plan`, `lane-state`, and `worker-assignments` with explicit readiness/conflict fields (`readiness_status`, `blocking_reasons`, `conflict_surface_paths`, `shared_artifact_risk`, `assignment_confidence`) plus deterministic validation findings for overlap/ownership/dependency blocking, and updated `playbook lanes`/`playbook workers` outputs to report ready-vs-blocked lanes with conflict surfaces. WHY: Prevents hidden overlap and makes pre-execution assignment risk machine-readable before parallel worker execution.

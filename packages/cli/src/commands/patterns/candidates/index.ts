@@ -2,7 +2,7 @@ import {
   bucketCompactionCandidates,
   extractCompactionCandidates,
   readPatternCards,
-  recordImprovementCandidate,
+  recordImprovementSignal,
   safeRecordRepositoryEvent,
   toExistingPatternTargets,
   type BucketedCandidateEntry
@@ -140,10 +140,11 @@ export const runPatternsCandidates = (cwd: string, commandArgs: string[], option
   if (action === 'list') {
     safeRecordRepositoryEvent(() => {
       for (const candidate of candidates) {
-        recordImprovementCandidate(cwd, {
+        recordImprovementSignal(cwd, {
           candidate_id: candidate.candidateId,
           source: 'patterns.candidates',
-          summary: `${candidate.sourceKind}/${candidate.subjectKind}: ${candidate.trigger} -> ${candidate.response}`
+          summary: `${candidate.sourceKind}/${candidate.subjectKind}: ${candidate.trigger} -> ${candidate.response}`,
+          related_artifacts: ['.playbook/memory/candidates.json']
         });
       }
     });
