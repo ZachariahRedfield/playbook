@@ -6,6 +6,7 @@ Deterministic adoption/readiness summary for governed Playbook usage.
 
 - `pnpm playbook status --json`: repo-level status/adoption summary.
 - `pnpm playbook status fleet --json`: fleet-level aggregate readiness summary using connected Observer repos.
+- `pnpm playbook status queue --json`: deterministic read-only adoption work-queue from fleet readiness.
 
 If no Observer registry exists, fleet mode falls back to the current repository as a single-repo fleet.
 
@@ -54,6 +55,32 @@ Priority order:
 
 Within a priority stage, repos are sorted by blocker severity, then `repo_id` to keep output stable and deterministic.
 
+
+## Adoption work-queue JSON contract highlights
+
+- `kind`: `fleet-adoption-work-queue`
+- `generated_at`: queue generation timestamp
+- `total_repos`
+- `work_items[]`:
+  - `repo_id`, `lifecycle_stage`, `blocker_codes[]`
+  - `recommended_command`, `priority_stage`, `severity`
+  - `parallel_group`, `dependencies[]`, `rationale`, `wave`
+- `waves[]`: deterministic wave allocation (`wave_1`, `wave_2`) with repo/action counts
+- `grouped_actions[]`: parallel-safe lanes (`init lane`, `index lane`, `verify/plan lane`, `apply lane`)
+- `blocked_items[]`: items with unmet dependencies
+
+## Queue wave and grouping logic
+
+- **Wave 1**: work items with no dependencies beyond current observed state.
+- **Wave 2**: work items unlocked only after prerequisite items complete.
+- Grouping remains action/lane specific so operators can run similar commands in parallel without violating deterministic dependency order.
+
+Playbook notes:
+
+- **Rule**: Work-queue ordering must be deterministic; identical readiness input produces identical queue output.
+- **Pattern**: Use lifecycle-derived action lanes (`init` → `index` → `verify/plan` → `apply`) to scale parallel execution safely.
+- **Failure Mode**: Queue drift occurs when operators collapse lane boundaries and execute dependent actions out of order.
+
 ## Lifecycle producers
 
 - Detect Playbook: `pnpm playbook init`
@@ -67,4 +94,5 @@ Within a priority stage, repos are sorted by blocker severity, then `repo_id` to
 pnpm playbook status --json
 pnpm playbook status
 pnpm playbook status fleet --json
+pnpm playbook status queue --json
 ```

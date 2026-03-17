@@ -6,7 +6,9 @@ import { loadAnalyzeRules } from '../lib/loadAnalyzeRules.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
 import {
   buildFleetAdoptionReadinessSummary,
+  buildFleetAdoptionWorkQueue,
   buildRepoAdoptionReadiness,
+  type FleetAdoptionWorkQueue,
   type FleetAdoptionReadinessSummary,
   type RepoAdoptionReadiness
 } from '@zachariahredfield/playbook-engine';
@@ -19,7 +21,7 @@ type StatusOptions = {
   ci: boolean;
   format: 'text' | 'json';
   quiet: boolean;
-  scope?: 'repo' | 'fleet';
+  scope?: 'repo' | 'fleet' | 'queue';
 };
 
 type StatusResult = {
@@ -41,6 +43,13 @@ type StatusFleetResult = {
   command: 'status';
   mode: 'fleet';
   fleet: FleetAdoptionReadinessSummary;
+};
+
+type StatusQueueResult = {
+  schemaVersion: '1.0';
+  command: 'status';
+  mode: 'queue';
+  queue: FleetAdoptionWorkQueue;
 };
 
 type ObserverRegistry = {
@@ -157,6 +166,16 @@ const toFleetStatusResult = (cwd: string): StatusFleetResult => {
   };
 };
 
+const toQueueStatusResult = (cwd: string): StatusQueueResult => {
+  const fleet = toFleetStatusResult(cwd).fleet;
+  return {
+    schemaVersion: '1.0',
+    command: 'status',
+    mode: 'queue',
+    queue: buildFleetAdoptionWorkQueue(fleet)
+  };
+};
+
 const printHuman = (
   result: StatusResult,
   ci: boolean,
@@ -220,6 +239,19 @@ const printHuman = (
 
 export const runStatus = async (cwd: string, options: StatusOptions): Promise<number> => {
   try {
+    if (options.scope === 'queue') {
+      const queueResult = toQueueStatusResult(cwd);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(queueResult, null, 2));
+      } else {
+        console.log(`Queue repos: ${queueResult.queue.total_repos}`);
+        console.log(`Wave 1 actions: ${queueResult.queue.waves[0]?.action_count ?? 0}`);
+        console.log(`Wave 2 actions: ${queueResult.queue.waves[1]?.action_count ?? 0}`);
+        console.log(`Top lane: ${queueResult.queue.grouped_actions[0]?.parallel_group ?? 'n/a'}`);
+      }
+      return ExitCode.Success;
+    }
+
     if (options.scope === 'fleet') {
       const fleetResult = toFleetStatusResult(cwd);
       if (options.format === 'json') {
