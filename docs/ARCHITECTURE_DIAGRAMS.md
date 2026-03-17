@@ -4,11 +4,13 @@
 ```mermaid
 flowchart TB
   n_fawxzzy_playbook["@fawxzzy/playbook"]
+  n_fawxzzy_playbook_cli["@fawxzzy/playbook-cli"]
   n_zachariahredfield_playbook_core["@zachariahredfield/playbook-core"]
   n_zachariahredfield_playbook_engine["@zachariahredfield/playbook-engine"]
   n_zachariahredfield_playbook_node["@zachariahredfield/playbook-node"]
   packages["packages"]
   packages --> n_fawxzzy_playbook
+  packages --> n_fawxzzy_playbook_cli
   packages --> n_zachariahredfield_playbook_core
   packages --> n_zachariahredfield_playbook_engine
   packages --> n_zachariahredfield_playbook_node
@@ -18,12 +20,14 @@ flowchart TB
 ```mermaid
 flowchart TB
   n_fawxzzy_playbook["@fawxzzy/playbook"]
+  n_fawxzzy_playbook_cli["@fawxzzy/playbook-cli"]
   n_zachariahredfield_playbook_core["@zachariahredfield/playbook-core"]
   n_zachariahredfield_playbook_engine["@zachariahredfield/playbook-engine"]
   n_zachariahredfield_playbook_node["@zachariahredfield/playbook-node"]
   n_fawxzzy_playbook --> n_zachariahredfield_playbook_core
   n_fawxzzy_playbook --> n_zachariahredfield_playbook_engine
   n_fawxzzy_playbook --> n_zachariahredfield_playbook_node
+  n_fawxzzy_playbook_cli --> n_fawxzzy_playbook
   n_zachariahredfield_playbook_engine --> n_zachariahredfield_playbook_core
 ```
 

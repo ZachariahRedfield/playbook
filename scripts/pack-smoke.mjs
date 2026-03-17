@@ -33,7 +33,7 @@ const ensureInitScaffoldContract = (projectDir) => {
 };
 
 const ensureInstalledCliContract = (projectDir) => {
-  const installedPkgDir = path.join(projectDir, 'node_modules', '@fawxzzy', 'playbook');
+  const installedPkgDir = path.join(projectDir, 'node_modules', '@fawxzzy', 'playbook-cli');
   const installedPkg = JSON.parse(fs.readFileSync(path.join(installedPkgDir, 'package.json'), 'utf8'));
   const binPath = path.join(installedPkgDir, installedPkg.bin.playbook);
 
@@ -68,6 +68,10 @@ const ensureBuilt = () => {
     {
       packageDir: 'packages/cli',
       expected: path.join(repoRoot, 'packages/cli/dist/templates/repo')
+    },
+    {
+      packageDir: 'packages/cli-wrapper',
+      expected: path.join(repoRoot, 'packages/cli-wrapper/bin/playbook.js')
     }
   ];
 
@@ -136,6 +140,7 @@ try {
   ensureBuilt();
 
   const cliTarball = packPackage('packages/cli');
+  const cliWrapperTarball = packPackage('packages/cli-wrapper');
   const dependencyTarballs = [
     packPackage('packages/core'),
     packPackage('packages/engine'),
@@ -150,14 +155,28 @@ try {
     JSON.stringify({ name: 'playbook-pack-smoke', private: true, version: '1.0.0' }, null, 2)
   );
 
-  installFromTarballs(projectDir, [...dependencyTarballs, cliTarball]);
+  installFromTarballs(projectDir, [...dependencyTarballs, cliTarball, cliWrapperTarball]);
   const binPath = ensureInstalledCliContract(projectDir);
 
   runLogged(nodeBin, [binPath, '--help'], { cwd: projectDir });
   runLogged(nodeBin, [binPath, 'init'], { cwd: projectDir });
-  runLogged(nodeBin, [binPath, 'analyze'], { cwd: projectDir });
-  runLogged(nodeBin, [binPath, 'verify'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'ai-context', '--json'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'ai-contract', '--json'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'context', '--json'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'index', '--json'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'query', 'modules', '--json'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'explain', 'architecture', '--json'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'verify', '--json'], { cwd: projectDir });
   runLogged(nodeBin, [binPath, 'plan', '--json'], { cwd: projectDir });
+  runLogged(nodeBin, [binPath, 'pilot', '--repo', projectDir, '--json'], { cwd: projectDir });
+
+  ensureFile(path.join(projectDir, '.playbook', 'findings.json'), '.playbook/findings.json');
+  ensureFile(path.join(projectDir, '.playbook', 'plan.json'), '.playbook/plan.json');
+  ensureFile(path.join(projectDir, '.playbook', 'repo-graph.json'), '.playbook/repo-graph.json');
+  const runArtifactsDir = path.join(projectDir, '.playbook', 'runs');
+  if (!fs.existsSync(runArtifactsDir) || fs.readdirSync(runArtifactsDir).filter((name) => name.endsWith('.json')).length === 0) {
+    throw new Error('pack-smoke failed: expected execution run artifacts under .playbook/runs/*.json');
+  }
 
   ensureInitScaffoldContract(projectDir);
 
