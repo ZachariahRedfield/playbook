@@ -151,6 +151,8 @@ Failure mode: if execution broadens beyond explicit `safe` decisions, control-pl
 
 The session evidence envelope now references `.playbook/pr-review.json` and extends lineage ordering to `session -> proposal_generation -> policy_evaluation -> pr_review -> execution_result` so PR review evidence is explicitly auditable alongside policy and execution artifacts.
 
+An additive observer ingestion layer now composes governed artifacts from registered repositories into a deterministic read-only snapshot at `.playbook/observer/snapshot.json` using `.playbook/observer/registry.json` as the source-of-truth repo list. Ingestion is restricted to known control-plane artifacts (`cycle-state`, `cycle-history`, `policy-evaluation`, `policy-apply-result`, `pr-review`, `session`), never mutates source repositories, records warning metadata for missing/malformed/invalid-kind inputs, and preserves stable repo/artifact ordering for reproducible cross-repo comparisons.
+
 Rule: every governed decision or execution step must be traceable through a deterministic evidence envelope.
 Pattern: unify existing artifacts through referenceable evidence chains before adding broader orchestration or learning layers.
 Failure Mode: runs/decisions/artifacts that remain unlinked become difficult to audit, explain, and evolve even when each artifact is individually correct.

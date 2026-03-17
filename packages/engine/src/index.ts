@@ -116,6 +116,23 @@ export {
   summarizePortabilityOutcomes
 } from './learning/portabilityOutcomes.js';
 export type { PortabilityOutcomesArtifact, PortabilityOutcomeLookup } from './learning/portabilityOutcomes.js';
+export {
+  OBSERVER_REPO_REGISTRY_RELATIVE_PATH,
+  OBSERVER_SNAPSHOT_RELATIVE_PATH,
+  readObserverRepoRegistry,
+  buildObserverSnapshot,
+  buildObserverSnapshotFromRegistry,
+  writeObserverSnapshotArtifact,
+  readObserverSnapshotArtifact
+} from './observer/snapshot.js';
+export type {
+  ObserverArtifactKey,
+  ObserverRepoRegistryEntry,
+  ObserverRepoRegistry,
+  ObserverRepoWarning,
+  ObserverRepoSnapshot,
+  ObserverSnapshot
+} from './observer/snapshot.js';
 export { replayMemoryToCandidates, MEMORY_CANDIDATES_RELATIVE_PATH } from './memory/replay.js';
 export { listCandidateKnowledge, loadCandidateKnowledgeById, promoteMemoryCandidate, retirePromotedKnowledge, supersedePromotedKnowledge, pruneMemoryKnowledge } from './memory/knowledge.js';
 export type { MemoryKnowledgeKind, MemoryKnowledgeEntry, MemoryKnowledgeArtifact, MemoryPromotionResult, MemoryRetireResult, MemorySupersedeResult, MemoryPruneResult } from './memory/knowledge.js';
