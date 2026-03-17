@@ -64,6 +64,7 @@ Failure-semantics rules:
 - Global PATH lookup is non-canonical and must not be required.
 - Missing runtime resolution must fail explicitly with operator guidance.
 - Consumer repos must provide one canonical operator command path; shadow wrappers that redefine Playbook behavior are not allowed.
+- Published wrapper entrypoints (for example `@fawxzzy/playbook-cli`) must remain thin delegates to the canonical `@fawxzzy/playbook` runtime and preserve semantic artifact parity under `.playbook/` (not metadata-only execution).
 
 ## 2) Project-Local Playbook State
 

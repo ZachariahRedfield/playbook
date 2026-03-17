@@ -564,6 +564,8 @@ For consumer-installed usage, run:
 pnpm playbook diagram
 ```
 
+Package-first runtime parity note: `@fawxzzy/playbook-cli` is now a thin entrypoint package that delegates directly to `@fawxzzy/playbook` runtime implementation, so consumer repos receive the same semantic `.playbook/*` artifacts (for example `findings.json`, `plan.json`, and `repo-graph.json`) instead of log-only shim behavior.
+
 Or view the generated diagrams here:
 
 - [docs/ARCHITECTURE_DIAGRAMS.md](docs/ARCHITECTURE_DIAGRAMS.md)

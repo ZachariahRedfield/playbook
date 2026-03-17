@@ -1,0 +1,22 @@
+{
+  "name": "@fawxzzy/playbook-cli",
+  "version": "0.1.1",
+  "type": "module",
+  "bin": {
+    "playbook": "bin/playbook.js"
+  },
+  "files": [
+    "bin/**"
+  ],
+  "scripts": {
+    "build": "node -e \"process.stdout.write('cli-wrapper build: no-op\\n')\"",
+    "test": "node -e \"process.stdout.write('cli-wrapper test: no-op\\n')\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@fawxzzy/playbook": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
