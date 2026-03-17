@@ -19,6 +19,24 @@ type ObserverRepoEntry = {
   tags: string[];
 };
 
+type ObserverRepoReadinessState = 'connected_only' | 'playbook_detected' | 'partially_observable' | 'observable';
+
+type ObserverRepoReadiness = {
+  connected: true;
+  playbook_detected: boolean;
+  playbook_directory_present: boolean;
+  repo_index_present: boolean;
+  cycle_state_present: boolean;
+  cycle_history_present: boolean;
+  policy_evaluation_present: boolean;
+  policy_apply_result_present: boolean;
+  pr_review_present: boolean;
+  session_present: boolean;
+  last_artifact_update_time: string | null;
+  readiness_state: ObserverRepoReadinessState;
+  missing_artifacts: string[];
+};
+
 type ObserverRepoRegistry = {
   schemaVersion: '1.0';
   kind: 'repo-registry';
@@ -41,6 +59,16 @@ const OBSERVER_ARTIFACTS = [
   { kind: 'policy-apply-result', relativePath: '.playbook/policy-apply-result.json' },
   { kind: 'pr-review', relativePath: '.playbook/pr-review.json' },
   { kind: 'session', relativePath: '.playbook/session.json' }
+] as const;
+
+const READINESS_ARTIFACTS = [
+  { key: 'repo_index_present', relativePath: '.playbook/repo-index.json' },
+  { key: 'cycle_state_present', relativePath: '.playbook/cycle-state.json' },
+  { key: 'cycle_history_present', relativePath: '.playbook/cycle-history.json' },
+  { key: 'policy_evaluation_present', relativePath: '.playbook/policy-evaluation.json' },
+  { key: 'policy_apply_result_present', relativePath: '.playbook/policy-apply-result.json' },
+  { key: 'pr_review_present', relativePath: '.playbook/pr-review.json' },
+  { key: 'session_present', relativePath: '.playbook/session.json' }
 ] as const;
 
 type ObserverArtifactKind = (typeof OBSERVER_ARTIFACTS)[number]['kind'];
@@ -213,6 +241,60 @@ const readRepoArtifact = (repo: ObserverRepoEntry, kind: ObserverArtifactKind): 
   }
 };
 
+const repoReadiness = (repo: ObserverRepoEntry): ObserverRepoReadiness => {
+  const playbookDirectoryPresent = fs.existsSync(repo.artifactsRoot) && fs.statSync(repo.artifactsRoot).isDirectory();
+  const playbookDetected =
+    playbookDirectoryPresent ||
+    fs.existsSync(path.join(repo.root, 'playbook.config.json')) ||
+    fs.existsSync(path.join(repo.root, '.playbook', 'config.json'));
+
+  const flags = Object.fromEntries(
+    READINESS_ARTIFACTS.map((artifact) => [artifact.key, fs.existsSync(path.join(repo.root, artifact.relativePath))])
+  ) as Record<(typeof READINESS_ARTIFACTS)[number]['key'], boolean>;
+
+  const presentArtifactPaths = READINESS_ARTIFACTS.filter((artifact) => flags[artifact.key]).map((artifact) => path.join(repo.root, artifact.relativePath));
+  const lastArtifactUpdateTime =
+    presentArtifactPaths.length === 0
+      ? null
+      : new Date(
+          Math.max(
+            ...presentArtifactPaths.map((artifactPath) => {
+              try {
+                return fs.statSync(artifactPath).mtimeMs;
+              } catch {
+                return 0;
+              }
+            })
+          )
+        ).toISOString();
+
+  const observableFlags = READINESS_ARTIFACTS.every((artifact) => flags[artifact.key]);
+  const anyArtifactsPresent = READINESS_ARTIFACTS.some((artifact) => flags[artifact.key]);
+  const readinessState: ObserverRepoReadinessState = !playbookDetected
+    ? 'connected_only'
+    : observableFlags
+      ? 'observable'
+      : anyArtifactsPresent
+        ? 'partially_observable'
+        : 'playbook_detected';
+
+  return {
+    connected: true,
+    playbook_detected: playbookDetected,
+    playbook_directory_present: playbookDirectoryPresent,
+    repo_index_present: flags.repo_index_present,
+    cycle_state_present: flags.cycle_state_present,
+    cycle_history_present: flags.cycle_history_present,
+    policy_evaluation_present: flags.policy_evaluation_present,
+    policy_apply_result_present: flags.policy_apply_result_present,
+    pr_review_present: flags.pr_review_present,
+    session_present: flags.session_present,
+    last_artifact_update_time: lastArtifactUpdateTime,
+    readiness_state: readinessState,
+    missing_artifacts: READINESS_ARTIFACTS.filter((artifact) => !flags[artifact.key]).map((artifact) => artifact.relativePath)
+  };
+};
+
 const addRepoToRegistry = (cwd: string, registry: ObserverRepoRegistry, input: ObserverRepoCreateInput): { repo: ObserverRepoEntry; registry: ObserverRepoRegistry } => {
   const root = path.resolve(cwd, input.path);
   const rootStat = fs.existsSync(root) ? fs.statSync(root) : null;
@@ -369,7 +451,8 @@ const renderRepos = async () => {
   for (const repo of payload.repos) {
     const item = document.createElement('div');
     item.className = 'card repo';
-    item.innerHTML = '<strong>' + repo.id + '</strong><div class="meta">' + repo.root + '</div>';
+    const readiness = repo.readiness || { readiness_state: 'connected_only' };
+    item.innerHTML = '<strong>' + repo.id + '</strong><div class="meta">' + repo.root + '</div><div class="meta">readiness: ' + readiness.readiness_state + '</div>';
     item.onclick = () => { selectedRepoId = repo.id; loadRepoDetail(); };
     reposEl.appendChild(item);
   }
@@ -386,7 +469,14 @@ const loadRepoDetail = async () => {
 
   const repoPayload = await getJson('/repos/' + encodeURIComponent(selectedRepoId));
   repoTitleEl.textContent = 'Repo: ' + repoPayload.repo.id;
-  repoDetailEl.innerHTML = format(repoPayload.repo);
+  const readiness = repoPayload.readiness || {};
+  const missing = Array.isArray(readiness.missing_artifacts) && readiness.missing_artifacts.length > 0 ? readiness.missing_artifacts.join(', ') : 'none';
+  const lastUpdate = readiness.last_artifact_update_time || 'n/a';
+  repoDetailEl.innerHTML =
+    '<div class="meta"><strong>Readiness:</strong> ' + (readiness.readiness_state || 'unknown') + '</div>' +
+    '<div class="meta"><strong>Last artifact update:</strong> ' + lastUpdate + '</div>' +
+    '<div class="meta"><strong>Missing artifacts:</strong> ' + missing + '</div>' +
+    format(repoPayload.repo);
   removeRepoEl.style.display = '';
   await loadArtifact();
 };
@@ -451,14 +541,22 @@ const observerServerResponse = (cwd: string, pathname: string): { statusCode: nu
   if (pathname === '/repos') {
     return {
       statusCode: 200,
-      payload: { ...base, kind: 'observer-server-repos', repos: registry.repos }
+      payload: {
+        ...base,
+        kind: 'observer-server-repos',
+        repos: registry.repos.map((repo) => ({ ...repo, readiness: repoReadiness(repo) }))
+      }
     };
   }
 
   if (pathname === '/snapshot') {
     return {
       statusCode: 200,
-      payload: { ...base, snapshot: loadSnapshotArtifact(cwd) ?? buildSnapshotFromRegistry(registry) }
+      payload: {
+        ...base,
+        snapshot: loadSnapshotArtifact(cwd) ?? buildSnapshotFromRegistry(registry),
+        readiness: registry.repos.map((repo) => ({ id: repo.id, readiness: repoReadiness(repo) }))
+      }
     };
   }
 
@@ -468,7 +566,7 @@ const observerServerResponse = (cwd: string, pathname: string): { statusCode: nu
     if (!repo) {
       return { statusCode: 404, payload: { ...base, kind: 'observer-server-error', error: 'repo-not-found' } };
     }
-    return { statusCode: 200, payload: { ...base, kind: 'observer-server-repo', repo } };
+    return { statusCode: 200, payload: { ...base, kind: 'observer-server-repo', repo, readiness: repoReadiness(repo) } };
   }
 
   const artifactMatch = /^\/repos\/([^/]+)\/artifacts\/([^/]+)$/.exec(pathname);

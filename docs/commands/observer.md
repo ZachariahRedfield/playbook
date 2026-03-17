@@ -52,3 +52,31 @@ Supported `:kind` values:
 Rule: A Playbook server must wrap governed artifacts and commands, not replace them.
 Pattern: Thin local server over canonical runtime artifacts.
 Failure Mode: If the server becomes the real source of state instead of a wrapper over repo-local truth, architecture drifts away from CLI-first determinism.
+
+### Readiness and observability status
+
+Observer server endpoints now include additive readiness metadata derived from filesystem presence only (read-only):
+
+- `connected`
+- `playbook_detected`
+- `playbook_directory_present`
+- `repo_index_present`
+- `cycle_state_present`
+- `cycle_history_present`
+- `policy_evaluation_present`
+- `policy_apply_result_present`
+- `pr_review_present`
+- `session_present`
+- `last_artifact_update_time`
+- `readiness_state` (`connected_only` | `playbook_detected` | `partially_observable` | `observable`)
+- `missing_artifacts`
+
+Readiness fields are available from:
+
+- `GET /repos` (per repo readiness object)
+- `GET /repos/:id` (repo-level readiness object)
+- `GET /snapshot` (top-level readiness summary by repo id)
+
+Rule: An observer UI must distinguish registration state from actual observability state.
+Pattern: Connected repo → readiness detection → artifact observation.
+Failure Mode: If empty repos look the same as fully observed repos, operators will misread what Playbook actually knows.

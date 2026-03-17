@@ -17,6 +17,14 @@ Boundary rule: research docs describe conceptual models; architecture/runtime do
 
 Rule: architecture documents describe current-state design and bounded staged capability, not live command inventory status.
 
+### Observer readiness boundary
+
+The observer server/UI registration list is not equivalent to observability completeness. Observer surfaces compute deterministic readiness from repo-local `.playbook` directory and governed artifact presence only, and expose readiness state (`connected_only`, `playbook_detected`, `partially_observable`, `observable`) as additive metadata over repo registration records.
+
+Rule: An observer UI must distinguish registration state from actual observability state.
+Pattern: Connected repo -> readiness detection -> artifact observation.
+Failure Mode: Treating registered repos as fully observed hides missing artifact evidence and causes operator misreads.
+
 
 ## Toroidal Flow and Knowledge Compaction artifact set
 

@@ -7,6 +7,12 @@ import { createObserverServer, runObserver, OBSERVER_REPO_REGISTRY_RELATIVE_PATH
 
 const makeTempDir = (): string => fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-observer-'));
 
+const writeArtifact = (repoRoot: string, relativePath: string, payload: Record<string, unknown>): void => {
+  const targetPath = path.join(repoRoot, relativePath);
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.writeFileSync(targetPath, JSON.stringify(payload, null, 2));
+};
+
 const parseJsonCall = (spy: ReturnType<typeof vi.spyOn>): Record<string, unknown> => JSON.parse(String(spy.mock.calls.at(-1)?.[0] ?? '{}'));
 
 afterEach(() => {
@@ -98,25 +104,95 @@ describe('observer server', () => {
 
     const repos = await fetch(`http://127.0.0.1:${port}/repos`);
     expect(repos.status).toBe(200);
-    const reposJson = await repos.json() as { repos: Array<{ id: string }> };
+    const reposJson = await repos.json() as { repos: Array<{ id: string; readiness: { readiness_state: string; session_present: boolean } }> };
     expect(reposJson.repos.map((entry) => entry.id)).toEqual(['repo-a']);
+    expect(reposJson.repos[0]?.readiness.readiness_state).toBe('partially_observable');
+    expect(reposJson.repos[0]?.readiness.session_present).toBe(true);
 
     const snapshot = await fetch(`http://127.0.0.1:${port}/snapshot`);
     expect(snapshot.status).toBe(200);
-    const snapshotJson = await snapshot.json() as { snapshot: { kind: string; repos: Array<{ id: string }> } };
+    const snapshotJson = await snapshot.json() as {
+      snapshot: { kind: string; repos: Array<{ id: string }> };
+      readiness: Array<{ id: string; readiness: { readiness_state: string } }>;
+    };
     expect(snapshotJson.snapshot.kind).toBe('observer-snapshot');
     expect(snapshotJson.snapshot.repos.map((entry) => entry.id)).toEqual(['repo-a']);
+    expect(snapshotJson.readiness[0]?.id).toBe('repo-a');
+    expect(snapshotJson.readiness[0]?.readiness.readiness_state).toBe('partially_observable');
 
     const repoResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a`);
     expect(repoResponse.status).toBe(200);
-    const repoJson = await repoResponse.json() as { repo: { id: string } };
+    const repoJson = await repoResponse.json() as { repo: { id: string }; readiness: { readiness_state: string } };
     expect(repoJson.repo.id).toBe('repo-a');
+    expect(repoJson.readiness.readiness_state).toBe('partially_observable');
 
     const artifactResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/artifacts/session`);
     expect(artifactResponse.status).toBe(200);
     const artifactJson = await artifactResponse.json() as { artifact: { kind: string; value: { kind: string } } };
     expect(artifactJson.artifact.kind).toBe('session');
     expect(artifactJson.artifact.value.kind).toBe('session');
+
+    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  });
+
+
+  it('computes deterministic readiness states for connected, partial, and observable repos', async () => {
+    const cwd = makeTempDir();
+    const connectedOnly = path.join(cwd, 'repo-connected-only');
+    const partial = path.join(cwd, 'repo-partial');
+    const full = path.join(cwd, 'repo-full');
+
+    fs.mkdirSync(connectedOnly, { recursive: true });
+    fs.mkdirSync(path.join(partial, '.playbook'), { recursive: true });
+    fs.mkdirSync(path.join(full, '.playbook'), { recursive: true });
+
+    writeArtifact(partial, '.playbook/repo-index.json', { schemaVersion: '1.0', kind: 'repo-index' });
+    writeArtifact(partial, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
+
+    writeArtifact(full, '.playbook/repo-index.json', { schemaVersion: '1.0', kind: 'repo-index' });
+    writeArtifact(full, '.playbook/cycle-state.json', { schemaVersion: '1.0', kind: 'cycle-state' });
+    writeArtifact(full, '.playbook/cycle-history.json', { schemaVersion: '1.0', kind: 'cycle-history' });
+    writeArtifact(full, '.playbook/policy-evaluation.json', { schemaVersion: '1.0', kind: 'policy-evaluation' });
+    writeArtifact(full, '.playbook/policy-apply-result.json', { schemaVersion: '1.0', kind: 'policy-apply-result' });
+    writeArtifact(full, '.playbook/pr-review.json', { schemaVersion: '1.0', kind: 'pr-review' });
+    writeArtifact(full, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
+
+    expect(await runObserver(cwd, ['repo', 'add', connectedOnly, '--id', 'connected-only'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runObserver(cwd, ['repo', 'add', partial, '--id', 'partial'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runObserver(cwd, ['repo', 'add', full, '--id', 'full'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+
+    const server = createObserverServer(cwd);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const address = server.address();
+    expect(address).toBeTypeOf('object');
+    const port = typeof address === 'object' && address ? address.port : 0;
+
+    const repos = await fetch(`http://127.0.0.1:${port}/repos`);
+    expect(repos.status).toBe(200);
+    const reposJson = await repos.json() as {
+      repos: Array<{ id: string; readiness: { readiness_state: string; missing_artifacts: string[]; last_artifact_update_time: string | null } }>;
+    };
+
+    const states = Object.fromEntries(reposJson.repos.map((repo) => [repo.id, repo.readiness.readiness_state]));
+    expect(states).toEqual({
+      'connected-only': 'connected_only',
+      partial: 'partially_observable',
+      full: 'observable'
+    });
+
+    const connectedReadiness = reposJson.repos.find((repo) => repo.id === 'connected-only')?.readiness;
+    expect(connectedReadiness?.missing_artifacts.length).toBeGreaterThan(0);
+    expect(connectedReadiness?.last_artifact_update_time).toBeNull();
+
+    const fullReadiness = reposJson.repos.find((repo) => repo.id === 'full')?.readiness;
+    expect(fullReadiness?.missing_artifacts).toEqual([]);
+    expect(typeof fullReadiness?.last_artifact_update_time).toBe('string');
+
+    const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
+    const uiScriptText = await uiScript.text();
+    expect(uiScriptText).toContain('readiness: ');
+    expect(uiScriptText).toContain('Missing artifacts:');
+    expect(uiScriptText).toContain('Last artifact update:');
 
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });
