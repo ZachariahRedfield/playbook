@@ -68,6 +68,10 @@ const toOutput = (target: string, explanation: ExplainTargetResult): ExplainOutp
     if (explanation.policyApplyResult) {
       payload.policy_apply_result = explanation.policyApplyResult;
     }
+
+    if (explanation.sessionEvidenceEnvelope) {
+      payload.session_evidence_envelope = explanation.sessionEvidenceEnvelope;
+    }
   }
 
   if (explanation.type === 'subsystem') {
@@ -320,6 +324,36 @@ const printText = (target: string, explanation: ExplainTargetResult): void => {
       printProposalList('Failed execution:', policyApplyResult.failed_execution);
       return;
     }
+
+    if (explanation.sessionEvidenceEnvelope) {
+      const sessionEvidenceEnvelope = explanation.sessionEvidenceEnvelope;
+      console.log('Artifact type: session-evidence-envelope');
+      console.log('');
+      console.log(`Session ID: ${sessionEvidenceEnvelope.session_id}`);
+      console.log(`Selected run: ${sessionEvidenceEnvelope.selected_run_id ?? 'none'}`);
+      console.log(`Cycle ID: ${sessionEvidenceEnvelope.cycle_id ?? 'none'}`);
+      console.log(`Generated from: ${sessionEvidenceEnvelope.generated_from_last_updated_time}`);
+      console.log('');
+      console.log('Lineage');
+      if (sessionEvidenceEnvelope.lineage.length === 0) {
+        console.log('- none');
+      } else {
+        for (const entry of sessionEvidenceEnvelope.lineage) {
+          console.log(`- [${entry.order}] ${entry.stage}: ${entry.artifact} (present=${entry.present})`);
+        }
+      }
+      console.log('');
+      console.log('Proposals');
+      if (sessionEvidenceEnvelope.proposal_ids.length === 0) {
+        console.log('- none');
+      } else {
+        for (const proposalId of sessionEvidenceEnvelope.proposal_ids) {
+          console.log(`- ${proposalId}`);
+        }
+      }
+      return;
+    }
+
 
     if (explanation.policyEvaluation) {
       const policyEvaluation = explanation.policyEvaluation;

@@ -12,6 +12,56 @@ export type SessionPinnedArtifact = {
 
 export type SessionStep = 'verify' | 'plan' | 'apply' | 'resume' | 'idle';
 
+export type SessionEvidenceArtifactKind =
+  | 'session'
+  | 'run'
+  | 'pinned'
+  | 'cycle-state'
+  | 'cycle-history'
+  | 'proposal-candidates'
+  | 'policy-evaluation'
+  | 'policy-apply-result';
+
+export type SessionEvidenceArtifactReference = {
+  path: string;
+  kind: SessionEvidenceArtifactKind;
+  present: boolean;
+};
+
+export type SessionEvidencePolicyDecision = {
+  proposal_id: string;
+  decision: 'safe' | 'requires_review' | 'blocked';
+  reason: string;
+  source: 'policy-evaluation' | 'policy-apply-result';
+};
+
+export type SessionEvidenceExecutionResult = {
+  executed: string[];
+  skipped_requires_review: string[];
+  skipped_blocked: string[];
+  failed_execution: string[];
+};
+
+export type SessionEvidenceLineageReference = {
+  order: number;
+  stage: 'session' | 'proposal_generation' | 'policy_evaluation' | 'execution_result';
+  artifact: string;
+  present: boolean;
+};
+
+export type SessionEvidenceEnvelope = {
+  version: 1;
+  session_id: string;
+  selected_run_id: string | null;
+  cycle_id: string | null;
+  generated_from_last_updated_time: string;
+  artifacts: SessionEvidenceArtifactReference[];
+  proposal_ids: string[];
+  policy_decisions: SessionEvidencePolicyDecision[];
+  execution_result: SessionEvidenceExecutionResult | null;
+  lineage: SessionEvidenceLineageReference[];
+};
+
 export type SessionContract = {
   version: 1;
   sessionId: string;
@@ -22,6 +72,7 @@ export type SessionContract = {
   currentStep: SessionStep;
   unresolvedQuestions: string[];
   constraints: string[];
+  evidenceEnvelope: SessionEvidenceEnvelope;
   lastUpdatedTime: string;
 };
 
@@ -32,6 +83,12 @@ export type ResumeSessionResult = {
 };
 
 export const SESSION_ARTIFACT_RELATIVE_PATH = '.playbook/session.json';
+
+const CYCLE_STATE_PATH = '.playbook/cycle-state.json' as const;
+const CYCLE_HISTORY_PATH = '.playbook/cycle-history.json' as const;
+const IMPROVEMENT_CANDIDATES_PATH = '.playbook/improvement-candidates.json' as const;
+const POLICY_EVALUATION_PATH = '.playbook/policy-evaluation.json' as const;
+const POLICY_APPLY_RESULT_PATH = '.playbook/policy-apply-result.json' as const;
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -72,11 +129,172 @@ const inferKind = (artifact: string): SessionPinnedArtifactKind => {
   return 'artifact';
 };
 
+const readJsonObject = (repoRoot: string, relativePath: string): Record<string, unknown> | null => {
+  const absolutePath = path.join(repoRoot, relativePath);
+  if (!fs.existsSync(absolutePath)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(absolutePath, 'utf8')) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return null;
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+const readRecordArray = (value: unknown): Array<Record<string, unknown>> =>
+  Array.isArray(value) ? value.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === 'object' && !Array.isArray(entry)) : [];
+
+const coerceDecision = (value: unknown): 'safe' | 'requires_review' | 'blocked' =>
+  value === 'safe' || value === 'blocked' ? value : 'requires_review';
+
+const buildSessionEvidenceEnvelope = (repoRoot: string, session: SessionContract): SessionEvidenceEnvelope => {
+  const seenArtifacts = new Set<string>();
+  const artifacts: SessionEvidenceArtifactReference[] = [];
+  const includeArtifact = (artifactPath: string, kind: SessionEvidenceArtifactKind): void => {
+    if (seenArtifacts.has(artifactPath)) {
+      return;
+    }
+
+    seenArtifacts.add(artifactPath);
+    artifacts.push({
+      path: artifactPath,
+      kind,
+      present: fs.existsSync(path.join(repoRoot, artifactPath))
+    });
+  };
+
+  includeArtifact(SESSION_ARTIFACT_RELATIVE_PATH, 'session');
+  includeArtifact(CYCLE_STATE_PATH, 'cycle-state');
+  includeArtifact(CYCLE_HISTORY_PATH, 'cycle-history');
+  includeArtifact(IMPROVEMENT_CANDIDATES_PATH, 'proposal-candidates');
+  includeArtifact(POLICY_EVALUATION_PATH, 'policy-evaluation');
+  includeArtifact(POLICY_APPLY_RESULT_PATH, 'policy-apply-result');
+
+  if (session.selectedRunId) {
+    const runArtifactPath = normalizeArtifactRef(repoRoot, path.relative(repoRoot, path.resolve(repoRoot, '.playbook', 'runs', `${session.selectedRunId}.run.json`)));
+    includeArtifact(runArtifactPath, 'run');
+  }
+
+  for (const pinned of session.pinnedArtifacts) {
+    includeArtifact(pinned.artifact, 'pinned');
+  }
+
+  const cycleState = readJsonObject(repoRoot, CYCLE_STATE_PATH);
+  const improvementCandidates = readJsonObject(repoRoot, IMPROVEMENT_CANDIDATES_PATH);
+  const policyEvaluation = readJsonObject(repoRoot, POLICY_EVALUATION_PATH);
+  const policyApplyResult = readJsonObject(repoRoot, POLICY_APPLY_RESULT_PATH);
+
+  const proposalIds = readRecordArray(improvementCandidates?.candidates)
+    .map((entry) => entry.candidate_id)
+    .filter((candidateId): candidateId is string => typeof candidateId === 'string')
+    .sort((left, right) => left.localeCompare(right));
+
+  const policyEvaluationDecisions: SessionEvidencePolicyDecision[] = [];
+  for (const entry of readRecordArray(policyEvaluation?.evaluations)) {
+    const proposalId = entry.proposal_id;
+    const reason = entry.reason;
+    if (typeof proposalId !== 'string' || typeof reason !== 'string') {
+      continue;
+    }
+
+    policyEvaluationDecisions.push({
+      proposal_id: proposalId,
+      decision: coerceDecision(entry.decision),
+      reason,
+      source: 'policy-evaluation'
+    });
+  }
+  policyEvaluationDecisions.sort((left, right) => left.proposal_id.localeCompare(right.proposal_id));
+
+  const flattenApplyIds = (field: unknown): string[] =>
+    readRecordArray(field)
+      .map((entry) => entry.proposal_id)
+      .filter((proposalId): proposalId is string => typeof proposalId === 'string')
+      .sort((left, right) => left.localeCompare(right));
+
+  const executionResult: SessionEvidenceExecutionResult | null = policyApplyResult
+    ? {
+        executed: flattenApplyIds(policyApplyResult.executed),
+        skipped_requires_review: flattenApplyIds(policyApplyResult.skipped_requires_review),
+        skipped_blocked: flattenApplyIds(policyApplyResult.skipped_blocked),
+        failed_execution: flattenApplyIds(policyApplyResult.failed_execution)
+      }
+    : null;
+
+  const applyPolicyDecisions: SessionEvidencePolicyDecision[] = [];
+  if (policyApplyResult) {
+    for (const field of ['executed', 'skipped_requires_review', 'skipped_blocked', 'failed_execution'] as const) {
+      for (const entry of readRecordArray(policyApplyResult[field])) {
+        const proposalId = entry.proposal_id;
+        const reason = entry.reason;
+        if (typeof proposalId !== 'string' || typeof reason !== 'string') {
+          continue;
+        }
+
+        applyPolicyDecisions.push({
+          proposal_id: proposalId,
+          decision: coerceDecision(entry.decision),
+          reason,
+          source: 'policy-apply-result'
+        });
+      }
+    }
+    applyPolicyDecisions.sort((left, right) => left.proposal_id.localeCompare(right.proposal_id));
+  }
+
+  const policyDecisions = [...policyEvaluationDecisions, ...applyPolicyDecisions].sort((left, right) => {
+    const proposalDelta = left.proposal_id.localeCompare(right.proposal_id);
+    if (proposalDelta !== 0) {
+      return proposalDelta;
+    }
+    return left.source.localeCompare(right.source);
+  });
+
+  const lineageCandidates: Array<{ stage: SessionEvidenceLineageReference['stage']; artifact: string }> = [
+    { stage: 'session', artifact: SESSION_ARTIFACT_RELATIVE_PATH },
+    { stage: 'proposal_generation', artifact: IMPROVEMENT_CANDIDATES_PATH },
+    { stage: 'policy_evaluation', artifact: POLICY_EVALUATION_PATH },
+    { stage: 'execution_result', artifact: POLICY_APPLY_RESULT_PATH }
+  ];
+
+  const lineage = lineageCandidates
+    .map((entry, index) => ({
+      order: index + 1,
+      stage: entry.stage,
+      artifact: entry.artifact,
+      present: fs.existsSync(path.join(repoRoot, entry.artifact))
+    }))
+    .sort((left, right) => left.order - right.order);
+
+  return {
+    version: 1,
+    session_id: session.sessionId,
+    selected_run_id: session.selectedRunId,
+    cycle_id: typeof cycleState?.cycle_id === 'string' ? cycleState.cycle_id : null,
+    generated_from_last_updated_time: session.lastUpdatedTime,
+    artifacts: artifacts.sort((left, right) => left.path.localeCompare(right.path)),
+    proposal_ids: proposalIds,
+    policy_decisions: policyDecisions,
+    execution_result: executionResult,
+    lineage
+  };
+};
+
 const writeSession = (repoRoot: string, session: SessionContract): SessionContract => {
+  const hydratedSession: SessionContract = {
+    ...session,
+    evidenceEnvelope: buildSessionEvidenceEnvelope(repoRoot, session)
+  };
+
   const artifactPath = resolveSessionPath(repoRoot);
   fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
-  fs.writeFileSync(artifactPath, deterministicStringify(session), 'utf8');
-  return session;
+  fs.writeFileSync(artifactPath, deterministicStringify(hydratedSession), 'utf8');
+  return hydratedSession;
 };
 
 const buildSessionId = (repoRoot: string): string => {
@@ -113,6 +331,18 @@ export const initializeSession = (
     currentStep: seed?.currentStep ?? 'idle',
     unresolvedQuestions: normalizeList(seed?.unresolvedQuestions),
     constraints: normalizeList(seed?.constraints),
+    evidenceEnvelope: {
+      version: 1,
+      session_id: buildSessionId(repoRoot),
+      selected_run_id: seed?.selectedRunId ?? null,
+      cycle_id: null,
+      generated_from_last_updated_time: timestamp,
+      artifacts: [],
+      proposal_ids: [],
+      policy_decisions: [],
+      execution_result: null,
+      lineage: []
+    },
     lastUpdatedTime: timestamp
   });
 };

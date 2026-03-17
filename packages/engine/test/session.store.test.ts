@@ -24,6 +24,7 @@ describe('sessionStore', () => {
     expect(session.activeGoal).toBe('ship deterministic workflow');
     expect(session.constraints).toEqual(['no network']);
     expect(fs.existsSync(sessionArtifactPath(repo))).toBe(true);
+    expect(session.evidenceEnvelope.artifacts.some((entry) => entry.path === '.playbook/session.json')).toBe(true);
   });
 
   it('pins artifacts and resumes with stale artifact warnings', () => {
@@ -37,6 +38,23 @@ describe('sessionStore', () => {
     expect(resumed.warnings).toContain('Missing pinned artifact: .playbook/plan.json');
     expect(resumed.warnings).toContain('Selected run not found: missing-run');
     expect(resumed.session.currentStep).toBe('resume');
+  });
+
+  it('builds deterministic evidence envelope references for governed artifacts', () => {
+    const repo = makeRepo();
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbook', 'improvement-candidates.json'), JSON.stringify({ candidates: [{ candidate_id: 'proposal.alpha' }] }), 'utf8');
+    fs.writeFileSync(path.join(repo, '.playbook', 'policy-evaluation.json'), JSON.stringify({ evaluations: [{ proposal_id: 'proposal.alpha', decision: 'safe', reason: 'strong evidence' }] }), 'utf8');
+    fs.writeFileSync(path.join(repo, '.playbook', 'policy-apply-result.json'), JSON.stringify({ executed: [{ proposal_id: 'proposal.alpha', decision: 'safe', reason: 'applied' }], skipped_requires_review: [], skipped_blocked: [], failed_execution: [] }), 'utf8');
+
+    const session = initializeSession(repo, { selectedRunId: 'run-123' });
+
+    expect(session.evidenceEnvelope.session_id).toBe(session.sessionId);
+    expect(session.evidenceEnvelope.selected_run_id).toBe('run-123');
+    expect(session.evidenceEnvelope.proposal_ids).toEqual(['proposal.alpha']);
+    expect(session.evidenceEnvelope.policy_decisions.map((entry) => entry.source)).toEqual(['policy-apply-result', 'policy-evaluation']);
+    expect(session.evidenceEnvelope.execution_result?.executed).toEqual(['proposal.alpha']);
+    expect(session.evidenceEnvelope.lineage.map((entry) => entry.stage)).toEqual(['session', 'proposal_generation', 'policy_evaluation', 'execution_result']);
   });
 
   it('attaches run-state and clears session artifacts', () => {

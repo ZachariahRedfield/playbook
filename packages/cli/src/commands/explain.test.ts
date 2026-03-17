@@ -877,6 +877,65 @@ describe('runExplain', () => {
     logSpy.mockRestore();
   });
 
+  it('explains session evidence envelope artifact in json mode', async () => {
+    const repo = createRepo('playbook-cli-explain-session-evidence-json');
+    writeArchitectureRegistry(repo);
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repo, '.playbook', 'session.json'),
+      JSON.stringify(
+        {
+          version: 1,
+          sessionId: 'session-abc',
+          repoRoot: repo,
+          activeGoal: 'trace evidence envelope',
+          selectedRunId: 'run-123',
+          pinnedArtifacts: [],
+          currentStep: 'resume',
+          unresolvedQuestions: [],
+          constraints: [],
+          lastUpdatedTime: '2026-01-01T00:00:00.000Z',
+          evidenceEnvelope: {
+            version: 1,
+            session_id: 'session-abc',
+            selected_run_id: 'run-123',
+            cycle_id: 'cycle-1',
+            generated_from_last_updated_time: '2026-01-01T00:00:00.000Z',
+            artifacts: [{ path: '.playbook/session.json', kind: 'session', present: true }],
+            proposal_ids: ['proposal-1'],
+            policy_decisions: [{ proposal_id: 'proposal-1', decision: 'safe', reason: 'deterministic evidence', source: 'policy-evaluation' }],
+            execution_result: {
+              executed: ['proposal-1'],
+              skipped_requires_review: [],
+              skipped_blocked: [],
+              failed_execution: []
+            },
+            lineage: [{ order: 1, stage: 'session', artifact: '.playbook/session.json', present: true }]
+          }
+        },
+        null,
+        2
+      )
+    );
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runExplain(repo, ['artifact', '.playbook/session.json'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.explanation.session_evidence_envelope.session_id).toBe('session-abc');
+    expect(payload.explanation.session_evidence_envelope.proposal_ids).toEqual(['proposal-1']);
+    expect(payload.explanation.session_evidence_envelope.lineage[0]).toEqual({
+      order: 1,
+      stage: 'session',
+      artifact: '.playbook/session.json',
+      present: true
+    });
+
+    logSpy.mockRestore();
+  });
+
+
   it('fails when target argument is missing', async () => {
     const repo = createRepo('playbook-cli-explain-args');
     writeRepoIndex(repo);

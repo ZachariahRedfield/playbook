@@ -16,9 +16,11 @@ const appendExecutionStep = vi.fn();
 const executionRunPath = vi.fn();
 const attachSessionRunState = vi.fn();
 const buildPolicyPreflight = vi.fn();
+const pinSessionArtifact = vi.fn();
+const updateSession = vi.fn();
 const loadVerifyRules = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, pinSessionArtifact, updateSession, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
 
@@ -53,6 +55,8 @@ describe('runApply', () => {
     executionRunPath.mockReset();
     attachSessionRunState.mockReset();
     buildPolicyPreflight.mockReset();
+    pinSessionArtifact.mockReset();
+    updateSession.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });
@@ -587,6 +591,8 @@ describe('runApply remediation status preconditions', () => {
     executionRunPath.mockReset();
     attachSessionRunState.mockReset();
     buildPolicyPreflight.mockReset();
+    pinSessionArtifact.mockReset();
+    updateSession.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });
@@ -663,6 +669,8 @@ describe('runApply warning-only remediation handling', () => {
     executionRunPath.mockReset();
     attachSessionRunState.mockReset();
     buildPolicyPreflight.mockReset();
+    pinSessionArtifact.mockReset();
+    updateSession.mockReset();
     loadVerifyRules.mockReset();
     getLatestMutableRun.mockReturnValue({ id: 'run-test' });
     appendExecutionStep.mockReturnValue({ id: 'run-test' });

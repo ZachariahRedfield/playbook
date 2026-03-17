@@ -642,6 +642,23 @@ const attachApplyRunArtifacts = (cwd: string, runId: string, fromPlan: string | 
   });
 };
 
+
+const attachPolicyArtifactsToSession = (cwd: string): void => {
+  const artifacts = [
+    '.playbook/improvement-candidates.json',
+    '.playbook/policy-evaluation.json',
+    '.playbook/policy-apply-result.json'
+  ];
+
+  for (const artifact of artifacts) {
+    if (fs.existsSync(path.resolve(cwd, artifact))) {
+      engine.pinSessionArtifact(cwd, artifact, 'artifact');
+    }
+  }
+
+  engine.updateSession(cwd, { currentStep: 'apply' });
+};
+
 const runPolicyCheckFlow = (cwd: string, options: ApplyOptions): number => {
   const evaluations = loadPolicyEvaluationArtifact(cwd);
   const preflight = engine.buildPolicyPreflight(evaluations);
@@ -653,11 +670,13 @@ const runPolicyCheckFlow = (cwd: string, options: ApplyOptions): number => {
     exitCode: ExitCode.Success
   };
 
+  attachPolicyArtifactsToSession(cwd);
   return emitPolicyCheckOutput(options, payload);
 };
 
 const runPolicyApplyFlow = (cwd: string, options: ApplyOptions): number => {
   const payload = runPolicyApply(cwd);
+  attachPolicyArtifactsToSession(cwd);
   return emitPolicyApplyOutput(options, payload);
 };
 

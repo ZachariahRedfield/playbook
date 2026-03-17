@@ -22,6 +22,10 @@ describe('runAiContext', () => {
     const controlPlaneArtifacts = payload.controlPlaneArtifacts as Record<string, unknown>;
     expect(controlPlaneArtifacts.policyEvaluation).toBe('.playbook/policy-evaluation.json');
     expect(controlPlaneArtifacts.policyApplyResult).toBe('.playbook/policy-apply-result.json');
+    expect(controlPlaneArtifacts.session).toBe('.playbook/session.json');
+    expect(controlPlaneArtifacts.cycleState).toBe('.playbook/cycle-state.json');
+    expect(controlPlaneArtifacts.cycleHistory).toBe('.playbook/cycle-history.json');
+    expect(controlPlaneArtifacts.improvementCandidates).toBe('.playbook/improvement-candidates.json');
 
     const operatingLadder = payload.operatingLadder as Record<string, unknown>;
     expect(operatingLadder.preferredCommandOrder).toEqual([

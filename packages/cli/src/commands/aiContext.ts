@@ -19,6 +19,10 @@ type AiContextResult = {
   controlPlaneArtifacts: {
     policyEvaluation: '.playbook/policy-evaluation.json';
     policyApplyResult: '.playbook/policy-apply-result.json';
+    session: '.playbook/session.json';
+    cycleState: '.playbook/cycle-state.json';
+    cycleHistory: '.playbook/cycle-history.json';
+    improvementCandidates: '.playbook/improvement-candidates.json';
   };
   operatingLadder: {
     preferredCommandOrder: [
@@ -76,7 +80,11 @@ const buildAiContextResult = (cwd: string): AiContextResult => {
     },
     controlPlaneArtifacts: {
       policyEvaluation: '.playbook/policy-evaluation.json',
-      policyApplyResult: '.playbook/policy-apply-result.json'
+      policyApplyResult: '.playbook/policy-apply-result.json',
+      session: '.playbook/session.json',
+      cycleState: '.playbook/cycle-state.json',
+      cycleHistory: '.playbook/cycle-history.json',
+      improvementCandidates: '.playbook/improvement-candidates.json'
     },
     operatingLadder: {
       preferredCommandOrder: [

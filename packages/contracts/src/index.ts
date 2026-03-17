@@ -13,5 +13,6 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   transferPlans: 'packages/contracts/src/transfer-plans.schema.json',
   transferReadiness: 'packages/contracts/src/transfer-readiness.schema.json',
   cycleState: 'packages/contracts/src/cycle-state.schema.json',
-  cycleHistory: 'packages/contracts/src/cycle-history.schema.json'
+  cycleHistory: 'packages/contracts/src/cycle-history.schema.json',
+  sessionEvidenceEnvelope: 'packages/contracts/src/session-evidence-envelope.schema.json'
 } as const;

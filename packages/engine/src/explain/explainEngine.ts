@@ -130,6 +130,7 @@ export type ArtifactExplanation = ExplainMemoryFields & {
   cycleHistory?: CycleHistoryArtifactExplanation;
   policyEvaluation?: PolicyEvaluationArtifactExplanation;
   policyApplyResult?: PolicyApplyResultArtifactExplanation;
+  sessionEvidenceEnvelope?: SessionEvidenceEnvelopeExplanation;
 };
 
 type CycleStateStepExplanation = {
@@ -195,6 +196,43 @@ type PolicyApplyResultEntryExplanation = {
 
 type PolicyApplyFailedEntryExplanation = PolicyApplyResultEntryExplanation & {
   error: string;
+};
+
+
+type SessionEvidenceArtifactReferenceExplanation = {
+  path: string;
+  kind: string;
+  present: boolean;
+};
+
+type SessionEvidenceLineageReferenceExplanation = {
+  order: number;
+  stage: 'session' | 'proposal_generation' | 'policy_evaluation' | 'execution_result';
+  artifact: string;
+  present: boolean;
+};
+
+type SessionEvidenceEnvelopeExplanation = {
+  version: number;
+  session_id: string;
+  selected_run_id: string | null;
+  cycle_id: string | null;
+  generated_from_last_updated_time: string;
+  artifacts: SessionEvidenceArtifactReferenceExplanation[];
+  proposal_ids: string[];
+  policy_decisions: Array<{
+    proposal_id: string;
+    decision: 'safe' | 'requires_review' | 'blocked';
+    reason: string;
+    source: 'policy-evaluation' | 'policy-apply-result';
+  }>;
+  execution_result: {
+    executed: string[];
+    skipped_requires_review: string[];
+    skipped_blocked: string[];
+    failed_execution: string[];
+  } | null;
+  lineage: SessionEvidenceLineageReferenceExplanation[];
 };
 
 type PolicyApplyResultArtifactExplanation = {
@@ -465,9 +503,10 @@ const explainArtifact = (projectRoot: string, target: string): ArtifactExplanati
   const cycleHistory = explainCycleHistoryArtifact(projectRoot, target) ?? undefined;
   const policyEvaluation = explainPolicyEvaluationArtifact(projectRoot, target) ?? undefined;
   const policyApplyResult = explainPolicyApplyResultArtifact(projectRoot, target) ?? undefined;
+  const sessionEvidenceEnvelope = explainSessionEvidenceEnvelopeArtifact(projectRoot, target) ?? undefined;
 
-  if (cycleState || cycleHistory || policyEvaluation || policyApplyResult) {
-    const policyArtifactOnly = (Boolean(policyEvaluation) || Boolean(policyApplyResult)) && !cycleState && !cycleHistory;
+  if (cycleState || cycleHistory || policyEvaluation || policyApplyResult || sessionEvidenceEnvelope) {
+    const policyArtifactOnly = (Boolean(policyEvaluation) || Boolean(policyApplyResult)) && !cycleState && !cycleHistory && !sessionEvidenceEnvelope;
     return {
       type: 'artifact',
       resolvedTarget: {
@@ -485,7 +524,8 @@ const explainArtifact = (projectRoot: string, target: string): ArtifactExplanati
       ...(cycleState ? { cycleState } : {}),
       ...(cycleHistory ? { cycleHistory } : {}),
       ...(policyEvaluation ? { policyEvaluation } : {}),
-      ...(policyApplyResult ? { policyApplyResult } : {})
+      ...(policyApplyResult ? { policyApplyResult } : {}),
+      ...(sessionEvidenceEnvelope ? { sessionEvidenceEnvelope } : {})
     };
   }
 
@@ -673,6 +713,135 @@ const explainPolicyApplyResultArtifact = (projectRoot: string, target: string): 
     skipped_requires_review: skippedRequiresReview,
     skipped_blocked: skippedBlocked,
     failed_execution: failedExecution
+  };
+};
+
+
+const explainSessionEvidenceEnvelopeArtifact = (projectRoot: string, target: string): SessionEvidenceEnvelopeExplanation | null => {
+  if (target !== '.playbook/session.json') {
+    return null;
+  }
+
+  const targetPath = path.join(projectRoot, target);
+  if (!fs.existsSync(targetPath)) {
+    throw new Error(`playbook explain artifact: missing artifact "${target}".`);
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(targetPath, 'utf8')) as Record<string, unknown>;
+  const envelopeCandidate = parsed.evidenceEnvelope;
+  if (!envelopeCandidate || typeof envelopeCandidate !== 'object' || Array.isArray(envelopeCandidate)) {
+    throw new Error('playbook explain artifact: session artifact is missing evidenceEnvelope. Re-run a session command to refresh.');
+  }
+
+  const envelope = envelopeCandidate as Record<string, unknown>;
+  const toArtifact = (value: unknown): SessionEvidenceArtifactReferenceExplanation | null => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    if (typeof candidate.path !== 'string' || typeof candidate.kind !== 'string' || typeof candidate.present !== 'boolean') {
+      return null;
+    }
+
+    return {
+      path: candidate.path,
+      kind: candidate.kind,
+      present: candidate.present
+    };
+  };
+
+  const toDecision = (value: unknown): SessionEvidenceEnvelopeExplanation['policy_decisions'][number] | null => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    if (typeof candidate.proposal_id !== 'string' || typeof candidate.reason !== 'string') {
+      return null;
+    }
+
+    const source = candidate.source === 'policy-apply-result' ? 'policy-apply-result' : 'policy-evaluation';
+    const decision = candidate.decision === 'safe' || candidate.decision === 'blocked' ? candidate.decision : 'requires_review';
+
+    return {
+      proposal_id: candidate.proposal_id,
+      decision,
+      reason: candidate.reason,
+      source
+    };
+  };
+
+  const toLineage = (value: unknown): SessionEvidenceLineageReferenceExplanation | null => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    if (typeof candidate.order !== 'number' || typeof candidate.artifact !== 'string' || typeof candidate.present !== 'boolean') {
+      return null;
+    }
+
+    const stage =
+      candidate.stage === 'proposal_generation' || candidate.stage === 'policy_evaluation' || candidate.stage === 'execution_result'
+        ? candidate.stage
+        : 'session';
+
+    return {
+      order: candidate.order,
+      stage,
+      artifact: candidate.artifact,
+      present: candidate.present
+    };
+  };
+
+  const executionCandidate = envelope.execution_result;
+  const executionResult =
+    executionCandidate && typeof executionCandidate === 'object' && !Array.isArray(executionCandidate)
+      ? {
+          executed: Array.isArray((executionCandidate as Record<string, unknown>).executed)
+            ? ((executionCandidate as Record<string, unknown>).executed as unknown[]).map((entry) => String(entry)).sort((l, r) => l.localeCompare(r))
+            : [],
+          skipped_requires_review: Array.isArray((executionCandidate as Record<string, unknown>).skipped_requires_review)
+            ? ((executionCandidate as Record<string, unknown>).skipped_requires_review as unknown[]).map((entry) => String(entry)).sort((l, r) => l.localeCompare(r))
+            : [],
+          skipped_blocked: Array.isArray((executionCandidate as Record<string, unknown>).skipped_blocked)
+            ? ((executionCandidate as Record<string, unknown>).skipped_blocked as unknown[]).map((entry) => String(entry)).sort((l, r) => l.localeCompare(r))
+            : [],
+          failed_execution: Array.isArray((executionCandidate as Record<string, unknown>).failed_execution)
+            ? ((executionCandidate as Record<string, unknown>).failed_execution as unknown[]).map((entry) => String(entry)).sort((l, r) => l.localeCompare(r))
+            : []
+        }
+      : null;
+
+  return {
+    version: Number(envelope.version ?? 1),
+    session_id: String(envelope.session_id ?? parsed.sessionId ?? ''),
+    selected_run_id: typeof envelope.selected_run_id === 'string' ? envelope.selected_run_id : null,
+    cycle_id: typeof envelope.cycle_id === 'string' ? envelope.cycle_id : null,
+    generated_from_last_updated_time: String(envelope.generated_from_last_updated_time ?? parsed.lastUpdatedTime ?? ''),
+    artifacts: (Array.isArray(envelope.artifacts) ? envelope.artifacts : [])
+      .map((entry) => toArtifact(entry))
+      .filter((entry): entry is SessionEvidenceArtifactReferenceExplanation => entry !== null)
+      .sort((left, right) => left.path.localeCompare(right.path)),
+    proposal_ids: (Array.isArray(envelope.proposal_ids) ? envelope.proposal_ids : [])
+      .map((entry) => String(entry))
+      .sort((left, right) => left.localeCompare(right)),
+    policy_decisions: (Array.isArray(envelope.policy_decisions) ? envelope.policy_decisions : [])
+      .map((entry) => toDecision(entry))
+      .filter((entry): entry is SessionEvidenceEnvelopeExplanation['policy_decisions'][number] => entry !== null)
+      .sort((left, right) => {
+        const proposalDelta = left.proposal_id.localeCompare(right.proposal_id);
+        if (proposalDelta !== 0) {
+          return proposalDelta;
+        }
+        return left.source.localeCompare(right.source);
+      }),
+    execution_result: executionResult,
+    lineage: (Array.isArray(envelope.lineage) ? envelope.lineage : [])
+      .map((entry) => toLineage(entry))
+      .filter((entry): entry is SessionEvidenceLineageReferenceExplanation => entry !== null)
+      .sort((left, right) => left.order - right.order)
   };
 };
 

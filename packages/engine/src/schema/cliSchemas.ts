@@ -408,10 +408,14 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       controlPlaneArtifacts: {
         type: 'object',
         additionalProperties: false,
-        required: ['policyEvaluation', 'policyApplyResult'],
+        required: ['policyEvaluation', 'policyApplyResult', 'session', 'cycleState', 'cycleHistory', 'improvementCandidates'],
         properties: {
           policyEvaluation: { const: '.playbook/policy-evaluation.json' },
-          policyApplyResult: { const: '.playbook/policy-apply-result.json' }
+          policyApplyResult: { const: '.playbook/policy-apply-result.json' },
+          session: { const: '.playbook/session.json' },
+          cycleState: { const: '.playbook/cycle-state.json' },
+          cycleHistory: { const: '.playbook/cycle-history.json' },
+          improvementCandidates: { const: '.playbook/improvement-candidates.json' }
         }
       },
       cli: {
@@ -1531,10 +1535,14 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       controlPlaneArtifacts: {
         type: 'object',
         additionalProperties: false,
-        required: ['policyEvaluation', 'policyApplyResult'],
+        required: ['policyEvaluation', 'policyApplyResult', 'session', 'cycleState', 'cycleHistory', 'improvementCandidates'],
         properties: {
           policyEvaluation: { const: '.playbook/policy-evaluation.json' },
-          policyApplyResult: { const: '.playbook/policy-apply-result.json' }
+          policyApplyResult: { const: '.playbook/policy-apply-result.json' },
+          session: { const: '.playbook/session.json' },
+          cycleState: { const: '.playbook/cycle-state.json' },
+          cycleHistory: { const: '.playbook/cycle-history.json' },
+          improvementCandidates: { const: '.playbook/improvement-candidates.json' }
         }
       },
       operatingLadder: {

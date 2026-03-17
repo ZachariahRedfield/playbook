@@ -31,6 +31,7 @@ describe('runContracts', () => {
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('cycle-state');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('cycle-history');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('policy-apply-result');
+    expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('session-evidence-envelope');
   });
 
   it('keeps schema registration identifiers and paths stable', async () => {
@@ -70,6 +71,7 @@ describe('runContracts', () => {
         { id: 'repository-events', version: '1.0', path: 'packages/contracts/src/repository-events.schema.json' },
         { id: 'cycle-state', version: '1.0', path: 'packages/contracts/src/cycle-state.schema.json' },
         { id: 'cycle-history', version: '1.0', path: 'packages/contracts/src/cycle-history.schema.json' },
+        { id: 'session-evidence-envelope', version: '1.0', path: 'packages/contracts/src/session-evidence-envelope.schema.json' },
         { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
         { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
         { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/session-evidence-envelope.schema.json",
+  "title": "Playbook Session Evidence Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "session_id",
+    "selected_run_id",
+    "cycle_id",
+    "generated_from_last_updated_time",
+    "artifacts",
+    "proposal_ids",
+    "policy_decisions",
+    "execution_result",
+    "lineage"
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "session_id": { "type": "string", "minLength": 1 },
+    "selected_run_id": { "type": ["string", "null"] },
+    "cycle_id": { "type": ["string", "null"] },
+    "generated_from_last_updated_time": { "type": "string", "minLength": 1 },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "kind", "present"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "kind": {
+            "enum": [
+              "session",
+              "run",
+              "pinned",
+              "cycle-state",
+              "cycle-history",
+              "proposal-candidates",
+              "policy-evaluation",
+              "policy-apply-result"
+            ]
+          },
+          "present": { "type": "boolean" }
+        }
+      }
+    },
+    "proposal_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "policy_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["proposal_id", "decision", "reason", "source"],
+        "properties": {
+          "proposal_id": { "type": "string", "minLength": 1 },
+          "decision": { "enum": ["safe", "requires_review", "blocked"] },
+          "reason": { "type": "string", "minLength": 1 },
+          "source": { "enum": ["policy-evaluation", "policy-apply-result"] }
+        }
+      }
+    },
+    "execution_result": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["executed", "skipped_requires_review", "skipped_blocked", "failed_execution"],
+          "properties": {
+            "executed": { "type": "array", "items": { "type": "string" } },
+            "skipped_requires_review": { "type": "array", "items": { "type": "string" } },
+            "skipped_blocked": { "type": "array", "items": { "type": "string" } },
+            "failed_execution": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "lineage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["order", "stage", "artifact", "present"],
+        "properties": {
+          "order": { "type": "integer", "minimum": 1 },
+          "stage": { "enum": ["session", "proposal_generation", "policy_evaluation", "execution_result"] },
+          "artifact": { "type": "string", "minLength": 1 },
+          "present": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -47,6 +47,7 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'repository-events', version: '1.0', path: 'packages/contracts/src/repository-events.schema.json' },
   { id: 'cycle-state', version: '1.0', path: 'packages/contracts/src/cycle-state.schema.json' },
   { id: 'cycle-history', version: '1.0', path: 'packages/contracts/src/cycle-history.schema.json' },
+  { id: 'session-evidence-envelope', version: '1.0', path: 'packages/contracts/src/session-evidence-envelope.schema.json' },
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
   { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
   { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },

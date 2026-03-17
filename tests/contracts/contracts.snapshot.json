@@ -49,6 +49,10 @@
         "producer": "apply"
       },
       {
+        "path": ".playbook/session.json",
+        "producer": "session"
+      },
+      {
         "path": ".playbook/repo-graph.json",
         "producer": "index"
       },
@@ -211,6 +215,11 @@
         "id": "cycle-history",
         "version": "1.0",
         "path": "packages/contracts/src/cycle-history.schema.json"
+      },
+      {
+        "id": "session-evidence-envelope",
+        "version": "1.0",
+        "path": "packages/contracts/src/session-evidence-envelope.schema.json"
       },
       {
         "id": "explain.memoryKnowledge",

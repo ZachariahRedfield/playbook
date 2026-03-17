@@ -145,6 +145,12 @@ Rule: mutation-capable policy execution must consume governed policy artifacts a
 
 Failure mode: if execution broadens beyond explicit `safe` decisions, control-plane autonomy outpaces governance trust.
 
+`.playbook/session.json` now includes an additive `evidenceEnvelope` contract as the canonical deterministic session/evidence slice for governed execution auditability. The envelope links session/run context to existing runtime/control-plane artifacts (`.playbook/cycle-state.json`, `.playbook/cycle-history.json`, `.playbook/improvement-candidates.json`, `.playbook/policy-evaluation.json`, `.playbook/policy-apply-result.json`) and preserves stable stage lineage (`session -> proposal_generation -> policy_evaluation -> execution_result`) plus proposal IDs, policy decisions, and execution result references when present.
+
+Rule: every governed decision or execution step must be traceable through a deterministic evidence envelope.
+Pattern: unify existing artifacts through referenceable evidence chains before adding broader orchestration or learning layers.
+Failure Mode: runs/decisions/artifacts that remain unlinked become difficult to audit, explain, and evolve even when each artifact is individually correct.
+
 ## Router accuracy telemetry feedback loop
 
 Routing quality is treated as a measurable architecture contract inside `routing_engine` + `telemetry_learning`.

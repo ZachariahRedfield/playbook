@@ -84,6 +84,19 @@ Verification remains the canonical trust gate for repository mutation and promot
 
 Session/evidence architecture strengthens this boundary by making decisions auditable; it does not replace `verify` as the trust primitive.
 
+
+## Implemented canonical contract slice (current)
+
+The current deterministic implementation is intentionally narrow and additive:
+
+- `.playbook/session.json` now carries `evidenceEnvelope` as a canonical, inspectable session/evidence envelope.
+- The envelope references existing artifacts instead of replacing contracts.
+- Current lineage stages are deterministic and ordered: `session -> proposal_generation -> policy_evaluation -> execution_result`.
+- Proposal/policy/apply linkage is represented through proposal IDs, policy decisions, and execution-result references when artifacts are present.
+- Missing optional artifacts are represented as `present: false` references instead of hard-failing session persistence.
+
+This provides the next contract slice for governed execution provenance while preserving existing command/runtime behavior.
+
 ## Dependency chain (long-term architecture)
 
 Recommended dependency chain:
