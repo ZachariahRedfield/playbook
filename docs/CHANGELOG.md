@@ -10,6 +10,10 @@
 
 ### CLI
 
+- WHAT: Hardened `publish-npm` tag reruns to skip `pnpm publish` when the exact package version is already present on npm (`npm view <pkg>@<version>`), then continue to fallback pack/upload steps. WHY: The `v0.1.4` publish run stopped at the first pre-upload blocker (`pnpm publish` version-already-exists), so release fallback tarball upload never executed and proof checks observed a 404 missing asset.
+- Rule: Release-proof flows are blocked by the first pre-upload failure in publish; 404 on fallback asset usually means publish never reached release upload.
+- Failure Mode: Assuming tag existence implies release asset existence.
+
 - WHAT: Fixed GitHub Actions security workflow installer/tool compatibility by replacing `sigstore/cosign-installer@v3.7.0` with `sigstore/cosign-installer@v4.1.0` while keeping `cosign-release: v3.0.3`. WHY: Ensures the installer major line matches Cosign v3 so release asset signature download/verification does not fail with HTTP fetch errors.
 - WHAT: Realigned release fallback ownership to the canonical GitHub repository (`ZachariahRedfield/playbook`) by updating release docs/examples and making `release:fallback:proof` default to the canonical owner/repo URL shape. WHY: Eliminates producer/consumer drift where fallback proofs and pinning examples targeted a non-authoritative release path.
 - WHAT: Prepared the next clean producer release cut at `0.1.4` across workspace package versions and release docs/examples so a fresh tag (`v0.1.4`) can be published from the fixed live workflow state. WHY: Avoids reusing polluted tags and establishes a single deterministic baseline for fallback asset proofing.
