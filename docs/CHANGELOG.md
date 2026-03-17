@@ -10,6 +10,7 @@
 
 ### CLI
 
+- WHAT: Fixed `publish-npm` release packaging so the fallback tarball pack destination resolves to repository-root `dist/release` and the rename step matches pnpm output (`fawxzzy-playbook-cli-<version>.tgz` -> `playbook-cli-<version>.tgz`). WHY: Ensures tag releases actually attach the deterministic fallback asset required by `pnpm release:fallback:proof`.
 - WHAT: Cut the next Playbook release target to `v0.1.2` across workspace package versions and release examples/docs so fallback proof commands and consumer pinning references stop pointing at the non-provisioned `v0.3.77` example. WHY: Enforces the operational rule that fallback contracts are only real when tied to an actually published release artifact.
 - WHAT: Recorded first `v0.1.2` fallback proof outcomes from this branch run: producer proof currently fails with release asset download HTTP 403 (`playbook-cli-0.1.2.tgz` unavailable) and the provided consumer path proof command fails with local path `ENOENT` (`C:\Users\zjhre\dev\fawxzzyFitness` not mounted in this environment). WHY: Makes producer/consumer proof status explicit until the tagged release is published and consumer validation is rerun in an environment with the target repo path.
 
