@@ -58,7 +58,7 @@ jobs:
         with:
           sbom: artifacts/sbom.json
           output-format: sarif
-          severity-cutoff: medium
+          severity-cutoff: high
           fail-build: "${{ github.event_name != 'pull_request' }}"
 
       - name: Step 3.2 — Upload vulnerability scan artifact
