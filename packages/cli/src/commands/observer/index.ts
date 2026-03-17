@@ -497,6 +497,7 @@ const observerDashboardHtml = (): string => `<!doctype html>
         <div class="card"><h3>Add Repo</h3><input id="repoPath" placeholder="/path/to/repo" /><input id="repoId" placeholder="optional-id" /><input id="repoTags" placeholder="tags comma-separated" /><button id="addRepo">Connect</button></div>
         <details id="selfPanel" class="card">
           <summary>Playbook Self-Observation</summary>
+          <div id="observerRegistryMeta" class="meta">Observer root metadata pending.</div>
           <div id="selfSummary" class="meta">Waiting for observer data.</div>
         </details>
       </aside>
@@ -540,6 +541,7 @@ const artifactPanelEl = document.getElementById('artifactPanel');
 const blueprintMetaEl = document.getElementById('blueprintMeta');
 const blueprintPanelEl = document.getElementById('blueprintPanel');
 const selfSummaryEl = document.getElementById('selfSummary');
+const observerRegistryMetaEl = document.getElementById('observerRegistryMeta');
 const selectedNodeDetailEl = document.getElementById('selectedNodeDetail');
 const compareLeftEl = document.getElementById('compareLeft');
 const compareRightEl = document.getElementById('compareRight');
@@ -772,6 +774,10 @@ const loadHealth = async () => {
 const renderRepos = async () => {
   const payload = await getJson('/repos');
   homeRepoId = payload.home_repo_id || null;
+  observerRegistryMetaEl.innerHTML =
+    '<div><strong>observer_root:</strong> ' + escapeHtml(payload.observer_root || 'unknown') + '</div>' +
+    '<div><strong>registry_path:</strong> ' + escapeHtml(payload.registry_path || 'unknown') + '</div>' +
+    '<div><strong>repo_count:</strong> ' + escapeHtml(payload.repo_count === undefined ? 'unknown' : String(payload.repo_count)) + '</div>';
   if (!selectedRepoId && homeRepoId) selectedRepoId = homeRepoId;
   reposEl.innerHTML = '';
   if (!Array.isArray(payload.repos) || payload.repos.length === 0) {

@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-cli-templates.mjs",
-    "test": "vitest run --passWithNoTests",
+    "test": "node ./scripts/run-tests.mjs",
     "playbook": "node dist/main.js",
     "prepublishOnly": "pnpm build"
   },

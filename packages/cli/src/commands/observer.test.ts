@@ -83,6 +83,59 @@ describe('runObserver', () => {
     expect(listPayload.registry.repos.map((entry) => entry.id)).toEqual(['repo-a']);
   });
 
+
+  it('persists registry across add/list/serve invocations from different cwd values', async () => {
+    const homeRoot = makeTempDir();
+    fs.writeFileSync(path.join(homeRoot, 'package.json'), JSON.stringify({ name: 'playbook-observer-fixture' }, null, 2));
+
+    const repo = path.join(homeRoot, 'repo-persisted');
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+
+    const addCwd = path.join(homeRoot, 'apps', 'add');
+    const listCwd = path.join(homeRoot, 'apps', 'list');
+    const serveCwd = path.join(homeRoot, 'apps', 'serve');
+    fs.mkdirSync(addCwd, { recursive: true });
+    fs.mkdirSync(listCwd, { recursive: true });
+    fs.mkdirSync(serveCwd, { recursive: true });
+
+    expect(await runObserver(addCwd, ['repo', 'add', repo, '--id', 'repo-persisted'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+
+    const listSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    expect(await runObserver(listCwd, ['repo', 'list'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    const listPayload = parseJsonCall(listSpy) as {
+      observer_root: string;
+      registry_path: string;
+      repo_count: number;
+      registry: { repos: Array<{ id: string }> };
+    };
+    expect(listPayload.observer_root).toBe(homeRoot);
+    expect(listPayload.registry_path).toBe(path.join(homeRoot, OBSERVER_REPO_REGISTRY_RELATIVE_PATH));
+    expect(listPayload.repo_count).toBe(1);
+    expect(listPayload.registry.repos.map((entry) => entry.id)).toEqual(['repo-persisted']);
+
+    const server = createObserverServer(homeRoot, serveCwd);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+
+    try {
+      const address = server.address();
+      expect(address).toBeTypeOf('object');
+      const port = typeof address === 'object' && address ? address.port : 0;
+      const repos = await fetch(`http://127.0.0.1:${port}/repos`);
+      const reposPayload = await repos.json() as {
+        observer_root: string;
+        registry_path: string;
+        repo_count: number;
+        repos: Array<{ id: string }>;
+      };
+      expect(reposPayload.observer_root).toBe(homeRoot);
+      expect(reposPayload.registry_path).toBe(path.join(homeRoot, OBSERVER_REPO_REGISTRY_RELATIVE_PATH));
+      expect(reposPayload.repo_count).toBe(1);
+      expect(reposPayload.repos.map((entry) => entry.id)).toEqual(['repo-persisted']);
+    } finally {
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
+  });
+
   it('supports explicit --root override for repo commands', async () => {
     const outerCwd = makeTempDir();
     const observerRoot = path.join(outerCwd, 'observer-root');

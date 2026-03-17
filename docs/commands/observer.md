@@ -58,6 +58,24 @@ Supported `:kind` values:
 - `session`
 - `system-map`
 
+
+### Fast debug checklist ("where did my repos go?")
+
+Use JSON mode to verify that commands are sharing one registry:
+
+```bash
+pnpm playbook observer repo list --json
+pnpm playbook observer repo list --json --root /absolute/path/to/observer-home
+```
+
+Confirm these fields match your expectation:
+
+- `observer_root` (resolved home root used for this invocation)
+- `registry_path` (exact `<observer-root>/.playbook/observer/repos.json` file)
+- `repo_count` (how many repos were loaded from that registry)
+
+If cwd differs across terminals, pass `--root` explicitly to force all add/list/serve invocations to the same observer registry.
+
 ## Determinism and scope
 
 - Deterministic ordering is enforced by `id`.
