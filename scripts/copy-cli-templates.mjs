@@ -7,6 +7,8 @@ const __dirname = path.dirname(__filename);
 
 const srcRoot = path.resolve(__dirname, '../templates/repo');
 const destRoot = path.resolve(__dirname, '../packages/cli/dist/templates/repo');
+const observerAppSrc = path.resolve(__dirname, '../packages/cli/src/commands/observer/dashboard-app.js');
+const observerAppDest = path.resolve(__dirname, '../packages/cli/dist/commands/observer/dashboard-app.js');
 
 const main = async () => {
   try {
@@ -21,7 +23,10 @@ const main = async () => {
 
   await mkdir(destRoot, { recursive: true });
   await cp(srcRoot, destRoot, { recursive: true });
+  await mkdir(path.dirname(observerAppDest), { recursive: true });
+  await cp(observerAppSrc, observerAppDest);
   console.log(`Copied templates: ${srcRoot} -> ${destRoot}`);
+  console.log(`Copied observer UI app: ${observerAppSrc} -> ${observerAppDest}`);
 };
 
 main().catch((error) => {

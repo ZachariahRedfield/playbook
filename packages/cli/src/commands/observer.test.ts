@@ -257,10 +257,18 @@ describe('observer server', () => {
     expect(uiScriptText).toContain('selectedRepoId = repos[0].id');
     expect(uiScriptText).toContain('await loadRepoDetail();');
     expect(uiScriptText).toContain('renderSelfObservation');
+    expect(uiScriptText).toContain('const selfPayload = await getJson');
+    expect(uiScriptText).toContain('await loadRepoDetail();');
+    expect(uiScriptText).toContain('const refreshAll = async () =>');
+    expect(uiScriptText).toContain('setInterval(refreshAll, 5000);');
+    expect(uiScriptText).toContain('showObserverBootstrapError');
+    expect(uiScriptText).toContain('Observer UI bootstrap failed.');
 
     expect(/\b:\s*any\b/.test(uiScriptText)).toBe(false);
     expect(/\bas\s+any\b/.test(uiScriptText)).toBe(false);
     expect(/=\s*<[A-Za-z_$][\w$]*>\s*\(/.test(uiScriptText)).toBe(false);
+    expect(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*:\s*[A-Za-z_$][\w$<>,\s\[\]\|&]*\s*(?:=|;)/.test(uiScriptText)).toBe(false);
+    expect(/\bas\s+(?:const|unknown|never|[A-Z][\w$]*(?:<[^>]+>)?)\b/.test(uiScriptText)).toBe(false);
 
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });

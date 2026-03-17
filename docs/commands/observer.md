@@ -37,6 +37,12 @@ Contract:
 `pnpm playbook observer serve` starts a local-only HTTP server bound to `127.0.0.1` by default.
 
 - Dashboard UI shell routes: `GET /`, `GET /ui`, `GET /ui/app.js`
+
+Maintainer note (UI bootstrap safety):
+
+- `GET /ui/app.js` is sourced from `packages/cli/src/commands/observer/dashboard-app.js` and **must remain plain browser JavaScript** (no TypeScript annotations/casts/generics).
+- Embedding large browser apps as raw template strings makes accidental TS leakage easier and review harder; dedicated source files reduce this risk and improve maintainability.
+- Regression checks live in `packages/cli/src/commands/observer.test.ts` and `packages/cli/scripts/run-observer-tests.mjs` to guard TS-leakage patterns and required bootstrap wiring (`refreshAll`, repo hydration, self-observation refresh).
 - Read endpoints: `GET /health`, `GET /repos`, `GET /snapshot`, `GET /repos/:id`, `GET /repos/:id/artifacts/:kind`
 - Registry mutation endpoints (local-only, add/remove parity with CLI): `POST /repos`, `DELETE /repos/:id`
 - Responses are deterministic envelopes, and artifact state remains sourced from governed observer/runtime artifacts.
