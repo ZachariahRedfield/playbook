@@ -198,6 +198,12 @@ Rule: Playbook should observe itself through the same governed observer model it
 Pattern: one observer model, special self-view presentation.
 Failure Mode: if self-observation uses hidden or dashboard-only state, operator trust degrades because self-view diverges from governed repo evidence.
 
+Observer blueprint surfaces now derive per-node state/activity directly from readiness and governed artifacts (`active`, `available`, `missing`, `stale`, `idle`) and keep self-observation collapsible so repo detail + blueprint remain primary. Node selection is inspection-only and reuses artifact-viewer truth surfaces instead of introducing dashboard-owned state contracts.
+
+Rule: Blueprint state must be derived from governed artifact truth, not UI heuristics.
+Pattern: static architecture map -> stateful blueprint -> selected-node inspection.
+Failure Mode: if large static summaries dominate the page while live system state remains secondary, operational signal density collapses and operator decisions degrade.
+
 Rule: observer UI/server surfaces must wrap canonical Playbook state, never become a second source of truth.
 Pattern: CLI/runtime stays canonical -> local server wraps governed artifacts/registry commands -> UI observes and renders.
 Failure Mode: if repo registration or artifact state is tracked independently in UI/server memory, observer state drifts from real Playbook runtime truth.

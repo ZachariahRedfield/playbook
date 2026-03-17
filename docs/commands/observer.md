@@ -85,12 +85,10 @@ Readiness fields are available from:
 
 ### Self-observation cockpit (UI)
 
-Observer UI includes a first-class **Playbook Self-Observation** panel that presents read-only summaries for the selected home repo:
+Observer UI keeps **Playbook Self-Observation** available as a collapsible panel so blueprint/repo detail surfaces remain primary by default. The panel still presents read-only summaries for the selected home repo:
 
 - repo readiness and missing-artifact guidance
-- cycle runtime loop presence (`cycle-state`, `cycle-history`)
-- control-plane evidence presence (`policy-evaluation`, `policy-apply-result`, `pr-review`, `session`)
-- derived deterministic summaries (`control-plane artifacts present`, `review loop available`, `runtime loop available`)
+- control-plane/runtime loop availability summaries
 - blueprint status from governed `.playbook/system-map.json` with explicit missing-artifact guidance when absent
 - observer server health status from `GET /health`
 
@@ -108,3 +106,17 @@ Failure Mode: If empty repos look the same as fully observed repos, operators wi
 Observer never generates a system-map artifact. It only reads `.playbook/system-map.json` if present in a connected repo and exposes it through `/snapshot` and `/repos/:id/artifacts/system-map`.
 
 Playbook command flows should keep the artifact fresh (for example `playbook index` and `playbook diagram system`) so the UI can remain a pure renderer.
+
+### Stateful system blueprint behavior
+
+System blueprint rendering is now read-only but stateful:
+
+- Node states are derived deterministically from governed observer artifacts/readiness only (`active`, `available`, `missing`, `stale`, `idle`).
+- Runtime/review flow edges are visually emphasized when required artifact paths are available.
+- Node selection is click-based and shows node id, layer, derived state, and linked artifact kind.
+- If a selected node maps to a known artifact kind, the artifact viewer is switched to that governed artifact view.
+- If `.playbook/system-map.json` is missing, blueprint rendering degrades to explicit guidance without hidden fallback state.
+
+Rule: Blueprint state must be derived from governed artifact truth, not UI heuristics.
+Pattern: Static architecture map -> stateful blueprint -> selected-node inspection.
+Failure Mode: If the dashboard emphasizes large static summaries over interactive system state, the UI becomes cluttered and less operationally useful.

@@ -403,10 +403,11 @@ const observerDashboardHtml = (): string => `<!doctype html>
       header { padding: 12px 18px; border-bottom: 1px solid #243252; }
       main { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 52px); }
       aside, section { padding: 12px; border-right: 1px solid #243252; }
-      section { border-right: none; }
+      section { border-right: none; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 10px; align-content: start; }
       h1, h2, h3 { margin: 0 0 8px; font-weight: 600; }
       .card { background: #111935; border: 1px solid #243252; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
       .repo { cursor: pointer; }
+      .repo.selected { border-color: #a5c4ff; }
       button { cursor: pointer; border-radius: 6px; border: 1px solid #35519c; background: #1d3270; color: #e7eeff; padding: 5px 8px; }
       input, select { width: 100%; box-sizing: border-box; margin: 4px 0 8px; padding: 5px; background: #111935; color: #e7eeff; border: 1px solid #243252; border-radius: 6px; }
       pre { white-space: pre-wrap; word-break: break-word; background: #0a1129; border: 1px solid #243252; padding: 10px; border-radius: 6px; max-height: 340px; overflow: auto; }
@@ -414,10 +415,25 @@ const observerDashboardHtml = (): string => `<!doctype html>
       .meta { color: #95addf; font-size: 12px; }
       .blueprint { width: 100%; height: 420px; background: #0a1129; border: 1px solid #243252; border-radius: 6px; }
       .layer-band { fill: #0f1734; stroke: #243252; stroke-width: 1; }
-      .node-box { fill: #15224b; stroke: #4d76d1; stroke-width: 1; rx: 6; }
-      .node-box.selected { stroke: #a5c4ff; stroke-width: 2; }
-      .edge-line { stroke: #6b8cd6; stroke-width: 1.2; marker-end: url(#arrowhead); }
+      .edge-line { stroke: #4a639f; stroke-width: 1.2; marker-end: url(#arrowhead); }
+      .edge-line.active { stroke: #87afff; stroke-width: 2; }
       .node-label, .layer-label { fill: #dbe5ff; font-size: 12px; }
+      .node-box { stroke-width: 1.4; rx: 6; }
+      .node-state-active { fill: #173964; stroke: #4cb6ff; }
+      .node-state-available { fill: #1e325e; stroke: #7ba6ff; }
+      .node-state-idle { fill: #202f4d; stroke: #7f8fb0; }
+      .node-state-missing { fill: #3a1f2f; stroke: #cf6a8e; }
+      .node-state-stale { fill: #3b321f; stroke: #d8a052; }
+      .node-box.selected { stroke: #ffffff; stroke-width: 2.3; }
+      .badge { display: inline-flex; border-radius: 999px; padding: 2px 8px; border: 1px solid #35519c; font-size: 11px; margin-right: 6px; }
+      .layout-main { min-width: 0; }
+      .layout-side { min-width: 0; }
+      details summary { cursor: pointer; font-weight: 600; }
+      .state-legend { margin-top: 6px; }
+      .state-legend .badge { margin-bottom: 4px; }
+      @media (max-width: 1200px) {
+        section { grid-template-columns: 1fr; }
+      }
     </style>
   </head>
   <body>
@@ -428,10 +444,18 @@ const observerDashboardHtml = (): string => `<!doctype html>
         <div class="card"><h3>Add Repo</h3><input id="repoPath" placeholder="/path/to/repo" /><input id="repoId" placeholder="optional-id" /><input id="repoTags" placeholder="tags comma-separated" /><button id="addRepo">Connect</button></div>
       </aside>
       <section>
-        <div class="card"><h2>Playbook Self-Observation</h2><div id="selfSummary" class="meta">Waiting for observer data.</div></div>
-        <div class="card"><h2 id="repoTitle">Repo Detail</h2><div id="repoDetail" class="meta">Select a repo.</div><button id="removeRepo" style="display:none">Remove repo</button></div>
-        <div class="card"><h3>Artifact Detail Viewer</h3><select id="artifactKind"></select><div id="artifactPanel"></div></div>
-        <div class="card"><h3>System Blueprint</h3><div id="blueprintMeta" class="meta">Select a repo.</div><svg id="blueprintPanel" class="blueprint" viewBox="0 0 980 420" aria-label="System Blueprint"></svg></div>
+        <div class="layout-main">
+          <div class="card"><h2 id="repoTitle">Repo Detail</h2><div id="repoDetail" class="meta">Select a repo.</div><button id="removeRepo" style="display:none">Remove repo</button></div>
+          <div class="card"><h3>System Blueprint</h3><div id="blueprintMeta" class="meta">Select a repo.</div><svg id="blueprintPanel" class="blueprint" viewBox="0 0 980 420" aria-label="System Blueprint"></svg><div class="state-legend"><span class="badge">active</span><span class="badge">available</span><span class="badge">stale</span><span class="badge">idle</span><span class="badge">missing</span></div></div>
+          <div class="card"><h3>Artifact Detail Viewer</h3><select id="artifactKind"></select><div id="artifactPanel"></div></div>
+        </div>
+        <div class="layout-side">
+          <details id="selfPanel" class="card">
+            <summary>Playbook Self-Observation</summary>
+            <div id="selfSummary" class="meta">Waiting for observer data.</div>
+          </details>
+          <div class="card"><h3>Selected Blueprint Node</h3><div id="selectedNodeDetail" class="meta">Click a node to inspect layer, state, and artifact linkage.</div></div>
+        </div>
       </section>
     </main>
     <script src="/ui/app.js"></script>
@@ -449,56 +473,36 @@ const artifactPanelEl = document.getElementById('artifactPanel');
 const blueprintMetaEl = document.getElementById('blueprintMeta');
 const blueprintPanelEl = document.getElementById('blueprintPanel');
 const selfSummaryEl = document.getElementById('selfSummary');
+const selectedNodeDetailEl = document.getElementById('selectedNodeDetail');
 let selectedRepoId = null;
 let selectedBlueprintNodeId = null;
 let homeRepoId = null;
+let latestRepoPayload = null;
+let latestSnapshotRepoEntry = null;
 
-const boolStatus = (value) => value ? 'present' : 'missing';
-
-const renderSelfObservation = (repoPayload, healthStatus) => {
-  if (!repoPayload || !repoPayload.repo) {
-    selfSummaryEl.innerHTML =
-      '<div><strong>Self/home repo:</strong> not connected</div>' +
-      '<div>Connect this Playbook repo to surface first-class self-observation.</div>';
-    return;
-  }
-
-  const readiness = repoPayload.readiness || {};
-  const missingArtifacts = Array.isArray(readiness.missing_artifacts) ? readiness.missing_artifacts : [];
-  const hasControlPlane = !!(readiness.policy_evaluation_present && readiness.policy_apply_result_present && readiness.pr_review_present && readiness.session_present);
-  const hasRuntimeLoop = !!(readiness.cycle_state_present && readiness.cycle_history_present);
-  const hasReviewLoop = !!(readiness.pr_review_present && readiness.policy_evaluation_present);
-  const hasBlueprint = missingArtifacts.includes('.playbook/system-map.json')
-    ? false
-    : true;
-  const blueprintGuidance = hasBlueprint
-    ? 'Blueprint available from governed artifact \`.playbook/system-map.json\`.'
-    : 'Blueprint missing. Run \`pnpm playbook diagram system\` to generate \`.playbook/system-map.json\`.';
-
-  selfSummaryEl.innerHTML =
-    '<div><strong>Self/home repo:</strong> ' + repoPayload.repo.id + '</div>' +
-    '<div><strong>Observer server health:</strong> ' + (healthStatus || 'unknown') + '</div>' +
-    '<div><strong>Readiness:</strong> ' + (readiness.readiness_state || 'unknown') + '</div>' +
-    '<div><strong>Cycle-state:</strong> ' + boolStatus(readiness.cycle_state_present) + '</div>' +
-    '<div><strong>Cycle-history:</strong> ' + boolStatus(readiness.cycle_history_present) + '</div>' +
-    '<div><strong>Policy evaluation:</strong> ' + boolStatus(readiness.policy_evaluation_present) + '</div>' +
-    '<div><strong>Policy apply result:</strong> ' + boolStatus(readiness.policy_apply_result_present) + '</div>' +
-    '<div><strong>PR review:</strong> ' + boolStatus(readiness.pr_review_present) + '</div>' +
-    '<div><strong>Session evidence:</strong> ' + boolStatus(readiness.session_present) + '</div>' +
-    '<div><strong>Control-plane artifacts present:</strong> ' + (hasControlPlane ? 'yes' : 'no') + '</div>' +
-    '<div><strong>Review loop available:</strong> ' + (hasReviewLoop ? 'yes' : 'no') + '</div>' +
-    '<div><strong>Runtime loop available:</strong> ' + (hasRuntimeLoop ? 'yes' : 'no') + '</div>' +
-    '<div><strong>Blueprint:</strong> ' + (hasBlueprint ? 'available' : 'missing') + '</div>' +
-    '<div>' + blueprintGuidance + '</div>';
+const NODE_LINKED_ARTIFACT = {
+  'cycle-state': 'cycle-state',
+  'cycle-history': 'cycle-history',
+  policy: 'policy-evaluation',
+  'policy-artifact': 'policy-evaluation',
+  apply: 'policy-apply-result',
+  'apply-artifact': 'policy-apply-result',
+  'review-pr': 'pr-review',
+  'pr-review-artifact': 'pr-review',
+  session: 'session',
+  'session-artifact': 'session',
+  'cycle-artifact': 'cycle-state',
+  'observer-server': 'system-map'
 };
 
-artifactKinds.forEach((kind) => {
-  const option = document.createElement('option');
-  option.value = kind;
-  option.textContent = kind;
-  artifactKindEl.appendChild(option);
-});
-
+const boolStatus = (value) => value ? 'present' : 'missing';
+const FRESH_WINDOW_MS = 1000 * 60 * 60 * 24;
+const parseTimestamp = (value) => {
+  if (!value || typeof value !== 'string') return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+const escapeHtml = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const format = (value) => '<pre>' + JSON.stringify(value, null, 2) + '</pre>';
 const getJson = async (url, init) => {
   const response = await fetch(url, init);
@@ -509,23 +513,112 @@ const getJson = async (url, init) => {
   return json;
 };
 
+const renderSelfObservation = (repoPayload, healthStatus) => {
+  if (!repoPayload || !repoPayload.repo) {
+    selfSummaryEl.innerHTML = '<div><strong>Self/home repo:</strong> not connected</div><div>Connect this Playbook repo to surface first-class self-observation.</div>';
+    return;
+  }
 
-const escapeHtml = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const readiness = repoPayload.readiness || {};
+  const missingArtifacts = Array.isArray(readiness.missing_artifacts) ? readiness.missing_artifacts : [];
+  const hasControlPlane = !!(readiness.policy_evaluation_present && readiness.policy_apply_result_present && readiness.pr_review_present && readiness.session_present);
+  const hasRuntimeLoop = !!(readiness.cycle_state_present && readiness.cycle_history_present);
+  const hasReviewLoop = !!(readiness.pr_review_present && readiness.policy_evaluation_present);
+  const hasBlueprint = !missingArtifacts.includes('.playbook/system-map.json');
+  const blueprintGuidance = hasBlueprint
+    ? 'Blueprint available from governed artifact \`.playbook/system-map.json\`.'
+    : 'Blueprint missing. Run \`pnpm playbook diagram system\` to generate \`.playbook/system-map.json\`.';
 
-const renderSystemBlueprint = (systemMap) => {
+  selfSummaryEl.innerHTML =
+    '<div><strong>Self/home repo:</strong> ' + repoPayload.repo.id + '</div>' +
+    '<div><strong>Observer server health:</strong> ' + (healthStatus || 'unknown') + '</div>' +
+    '<div><strong>Readiness:</strong> ' + (readiness.readiness_state || 'unknown') + '</div>' +
+    '<div><strong>Control-plane artifacts present:</strong> ' + (hasControlPlane ? 'yes' : 'no') + '</div>' +
+    '<div><strong>Review loop available:</strong> ' + (hasReviewLoop ? 'yes' : 'no') + '</div>' +
+    '<div><strong>Runtime loop available:</strong> ' + (hasRuntimeLoop ? 'yes' : 'no') + '</div>' +
+    '<div><strong>Blueprint:</strong> ' + (hasBlueprint ? 'available' : 'missing') + '</div>' +
+    '<div>' + blueprintGuidance + '</div>';
+};
+
+const deriveNodeState = (node, readiness, artifactsByKind) => {
+  const updatedMs = parseTimestamp(readiness && readiness.last_artifact_update_time);
+  const stale = updatedMs !== null && Date.now() - updatedMs > FRESH_WINDOW_MS;
+  const linkedArtifact = NODE_LINKED_ARTIFACT[node.id] || null;
+  const has = (k) => !!(readiness && readiness[k]);
+
+  let state = 'idle';
+  if (['cycle', 'cycle-state', 'cycle-history', 'telemetry'].includes(node.id)) {
+    state = has('cycle_state_present') ? 'active' : 'missing';
+  } else if (['policy', 'policy-artifact'].includes(node.id)) {
+    state = has('policy_evaluation_present') ? 'active' : 'missing';
+  } else if (['apply', 'apply-artifact'].includes(node.id)) {
+    state = has('policy_apply_result_present') ? 'active' : 'missing';
+  } else if (['review-pr', 'pr-review-artifact'].includes(node.id)) {
+    state = has('pr_review_present') ? 'active' : 'missing';
+  } else if (['analyze-pr', 'improve'].includes(node.id)) {
+    state = has('pr_review_present') ? 'available' : 'idle';
+  } else if (['session', 'session-artifact', 'evidence-envelope'].includes(node.id)) {
+    state = has('session_present') ? 'available' : 'missing';
+  } else if (node.id === 'observer-server') {
+    state = artifactsByKind['system-map'] ? 'available' : 'missing';
+  } else if (node.id.includes('artifact')) {
+    state = linkedArtifact && artifactsByKind[linkedArtifact] ? 'available' : 'missing';
+  }
+
+  if (state !== 'missing' && stale) state = 'stale';
+  return { state, linkedArtifact };
+};
+
+const computeActiveNodes = (readiness) => {
+  const activeNodes = new Set();
+  if (readiness && readiness.cycle_state_present && readiness.cycle_history_present && readiness.policy_evaluation_present && readiness.policy_apply_result_present) {
+    ['cycle', 'cycle-state', 'cycle-history', 'telemetry', 'policy', 'apply'].forEach((id) => activeNodes.add(id));
+  }
+  if (readiness && readiness.pr_review_present && readiness.policy_evaluation_present) {
+    ['analyze-pr', 'improve', 'policy', 'review-pr'].forEach((id) => activeNodes.add(id));
+  }
+  return activeNodes;
+};
+
+const renderSelectedNode = (systemMap, nodeStates) => {
+  if (!selectedBlueprintNodeId) {
+    selectedNodeDetailEl.textContent = 'Click a node to inspect layer, state, and artifact linkage.';
+    return;
+  }
+  const node = Array.isArray(systemMap && systemMap.nodes) ? systemMap.nodes.find((entry) => entry.id === selectedBlueprintNodeId) : null;
+  if (!node) {
+    selectedNodeDetailEl.textContent = 'Selected node is no longer available.';
+    return;
+  }
+  const derived = nodeStates[node.id] || { state: 'idle', linkedArtifact: null };
+  selectedNodeDetailEl.innerHTML = '<div><strong>Node ID:</strong> ' + escapeHtml(node.id) + '</div><div><strong>Layer:</strong> ' + escapeHtml(node.layer || 'unknown') + '</div><div><strong>Derived state:</strong> ' + escapeHtml(derived.state) + '</div><div><strong>Linked artifact:</strong> ' + escapeHtml(derived.linkedArtifact || 'none') + '</div>';
+};
+
+const renderSystemBlueprint = (systemMap, readiness, artifacts) => {
   if (!systemMap || !Array.isArray(systemMap.layers) || !Array.isArray(systemMap.nodes) || !Array.isArray(systemMap.edges)) {
     blueprintMetaEl.textContent = 'System map artifact unavailable for selected repo.';
     blueprintPanelEl.innerHTML = '';
+    selectedNodeDetailEl.textContent = 'Click a node to inspect layer, state, and artifact linkage.';
     return;
+  }
+
+  const artifactsByKind = {};
+  for (const artifact of Array.isArray(artifacts) ? artifacts : []) {
+    if (artifact && typeof artifact.kind === 'string') artifactsByKind[artifact.kind] = artifact.value;
   }
 
   const layers = systemMap.layers;
   const nodes = systemMap.nodes;
   const edges = systemMap.edges;
+  const nodeStates = {};
+  for (const node of nodes) {
+    nodeStates[node.id] = deriveNodeState(node, readiness || {}, artifactsByKind);
+  }
+  const activeNodes = computeActiveNodes(readiness || {});
+
   const width = 980;
   const height = 420;
   const laneHeight = Math.max(48, Math.floor(height / Math.max(layers.length, 1)));
-
   const nodeByLayer = new Map();
   for (const layer of layers) {
     nodeByLayer.set(layer.id, nodes.filter((node) => node.layer === layer.id).sort((a, b) => a.id.localeCompare(b.id)));
@@ -536,60 +629,62 @@ const renderSystemBlueprint = (systemMap) => {
     const layer = layers[layerIndex];
     const layerNodes = nodeByLayer.get(layer.id) || [];
     const usableWidth = width - 220;
-    const spacing = layerNodes.length > 0 ? usableWidth / layerNodes.length : usableWidth;
-    for (let nodeIndex = 0; nodeIndex < layerNodes.length; nodeIndex += 1) {
-      const node = layerNodes[nodeIndex];
-      positions.set(node.id, { x: 190 + spacing * nodeIndex + 8, y: layerIndex * laneHeight + 10, layer: layer.id });
-    }
+    const spacing = layerNodes.length > 0 ? usableWidth / (layerNodes.length + 1) : usableWidth / 2;
+    layerNodes.forEach((node, nodeIndex) => {
+      positions.set(node.id, { x: 180 + Math.floor(spacing * (nodeIndex + 1)), y: layerIndex * laneHeight + Math.floor(laneHeight / 2) });
+    });
   }
 
-  const edgeSvg = edges
-    .filter((edge) => positions.has(edge.from) && positions.has(edge.to))
-    .map((edge) => {
-      const from = positions.get(edge.from);
-      const to = positions.get(edge.to);
-      return '<line class="edge-line" x1="' + (from.x + 74) + '" y1="' + (from.y + 16) + '" x2="' + to.x + '" y2="' + (to.y + 16) + '"></line>';
-    })
-    .join('');
+  const layerSvg = layers.map((layer, index) =>
+    '<rect class="layer-band" x="0" y="' + (index * laneHeight) + '" width="980" height="' + laneHeight + '"></rect>' +
+    '<text class="layer-label" x="12" y="' + (index * laneHeight + 24) + '">' + escapeHtml(layer.label || layer.id) + '</text>'
+  ).join('');
 
-  const layerSvg = layers
-    .map((layer, index) => {
-      const y = index * laneHeight;
-      return '<rect class="layer-band" x="0" y="' + y + '" width="980" height="' + laneHeight + '"></rect>' +
-        '<text class="layer-label" x="12" y="' + (y + 28) + '">' + escapeHtml(layer.label + ' (' + layer.id + ')') + '</text>';
-    })
-    .join('');
+  const edgeSvg = edges.map((edge) => {
+    const from = positions.get(edge.from);
+    const to = positions.get(edge.to);
+    if (!from || !to) return '';
+    const active = activeNodes.has(edge.from) && activeNodes.has(edge.to);
+    return '<line class="edge-line' + (active ? ' active' : '') + '" x1="' + from.x + '" y1="' + from.y + '" x2="' + to.x + '" y2="' + to.y + '"></line>';
+  }).join('');
 
-  const nodeSvg = nodes
-    .filter((node) => positions.has(node.id))
-    .map((node) => {
-      const pos = positions.get(node.id);
-      const isSelected = selectedBlueprintNodeId === node.id;
-      return '<g data-node-id="' + escapeHtml(node.id) + '" data-layer-id="' + escapeHtml(node.layer) + '">' +
-        '<rect class="node-box' + (isSelected ? ' selected' : '') + '" x="' + pos.x + '" y="' + pos.y + '" width="148" height="32"></rect>' +
-        '<title>' + escapeHtml(node.id + ' | layer: ' + node.layer) + '</title>' +
-        '<text class="node-label" x="' + (pos.x + 8) + '" y="' + (pos.y + 21) + '">' + escapeHtml(node.id) + '</text>' +
+  const nodeSvg = nodes.map((node) => {
+    const position = positions.get(node.id);
+    if (!position) return '';
+    const isSelected = node.id === selectedBlueprintNodeId;
+    const derived = nodeStates[node.id] || { state: 'idle' };
+    return '<g data-node-id="' + escapeHtml(node.id) + '" data-layer-id="' + escapeHtml(node.layer) + '">' +
+      '<rect class="node-box node-state-' + escapeHtml(derived.state) + (isSelected ? ' selected' : '') + '" x="' + (position.x - 56) + '" y="' + (position.y - 16) + '" width="112" height="32"></rect>' +
+      '<text class="node-label" x="' + (position.x - 49) + '" y="' + (position.y + 4) + '">' + escapeHtml(node.id) + '</text>' +
       '</g>';
-    })
-    .join('');
+  }).join('');
 
-  blueprintPanelEl.innerHTML =
-    '<defs><marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0, 6 3, 0 6" fill="#6b8cd6"></polygon></marker></defs>' +
-    layerSvg + edgeSvg + nodeSvg;
+  blueprintPanelEl.innerHTML = '<defs><marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0, 6 3, 0 6" fill="#6b8cd6"></polygon></marker></defs>' + layerSvg + edgeSvg + nodeSvg;
 
   blueprintPanelEl.querySelectorAll('g[data-node-id]').forEach((group) => {
     group.addEventListener('click', () => {
       selectedBlueprintNodeId = group.getAttribute('data-node-id');
-      const layerId = group.getAttribute('data-layer-id') || 'unknown';
-      blueprintMetaEl.textContent = 'Selected node: ' + selectedBlueprintNodeId + ' (layer: ' + layerId + ')';
-      renderSystemBlueprint(systemMap);
+      const linkedArtifact = NODE_LINKED_ARTIFACT[selectedBlueprintNodeId || ''] || null;
+      if (linkedArtifact && artifactKinds.includes(linkedArtifact)) {
+        artifactKindEl.value = linkedArtifact;
+        loadArtifact();
+      }
+      renderSystemBlueprint(systemMap, readiness, artifacts);
     });
   });
 
-  if (!selectedBlueprintNodeId) {
-    blueprintMetaEl.textContent = 'System map loaded. Hover nodes for details; click to select.';
-  }
+  blueprintMetaEl.textContent = selectedBlueprintNodeId && nodeStates[selectedBlueprintNodeId]
+    ? 'Selected node: ' + selectedBlueprintNodeId + ' (state: ' + nodeStates[selectedBlueprintNodeId].state + ')'
+    : 'System map loaded. Click nodes for stateful detail.';
+  renderSelectedNode(systemMap, nodeStates);
 };
+
+artifactKinds.forEach((kind) => {
+  const option = document.createElement('option');
+  option.value = kind;
+  option.textContent = kind;
+  artifactKindEl.appendChild(option);
+});
 
 const loadHealth = async () => {
   const health = await getJson('/health');
@@ -600,17 +695,15 @@ const loadHealth = async () => {
 const renderRepos = async () => {
   const payload = await getJson('/repos');
   homeRepoId = payload.home_repo_id || null;
-  if (!selectedRepoId && homeRepoId) {
-    selectedRepoId = homeRepoId;
-  }
+  if (!selectedRepoId && homeRepoId) selectedRepoId = homeRepoId;
   reposEl.innerHTML = '';
   for (const repo of payload.repos) {
     const item = document.createElement('div');
-    item.className = 'card repo';
+    item.className = 'card repo' + (repo.id === selectedRepoId ? ' selected' : '');
     const readiness = repo.readiness || { readiness_state: 'connected_only' };
     const isHome = homeRepoId && repo.id === homeRepoId;
     item.innerHTML = '<strong>' + repo.id + (isHome ? ' (self/home)' : '') + '</strong><div class="meta">' + repo.root + '</div><div class="meta">readiness: ' + readiness.readiness_state + '</div>';
-    item.onclick = () => { selectedRepoId = repo.id; loadRepoDetail(); };
+    item.onclick = () => { selectedRepoId = repo.id; selectedBlueprintNodeId = null; loadRepoDetail(); renderRepos(); };
     reposEl.appendChild(item);
   }
   return payload;
@@ -624,19 +717,20 @@ const loadRepoDetail = async () => {
     artifactPanelEl.innerHTML = '';
     blueprintPanelEl.innerHTML = '';
     blueprintMetaEl.textContent = 'Select a repo.';
+    selectedNodeDetailEl.textContent = 'Click a node to inspect layer, state, and artifact linkage.';
     return;
   }
 
-  const repoPayload = await getJson('/repos/' + encodeURIComponent(selectedRepoId));
-  repoTitleEl.textContent = 'Repo: ' + repoPayload.repo.id;
-  const readiness = repoPayload.readiness || {};
+  latestRepoPayload = await getJson('/repos/' + encodeURIComponent(selectedRepoId));
+  repoTitleEl.textContent = 'Repo: ' + latestRepoPayload.repo.id;
+  const readiness = latestRepoPayload.readiness || {};
   const missing = Array.isArray(readiness.missing_artifacts) && readiness.missing_artifacts.length > 0 ? readiness.missing_artifacts.join(', ') : 'none';
   const lastUpdate = readiness.last_artifact_update_time || 'n/a';
   repoDetailEl.innerHTML =
     '<div class="meta"><strong>Readiness:</strong> ' + (readiness.readiness_state || 'unknown') + '</div>' +
     '<div class="meta"><strong>Last artifact update:</strong> ' + lastUpdate + '</div>' +
     '<div class="meta"><strong>Missing artifacts:</strong> ' + missing + '</div>' +
-    format(repoPayload.repo);
+    format(latestRepoPayload.repo);
   removeRepoEl.style.display = '';
   await loadArtifact();
   await loadBlueprint();
@@ -652,7 +746,6 @@ const loadArtifact = async () => {
   artifactPanelEl.innerHTML = format(artifactPayload.artifact);
 };
 
-
 const loadBlueprint = async () => {
   if (!selectedRepoId) {
     blueprintPanelEl.innerHTML = '';
@@ -661,13 +754,10 @@ const loadBlueprint = async () => {
   }
 
   const payload = await getJson('/snapshot');
-  const repoEntry = (payload.snapshot && Array.isArray(payload.snapshot.repos))
-    ? payload.snapshot.repos.find((entry) => entry.id === selectedRepoId)
-    : null;
-  const systemMapArtifact = repoEntry && Array.isArray(repoEntry.artifacts)
-    ? repoEntry.artifacts.find((artifact) => artifact.kind === 'system-map')
-    : null;
-  renderSystemBlueprint(systemMapArtifact ? systemMapArtifact.value : null);
+  latestSnapshotRepoEntry = (payload.snapshot && Array.isArray(payload.snapshot.repos)) ? payload.snapshot.repos.find((entry) => entry.id === selectedRepoId) : null;
+  const systemMapArtifact = latestSnapshotRepoEntry && Array.isArray(latestSnapshotRepoEntry.artifacts) ? latestSnapshotRepoEntry.artifacts.find((artifact) => artifact.kind === 'system-map') : null;
+  const readiness = latestRepoPayload && latestRepoPayload.readiness ? latestRepoPayload.readiness : {};
+  renderSystemBlueprint(systemMapArtifact ? systemMapArtifact.value : null, readiness, latestSnapshotRepoEntry ? latestSnapshotRepoEntry.artifacts : []);
 };
 
 const refreshAll = async () => {
@@ -700,11 +790,10 @@ document.getElementById('addRepo').onclick = async () => {
 };
 
 removeRepoEl.onclick = async () => {
-  if (!selectedRepoId) {
-    return;
-  }
+  if (!selectedRepoId) return;
   await getJson('/repos/' + encodeURIComponent(selectedRepoId), { method: 'DELETE' });
   selectedRepoId = null;
+  selectedBlueprintNodeId = null;
   await refreshAll();
 };
 
