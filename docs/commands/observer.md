@@ -41,6 +41,7 @@ Supported `:kind` values:
 - `policy-apply-result`
 - `pr-review`
 - `session`
+- `system-map`
 
 ## Determinism and scope
 
@@ -80,3 +81,10 @@ Readiness fields are available from:
 Rule: An observer UI must distinguish registration state from actual observability state.
 Pattern: Connected repo → readiness detection → artifact observation.
 Failure Mode: If empty repos look the same as fully observed repos, operators will misread what Playbook actually knows.
+
+
+## System blueprint artifact behavior
+
+Observer never generates a system-map artifact. It only reads `.playbook/system-map.json` if present in a connected repo and exposes it through `/snapshot` and `/repos/:id/artifacts/system-map`.
+
+Playbook command flows should keep the artifact fresh (for example `playbook index` and `playbook diagram system`) so the UI can remain a pure renderer.

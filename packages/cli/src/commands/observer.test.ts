@@ -88,6 +88,7 @@ describe('observer server', () => {
     const repo = path.join(cwd, 'repo-a');
     fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.playbook', 'session.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'session', id: 'session-a' }, null, 2));
+    fs.writeFileSync(path.join(repo, '.playbook', 'system-map.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'system-map', layers: [], nodes: [], edges: [] }, null, 2));
 
     expect(await runObserver(cwd, ['repo', 'add', repo, '--id', 'repo-a'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
 
@@ -117,6 +118,8 @@ describe('observer server', () => {
     };
     expect(snapshotJson.snapshot.kind).toBe('observer-snapshot');
     expect(snapshotJson.snapshot.repos.map((entry) => entry.id)).toEqual(['repo-a']);
+    const systemMapInSnapshot = (snapshotJson.snapshot as { repos: Array<{ artifacts?: Array<{ kind: string; value: unknown }> }> }).repos[0]?.artifacts?.find((artifact) => artifact.kind === 'system-map');
+    expect(systemMapInSnapshot).toBeDefined();
     expect(snapshotJson.readiness[0]?.id).toBe('repo-a');
     expect(snapshotJson.readiness[0]?.readiness.readiness_state).toBe('partially_observable');
 
@@ -131,6 +134,12 @@ describe('observer server', () => {
     const artifactJson = await artifactResponse.json() as { artifact: { kind: string; value: { kind: string } } };
     expect(artifactJson.artifact.kind).toBe('session');
     expect(artifactJson.artifact.value.kind).toBe('session');
+
+    const systemMapArtifactResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/artifacts/system-map`);
+    expect(systemMapArtifactResponse.status).toBe(200);
+    const systemMapArtifactJson = await systemMapArtifactResponse.json() as { artifact: { kind: string; value: { kind: string } } };
+    expect(systemMapArtifactJson.artifact.kind).toBe('system-map');
+    expect(systemMapArtifactJson.artifact.value.kind).toBe('system-map');
 
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });
