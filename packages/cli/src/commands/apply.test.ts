@@ -201,11 +201,29 @@ describe('runApply', () => {
     );
   });
 
+
+  it('fails policy-check when combined with --task', async () => {
+    const { runApply } = await import('./apply.js');
+
+    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policyCheck: true, tasks: ['task-1'] })).rejects.toThrow(
+      'The --policy-check flag is read-only and cannot be combined with --task.'
+    );
+  });
+
   it('fails when --policy is combined with --policy-check', async () => {
     const { runApply } = await import('./apply.js');
 
     await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policy: true, policyCheck: true })).rejects.toThrow(
       'The --policy flag cannot be combined with --policy-check.'
+    );
+  });
+
+
+  it('fails policy mode when combined with --task', async () => {
+    const { runApply } = await import('./apply.js');
+
+    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policy: true, tasks: ['task-1'] })).rejects.toThrow(
+      'The --policy flag cannot be combined with --task.'
     );
   });
 
