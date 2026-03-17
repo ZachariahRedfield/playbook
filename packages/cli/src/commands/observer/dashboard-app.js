@@ -48,6 +48,7 @@ const crossRepoModeBtnEl = document.getElementById('crossRepoModeBtn');
 const repoViewPanelEl = document.getElementById('repoViewPanel');
 const crossRepoViewPanelEl = document.getElementById('crossRepoViewPanel');
 const fleetSummaryPanelEl = document.getElementById('fleetSummaryPanel');
+const queueSummaryPanelEl = document.getElementById('queueSummaryPanel');
 let selectedRepoId = null;
 let selectedBlueprintNodeId = null;
 let homeRepoId = null;
@@ -386,6 +387,38 @@ const loadFleetSummary = async () => {
   renderFleetSummary(payload.fleet || null);
 };
 
+
+const renderQueueSummary = (queue) => {
+  if (!queue || typeof queue !== 'object') {
+    queueSummaryPanelEl.innerHTML = '<div class="empty-state">Work queue unavailable.</div>';
+    return;
+  }
+
+  const waveRows = Array.isArray(queue.waves) ? queue.waves.map((wave) =>
+    '<li>' + escapeHtml(wave.wave + ': ' + wave.action_count + ' actions') + '</li>'
+  ).join('') : '';
+  const laneRows = Array.isArray(queue.grouped_actions) ? queue.grouped_actions.slice(0, 5).map((lane) =>
+    '<li>' + escapeHtml(lane.parallel_group + ' • ' + lane.command + ' (' + lane.repo_ids.length + ')') + '</li>'
+  ).join('') : '';
+  const blockedRows = Array.isArray(queue.blocked_items) ? queue.blocked_items.slice(0, 5).map((item) =>
+    '<li>' + escapeHtml(item.repo_id + ' • ' + item.item_id + ' <= ' + item.unmet_dependencies.join(', ')) + '</li>'
+  ).join('') : '';
+
+  queueSummaryPanelEl.innerHTML =
+    '<div><strong>Total repos:</strong> ' + escapeHtml(String(queue.total_repos || 0)) + '</div>' +
+    '<div><strong>Total work items:</strong> ' + escapeHtml(String((queue.work_items || []).length || 0)) + '</div>' +
+    '<div><strong>Highest priority actions</strong><ul>' + (Array.isArray(queue.work_items) && queue.work_items.length > 0 ? queue.work_items.slice(0, 5).map((item) => '<li>' + escapeHtml(item.repo_id + ' • ' + item.recommended_command) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Wave breakdown</strong><ul>' + (waveRows || '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Grouped action lanes</strong><ul>' + (laneRows || '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Top blocked repos</strong><ul>' + (blockedRows || '<li>none</li>') + '</ul></div>';
+};
+
+const loadQueueSummary = async () => {
+  const payload = await getJson('/api/readiness/queue');
+  renderQueueSummary(payload.queue || null);
+};
+
+
 const setActiveView = (view) => {
   activeView = view === 'cross-repo' ? 'cross-repo' : 'repo';
   const repoMode = activeView === 'repo';
@@ -534,6 +567,7 @@ const refreshAll = async () => {
       renderSelfObservation(null, healthStatus);
     }
     await loadFleetSummary();
+    await loadQueueSummary();
   } catch (error) {
     healthEl.textContent = 'error: ' + error.message;
   }

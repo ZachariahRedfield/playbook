@@ -14,8 +14,9 @@ vi.mock('./verify.js', () => ({ collectVerifyReport }));
 
 const buildRepoAdoptionReadiness = vi.fn();
 const buildFleetAdoptionReadinessSummary = vi.fn();
+const buildFleetAdoptionWorkQueue = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue }));
 
 const makeAnalyzeReport = (overrides?: Partial<AnalyzeReport>): AnalyzeReport => ({
   repoPath: '/tmp/repo',
@@ -45,6 +46,7 @@ describe('runStatus', () => {
     ensureRepoIndex.mockImplementation(async (repoRoot: string) => `${repoRoot}/.playbook/repo-index.json`);
     buildRepoAdoptionReadiness.mockReset();
     buildFleetAdoptionReadinessSummary.mockReset();
+    buildFleetAdoptionWorkQueue.mockReset();
     buildRepoAdoptionReadiness.mockReturnValue({
       schemaVersion: '1.0',
       connection_status: 'connected',
@@ -79,6 +81,16 @@ describe('runStatus', () => {
       blocker_frequencies: [],
       recommended_actions: [],
       repos_by_priority: []
+    });
+    buildFleetAdoptionWorkQueue.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'fleet-adoption-work-queue',
+      generated_at: '2026-01-01T00:00:00.000Z',
+      total_repos: 0,
+      work_items: [],
+      waves: [],
+      grouped_actions: [],
+      blocked_items: []
     });
   });
 
@@ -183,4 +195,63 @@ describe('runStatus', () => {
     expect(collectDoctorReport).not.toHaveBeenCalled();
     logSpy.mockRestore();
   });
+
+  it('prints queue JSON output when queue scope is requested', async () => {
+    const { runStatus } = await import('./status.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    buildFleetAdoptionReadinessSummary.mockReturnValueOnce({
+      schemaVersion: '1.0',
+      kind: 'fleet-adoption-readiness-summary',
+      total_repos: 1,
+      by_lifecycle_stage: {
+        not_connected: 0,
+        playbook_not_detected: 1,
+        playbook_detected_index_pending: 0,
+        indexed_plan_pending: 0,
+        planned_apply_pending: 0,
+        ready: 0
+      },
+      playbook_detected_count: 0,
+      fallback_proof_ready_count: 0,
+      cross_repo_eligible_count: 0,
+      blocker_frequencies: [],
+      recommended_actions: [],
+      repos_by_priority: []
+    });
+    buildFleetAdoptionWorkQueue.mockReturnValueOnce({
+      schemaVersion: '1.0',
+      kind: 'fleet-adoption-work-queue',
+      generated_at: '2026-01-01T00:00:00.000Z',
+      total_repos: 1,
+      work_items: [
+        {
+          item_id: 'repo-a:init',
+          repo_id: 'repo-a',
+          lifecycle_stage: 'playbook_not_detected',
+          blocker_codes: ['playbook_not_detected'],
+          recommended_command: 'pnpm playbook init',
+          priority_stage: 'playbook_not_detected',
+          severity: 'high',
+          parallel_group: 'init lane',
+          dependencies: [],
+          rationale: 'Playbook bootstrap is missing and must be initialized first.',
+          wave: 'wave_1'
+        }
+      ],
+      waves: [{ wave: 'wave_1', item_ids: ['repo-a:init'], repo_ids: ['repo-a'], action_count: 1 }],
+      grouped_actions: [{ parallel_group: 'init lane', command: 'pnpm playbook init', repo_ids: ['repo-a'], item_ids: ['repo-a:init'] }],
+      blocked_items: []
+    });
+
+    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'json', quiet: false, scope: 'queue' });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.mode).toBe('queue');
+    expect(payload.queue.kind).toBe('fleet-adoption-work-queue');
+    expect(collectDoctorReport).not.toHaveBeenCalled();
+    logSpy.mockRestore();
+  });
+
 });

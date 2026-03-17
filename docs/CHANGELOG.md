@@ -10,6 +10,11 @@
 
 ### CLI
 
+- WHAT: Added deterministic adoption work-queue planning on top of fleet readiness (`pnpm playbook status queue --json`) with a stable `fleet-adoption-work-queue` contract (`work_items`, `waves`, `grouped_actions`, `blocked_items`), observer API/UI integration (`GET /api/readiness/queue` + dashboard queue panel), and focused ordering/wave/grouping tests. WHY: Converts fleet readiness into an executable, parallel-safe queue without mutating repositories.
+- Rule: Queue output must remain read-only and deterministic for identical readiness input.
+- Pattern: Use lane-specific grouped actions to parallelize safely while preserving dependency order.
+- Failure Mode: Adoption orchestration drifts when operators execute apply/plan tasks ahead of prerequisite lanes.
+
 - WHAT: Added deterministic fleet-level adoption readiness aggregation across status, Observer API, and Observer UI (`pnpm playbook status fleet --json`, `GET /api/readiness/fleet`, plus a fleet summary panel) including stable lifecycle counts, blocker/action frequencies, eligibility counts, and prioritized repo ordering. WHY: Enables portfolio-level adoption triage while preserving repo-first inspection workflows.
 
 - WHAT: Aligned root and all publishable package manifests to release version `0.1.6` so producer publish/tag/fallback flows resolve one canonical version across workspace and release artifacts. WHY: Prevents split release state between root metadata and publishable packages during clean release proof.

@@ -5,6 +5,7 @@ import http from 'node:http';
 import { emitJsonOutput, writeJsonArtifactAbsolute } from '../../lib/jsonArtifact.js';
 import {
   buildFleetAdoptionReadinessSummary,
+  buildFleetAdoptionWorkQueue,
   buildRepoAdoptionReadiness,
   computeCrossRepoPatternLearning,
   readCrossRepoPatternsArtifact,
@@ -538,6 +539,7 @@ const observerDashboardHtml = (): string => `<!doctype html>
           </div>
           <div id="crossRepoViewPanel" class="hidden">
           <div class="card"><h3>Fleet Readiness Summary</h3><div id="fleetSummaryPanel" class="meta">Fleet readiness summary loads from connected repos.</div></div>
+          <div class="card"><h3>Adoption Work Queue</h3><div id="queueSummaryPanel" class="meta">Adoption work queue loads from connected repos.</div></div>
           <div class="card"><h3>Cross-Repo Intelligence</h3>
             <div class="row"><label class="meta">Left repo</label><select id="compareLeft"></select></div>
             <div class="row"><label class="meta">Right repo</label><select id="compareRight"></select></div>
@@ -617,6 +619,18 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
         ...base,
         kind: 'observer-fleet-readiness-summary',
         fleet: buildFleetReadinessSummary(registry)
+      }
+    };
+  }
+
+  if (pathname === '/api/readiness/queue') {
+    const fleet = buildFleetReadinessSummary(registry);
+    return {
+      statusCode: 200,
+      payload: {
+        ...base,
+        kind: 'observer-fleet-adoption-work-queue',
+        queue: buildFleetAdoptionWorkQueue(fleet)
       }
     };
   }

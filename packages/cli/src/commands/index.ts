@@ -265,7 +265,7 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
   status: async ({ cwd, ci, format, quiet, commandArgs }) => {
     const { runStatus } = await import('./status.js');
     const scopeArg = commandArgs.find((arg) => !arg.startsWith('-'));
-    const scope = scopeArg === 'fleet' ? 'fleet' : 'repo';
+    const scope = scopeArg === 'fleet' ? 'fleet' : scopeArg === 'queue' ? 'queue' : 'repo';
     return runStatus(cwd, { ci, format, quiet, scope });
   },
   upgrade: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {

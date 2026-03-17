@@ -733,3 +733,9 @@ Execution runs are appended by `verify`, `plan`, `apply`, and follow-up `verify`
 Use this as the single operator status surface before running fallback proof or cross-repo comparison.
 
 For portfolio-level triage, run `pnpm playbook status fleet --json` to aggregate lifecycle-stage counts, blocker frequencies, fallback/cross-repo eligibility counts, and deterministic `repos_by_priority` ordering across connected Observer repos.
+
+For actionable execution sequencing, run `pnpm playbook status queue --json` to produce a deterministic, read-only adoption work queue with ordered work items, explicit dependencies, Wave 1/Wave 2 breakdown, and parallel-safe grouped action lanes.
+
+- Rule: identical readiness input must produce identical queue ordering and wave assignment.
+- Pattern: execute grouped lanes in stage order (`init` -> `index` -> `verify/plan` -> `apply`) for safe parallel adoption work.
+- Failure Mode: queue drift appears when dependent actions are run before prerequisite lane completion.
