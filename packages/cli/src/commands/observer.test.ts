@@ -218,7 +218,49 @@ describe('observer server', () => {
     expect(reposJson.repos.map((entry) => entry.id)).toEqual(['repo-nested']);
 
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
-    expect(await uiScript.text()).toContain('No repos connected in');
+    const uiScriptText = await uiScript.text();
+    expect(uiScriptText).toContain('No repos connected in');
+    expect(uiScriptText).toContain('const refreshAll = async () =>');
+    expect(uiScriptText).toContain("refreshAll();");
+    expect(uiScriptText).toContain("setInterval(refreshAll, 5000);");
+    expect(uiScriptText).toContain('selectedRepoId = repos[0].id');
+    expect(uiScriptText).toContain('await loadRepoDetail();');
+    expect(uiScriptText).not.toContain(': any');
+    expect(uiScriptText).not.toContain(' as any');
+
+    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  });
+
+  it('emits observer dashboard script as plain browser JavaScript without TypeScript syntax leakage', async () => {
+    const cwd = makeTempDir();
+    const repo = path.join(cwd, 'repo-ui-script');
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    writeArtifact(repo, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
+
+    expect(await runObserver(cwd, ['repo', 'add', repo, '--id', 'repo-ui-script'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+
+    const server = createObserverServer(cwd);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const address = server.address();
+    expect(address).toBeTypeOf('object');
+    const port = typeof address === 'object' && address ? address.port : 0;
+
+    const repos = await fetch(`http://127.0.0.1:${port}/repos`);
+    const reposJson = await repos.json() as { repos: Array<{ id: string }> };
+    expect(reposJson.repos.length).toBeGreaterThan(0);
+
+    const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
+    const uiScriptText = await uiScript.text();
+
+    expect(uiScriptText).toContain('const refreshAll = async () =>');
+    expect(uiScriptText).toContain('renderRepos()');
+    expect(uiScriptText).toContain('selectedRepoId = repos[0].id');
+    expect(uiScriptText).toContain('await loadRepoDetail();');
+    expect(uiScriptText).toContain('renderSelfObservation');
+
+    expect(/\b:\s*any\b/.test(uiScriptText)).toBe(false);
+    expect(/\bas\s+any\b/.test(uiScriptText)).toBe(false);
+    expect(/=\s*<[A-Za-z_$][\w$]*>\s*\(/.test(uiScriptText)).toBe(false);
 
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });

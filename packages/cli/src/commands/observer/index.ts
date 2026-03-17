@@ -664,7 +664,7 @@ const renderSelectedNode = (systemMap, nodeStates) => {
     selectedNodeDetailEl.textContent = 'Click a node to inspect layer, state, and artifact linkage.';
     return;
   }
-  const node = Array.isArray(systemMap && systemMap.nodes) ? systemMap.nodes.find((entry: any) => entry.id === selectedBlueprintNodeId) : null;
+  const node = Array.isArray(systemMap && systemMap.nodes) ? systemMap.nodes.find((entry) => entry.id === selectedBlueprintNodeId) : null;
   if (!node) {
     selectedNodeDetailEl.textContent = 'Selected node is no longer available.';
     return;
@@ -841,7 +841,7 @@ const loadBlueprint = async () => {
   }
 
   const payload = await getJson('/snapshot');
-  latestSnapshotRepoEntry = (payload.snapshot && Array.isArray(payload.snapshot.repos)) ? payload.snapshot.repos.find((entry: any) => entry.id === selectedRepoId) : null;
+  latestSnapshotRepoEntry = (payload.snapshot && Array.isArray(payload.snapshot.repos)) ? payload.snapshot.repos.find((entry) => entry.id === selectedRepoId) : null;
   const systemMapArtifact = latestSnapshotRepoEntry && Array.isArray(latestSnapshotRepoEntry.artifacts) ? latestSnapshotRepoEntry.artifacts.find((artifact) => artifact.kind === 'system-map') : null;
   const readiness = latestRepoPayload && latestRepoPayload.readiness ? latestRepoPayload.readiness : {};
   renderSystemBlueprint(systemMapArtifact ? systemMapArtifact.value : null, readiness, latestSnapshotRepoEntry ? latestSnapshotRepoEntry.artifacts : []);
