@@ -10,9 +10,10 @@
     "runtime/**"
   ],
   "scripts": {
-    "build": "node ../../scripts/prepare-cli-wrapper-runtime.mjs",
+    "build": "node -e \"process.stdout.write('cli-wrapper build: no-op\\n')\"",
     "test": "node -e \"process.stdout.write('cli-wrapper test: no-op\\n')\"",
-    "prepublishOnly": "pnpm build"
+    "prepack": "node ../../scripts/prepare-cli-wrapper-runtime.mjs",
+    "prepublishOnly": "node ../../scripts/prepare-cli-wrapper-runtime.mjs"
   },
   "publishConfig": {
     "access": "public"
