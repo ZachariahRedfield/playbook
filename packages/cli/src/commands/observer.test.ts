@@ -121,7 +121,7 @@ describe('observer server', () => {
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });
 
-  it('returns 404 for missing repos and blocks mutation routes', async () => {
+  it('serves UI shell, supports repo add/remove mutations, and still rejects unsupported methods', async () => {
     const cwd = makeTempDir();
     const server = createObserverServer(cwd);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
@@ -134,10 +134,38 @@ describe('observer server', () => {
     const missingRepoJson = await missingRepo.json() as { error: string };
     expect(missingRepoJson.error).toBe('repo-not-found');
 
-    const postAttempt = await fetch(`http://127.0.0.1:${port}/repos`, { method: 'POST' });
-    expect(postAttempt.status).toBe(405);
-    const postJson = await postAttempt.json() as { error: string };
-    expect(postJson.error).toBe('method-not-allowed');
+    const uiResponse = await fetch(`http://127.0.0.1:${port}/`);
+    expect(uiResponse.status).toBe(200);
+    const uiHtml = await uiResponse.text();
+    expect(uiHtml).toContain('Observer Dashboard');
+
+    const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
+    expect(uiScript.status).toBe(200);
+    const uiScriptText = await uiScript.text();
+    expect(uiScriptText).toContain('setInterval(refreshAll, 5000)');
+
+    const repoPath = path.join(cwd, 'repo-http');
+    fs.mkdirSync(repoPath, { recursive: true });
+    const postAttempt = await fetch(`http://127.0.0.1:${port}/repos`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: repoPath, id: 'repo-http' })
+    });
+    expect(postAttempt.status).toBe(200);
+    const postJson = await postAttempt.json() as { kind: string; repo: { id: string } };
+    expect(postJson.kind).toBe('observer-server-repo-add');
+    expect(postJson.repo.id).toBe('repo-http');
+
+    const deleteAttempt = await fetch(`http://127.0.0.1:${port}/repos/repo-http`, { method: 'DELETE' });
+    expect(deleteAttempt.status).toBe(200);
+    const deleteJson = await deleteAttempt.json() as { kind: string; removedId: string };
+    expect(deleteJson.kind).toBe('observer-server-repo-remove');
+    expect(deleteJson.removedId).toBe('repo-http');
+
+    const patchAttempt = await fetch(`http://127.0.0.1:${port}/repos`, { method: 'PATCH' });
+    expect(patchAttempt.status).toBe(405);
+    const patchJson = await patchAttempt.json() as { error: string };
+    expect(patchJson.error).toBe('method-not-allowed');
 
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });

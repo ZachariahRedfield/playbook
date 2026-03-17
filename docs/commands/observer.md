@@ -1,6 +1,6 @@
 # `playbook observer`
 
-Manage a deterministic local observer registry and thin local read-only API server.
+Manage a deterministic local observer registry, thin local observer API, and local dashboard UI shell.
 
 ## Usage
 
@@ -25,20 +25,13 @@ Contract:
 
 ## Local server (`observer serve`)
 
-`pnpm playbook observer serve` starts a local-only read-only HTTP server bound to `127.0.0.1` by default.
+`pnpm playbook observer serve` starts a local-only HTTP server bound to `127.0.0.1` by default.
 
-- No mutation routes are provided in v1.
-- Only `GET` routes are allowed.
-- Responses are deterministic JSON envelopes.
-- Data is read from governed observer artifacts and repo-local `.playbook` artifacts.
-
-Endpoints:
-
-- `GET /health`
-- `GET /repos`
-- `GET /snapshot`
-- `GET /repos/:id`
-- `GET /repos/:id/artifacts/:kind`
+- Dashboard UI shell routes: `GET /`, `GET /ui`, `GET /ui/app.js`
+- Read endpoints: `GET /health`, `GET /repos`, `GET /snapshot`, `GET /repos/:id`, `GET /repos/:id/artifacts/:kind`
+- Registry mutation endpoints (local-only, add/remove parity with CLI): `POST /repos`, `DELETE /repos/:id`
+- Responses are deterministic envelopes, and artifact state remains sourced from governed observer/runtime artifacts.
+- No artifact/runtime mutation routes are provided in v1 beyond repo registration actions.
 
 Supported `:kind` values:
 

@@ -163,11 +163,11 @@ Rule: multi-repo observation must start from explicit deterministic registry sta
 Pattern: runtime remains canonical per repo while observer indexing tracks connected repos and artifact roots.
 Failure Mode: ambient path-scanning introduces non-deterministic cross-repo visibility and erodes trust.
 
-`playbook observer serve` now adds a thin local-only (`127.0.0.1`/`localhost`) read-only API wrapper over the existing observer repo registry (`.playbook/observer/repos.json`), optional observer snapshot artifact (`.playbook/observer/snapshot.json`), and governed per-repo artifacts. v1 exposes only deterministic JSON `GET` endpoints (`/health`, `/repos`, `/snapshot`, `/repos/:id`, `/repos/:id/artifacts/:kind`) and rejects mutation methods.
+`playbook observer serve` now adds a thin local-only (`127.0.0.1`/`localhost`) dashboard + API wrapper over the existing observer repo registry (`.playbook/observer/repos.json`), optional observer snapshot artifact (`.playbook/observer/snapshot.json`), and governed per-repo artifacts. v1 keeps observer state canonical in CLI/runtime artifacts while exposing deterministic `GET` endpoints (`/health`, `/repos`, `/snapshot`, `/repos/:id`, `/repos/:id/artifacts/:kind`), local dashboard routes (`/`, `/ui`, `/ui/app.js`), and narrowly scoped registry mutations (`POST /repos`, `DELETE /repos/:id`) only for connect/disconnect actions.
 
-Rule: a Playbook server must wrap governed artifacts and commands, not replace them.
-Pattern: thin local server over canonical runtime artifacts.
-Failure Mode: if the server becomes the primary mutable state layer, CLI-first deterministic architecture drifts.
+Rule: observer UI/server surfaces must wrap canonical Playbook state, never become a second source of truth.
+Pattern: CLI/runtime stays canonical -> local server wraps governed artifacts/registry commands -> UI observes and renders.
+Failure Mode: if repo registration or artifact state is tracked independently in UI/server memory, observer state drifts from real Playbook runtime truth.
 
 ## Router accuracy telemetry feedback loop
 
