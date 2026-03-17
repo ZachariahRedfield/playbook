@@ -541,7 +541,7 @@
       "canonicalSequence": null,
       "productFacing": false,
       "machineReadable": true,
-      "example": "pnpm playbook upgrade --check --json"
+      "example": "pnpm playbook upgrade --json"
     },
     {
       "name": "verify",

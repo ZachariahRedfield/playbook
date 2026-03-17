@@ -18,9 +18,12 @@ type UpgradeOptions = {
 
 type IntegrationMode = 'dependency' | 'vendored' | 'unknown';
 
+type UpgradeStatus = 'up_to_date' | 'upgrade_available' | 'upgrade_applied' | 'upgrade_blocked';
+
 type ModeDetection = {
   mode: IntegrationMode;
   currentVersion?: string;
+  dependencySection?: string;
 };
 
 type NeededMigration = {
@@ -31,15 +34,25 @@ type NeededMigration = {
   safeToAutoApply: boolean;
 };
 
+type PackageManagerState = {
+  manager: 'pnpm' | 'npm' | 'yarn' | 'bun' | 'unknown';
+  status: 'supported' | 'unsupported' | 'ambiguous';
+  details: string;
+};
+
 type UpgradeJsonResult = {
   schemaVersion: '1.0';
+  kind: 'playbook-upgrade';
+  currentVersion?: string;
+  targetVersion: string;
+  status: UpgradeStatus;
+  actions: string[];
+  notes: string[];
+  mode: IntegrationMode;
+  packageManager: PackageManagerState;
   command: 'upgrade';
   ok: boolean;
   exitCode: number;
-  mode: IntegrationMode;
-  currentVersion?: string;
-  targetVersion: string;
-  recommendedCommands: string[];
   migrationsNeeded: NeededMigration[];
   applied?: MigrationApplyResult[];
   dryRun?: boolean;
@@ -49,10 +62,14 @@ type UpgradeJsonResult = {
 type UpgradeResultParams = {
   options: UpgradeOptions;
   integration: ModeDetection;
+  packageManager: PackageManagerState;
   targetVersion: string;
   migrationsNeeded: NeededMigration[];
   exitCode: number;
+  status: UpgradeStatus;
   summary: string;
+  actions: string[];
+  notes: string[];
   applied?: MigrationApplyResult[];
 };
 
@@ -65,13 +82,18 @@ const readJson = (filePath: string): Record<string, unknown> | undefined => {
   return JSON.parse(raw) as Record<string, unknown>;
 };
 
+const writeJson = (filePath: string, value: Record<string, unknown>): void => {
+  const serialized = `${JSON.stringify(value, null, 2)}\n`;
+  fs.writeFileSync(filePath, serialized, 'utf8');
+};
+
 const getCurrentCliVersion = (): string => {
   const cliPackagePath = new URL('../../package.json', import.meta.url);
   const packageJson = JSON.parse(fs.readFileSync(cliPackagePath, 'utf8')) as { version?: string };
   return packageJson.version ?? '0.1.1';
 };
 
-const extractDependencyVersion = (pkg: Record<string, unknown>): string | undefined => {
+const extractDependencyVersion = (pkg: Record<string, unknown>): { version: string; section: string } | undefined => {
   const sections = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
 
   for (const section of sections) {
@@ -82,11 +104,34 @@ const extractDependencyVersion = (pkg: Record<string, unknown>): string | undefi
 
     const value = (block as Record<string, unknown>)['@fawxzzy/playbook'];
     if (typeof value === 'string' && value.length > 0) {
-      return value;
+      return { version: value, section };
     }
   }
 
   return undefined;
+};
+
+const normalizeVersionSpec = (value: string | undefined): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.startsWith('workspace:')) {
+    return trimmed.slice('workspace:'.length).replace(/^[\^~><= ]+/, '').trim();
+  }
+
+  return trimmed.replace(/^[\^~><= ]+/, '').trim();
+};
+
+const isVersionAligned = (currentVersion: string | undefined, targetVersion: string): boolean => {
+  const normalizedCurrent = normalizeVersionSpec(currentVersion);
+  const normalizedTarget = normalizeVersionSpec(targetVersion);
+  if (!normalizedCurrent || !normalizedTarget) {
+    return false;
+  }
+
+  return normalizedCurrent === normalizedTarget;
 };
 
 const detectVendoredVersion = (repoRoot: string): string | undefined => {
@@ -127,7 +172,7 @@ const detectIntegrationMode = (repoRoot: string): ModeDetection => {
   if (pkg) {
     const dependencyVersion = extractDependencyVersion(pkg);
     if (dependencyVersion) {
-      return { mode: 'dependency', currentVersion: dependencyVersion };
+      return { mode: 'dependency', currentVersion: dependencyVersion.version, dependencySection: dependencyVersion.section };
     }
   }
 
@@ -139,38 +184,103 @@ const detectIntegrationMode = (repoRoot: string): ModeDetection => {
   return { mode: 'unknown' };
 };
 
-const recommendedCommandsForMode = (mode: IntegrationMode, targetVersion: string): string[] => {
+const detectPackageManagerState = (repoRoot: string): PackageManagerState => {
+  const packageJsonPath = path.join(repoRoot, 'package.json');
+  const pkg = readJson(packageJsonPath);
+  const packageManagerField = typeof pkg?.packageManager === 'string' ? pkg.packageManager : undefined;
+
+  const lockfiles = [
+    { file: 'pnpm-lock.yaml', manager: 'pnpm' as const },
+    { file: 'package-lock.json', manager: 'npm' as const },
+    { file: 'yarn.lock', manager: 'yarn' as const },
+    { file: 'bun.lockb', manager: 'bun' as const }
+  ].filter((entry) => fs.existsSync(path.join(repoRoot, entry.file)));
+
+  const detectedManagers = new Set<string>();
+  for (const lockfile of lockfiles) {
+    detectedManagers.add(lockfile.manager);
+  }
+  if (packageManagerField) {
+    detectedManagers.add(packageManagerField.split('@')[0]);
+  }
+
+  if (detectedManagers.size > 1) {
+    return {
+      manager: 'unknown',
+      status: 'ambiguous',
+      details: `Detected multiple package managers: ${Array.from(detectedManagers).join(', ')}`
+    };
+  }
+
+  if (detectedManagers.size === 0) {
+    return {
+      manager: 'unknown',
+      status: 'unsupported',
+      details: 'No package manager markers found (expected pnpm lockfile or packageManager field).'
+    };
+  }
+
+  const manager = Array.from(detectedManagers)[0] as PackageManagerState['manager'];
+  if (manager !== 'pnpm') {
+    return {
+      manager,
+      status: 'unsupported',
+      details: `Detected ${manager}; this operator flow currently supports pnpm-managed repositories only.`
+    };
+  }
+
+  return {
+    manager,
+    status: 'supported',
+    details: 'Detected pnpm repository markers.'
+  };
+};
+
+const recommendedActions = (mode: IntegrationMode, targetVersion: string): string[] => {
   if (mode === 'dependency') {
-    return [
-      `pnpm add -D @fawxzzy/playbook@${targetVersion}`,
-      'pnpm exec playbook upgrade --check',
-      'pnpm exec playbook upgrade --apply'
-    ];
+    return ['pnpm install', 'pnpm playbook verify', 'pnpm playbook index --json'];
   }
 
   if (mode === 'vendored') {
     return [
       `Update the vendored Playbook directory to version ${targetVersion} from your approved source.`,
       'Update Playbook/VERSION (or equivalent marker file).',
-      'Run playbook upgrade --check to verify local migrations.'
+      'pnpm playbook upgrade --check --json'
     ];
   }
 
   return [
-    'Install @fawxzzy/playbook as a dev dependency, or vendor a Playbook/ directory.',
-    'Re-run playbook upgrade --check --from <currentVersion> after integration mode is known.'
+    'Install @fawxzzy/playbook as a dev dependency in package.json.',
+    'pnpm install',
+    'pnpm playbook upgrade --json'
   ];
 };
 
-const toUpgradeResult = ({ options, integration, targetVersion, migrationsNeeded, exitCode, summary, applied }: UpgradeResultParams): UpgradeJsonResult => ({
+const toUpgradeResult = ({
+  options,
+  integration,
+  packageManager,
+  targetVersion,
+  migrationsNeeded,
+  exitCode,
+  status,
+  summary,
+  actions,
+  notes,
+  applied
+}: UpgradeResultParams): UpgradeJsonResult => ({
   schemaVersion: '1.0',
+  kind: 'playbook-upgrade',
+  currentVersion: integration.currentVersion,
+  targetVersion,
+  status,
+  actions,
+  notes,
+  mode: integration.mode,
+  packageManager,
   command: 'upgrade',
   ok: exitCode === ExitCode.Success,
   exitCode,
-  mode: integration.mode,
-  currentVersion: integration.currentVersion,
-  targetVersion,
-  recommendedCommands: recommendedCommandsForMode(integration.mode, targetVersion),
   migrationsNeeded,
   applied,
   dryRun: options.apply ? options.dryRun : undefined,
@@ -192,14 +302,22 @@ const printText = (result: UpgradeJsonResult, options: UpgradeOptions): void => 
   }
 
   console.log('Playbook upgrade');
+  console.log(`- status: ${result.status}`);
   console.log(`- mode: ${result.mode}`);
   console.log(`- currentVersion: ${result.currentVersion ?? 'unknown'}`);
   console.log(`- targetVersion: ${result.targetVersion}`);
-  console.log(`- offline: ${options.offline ? 'true' : 'false'} (network lookups are disabled in v1)`);
+  console.log(`- packageManager: ${result.packageManager.manager} (${result.packageManager.status})`);
 
-  console.log('Recommended operator actions:');
-  for (const command of result.recommendedCommands) {
+  console.log('Actions:');
+  for (const command of result.actions) {
     console.log(`- ${command}`);
+  }
+
+  if (result.notes.length > 0) {
+    console.log('Notes:');
+    for (const note of result.notes) {
+      console.log(`- ${note}`);
+    }
   }
 
   console.log('Migration check summary:');
@@ -278,47 +396,114 @@ const runApply = async (
   return applied;
 };
 
+const applyDependencyVersionBump = (
+  repoRoot: string,
+  integration: ModeDetection,
+  targetVersion: string,
+  dryRun: boolean
+): { changed: boolean; note: string } => {
+  const packageJsonPath = path.join(repoRoot, 'package.json');
+  const pkg = readJson(packageJsonPath);
+  if (!pkg || integration.mode !== 'dependency' || !integration.dependencySection) {
+    return { changed: false, note: 'Package mutation skipped: dependency section not detected.' };
+  }
+
+  const section = pkg[integration.dependencySection];
+  if (!section || typeof section !== 'object') {
+    return { changed: false, note: 'Package mutation skipped: dependency section missing from package.json.' };
+  }
+
+  const deps = section as Record<string, unknown>;
+  const currentSpec = typeof deps['@fawxzzy/playbook'] === 'string' ? (deps['@fawxzzy/playbook'] as string) : undefined;
+  if (!currentSpec) {
+    return { changed: false, note: 'Package mutation skipped: @fawxzzy/playbook dependency not found.' };
+  }
+
+  const prefixMatch = currentSpec.match(/^(workspace:)?[\^~]/);
+  const nextSpec = `${prefixMatch?.[0] ?? '^'}${targetVersion}`;
+  if (nextSpec === currentSpec) {
+    return { changed: false, note: 'Dependency already pinned to target version.' };
+  }
+
+  if (!dryRun) {
+    deps['@fawxzzy/playbook'] = nextSpec;
+    writeJson(packageJsonPath, pkg);
+  }
+
+  return {
+    changed: true,
+    note: dryRun
+      ? `Dry-run: would update @fawxzzy/playbook from ${currentSpec} to ${nextSpec}.`
+      : `Updated @fawxzzy/playbook from ${currentSpec} to ${nextSpec}.`
+  };
+};
+
 export const runUpgrade = async (cwd: string, options: UpgradeOptions): Promise<number> => {
   try {
     const integration = detectIntegrationMode(cwd);
+    const packageManager = detectPackageManagerState(cwd);
     const targetVersion = options.to ?? getCurrentCliVersion();
+    const currentVersion = options.from ?? integration.currentVersion;
+    const versionAligned = isVersionAligned(currentVersion, targetVersion);
 
-    if ((options.check || options.apply) && integration.mode === 'unknown' && !options.from) {
-      const unknownModeResult = toUpgradeResult({
-        options,
-        integration,
-        targetVersion,
-        migrationsNeeded: [],
-        exitCode: ExitCode.Failure,
-        summary: 'Unknown integration mode. Provide --from <version> to run upgrade checks safely.'
-      });
+    let status: UpgradeStatus = versionAligned ? 'up_to_date' : 'upgrade_available';
+    let notes: string[] = [packageManager.details];
+    let actions = recommendedActions(integration.mode, targetVersion);
 
-      emitUpgradeResult(unknownModeResult, options);
-
-      return ExitCode.Failure;
+    if (integration.mode === 'unknown') {
+      status = 'upgrade_blocked';
+      notes = [...notes, 'Unable to detect Playbook integration mode for this repository.'];
     }
 
-    const fromVersion = options.from ?? integration.currentVersion;
-    let migrationsNeeded = await runChecks(cwd, fromVersion, targetVersion);
+    if (integration.mode === 'vendored' && options.apply) {
+      status = 'upgrade_blocked';
+      notes = [...notes, 'Automatic dependency bump is not supported for vendored mode.'];
+    }
+
+    if (options.apply && integration.mode === 'dependency' && packageManager.status !== 'supported') {
+      status = 'upgrade_blocked';
+      notes = [...notes, 'Automatic upgrade apply is only supported for pnpm-managed dependency mode repositories.'];
+    }
+
+    let migrationsNeeded = await runChecks(cwd, currentVersion, targetVersion);
     let applied: MigrationApplyResult[] | undefined;
 
-    if (options.apply) {
-      applied = await runApply(cwd, options, fromVersion, targetVersion, migrationsNeeded);
-      migrationsNeeded = await runChecks(cwd, fromVersion, targetVersion);
+    if (options.apply && status !== 'upgrade_blocked' && !versionAligned && integration.mode === 'dependency') {
+      const dependencyMutation = applyDependencyVersionBump(cwd, integration, targetVersion, options.dryRun);
+      notes = [...notes, dependencyMutation.note];
+      status = dependencyMutation.changed ? 'upgrade_applied' : 'up_to_date';
+      applied = await runApply(cwd, options, currentVersion, targetVersion, migrationsNeeded);
+      migrationsNeeded = await runChecks(cwd, currentVersion, targetVersion);
+      actions = ['pnpm install', 'pnpm playbook verify', 'pnpm playbook index --json'];
     }
 
-    const exitCode = migrationsNeeded.length > 0 ? ExitCode.WarningsOnly : ExitCode.Success;
-    const summary = options.apply
-      ? migrationsNeeded.length > 0
-        ? 'Upgrade apply finished with additional recommended migrations remaining.'
-        : options.dryRun
-          ? 'Upgrade dry-run completed successfully.'
-          : 'Upgrade apply completed successfully.'
-      : migrationsNeeded.length > 0
-        ? 'Upgrade checks found recommended migrations.'
-        : 'Upgrade checks passed with no recommended migrations.';
+    const hasWarnings = migrationsNeeded.length > 0 || status === 'upgrade_blocked';
+    const exitCode = hasWarnings ? ExitCode.WarningsOnly : ExitCode.Success;
 
-    const result = toUpgradeResult({ options, integration, targetVersion, migrationsNeeded, exitCode, summary, applied });
+    const summary =
+      status === 'upgrade_applied'
+        ? options.dryRun
+          ? 'Upgrade dry-run produced deterministic local update actions.'
+          : 'Upgrade applied local dependency update actions successfully.'
+        : status === 'up_to_date'
+          ? 'Repository Playbook dependency is already aligned with target version.'
+          : status === 'upgrade_available'
+            ? 'A newer Playbook version is available for this repository.'
+            : 'Upgrade is blocked until repository integration/package-manager state is resolved.';
+
+    const result = toUpgradeResult({
+      options,
+      integration,
+      packageManager,
+      targetVersion,
+      migrationsNeeded,
+      exitCode,
+      status,
+      summary,
+      actions,
+      notes,
+      applied
+    });
     emitUpgradeResult(result, options);
 
     return exitCode;
@@ -330,10 +515,14 @@ export const runUpgrade = async (cwd: string, options: UpgradeOptions): Promise<
       const failed = toUpgradeResult({
         options,
         integration: { mode: 'unknown' },
+        packageManager: { manager: 'unknown', status: 'unsupported', details: 'Unable to detect package manager state.' },
         targetVersion: options.to ?? getCurrentCliVersion(),
         migrationsNeeded: [],
         exitCode: ExitCode.Failure,
-        summary: String(error)
+        status: 'upgrade_blocked',
+        summary: String(error),
+        actions: ['Review command output and retry with --to <version> after resolving repository state.'],
+        notes: [String(error)]
       });
       emitUpgradeResult(failed, options);
     }

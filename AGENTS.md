@@ -262,7 +262,7 @@ Do not hand-edit entries inside the managed markers.
 - `init`: Initialize playbook docs/config
 - `fix`: Apply safe, deterministic autofixes for verify findings
 - `status`: Show overall Playbook repository health
-- `upgrade`: Plan safe upgrades and local deterministic migrations
+- `upgrade`: Check and apply explicit local Playbook dependency upgrades
 - `session`: Manage repo-scoped session memory and snapshot workflows
 <!-- PLAYBOOK:COMMANDS_END -->
 

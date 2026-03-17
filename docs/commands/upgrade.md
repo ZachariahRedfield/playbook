@@ -1,23 +1,49 @@
 # `pnpm playbook upgrade`
 
 ## What it does
-Plans and applies deterministic local Playbook upgrade migrations for known integration modes, with explicit operator-facing next actions in both text and JSON output.
+`pnpm playbook upgrade` is the canonical local operator surface for pulling newer Playbook versions into a repository.
+
+It inspects the repo-local Playbook integration, compares current vs target version, reports deterministic upgrade state, and can apply a bounded dependency-version bump for supported pnpm dependency installs.
 
 ## Common usage
-- `pnpm playbook upgrade --check`
-- `pnpm playbook upgrade --apply --dry-run`
-- `pnpm playbook upgrade --check --from 0.1.0 --to 0.1.1`
+- `pnpm playbook upgrade`
+- `pnpm playbook upgrade --json`
+- `pnpm playbook upgrade --to 0.2.0 --json`
+- `pnpm playbook upgrade --apply --to 0.2.0`
+- `pnpm playbook upgrade --apply --dry-run --to 0.2.0 --json`
+
+## Upgrade contract
+JSON output includes a deterministic envelope with:
+- `schemaVersion: "1.0"`
+- `kind: "playbook-upgrade"`
+- `currentVersion`
+- `targetVersion`
+- `status` (`up_to_date` | `upgrade_available` | `upgrade_applied` | `upgrade_blocked`)
+- `actions`
+- `notes`
+
+Additional fields (`mode`, `packageManager`, `migrationsNeeded`, `applied`, `summary`) are included for operator diagnostics and deterministic migration workflow continuity.
+
+## Real mutation behavior
+`--apply` performs **bounded local mutation** only when all conditions are met:
+- integration mode is dependency-based (`@fawxzzy/playbook` in `package.json`)
+- package manager state is pnpm-supported and unambiguous
+- current and target versions are not already aligned
+
+In that case, Playbook updates only the `@fawxzzy/playbook` dependency spec in the detected dependency section and does not mutate unrelated dependencies.
+
+If conditions are not met, the command returns `upgrade_blocked` with deterministic actions/notes.
+
+## Post-upgrade guidance
+When upgrade is available/applied, output actions include deterministic local follow-up steps:
+- `pnpm install`
+- `pnpm playbook verify`
+- `pnpm playbook index --json`
 
 ## Notable flags
 - `--check`: run migration checks only.
-- `--apply`: run safe migration apply flow.
-- `--dry-run`: preview migration changes.
-- `--from <version>` / `--to <version>`: explicit version bounds for checks.
-- `--offline`: force offline-safe mode.
+- `--apply`: apply bounded safe upgrade + migration flow.
+- `--dry-run`: preview apply behavior without mutating files.
+- `--from <version>` / `--to <version>`: explicit version bounds.
+- `--offline`: offline-safe migration checks (no network lookup behavior in this command).
 - `--json` / `--format json`: machine-readable output.
-
-
-## Operator surface
-- Text mode prints **Recommended operator actions** and a migration check summary.
-- JSON mode returns a stable envelope: `recommendedCommands`, `migrationsNeeded`, optional `applied`, and `summary`.
-- If integration mode cannot be detected, `--check`/`--apply` require `--from <version>` for safe deterministic checks.
