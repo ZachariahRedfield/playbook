@@ -1,4 +1,15 @@
-import { buildModuleContextDigests, generateCompactionCandidateArtifact, generateRepositoryGraph, generateRepositoryIndex, MODULE_CONTEXT_DIR_RELATIVE_PATH, REPOSITORY_GRAPH_RELATIVE_PATH, writeModuleContextDigests } from '@zachariahredfield/playbook-engine';
+import {
+  buildModuleContextDigests,
+  generateCompactionCandidateArtifact,
+  generateRepositoryGraph,
+  generateRepositoryIndex,
+  MODULE_CONTEXT_DIR_RELATIVE_PATH,
+  REPOSITORY_GRAPH_RELATIVE_PATH,
+  SYSTEM_MAP_RELATIVE_PATH,
+  writeModuleContextDigests,
+  writeSystemMapArtifact
+} from '@zachariahredfield/playbook-engine';
+import fs from 'node:fs';
 import path from 'node:path';
 import { ExitCode } from '../lib/cliContract.js';
 import { emitJsonOutput, writeJsonArtifactAbsolute } from '../lib/jsonArtifact.js';
@@ -14,6 +25,7 @@ type IndexResult = {
   ok: true;
   indexFile: '.playbook/repo-index.json';
   graphFile: '.playbook/repo-graph.json';
+  systemMapFile: '.playbook/system-map.json';
   contextDir: '.playbook/context/modules';
   framework: string;
   architecture: string;
@@ -21,6 +33,7 @@ type IndexResult = {
 };
 
 const INDEX_RELATIVE_PATH = '.playbook/repo-index.json' as const;
+const ARCHITECTURE_REGISTRY_RELATIVE_PATH = '.playbook/architecture/subsystems.json' as const;
 
 const writeRepositoryIndex = (cwd: string): { indexPath: string; result: IndexResult } => {
   const index = generateRepositoryIndex(cwd);
@@ -34,6 +47,11 @@ const writeRepositoryIndex = (cwd: string): { indexPath: string; result: IndexRe
   writeModuleContextDigests(cwd, moduleDigests);
   generateCompactionCandidateArtifact({ repoRoot: cwd, index, graph });
 
+  const architectureRegistryPath = path.join(cwd, ARCHITECTURE_REGISTRY_RELATIVE_PATH);
+  if (fs.existsSync(architectureRegistryPath)) {
+    writeSystemMapArtifact(cwd);
+  }
+
   return {
     indexPath,
     result: {
@@ -41,6 +59,7 @@ const writeRepositoryIndex = (cwd: string): { indexPath: string; result: IndexRe
       ok: true,
       indexFile: INDEX_RELATIVE_PATH,
       graphFile: REPOSITORY_GRAPH_RELATIVE_PATH,
+      systemMapFile: SYSTEM_MAP_RELATIVE_PATH,
       contextDir: MODULE_CONTEXT_DIR_RELATIVE_PATH,
       framework: index.framework,
       architecture: index.architecture,
@@ -62,6 +81,7 @@ export const runIndex = async (cwd: string, options: IndexOptions): Promise<numb
     console.log('───────────────────────');
     console.log(`Index file: ${result.indexFile}`);
     console.log(`Graph file: ${result.graphFile}`);
+    console.log(`System map file: ${result.systemMapFile}`);
     console.log(`Context digests: ${result.contextDir}`);
     console.log(`Framework: ${result.framework}`);
     console.log(`Architecture: ${result.architecture}`);
