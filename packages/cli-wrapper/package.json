@@ -1,24 +1,20 @@
 {
   "name": "@fawxzzy/playbook-cli",
-  "version": "0.1.7",
+  "version": "0.1.6",
   "type": "module",
   "bin": {
     "playbook": "bin/playbook.js"
   },
   "files": [
-    "bin/**",
-    "runtime/**"
+    "bin/**"
   ],
   "scripts": {
-    "build": "node ../../scripts/prepare-cli-wrapper-runtime.mjs",
+    "build": "node -e \"process.stdout.write('cli-wrapper build: no-op\\n')\"",
     "test": "node -e \"process.stdout.write('cli-wrapper test: no-op\\n')\"",
-    "prepack": "pnpm build",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@zachariahredfield/playbook-core": "^0.1.6",
-    "@zachariahredfield/playbook-engine": "^0.1.6",
-    "@zachariahredfield/playbook-node": "^0.1.6"
+    "@fawxzzy/playbook": "workspace:*"
   },
   "publishConfig": {
     "access": "public"
