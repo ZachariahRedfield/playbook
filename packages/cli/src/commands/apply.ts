@@ -25,6 +25,8 @@ type ApplyOptions = {
   runId?: string;
 };
 
+type ApplyMode = 'standard' | 'policy-check' | 'policy';
+
 type ApplyResult = {
   id: string;
   ruleId: string;
@@ -543,6 +545,122 @@ const printApplyHelp = (): void => {
   console.log('  --help                     Show help');
 };
 
+const resolveApplyMode = (options: ApplyOptions): ApplyMode => {
+  if (options.policyCheck) {
+    return 'policy-check';
+  }
+
+  if (options.policy) {
+    return 'policy';
+  }
+
+  return 'standard';
+};
+
+const validateApplyOptions = (options: ApplyOptions, mode: ApplyMode): void => {
+  if (mode === 'policy-check') {
+    if (options.policy) {
+      throw new Error('The --policy flag cannot be combined with --policy-check.');
+    }
+    if (options.fromPlan) {
+      throw new Error('The --policy-check flag is read-only and cannot be combined with --from-plan.');
+    }
+    if ((options.tasks?.length ?? 0) > 0) {
+      throw new Error('The --policy-check flag is read-only and cannot be combined with --task.');
+    }
+  }
+
+  if (mode === 'policy') {
+    if (options.fromPlan) {
+      throw new Error('The --policy flag cannot be combined with --from-plan.');
+    }
+    if ((options.tasks?.length ?? 0) > 0) {
+      throw new Error('The --policy flag cannot be combined with --task.');
+    }
+  }
+
+  if (mode === 'standard' && (options.tasks?.length ?? 0) > 0 && !options.fromPlan) {
+    throw new Error('The --task flag requires --from-plan so task selection is tied to a reviewed artifact.');
+  }
+};
+
+const emitApplyOutput = (options: ApplyOptions, payload: ApplyJsonResult, renderText: (result: ApplyJsonResult) => void): number => {
+  if (options.format === 'json') {
+    console.log(JSON.stringify(payload, null, 2));
+    return payload.exitCode;
+  }
+
+  if (!options.quiet) {
+    renderText(payload);
+  }
+
+  return payload.exitCode;
+};
+
+const emitPolicyCheckOutput = (options: ApplyOptions, payload: PolicyCheckJsonResult): number => {
+  if (options.format === 'json') {
+    console.log(JSON.stringify(payload, null, 2));
+    return ExitCode.Success;
+  }
+
+  if (!options.quiet) {
+    renderTextPolicyCheck(payload);
+  }
+
+  return ExitCode.Success;
+};
+
+const emitPolicyApplyOutput = (options: ApplyOptions, payload: PolicyApplyJsonResult): number => {
+  if (options.format === 'json') {
+    console.log(JSON.stringify(payload, null, 2));
+    return payload.exitCode;
+  }
+
+  if (!options.quiet) {
+    console.log('Apply policy execution (safe proposals only)');
+    console.log('──────────────────────────────────────────');
+    console.log(`Executed: ${payload.summary.executed}`);
+    console.log(`Skipped (requires_review): ${payload.summary.skipped_requires_review}`);
+    console.log(`Skipped (blocked): ${payload.summary.skipped_blocked}`);
+    console.log(`Failed execution: ${payload.summary.failed_execution}`);
+    console.log(`Result artifact: ${payload.resultArtifact}`);
+  }
+
+  return payload.exitCode;
+};
+
+const attachApplyRunArtifacts = (cwd: string, runId: string, fromPlan: string | undefined): void => {
+  const runArtifactPath = engine.executionRunPath(cwd, runId);
+  engine.attachSessionRunState(cwd, {
+    step: 'apply',
+    runId,
+    goal: 'apply deterministic remediation plan',
+    artifacts: [
+      { artifact: runArtifactPath, kind: 'run' },
+      ...(fromPlan ? [{ artifact: fromPlan, kind: 'plan' as const }] : [])
+    ]
+  });
+};
+
+const runPolicyCheckFlow = (cwd: string, options: ApplyOptions): number => {
+  const evaluations = loadPolicyEvaluationArtifact(cwd);
+  const preflight = engine.buildPolicyPreflight(evaluations);
+  const payload: PolicyCheckJsonResult = {
+    ...preflight,
+    command: 'apply',
+    mode: 'policy-check',
+    ok: true,
+    exitCode: ExitCode.Success
+  };
+
+  return emitPolicyCheckOutput(options, payload);
+};
+
+const runPolicyApplyFlow = (cwd: string, options: ApplyOptions): number => {
+  const payload = runPolicyApply(cwd);
+  return emitPolicyApplyOutput(options, payload);
+};
+
 
 const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
   if (requestedRunId) {
@@ -564,63 +682,15 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     return ExitCode.Success;
   }
 
-  if (options.policyCheck) {
-    if (options.policy) {
-      throw new Error('The --policy flag cannot be combined with --policy-check.');
-    }
-    if (options.fromPlan) {
-      throw new Error('The --policy-check flag is read-only and cannot be combined with --from-plan.');
-    }
+  const mode = resolveApplyMode(options);
+  validateApplyOptions(options, mode);
 
-    if ((options.tasks?.length ?? 0) > 0) {
-      throw new Error('The --policy-check flag is read-only and cannot be combined with --task.');
-    }
-
-    const evaluations = loadPolicyEvaluationArtifact(cwd);
-    const preflight = engine.buildPolicyPreflight(evaluations);
-    const payload: PolicyCheckJsonResult = {
-      ...preflight,
-      command: 'apply',
-      mode: 'policy-check',
-      ok: true,
-      exitCode: ExitCode.Success
-    };
-
-    if (options.format === 'json') {
-      console.log(JSON.stringify(payload, null, 2));
-      return ExitCode.Success;
-    }
-
-    if (!options.quiet) {
-      renderTextPolicyCheck(payload);
-    }
-
-    return ExitCode.Success;
+  if (mode === 'policy-check') {
+    return runPolicyCheckFlow(cwd, options);
   }
 
-  if (options.policy) {
-    if (options.fromPlan) {
-      throw new Error('The --policy flag cannot be combined with --from-plan.');
-    }
-
-    if ((options.tasks?.length ?? 0) > 0) {
-      throw new Error('The --policy flag cannot be combined with --task.');
-    }
-
-    const payload = runPolicyApply(cwd);
-    if (options.format === 'json') {
-      console.log(JSON.stringify(payload, null, 2));
-    } else if (!options.quiet) {
-      console.log('Apply policy execution (safe proposals only)');
-      console.log('──────────────────────────────────────────');
-      console.log(`Executed: ${payload.summary.executed}`);
-      console.log(`Skipped (requires_review): ${payload.summary.skipped_requires_review}`);
-      console.log(`Skipped (blocked): ${payload.summary.skipped_blocked}`);
-      console.log(`Failed execution: ${payload.summary.failed_execution}`);
-      console.log(`Result artifact: ${payload.resultArtifact}`);
-    }
-
-    return payload.exitCode;
+  if (mode === 'policy') {
+    return runPolicyApplyFlow(cwd, options);
   }
 
   const routeDecision = engine.routeTask(cwd, 'apply approved remediation plan', {
@@ -634,10 +704,6 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   }
 
   const runId = resolveRunId(cwd, options.runId);
-
-  if ((options.tasks?.length ?? 0) > 0 && !options.fromPlan) {
-    throw new Error('The --task flag requires --from-plan so task selection is tied to a reviewed artifact.');
-  }
 
   const plan = options.fromPlan
     ? loadPlanFromFile(cwd, options.fromPlan)
@@ -675,16 +741,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
       evidence: options.fromPlan ? [{ id: 'evidence-plan-artifact', kind: 'artifact', ref: options.fromPlan }] : []
     });
 
-    const runArtifactPath = engine.executionRunPath(cwd, runId);
-    engine.attachSessionRunState(cwd, {
-      step: 'apply',
-      runId,
-      goal: 'apply deterministic remediation plan',
-      artifacts: [
-        { artifact: runArtifactPath, kind: 'run' },
-        ...(options.fromPlan ? [{ artifact: options.fromPlan, kind: 'plan' as const }] : [])
-      ]
-    });
+    attachApplyRunArtifacts(cwd, runId, options.fromPlan);
 
     if (options.format === 'json') {
       console.log(JSON.stringify(payload, null, 2));
@@ -743,25 +800,6 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     ]
   });
 
-
-  const runArtifactPath = engine.executionRunPath(cwd, runId);
-  engine.attachSessionRunState(cwd, {
-    step: 'apply',
-    runId,
-    goal: 'apply deterministic remediation plan',
-    artifacts: [
-      { artifact: runArtifactPath, kind: 'run' },
-      ...(options.fromPlan ? [{ artifact: options.fromPlan, kind: 'plan' as const }] : [])
-    ]
-  });
-  if (options.format === 'json') {
-    console.log(JSON.stringify(payload, null, 2));
-    return exitCode;
-  }
-
-  if (!options.quiet) {
-    renderTextApply(payload);
-  }
-
-  return exitCode;
+  attachApplyRunArtifacts(cwd, runId, options.fromPlan);
+  return emitApplyOutput(options, payload, renderTextApply);
 };
