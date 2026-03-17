@@ -1,12 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+type CommandTruthCommand = {
+  name: string;
+  lifecycle?: string;
+  role?: string;
+  discoverability?: string;
+  productFacing?: boolean;
+};
+
 type CommandTruth = {
   canonicalCommands: string[];
   compatibilityCommands: string[];
   utilityCommands: string[];
   bootstrapLadder: string[];
   remediationLoop: string[];
+  commandTruth?: CommandTruthCommand[];
 };
 
 export type DocsAuditLevel = 'error' | 'warning';
@@ -226,6 +235,31 @@ const hasAllMarkers = (content: string, markers: readonly string[]): boolean => 
   return markers.every((marker) => normalized.includes(marker.toLowerCase()));
 };
 
+
+const extractManagedCommandStatusNames = (content: string): string[] => {
+  const startMarker = '<!-- PLAYBOOK:DOCS_COMMAND_STATUS_START -->';
+  const endMarker = '<!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->';
+  const startIndex = content.indexOf(startMarker);
+  const endIndex = content.indexOf(endMarker);
+
+  if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+    return [];
+  }
+
+  const section = content.slice(startIndex + startMarker.length, endIndex);
+  const names: string[] = [];
+  for (const line of section.split(/\r?\n/u)) {
+    const match = /^\|\s*`([^`]+)`\s*\|/u.exec(line.trim());
+    if (match) {
+      names.push(match[1]);
+    }
+  }
+
+  return names;
+};
+
+const unique = (values: string[]): string[] => [...new Set(values)];
+
 const readCommandTruth = (repoRoot: string): CommandTruth | null => {
   const truthPath = path.join(repoRoot, 'docs/contracts/command-truth.json');
   if (!fs.existsSync(truthPath)) {
@@ -401,6 +435,37 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
       });
     }
 
+    if (Array.isArray(commandTruth.commandTruth)) {
+      const truthNames = commandTruth.commandTruth.map((command) => command.name);
+      const duplicateTruthNames = unique(truthNames.filter((name, index) => truthNames.indexOf(name) !== index));
+      for (const duplicateName of duplicateTruthNames) {
+        findings.push({
+          ruleId: 'docs.command-truth.duplicate-command',
+          level: 'error',
+          message: `Command truth metadata contains duplicate command entry: "${duplicateName}".`,
+          path: 'docs/contracts/command-truth.json',
+          suggestedDestination: 'packages/cli/src/lib/commandMetadata.ts'
+        });
+      }
+
+      if (commandsReadme) {
+        const docsStatusNames = extractManagedCommandStatusNames(commandsReadme);
+        const truthProductNames = commandTruth.commandTruth.filter((command) => command.productFacing).map((command) => command.name);
+        const docsMissing = unique(truthProductNames.filter((name) => !docsStatusNames.includes(name)));
+        const docsUnexpected = unique(docsStatusNames.filter((name) => !truthProductNames.includes(name)));
+
+        if (docsMissing.length > 0 || docsUnexpected.length > 0) {
+          findings.push({
+            ruleId: 'docs.command-truth.status-table-drift',
+            level: 'error',
+            message: `docs/commands/README.md managed command status block drift detected (missing: ${docsMissing.join(', ') || 'none'}; unexpected: ${docsUnexpected.join(', ') || 'none'}).`,
+            path: 'docs/commands/README.md',
+            suggestedDestination: 'pnpm docs:update'
+          });
+        }
+      }
+    }
+
     if (onboarding && !/supported question classes|unsupported question classes|deterministic fallback/iu.test(onboarding)) {
       findings.push({
         ruleId: 'docs.ask-boundary.contract-missing',
@@ -508,7 +573,7 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
     summary: {
       errors,
       warnings,
-      checksRun: 10
+      checksRun: 12
     },
     findings
   };

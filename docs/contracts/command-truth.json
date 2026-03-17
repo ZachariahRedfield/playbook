@@ -388,18 +388,6 @@
       "example": "pnpm playbook pilot --repo \"./target-repo\" --json"
     },
     {
-      "name": "pilot",
-      "category": "Repository tools",
-      "role": "bootstrap",
-      "lifecycle": "canonical",
-      "discoverability": "primary",
-      "onboardingPriority": 11,
-      "canonicalSequence": 11,
-      "productFacing": true,
-      "machineReadable": true,
-      "example": "pnpm playbook pilot --repo ../target-repo --json"
-    },
-    {
       "name": "plan",
       "category": "Core",
       "role": "remediation",
@@ -579,7 +567,6 @@
     "orchestrate",
     "patterns",
     "pilot",
-    "pilot",
     "plan",
     "policy",
     "query",
@@ -611,8 +598,7 @@
   "bootstrapLadder": [
     "ai-context",
     "ai-contract",
-    "context",
-    "pilot"
+    "context"
   ],
   "remediationLoop": [
     "verify",

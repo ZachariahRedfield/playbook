@@ -117,7 +117,7 @@ describe('runDocs', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.schemaVersion).toBe('1.0');
     expect(payload.command).toBe('docs audit');
-    expect(payload.summary).toEqual(expect.objectContaining({ checksRun: 10 }));
+    expect(payload.summary).toEqual(expect.objectContaining({ checksRun: 12 }));
     expect(Array.isArray(payload.findings)).toBe(true);
   });
 

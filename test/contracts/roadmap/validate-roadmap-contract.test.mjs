@@ -8,9 +8,11 @@ import { spawnSync } from 'node:child_process';
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
 const validatorPath = path.join(repoRoot, 'scripts', 'validate-roadmap-contract.mjs');
 
-const createRoadmapFixture = (cwd) => {
+const createRoadmapFixture = (cwd, commandNames = ['verify']) => {
   const roadmapDir = path.join(cwd, 'docs', 'roadmap');
+  const contractsDir = path.join(cwd, 'docs', 'contracts');
   fs.mkdirSync(roadmapDir, { recursive: true });
+  fs.mkdirSync(contractsDir, { recursive: true });
   fs.writeFileSync(
     path.join(roadmapDir, 'ROADMAP.json'),
     JSON.stringify(
@@ -19,10 +21,10 @@ const createRoadmapFixture = (cwd) => {
         features: [
           {
             feature_id: 'PB-V08-KNOWLEDGE-COMPACTION-SPEC-001',
-            version: 'v0.8',
+            version: 'v0.9',
             title: 'Knowledge Compaction Phase deterministic foundations',
             goal: 'Test fixture',
-            commands: [],
+            commands: commandNames,
             contracts: [],
             tests: [],
             docs: [],
@@ -37,11 +39,30 @@ const createRoadmapFixture = (cwd) => {
       2
     )
   );
+
+  fs.writeFileSync(
+    path.join(contractsDir, 'command-truth.json'),
+    JSON.stringify(
+      {
+        commandTruth: commandNames.map((name) => ({ name, productFacing: true }))
+      },
+      null,
+      2
+    )
+  );
 };
 
-const runValidator = ({ title = '', body = '', metadataFeatureIds = null }) => {
+const runValidator = ({ title = '', body = '', metadataFeatureIds = null, roadmapCommandNames = ['verify'], liveCommandNames = ['verify'] }) => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-roadmap-validator-'));
-  createRoadmapFixture(tempDir);
+  createRoadmapFixture(tempDir, roadmapCommandNames);
+
+  if (JSON.stringify(liveCommandNames) !== JSON.stringify(roadmapCommandNames)) {
+    const contractsDir = path.join(tempDir, 'docs', 'contracts');
+    fs.writeFileSync(
+      path.join(contractsDir, 'command-truth.json'),
+      JSON.stringify({ commandTruth: liveCommandNames.map((name) => ({ name, productFacing: true })) }, null, 2)
+    );
+  }
 
   const eventPath = path.join(tempDir, 'event.json');
   fs.writeFileSync(eventPath, JSON.stringify({ pull_request: { title, body } }, null, 2));
@@ -99,4 +120,25 @@ test('ignores invalid repo artifact feature_ids and fails deterministically', ()
   });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /PR feature-id enforcement failed/);
+});
+
+
+test('fails when roadmap includes command not present in command truth contract', () => {
+  const result = runValidator({
+    title: 'PB-V08-KNOWLEDGE-COMPACTION-SPEC-001: update docs',
+    roadmapCommandNames: ['verify', 'ghost-command'],
+    liveCommandNames: ['verify']
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /unknown live command "ghost-command"/);
+});
+
+test('fails when roadmap feature command list contains duplicates', () => {
+  const result = runValidator({
+    title: 'PB-V08-KNOWLEDGE-COMPACTION-SPEC-001: update docs',
+    roadmapCommandNames: ['verify', 'verify'],
+    liveCommandNames: ['verify']
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /commands contains duplicate entries: verify/);
 });

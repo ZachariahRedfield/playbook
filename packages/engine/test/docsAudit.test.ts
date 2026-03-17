@@ -120,4 +120,59 @@ describe('docs audit', () => {
     const result = runDocsAudit(root);
     expect(result.findings.find((finding) => finding.ruleId === 'docs.command-truth.missing')).toBeDefined();
   });
+
+  it('fails when command truth metadata contains duplicate command entries', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/contracts/command-truth.json',
+      JSON.stringify(
+        {
+          bootstrapLadder: ['ai-context', 'ai-contract', 'context'],
+          remediationLoop: ['verify', 'plan', 'apply', 'verify'],
+          canonicalCommands: ['ai-context'],
+          compatibilityCommands: ['analyze'],
+          utilityCommands: ['demo'],
+          commandTruth: [
+            { name: 'verify', productFacing: true },
+            { name: 'verify', productFacing: true }
+          ]
+        },
+        null,
+        2
+      )
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.command-truth.duplicate-command')).toBeDefined();
+  });
+
+  it('fails when docs command status managed table drifts from command truth', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/contracts/command-truth.json',
+      JSON.stringify(
+        {
+          bootstrapLadder: ['ai-context', 'ai-contract', 'context'],
+          remediationLoop: ['verify', 'plan', 'apply', 'verify'],
+          canonicalCommands: ['verify'],
+          compatibilityCommands: [],
+          utilityCommands: [],
+          commandTruth: [{ name: 'verify', productFacing: true }]
+        },
+        null,
+        2
+      )
+    );
+    write(
+      root,
+      'docs/commands/README.md',
+      '# Commands\n<!-- PLAYBOOK:DOCS_COMMAND_STATUS_START -->\n| Command / Artifact | Purpose |\n| --- | --- |\n| `plan` | Generate |\n<!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->'
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.command-truth.status-table-drift')).toBeDefined();
+  });
+
 });

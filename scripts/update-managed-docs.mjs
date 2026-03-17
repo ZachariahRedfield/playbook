@@ -54,6 +54,25 @@ const loadCommandMetadata = async () => {
   }
 };
 
+
+const assertUniqueCommandNames = (commands) => {
+  const seen = new Set();
+  const duplicates = new Set();
+
+  for (const command of commands) {
+    if (seen.has(command.name)) {
+      duplicates.add(command.name);
+      continue;
+    }
+
+    seen.add(command.name);
+  }
+
+  if (duplicates.size > 0) {
+    throw new Error(`Duplicate command metadata entries detected: ${[...duplicates].sort().join(', ')}`);
+  }
+};
+
 const toCommandTruth = (commands) => {
   const canonicalCommands = commands
     .filter((command) => command.lifecycle === 'canonical')
@@ -187,6 +206,7 @@ const updateFile = (current, updates) => {
 
 const run = async () => {
   const commands = await loadCommandMetadata();
+  assertUniqueCommandNames(commands);
   const commandTruth = toCommandTruth(commands);
 
   const targets = [

@@ -13,6 +13,13 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - Direct `node packages/cli/dist/main.js <command>` examples are internal/debug-oriented unless explicitly labeled otherwise.
 - `npx`/published-package command examples are not part of current operator guidance unless distribution docs explicitly say so.
 
+## Deterministic governance gates
+
+- `pnpm docs:check` blocks managed command-state drift (`AGENTS.md`, this command index, and `docs/contracts/command-truth.json`).
+- `node scripts/validate-roadmap-contract.mjs --ci` blocks roadmap/live-command boundary drift by validating roadmap `commands` against `docs/contracts/command-truth.json`.
+- `pnpm playbook docs audit --ci --json` blocks command-truth drift findings marked as errors (for example duplicate command metadata or managed status-table mismatch).
+
+
 ## Product-facing command surface (current)
 
 The following section is generated from shared CLI command metadata.
@@ -23,7 +30,7 @@ Do not hand-edit entries inside the managed markers.
 | Command / Artifact | Purpose | Lifecycle | Role | Discoverability | Onboarding | Status | Example |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `analyze` | Analyze project stack | compatibility | compatibility | hidden-compatibility | — | Current (implemented) | `pnpm playbook analyze --json` |
-| `pilot` | Run deterministic baseline external repository analysis in one command | canonical | bootstrap | primary | — | Current (implemented) | `pnpm playbook pilot --repo "./target-repo" --json` |
+| `pilot` | Run one-command external baseline analysis workflow for a target repository | canonical | bootstrap | primary | — | Current (implemented) | `pnpm playbook pilot --repo "./target-repo" --json` |
 | `verify` | Verify governance rules | canonical | governance | primary | 8 | Current (implemented) | `pnpm playbook verify --ci --json` |
 | `plan` | Generate a structured fix plan from rule findings | canonical | remediation | primary | 9 | Current (implemented) | `pnpm playbook plan --json` |
 | `lanes` | Derive deterministic lane-state from .playbook/workset-plan.json | canonical | remediation | primary | — | Current (implemented) | `pnpm playbook lanes --json` |
@@ -43,7 +50,6 @@ Do not hand-edit entries inside the managed markers.
 | `context` | Print deterministic CLI and architecture context for tools and agents | canonical | bootstrap | primary | 3 | Current (implemented) | `pnpm playbook context --json` |
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | canonical | bootstrap | primary | 1 | Current (implemented) | `pnpm playbook ai-context --json` |
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | canonical | bootstrap | primary | 2 | Current (implemented) | `pnpm playbook ai-contract --json` |
-| `pilot` | Run one-command external baseline analysis workflow for a target repository | canonical | bootstrap | primary | 11 | Current (implemented) | `pnpm playbook pilot --repo ../target-repo --json` |
 | `ignore` | Suggest and safely apply ranked .playbookignore recommendations | canonical | remediation | primary | 12 | Current (implemented) | `pnpm playbook ignore suggest --repo ../target-repo --json` |
 | `contracts` | Emit deterministic contract registry for schemas, artifacts, and roadmap status | utility | utility | secondary | — | Current (implemented) | `pnpm playbook contracts --json` |
 | `index` | Generate machine-readable repository intelligence index | canonical | repo-intelligence | primary | 4 | Current (implemented) | `pnpm playbook index --json` |

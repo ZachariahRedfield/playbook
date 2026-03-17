@@ -8,6 +8,7 @@ const enforcePrFeatureId = args.has('--enforce-pr-feature-id');
 const repoRoot = process.cwd();
 const roadmapPath = path.join(repoRoot, 'docs', 'roadmap', 'ROADMAP.json');
 const prMetadataPath = path.join(repoRoot, '.playbook', 'pr-metadata.json');
+const commandTruthPath = path.join(repoRoot, 'docs', 'contracts', 'command-truth.json');
 const shippedStatuses = new Set(['implemented-hardening', 'in-progress']);
 const enforcedVersionForStrictValidation = 'v0.9';
 
@@ -37,6 +38,26 @@ const readJsonFile = (filePath) => {
     fail(`invalid JSON in ${path.relative(repoRoot, filePath)} (${error.message})`);
     return null;
   }
+};
+
+
+const getLiveCommandNames = () => {
+  if (!fs.existsSync(commandTruthPath)) {
+    fail(`missing command truth contract at ${path.relative(repoRoot, commandTruthPath)}`);
+    return new Set();
+  }
+
+  const commandTruth = readJsonFile(commandTruthPath);
+  if (!commandTruth || !Array.isArray(commandTruth.commandTruth)) {
+    fail('command-truth.json must contain a commandTruth array');
+    return new Set();
+  }
+
+  return new Set(
+    commandTruth.commandTruth
+      .map((entry) => (typeof entry?.name === 'string' ? entry.name.trim() : ''))
+      .filter((name) => name.length > 0)
+  );
 };
 
 const hasFeatureIdMatch = (text, featureIds) => {
@@ -84,6 +105,7 @@ const requiredFields = [
   'status'
 ];
 
+const liveCommandNames = getLiveCommandNames();
 const featureIds = new Set();
 for (const [index, feature] of (roadmap.features ?? []).entries()) {
   for (const field of requiredFields) {
@@ -105,6 +127,24 @@ for (const [index, feature] of (roadmap.features ?? []).entries()) {
     if (!Array.isArray(feature[listField])) {
       fail(`features[${index}].${listField} must be an array`);
     }
+  }
+
+  for (const commandName of feature.commands) {
+    if (typeof commandName !== 'string' || !commandName.trim()) {
+      fail(`features[${index}].commands must contain non-empty command names`);
+      continue;
+    }
+
+    if (feature.version === enforcedVersionForStrictValidation && shippedStatuses.has(feature.status) && !liveCommandNames.has(commandName)) {
+      fail(
+        `features[${index}].commands includes unknown live command "${commandName}" for shipped status ${JSON.stringify(feature.status)}. Update docs/contracts/command-truth.json or roadmap command mapping.`
+      );
+    }
+  }
+
+  const duplicateCommands = [...new Set(feature.commands.filter((command, commandIndex) => feature.commands.indexOf(command) !== commandIndex))];
+  if (duplicateCommands.length > 0) {
+    fail(`features[${index}].commands contains duplicate entries: ${duplicateCommands.join(', ')}`);
   }
 
   if (feature.version === enforcedVersionForStrictValidation && shippedStatuses.has(feature.status)) {

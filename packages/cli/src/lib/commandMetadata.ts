@@ -33,7 +33,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'pilot',
-    description: 'Run deterministic baseline external repository analysis in one command',
+    description: 'Run one-command external baseline analysis workflow for a target repository',
     category: 'Core',
     role: 'bootstrap',
     lifecycle: 'canonical',
@@ -293,19 +293,6 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
 
-  {
-    name: 'pilot',
-    description: 'Run one-command external baseline analysis workflow for a target repository',
-    category: 'Repository tools',
-    role: 'bootstrap',
-    lifecycle: 'canonical',
-    discoverability: 'primary',
-    onboardingPriority: 11,
-    canonicalSequence: 11,
-    productFacing: true,
-    exampleArgs: 'pilot --repo ../target-repo --json',
-    machineReadable: true
-  },
   {
     name: 'ignore',
     description: 'Suggest and safely apply ranked .playbookignore recommendations',

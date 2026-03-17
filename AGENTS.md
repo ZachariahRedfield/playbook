@@ -168,7 +168,7 @@ Do not hand-edit entries inside the managed markers.
 
 - `analyze`: Analyze project stack
   - Example: `pnpm playbook analyze --json`
-- `pilot`: Run deterministic baseline external repository analysis in one command
+- `pilot`: Run one-command external baseline analysis workflow for a target repository
   - Example: `pnpm playbook pilot --repo "./target-repo" --json`
 - `verify`: Verify governance rules
   - Example: `pnpm playbook verify --ci --json`
@@ -211,8 +211,6 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook ai-context --json`
 - `ai-contract`: Print deterministic AI repository contract for Playbook-aware agents
   - Example: `pnpm playbook ai-contract --json`
-- `pilot`: Run one-command external baseline analysis workflow for a target repository
-  - Example: `pnpm playbook pilot --repo ../target-repo --json`
 - `ignore`: Suggest and safely apply ranked .playbookignore recommendations
   - Example: `pnpm playbook ignore suggest --repo ../target-repo --json`
 - `contracts`: Emit deterministic contract registry for schemas, artifacts, and roadmap status
@@ -294,7 +292,6 @@ Do not hand-edit entries inside the managed markers.
 | `context` | `pnpm playbook context --json` |
 | `ai-context` | `pnpm playbook ai-context --json` |
 | `ai-contract` | `pnpm playbook ai-contract --json` |
-| `pilot` | `pnpm playbook pilot --repo ../target-repo --json` |
 | `ignore` | `pnpm playbook ignore suggest --repo ../target-repo --json` |
 | `contracts` | `pnpm playbook contracts --json` |
 | `index` | `pnpm playbook index --json` |
