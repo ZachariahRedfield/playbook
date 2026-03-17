@@ -47,6 +47,7 @@ const repoModeBtnEl = document.getElementById('repoModeBtn');
 const crossRepoModeBtnEl = document.getElementById('crossRepoModeBtn');
 const repoViewPanelEl = document.getElementById('repoViewPanel');
 const crossRepoViewPanelEl = document.getElementById('crossRepoViewPanel');
+const fleetSummaryPanelEl = document.getElementById('fleetSummaryPanel');
 let selectedRepoId = null;
 let selectedBlueprintNodeId = null;
 let homeRepoId = null;
@@ -353,6 +354,38 @@ const loadBlueprint = async () => {
 };
 
 
+
+const renderFleetSummary = (fleet) => {
+  if (!fleet || typeof fleet !== 'object') {
+    fleetSummaryPanelEl.innerHTML = '<div class="empty-state">Fleet summary unavailable.</div>';
+    return;
+  }
+
+  const blockerRows = Array.isArray(fleet.blocker_frequencies) ? fleet.blocker_frequencies.slice(0, 5).map((entry) =>
+    '<li>' + escapeHtml(entry.blocker_code + ': ' + entry.count) + '</li>'
+  ).join('') : '';
+  const actionRows = Array.isArray(fleet.recommended_actions) ? fleet.recommended_actions.slice(0, 5).map((entry) =>
+    '<li>' + escapeHtml(entry.command + ' (' + entry.count + ')') + '</li>'
+  ).join('') : '';
+  const topRepos = Array.isArray(fleet.repos_by_priority) ? fleet.repos_by_priority.slice(0, 5).map((entry) =>
+    '<li>' + escapeHtml(entry.repo_id + ' • ' + entry.priority_stage + ' • ' + (entry.next_action || 'n/a')) + '</li>'
+  ).join('') : '';
+
+  fleetSummaryPanelEl.innerHTML =
+    '<div><strong>Total repos:</strong> ' + escapeHtml(String(fleet.total_repos || 0)) + '</div>' +
+    '<div><strong>Lifecycle counts:</strong> ' + escapeHtml(JSON.stringify(fleet.by_lifecycle_stage || {})) + '</div>' +
+    '<div><strong>Fallback-proof ready:</strong> ' + escapeHtml(String(fleet.fallback_proof_ready_count || 0)) + '</div>' +
+    '<div><strong>Cross-repo eligible:</strong> ' + escapeHtml(String(fleet.cross_repo_eligible_count || 0)) + '</div>' +
+    '<div><strong>Top blockers</strong><ul>' + (blockerRows || '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Top actions</strong><ul>' + (actionRows || '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Repos by priority</strong><ul>' + (topRepos || '<li>none</li>') + '</ul></div>';
+};
+
+const loadFleetSummary = async () => {
+  const payload = await getJson('/api/readiness/fleet');
+  renderFleetSummary(payload.fleet || null);
+};
+
 const setActiveView = (view) => {
   activeView = view === 'cross-repo' ? 'cross-repo' : 'repo';
   const repoMode = activeView === 'repo';
@@ -500,6 +533,7 @@ const refreshAll = async () => {
     } else {
       renderSelfObservation(null, healthStatus);
     }
+    await loadFleetSummary();
   } catch (error) {
     healthEl.textContent = 'error: ' + error.message;
   }

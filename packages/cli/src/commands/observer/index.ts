@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import http from 'node:http';
 import { emitJsonOutput, writeJsonArtifactAbsolute } from '../../lib/jsonArtifact.js';
 import {
+  buildFleetAdoptionReadinessSummary,
   buildRepoAdoptionReadiness,
   computeCrossRepoPatternLearning,
   readCrossRepoPatternsArtifact,
@@ -346,6 +347,16 @@ const repoReadiness = (repo: ObserverRepoEntry): ObserverRepoReadiness => {
   };
 };
 
+
+const buildFleetReadinessSummary = (registry: ObserverRepoRegistry) =>
+  buildFleetAdoptionReadinessSummary(
+    registry.repos.map((repo) => ({
+      repo_id: repo.id,
+      repo_name: repo.name,
+      readiness: repoReadiness(repo)
+    }))
+  );
+
 const findHomeRepoId = (registry: ObserverRepoRegistry, cwd: string): string | null => {
   const cwdRoot = path.resolve(cwd);
   const fromExactRoot = registry.repos.find((repo) => path.resolve(repo.root) === cwdRoot);
@@ -526,6 +537,7 @@ const observerDashboardHtml = (): string => `<!doctype html>
           <div class="card"><h3>Artifact Detail Viewer</h3><select id="artifactKind"></select><div id="artifactPanel"></div></div>
           </div>
           <div id="crossRepoViewPanel" class="hidden">
+          <div class="card"><h3>Fleet Readiness Summary</h3><div id="fleetSummaryPanel" class="meta">Fleet readiness summary loads from connected repos.</div></div>
           <div class="card"><h3>Cross-Repo Intelligence</h3>
             <div class="row"><label class="meta">Left repo</label><select id="compareLeft"></select></div>
             <div class="row"><label class="meta">Right repo</label><select id="compareRight"></select></div>
@@ -598,6 +610,17 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
     return { statusCode: 200, payload: { ...base, kind: 'observer-cross-repo-summary', summary: { source_repos: artifact.source_repos, candidate_count: artifact.candidate_patterns.length, comparison_count: artifact.comparisons.length } } };
   }
 
+  if (pathname === '/api/readiness/fleet') {
+    return {
+      statusCode: 200,
+      payload: {
+        ...base,
+        kind: 'observer-fleet-readiness-summary',
+        fleet: buildFleetReadinessSummary(registry)
+      }
+    };
+  }
+
   if (pathname === '/api/cross-repo/candidates') {
     const artifact = buildCrossRepoArtifact(observerRoot, registry);
     return { statusCode: 200, payload: { ...base, kind: 'observer-cross-repo-candidates', candidates: artifact.candidate_patterns } };
@@ -637,7 +660,8 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
         ...base,
         home_repo_id: homeRepoId,
         snapshot: loadSnapshotArtifact(observerRoot) ?? buildSnapshotFromRegistry(registry),
-        readiness: registry.repos.map((repo) => ({ id: repo.id, readiness: repoReadiness(repo) }))
+        readiness: registry.repos.map((repo) => ({ id: repo.id, readiness: repoReadiness(repo) })),
+        fleet: buildFleetReadinessSummary(registry)
       }
     };
   }

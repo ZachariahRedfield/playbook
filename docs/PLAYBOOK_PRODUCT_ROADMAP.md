@@ -24,6 +24,8 @@ Failure Mode: Business docs drifting away from runtime truth.
 
 ## Strategic direction
 
+Recent implementation note: fleet-level readiness aggregation is now available in current command surfaces (`pnpm playbook status fleet --json`, Observer `GET /api/readiness/fleet`, and Observer dashboard fleet summary card) to prioritize cross-repo adoption without replacing repo-first workflows.
+
 Playbook continues to ship as a deterministic repository intelligence and governance CLI, while deepening into a deterministic reasoning engine behind stable command contracts.
 
 Positioning guardrails:

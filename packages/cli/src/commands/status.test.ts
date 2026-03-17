@@ -13,8 +13,9 @@ vi.mock('./doctor.js', () => ({ collectDoctorReport }));
 vi.mock('./verify.js', () => ({ collectVerifyReport }));
 
 const buildRepoAdoptionReadiness = vi.fn();
+const buildFleetAdoptionReadinessSummary = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary }));
 
 const makeAnalyzeReport = (overrides?: Partial<AnalyzeReport>): AnalyzeReport => ({
   repoPath: '/tmp/repo',
@@ -43,6 +44,7 @@ describe('runStatus', () => {
     ensureRepoIndex.mockReset();
     ensureRepoIndex.mockImplementation(async (repoRoot: string) => `${repoRoot}/.playbook/repo-index.json`);
     buildRepoAdoptionReadiness.mockReset();
+    buildFleetAdoptionReadinessSummary.mockReset();
     buildRepoAdoptionReadiness.mockReturnValue({
       schemaVersion: '1.0',
       connection_status: 'connected',
@@ -58,6 +60,25 @@ describe('runStatus', () => {
       cross_repo_eligible: true,
       blockers: [],
       recommended_next_steps: []
+    });
+    buildFleetAdoptionReadinessSummary.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'fleet-adoption-readiness-summary',
+      total_repos: 0,
+      by_lifecycle_stage: {
+        not_connected: 0,
+        playbook_not_detected: 0,
+        playbook_detected_index_pending: 0,
+        indexed_plan_pending: 0,
+        planned_apply_pending: 0,
+        ready: 0
+      },
+      playbook_detected_count: 0,
+      fallback_proof_ready_count: 0,
+      cross_repo_eligible_count: 0,
+      blocker_frequencies: [],
+      recommended_actions: [],
+      repos_by_priority: []
     });
   });
 
@@ -126,6 +147,40 @@ describe('runStatus', () => {
     expect(exitCode).toBe(ExitCode.Success);
     expect(ensureRepoIndex).toHaveBeenCalledWith('/tmp/repo-root');
 
+    logSpy.mockRestore();
+  });
+
+  it('prints fleet JSON output when fleet scope is requested', async () => {
+    const { runStatus } = await import('./status.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    buildFleetAdoptionReadinessSummary.mockReturnValueOnce({
+      schemaVersion: '1.0',
+      kind: 'fleet-adoption-readiness-summary',
+      total_repos: 1,
+      by_lifecycle_stage: {
+        not_connected: 0,
+        playbook_not_detected: 0,
+        playbook_detected_index_pending: 0,
+        indexed_plan_pending: 0,
+        planned_apply_pending: 0,
+        ready: 1
+      },
+      playbook_detected_count: 1,
+      fallback_proof_ready_count: 1,
+      cross_repo_eligible_count: 1,
+      blocker_frequencies: [],
+      recommended_actions: [],
+      repos_by_priority: []
+    });
+
+    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'json', quiet: false, scope: 'fleet' });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.mode).toBe('fleet');
+    expect(payload.fleet.total_repos).toBe(1);
+    expect(collectDoctorReport).not.toHaveBeenCalled();
     logSpy.mockRestore();
   });
 });

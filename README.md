@@ -731,3 +731,5 @@ Execution runs are appended by `verify`, `plan`, `apply`, and follow-up `verify`
 - deterministic blockers and exact next command recommendations
 
 Use this as the single operator status surface before running fallback proof or cross-repo comparison.
+
+For portfolio-level triage, run `pnpm playbook status fleet --json` to aggregate lifecycle-stage counts, blocker frequencies, fallback/cross-repo eligibility counts, and deterministic `repos_by_priority` ordering across connected Observer repos.

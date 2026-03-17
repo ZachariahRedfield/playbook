@@ -4,7 +4,12 @@ import { collectVerifyReport } from './verify.js';
 import { ExitCode } from '../lib/cliContract.js';
 import { loadAnalyzeRules } from '../lib/loadAnalyzeRules.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
-import { buildRepoAdoptionReadiness, type RepoAdoptionReadiness } from '@zachariahredfield/playbook-engine';
+import {
+  buildFleetAdoptionReadinessSummary,
+  buildRepoAdoptionReadiness,
+  type FleetAdoptionReadinessSummary,
+  type RepoAdoptionReadiness
+} from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AnalyzeReport } from './analyze.js';
@@ -14,6 +19,7 @@ type StatusOptions = {
   ci: boolean;
   format: 'text' | 'json';
   quiet: boolean;
+  scope?: 'repo' | 'fleet';
 };
 
 type StatusResult = {
@@ -28,6 +34,17 @@ type StatusResult = {
     errors: number;
   };
   adoption: RepoAdoptionReadiness;
+};
+
+type StatusFleetResult = {
+  schemaVersion: '1.0';
+  command: 'status';
+  mode: 'fleet';
+  fleet: FleetAdoptionReadinessSummary;
+};
+
+type ObserverRegistry = {
+  repos: Array<{ id: string; name: string; root: string }>;
 };
 
 type RepoIndexSummary = {
@@ -117,6 +134,29 @@ const toStatusResult = async (cwd: string): Promise<{ result: StatusResult; exit
   return { result, exitCode, topIssue: await resolveTopIssue(cwd, verify, analyze), repoRoot: analyze.repoPath };
 };
 
+const toFleetStatusResult = (cwd: string): StatusFleetResult => {
+  const registryPath = path.join(cwd, '.playbook', 'observer', 'repos.json');
+  const registry = fs.existsSync(registryPath)
+    ? (JSON.parse(fs.readFileSync(registryPath, 'utf8')) as ObserverRegistry)
+    : { repos: [{ id: 'current-repo', name: path.basename(cwd), root: cwd }] };
+
+  const repos = Array.isArray(registry.repos) ? registry.repos : [];
+  const fleet = buildFleetAdoptionReadinessSummary(
+    repos.map((repo) => ({
+      repo_id: repo.id,
+      repo_name: repo.name,
+      readiness: buildRepoAdoptionReadiness({ repoRoot: repo.root, connected: true })
+    }))
+  );
+
+  return {
+    schemaVersion: '1.0',
+    command: 'status',
+    mode: 'fleet',
+    fleet
+  };
+};
+
 const printHuman = (
   result: StatusResult,
   ci: boolean,
@@ -180,6 +220,18 @@ const printHuman = (
 
 export const runStatus = async (cwd: string, options: StatusOptions): Promise<number> => {
   try {
+    if (options.scope === 'fleet') {
+      const fleetResult = toFleetStatusResult(cwd);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(fleetResult, null, 2));
+      } else {
+        console.log(`Fleet repos: ${fleetResult.fleet.total_repos}`);
+        console.log(`By stage: ${JSON.stringify(fleetResult.fleet.by_lifecycle_stage)}`);
+        console.log(`Top action: ${fleetResult.fleet.recommended_actions[0]?.command ?? 'n/a'}`);
+      }
+      return ExitCode.Success;
+    }
+
     const { result, exitCode, topIssue, repoRoot } = await toStatusResult(cwd);
 
     if (options.format === 'json') {

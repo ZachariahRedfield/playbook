@@ -307,6 +307,7 @@ describe('observer server', () => {
       home_repo_id: string | null;
       snapshot: { kind: string; repos: Array<{ id: string }> };
       readiness: Array<{ id: string; readiness: { readiness_state: string } }>;
+      fleet: { total_repos: number };
     };
     expect(snapshotJson.home_repo_id).toBeNull();
     expect(snapshotJson.snapshot.kind).toBe('observer-snapshot');
@@ -315,6 +316,15 @@ describe('observer server', () => {
     expect(systemMapInSnapshot).toBeDefined();
     expect(snapshotJson.readiness[0]?.id).toBe('repo-a');
     expect(snapshotJson.readiness[0]?.readiness.readiness_state).toBe('partially_observable');
+    expect(snapshotJson.fleet.total_repos).toBe(1);
+
+
+    const fleetReadiness = await fetch(`http://127.0.0.1:${port}/api/readiness/fleet`);
+    expect(fleetReadiness.status).toBe(200);
+    const fleetReadinessJson = await fleetReadiness.json() as { kind: string; fleet: { total_repos: number; repos_by_priority: Array<{ repo_id: string }> } };
+    expect(fleetReadinessJson.kind).toBe('observer-fleet-readiness-summary');
+    expect(fleetReadinessJson.fleet.total_repos).toBe(1);
+    expect(fleetReadinessJson.fleet.repos_by_priority[0]?.repo_id).toBe('repo-a');
 
     const repoResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a`);
     expect(repoResponse.status).toBe(200);

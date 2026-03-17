@@ -43,7 +43,7 @@ Maintainer note (UI bootstrap safety):
 - `GET /ui/app.js` is sourced from `packages/cli/src/commands/observer/dashboard-app.js` and **must remain plain browser JavaScript** (no TypeScript annotations/casts/generics).
 - Embedding large browser apps as raw template strings makes accidental TS leakage easier and review harder; dedicated source files reduce this risk and improve maintainability.
 - Regression checks live in `packages/cli/src/commands/observer.test.ts` and `packages/cli/scripts/run-observer-tests.mjs` to guard TS-leakage patterns and required bootstrap wiring (`refreshAll`, repo hydration, self-observation refresh).
-- Read endpoints: `GET /health`, `GET /repos`, `GET /snapshot`, `GET /repos/:id`, `GET /repos/:id/artifacts/:kind`
+- Read endpoints: `GET /health`, `GET /repos`, `GET /snapshot`, `GET /repos/:id`, `GET /repos/:id/artifacts/:kind`, `GET /api/readiness/fleet`
 - Registry mutation endpoints (local-only, add/remove parity with CLI): `POST /repos`, `DELETE /repos/:id`
 - Responses are deterministic envelopes, and artifact state remains sourced from governed observer/runtime artifacts.
 - Startup output includes observer root metadata (`observer_root`, `registry_path`, `repo_count`) in both text and `--json` modes for debugging.
@@ -121,6 +121,40 @@ Readiness fields are available from:
 - `GET /repos` (per repo readiness object)
 - `GET /repos/:id` (repo-level readiness object)
 - `GET /snapshot` (top-level readiness summary by repo id)
+
+Fleet readiness fields are available from:
+
+- `GET /api/readiness/fleet` (compact aggregate fleet summary)
+- `GET /snapshot` (`fleet` object for one-call snapshot consumers)
+
+Fleet summary includes deterministic aggregate counts and prioritization:
+
+- `total_repos`, `by_lifecycle_stage`
+- `playbook_detected_count`, `fallback_proof_ready_count`, `cross_repo_eligible_count`
+- `blocker_frequencies[]`
+- `recommended_actions[]`
+- `repos_by_priority[]`
+
+Prioritization order is deterministic and adoption-focused:
+
+1. `playbook_not_detected`
+2. `index_pending`
+3. `plan_pending`
+4. `apply_pending`
+5. `ready`
+
+Within a stage, repos are sorted by blocker severity then repo id.
+
+### Fleet readiness panel (UI)
+
+Observer cross-repo mode now includes a compact **Fleet Readiness Summary** card that surfaces:
+
+- lifecycle stage counts
+- top blocker frequencies
+- highest-frequency next actions
+- top repos by deterministic priority order
+
+This is additive and does not replace repo-first inspection flows.
 
 ### Self-observation cockpit (UI)
 
