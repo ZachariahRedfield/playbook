@@ -69,6 +69,7 @@ Do not hand-edit entries inside the managed markers.
 | `telemetry` | Inspect deterministic repository/process telemetry and compact cross-run learning summaries | utility | utility | secondary | — | Current (implemented) | `pnpm playbook telemetry learning --json` |
 | `policy` | Evaluate improvement proposals against governed runtime evidence (read-only control-plane) | canonical | governance | secondary | — | Current (implemented) | `pnpm playbook policy evaluate --json` |
 | `agent` | Read runtime control-plane records and run plan-backed dry-run previews | utility | utility | secondary | — | Current (implemented) | `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json` |
+| `observer` | Manage deterministic local observer repo registry state | utility | utility | secondary | — | Current (implemented) | `pnpm playbook observer repo list --json` |
 <!-- PLAYBOOK:DOCS_COMMAND_STATUS_END -->
 
 ## Command docs index
@@ -78,7 +79,7 @@ Do not hand-edit entries inside the managed markers.
 - Core flow: [`verify`](verify.md), [`plan`](plan.md), [`apply`](apply.md), [`pilot`](pilot.md)
 - Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md)
 - AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`context`](overview.md)
-- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`analyze`](analyze.md)
+- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`observer`](observer.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`analyze`](analyze.md)
 
 ### Implemented control-plane command docs
 

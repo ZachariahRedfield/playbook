@@ -219,6 +219,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook contracts --json`
 - `architecture`: Verify subsystem registry ownership and architecture mapping integrity
   - Example: `pnpm playbook architecture verify --json`
+- `observer`: Manage deterministic local observer repo registry state
+  - Example: `pnpm playbook observer repo list --json`
 
 ### Repository intelligence
 
@@ -313,4 +315,5 @@ Do not hand-edit entries inside the managed markers.
 | `telemetry` | `pnpm playbook telemetry learning --json` |
 | `policy` | `pnpm playbook policy evaluate --json` |
 | `agent` | `pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json` |
+| `observer` | `pnpm playbook observer repo list --json` |
 <!-- PLAYBOOK:EXAMPLES_END -->

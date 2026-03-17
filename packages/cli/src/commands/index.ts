@@ -376,6 +376,10 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
     const { runAgent } = await import('./agent.js');
     return runAgent(cwd, commandArgs, { format, quiet });
   },
+  observer: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runObserver } = await import('./observer.js');
+    return runObserver(cwd, commandArgs, { format, quiet });
+  },
   learn: async ({ cwd, commandArgs, format, quiet }) => {
     const { runLearnDraft } = await import('./learnDraft.js');
     const subcommand = commandArgs.find((arg) => !arg.startsWith('-'));
@@ -504,7 +508,8 @@ const commandOrder = [
   'security',
   'telemetry',
   'policy',
-  'agent'
+  'agent',
+  'observer'
 ] as const;
 
 const metadataByName = new Map(commandMetadata.map((command) => [command.name, command]));

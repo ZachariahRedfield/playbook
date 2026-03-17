@@ -620,6 +620,19 @@ export const commandMetadata: CommandMetadata[] = [
     productFacing: true,
     exampleArgs: 'agent run --from-plan .playbook/plan.json --dry-run --json',
     machineReadable: true
+  },
+  {
+    name: 'observer',
+    description: 'Manage deterministic local observer repo registry state',
+    category: 'Repository tools',
+    role: 'utility',
+    lifecycle: 'utility',
+    discoverability: 'secondary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'observer repo list --json',
+    machineReadable: true
   }
 ];
 

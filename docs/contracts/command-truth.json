@@ -352,6 +352,18 @@
       "example": "pnpm playbook memory events --json"
     },
     {
+      "name": "observer",
+      "category": "Repository tools",
+      "role": "utility",
+      "lifecycle": "utility",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook observer repo list --json"
+    },
+    {
       "name": "orchestrate",
       "category": "Core",
       "role": "remediation",
@@ -602,6 +614,7 @@
     "init",
     "learn",
     "memory",
+    "observer",
     "schema",
     "session",
     "status",

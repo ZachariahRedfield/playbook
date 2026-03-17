@@ -155,6 +155,12 @@ Rule: every governed decision or execution step must be traceable through a dete
 Pattern: unify existing artifacts through referenceable evidence chains before adding broader orchestration or learning layers.
 Failure Mode: runs/decisions/artifacts that remain unlinked become difficult to audit, explain, and evolve even when each artifact is individually correct.
 
+Observer wrappers can now maintain a deterministic multi-repo registry at `.playbook/observer/repos.json` (`kind: repo-registry`) containing explicit connected repo roots, stable ids, and per-repo `.playbook` artifact roots. This observer registry is read-only control-plane support for local/server wrappers and does not replace per-repo runtime artifacts as canonical sources of truth.
+
+Rule: multi-repo observation must start from explicit deterministic registry state rather than implicit filesystem scanning.
+Pattern: runtime remains canonical per repo while observer indexing tracks connected repos and artifact roots.
+Failure Mode: ambient path-scanning introduces non-deterministic cross-repo visibility and erodes trust.
+
 ## Router accuracy telemetry feedback loop
 
 Routing quality is treated as a measurable architecture contract inside `routing_engine` + `telemetry_learning`.

@@ -72,7 +72,8 @@
       "security",
       "telemetry",
       "policy",
-      "agent"
+      "agent",
+      "observer"
     ]
   }
 }
