@@ -41,31 +41,66 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/core
-        run: pnpm publish --access public --no-git-checks --provenance
+        run: |
+          package_name="@fawxzzy/playbook-core"
+          package_version="$(node -p "require('./package.json').version")"
+          if npm view "${package_name}@${package_version}" version >/dev/null 2>&1; then
+            echo "${package_name}@${package_version} already published; skipping publish."
+            exit 0
+          fi
+          pnpm publish --access public --no-git-checks --provenance
 
       - name: Publish @fawxzzy/playbook-node
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/node
-        run: pnpm publish --access public --no-git-checks --provenance
+        run: |
+          package_name="@fawxzzy/playbook-node"
+          package_version="$(node -p "require('./package.json').version")"
+          if npm view "${package_name}@${package_version}" version >/dev/null 2>&1; then
+            echo "${package_name}@${package_version} already published; skipping publish."
+            exit 0
+          fi
+          pnpm publish --access public --no-git-checks --provenance
 
       - name: Publish @fawxzzy/playbook-engine
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/engine
-        run: pnpm publish --access public --no-git-checks --provenance
+        run: |
+          package_name="@fawxzzy/playbook-engine"
+          package_version="$(node -p "require('./package.json').version")"
+          if npm view "${package_name}@${package_version}" version >/dev/null 2>&1; then
+            echo "${package_name}@${package_version} already published; skipping publish."
+            exit 0
+          fi
+          pnpm publish --access public --no-git-checks --provenance
 
       - name: Publish @fawxzzy/playbook-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/cli
-        run: pnpm publish --access public --no-git-checks --provenance
+        run: |
+          package_name="@fawxzzy/playbook-cli"
+          package_version="$(node -p "require('./package.json').version")"
+          if npm view "${package_name}@${package_version}" version >/dev/null 2>&1; then
+            echo "${package_name}@${package_version} already published; skipping publish."
+            exit 0
+          fi
+          pnpm publish --access public --no-git-checks --provenance
 
       - name: Publish @fawxzzy/playbook-cli-wrapper
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/cli-wrapper
-        run: pnpm publish --access public --no-git-checks --provenance
+        run: |
+          package_name="@fawxzzy/playbook-cli-wrapper"
+          package_version="$(node -p "require('./package.json').version")"
+          if npm view "${package_name}@${package_version}" version >/dev/null 2>&1; then
+            echo "${package_name}@${package_version} already published; skipping publish."
+            exit 0
+          fi
+          pnpm publish --access public --no-git-checks --provenance
 
       - name: Pack deterministic fallback tarball
         id: fallback_pack
