@@ -127,7 +127,7 @@ jobs:
           if-no-files-found: error
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4
+        uses: sigstore/cosign-installer@v3.7.0
         with:
           cosign-release: 'v3.0.3'
 

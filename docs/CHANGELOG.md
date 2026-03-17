@@ -10,6 +10,7 @@
 
 ### CLI
 
+- WHAT: Fixed GitHub Actions security workflow action resolution by replacing nonexistent `sigstore/cosign-installer@v4` with published pin `sigstore/cosign-installer@v3.7.0` while preserving existing cosign install behavior. WHY: Prevents pre-run workflow failure at action fetch time so release/security checks can execute.
 - WHAT: Realigned release fallback ownership to the canonical GitHub repository (`ZachariahRedfield/playbook`) by updating release docs/examples and making `release:fallback:proof` default to the canonical owner/repo URL shape. WHY: Eliminates producer/consumer drift where fallback proofs and pinning examples targeted a non-authoritative release path.
 - WHAT: Prepared the next clean producer release cut at `0.1.4` across workspace package versions and release docs/examples so a fresh tag (`v0.1.4`) can be published from the fixed live workflow state. WHY: Avoids reusing polluted tags and establishes a single deterministic baseline for fallback asset proofing.
 
