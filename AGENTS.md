@@ -261,7 +261,7 @@ Do not hand-edit entries inside the managed markers.
 - `demo`: Show the official Playbook demo repository and guided first-run workflow
 - `init`: Initialize playbook docs/config
 - `fix`: Apply safe, deterministic autofixes for verify findings
-- `status`: Show overall Playbook repository health
+- `status`: Show deterministic repository health and adoption readiness status
 - `upgrade`: Check and apply explicit local Playbook dependency upgrades
 - `session`: Manage repo-scoped session memory and snapshot workflows
 <!-- PLAYBOOK:COMMANDS_END -->

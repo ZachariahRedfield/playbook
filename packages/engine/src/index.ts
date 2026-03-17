@@ -20,6 +20,9 @@ export type { LanePromptSpec, RenderLanePromptInput, WriteLanePromptsInput } fro
 export { generateRepositoryHealth } from './doctor/index.js';
 export type { RepositoryHealth, GovernanceStatusItem, ArtifactHygieneReport } from './doctor/index.js';
 
+export { buildRepoAdoptionReadiness } from './adoption/readiness.js';
+export type { RepoAdoptionReadiness, RepoAdoptionBlocker, ReadinessLifecycleStage, ReadinessConnectionStatus, ReadinessArtifactStatus, ReadinessArtifactStatusCode } from './adoption/readiness.js';
+
 export { generateRepositoryIndex } from './indexer/repoIndexer.js';
 export type { RepositoryIndex, RepositoryModule, RepositoryDependencyEdge, RepositoryWorkspaceNode, RepositoryTestCoverage, RepositoryConfigEntry } from './indexer/repoIndexer.js';
 export {

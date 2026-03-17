@@ -719,3 +719,15 @@ Execution runs are appended by `verify`, `plan`, `apply`, and follow-up `verify`
 
 - `playbook query runs`
 - `playbook query run --id <run-id>`
+
+## Adoption readiness status
+
+`pnpm playbook status --json` now includes a deterministic adoption/readiness contract for connected repositories:
+
+- connection status and Playbook detection
+- governed artifact presence/validity (`repo-index`, `repo-graph`, `plan`, `policy-apply-result`)
+- lifecycle stage (`playbook_not_detected` -> `playbook_detected_index_pending` -> `indexed_plan_pending` -> `planned_apply_pending` -> `ready`)
+- fallback-proof and cross-repo eligibility gates
+- deterministic blockers and exact next command recommendations
+
+Use this as the single operator status surface before running fallback proof or cross-repo comparison.

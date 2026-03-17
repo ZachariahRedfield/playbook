@@ -2121,3 +2121,8 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Rule — Lane lifecycle transitions must stay stricter than eventual automation behavior.
 - Pattern — Readiness snapshots become operationally useful when they support deterministic state progression.
 - Failure Mode — Static lane-state without lifecycle transitions cannot become a real orchestration layer.
+
+### Adoption/readiness status surface (implemented)
+
+- `pnpm playbook status --json` provides a deterministic adoption contract for connected repos: connection status, Playbook detection, governed artifact readiness, lifecycle stage, fallback-proof eligibility, cross-repo eligibility, blockers, and exact next commands.
+- Observer repo cards/details now expose this readiness stage and first actionable next command without requiring manual artifact interpretation.

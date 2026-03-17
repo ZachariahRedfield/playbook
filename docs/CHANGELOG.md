@@ -10,6 +10,7 @@
 
 ### CLI
 
+- WHAT: Added a deterministic adoption/readiness contract surfaced through `pnpm playbook status --json` and Observer repo APIs/UI (lifecycle stage, fallback-proof readiness, cross-repo eligibility, blockers, and exact next command recommendations) backed by governed artifact producers instead of heuristics. WHY: Gives operators a single actionable readiness view without manual cross-command artifact interpretation.
 - WHAT: Replaced the Step 5 provenance attestation heredoc in `.github/workflows/security.yml` with a deterministic Node-based file write while preserving the existing payload fields and artifact path (`artifacts/provenance.json`). WHY: Prevents YAML-parse fragility from embedded shell heredoc indentation so the workflow remains syntactically valid and runnable.
 - Pattern: Prefer programmatic file writes over shell heredocs in GitHub Actions when embedding structured JSON inside YAML.
 - Failure Mode: Shell heredocs inside workflow YAML are easy to break with indentation/copy-paste changes and can invalidate the whole workflow before runtime.

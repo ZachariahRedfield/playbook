@@ -338,30 +338,45 @@ describe('observer server', () => {
   });
 
 
-  it('computes deterministic readiness states for connected, partial, and observable repos', async () => {
+  it('computes deterministic readiness and lifecycle stages across fixture tiers', async () => {
     const cwd = makeTempDir();
     const connectedOnly = path.join(cwd, 'repo-connected-only');
-    const partial = path.join(cwd, 'repo-partial');
-    const full = path.join(cwd, 'repo-full');
+    const partiallyObservable = path.join(cwd, 'repo-partially-observable');
+    const indexedPlanPending = path.join(cwd, 'repo-indexed-plan-pending');
+    const proofCapable = path.join(cwd, 'repo-proof-capable');
+    const ready = path.join(cwd, 'repo-ready');
 
     fs.mkdirSync(connectedOnly, { recursive: true });
-    fs.mkdirSync(path.join(partial, '.playbook'), { recursive: true });
-    fs.mkdirSync(path.join(full, '.playbook'), { recursive: true });
+    fs.mkdirSync(path.join(partiallyObservable, '.playbook'), { recursive: true });
+    fs.mkdirSync(path.join(indexedPlanPending, '.playbook'), { recursive: true });
+    fs.mkdirSync(path.join(proofCapable, '.playbook'), { recursive: true });
+    fs.mkdirSync(path.join(ready, '.playbook'), { recursive: true });
 
-    writeArtifact(partial, '.playbook/repo-index.json', { schemaVersion: '1.0', kind: 'repo-index' });
-    writeArtifact(partial, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
+    writeArtifact(partiallyObservable, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
 
-    writeArtifact(full, '.playbook/repo-index.json', { schemaVersion: '1.0', kind: 'repo-index' });
-    writeArtifact(full, '.playbook/cycle-state.json', { schemaVersion: '1.0', kind: 'cycle-state' });
-    writeArtifact(full, '.playbook/cycle-history.json', { schemaVersion: '1.0', kind: 'cycle-history' });
-    writeArtifact(full, '.playbook/policy-evaluation.json', { schemaVersion: '1.0', kind: 'policy-evaluation' });
-    writeArtifact(full, '.playbook/policy-apply-result.json', { schemaVersion: '1.0', kind: 'policy-apply-result' });
-    writeArtifact(full, '.playbook/pr-review.json', { schemaVersion: '1.0', kind: 'pr-review' });
-    writeArtifact(full, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
+    writeArtifact(indexedPlanPending, '.playbook/repo-index.json', { framework: 'node' });
+    writeArtifact(indexedPlanPending, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
+
+    writeArtifact(proofCapable, '.playbook/repo-index.json', { framework: 'node' });
+    writeArtifact(proofCapable, '.playbook/repo-graph.json', { edges: [] });
+    writeArtifact(proofCapable, '.playbook/plan.json', { command: 'plan' });
+    writeArtifact(proofCapable, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
+
+    writeArtifact(ready, '.playbook/repo-index.json', { framework: 'node' });
+    writeArtifact(ready, '.playbook/repo-graph.json', { edges: [] });
+    writeArtifact(ready, '.playbook/plan.json', { command: 'plan' });
+    writeArtifact(ready, '.playbook/cycle-state.json', { schemaVersion: '1.0', kind: 'cycle-state' });
+    writeArtifact(ready, '.playbook/cycle-history.json', { schemaVersion: '1.0', kind: 'cycle-history' });
+    writeArtifact(ready, '.playbook/policy-evaluation.json', { schemaVersion: '1.0', kind: 'policy-evaluation' });
+    writeArtifact(ready, '.playbook/policy-apply-result.json', { schemaVersion: '1.0', kind: 'policy-apply-result' });
+    writeArtifact(ready, '.playbook/pr-review.json', { schemaVersion: '1.0', kind: 'pr-review' });
+    writeArtifact(ready, '.playbook/session.json', { schemaVersion: '1.0', kind: 'session' });
 
     expect(await runObserver(cwd, ['repo', 'add', connectedOnly, '--id', 'connected-only'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
-    expect(await runObserver(cwd, ['repo', 'add', partial, '--id', 'partial'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
-    expect(await runObserver(cwd, ['repo', 'add', full, '--id', 'full'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runObserver(cwd, ['repo', 'add', partiallyObservable, '--id', 'partial'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runObserver(cwd, ['repo', 'add', indexedPlanPending, '--id', 'indexed-plan-pending'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runObserver(cwd, ['repo', 'add', proofCapable, '--id', 'proof-capable'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runObserver(cwd, ['repo', 'add', ready, '--id', 'ready'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
 
     const server = createObserverServer(cwd);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
@@ -372,23 +387,39 @@ describe('observer server', () => {
     const repos = await fetch(`http://127.0.0.1:${port}/repos`);
     expect(repos.status).toBe(200);
     const reposJson = await repos.json() as {
-      repos: Array<{ id: string; readiness: { readiness_state: string; missing_artifacts: string[]; last_artifact_update_time: string | null } }>;
+      repos: Array<{ id: string; readiness: { readiness_state: string; lifecycle_stage: string; fallback_proof_ready: boolean; cross_repo_eligible: boolean; recommended_next_steps: string[]; missing_artifacts: string[]; last_artifact_update_time: string | null } }>;
     };
 
     const states = Object.fromEntries(reposJson.repos.map((repo) => [repo.id, repo.readiness.readiness_state]));
     expect(states).toEqual({
       'connected-only': 'connected_only',
       partial: 'partially_observable',
-      full: 'observable'
+      'indexed-plan-pending': 'partially_observable',
+      'proof-capable': 'partially_observable',
+      ready: 'observable'
     });
 
-    const connectedReadiness = reposJson.repos.find((repo) => repo.id === 'connected-only')?.readiness;
-    expect(connectedReadiness?.missing_artifacts.length).toBeGreaterThan(0);
-    expect(connectedReadiness?.last_artifact_update_time).toBeNull();
+    const byId = Object.fromEntries(reposJson.repos.map((repo) => [repo.id, repo.readiness]));
 
-    const fullReadiness = reposJson.repos.find((repo) => repo.id === 'full')?.readiness;
-    expect(fullReadiness?.missing_artifacts).toEqual([]);
-    expect(typeof fullReadiness?.last_artifact_update_time).toBe('string');
+    expect(byId['connected-only']?.lifecycle_stage).toBe('playbook_not_detected');
+    expect(byId['connected-only']?.recommended_next_steps[0]).toBe('pnpm playbook init');
+
+    expect(byId.partial?.lifecycle_stage).toBe('playbook_detected_index_pending');
+    expect(byId.partial?.cross_repo_eligible).toBe(false);
+
+    expect(byId['indexed-plan-pending']?.lifecycle_stage).toBe('indexed_plan_pending');
+    expect(byId['indexed-plan-pending']?.cross_repo_eligible).toBe(true);
+    expect(byId['indexed-plan-pending']?.fallback_proof_ready).toBe(false);
+
+    expect(byId['proof-capable']?.lifecycle_stage).toBe('planned_apply_pending');
+    expect(byId['proof-capable']?.fallback_proof_ready).toBe(true);
+    expect(byId['proof-capable']?.cross_repo_eligible).toBe(true);
+
+    expect(byId.ready?.missing_artifacts).toEqual([]);
+    expect(byId.ready?.lifecycle_stage).toBe('ready');
+    expect(byId.ready?.fallback_proof_ready).toBe(true);
+    expect(byId.ready?.cross_repo_eligible).toBe(true);
+    expect(typeof byId.ready?.last_artifact_update_time).toBe('string');
 
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
@@ -400,6 +431,8 @@ describe('observer server', () => {
     expect(uiScriptText).toContain('node-state-');
     expect(uiScriptText).toContain('Control-plane artifacts present:</strong>');
     expect(uiScriptText).toContain('Runtime loop available:</strong>');
+    expect(uiScriptText).toContain('Lifecycle stage:');
+    expect(uiScriptText).toContain('Next command:');
 
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });
@@ -410,7 +443,7 @@ describe('observer server', () => {
     const playbookRepo = path.join(cwd, 'playbook');
     fs.mkdirSync(path.join(playbookRepo, '.playbook'), { recursive: true });
 
-    writeArtifact(playbookRepo, '.playbook/repo-index.json', { schemaVersion: '1.0', kind: 'repo-index' });
+    writeArtifact(playbookRepo, '.playbook/repo-index.json', { framework: 'node' });
     writeArtifact(playbookRepo, '.playbook/cycle-state.json', { schemaVersion: '1.0', kind: 'cycle-state' });
     writeArtifact(playbookRepo, '.playbook/cycle-history.json', { schemaVersion: '1.0', kind: 'cycle-history' });
     writeArtifact(playbookRepo, '.playbook/policy-evaluation.json', { schemaVersion: '1.0', kind: 'policy-evaluation' });

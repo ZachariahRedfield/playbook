@@ -109,6 +109,11 @@ Observer server endpoints now include additive readiness metadata derived from f
 - `session_present`
 - `last_artifact_update_time`
 - `readiness_state` (`connected_only` | `playbook_detected` | `partially_observable` | `observable`)
+- `lifecycle_stage` (`playbook_not_detected` | `playbook_detected_index_pending` | `indexed_plan_pending` | `planned_apply_pending` | `ready`)
+- `fallback_proof_ready`
+- `cross_repo_eligible`
+- `blockers[]`
+- `recommended_next_steps[]`
 - `missing_artifacts`
 
 Readiness fields are available from:

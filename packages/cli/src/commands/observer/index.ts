@@ -3,7 +3,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import http from 'node:http';
 import { emitJsonOutput, writeJsonArtifactAbsolute } from '../../lib/jsonArtifact.js';
-import { computeCrossRepoPatternLearning, readCrossRepoPatternsArtifact, type CrossRepoPatternsArtifact } from '@zachariahredfield/playbook-engine';
+import {
+  buildRepoAdoptionReadiness,
+  computeCrossRepoPatternLearning,
+  readCrossRepoPatternsArtifact,
+  type CrossRepoPatternsArtifact,
+  type RepoAdoptionReadiness
+} from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../../lib/cliContract.js';
 
 type ObserverOptions = {
@@ -36,6 +42,11 @@ type ObserverRepoReadiness = {
   last_artifact_update_time: string | null;
   readiness_state: ObserverRepoReadinessState;
   missing_artifacts: string[];
+  lifecycle_stage: RepoAdoptionReadiness['lifecycle_stage'];
+  fallback_proof_ready: boolean;
+  cross_repo_eligible: boolean;
+  blockers: RepoAdoptionReadiness['blockers'];
+  recommended_next_steps: string[];
 };
 
 type ObserverRepoRegistry = {
@@ -281,10 +292,7 @@ const readRepoArtifact = (repo: ObserverRepoEntry, kind: ObserverArtifactKind): 
 
 const repoReadiness = (repo: ObserverRepoEntry): ObserverRepoReadiness => {
   const playbookDirectoryPresent = fs.existsSync(repo.artifactsRoot) && fs.statSync(repo.artifactsRoot).isDirectory();
-  const playbookDetected =
-    playbookDirectoryPresent ||
-    fs.existsSync(path.join(repo.root, 'playbook.config.json')) ||
-    fs.existsSync(path.join(repo.root, '.playbook', 'config.json'));
+  const adoption = buildRepoAdoptionReadiness({ repoRoot: repo.root, connected: true });
 
   const flags = Object.fromEntries(
     READINESS_ARTIFACTS.map((artifact) => [artifact.key, fs.existsSync(path.join(repo.root, artifact.relativePath))])
@@ -308,7 +316,7 @@ const repoReadiness = (repo: ObserverRepoEntry): ObserverRepoReadiness => {
 
   const observableFlags = READINESS_ARTIFACTS.every((artifact) => flags[artifact.key]);
   const anyArtifactsPresent = READINESS_ARTIFACTS.some((artifact) => flags[artifact.key]);
-  const readinessState: ObserverRepoReadinessState = !playbookDetected
+  const readinessState: ObserverRepoReadinessState = !adoption.playbook_detected
     ? 'connected_only'
     : observableFlags
       ? 'observable'
@@ -318,7 +326,7 @@ const repoReadiness = (repo: ObserverRepoEntry): ObserverRepoReadiness => {
 
   return {
     connected: true,
-    playbook_detected: playbookDetected,
+    playbook_detected: adoption.playbook_detected,
     playbook_directory_present: playbookDirectoryPresent,
     repo_index_present: flags.repo_index_present,
     cycle_state_present: flags.cycle_state_present,
@@ -329,7 +337,12 @@ const repoReadiness = (repo: ObserverRepoEntry): ObserverRepoReadiness => {
     session_present: flags.session_present,
     last_artifact_update_time: lastArtifactUpdateTime,
     readiness_state: readinessState,
-    missing_artifacts: READINESS_ARTIFACTS.filter((artifact) => !flags[artifact.key]).map((artifact) => artifact.relativePath)
+    missing_artifacts: READINESS_ARTIFACTS.filter((artifact) => !flags[artifact.key]).map((artifact) => artifact.relativePath),
+    lifecycle_stage: adoption.lifecycle_stage,
+    fallback_proof_ready: adoption.fallback_proof_ready,
+    cross_repo_eligible: adoption.cross_repo_eligible,
+    blockers: adoption.blockers,
+    recommended_next_steps: adoption.recommended_next_steps
   };
 };
 

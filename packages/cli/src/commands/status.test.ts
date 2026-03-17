@@ -12,6 +12,10 @@ vi.mock('./analyze.js', () => ({ collectAnalyzeReport, ensureRepoIndex }));
 vi.mock('./doctor.js', () => ({ collectDoctorReport }));
 vi.mock('./verify.js', () => ({ collectVerifyReport }));
 
+const buildRepoAdoptionReadiness = vi.fn();
+
+vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness }));
+
 const makeAnalyzeReport = (overrides?: Partial<AnalyzeReport>): AnalyzeReport => ({
   repoPath: '/tmp/repo',
   ok: true,
@@ -38,6 +42,23 @@ describe('runStatus', () => {
     collectVerifyReport.mockReset();
     ensureRepoIndex.mockReset();
     ensureRepoIndex.mockImplementation(async (repoRoot: string) => `${repoRoot}/.playbook/repo-index.json`);
+    buildRepoAdoptionReadiness.mockReset();
+    buildRepoAdoptionReadiness.mockReturnValue({
+      schemaVersion: '1.0',
+      connection_status: 'connected',
+      playbook_detected: true,
+      governed_artifacts_present: {
+        repo_index: { present: true, valid: true, stale: false, failure_type: null },
+        repo_graph: { present: true, valid: true, stale: false, failure_type: null },
+        plan: { present: true, valid: true, stale: false, failure_type: null },
+        policy_apply_result: { present: true, valid: true, stale: false, failure_type: null }
+      },
+      lifecycle_stage: 'ready',
+      fallback_proof_ready: true,
+      cross_repo_eligible: true,
+      blockers: [],
+      recommended_next_steps: []
+    });
   });
 
   it('prints top issue guidance when findings exist', async () => {
@@ -87,6 +108,7 @@ describe('runStatus', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.command).toBe('status');
     expect(payload).not.toHaveProperty('topIssue');
+    expect(payload).toHaveProperty('adoption.lifecycle_stage', 'ready');
 
     logSpy.mockRestore();
   });

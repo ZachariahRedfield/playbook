@@ -107,6 +107,9 @@ const renderSelfObservation = (repoPayload, healthStatus) => {
     '<div><strong>Self/home repo:</strong> ' + repoPayload.repo.id + '</div>' +
     '<div><strong>Observer server health:</strong> ' + (healthStatus || 'unknown') + '</div>' +
     '<div><strong>Readiness:</strong> ' + (readiness.readiness_state || 'unknown') + '</div>' +
+    '<div><strong>Lifecycle stage:</strong> ' + (readiness.lifecycle_stage || 'unknown') + '</div>' +
+    '<div><strong>Fallback proof ready:</strong> ' + (readiness.fallback_proof_ready ? 'yes' : 'no') + '</div>' +
+    '<div><strong>Cross-repo eligible:</strong> ' + (readiness.cross_repo_eligible ? 'yes' : 'no') + '</div>' +
     '<div><strong>Control-plane artifacts present:</strong> ' + (hasControlPlane ? 'yes' : 'no') + '</div>' +
     '<div><strong>Review loop available:</strong> ' + (hasReviewLoop ? 'yes' : 'no') + '</div>' +
     '<div><strong>Runtime loop available:</strong> ' + (hasRuntimeLoop ? 'yes' : 'no') + '</div>' +
@@ -284,7 +287,7 @@ const renderRepos = async () => {
     item.className = 'card repo' + (repo.id === selectedRepoId ? ' selected' : '');
     const readiness = repo.readiness || { readiness_state: 'connected_only' };
     const isHome = homeRepoId && repo.id === homeRepoId;
-    item.innerHTML = '<strong>' + repo.id + (isHome ? ' (self/home)' : '') + '</strong><div class="meta">' + repo.root + '</div><div class="meta">readiness: ' + readiness.readiness_state + '</div>';
+    item.innerHTML = '<strong>' + repo.id + (isHome ? ' (self/home)' : '') + '</strong><div class="meta">' + repo.root + '</div><div class="meta">readiness: ' + readiness.readiness_state + ' / ' + (readiness.lifecycle_stage || 'unknown') + '</div><div class="meta">next: ' + escapeHtml((readiness.recommended_next_steps && readiness.recommended_next_steps[0]) || 'n/a') + '</div>';
     item.onclick = () => { selectedRepoId = repo.id; selectedBlueprintNodeId = null; loadRepoDetail(); renderRepos(); };
     reposEl.appendChild(item);
   }
@@ -308,8 +311,15 @@ const loadRepoDetail = async () => {
   const readiness = latestRepoPayload.readiness || {};
   const missing = Array.isArray(readiness.missing_artifacts) && readiness.missing_artifacts.length > 0 ? readiness.missing_artifacts.join(', ') : 'none';
   const lastUpdate = readiness.last_artifact_update_time || 'n/a';
+  const blockers = Array.isArray(readiness.blockers) && readiness.blockers.length > 0 ? readiness.blockers.map((b) => b.code).join(', ') : 'none';
+  const nextStep = Array.isArray(readiness.recommended_next_steps) && readiness.recommended_next_steps.length > 0 ? readiness.recommended_next_steps[0] : 'n/a';
   repoDetailEl.innerHTML =
     '<div class="meta"><strong>Readiness:</strong> ' + (readiness.readiness_state || 'unknown') + '</div>' +
+    '<div class="meta"><strong>Lifecycle stage:</strong> ' + (readiness.lifecycle_stage || 'unknown') + '</div>' +
+    '<div class="meta"><strong>Fallback proof:</strong> ' + (readiness.fallback_proof_ready ? 'eligible' : 'blocked') + '</div>' +
+    '<div class="meta"><strong>Cross-repo:</strong> ' + (readiness.cross_repo_eligible ? 'eligible' : 'blocked') + '</div>' +
+    '<div class="meta"><strong>Blockers:</strong> ' + blockers + '</div>' +
+    '<div class="meta"><strong>Next command:</strong> ' + escapeHtml(nextStep) + '</div>' +
     '<div class="meta"><strong>Last artifact update:</strong> ' + lastUpdate + '</div>' +
     '<div class="meta"><strong>Missing artifacts:</strong> ' + missing + '</div>' +
     format(latestRepoPayload.repo);

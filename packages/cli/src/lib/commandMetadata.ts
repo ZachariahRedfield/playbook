@@ -453,7 +453,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'status',
-    description: 'Show overall Playbook repository health',
+    description: 'Show deterministic repository health and adoption readiness status',
     category: 'Utility',
     role: 'utility',
     lifecycle: 'utility',

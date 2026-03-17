@@ -4,6 +4,7 @@ import { collectVerifyReport } from './verify.js';
 import { ExitCode } from '../lib/cliContract.js';
 import { loadAnalyzeRules } from '../lib/loadAnalyzeRules.js';
 import { loadVerifyRules } from '../lib/loadVerifyRules.js';
+import { buildRepoAdoptionReadiness, type RepoAdoptionReadiness } from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AnalyzeReport } from './analyze.js';
@@ -26,6 +27,7 @@ type StatusResult = {
     warnings: number;
     errors: number;
   };
+  adoption: RepoAdoptionReadiness;
 };
 
 type RepoIndexSummary = {
@@ -106,7 +108,8 @@ const toStatusResult = async (cwd: string): Promise<{ result: StatusResult; exit
     environment: { ok: environmentOk },
     analysis: { warnings, errors },
     verification: { ok: verify.ok },
-    summary: { warnings, errors }
+    summary: { warnings, errors },
+    adoption: buildRepoAdoptionReadiness({ repoRoot: analyze.repoPath, connected: true })
   };
 
   const exitCode = verify.ok ? ExitCode.Success : ExitCode.PolicyFailure;
@@ -151,6 +154,18 @@ const printHuman = (
   console.log(`  Overall: ${result.ok ? 'healthy' : 'issues detected'}`);
   console.log(`  Warnings: ${result.summary.warnings}`);
   console.log(`  Errors: ${result.summary.errors}`);
+
+  console.log('');
+  console.log('Adoption readiness');
+  console.log(`  Connection: ${result.adoption.connection_status}`);
+  console.log(`  Playbook detected: ${result.adoption.playbook_detected ? 'yes' : 'no'}`);
+  console.log(`  Lifecycle stage: ${result.adoption.lifecycle_stage}`);
+  console.log(`  Fallback proof ready: ${result.adoption.fallback_proof_ready ? 'yes' : 'no'}`);
+  console.log(`  Cross-repo eligible: ${result.adoption.cross_repo_eligible ? 'yes' : 'no'}`);
+  if (result.adoption.blockers.length > 0) {
+    console.log(`  Blockers: ${result.adoption.blockers.map((blocker: { code: string }) => blocker.code).join(', ')}`);
+    console.log(`  Next command: ${result.adoption.recommended_next_steps[0] ?? 'n/a'}`);
+  }
 
   if (topIssue) {
     console.log('');
