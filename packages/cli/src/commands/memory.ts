@@ -16,6 +16,8 @@ type MemoryOptions = {
   quiet: boolean;
 };
 
+type MemorySubcommand = 'events' | 'query' | 'candidates' | 'knowledge' | 'show' | 'promote' | 'retire';
+
 const printMemoryHelp = (): void => {
   console.log(`Usage: playbook memory <subcommand> [options]
 
@@ -94,12 +96,57 @@ const resolveSubcommandArgument = (args: string[]): string | null => {
   return positional[1] ?? null;
 };
 
-export const runMemory = async (cwd: string, args: string[], options: MemoryOptions): Promise<number> => {
+const parseSubcommand = (args: string[]): MemorySubcommand | null => {
   const subcommand = args.find((arg) => !arg.startsWith('-'));
+  if (!subcommand) {
+    return null;
+  }
 
-  if (!subcommand || args.includes('--help') || args.includes('-h')) {
+  if (['events', 'query', 'candidates', 'knowledge', 'show', 'promote', 'retire'].includes(subcommand)) {
+    return subcommand as MemorySubcommand;
+  }
+
+  return null;
+};
+
+const emitMemoryResult = (
+  cwd: string,
+  options: MemoryOptions,
+  command: string,
+  payload: Record<string, unknown>,
+  textSummary: string
+): void => {
+  if (options.format === 'json') {
+    emitJsonOutput({ cwd, command, payload });
+    return;
+  }
+
+  if (!options.quiet) {
+    console.log(textSummary);
+  }
+};
+
+const emitMemoryError = (options: MemoryOptions, subcommand: string, error: unknown): void => {
+  const message = error instanceof Error ? error.message : String(error);
+  if (options.format === 'json') {
+    console.log(JSON.stringify({ schemaVersion: '1.0', command: `memory-${subcommand}`, error: message }, null, 2));
+  } else {
+    console.error(message);
+  }
+};
+
+export const runMemory = async (cwd: string, args: string[], options: MemoryOptions): Promise<number> => {
+  const requestedSubcommand = args.find((arg) => !arg.startsWith('-'));
+  const subcommand = parseSubcommand(args);
+
+  if (!requestedSubcommand || args.includes('--help') || args.includes('-h')) {
     printMemoryHelp();
-    return subcommand ? ExitCode.Success : ExitCode.Failure;
+    return requestedSubcommand ? ExitCode.Success : ExitCode.Failure;
+  }
+
+  if (!subcommand) {
+    emitMemoryError(options, requestedSubcommand, 'playbook memory: unsupported subcommand. Use events, query, candidates, knowledge, show, promote, or retire.');
+    return ExitCode.Failure;
   }
 
   try {
@@ -116,11 +163,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         })
       };
 
-      if (options.format === 'json') {
-        emitJsonOutput({ cwd, command: 'memory events', payload });
-      } else if (!options.quiet) {
-        console.log(`Found ${payload.events.length} memory events.`);
-      }
+      emitMemoryResult(cwd, options, 'memory events', payload, `Found ${payload.events.length} memory events.`);
       return ExitCode.Success;
     }
 
@@ -191,11 +234,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         })()
       };
 
-      if (options.format === 'json') {
-        emitJsonOutput({ cwd, command: 'memory query', payload });
-      } else if (!options.quiet) {
-        console.log(`Found ${payload.events.length} repository memory events (${payload.view}).`);
-      }
+      emitMemoryResult(cwd, options, 'memory query', payload, `Found ${payload.events.length} repository memory events (${payload.view}).`);
       return ExitCode.Success;
     }
 
@@ -209,11 +248,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         })
       };
 
-      if (options.format === 'json') {
-        emitJsonOutput({ cwd, command: 'memory candidates', payload });
-      } else if (!options.quiet) {
-        console.log(`Found ${payload.candidates.length} memory candidates.`);
-      }
+      emitMemoryResult(cwd, options, 'memory candidates', payload, `Found ${payload.candidates.length} memory candidates.`);
       return ExitCode.Success;
     }
 
@@ -227,11 +262,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         })
       };
 
-      if (options.format === 'json') {
-        emitJsonOutput({ cwd, command: 'memory knowledge', payload });
-      } else if (!options.quiet) {
-        console.log(`Found ${payload.knowledge.length} promoted memory records.`);
-      }
+      emitMemoryResult(cwd, options, 'memory knowledge', payload, `Found ${payload.knowledge.length} promoted memory records.`);
       return ExitCode.Success;
     }
 
@@ -256,8 +287,8 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
 
         if (options.format === 'json') {
           emitJsonOutput({ cwd, command: 'memory show', payload });
-        } else if (!options.quiet) {
-          console.log(`Candidate ${id}: ${candidate.title}`);
+        } else {
+          emitMemoryResult(cwd, options, 'memory show', payload, `Candidate ${id}: ${candidate.title}`);
         }
         return ExitCode.Success;
       }
@@ -275,11 +306,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
         record: knowledge
       };
 
-      if (options.format === 'json') {
-        emitJsonOutput({ cwd, command: 'memory show', payload });
-      } else if (!options.quiet) {
-        console.log(`Knowledge ${id}: ${knowledge.title}`);
-      }
+      emitMemoryResult(cwd, options, 'memory show', payload, `Knowledge ${id}: ${knowledge.title}`);
       return ExitCode.Success;
     }
 
@@ -292,11 +319,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
       loadCandidateKnowledgeById(cwd, candidateId);
       const payload = promoteMemoryCandidate(cwd, candidateId);
 
-      if (options.format === 'json') {
-        emitJsonOutput({ cwd, command: 'memory promote', payload });
-      } else if (!options.quiet) {
-        console.log(`Promoted candidate ${candidateId} into ${payload.artifactPath}.`);
-      }
+      emitMemoryResult(cwd, options, 'memory promote', payload, `Promoted candidate ${candidateId} into ${payload.artifactPath}.`);
       return ExitCode.Success;
     }
 
@@ -309,22 +332,13 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
       const reason = readOptionValue(args, '--reason') ?? 'Retired during human memory review.';
       const payload = retirePromotedKnowledge(cwd, knowledgeId, { reason });
 
-      if (options.format === 'json') {
-        emitJsonOutput({ cwd, command: 'memory retire', payload });
-      } else if (!options.quiet) {
-        console.log(`Retired knowledge ${knowledgeId}.`);
-      }
+      emitMemoryResult(cwd, options, 'memory retire', payload, `Retired knowledge ${knowledgeId}.`);
       return ExitCode.Success;
     }
-
     throw new Error('playbook memory: unsupported subcommand. Use events, query, candidates, knowledge, show, promote, or retire.');
+
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (options.format === 'json') {
-      console.log(JSON.stringify({ schemaVersion: '1.0', command: `memory-${subcommand}`, error: message }, null, 2));
-    } else {
-      console.error(message);
-    }
+    emitMemoryError(options, subcommand, error);
     return ExitCode.Failure;
   }
 };

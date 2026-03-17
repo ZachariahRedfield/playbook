@@ -46,6 +46,16 @@ type UpgradeJsonResult = {
   summary: string;
 };
 
+type UpgradeResultParams = {
+  options: UpgradeOptions;
+  integration: ModeDetection;
+  targetVersion: string;
+  migrationsNeeded: NeededMigration[];
+  exitCode: number;
+  summary: string;
+  applied?: MigrationApplyResult[];
+};
+
 const readJson = (filePath: string): Record<string, unknown> | undefined => {
   if (!fs.existsSync(filePath)) {
     return undefined;
@@ -152,6 +162,30 @@ const recommendedCommandsForMode = (mode: IntegrationMode, targetVersion: string
   ];
 };
 
+const toUpgradeResult = ({ options, integration, targetVersion, migrationsNeeded, exitCode, summary, applied }: UpgradeResultParams): UpgradeJsonResult => ({
+  schemaVersion: '1.0',
+  command: 'upgrade',
+  ok: exitCode === ExitCode.Success,
+  exitCode,
+  mode: integration.mode,
+  currentVersion: integration.currentVersion,
+  targetVersion,
+  recommendedCommands: recommendedCommandsForMode(integration.mode, targetVersion),
+  migrationsNeeded,
+  applied,
+  dryRun: options.apply ? options.dryRun : undefined,
+  summary
+});
+
+const emitUpgradeResult = (result: UpgradeJsonResult, options: UpgradeOptions): void => {
+  if (options.format === 'json') {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  printText(result, options);
+};
+
 const printText = (result: UpgradeJsonResult, options: UpgradeOptions): void => {
   if (options.quiet && result.ok && !options.check && !options.apply) {
     return;
@@ -163,7 +197,7 @@ const printText = (result: UpgradeJsonResult, options: UpgradeOptions): void => 
   console.log(`- targetVersion: ${result.targetVersion}`);
   console.log(`- offline: ${options.offline ? 'true' : 'false'} (network lookups are disabled in v1)`);
 
-  console.log('Recommended manual upgrade commands:');
+  console.log('Recommended operator actions:');
   for (const command of result.recommendedCommands) {
     console.log(`- ${command}`);
   }
@@ -250,24 +284,16 @@ export const runUpgrade = async (cwd: string, options: UpgradeOptions): Promise<
     const targetVersion = options.to ?? getCurrentCliVersion();
 
     if ((options.check || options.apply) && integration.mode === 'unknown' && !options.from) {
-      const unknownModeResult: UpgradeJsonResult = {
-        schemaVersion: '1.0',
-        command: 'upgrade',
-        ok: false,
-        exitCode: ExitCode.Failure,
-        mode: integration.mode,
-        currentVersion: integration.currentVersion,
+      const unknownModeResult = toUpgradeResult({
+        options,
+        integration,
         targetVersion,
-        recommendedCommands: recommendedCommandsForMode(integration.mode, targetVersion),
         migrationsNeeded: [],
+        exitCode: ExitCode.Failure,
         summary: 'Unknown integration mode. Provide --from <version> to run upgrade checks safely.'
-      };
+      });
 
-      if (options.format === 'json') {
-        console.log(JSON.stringify(unknownModeResult, null, 2));
-      } else {
-        printText(unknownModeResult, options);
-      }
+      emitUpgradeResult(unknownModeResult, options);
 
       return ExitCode.Failure;
     }
@@ -292,45 +318,24 @@ export const runUpgrade = async (cwd: string, options: UpgradeOptions): Promise<
         ? 'Upgrade checks found recommended migrations.'
         : 'Upgrade checks passed with no recommended migrations.';
 
-    const result: UpgradeJsonResult = {
-      schemaVersion: '1.0',
-      command: 'upgrade',
-      ok: exitCode === ExitCode.Success,
-      exitCode,
-      mode: integration.mode,
-      currentVersion: integration.currentVersion,
-      targetVersion,
-      recommendedCommands: recommendedCommandsForMode(integration.mode, targetVersion),
-      migrationsNeeded,
-      applied,
-      dryRun: options.apply ? options.dryRun : undefined,
-      summary
-    };
-
-    if (options.format === 'json') {
-      console.log(JSON.stringify(result, null, 2));
-    } else {
-      printText(result, options);
-    }
+    const result = toUpgradeResult({ options, integration, targetVersion, migrationsNeeded, exitCode, summary, applied });
+    emitUpgradeResult(result, options);
 
     return exitCode;
   } catch (error) {
-    if (options.format === 'json') {
-      const failed: UpgradeJsonResult = {
-        schemaVersion: '1.0',
-        command: 'upgrade',
-        ok: false,
-        exitCode: ExitCode.Failure,
-        mode: 'unknown',
-        targetVersion: options.to ?? getCurrentCliVersion(),
-        recommendedCommands: [],
-        migrationsNeeded: [],
-        summary: String(error)
-      };
-      console.log(JSON.stringify(failed, null, 2));
-    } else {
+    if (options.format !== 'json') {
       console.error('playbook upgrade failed with an internal error.');
       console.error(String(error));
+    } else {
+      const failed = toUpgradeResult({
+        options,
+        integration: { mode: 'unknown' },
+        targetVersion: options.to ?? getCurrentCliVersion(),
+        migrationsNeeded: [],
+        exitCode: ExitCode.Failure,
+        summary: String(error)
+      });
+      emitUpgradeResult(failed, options);
     }
 
     return ExitCode.Failure;

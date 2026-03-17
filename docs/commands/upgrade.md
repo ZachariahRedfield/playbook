@@ -1,7 +1,7 @@
 # `pnpm playbook upgrade`
 
 ## What it does
-Plans and applies deterministic local Playbook upgrade migrations for known integration modes.
+Plans and applies deterministic local Playbook upgrade migrations for known integration modes, with explicit operator-facing next actions in both text and JSON output.
 
 ## Common usage
 - `pnpm playbook upgrade --check`
@@ -15,3 +15,9 @@ Plans and applies deterministic local Playbook upgrade migrations for known inte
 - `--from <version>` / `--to <version>`: explicit version bounds for checks.
 - `--offline`: force offline-safe mode.
 - `--json` / `--format json`: machine-readable output.
+
+
+## Operator surface
+- Text mode prints **Recommended operator actions** and a migration check summary.
+- JSON mode returns a stable envelope: `recommendedCommands`, `migrationsNeeded`, optional `applied`, and `summary`.
+- If integration mode cannot be detected, `--check`/`--apply` require `--from <version>` for safe deterministic checks.

@@ -155,4 +155,17 @@ describe('runMemory', () => {
     expect(payload.command).toBe('memory-retire');
     logSpy.mockRestore();
   });
+  it('returns deterministic failure envelope for unsupported subcommands', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runMemory('/repo', ['unknown-subcommand'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-unknown-subcommand');
+    expect(payload.error).toContain('unsupported subcommand');
+    logSpy.mockRestore();
+  });
+
 });
