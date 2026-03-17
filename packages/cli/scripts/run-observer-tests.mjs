@@ -99,6 +99,39 @@ test('persists registry across add/list/serve from different cwd values', async 
   }
 });
 
+
+test('serves browser-safe observer dashboard bootstrap script with expected wiring', async () => {
+  const cwd = makeTempDir();
+  const repo = path.join(cwd, 'repo-ui-script');
+  fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+  fs.writeFileSync(path.join(repo, '.playbook', 'session.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'session' }, null, 2));
+
+  assert.equal(await runObserver(cwd, ['repo', 'add', repo, '--id', 'repo-ui-script'], { format: 'json', quiet: false }), 0);
+
+  const server = createObserverServer(cwd);
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const address = server.address();
+    const port = typeof address === 'object' && address ? address.port : 0;
+    const response = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
+    const script = await response.text();
+
+    assert.equal(script.includes('const refreshAll = async () =>'), true);
+    assert.equal(script.includes('await loadRepoDetail();'), true);
+    assert.equal(script.includes('const selfPayload = await getJson'), true);
+    assert.equal(script.includes('renderSelfObservation'), true);
+    assert.equal(script.includes('showObserverBootstrapError'), true);
+    assert.equal(script.includes('setInterval(refreshAll, 5000);'), true);
+    assert.equal(/\b:\s*any\b/.test(script), false);
+    assert.equal(/\bas\s+any\b/.test(script), false);
+    assert.equal(/=\s*<[A-Za-z_$][\w$]*>\s*\(/.test(script), false);
+    assert.equal(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*:\s*[A-Za-z_$][\w$<>,\s\[\]\|&]*\s*(?:=|;)/.test(script), false);
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+});
+
+
 let failures = 0;
 for (const { name, fn } of tests) {
   try {
