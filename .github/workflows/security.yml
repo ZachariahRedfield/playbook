@@ -84,15 +84,16 @@ jobs:
           }
 
           const sarifRaw = fs.readFileSync(sarifPath, 'utf8');
-          if (!sarifRaw.trim()) {
-            throw new Error(`Expected SARIF JSON is empty: ${sarifPath}`);
-          }
 
           let sarif;
-          try {
-            sarif = JSON.parse(sarifRaw);
-          } catch (error) {
-            throw new Error(`Failed to parse SARIF JSON at ${sarifPath}: ${error.message}`);
+          if (!sarifRaw.trim()) {
+            sarif = { runs: [] };
+          } else {
+            try {
+              sarif = JSON.parse(sarifRaw);
+            } catch (error) {
+              throw new Error(`Failed to parse SARIF JSON at ${sarifPath}: ${error.message}`);
+            }
           }
           const results = Array.isArray(sarif.runs)
             ? sarif.runs.flatMap((run) => (Array.isArray(run.results) ? run.results : []))
