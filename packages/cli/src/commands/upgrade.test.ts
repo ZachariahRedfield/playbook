@@ -35,8 +35,8 @@ describe('runUpgrade', () => {
 
   beforeEach(() => {
     repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-upgrade-'));
-    checkOne.mockReset();
-    checkTwo.mockReset();
+    checkOne.mockReset().mockResolvedValue({ needed: false, reason: 'not needed' });
+    checkTwo.mockReset().mockResolvedValue({ needed: false, reason: 'not needed' });
     applyOne.mockReset();
     applyTwo.mockReset();
   });
@@ -46,9 +46,42 @@ describe('runUpgrade', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns deterministic json failure when mode is unknown and --from is omitted', async () => {
+  it('reports up_to_date for already aligned dependency repos', async () => {
     const { runUpgrade } = await import('./upgrade.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    fs.writeFileSync(
+      path.join(repoRoot, 'package.json'),
+      JSON.stringify({ packageManager: 'pnpm@9.0.0', devDependencies: { '@fawxzzy/playbook': '^0.1.1' } })
+    );
+
+    const exitCode = await runUpgrade(repoRoot, {
+      check: false,
+      apply: false,
+      dryRun: false,
+      offline: false,
+      ci: false,
+      explain: false,
+      format: 'json',
+      quiet: false,
+      to: '0.1.1'
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.kind).toBe('playbook-upgrade');
+    expect(payload.status).toBe('up_to_date');
+    expect(payload.currentVersion).toBe('^0.1.1');
+  });
+
+  it('reports upgrade_available for dependency repos behind target', async () => {
+    const { runUpgrade } = await import('./upgrade.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    fs.writeFileSync(
+      path.join(repoRoot, 'package.json'),
+      JSON.stringify({ packageManager: 'pnpm@9.0.0', devDependencies: { '@fawxzzy/playbook': '^0.1.0' } })
+    );
 
     const exitCode = await runUpgrade(repoRoot, {
       check: true,
@@ -58,51 +91,75 @@ describe('runUpgrade', () => {
       ci: false,
       explain: false,
       format: 'json',
-      quiet: false
+      quiet: false,
+      to: '0.1.1'
     });
 
-    expect(exitCode).toBe(ExitCode.Failure);
+    expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.command).toBe('upgrade');
-    expect(payload.summary).toContain('Unknown integration mode');
-    expect(payload.recommendedCommands).toHaveLength(2);
+    expect(payload.status).toBe('upgrade_available');
+    expect(payload.targetVersion).toBe('0.1.1');
+    expect(payload.actions).toContain('pnpm install');
   });
 
-  it('runs check/apply/check cycle and emits stable json envelope', async () => {
+  it('returns blocked status for ambiguous package manager markers on apply', async () => {
     const { runUpgrade } = await import('./upgrade.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    fs.writeFileSync(path.join(repoRoot, 'package.json'), JSON.stringify({ devDependencies: { '@fawxzzy/playbook': '^0.1.0' } }));
-
-    checkOne
-      .mockResolvedValueOnce({ needed: true, reason: 'needed before apply' })
-      .mockResolvedValueOnce({ needed: false, reason: 'resolved' });
-    checkTwo
-      .mockResolvedValueOnce({ needed: true, reason: 'manual migration needed' })
-      .mockResolvedValueOnce({ needed: true, reason: 'manual migration needed' });
-    applyOne.mockResolvedValue({ changed: true, filesChanged: ['docs/REFERENCE/cli.md'], summary: 'Applied migration one.' });
+    fs.writeFileSync(
+      path.join(repoRoot, 'package.json'),
+      JSON.stringify({ packageManager: 'pnpm@9.0.0', devDependencies: { '@fawxzzy/playbook': '^0.1.0' } })
+    );
+    fs.writeFileSync(path.join(repoRoot, 'yarn.lock'), 'lock');
 
     const exitCode = await runUpgrade(repoRoot, {
       check: false,
       apply: true,
       dryRun: false,
-      offline: true,
+      offline: false,
       ci: false,
       explain: false,
       format: 'json',
-      quiet: false
+      quiet: false,
+      to: '0.1.1'
     });
 
     expect(exitCode).toBe(ExitCode.WarningsOnly);
-    expect(applyOne).toHaveBeenCalledTimes(1);
-    expect(applyTwo).not.toHaveBeenCalled();
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.status).toBe('upgrade_blocked');
+    expect(payload.packageManager.status).toBe('ambiguous');
+  });
+
+  it('applies bounded dependency mutation in apply mode', async () => {
+    const { runUpgrade } = await import('./upgrade.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    fs.writeFileSync(path.join(repoRoot, 'pnpm-lock.yaml'), 'lockfileVersion: 9.0');
+    fs.writeFileSync(
+      path.join(repoRoot, 'package.json'),
+      JSON.stringify({ devDependencies: { '@fawxzzy/playbook': '^0.1.0', vitest: '^1.0.0' } })
+    );
+
+    const exitCode = await runUpgrade(repoRoot, {
+      check: false,
+      apply: true,
+      dryRun: false,
+      offline: false,
+      ci: false,
+      explain: false,
+      format: 'json',
+      quiet: false,
+      to: '0.1.1'
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const updated = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as {
+      devDependencies: Record<string, string>;
+    };
+    expect(updated.devDependencies['@fawxzzy/playbook']).toBe('^0.1.1');
+    expect(updated.devDependencies.vitest).toBe('^1.0.0');
 
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.command).toBe('upgrade');
-    expect(payload.mode).toBe('dependency');
-    expect(payload.dryRun).toBe(false);
-    expect(payload.applied).toHaveLength(1);
-    expect(payload.migrationsNeeded).toHaveLength(1);
-    expect(payload.summary).toContain('additional recommended migrations remaining');
+    expect(payload.status).toBe('upgrade_applied');
   });
 });

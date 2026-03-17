@@ -466,7 +466,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: 'upgrade',
-    description: 'Plan safe upgrades and local deterministic migrations',
+    description: 'Check and apply explicit local Playbook dependency upgrades',
     category: 'Utility',
     role: 'utility',
     lifecycle: 'utility',
@@ -474,7 +474,7 @@ export const commandMetadata: CommandMetadata[] = [
     onboardingPriority: null,
     canonicalSequence: null,
     productFacing: false,
-    exampleArgs: 'upgrade --check --json',
+    exampleArgs: 'upgrade --json',
     machineReadable: true
   },
   {
