@@ -223,15 +223,6 @@ const observedTransitionForPrompt = (
   if (input?.observed_transition) {
     return input.observed_transition;
   }
-  if ((input?.status ?? "not_run") === "succeeded") {
-    return transitionForItem(
-      item ??
-        ({
-          lifecycle_stage: from,
-          parallel_group: "apply lane",
-        } as AdoptionWorkItem),
-    );
-  }
   return { from, to: from };
 };
 

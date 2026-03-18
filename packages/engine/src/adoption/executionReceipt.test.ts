@@ -220,7 +220,12 @@ describe("buildFleetExecutionReceipt", () => {
           lane_id: prompt!.lane_id,
           status: "succeeded",
           verification_passed: true,
-          notes: "operator reported success but readiness stayed pending",
+          observed_transition: {
+            from: "planned_apply_pending",
+            to: "planned_apply_pending",
+          },
+          notes:
+            "operator reported success but observed lifecycle stayed pending",
         },
       ]),
     );

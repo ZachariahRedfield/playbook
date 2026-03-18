@@ -102,7 +102,8 @@ export const buildExecutionOutcomeInputFromResults = (
       repo_id: prompt.repo_id,
       lane_id: prompt.lane_id,
       status: statusToObserved(result.status),
-      verification_passed: result.status === "success",
+      verification_passed:
+        result.status === "success" && result.observed_transition !== undefined,
       notes: result.error?.trim()
         ? result.error.trim()
         : `execution result ingested: ${result.status}`,

@@ -66,7 +66,10 @@ describe("ingestExecutionResults", () => {
           repo_id: "repo-b",
           prompt_id: promptB!.prompt_id,
           status: "success",
-          observed_transition: { from: "planned_apply_pending", to: "ready" },
+          observed_transition: {
+            from: "planned_apply_pending",
+            to: "indexed_plan_pending",
+          },
         },
         {
           repo_id: "repo-a",
@@ -93,12 +96,19 @@ describe("ingestExecutionResults", () => {
     expect(
       result.receipt.repo_results.find((entry) => entry.repo_id === "repo-b"),
     ).toMatchObject({
-      status: "success",
-      observed_transition: { to: "ready", from: "planned_apply_pending" },
+      status: "mismatch",
+      observed_transition: {
+        to: "indexed_plan_pending",
+        from: "planned_apply_pending",
+      },
     });
     expect(result.updated_state.summary.repos_needing_retry).toEqual([
       "repo-a",
     ]);
+    expect(
+      result.updated_state.repos.find((entry) => entry.repo_id === "repo-b")
+        ?.reconciliation_status,
+    ).toBe("completed_with_drift");
     expect(result.next_queue.queue_source).toBe("updated_state");
     expect(result.next_queue.work_items.map((entry) => entry.repo_id)).toEqual([
       "repo-a",
