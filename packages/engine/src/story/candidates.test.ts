@@ -10,8 +10,14 @@ const makeRepo = (): string => {
   tempDirs.push(dir);
   return dir;
 };
-const writeJson = (repo: string, relativePath: string, payload: unknown): void => {
-  const target = path.join(repo, relativePath);
+
+const requireRepoRoot = (repoRoot: string | undefined): string => {
+  expect(repoRoot, 'test fixture must return a repo root path').toEqual(expect.any(String));
+  return repoRoot as string;
+};
+
+const writeJson = (repoRoot: string, relativePath: string, payload: unknown): void => {
+  const target = path.join(repoRoot, relativePath);
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.writeFileSync(target, JSON.stringify(payload, null, 2));
 };
@@ -22,11 +28,11 @@ afterEach(() => {
 
 describe('story candidates', () => {
   it('derives grouped candidates from deterministic evidence without mutating canonical backlog', () => {
-    const repo = makeRepo();
-    const repoName = path.basename(repo);
-    writeJson(repo, '.playbook/repo-index.json', { framework: 'node' });
-    writeJson(repo, '.playbook/repo-graph.json', { edges: [] });
-    writeJson(repo, '.playbook/improvement-candidates.json', {
+    const repoRoot = requireRepoRoot(makeRepo());
+    const repoName = path.basename(repoRoot);
+    writeJson(repoRoot, '.playbook/repo-index.json', { framework: 'node' });
+    writeJson(repoRoot, '.playbook/repo-graph.json', { edges: [] });
+    writeJson(repoRoot, '.playbook/improvement-candidates.json', {
       schemaVersion: '1.0',
       kind: 'improvement-candidates',
       generatedAt: '2026-01-01T00:00:00.000Z',
@@ -57,23 +63,23 @@ describe('story candidates', () => {
       ],
       rejected_candidates: []
     });
-    writeJson(repo, '.playbook/execution-receipt.json', { verification_summary: { planned_vs_actual_drift: ['lane drift detected'] } });
-    writeJson(repo, '.playbook/execution-updated-state.json', { summary: { by_reconciliation_status: { completed_with_drift: 1, stale_plan_or_superseded: 0 } } });
+    writeJson(repoRoot, '.playbook/execution-receipt.json', { verification_summary: { planned_vs_actual_drift: ['lane drift detected'] } });
+    writeJson(repoRoot, '.playbook/execution-updated-state.json', { summary: { by_reconciliation_status: { completed_with_drift: 1, stale_plan_or_superseded: 0 } } });
 
-    const artifact = generateStoryCandidates(repo, { generatedAt: '2026-01-02T00:00:00.000Z' });
+    const artifact = generateStoryCandidates(repoRoot, { generatedAt: '2026-01-02T00:00:00.000Z' });
     expect(artifact.repo).toBe(repoName);
     expect(artifact.candidates.length).toBeGreaterThanOrEqual(4);
     const routing = artifact.candidates.find((entry) => entry.candidate_id.includes('improvement-routing-governance'));
     expect(routing?.source_findings).toHaveLength(2);
     expect(routing?.promoted_story_id).toBeNull();
-    expect(fs.existsSync(path.join(repo, STORIES_RELATIVE_PATH))).toBe(false);
+    expect(fs.existsSync(path.join(repoRoot, STORIES_RELATIVE_PATH))).toBe(false);
     expect(artifact.source_artifacts).toContain('.playbook/improvement-candidates.json');
   });
 
   it('promotes one candidate explicitly into canonical backlog state', () => {
-    const repo = makeRepo();
-    writeJson(repo, '.playbook/repo-index.json', { framework: 'node' });
-    writeJson(repo, '.playbook/improvement-candidates.json', {
+    const repoRoot = requireRepoRoot(makeRepo());
+    writeJson(repoRoot, '.playbook/repo-index.json', { framework: 'node' });
+    writeJson(repoRoot, '.playbook/improvement-candidates.json', {
       schemaVersion: '1.0', kind: 'improvement-candidates', generatedAt: '2026-01-01T00:00:00.000Z',
       thresholds: { minimum_recurrence: 3, minimum_confidence: 0.6 }, sourceArtifacts: { memoryEventsPath: '', learningStatePath: '', memoryEventCount: 0, learningStateAvailable: false },
       summary: { AUTO_SAFE: 0, CONVERSATIONAL: 0, GOVERNANCE: 1, total: 1 },
@@ -84,14 +90,14 @@ describe('story candidates', () => {
       rejected_candidates: []
     });
 
-    const before = fs.existsSync(path.join(repo, STORIES_RELATIVE_PATH)) ? fs.readFileSync(path.join(repo, STORIES_RELATIVE_PATH), 'utf8') : null;
-    const artifact = generateStoryCandidates(repo, { generatedAt: '2026-01-02T00:00:00.000Z' });
-    const promoted = promoteStoryCandidate(repo, artifact.candidates[0]!.candidate_id);
+    const before = fs.existsSync(path.join(repoRoot, STORIES_RELATIVE_PATH)) ? fs.readFileSync(path.join(repoRoot, STORIES_RELATIVE_PATH), 'utf8') : null;
+    const artifact = generateStoryCandidates(repoRoot, { generatedAt: '2026-01-02T00:00:00.000Z' });
+    const promoted = promoteStoryCandidate(repoRoot, artifact.candidates[0]!.candidate_id);
     expect(promoted.story.id).toContain('story-');
-    const stories = JSON.parse(fs.readFileSync(path.join(repo, STORIES_RELATIVE_PATH), 'utf8')) as { stories: Array<{ id: string }> };
+    const stories = JSON.parse(fs.readFileSync(path.join(repoRoot, STORIES_RELATIVE_PATH), 'utf8')) as { stories: Array<{ id: string }> };
     expect(stories.stories).toHaveLength(1);
     expect(stories.stories[0]!.id).toBe(promoted.story.id);
-    expect(fs.existsSync(path.join(repo, STORY_CANDIDATES_RELATIVE_PATH))).toBe(true);
+    expect(fs.existsSync(path.join(repoRoot, STORY_CANDIDATES_RELATIVE_PATH))).toBe(true);
     expect(before).toBeNull();
   });
 });
