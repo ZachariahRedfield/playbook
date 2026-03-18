@@ -309,7 +309,9 @@ const commandRunners: Record<
               ? "receipt"
               : scopeArg === "updated"
                 ? "updated"
-                : "repo";
+                : scopeArg === "proof"
+                  ? "proof"
+                  : "repo";
     return runStatus(cwd, { ci, format, quiet, scope });
   },
   upgrade: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {

@@ -14,7 +14,11 @@ function createFixtureRepo(): string {
   fs.mkdirSync(path.join(fixtureRepo, 'src', 'features', 'workouts'), { recursive: true });
   fs.mkdirSync(path.join(fixtureRepo, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(fixtureRepo, 'src', 'features', 'workouts', 'index.ts'), 'export const workouts = true;\n');
+  fs.writeFileSync(path.join(fixtureRepo, 'docs', 'ARCHITECTURE.md'), '# Architecture\n');
+  fs.writeFileSync(path.join(fixtureRepo, 'docs', 'CHANGELOG.md'), '# Changelog\n');
+  fs.writeFileSync(path.join(fixtureRepo, 'docs', 'PLAYBOOK_CHECKLIST.md'), '# Checklist\n');
   fs.writeFileSync(path.join(fixtureRepo, 'docs', 'PLAYBOOK_NOTES.md'), '# Playbook Notes\n\n- Fixture notes.\n');
+  fs.writeFileSync(path.join(fixtureRepo, 'playbook.config.json'), JSON.stringify({ version: 1 }, null, 2));
 
   return fixtureRepo;
 }
@@ -57,10 +61,36 @@ describe('external repo bootstrap', () => {
     const plan = runCli([`--repo=${fixtureRepo}`, 'plan', '--json']);
     expect(plan.status).toBe(0);
     expect(plan.stdout).toContain('"command": "plan"');
+    fs.writeFileSync(path.join(fixtureRepo, '.playbook', 'plan.json'), plan.stdout);
 
     const query = runCli(['--repo', fixtureRepo, 'query', 'modules', '--json']);
     expect(query.status).toBe(0);
     expect(query.stdout).toContain('"command": "query"');
     expect(query.stdout).toContain('"modules"');
   });
+
+  it('proves bootstrap readiness and surfaces execution-state failures clearly', { timeout: 45000 }, () => {
+    const before = fs.existsSync(path.join(fixtureRepo, '.playbook', 'policy-apply-result.json'));
+    expect(before).toBe(false);
+
+    const plan = runCli([`--repo=${fixtureRepo}`, 'plan', '--json']);
+    expect(plan.status).toBe(0);
+    fs.writeFileSync(path.join(fixtureRepo, '.playbook', 'plan.json'), plan.stdout);
+
+    const failingProof = runCli(['--repo', fixtureRepo, 'status', 'proof', '--json']);
+    expect(failingProof.status).toBe(1);
+    const failingPayload = JSON.parse(failingProof.stdout);
+    expect(failingPayload.mode).toBe('proof');
+    expect(failingPayload.proof.current_state).toBe('execution_state_blocked');
+    expect(failingPayload.proof.diagnostics.failing_stage).toBe('execution-state');
+
+    fs.writeFileSync(path.join(fixtureRepo, '.playbook', 'policy-apply-result.json'), JSON.stringify({ ok: true }, null, 2));
+
+    const passingProof = runCli(['--repo', fixtureRepo, 'status', 'proof', '--json']);
+    expect(passingProof.status).toBe(0);
+    const passingPayload = JSON.parse(passingProof.stdout);
+    expect(passingPayload.proof.ok).toBe(true);
+    expect(passingPayload.proof.current_state).toBe('governed_consumer_ready');
+  });
+
 });

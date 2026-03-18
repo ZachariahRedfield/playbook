@@ -22,8 +22,10 @@ const buildFleetCodexExecutionPlan = vi.fn();
 const buildFleetExecutionReceipt = vi.fn();
 const buildFleetUpdatedAdoptionState = vi.fn();
 const deriveNextAdoptionQueueFromUpdatedState = vi.fn();
+const runBootstrapProof = vi.fn();
+const defaultBootstrapCliResolutionCommands = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState, runBootstrapProof, defaultBootstrapCliResolutionCommands }));
 
 const makeAnalyzeReport = (overrides?: Partial<AnalyzeReport>): AnalyzeReport => ({
   repoPath: '/tmp/repo',
@@ -58,6 +60,9 @@ describe('runStatus', () => {
     buildFleetExecutionReceipt.mockReset();
     buildFleetUpdatedAdoptionState.mockReset();
     deriveNextAdoptionQueueFromUpdatedState.mockReset();
+    runBootstrapProof.mockReset();
+    defaultBootstrapCliResolutionCommands.mockReset();
+    defaultBootstrapCliResolutionCommands.mockReturnValue([]);
     buildRepoAdoptionReadiness.mockReturnValue({
       schemaVersion: '1.0',
       connection_status: 'connected',
@@ -178,6 +183,26 @@ describe('runStatus', () => {
       waves: [],
       grouped_actions: [],
       blocked_items: []
+    });
+    runBootstrapProof.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'playbook-bootstrap-proof',
+      repo_root: process.cwd(),
+      command: 'status',
+      mode: 'proof',
+      ok: true,
+      current_state: 'governed_consumer_ready',
+      highest_priority_next_action: 'No action required.',
+      summary: {
+        current_state: 'Repo passed the governed Playbook bootstrap proof.',
+        why: 'all checks passed',
+        what_next: 'No action required.'
+      },
+      diagnostics: {
+        failing_stage: null,
+        failing_category: null,
+        checks: []
+      }
     });
   });
 
@@ -513,6 +538,61 @@ describe('runStatus', () => {
     expect(JSON.parse(fs.readFileSync(committedPath, 'utf8'))).toEqual({ kind: 'prior-updated-state', preserved: true });
     const stagedPath = path.join(cwd, '.playbook', 'staged', 'workflow-status-updated', 'execution-updated-state.json');
     expect(fs.existsSync(stagedPath)).toBe(true);
+    logSpy.mockRestore();
+  });
+
+
+  it('supports proof scope with stable json output', async () => {
+    const { runStatus } = await import('./status.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    runBootstrapProof.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'playbook-bootstrap-proof',
+      repo_root: '/tmp/proof-repo',
+      command: 'status',
+      mode: 'proof',
+      ok: false,
+      current_state: 'docs_blocked',
+      highest_priority_next_action: 'Run `pnpm playbook init`.',
+      summary: {
+        current_state: 'Repo is missing required bootstrap docs/governance surfaces.',
+        why: 'Bootstrap docs are missing. missing required bootstrap doc: docs/ARCHITECTURE.md',
+        what_next: 'Run `pnpm playbook init`.'
+      },
+      diagnostics: {
+        failing_stage: 'docs',
+        failing_category: 'required_docs_missing',
+        checks: [
+          {
+            id: 'docs.bootstrap-required',
+            stage: 'docs',
+            status: 'fail',
+            category: 'required_docs_missing',
+            summary: 'Bootstrap docs are missing.',
+            diagnostics: ['missing required bootstrap doc: docs/ARCHITECTURE.md'],
+            next_action: 'Run `pnpm playbook init`.',
+            command: null
+          }
+        ]
+      }
+    });
+
+    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'json', quiet: false, scope: 'proof' });
+    expect(exitCode).toBe(ExitCode.Failure);
+
+    const payload = JSON.parse(logSpy.mock.calls.map((call) => String(call[0])).join('\n'));
+    expect(payload).toEqual({
+      schemaVersion: '1.0',
+      command: 'status',
+      mode: 'proof',
+      proof: expect.objectContaining({
+        ok: false,
+        current_state: 'docs_blocked',
+        diagnostics: expect.objectContaining({ failing_stage: 'docs', failing_category: 'required_docs_missing' })
+      })
+    });
+
     logSpy.mockRestore();
   });
 

@@ -21,6 +21,8 @@ export { generateRepositoryHealth } from './doctor/index.js';
 export type { RepositoryHealth, GovernanceStatusItem, ArtifactHygieneReport } from './doctor/index.js';
 
 export { buildRepoAdoptionReadiness } from './adoption/readiness.js';
+export { runBootstrapProof, resolveBootstrapCliAvailability, defaultBootstrapCliResolutionCommands } from './adoption/bootstrapProof.js';
+export type { BootstrapProofStage, BootstrapProofFailureCategory, BootstrapProofCheck, BootstrapProofResult, BootstrapCliResolutionCommand } from './adoption/bootstrapProof.js';
 export type { RepoAdoptionReadiness, RepoAdoptionBlocker, ReadinessLifecycleStage, ReadinessConnectionStatus, ReadinessArtifactStatus, ReadinessArtifactStatusCode } from './adoption/readiness.js';
 export { buildFleetAdoptionReadinessSummary } from './adoption/fleetReadiness.js';
 export type { FleetRepoReadinessEntry, FleetPriorityStage, FleetBlockerFrequency, FleetRecommendedAction, FleetRepoPriorityEntry, FleetAdoptionReadinessSummary } from './adoption/fleetReadiness.js';

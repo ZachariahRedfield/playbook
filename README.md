@@ -731,6 +731,7 @@ Execution runs are appended by `verify`, `plan`, `apply`, and follow-up `verify`
 - deterministic blockers and exact next command recommendations
 
 Use this as the single operator status surface before running fallback proof or cross-repo comparison.
+Run `pnpm playbook status proof --json` when you need an end-to-end external-consumer bootstrap proof. It deterministically validates runtime acquisition, local CLI resolution, initialization, required docs/governance artifacts, required execution state, and governed bootstrap contract success, then returns the single highest-priority next action if proof fails.
 
 For portfolio-level triage, run `pnpm playbook status fleet --json` to aggregate lifecycle-stage counts, blocker frequencies, fallback/cross-repo eligibility counts, and deterministic `repos_by_priority` ordering across connected Observer repos.
 

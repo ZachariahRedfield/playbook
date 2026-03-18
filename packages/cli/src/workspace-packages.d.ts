@@ -19,6 +19,10 @@ declare module "@zachariahredfield/playbook-engine" {
   export const loadConfig: (...args: any[]) => Promise<any>;
   export const generateRepositoryHealth: (...args: any[]) => any;
   export const buildRepoAdoptionReadiness: (...args: any[]) => any;
+  export const runBootstrapProof: (...args: any[]) => any;
+  export const resolveBootstrapCliAvailability: (...args: any[]) => any;
+  export const defaultBootstrapCliResolutionCommands: (...args: any[]) => any;
+  export type BootstrapCliResolutionCommand = any;
   export const buildFleetAdoptionReadinessSummary: (...args: any[]) => any;
   export const buildFleetAdoptionWorkQueue: (...args: any[]) => any;
   export const buildFleetCodexExecutionPlan: (...args: any[]) => any;
