@@ -5,14 +5,17 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { generateStoryCandidates, promoteStoryCandidate, STORY_CANDIDATES_RELATIVE_PATH, STORIES_RELATIVE_PATH } from './candidates.js';
 
 const tempDirs: string[] = [];
-const makeRepo = (): string => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-story-candidates-'));
-  tempDirs.push(dir);
-  return dir;
+type StoryCandidateTestRepo = { repoRoot: string };
+
+const makeRepo = (): StoryCandidateTestRepo => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-story-candidates-'));
+  tempDirs.push(repoRoot);
+  return { repoRoot };
 };
 
 const requireRepoRoot = (repoRoot: string | undefined): string => {
-  expect(repoRoot, 'test fixture must return a repo root path').toEqual(expect.any(String));
+  expect(repoRoot, 'test fixture must return a repoRoot path').toBeTruthy();
+  expect(repoRoot).toEqual(expect.any(String));
   return repoRoot as string;
 };
 
@@ -28,7 +31,8 @@ afterEach(() => {
 
 describe('story candidates', () => {
   it('derives grouped candidates from deterministic evidence without mutating canonical backlog', () => {
-    const repoRoot = requireRepoRoot(makeRepo());
+    const { repoRoot: fixtureRepoRoot } = makeRepo();
+    const repoRoot = requireRepoRoot(fixtureRepoRoot);
     const repoName = path.basename(repoRoot);
     writeJson(repoRoot, '.playbook/repo-index.json', { framework: 'node' });
     writeJson(repoRoot, '.playbook/repo-graph.json', { edges: [] });
@@ -77,7 +81,8 @@ describe('story candidates', () => {
   });
 
   it('promotes one candidate explicitly into canonical backlog state', () => {
-    const repoRoot = requireRepoRoot(makeRepo());
+    const { repoRoot: fixtureRepoRoot } = makeRepo();
+    const repoRoot = requireRepoRoot(fixtureRepoRoot);
     writeJson(repoRoot, '.playbook/repo-index.json', { framework: 'node' });
     writeJson(repoRoot, '.playbook/improvement-candidates.json', {
       schemaVersion: '1.0', kind: 'improvement-candidates', generatedAt: '2026-01-01T00:00:00.000Z',
