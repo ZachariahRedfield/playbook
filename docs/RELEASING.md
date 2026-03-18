@@ -17,17 +17,19 @@ Tag pushes (`v*`) trigger `.github/workflows/publish-npm.yml`, which publishes t
 The publish workflow now packs `packages/cli-wrapper` and uploads a deterministic release asset for CI fallback consumers:
 
 - Asset filename: `playbook-cli-<version>.tgz`
-- Example for first fixed release `v0.1.6`: `playbook-cli-0.1.6.tgz`
+- Example for first fixed release `v0.1.7`: `playbook-cli-0.1.7.tgz`
 - Release URL shape: `https://github.com/ZachariahRedfield/playbook/releases/download/v<version>/playbook-cli-<version>.tgz`
 
 The workflow enforces `tag version == packages/cli-wrapper package.json version` before uploading the tarball so pinned fallback URLs remain immutable and real.
+
+Before upload, the release job now runs `node scripts/pack-release-fallback-asset.mjs`, which packs from `packages/cli-wrapper`, preserves the exact generated tarball as `dist/release/playbook-cli-<version>.tgz`, and asserts the tarball contains `package/bin/playbook.js`, `package/runtime/main.js`, and vendored `package/runtime/node_modules/**`.
 
 ## 4) Consumer pinning contract (Fawxzzy Fitness)
 
 Consumer repositories must pin `PLAYBOOK_OFFICIAL_FALLBACK_SPEC` to the exact deterministic URL:
 
 ```bash
-PLAYBOOK_OFFICIAL_FALLBACK_SPEC=@https://github.com/ZachariahRedfield/playbook/releases/download/v0.1.6/playbook-cli-0.1.6.tgz
+PLAYBOOK_OFFICIAL_FALLBACK_SPEC=@https://github.com/ZachariahRedfield/playbook/releases/download/v0.1.7/playbook-cli-0.1.7.tgz
 ```
 
 This keeps producer (release asset) and consumer (fallback URL) ownership boundaries explicit and prevents URL/version/filename drift.
@@ -37,13 +39,13 @@ This keeps producer (release asset) and consumer (fallback URL) ownership bounda
 From this repository, run:
 
 ```bash
-pnpm release:fallback:proof --version 0.1.6 --json
+pnpm release:fallback:proof --version 0.1.7 --json
 ```
 
 Optional consumer smoke validation (for real downstream proof):
 
 ```bash
-pnpm release:fallback:proof --version 0.1.6 --consumer-repo /path/to/FawxzzyFitness --json
+pnpm release:fallback:proof --version 0.1.7 --consumer-repo /path/to/FawxzzyFitness --json
 ```
 
 Use `--asset-path dist/release/playbook-cli-<version>.tgz` to prove a locally packed release artifact before upload, and add `--consumer-repo <path>` for a clean external consumer proof.
@@ -91,8 +93,8 @@ npx @fawxzzy/playbook apply --json
 Create and push a git tag that matches the released version:
 
 ```bash
-git tag v0.1.6
-git push origin v0.1.6
+git tag v0.1.7
+git push origin v0.1.7
 ```
 
 ## 5.2) Proof invariants

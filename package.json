@@ -1,6 +1,6 @@
 {
   "name": "playbook-monorepo",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "packageManager": "pnpm@10.23.0",
   "engines": {
@@ -38,6 +38,7 @@
     "test:targeted": "pnpm test -- ask && pnpm test -- ai-contract && pnpm test -- schema && pnpm test -- doctor && pnpm test -- policy && pnpm test -- runtime && pnpm test -- scheduler && pnpm test -- agent",
     "validate:docs-governance": "pnpm docs:check && node scripts/validate-roadmap-contract.mjs --ci && pnpm playbook docs audit --ci --json",
     "pack:cli-wrapper": "pnpm -C packages/cli-wrapper pack --out ../../dist/release/playbook-cli-%v.tgz",
+    "pack:release:fallback": "node scripts/pack-release-fallback-asset.mjs",
     "release:fallback:proof": "node scripts/release-fallback-proof.mjs"
   },
   "pnpm": {

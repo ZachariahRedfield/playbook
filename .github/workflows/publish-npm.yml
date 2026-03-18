@@ -156,19 +156,11 @@ jobs:
 
       - name: Pack deterministic fallback tarball
         id: fallback_pack
-        working-directory: packages/cli-wrapper
         run: |
-          tag_version="${GITHUB_REF_NAME#v}"
-          package_version="$(node -p "require('./package.json').version")"
-          if [ "$tag_version" != "$package_version" ]; then
-            echo "Tag version ($tag_version) does not match packages/cli-wrapper version ($package_version)." >&2
-            exit 1
-          fi
-          mkdir -p ../../dist/release
-          pnpm pack --pack-destination ../../dist/release
-          mv "../../dist/release/fawxzzy-playbook-cli-${package_version}.tgz" "../../dist/release/playbook-cli-${package_version}.tgz"
-          echo "version=${package_version}" >> "$GITHUB_OUTPUT"
-          echo "asset_path=dist/release/playbook-cli-${package_version}.tgz" >> "$GITHUB_OUTPUT"
+          pack_json="$(node scripts/pack-release-fallback-asset.mjs)"
+          echo "$pack_json"
+          echo "version=$(printf '%s' "$pack_json" | node -pe "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")" >> "$GITHUB_OUTPUT"
+          echo "asset_path=$(printf '%s' "$pack_json" | node -pe "JSON.parse(require('fs').readFileSync(0, 'utf8')).assetPath")" >> "$GITHUB_OUTPUT"
 
       - name: Upload fallback tarball to release
         uses: softprops/action-gh-release@v2
