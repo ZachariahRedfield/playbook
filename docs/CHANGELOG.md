@@ -1,3 +1,9 @@
+- WHAT: Fixed `scripts/release-fallback-proof.mjs` external-consumer fallback proof initialization and Windows acquisition handling by creating a deterministic temp-consumer `package.json` baseline before any install, preserving scoped package specs through the `cmd.exe /d /s /c` launcher, and switching tarball fallback installs to direct asset URLs. WHY: Real Windows runs were failing before proof execution because npm install had no package baseline, `cmd.exe` quoting corrupted scoped package specs like `@fawxzzy/playbook-cli@9999.0.0`, and hosted tarball fallback attempted the invalid `@https://...` package-spec form.
+- Failure Mode: consumer fallback proof can fail before acquisition if the temp consumer repo is not initialized as an npm package.
+- Failure Mode: Windows command-string quoting can corrupt scoped package specs during cmd.exe launch.
+- Rule: external consumer proof must initialize its own deterministic package-manager baseline before install/acquisition steps.
+- Pattern: tarball fallback acquisition should install direct asset URLs, not malformed package-spec wrappers.
+
 - WHAT: Switched `scripts/release-fallback-proof.mjs` Windows consumer-proof npm/npx launches to a deterministic `cmd.exe /d /s /c <command>` path while preserving existing tarball validation, artifact checks, and spawn diagnostics. WHY: Direct `spawnSync` of `.cmd` tools was failing with `EINVAL` in Windows automation even though the same commands were valid in an interactive shell.
 - Failure Mode: direct `spawnSync` of `.cmd` executables can fail with `EINVAL` on Windows even when the command is valid in an interactive shell.
 - Pattern: cross-platform proof runners should use platform-native process launch semantics rather than assuming spawned command parity.

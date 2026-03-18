@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, statSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, statSync, mkdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -23,7 +23,7 @@ const TAR_COMMAND = resolveCommand('tar');
 const WINDOWS_SHELL = process.env.ComSpec || 'cmd.exe';
 
 const quoteWindowsCommandArg = (arg) => {
-  if (/^[A-Za-z0-9_./:-]+$/.test(arg)) return arg;
+  if (/^[A-Za-z0-9_./:@=-]+$/.test(arg)) return arg;
   return `"${String(arg).replace(/"/g, '\"')}"`;
 };
 
@@ -79,6 +79,30 @@ const parseArgs = () => {
 
   if (!result.version) throw new Error('--version is required');
   return result;
+};
+
+
+export const ensureConsumerPackageBaseline = (consumerRepo) => {
+  mkdirSync(consumerRepo, { recursive: true });
+  const packageJsonPath = path.join(consumerRepo, 'package.json');
+  if (existsSync(packageJsonPath)) return packageJsonPath;
+
+  writeFileSync(
+    packageJsonPath,
+    JSON.stringify(
+      {
+        name: 'playbook-fallback-proof-consumer',
+        private: true,
+        version: '0.0.0',
+        description: 'Machine-generated fallback proof consumer baseline'
+      },
+      null,
+      2
+    ) + '\n',
+    'utf8'
+  );
+
+  return packageJsonPath;
 };
 
 export const run = (cmd, args, cwd = process.cwd(), spawnImpl = spawnSync, platform = process.platform) => {
@@ -259,7 +283,8 @@ const main = async () => {
 
   if (options.consumerRepo) {
     const consumerRepo = path.resolve(options.consumerRepo);
-    const fallbackSpec = assetPath ? tarPath : `@${assetUrl}`;
+    ensureConsumerPackageBaseline(consumerRepo);
+    const fallbackSpec = assetPath ? tarPath : assetUrl;
     const envPath = path.join(consumerRepo, '.env.playbook-fallback-proof');
     writeFileSync(envPath, `PLAYBOOK_OFFICIAL_FALLBACK_SPEC=${fallbackSpec}\n`, 'utf8');
 

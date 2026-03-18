@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -9,7 +9,8 @@ import {
   evaluateTarballEntries,
   parseTarEntries,
   resolveCommand,
-  run
+  run,
+  ensureConsumerPackageBaseline
 } from '../scripts/release-fallback-proof.mjs';
 
 const withTempRepo = (fn) => {
@@ -117,6 +118,35 @@ test('evaluateTarballEntries validates exact entries and vendored runtime in JS'
 });
 
 
+test('ensureConsumerPackageBaseline creates a minimal package.json when missing', () => {
+  withTempRepo((repoRoot) => {
+    const consumerRepo = path.join(repoRoot, 'consumer');
+    const packageJsonPath = ensureConsumerPackageBaseline(consumerRepo);
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+
+    assert.equal(packageJsonPath, path.join(consumerRepo, 'package.json'));
+    assert.deepEqual(packageJson, {
+      name: 'playbook-fallback-proof-consumer',
+      private: true,
+      version: '0.0.0',
+      description: 'Machine-generated fallback proof consumer baseline'
+    });
+  });
+});
+
+test('ensureConsumerPackageBaseline preserves an existing package.json', () => {
+  withTempRepo((repoRoot) => {
+    const consumerRepo = path.join(repoRoot, 'consumer');
+    mkdirSync(consumerRepo, { recursive: true });
+    const packageJsonPath = path.join(consumerRepo, 'package.json');
+    writeFileSync(packageJsonPath, JSON.stringify({ name: 'existing-consumer', private: true }, null, 2));
+
+    assert.equal(ensureConsumerPackageBaseline(consumerRepo), packageJsonPath);
+    assert.deepEqual(JSON.parse(readFileSync(packageJsonPath, 'utf8')), { name: 'existing-consumer', private: true });
+  });
+});
+
+
 test('resolveCommand maps npm and npx to cmd executables on Windows only', () => {
   assert.equal(resolveCommand('npm', 'win32'), 'npm.cmd');
   assert.equal(resolveCommand('npx', 'win32'), 'npx.cmd');
@@ -129,6 +159,11 @@ test('createSpawnInvocation uses cmd.exe launcher for Windows npm and npx comman
     spawnCommand: 'cmd.exe',
     spawnArgs: ['/d', '/s', '/c', 'npm.cmd install'],
     command: 'npm.cmd install'
+  });
+  assert.deepEqual(createSpawnInvocation('npm.cmd', ['install', '@fawxzzy/playbook-cli@9999.0.0'], 'win32'), {
+    spawnCommand: 'cmd.exe',
+    spawnArgs: ['/d', '/s', '/c', 'npm.cmd install @fawxzzy/playbook-cli@9999.0.0'],
+    command: 'npm.cmd install @fawxzzy/playbook-cli@9999.0.0'
   });
   assert.deepEqual(createSpawnInvocation('npx.cmd', ['playbook', 'plan', '--out', '.playbook/plan.json'], 'win32'), {
     spawnCommand: 'cmd.exe',
@@ -178,7 +213,7 @@ test('run launches Windows npm commands through cmd.exe while preserving logical
   const calls = [];
   const result = run(
     'npm.cmd',
-    ['install', '--no-save', '@https://example.com/playbook-cli-0.1.8.tgz'],
+    ['install', '--no-save', 'https://example.com/playbook-cli-0.1.8.tgz'],
     'C:/temp/playbook-test',
     (command, args, options) => {
       calls.push({ command, args, options });
@@ -190,10 +225,10 @@ test('run launches Windows npm commands through cmd.exe while preserving logical
   assert.deepEqual(calls, [
     {
       command: 'cmd.exe',
-      args: ['/d', '/s', '/c', 'npm.cmd install --no-save "@https://example.com/playbook-cli-0.1.8.tgz"'],
+      args: ['/d', '/s', '/c', 'npm.cmd install --no-save https://example.com/playbook-cli-0.1.8.tgz'],
       options: { cwd: 'C:/temp/playbook-test', encoding: 'utf8' }
     }
   ]);
   assert.equal(result.ok, true);
-  assert.equal(result.command, 'npm.cmd install --no-save @https://example.com/playbook-cli-0.1.8.tgz');
+  assert.equal(result.command, 'npm.cmd install --no-save https://example.com/playbook-cli-0.1.8.tgz');
 });
