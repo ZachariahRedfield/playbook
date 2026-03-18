@@ -89,6 +89,8 @@ export type { AskEngineResult } from './ask/askEngine.js';
 export { resolveDiffAskContext } from './ask/diffContext.js';
 export type { DiffAskContext } from './ask/diffContext.js';
 export { generateKnowledgeCandidatesDraft } from './learn/draft.js';
+export { extractDoctrineFromSummary, readDoctrineExtractionInput } from './learn/doctrine.js';
+export type { DoctrineExtractionInput, DoctrineExtractionResult, DoctrineExtractionEntry, DoctrineExtractionSuggestion, DoctrineCheckCandidate } from './learn/doctrine.js';
 export { LEARNING_COMPACTION_SCHEMA_VERSION, LEARNING_COMPACTION_RELATIVE_PATH, generateLearningCompactionArtifact, writeLearningCompactionArtifact } from './learning/learningCompaction.js';
 export type { LearningCompactionArtifact } from './learning/learningCompaction.js';
 export {

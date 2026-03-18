@@ -157,6 +157,8 @@ Rule: Treat extracted knowledge as evidence first, reusable knowledge second.
 
 Status update: telemetry → repository memory → learning compaction → improvement recommendations → knowledge inspection is now implemented as a deterministic runtime pipeline; current roadmap focus is hardening, governance quality, and promotion policy depth rather than introducing a parallel learning path.
 
+Recent implementation note: `pnpm playbook learn doctrine --json` now adds a report-only post-merge extraction surface for reusable Rule / Pattern / Failure Mode suggestions, notes-update guidance, and future verification candidates seeded from real merged work, while preserving human-reviewed promotion boundaries.
+
 Rule: Promotion must only happen after canonicalization, deterministic comparison, and compaction.
 Pattern: Internal-first knowledge lifecycle before public command expansion.
 Pattern: Compaction is the trust-preserving bridge between extraction and promotion.

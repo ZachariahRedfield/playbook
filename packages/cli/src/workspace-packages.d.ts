@@ -44,6 +44,9 @@ declare module "@zachariahredfield/playbook-engine" {
   export const formatAnalyzePrGithubComment: (...args: any[]) => string;
   export const formatAnalyzePrOutput: (...args: any[]) => string;
   export const generateKnowledgeCandidatesDraft: (...args: any[]) => any;
+  export const extractDoctrineFromSummary: (...args: any[]) => any;
+  export const readDoctrineExtractionInput: (...args: any[]) => any;
+  export type DoctrineExtractionResult = any;
   export const replayMemoryToCandidates: (...args: any[]) => any;
   export const lookupMemoryEventTimeline: (...args: any[]) => any[];
   export const lookupMemoryCandidateKnowledge: (...args: any[]) => any[];

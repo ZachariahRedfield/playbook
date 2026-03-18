@@ -28,6 +28,8 @@ const command = commandArg ?? '';
 const commandArgs = commandIndex >= 0 ? args.slice(commandIndex + 1) : [];
 const pilotRepoFromCommandArgs = command === 'pilot' ? parseOptionValue(commandArgs, '--repo') : undefined;
 
+const isReportOnlyCommand = (): boolean => command === 'learn' && commandArgs.find((arg) => !arg.startsWith('-')) === 'doctrine';
+
 const ci = parseFlag(args, '--ci');
 const format = formatFromArgs(args);
 const quiet = parseFlag(args, '--quiet') || ci;
@@ -104,13 +106,15 @@ const run = async () => {
   const childCommands =
     command === 'pilot' ? ['context', 'index', 'query modules', 'verify', 'plan'] : [];
   const runtimeRepoRoot = resolveRuntimeRepoRoot(targetCwd);
-
-  const cycle = beginRuntimeCycle({
-    repoRoot: runtimeRepoRoot,
-    triggerCommand: command,
-    childCommands,
-    playbookVersion
-  });
+  const reportOnly = isReportOnlyCommand();
+  const cycle = reportOnly
+    ? null
+    : beginRuntimeCycle({
+        repoRoot: runtimeRepoRoot,
+        triggerCommand: command,
+        childCommands,
+        playbookVersion
+      });
 
   const startedAt = Date.now();
 
@@ -124,20 +128,25 @@ const run = async () => {
       format,
       quiet
     });
-    cycle.childCommands = commandResult.childCommands;
 
-    endRuntimeCycle(cycle, {
-      exitCode: commandResult.exitCode,
-      durationMs: Date.now() - startedAt
-    });
+    if (cycle) {
+      cycle.childCommands = commandResult.childCommands;
+      endRuntimeCycle(cycle, {
+        exitCode: commandResult.exitCode,
+        durationMs: Date.now() - startedAt
+      });
+    }
+
     process.exit(commandResult.exitCode);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    endRuntimeCycle(cycle, {
-      exitCode: ExitCode.Failure,
-      durationMs: Date.now() - startedAt,
-      error: message
-    });
+    if (cycle) {
+      endRuntimeCycle(cycle, {
+        exitCode: ExitCode.Failure,
+        durationMs: Date.now() - startedAt,
+        error: message
+      });
+    }
     throw error;
   }
 };

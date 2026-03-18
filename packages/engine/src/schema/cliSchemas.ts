@@ -1439,7 +1439,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
         required: ['schemaVersion', 'command', 'error'],
         properties: {
           schemaVersion: { const: '1.0' },
-          command: { const: 'learn-draft' },
+          command: { enum: ['learn-draft', 'learn-doctrine', 'learn'] },
           error: { type: 'string' }
         }
       },
@@ -1488,8 +1488,83 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
             }
           }
         }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'mode', 'source', 'conciseChangeSummary', 'learned', 'suggestedNotesUpdate', 'candidateFutureChecks'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'learn-doctrine' },
+          mode: { const: 'report-only' },
+          source: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['changedFiles'],
+            properties: {
+              inputPath: { type: 'string' },
+              title: { type: 'string' },
+              changedFiles: { type: 'array', items: { type: 'string' } }
+            }
+          },
+          conciseChangeSummary: { type: 'array', items: { type: 'string' } },
+          learned: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['rules', 'patterns', 'failureModes'],
+            properties: {
+              rules: { '$ref': '#/$defs/doctrineEntries' },
+              patterns: { '$ref': '#/$defs/doctrineEntries' },
+              failureModes: { '$ref': '#/$defs/doctrineEntries' }
+            }
+          },
+          suggestedNotesUpdate: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['target', 'summary', 'rationale'],
+              properties: {
+                target: { enum: ['notes', 'patterns-docs', 'changelog', 'verification'] },
+                summary: { type: 'string' },
+                rationale: { type: 'string' }
+              }
+            }
+          },
+          candidateFutureChecks: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['name', 'summary', 'scope'],
+              properties: {
+                name: { type: 'string' },
+                summary: { type: 'string' },
+                scope: { enum: ['docs', 'artifacts', 'command-contract', 'architecture'] }
+              }
+            }
+          }
+        }
       }
-    ]
+    ],
+    $defs: {
+      doctrineEntries: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['kind', 'title', 'statement', 'rationale', 'confidence', 'sourceSignals'],
+          properties: {
+            kind: { enum: ['rule', 'pattern', 'failure-mode'] },
+            title: { type: 'string' },
+            statement: { type: 'string' },
+            rationale: { type: 'string' },
+            confidence: { enum: ['high', 'medium'] },
+            sourceSignals: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      }
+    }
   },
   'ai-context': {
     $schema: JSON_SCHEMA_DRAFT,

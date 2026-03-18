@@ -79,7 +79,7 @@ Do not hand-edit entries inside the managed markers.
 - Core flow: [`verify`](verify.md), [`plan`](plan.md), [`apply`](apply.md), [`pilot`](pilot.md)
 - Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md)
 - AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`context`](overview.md)
-- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`observer`](observer.md), [`receipt`](receipt.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
+- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`observer`](observer.md), [`receipt`](receipt.md), [`learn`](learn.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
 - `status proof` is the canonical external-consumer bootstrap proof surface for proving runtime + CLI + docs/artifact + execution/governance readiness in one read-only flow.
 
 ### Implemented control-plane command docs
@@ -218,6 +218,27 @@ Artifact intent:
 
 - `.playbook/knowledge/**` is runtime draft state and should stay gitignored by default.
 - Promote/commit knowledge artifacts only when intentionally reviewed for upstream inclusion.
+
+### Learn doctrine (`pnpm playbook learn doctrine`)
+
+`pnpm playbook learn doctrine` is the first-class post-merge doctrine extraction flow for turning merged change summaries into reusable report-only learning.
+
+- Accepts `--input <path>` for text/JSON fixture summaries or `--summary <text>` for inline summaries.
+- Produces a deterministic report-only payload with concise change summary, Rule / Pattern / Failure Mode extraction, suggested notes updates, and candidate future checks.
+- Does not mutate the repository in report-only mode.
+- Keeps doctrine promotion manual; it does not auto-update source-of-truth docs.
+
+Examples:
+
+```bash
+pnpm playbook learn doctrine --input tests/contracts/fixtures/doctrine-extraction-summary.json --json
+pnpm playbook learn doctrine --summary "artifact governance / staged promotion hardened the workflow-promotion contract" --json
+```
+
+Doctrine summary anchors:
+
+- Pattern: Post-merge learning should extract reusable doctrine from real code changes.
+- Failure Mode: Valuable engineering doctrine remains trapped in conversations and PR context unless extracted into reusable system knowledge.
 
 ## Memory inspection surfaces (`pnpm playbook memory ...`)
 

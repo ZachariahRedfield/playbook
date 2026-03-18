@@ -1,0 +1,9 @@
+{
+  "title": "Pilot doctrine extraction fixture",
+  "summary": "Artifact governance / staged promotion introduced a shared workflow-promotion contract. Shared aggregation boundary for reads now pairs with targeted invalidation and centralized recompute for writes.",
+  "changedFiles": [
+    "docs/CHANGELOG.md",
+    "docs/commands/README.md",
+    "packages/cli/src/commands/index.ts"
+  ]
+}

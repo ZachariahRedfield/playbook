@@ -451,15 +451,16 @@ const commandRunners: Record<
   },
   learn: async ({ cwd, commandArgs, format, quiet }) => {
     const { runLearnDraft } = await import("./learnDraft.js");
+    const { runLearnDoctrine } = await import("./learnDoctrine.js");
     const subcommand = commandArgs.find((arg) => !arg.startsWith("-"));
 
-    if (subcommand !== "draft") {
+    if (subcommand !== "draft" && subcommand !== "doctrine") {
       const message =
-        'playbook learn: unsupported subcommand. Use "playbook learn draft".';
+        'playbook learn: unsupported subcommand. Use "playbook learn draft" or "playbook learn doctrine".';
       if (format === "json") {
         console.log(
           JSON.stringify(
-            { schemaVersion: "1.0", command: "learn-draft", error: message },
+            { schemaVersion: "1.0", command: "learn", error: message },
             null,
             2,
           ),
@@ -470,20 +471,29 @@ const commandRunners: Record<
       return ExitCode.Failure;
     }
 
-    const draftArgs = commandArgs.filter((arg, index) => {
+    const subcommandArgs = commandArgs.filter((arg, index) => {
       if (index === 0 && arg === subcommand) {
         return false;
       }
       return true;
     });
 
-    return runLearnDraft(cwd, draftArgs, {
+    if (subcommand === "doctrine") {
+      return runLearnDoctrine(cwd, subcommandArgs, {
+        format,
+        quiet,
+        inputPath: parseOptionValue(subcommandArgs, "--input"),
+        summaryText: parseOptionValue(subcommandArgs, "--summary"),
+      });
+    }
+
+    return runLearnDraft(cwd, subcommandArgs, {
       format,
       quiet,
-      outFile: parseOptionValue(draftArgs, "--out"),
-      baseRef: parseOptionValue(draftArgs, "--base"),
-      diffContext: parseLearnDiffContext(draftArgs),
-      appendNotes: parseFlag(draftArgs, "--append-notes"),
+      outFile: parseOptionValue(subcommandArgs, "--out"),
+      baseRef: parseOptionValue(subcommandArgs, "--base"),
+      diffContext: parseLearnDiffContext(subcommandArgs),
+      appendNotes: parseFlag(subcommandArgs, "--append-notes"),
     });
   },
   rules: async ({ cwd, explain, format, quiet }) => {

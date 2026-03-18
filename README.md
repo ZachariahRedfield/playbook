@@ -21,6 +21,8 @@ Playbook is best understood as **deterministic repo intelligence + governance + 
 
 This framing is the core promise: deterministic evidence over ad-hoc inference, and reviewed intent before execution.
 
+Recent implementation note: `pnpm playbook learn doctrine --json` now provides a first-class report-only post-merge learning surface that turns merged change summaries into reusable Rule / Pattern / Failure Mode suggestions, notes-update guidance, and candidate future verification checks without auto-promoting doctrine into source-of-truth docs.
+
 ## Shared core, project-local intelligence
 
 Playbook uses a **shared core + project-local Playbook state** integration model:
