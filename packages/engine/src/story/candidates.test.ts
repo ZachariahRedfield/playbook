@@ -25,7 +25,9 @@ afterEach(() => {
 
 describe('story candidates', () => {
   it('derives grouped candidates from deterministic evidence without mutating canonical backlog', () => {
-    const { repoRoot } = createRepoFixture();
+    const fixture = createRepoFixture();
+    expect(fixture).toEqual({ repoRoot: expect.any(String) });
+    const repoRoot = fixture.repoRoot;
     expect(typeof repoRoot).toBe('string');
     expect(repoRoot.length).toBeGreaterThan(0);
     const repoName = path.basename(repoRoot);
@@ -76,7 +78,9 @@ describe('story candidates', () => {
   });
 
   it('promotes one candidate explicitly into canonical backlog state', () => {
-    const { repoRoot } = createRepoFixture();
+    const fixture = createRepoFixture();
+    expect(fixture).toEqual({ repoRoot: expect.any(String) });
+    const repoRoot = fixture.repoRoot;
     expect(typeof repoRoot).toBe('string');
     expect(repoRoot.length).toBeGreaterThan(0);
     writeJson(repoRoot, '.playbook/repo-index.json', { framework: 'node' });
