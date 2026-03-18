@@ -10,6 +10,12 @@
 
 ### CLI
 
+- WHAT: Finalized the hosted fallback release cut for `0.1.8` by bumping all release-coupled workspace/package manifests and release-facing docs/examples in parity so the next clean tag publishes one deterministic wrapper/runtime version. WHY: Release/tag correctness depends on root package, published packages, wrapper tarball naming, and operator docs all agreeing on the same immutable version.
+- WHAT: Documented the hosted fallback fix as a release-finalization requirement: the uploaded GitHub release asset must be the staged `cli-wrapper` tarball and must validate `package/bin/playbook.js`, `package/runtime/main.js`, and vendored `package/runtime/node_modules/**` before upload. WHY: The prior hosted asset failure showed that a locally valid packaging path can still publish an invalid release artifact if upload-time content checks are skipped.
+- Rule: A fallback release is not complete until the hosted asset is proven, not just locally packed.
+- Failure Mode: A valid local tarball can mask an invalid uploaded release asset.
+- Pattern: Release finalization should include version bump, hosted asset verification, and external consumer proof as one deterministic flow.
+
 - WHAT: Added `scripts/pack-release-fallback-asset.mjs` and switched the publish workflow to use it for fallback release assets, so the release upload now packs directly from `packages/cli-wrapper`, captures the exact generated tarball, and fails before upload unless `package/bin/playbook.js`, `package/runtime/main.js`, and vendored `package/runtime/node_modules/**` are present. WHY: Prevents asset-name parity from hiding that a release uploaded the wrong or incompletely staged payload.
 - Rule: Hosted fallback release assets must be validated by tarball-content assertions before upload.
 - Pattern: Local pack success is not sufficient; the release workflow must prove it uploads the same staged artifact.
@@ -45,7 +51,7 @@
 
 - WHAT: Added deterministic fleet-level adoption readiness aggregation across status, Observer API, and Observer UI (`pnpm playbook status fleet --json`, `GET /api/readiness/fleet`, plus a fleet summary panel) including stable lifecycle counts, blocker/action frequencies, eligibility counts, and prioritized repo ordering. WHY: Enables portfolio-level adoption triage while preserving repo-first inspection workflows.
 
-- WHAT: Aligned root and all publishable package manifests to release version `0.1.7` so producer publish/tag/fallback flows resolve one canonical version across workspace and release artifacts. WHY: Prevents split release state between root metadata and publishable packages during clean release proof.
+- WHAT: Aligned root and all publishable package manifests to release version `0.1.8` so producer publish/tag/fallback flows resolve one canonical version across workspace and release artifacts. WHY: Prevents split release state between root metadata and publishable packages during clean release proof.
 - Failure Mode: Tagging a new release version without aligning publishable package manifests creates split-brain release state and confusing publish behavior.
 - Pattern: Release tags should only be cut from a fully version-aligned workspace.
 
@@ -59,7 +65,7 @@
 - Pattern: Prefer programmatic file writes over shell heredocs in GitHub Actions when embedding structured JSON inside YAML.
 - Failure Mode: Shell heredocs inside workflow YAML are easy to break with indentation/copy-paste changes and can invalidate the whole workflow before runtime.
 
-- WHAT: Updated the README version badge from `v0.1.1` to `v0.1.7` to match the current release baseline referenced by this branch. WHY: Keeps human-facing release metadata aligned with active release state and avoids false signals of stale publishing.
+- WHAT: Updated the README version badge from `v0.1.1` to `v0.1.8` to match the current release baseline referenced by this branch. WHY: Keeps human-facing release metadata aligned with active release state and avoids false signals of stale publishing.
 - Pattern: Human-visible release indicators should either be generated from the canonical package version or updated as part of the release checklist.
 - Failure Mode: Stale human-facing release metadata can make successful release work look unfinished even when package/version state has moved forward.
 
@@ -75,13 +81,13 @@
 
 - WHAT: Reworked `pnpm release:fallback:proof` consumer artifact validation to enforce the real lifecycle (`index -> verify -> plan -> apply`), replacing opaque file-exists checks with deterministic artifact contract diagnostics (`missing_prerequisite_artifact`, `stale_artifact`, `invalid_artifact`) that include artifact path, producer command, remediation text, and severity. WHY: Fixes contract drift where proof required non-existent `.playbook/last-run.json` / `.playbook/findings.json` artifacts and makes downstream remediation actionable.
 
-- WHAT: Hardened `publish-npm` tag reruns to skip `pnpm publish` when the exact package version is already present on npm (`npm view <pkg>@<version>`), then continue to fallback pack/upload steps. WHY: The `v0.1.7` publish run stopped at the first pre-upload blocker (`pnpm publish` version-already-exists), so release fallback tarball upload never executed and proof checks observed a 404 missing asset.
+- WHAT: Hardened `publish-npm` tag reruns to skip `pnpm publish` when the exact package version is already present on npm (`npm view <pkg>@<version>`), then continue to fallback pack/upload steps. WHY: The `v0.1.8` publish run stopped at the first pre-upload blocker (`pnpm publish` version-already-exists), so release fallback tarball upload never executed and proof checks observed a 404 missing asset.
 - Rule: Release-proof flows are blocked by the first pre-upload failure in publish; 404 on fallback asset usually means publish never reached release upload.
 - Failure Mode: Assuming tag existence implies release asset existence.
 
 - WHAT: Fixed GitHub Actions security workflow installer/tool compatibility by replacing `sigstore/cosign-installer@v3.7.0` with `sigstore/cosign-installer@v4.1.0` while keeping `cosign-release: v3.0.3`. WHY: Ensures the installer major line matches Cosign v3 so release asset signature download/verification does not fail with HTTP fetch errors.
 - WHAT: Realigned release fallback ownership to the canonical GitHub repository (`ZachariahRedfield/playbook`) by updating release docs/examples and making `release:fallback:proof` default to the canonical owner/repo URL shape. WHY: Eliminates producer/consumer drift where fallback proofs and pinning examples targeted a non-authoritative release path.
-- WHAT: Prepared the next clean producer release cut at `0.1.7` across workspace package versions and release docs/examples so a fresh tag (`v0.1.7`) can be published from the fixed live workflow state. WHY: Avoids reusing polluted tags and establishes a single deterministic baseline for fallback asset proofing.
+- WHAT: Prepared the next clean producer release cut at `0.1.8` across workspace package versions and release docs/examples so a fresh tag (`v0.1.8`) can be published from the fixed live workflow state. WHY: Avoids reusing polluted tags and establishes a single deterministic baseline for fallback asset proofing.
 
 - WHAT: Fixed `publish-npm` release packaging so the fallback tarball pack destination resolves to repository-root `dist/release` and the rename step matches pnpm output (`fawxzzy-playbook-cli-<version>.tgz` -> `playbook-cli-<version>.tgz`). WHY: Ensures tag releases actually attach the deterministic fallback asset required by `pnpm release:fallback:proof`.
 - WHAT: Cut the next Playbook release target to `v0.1.2` across workspace package versions and release examples/docs so fallback proof commands and consumer pinning references stop pointing at the non-provisioned `v0.3.77` example. WHY: Enforces the operational rule that fallback contracts are only real when tied to an actually published release artifact.
