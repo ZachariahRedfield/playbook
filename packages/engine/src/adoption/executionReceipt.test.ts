@@ -98,6 +98,7 @@ describe('buildFleetExecutionReceipt', () => {
     expect(receipt).toMatchObject({
       schemaVersion: '1.0',
       kind: 'fleet-adoption-execution-receipt',
+      workflow_promotion: null,
       execution_plan_digest: expect.any(String),
       wave_results: expect.any(Array),
       prompt_results: expect.any(Array),
@@ -105,6 +106,39 @@ describe('buildFleetExecutionReceipt', () => {
       artifact_deltas: expect.any(Array),
       blockers: expect.any(Array),
       verification_summary: expect.any(Object)
+    });
+  });
+
+  it('attaches workflow-promotion metadata when provided', () => {
+    const queue = buildFleetAdoptionWorkQueue(makeFleet(), { generatedAt: '2026-01-01T00:00:00.000Z' });
+    const plan = buildFleetCodexExecutionPlan(queue, { generatedAt: '2026-01-02T00:00:00.000Z' });
+
+    const receipt = buildFleetExecutionReceipt(plan, queue, makeFleet(), makeOutcomeInput([]), {
+      generatedAt: '2026-01-04T00:00:00.000Z',
+      workflowPromotion: {
+        schemaVersion: '1.0',
+        kind: 'workflow-promotion',
+        workflow_kind: 'status-updated',
+        staged_generation: true,
+        candidate_artifact_path: '.playbook/staged/workflow-status-updated/execution-updated-state.json',
+        staged_artifact_path: '.playbook/staged/workflow-status-updated/execution-updated-state.json',
+        committed_target_path: '.playbook/execution-updated-state.json',
+        validation_status: 'blocked',
+        validation_passed: false,
+        promotion_status: 'blocked',
+        promoted: false,
+        committed_state_preserved: true,
+        blocked_reason: 'summary.repos_total must match repos length',
+        error_summary: 'summary.repos_total must match repos length',
+        generated_at: '2026-01-04T00:00:00.000Z',
+        summary: 'Staged updated-state candidate blocked; committed adoption state preserved.'
+      }
+    });
+
+    expect(receipt.workflow_promotion).toMatchObject({
+      workflow_kind: 'status-updated',
+      promotion_status: 'blocked',
+      committed_state_preserved: true
     });
   });
 });

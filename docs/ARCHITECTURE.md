@@ -198,6 +198,12 @@ Rule: Playbook should observe itself through the same governed observer model it
 Pattern: one observer model, special self-view presentation.
 Failure Mode: if self-observation uses hidden or dashboard-only state, operator trust degrades because self-view diverges from governed repo evidence.
 
+Workflow-promotion state is now a first-class cross-layer concern rather than CLI-only output. The shared `workflow-promotion` contract flows through the execution receipt, Observer readiness APIs, and the Observer dashboard so staged candidate paths, validation outcome, promotion result, and committed-target preservation remain queryable without re-deriving state from terminal logs.
+
+Rule: Promotion state must be visible and queryable across system layers.
+Pattern: Workflow-promotion metadata flows through CLI -> engine -> API -> UI.
+Failure Mode: Hidden promotion state prevents system-level reasoning and safe orchestration.
+
 Observer blueprint surfaces now derive per-node state/activity directly from readiness and governed artifacts (`active`, `available`, `missing`, `stale`, `idle`) and keep self-observation collapsible so repo detail + blueprint remain primary. Node selection is inspection-only and reuses artifact-viewer truth surfaces instead of introducing dashboard-owned state contracts.
 
 Rule: Blueprint state must be derived from governed artifact truth, not UI heuristics.

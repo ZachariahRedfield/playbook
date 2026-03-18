@@ -50,6 +50,7 @@ const crossRepoViewPanelEl = document.getElementById('crossRepoViewPanel');
 const fleetSummaryPanelEl = document.getElementById('fleetSummaryPanel');
 const queueSummaryPanelEl = document.getElementById('queueSummaryPanel');
 const executionReceiptPanelEl = document.getElementById('executionReceiptPanel');
+const promotionPanelEl = document.getElementById('promotionPanel');
 const updatedStatePanelEl = document.getElementById('updatedStatePanel');
 const nextQueuePanelEl = document.getElementById('nextQueuePanel');
 const executionPlanPanelEl = document.getElementById('executionPlanPanel');
@@ -393,6 +394,36 @@ const loadFleetSummary = async () => {
 
 
 
+
+const renderPromotionSummary = (promotion) => {
+  if (!promotion || typeof promotion !== 'object') {
+    promotionPanelEl.innerHTML = '<div class="empty-state">Promotion state unavailable.</div>';
+    return;
+  }
+
+  const stagedCandidates = promotion.candidate_artifact_path ? 1 : 0;
+  const affectedArtifacts = [promotion.candidate_artifact_path, promotion.committed_target_path].filter(Boolean);
+  const resultLabel = promotion.promoted ? 'promoted' : (promotion.promotion_status || 'blocked');
+  const validationLabel = promotion.validation_status || (promotion.validation_passed ? 'passed' : 'blocked');
+  const blockedReason = promotion.blocked_reason || promotion.error_summary || 'none';
+
+  promotionPanelEl.innerHTML =
+    '<div><strong>Last promotion result:</strong> ' + escapeHtml(resultLabel) + '</div>' +
+    '<div><strong>Validated:</strong> ' + escapeHtml(validationLabel) + '</div>' +
+    '<div><strong>Committed state:</strong> ' + escapeHtml(promotion.committed_state_preserved ? 'preserved / source of truth' : 'mutated') + '</div>' +
+    '<div><strong>Staged candidates:</strong> ' + escapeHtml(String(stagedCandidates)) + '</div>' +
+    '<div><strong>Candidate artifact:</strong> ' + escapeHtml(promotion.candidate_artifact_path || 'none') + '</div>' +
+    '<div><strong>Committed artifact:</strong> ' + escapeHtml(promotion.committed_target_path || 'none') + '</div>' +
+    '<div><strong>Blocked reason:</strong> ' + escapeHtml(blockedReason) + '</div>' +
+    '<div><strong>Affected artifacts</strong><ul>' + (affectedArtifacts.length > 0 ? affectedArtifacts.map((artifact) => '<li><code>' + escapeHtml(artifact) + '</code></li>').join('') : '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Summary:</strong> ' + escapeHtml(promotion.summary || 'none') + '</div>';
+};
+
+const loadPromotionSummary = async () => {
+  const payload = await getJson('/api/readiness/promotion');
+  renderPromotionSummary(payload.promotion || null);
+};
+
 const renderExecutionReceiptSummary = (receipt) => {
   if (!receipt || typeof receipt !== 'object') {
     executionReceiptPanelEl.innerHTML = '<div class="empty-state">Execution outcome receipt unavailable.</div>';
@@ -412,6 +443,7 @@ const renderExecutionReceiptSummary = (receipt) => {
 const loadExecutionReceipt = async () => {
   const payload = await getJson('/api/readiness/receipt');
   renderExecutionReceiptSummary(payload.receipt || null);
+  renderPromotionSummary((payload.receipt && payload.receipt.workflow_promotion) || payload.promotion || null);
 };
 
 
@@ -669,6 +701,7 @@ const refreshAll = async () => {
     await loadFleetSummary();
     await loadQueueSummary();
     await loadExecutionReceipt();
+    await loadPromotionSummary();
     await loadUpdatedState();
     await loadNextQueueSummary();
     await loadExecutionPlanSummary();

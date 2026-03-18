@@ -258,6 +258,7 @@ describe('observer server', () => {
     expect(uiScriptText).toContain('await loadRepoDetail();');
     expect(uiScriptText).toContain('renderSelfObservation');
     expect(uiScriptText).toContain('const selfPayload = await getJson');
+    expect(uiScriptText).toContain('const loadPromotionSummary = async () =>');
     expect(uiScriptText).toContain('await loadRepoDetail();');
     expect(uiScriptText).toContain('const refreshAll = async () =>');
     expect(uiScriptText).toContain('setInterval(refreshAll, 5000);');
@@ -321,9 +322,32 @@ describe('observer server', () => {
 
     const receiptResponse = await fetch(`http://127.0.0.1:${port}/api/readiness/receipt`);
     expect(receiptResponse.status).toBe(200);
-    const receiptJson = await receiptResponse.json() as { kind: string; receipt: { kind: string; verification_summary: { prompts_total: number } } };
+    const receiptJson = await receiptResponse.json() as {
+      kind: string;
+      promotion: { workflow_kind: string; promotion_status: string; committed_target_path: string };
+      receipt: { kind: string; workflow_promotion: { workflow_kind: string; promotion_status: string }; verification_summary: { prompts_total: number } };
+    };
     expect(receiptJson.kind).toBe('observer-fleet-adoption-execution-receipt');
     expect(receiptJson.receipt.kind).toBe('fleet-adoption-execution-receipt');
+    expect(receiptJson.receipt.workflow_promotion.workflow_kind).toBe('status-updated');
+    expect(receiptJson.promotion.committed_target_path).toBe('.playbook/execution-updated-state.json');
+
+    const promotionResponse = await fetch(`http://127.0.0.1:${port}/api/readiness/promotion`);
+    expect(promotionResponse.status).toBe(200);
+    const promotionJson = await promotionResponse.json() as {
+      kind: string;
+      promotion: { workflow_kind: string; staged_generation: boolean; promotion_status: string; committed_state_preserved: boolean };
+      updated_state: { kind: string };
+      receipt: { kind: string };
+    };
+    expect(promotionJson.kind).toBe('observer-fleet-adoption-promotion-state');
+    expect(promotionJson.promotion).toMatchObject({
+      workflow_kind: 'status-updated',
+      staged_generation: true,
+      committed_state_preserved: true
+    });
+    expect(promotionJson.updated_state.kind).toBe('fleet-adoption-updated-state');
+    expect(promotionJson.receipt.kind).toBe('fleet-adoption-execution-receipt');
 
     const fleetReadiness = await fetch(`http://127.0.0.1:${port}/api/readiness/fleet`);
     expect(fleetReadiness.status).toBe(200);

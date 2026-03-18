@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { AnalyzeReport } from './analyze.js';
 import type { VerifyReport } from './verify.js';
-import { stageWorkflowArtifact } from '../lib/workflowPromotion.js';
+import { previewWorkflowArtifact, stageWorkflowArtifact } from '../lib/workflowPromotion.js';
 import type { WorkflowPromotion } from '../lib/workflowPromotion.js';
 
 type StatusOptions = {
@@ -245,7 +245,11 @@ export const computeReceipt = (cwd: string): { fleet: FleetAdoptionReadinessSumm
   const fleet = toFleetStatusResult(cwd).fleet;
   const queue = buildFleetAdoptionWorkQueue(fleet);
   const executionPlan = buildFleetCodexExecutionPlan(queue);
-  const receipt = buildFleetExecutionReceipt(executionPlan, queue, fleet, readExecutionOutcomeInput(cwd));
+  const provisionalReceipt = buildFleetExecutionReceipt(executionPlan, queue, fleet, readExecutionOutcomeInput(cwd));
+  const updatedState = buildFleetUpdatedAdoptionState(executionPlan, queue, fleet, provisionalReceipt);
+  const nextQueue = deriveNextAdoptionQueueFromUpdatedState(updatedState);
+  const workflowPromotion = previewUpdatedStatePromotion(cwd, updatedState, nextQueue);
+  const receipt = buildFleetExecutionReceipt(executionPlan, queue, fleet, readExecutionOutcomeInput(cwd), { workflowPromotion });
   return { fleet, queue, executionPlan, receipt };
 };
 

@@ -79,6 +79,12 @@
     },
     "artifact_deltas": { "type": "array", "items": { "$ref": "#/$defs/artifactDelta" } },
     "blockers": { "type": "array", "items": { "$ref": "#/$defs/blocker" } },
+    "workflow_promotion": {
+      "anyOf": [
+        { "$ref": "https://playbook.dev/schemas/workflow-promotion.schema.json" },
+        { "type": "null" }
+      ]
+    },
     "verification_summary": {
       "type": "object",
       "additionalProperties": false,

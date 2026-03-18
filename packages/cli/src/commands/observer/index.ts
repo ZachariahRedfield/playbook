@@ -3,6 +3,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import http from 'node:http';
 import { emitJsonOutput, writeJsonArtifactAbsolute } from '../../lib/jsonArtifact.js';
+import { previewWorkflowArtifact } from '../../lib/workflowPromotion.js';
+import type { WorkflowPromotion } from '../../lib/workflowPromotion.js';
 import {
   buildFleetAdoptionReadinessSummary,
   buildFleetAdoptionWorkQueue,
@@ -72,6 +74,9 @@ type ObserverRepoCreateInput = {
 
 const OBSERVER_REPO_REGISTRY_RELATIVE_PATH = '.playbook/observer/repos.json' as const;
 const OBSERVER_SNAPSHOT_RELATIVE_PATH = '.playbook/observer/snapshot.json' as const;
+const EXECUTION_OUTCOME_INPUT_RELATIVE_PATH = path.join('.playbook', 'execution-outcome-input.json');
+const UPDATED_STATE_RELATIVE_PATH = path.join('.playbook', 'execution-updated-state.json');
+const UPDATED_STATE_STAGING_RELATIVE_PATH = path.join('.playbook', 'staged', 'workflow-status-updated', 'execution-updated-state.json');
 
 const OBSERVER_ARTIFACTS = [
   { kind: 'cycle-state', relativePath: '.playbook/cycle-state.json' },
@@ -94,6 +99,63 @@ const READINESS_ARTIFACTS = [
 ] as const;
 
 type ObserverArtifactKind = (typeof OBSERVER_ARTIFACTS)[number]['kind'];
+
+const defaultExecutionOutcomeInput = (): FleetExecutionOutcomeInput => ({
+  schemaVersion: '1.0',
+  kind: 'fleet-adoption-execution-outcome-input',
+  generated_at: new Date(0).toISOString(),
+  session_id: 'unrecorded-session',
+  prompt_outcomes: []
+});
+
+const validateUpdatedStateArtifact = (
+  updatedState: ReturnType<typeof buildFleetUpdatedAdoptionState>,
+  nextQueue: ReturnType<typeof deriveNextAdoptionQueueFromUpdatedState>
+): string[] => {
+  const errors: string[] = [];
+  if (updatedState.schemaVersion !== '1.0') errors.push('schemaVersion must be 1.0');
+  if (updatedState.kind !== 'fleet-adoption-updated-state') errors.push('kind must be fleet-adoption-updated-state');
+  if (!Array.isArray(updatedState.repos)) errors.push('repos must be an array');
+  if (!updatedState.summary || typeof updatedState.summary !== 'object') errors.push('summary must be present');
+  if (nextQueue.queue_source !== 'updated_state') errors.push('next queue must be derived from updated_state');
+  if (Array.isArray(updatedState.repos) && updatedState.summary?.repos_total !== updatedState.repos.length) {
+    errors.push('summary.repos_total must match repos length');
+  }
+  return errors;
+};
+
+const previewUpdatedStatePromotion = (
+  observerRoot: string,
+  updatedState: ReturnType<typeof buildFleetUpdatedAdoptionState>,
+  nextQueue: ReturnType<typeof deriveNextAdoptionQueueFromUpdatedState>
+): WorkflowPromotion =>
+  previewWorkflowArtifact({
+    cwd: observerRoot,
+    workflowKind: 'status-updated',
+    candidateRelativePath: UPDATED_STATE_STAGING_RELATIVE_PATH,
+    committedRelativePath: UPDATED_STATE_RELATIVE_PATH,
+    artifact: updatedState,
+    validate: () => validateUpdatedStateArtifact(updatedState, nextQueue),
+    generatedAt: updatedState.generated_at,
+    successSummary: 'Staged updated-state candidate validated and ready for promotion into committed adoption state.',
+    blockedSummary: 'Staged updated-state candidate blocked; committed adoption state preserved.'
+  });
+
+const computeReadinessArtifacts = (observerRoot: string, registry: ObserverRepoRegistry) => {
+  const fleet = buildFleetReadinessSummary(registry);
+  const queue = buildFleetAdoptionWorkQueue(fleet);
+  const executionPlan = buildFleetCodexExecutionPlan(queue);
+  const outcomePath = path.join(observerRoot, EXECUTION_OUTCOME_INPUT_RELATIVE_PATH);
+  const outcomeInput = fs.existsSync(outcomePath)
+    ? (JSON.parse(fs.readFileSync(outcomePath, 'utf8')) as FleetExecutionOutcomeInput)
+    : defaultExecutionOutcomeInput();
+  const provisionalReceipt = buildFleetExecutionReceipt(executionPlan, queue, fleet, outcomeInput);
+  const updatedState = buildFleetUpdatedAdoptionState(executionPlan, queue, fleet, provisionalReceipt);
+  const nextQueue = deriveNextAdoptionQueueFromUpdatedState(updatedState);
+  const promotion = previewUpdatedStatePromotion(observerRoot, updatedState, nextQueue);
+  const receipt = buildFleetExecutionReceipt(executionPlan, queue, fleet, outcomeInput, { workflowPromotion: promotion });
+  return { fleet, queue, executionPlan, receipt, updatedState, nextQueue, promotion };
+};
 
 const printObserverHelp = (): void => {
   console.log(`Usage: playbook observer <repo|serve> [options]
@@ -624,37 +686,40 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
   }
 
   if (pathname === '/api/readiness/fleet') {
+    const readinessArtifacts = computeReadinessArtifacts(observerRoot, registry);
     return {
       statusCode: 200,
       payload: {
         ...base,
         kind: 'observer-fleet-readiness-summary',
-        fleet: buildFleetReadinessSummary(registry)
+        fleet: readinessArtifacts.fleet,
+        promotion: readinessArtifacts.promotion
       }
     };
   }
 
   if (pathname === '/api/readiness/queue') {
-    const fleet = buildFleetReadinessSummary(registry);
+    const readinessArtifacts = computeReadinessArtifacts(observerRoot, registry);
     return {
       statusCode: 200,
       payload: {
         ...base,
         kind: 'observer-fleet-adoption-work-queue',
-        queue: buildFleetAdoptionWorkQueue(fleet)
+        queue: readinessArtifacts.queue,
+        promotion: readinessArtifacts.promotion
       }
     };
   }
 
   if (pathname === '/api/readiness/execute') {
-    const fleet = buildFleetReadinessSummary(registry);
-    const queue = buildFleetAdoptionWorkQueue(fleet);
+    const readinessArtifacts = computeReadinessArtifacts(observerRoot, registry);
     return {
       statusCode: 200,
       payload: {
         ...base,
         kind: 'observer-fleet-adoption-execution-plan',
-        execution_plan: buildFleetCodexExecutionPlan(queue)
+        execution_plan: readinessArtifacts.executionPlan,
+        promotion: readinessArtifacts.promotion
       }
     };
   }
@@ -675,7 +740,8 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
         payload: {
           ...base,
           kind: 'observer-fleet-adoption-updated-state',
-          updated_state: updatedState
+          updated_state: readinessArtifacts.updatedState,
+          promotion: readinessArtifacts.promotion
         }
       };
     }
@@ -685,7 +751,20 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
         payload: {
           ...base,
           kind: 'observer-fleet-adoption-next-queue',
-          next_queue: deriveNextAdoptionQueueFromUpdatedState(updatedState)
+          next_queue: readinessArtifacts.nextQueue,
+          promotion: readinessArtifacts.promotion
+        }
+      };
+    }
+    if (pathname === '/api/readiness/promotion') {
+      return {
+        statusCode: 200,
+        payload: {
+          ...base,
+          kind: 'observer-fleet-adoption-promotion-state',
+          promotion: readinessArtifacts.promotion,
+          updated_state: readinessArtifacts.updatedState,
+          receipt: readinessArtifacts.receipt
         }
       };
     }
@@ -694,7 +773,8 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
       payload: {
         ...base,
         kind: 'observer-fleet-adoption-execution-receipt',
-        receipt
+        receipt: readinessArtifacts.receipt,
+        promotion: readinessArtifacts.promotion
       }
     };
   }

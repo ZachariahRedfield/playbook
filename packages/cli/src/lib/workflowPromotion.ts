@@ -45,7 +45,7 @@ const promoteWorkflowArtifact = (stagedPath: string, destinationPath: string): v
   }
 };
 
-type StageWorkflowArtifactInput = {
+export type StageWorkflowArtifactInput = {
   cwd: string;
   workflowKind: string;
   candidateRelativePath: string;
@@ -57,37 +57,19 @@ type StageWorkflowArtifactInput = {
   blockedSummary?: string;
 };
 
-export const stageWorkflowArtifact = (input: StageWorkflowArtifactInput): WorkflowPromotion => {
-  const stagedPath = path.join(input.cwd, input.candidateRelativePath);
-  const committedPath = path.join(input.cwd, input.committedRelativePath);
 
-  fs.mkdirSync(path.dirname(stagedPath), { recursive: true });
-  fs.writeFileSync(stagedPath, stableStringify(input.artifact), 'utf8');
+const buildWorkflowPromotionResult = (input: {
+  workflowKind: string;
+  candidateRelativePath: string;
+  committedRelativePath: string;
+  generatedAt?: string;
+  validationErrors: string[];
+  successSummary: string;
+  blockedSummary?: string;
+}): WorkflowPromotion => {
+  const blockedReason = input.validationErrors.length > 0 ? input.validationErrors.join('; ') : null;
+  const promoted = input.validationErrors.length === 0;
 
-  const validationErrors = input.validate();
-  if (validationErrors.length > 0) {
-    const blockedReason = validationErrors.join('; ');
-    return {
-      schemaVersion: '1.0',
-      kind: 'workflow-promotion',
-      workflow_kind: input.workflowKind,
-      staged_generation: true,
-      candidate_artifact_path: input.candidateRelativePath,
-      staged_artifact_path: input.candidateRelativePath,
-      committed_target_path: input.committedRelativePath,
-      validation_status: 'blocked',
-      validation_passed: false,
-      promotion_status: 'blocked',
-      promoted: false,
-      committed_state_preserved: true,
-      blocked_reason: blockedReason,
-      error_summary: blockedReason,
-      generated_at: input.generatedAt ?? new Date(0).toISOString(),
-      summary: input.blockedSummary ?? `Staged ${input.workflowKind} candidate blocked before promotion.`
-    };
-  }
-
-  promoteWorkflowArtifact(stagedPath, committedPath);
   return {
     schemaVersion: '1.0',
     kind: 'workflow-promotion',
@@ -96,14 +78,43 @@ export const stageWorkflowArtifact = (input: StageWorkflowArtifactInput): Workfl
     candidate_artifact_path: input.candidateRelativePath,
     staged_artifact_path: input.candidateRelativePath,
     committed_target_path: input.committedRelativePath,
-    validation_status: 'passed',
-    validation_passed: true,
-    promotion_status: 'promoted',
-    promoted: true,
+    validation_status: promoted ? 'passed' : 'blocked',
+    validation_passed: promoted,
+    promotion_status: promoted ? 'promoted' : 'blocked',
+    promoted,
     committed_state_preserved: true,
-    blocked_reason: null,
-    error_summary: null,
+    blocked_reason: blockedReason,
+    error_summary: blockedReason,
     generated_at: input.generatedAt ?? new Date(0).toISOString(),
-    summary: input.successSummary
+    summary: promoted
+      ? input.successSummary
+      : input.blockedSummary ?? `Staged ${input.workflowKind} candidate blocked before promotion.`
   };
+};
+
+export const previewWorkflowArtifact = (input: StageWorkflowArtifactInput): WorkflowPromotion =>
+  buildWorkflowPromotionResult({
+    workflowKind: input.workflowKind,
+    candidateRelativePath: input.candidateRelativePath,
+    committedRelativePath: input.committedRelativePath,
+    generatedAt: input.generatedAt,
+    validationErrors: input.validate(),
+    successSummary: input.successSummary,
+    blockedSummary: input.blockedSummary
+  });
+
+export const stageWorkflowArtifact = (input: StageWorkflowArtifactInput): WorkflowPromotion => {
+  const stagedPath = path.join(input.cwd, input.candidateRelativePath);
+  const committedPath = path.join(input.cwd, input.committedRelativePath);
+
+  fs.mkdirSync(path.dirname(stagedPath), { recursive: true });
+  fs.writeFileSync(stagedPath, stableStringify(input.artifact), 'utf8');
+
+  const promotion = previewWorkflowArtifact(input);
+  if (!promotion.promoted) {
+    return promotion;
+  }
+
+  promoteWorkflowArtifact(stagedPath, committedPath);
+  return promotion;
 };

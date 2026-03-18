@@ -3,6 +3,7 @@ import type { FleetAdoptionReadinessSummary } from './fleetReadiness.js';
 import type { FleetCodexExecutionPlan, CodexExecutionPrompt, ExecutionPlanWaveId } from './executionPlan.js';
 import type { FleetAdoptionWorkQueue, AdoptionWorkItem } from './workQueue.js';
 import type { ReadinessLifecycleStage } from './readiness.js';
+import type { WorkflowPromotion } from '../schema/workflowPromotion.js';
 
 export type ExecutionObservedStatus = 'succeeded' | 'failed' | 'partial' | 'not_run';
 export type ExecutionComparisonStatus = 'success' | 'failed' | 'partial_success' | 'mismatch' | 'not_run';
@@ -96,6 +97,7 @@ export type ExecutionVerificationSummary = {
 };
 
 export type FleetExecutionReceipt = {
+  workflow_promotion?: WorkflowPromotion | null;
   schemaVersion: '1.0';
   kind: 'fleet-adoption-execution-receipt';
   generated_at: string;
@@ -190,7 +192,7 @@ export const buildFleetExecutionReceipt = (
   queue: FleetAdoptionWorkQueue,
   fleet: FleetAdoptionReadinessSummary,
   outcomeInput: FleetExecutionOutcomeInput,
-  options?: { generatedAt?: string }
+  options?: { generatedAt?: string; workflowPromotion?: WorkflowPromotion | null }
 ): FleetExecutionReceipt => {
   const generatedAt = options?.generatedAt ?? new Date().toISOString();
   const inputByPrompt = new Map(outcomeInput.prompt_outcomes.map((entry) => [entry.prompt_id, entry]));
@@ -293,6 +295,7 @@ export const buildFleetExecutionReceipt = (
     .map((result) => ({ prompt_id: result.prompt_id, repo_id: result.repo_id, expected: result.intended_transition.to, observed: result.observed_transition.to }));
 
   return {
+    workflow_promotion: options?.workflowPromotion ?? null,
     schemaVersion: '1.0',
     kind: 'fleet-adoption-execution-receipt',
     generated_at: generatedAt,
