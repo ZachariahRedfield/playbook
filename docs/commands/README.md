@@ -152,6 +152,16 @@ The CLI registry currently also exposes utility commands not treated as part of 
 
 Source of truth: shared command metadata in `packages/cli/src/lib/commandMetadata.ts` and generated truth contract `docs/contracts/command-truth.json`.
 
+## Artifact workflow governance
+
+Artifact-producing pipelines in this repository follow one sequencing rule: generate candidate state, validate the regenerated candidate, then promote approved outputs into committed locations.
+
+- Rule: All artifact-producing pipelines must validate regenerated candidate state, not stale committed outputs.
+- Pattern: Use isolated candidate generation plus gated promotion for deterministic artifact workflows.
+- Failure Mode: Writing or validating committed outputs too early causes false failures, drift, and unsafe partial promotion.
+
+Implementation note: shared staging helpers live in `scripts/staged-artifact-workflow.mjs` and are used by managed docs refresh, contract snapshot refresh, and fallback release asset packaging so sequencing logic stays consistent across pipelines.
+
 ## Product-state anchoring rule
 
 When command/workflow state changes, update these surfaces in the same change (or immediately after):

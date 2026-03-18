@@ -6,7 +6,8 @@ import { createEmptyKnowledgeFixtureRepo, createSeededKnowledgeFixtureRepo } fro
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
 const cliEntry = path.join(repoRoot, 'packages', 'cli', 'dist', 'main.js');
-const snapshotDir = path.join(repoRoot, 'tests', 'contracts');
+const committedSnapshotDir = path.join(repoRoot, 'tests', 'contracts');
+const snapshotOutputDir = process.env.PLAYBOOK_SNAPSHOT_OUTPUT_DIR ? path.resolve(process.env.PLAYBOOK_SNAPSHOT_OUTPUT_DIR) : committedSnapshotDir;
 const shouldUpdateSnapshots = process.env.UPDATE_CONTRACT_SNAPSHOTS === '1';
 
 function normalizeDynamicContractString(value: string): string {
@@ -319,12 +320,13 @@ describe('CLI JSON contract snapshots', () => {
   });
 
   it('matches committed snapshots for stable automation contracts', { timeout: 120000 }, () => {
-    fs.mkdirSync(snapshotDir, { recursive: true });
+    fs.mkdirSync(snapshotOutputDir, { recursive: true });
     const schemaByCommand = new Map<CommandContract['schemaCommand'], unknown>();
 
     for (const contract of commandContracts) {
       fs.rmSync(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'runtime'), { recursive: true, force: true });
-      const snapshotPath = path.join(snapshotDir, contract.file);
+      const snapshotPath = path.join(snapshotOutputDir, contract.file);
+      const committedSnapshotPath = path.join(committedSnapshotDir, contract.file);
       const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
       const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
 
@@ -338,11 +340,11 @@ describe('CLI JSON contract snapshots', () => {
         `Schema validation failed for ${contract.args.join(' ')}`
       ).toBe(true);
 
-      if (shouldUpdateSnapshots || !fs.existsSync(snapshotPath)) {
+      if (shouldUpdateSnapshots || !fs.existsSync(committedSnapshotPath)) {
         fs.writeFileSync(snapshotPath, actualJson, 'utf8');
       }
 
-      const expectedJson = fs.readFileSync(snapshotPath, 'utf8');
+      const expectedJson = fs.readFileSync(shouldUpdateSnapshots ? snapshotPath : committedSnapshotPath, 'utf8');
       expect(normalizeLineEndings(actualJson)).toBe(normalizeLineEndings(expectedJson));
       }
   });

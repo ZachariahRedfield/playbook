@@ -15,6 +15,11 @@
 
 ## Unreleased
 
+- WHAT: Audited remaining artifact-producing refresh and packaging pipelines and normalized contract snapshot updates plus fallback release asset packing onto staged candidate generation with gated promotion. Introduced `scripts/staged-artifact-workflow.mjs` so managed docs, contract snapshot refresh, and release asset packaging share the same isolated generate → validate → promote structure, and added regression tests that prove failed validation/promotion leaves committed outputs untouched. WHY: These pipelines were still vulnerable to stale-state validation or premature writes that could partially promote invalid artifacts.
+- Rule: All artifact-producing pipelines must validate regenerated candidate state, not stale committed outputs.
+- Pattern: Use isolated candidate generation plus gated promotion for deterministic artifact workflows.
+- Failure Mode: Writing or validating committed outputs too early causes false failures, drift, and unsafe partial promotion.
+
 - WHAT: Normalized the managed-docs governance pipeline to the same sequencing model as demo refresh by introducing a staged `scripts/managed-docs-pipeline.mjs` flow that regenerates `AGENTS.md`, `docs/commands/README.md`, and `docs/contracts/command-truth.json` into an overlay workspace, runs roadmap-contract validation plus `playbook docs audit` against the regenerated outputs, and only promotes those files back into the repo after validation passes. Added regression coverage for stale-artifact regeneration-before-validation and promotion blocking on validation failure. WHY: Prevents stale generated command artifacts from failing governance checks before regeneration and avoids partially promoted docs when validation rejects the refreshed outputs.
 - Rule: Generated artifacts must be regenerated before they are validated in any refresh/build/release pipeline.
 - Pattern: Generate → validate → promote is the default artifact pipeline shape.
