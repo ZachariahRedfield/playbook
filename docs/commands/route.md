@@ -10,6 +10,7 @@ pnpm playbook route "summarize current repo state" --json
 pnpm playbook route "propose fix for failing tests"
 pnpm playbook route "update command docs"
 pnpm playbook route "update command docs" --codex-prompt
+pnpm playbook route --story story-123 --json
 ```
 
 ## Command-surface guarantees
@@ -94,6 +95,7 @@ Use `--codex-prompt` to compile the deterministic execution plan into a PR-sized
 
 ```bash
 pnpm playbook route "update command docs" --codex-prompt
+pnpm playbook route --story story-123 --json
 ```
 
 Compiled prompt sections are deterministic and include:
@@ -106,3 +108,14 @@ Compiled prompt sections are deterministic and include:
 - Rule / Pattern / Failure Mode
 
 The compiled prompt is guidance-only. It does **not** launch workers, create branches, open PRs, or mutate the repository autonomously.
+
+
+## Story-linked planning
+
+`playbook route --story <id> --json` resolves the canonical story from `.playbook/stories.json`, derives a deterministic task statement, and writes the normal `.playbook/execution-plan.json` artifact with `story_reference` metadata.
+
+- Pattern: Story is durable intent; Plan is execution shape; Receipt is observed outcome.
+- Rule: Story, Plan, Worker, and Receipt must remain separate governed artifacts even when linked.
+- Failure Mode: Collapsing planning and execution artifacts into story state destroys clear control-plane boundaries.
+
+When a linked story is `ready`, route promotion may conservatively transition it to `in_progress` because deterministic planning evidence now exists.

@@ -8,7 +8,16 @@ import {
   type LearningStateSnapshotArtifact,
   type RouteDecision,
   recordRouteDecision,
-  safeRecordRepositoryEvent
+  safeRecordRepositoryEvent,
+  readStoriesArtifact,
+  findStoryById,
+  buildStoryRouteTask,
+  toStoryPlanningReference,
+  transitionStoryFromEvent,
+  validateStoriesArtifact,
+  STORIES_RELATIVE_PATH,
+  type StoriesArtifact,
+  type StoryRecord
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { createCommandQualityTracker } from '../lib/commandQuality.js';
@@ -24,15 +33,29 @@ type RouteOptions = {
   help?: boolean;
 };
 
+type StoryTransitionOutput = {
+  story_id: string;
+  previous_status: StoryRecord['status'];
+  next_status: StoryRecord['status'];
+  promotion: WorkflowPromotion;
+} | null;
+
 type RouteOutput = {
   schemaVersion: '1.0';
   command: 'route';
   task: string;
+  story?: {
+    id: string;
+    title: string;
+    status: StoryRecord['status'];
+    derived_task: string;
+  };
   selectedRoute: RouteDecision['route'];
   why: string;
   requiredInputs: string[];
   executionPlan: ExecutionPlanArtifact;
   promotion: WorkflowPromotion;
+  story_transition: StoryTransitionOutput;
   codexPrompt?: string;
   interpretation: InterpretationLayer;
 };
@@ -41,8 +64,33 @@ const EXECUTION_PLAN_PATH = '.playbook/execution-plan.json';
 const TASK_EXECUTION_PROFILE_PATH = '.playbook/task-execution-profile.json';
 const LEARNING_STATE_PATH = '.playbook/learning-state.json';
 
+const readOptionValue = (args: string[], optionName: string): string | undefined => {
+  const exactIndex = args.findIndex((arg) => arg === optionName);
+  if (exactIndex >= 0) {
+    return args[exactIndex + 1];
+  }
+  const prefixed = args.find((arg) => arg.startsWith(`${optionName}=`));
+  return prefixed ? prefixed.slice(optionName.length + 1) : undefined;
+};
+
+const filterOptionArgs = (args: string[]): string[] => {
+  const filtered: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === '--story') {
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--story=')) {
+      continue;
+    }
+    filtered.push(arg);
+  }
+  return filtered;
+};
+
 const extractTask = (args: string[]): string | undefined => {
-  const positional = args.filter((arg) => !arg.startsWith('-'));
+  const positional = filterOptionArgs(args).filter((arg) => !arg.startsWith('-'));
   if (positional.length === 0) {
     return undefined;
   }
@@ -59,21 +107,54 @@ const tryReadJsonArtifact = <T>(cwd: string, artifactPath: string): T | undefine
   return JSON.parse(fs.readFileSync(absolutePath, 'utf8')) as T;
 };
 
+const promoteStoryTransition = (cwd: string, current: StoriesArtifact, storyId: string): StoryTransitionOutput => {
+  const before = findStoryById(current, storyId);
+  if (!before) {
+    return null;
+  }
+  const nextArtifact = transitionStoryFromEvent(current, storyId, 'planned');
+  const after = findStoryById(nextArtifact, storyId);
+  if (!after || after.status === before.status) {
+    return null;
+  }
+  const promotion = stageWorkflowArtifact({
+    cwd,
+    workflowKind: 'story-status',
+    candidateRelativePath: '.playbook/stories.staged.json',
+    committedRelativePath: STORIES_RELATIVE_PATH,
+    artifact: nextArtifact,
+    validate: () => validateStoriesArtifact(nextArtifact),
+    generatedAt: new Date().toISOString(),
+    successSummary: `Updated story ${storyId} to status ${after.status}`,
+    blockedSummary: 'Story status update blocked; committed backlog state preserved.'
+  });
+  return {
+    story_id: storyId,
+    previous_status: before.status,
+    next_status: after.status,
+    promotion
+  };
+};
+
 const toOutput = (
   task: string,
   decision: RouteDecision,
   executionPlan: ExecutionPlanArtifact,
   promotion: WorkflowPromotion,
-  codexPrompt: string | undefined
+  codexPrompt: string | undefined,
+  storyTransition: StoryTransitionOutput,
+  storyContext?: { id: string; title: string; status: StoryRecord['status']; derived_task: string }
 ): RouteOutput => ({
   schemaVersion: '1.0',
   command: 'route',
   task,
+  ...(storyContext ? { story: storyContext } : {}),
   selectedRoute: decision.route,
   why: decision.why,
   requiredInputs: decision.requiredInputs,
   executionPlan,
   promotion,
+  story_transition: storyTransition,
   codexPrompt,
   interpretation: buildRouteInterpretation({
     task,
@@ -98,6 +179,9 @@ const printText = (payload: RouteOutput, options: RouteOptions): void => {
   console.log('Route');
   console.log('─────');
   console.log(`Task: ${payload.task}`);
+  if (payload.story) {
+    console.log(`Story: ${payload.story.id} (${payload.story.status})`);
+  }
   console.log(`Selected route: ${payload.selectedRoute}`);
   console.log(`Why: ${payload.why}`);
   console.log(`Task family: ${payload.executionPlan.task_family}`);
@@ -106,6 +190,10 @@ const printText = (payload: RouteOutput, options: RouteOptions): void => {
   console.log(`Repository mutation allowed: ${payload.executionPlan.mutation_allowed ? 'yes' : 'no'}`);
   console.log(`Learning state available: ${payload.executionPlan.learning_state_available ? 'yes' : 'no'}`);
   console.log(`Route confidence: ${payload.executionPlan.route_confidence}`);
+
+  if (payload.executionPlan.story_reference) {
+    console.log(`Story linkage: ${payload.executionPlan.story_reference.id} -> ${payload.executionPlan.story_reference.artifact_path}`);
+  }
 
   console.log('');
   console.log('Rule packs:');
@@ -151,6 +239,11 @@ const printText = (payload: RouteOutput, options: RouteOptions): void => {
     }
   }
 
+  if (payload.story_transition) {
+    console.log('');
+    console.log(`Story transition: ${payload.story_transition.previous_status} -> ${payload.story_transition.next_status}`);
+  }
+
   if (options.codexPrompt && payload.codexPrompt) {
     console.log('');
     console.log('Codex worker prompt');
@@ -164,21 +257,35 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     printCommandHelp({
       usage: 'playbook route <task> [options]',
       description: 'Classify task routing and emit a deterministic proposal execution plan.',
-      options: ['--codex-prompt             Include compiled Codex worker prompt', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
-      artifacts: [EXECUTION_PLAN_PATH]
+      options: ['--story <id>               Build a route/execution plan from a canonical story', '--codex-prompt             Include compiled Codex worker prompt', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
+      artifacts: [EXECUTION_PLAN_PATH, STORIES_RELATIVE_PATH]
     });
     return ExitCode.Success;
   }
 
   const tracker = createCommandQualityTracker(cwd, 'route');
 
-  const task = extractTask(commandArgs);
+  const storyId = readOptionValue(commandArgs, '--story');
+  const storiesArtifact = storyId ? readStoriesArtifact(cwd) : null;
+  const linkedStory = storyId && storiesArtifact ? findStoryById(storiesArtifact, storyId) : null;
+  if (storyId && !linkedStory) {
+    const exitCode = emitCommandFailure('route', options, {
+      summary: `Route failed: story not found (${storyId}).`,
+      findingId: 'route.story.not_found',
+      message: `Story not found: ${storyId}.`,
+      nextActions: ['Run `playbook story list --json` to inspect canonical story ids.']
+    });
+    tracker.finish({ inputsSummary: `story=${storyId}`, successStatus: 'failure', warningsCount: 1 });
+    return exitCode;
+  }
+
+  const task = linkedStory ? buildStoryRouteTask(linkedStory) : extractTask(commandArgs);
   if (!task) {
     const exitCode = emitCommandFailure('route', options, {
       summary: 'Route failed: missing required task argument.',
       findingId: 'route.task.required',
       message: 'Missing required argument: <task>.',
-      nextActions: ['Run `playbook route "<task>"` with a deterministic task statement.']
+      nextActions: ['Run `playbook route "<task>"` with a deterministic task statement.', 'Or run `playbook route --story <id>` to plan from a canonical story.']
     });
     tracker.finish({
       inputsSummary: 'missing task argument',
@@ -195,6 +302,7 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     task,
     decision,
     learningStateSnapshot: learningState,
+    story: linkedStory ? toStoryPlanningReference(linkedStory) : undefined,
     sourceArtifacts: {
       taskExecutionProfile: {
         available: taskExecutionProfile !== undefined,
@@ -225,7 +333,16 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     successSummary: 'Staged execution-plan candidate validated and promoted into the committed route artifact.',
     blockedSummary: 'Staged execution-plan candidate blocked; committed route artifact preserved.'
   });
-  const output = toOutput(task, decision, executionPlan, promotion, codexPrompt);
+  const storyTransition = linkedStory && storiesArtifact ? promoteStoryTransition(cwd, storiesArtifact, linkedStory.id) : null;
+  const output = toOutput(
+    task,
+    decision,
+    executionPlan,
+    promotion,
+    codexPrompt,
+    storyTransition,
+    linkedStory ? { id: linkedStory.id, title: linkedStory.title, status: linkedStory.status, derived_task: task } : undefined
+  );
 
   safeRecordRepositoryEvent(() => {
     recordRouteDecision(cwd, {
@@ -241,9 +358,9 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     console.log(JSON.stringify(output, null, 2));
     const exitCode = decision.route === 'unsupported' ? ExitCode.Failure : ExitCode.Success;
     tracker.finish({
-      inputsSummary: `task=${task}`,
-      artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH],
-      artifactsWritten: [EXECUTION_PLAN_PATH],
+      inputsSummary: linkedStory ? `story=${linkedStory.id}` : `task=${task}`,
+      artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH, ...(linkedStory ? [STORIES_RELATIVE_PATH] : [])],
+      artifactsWritten: [EXECUTION_PLAN_PATH, ...(storyTransition ? [STORIES_RELATIVE_PATH] : [])],
       downstreamArtifactsProduced: [EXECUTION_PLAN_PATH],
       successStatus: decision.route === 'unsupported' ? 'partial' : 'success',
       warningsCount: output.executionPlan.warnings.length,
@@ -259,32 +376,15 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
     console.log(`Wrote proposal artifact: ${EXECUTION_PLAN_PATH}`);
   }
 
-  if (decision.route === 'unsupported') {
-    if (output.executionPlan.missing_prerequisites.length > 0) {
-      console.error(`Next steps: provide ${output.executionPlan.missing_prerequisites.join(', ')} and retry.`);
-    }
-    tracker.finish({
-      inputsSummary: `task=${task}`,
-      artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH],
-      artifactsWritten: [EXECUTION_PLAN_PATH],
-      downstreamArtifactsProduced: [EXECUTION_PLAN_PATH],
-      successStatus: 'partial',
-      warningsCount: output.executionPlan.warnings.length,
-      openQuestionsCount: output.executionPlan.open_questions.length,
-      confidenceScore: output.executionPlan.route_confidence
-    });
-    return ExitCode.Failure;
-  }
-
   tracker.finish({
-    inputsSummary: `task=${task}`,
-    artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH],
-    artifactsWritten: [EXECUTION_PLAN_PATH],
+    inputsSummary: linkedStory ? `story=${linkedStory.id}` : `task=${task}`,
+    artifactsRead: [TASK_EXECUTION_PROFILE_PATH, LEARNING_STATE_PATH, ...(linkedStory ? [STORIES_RELATIVE_PATH] : [])],
+    artifactsWritten: [EXECUTION_PLAN_PATH, ...(storyTransition ? [STORIES_RELATIVE_PATH] : [])],
     downstreamArtifactsProduced: [EXECUTION_PLAN_PATH],
-    successStatus: 'success',
+    successStatus: decision.route === 'unsupported' ? 'partial' : 'success',
     warningsCount: output.executionPlan.warnings.length,
     openQuestionsCount: output.executionPlan.open_questions.length,
     confidenceScore: output.executionPlan.route_confidence
   });
-  return ExitCode.Success;
+  return decision.route === 'unsupported' ? ExitCode.Failure : ExitCode.Success;
 };

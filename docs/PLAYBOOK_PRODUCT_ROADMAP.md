@@ -2279,3 +2279,8 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Pattern: Candidate stories require grouping, dedupe, and explicit promotion.
 - Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.
 - Failure Mode: Raw finding -> automatic story conversion creates backlog spam and weak planning signal.
+
+
+- Pattern: Story is durable intent; Plan is execution shape; Receipt is observed outcome.
+- Rule: Story, Plan, Worker, and Receipt must remain separate governed artifacts even when linked.
+- Failure Mode: Collapsing planning and execution artifacts into story state destroys clear control-plane boundaries.

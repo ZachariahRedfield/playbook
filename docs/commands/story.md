@@ -8,6 +8,7 @@ Manage the canonical repo-local story backlog artifact at `.playbook/stories.jso
 - `playbook story show <id> --json`
 - `playbook story create --id <id> --title <title> --type <type> --source <source> --severity <severity> --priority <priority> --confidence <confidence> [--rationale <text>] [--acceptance <criterion>]... [--evidence <item>]... [--depends-on <story-id>]... [--execution-lane <lane>] [--suggested-route <route>] --json`
 - `playbook story status <id> --status ready --json`
+- `playbook story plan <id> --json`
 - `playbook story candidates --json`
 - `playbook story candidates --explain --json`
 - `playbook story promote <candidate-id> --json`

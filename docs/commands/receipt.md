@@ -112,3 +112,8 @@ Replay is read-only: it reuses the canonical execution outcome input artifact an
 If execution ingestion is modeled separately from receipt reconciliation and queue derivation, the control loop can drift into mismatched semantics and nondeterministic retries.
 
 Without replay and drift classification, closed-loop automation becomes harder to debug, test, and trust.
+
+
+## Story linkage
+
+When the committed `.playbook/execution-plan.json` includes `story_reference`, `playbook receipt ingest` preserves that linkage in the receipt and updated-state outputs. Story lifecycle updates remain explicit and conservative: blocked receipt evidence may transition the linked story to `blocked`, and fully completed deterministic outcomes may transition it to `done`.

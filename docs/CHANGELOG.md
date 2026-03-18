@@ -1,3 +1,8 @@
+## Unreleased
+
+- Added story-linked routing via `playbook route --story <id>` and `playbook story plan <id>` while preserving Story as durable intent and Plan as separate execution shape.
+- Added `story_reference` metadata propagation from execution plans into receipt and updated-state outputs, plus conservative deterministic story lifecycle transitions for planning, blocked execution, and completed execution evidence.
+
 ## 2026-03-18 — Candidate story derivation and explicit promotion
 
 - WHAT: Added `pnpm playbook story candidates --json` and `pnpm playbook story candidates --explain --json`, which derive inspectable story candidates into `.playbook/story-candidates.json` from governed readiness blockers, improvement opportunities, execution updated-state drift/replan evidence, and stable router recommendations without mutating `.playbook/stories.json`. WHY: Findings need durable interpretation before they become backlog work, so candidate generation must stay read-only relative to the canonical backlog artifact.

@@ -562,3 +562,7 @@ Use query surfaces to inspect state:
 - Pattern: Candidate stories require grouping, dedupe, and explicit promotion.
 - Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.
 - Failure Mode: Raw finding -> automatic story conversion creates backlog spam and weak planning signal.
+
+
+- `playbook story plan <id> --json`: generate a route/execution plan from canonical story intent while keeping story, plan, worker, and receipt as separate linked artifacts.
+- `playbook route --story <id> --json`: derive a deterministic route directly from a story id and stamp `story_reference` metadata into the generated execution plan.

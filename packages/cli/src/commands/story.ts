@@ -18,6 +18,7 @@ import {
   type StoryStatus
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
+import { runRoute } from './route.js';
 import { stageWorkflowArtifact } from '../lib/workflowPromotion.js';
 
 type StoryCommandOptions = { format: 'text' | 'json'; quiet: boolean };
@@ -34,7 +35,7 @@ const print = (format: 'text' | 'json', payload: unknown): void => {
   if (format === 'json') console.log(JSON.stringify(payload, null, 2));
   else console.log(typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2));
 };
-const usage = 'Usage: playbook story <list|show|create|status|candidates|promote> [options]';
+const usage = 'Usage: playbook story <list|show|create|status|plan|candidates|promote> [options]';
 
 const summarizeCandidate = (candidate: StoryCandidateRecord): Record<string, unknown> => ({
   id: candidate.id,
@@ -59,6 +60,16 @@ export const runStory = async (cwd: string, args: string[], options: StoryComman
     const artifact = readStoriesArtifact(cwd);
     print(options.format, { schemaVersion: '1.0', command: 'story.list', repo: artifact.repo, stories: artifact.stories });
     return ExitCode.Success;
+  }
+
+
+  if (subcommand === 'plan') {
+    const id = args[1];
+    if (!id) {
+      print(options.format, { schemaVersion: '1.0', command: 'story.plan', error: 'Usage: playbook story plan <id> --json' });
+      return ExitCode.Failure;
+    }
+    return runRoute(cwd, ['--story', id], { format: options.format, quiet: options.quiet, codexPrompt: false });
   }
 
   if (subcommand === 'candidates') {

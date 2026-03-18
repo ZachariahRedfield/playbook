@@ -18,25 +18,80 @@
     "verification_summary"
   ],
   "properties": {
-    "schemaVersion": { "const": "1.0" },
-    "kind": { "const": "fleet-adoption-execution-receipt" },
-    "generated_at": { "type": "string" },
-    "execution_plan_digest": { "type": "string" },
-    "session_id": { "type": "string" },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "fleet-adoption-execution-receipt"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "execution_plan_digest": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
     "wave_results": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["wave_id", "status", "completed_prompts", "failed_prompts", "partial_prompts", "repos_needing_retry", "planned_vs_actual_drift"],
+        "required": [
+          "wave_id",
+          "status",
+          "completed_prompts",
+          "failed_prompts",
+          "partial_prompts",
+          "repos_needing_retry",
+          "planned_vs_actual_drift"
+        ],
         "properties": {
-          "wave_id": { "enum": ["wave_1", "wave_2"] },
-          "status": { "enum": ["succeeded", "failed", "partial", "not_run"] },
-          "completed_prompts": { "type": "array", "items": { "type": "string" } },
-          "failed_prompts": { "type": "array", "items": { "type": "string" } },
-          "partial_prompts": { "type": "array", "items": { "type": "string" } },
-          "repos_needing_retry": { "type": "array", "items": { "type": "string" } },
-          "planned_vs_actual_drift": { "type": "array", "items": { "type": "string" } }
+          "wave_id": {
+            "enum": [
+              "wave_1",
+              "wave_2"
+            ]
+          },
+          "status": {
+            "enum": [
+              "succeeded",
+              "failed",
+              "partial",
+              "not_run"
+            ]
+          },
+          "completed_prompts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "failed_prompts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "partial_prompts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "repos_needing_retry": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "planned_vs_actual_drift": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -45,18 +100,61 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["prompt_id", "repo_id", "lane_id", "wave_id", "intended_transition", "observed_transition", "status", "verification_passed", "notes", "evidence"],
+        "required": [
+          "prompt_id",
+          "repo_id",
+          "lane_id",
+          "wave_id",
+          "intended_transition",
+          "observed_transition",
+          "status",
+          "verification_passed",
+          "notes",
+          "evidence"
+        ],
         "properties": {
-          "prompt_id": { "type": "string" },
-          "repo_id": { "type": "string" },
-          "lane_id": { "type": "string" },
-          "wave_id": { "enum": ["wave_1", "wave_2"] },
-          "intended_transition": { "$ref": "#/$defs/transition" },
-          "observed_transition": { "$ref": "#/$defs/transition" },
-          "status": { "enum": ["success", "failed", "partial_success", "mismatch", "not_run"] },
-          "verification_passed": { "type": "boolean" },
-          "notes": { "type": "string" },
-          "evidence": { "type": "array", "items": { "type": "string" } }
+          "prompt_id": {
+            "type": "string"
+          },
+          "repo_id": {
+            "type": "string"
+          },
+          "lane_id": {
+            "type": "string"
+          },
+          "wave_id": {
+            "enum": [
+              "wave_1",
+              "wave_2"
+            ]
+          },
+          "intended_transition": {
+            "$ref": "#/$defs/transition"
+          },
+          "observed_transition": {
+            "$ref": "#/$defs/transition"
+          },
+          "status": {
+            "enum": [
+              "success",
+              "failed",
+              "partial_success",
+              "mismatch",
+              "not_run"
+            ]
+          },
+          "verification_passed": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -65,52 +163,198 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["repo_id", "planned_transition", "observed_transition", "status", "prompts", "blockers", "retry_recommended"],
+        "required": [
+          "repo_id",
+          "planned_transition",
+          "observed_transition",
+          "status",
+          "prompts",
+          "blockers",
+          "retry_recommended"
+        ],
         "properties": {
-          "repo_id": { "type": "string" },
-          "planned_transition": { "anyOf": [{ "$ref": "#/$defs/transition" }, { "type": "null" }] },
-          "observed_transition": { "$ref": "#/$defs/transition" },
-          "status": { "enum": ["success", "failed", "partial_success", "mismatch", "not_run"] },
-          "prompts": { "type": "array", "items": { "type": "string" } },
-          "blockers": { "type": "array", "items": { "type": "string" } },
-          "retry_recommended": { "type": "boolean" }
+          "repo_id": {
+            "type": "string"
+          },
+          "planned_transition": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/transition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observed_transition": {
+            "$ref": "#/$defs/transition"
+          },
+          "status": {
+            "enum": [
+              "success",
+              "failed",
+              "partial_success",
+              "mismatch",
+              "not_run"
+            ]
+          },
+          "prompts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "retry_recommended": {
+            "type": "boolean"
+          }
         }
       }
     },
-    "artifact_deltas": { "type": "array", "items": { "$ref": "#/$defs/artifactDelta" } },
-    "blockers": { "type": "array", "items": { "$ref": "#/$defs/blocker" } },
+    "artifact_deltas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifactDelta"
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/blocker"
+      }
+    },
     "workflow_promotion": {
       "anyOf": [
-        { "$ref": "https://playbook.dev/schemas/workflow-promotion.schema.json" },
-        { "type": "null" }
+        {
+          "$ref": "https://playbook.dev/schemas/workflow-promotion.schema.json"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "verification_summary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["prompts_total", "verification_passed_count", "succeeded_count", "failed_count", "partial_count", "mismatch_count", "not_run_count", "repos_needing_retry", "planned_vs_actual_drift"],
+      "required": [
+        "prompts_total",
+        "verification_passed_count",
+        "succeeded_count",
+        "failed_count",
+        "partial_count",
+        "mismatch_count",
+        "not_run_count",
+        "repos_needing_retry",
+        "planned_vs_actual_drift"
+      ],
       "properties": {
-        "prompts_total": { "type": "integer" },
-        "verification_passed_count": { "type": "integer" },
-        "succeeded_count": { "type": "integer" },
-        "failed_count": { "type": "integer" },
-        "partial_count": { "type": "integer" },
-        "mismatch_count": { "type": "integer" },
-        "not_run_count": { "type": "integer" },
-        "repos_needing_retry": { "type": "array", "items": { "type": "string" } },
+        "prompts_total": {
+          "type": "integer"
+        },
+        "verification_passed_count": {
+          "type": "integer"
+        },
+        "succeeded_count": {
+          "type": "integer"
+        },
+        "failed_count": {
+          "type": "integer"
+        },
+        "partial_count": {
+          "type": "integer"
+        },
+        "mismatch_count": {
+          "type": "integer"
+        },
+        "not_run_count": {
+          "type": "integer"
+        },
+        "repos_needing_retry": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "planned_vs_actual_drift": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["prompt_id", "repo_id", "expected", "observed"],
+            "required": [
+              "prompt_id",
+              "repo_id",
+              "expected",
+              "observed"
+            ],
             "properties": {
-              "prompt_id": { "type": "string" },
-              "repo_id": { "type": "string" },
-              "expected": { "$ref": "#/$defs/lifecycleStage" },
-              "observed": { "$ref": "#/$defs/lifecycleStage" }
+              "prompt_id": {
+                "type": "string"
+              },
+              "repo_id": {
+                "type": "string"
+              },
+              "expected": {
+                "$ref": "#/$defs/lifecycleStage"
+              },
+              "observed": {
+                "$ref": "#/$defs/lifecycleStage"
+              }
             }
           }
+        }
+      }
+    },
+    "story_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "artifact_path",
+        "suggested_route",
+        "execution_lane"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "ready",
+            "in_progress",
+            "blocked",
+            "done",
+            "archived"
+          ]
+        },
+        "artifact_path": {
+          "type": "string",
+          "const": ".playbook/stories.json"
+        },
+        "suggested_route": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "execution_lane": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     }
@@ -129,35 +373,93 @@
     "transition": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["from", "to"],
+      "required": [
+        "from",
+        "to"
+      ],
       "properties": {
-        "from": { "$ref": "#/$defs/lifecycleStage" },
-        "to": { "$ref": "#/$defs/lifecycleStage" }
+        "from": {
+          "$ref": "#/$defs/lifecycleStage"
+        },
+        "to": {
+          "$ref": "#/$defs/lifecycleStage"
+        }
       }
     },
     "artifactDelta": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["artifact_kind", "artifact_path", "change_type", "evidence"],
+      "required": [
+        "artifact_kind",
+        "artifact_path",
+        "change_type",
+        "evidence"
+      ],
       "properties": {
-        "artifact_kind": { "enum": ["repo-index", "repo-graph", "plan", "policy-apply-result"] },
-        "artifact_path": { "type": "string" },
-        "change_type": { "enum": ["created", "updated", "unchanged", "missing", "invalid"] },
-        "evidence": { "type": "string" }
+        "artifact_kind": {
+          "enum": [
+            "repo-index",
+            "repo-graph",
+            "plan",
+            "policy-apply-result"
+          ]
+        },
+        "artifact_path": {
+          "type": "string"
+        },
+        "change_type": {
+          "enum": [
+            "created",
+            "updated",
+            "unchanged",
+            "missing",
+            "invalid"
+          ]
+        },
+        "evidence": {
+          "type": "string"
+        }
       }
     },
     "blocker": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["blocker_code", "scope", "message", "evidence"],
+      "required": [
+        "blocker_code",
+        "scope",
+        "message",
+        "evidence"
+      ],
       "properties": {
-        "blocker_code": { "type": "string" },
-        "scope": { "enum": ["fleet", "wave", "prompt", "repo"] },
-        "repo_id": { "type": "string" },
-        "prompt_id": { "type": "string" },
-        "wave_id": { "enum": ["wave_1", "wave_2"] },
-        "message": { "type": "string" },
-        "evidence": { "type": "string" }
+        "blocker_code": {
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "fleet",
+            "wave",
+            "prompt",
+            "repo"
+          ]
+        },
+        "repo_id": {
+          "type": "string"
+        },
+        "prompt_id": {
+          "type": "string"
+        },
+        "wave_id": {
+          "enum": [
+            "wave_1",
+            "wave_2"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        }
       }
     }
   }

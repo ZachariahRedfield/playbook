@@ -171,6 +171,55 @@
         "minLength": 1
       },
       "uniqueItems": true
+    },
+    "story_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "artifact_path",
+        "suggested_route",
+        "execution_lane"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "ready",
+            "in_progress",
+            "blocked",
+            "done",
+            "archived"
+          ]
+        },
+        "artifact_path": {
+          "type": "string",
+          "const": ".playbook/stories.json"
+        },
+        "suggested_route": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "execution_lane": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     }
   },
   "$defs": {

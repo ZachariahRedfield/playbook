@@ -4,49 +4,141 @@
   "title": "Fleet Adoption Updated State",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "generated_at", "execution_plan_digest", "session_id", "summary", "repos"],
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generated_at",
+    "execution_plan_digest",
+    "session_id",
+    "summary",
+    "repos"
+  ],
   "properties": {
-    "schemaVersion": { "const": "1.0" },
-    "kind": { "const": "fleet-adoption-updated-state" },
-    "generated_at": { "type": "string" },
-    "execution_plan_digest": { "type": "string" },
-    "session_id": { "type": "string" },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "fleet-adoption-updated-state"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "execution_plan_digest": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
     "summary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repos_total", "by_reconciliation_status", "action_counts", "repos_needing_retry", "repos_needing_replan", "repos_needing_review", "stale_or_superseded_repo_ids", "blocked_repo_ids", "completed_repo_ids"],
+      "required": [
+        "repos_total",
+        "by_reconciliation_status",
+        "action_counts",
+        "repos_needing_retry",
+        "repos_needing_replan",
+        "repos_needing_review",
+        "stale_or_superseded_repo_ids",
+        "blocked_repo_ids",
+        "completed_repo_ids"
+      ],
       "properties": {
-        "repos_total": { "type": "integer" },
+        "repos_total": {
+          "type": "integer"
+        },
         "by_reconciliation_status": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["completed_as_planned", "completed_with_drift", "partial", "failed", "blocked", "not_run", "stale_plan_or_superseded"],
+          "required": [
+            "completed_as_planned",
+            "completed_with_drift",
+            "partial",
+            "failed",
+            "blocked",
+            "not_run",
+            "stale_plan_or_superseded"
+          ],
           "properties": {
-            "completed_as_planned": { "type": "integer" },
-            "completed_with_drift": { "type": "integer" },
-            "partial": { "type": "integer" },
-            "failed": { "type": "integer" },
-            "blocked": { "type": "integer" },
-            "not_run": { "type": "integer" },
-            "stale_plan_or_superseded": { "type": "integer" }
+            "completed_as_planned": {
+              "type": "integer"
+            },
+            "completed_with_drift": {
+              "type": "integer"
+            },
+            "partial": {
+              "type": "integer"
+            },
+            "failed": {
+              "type": "integer"
+            },
+            "blocked": {
+              "type": "integer"
+            },
+            "not_run": {
+              "type": "integer"
+            },
+            "stale_plan_or_superseded": {
+              "type": "integer"
+            }
           }
         },
         "action_counts": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["needs_retry", "needs_replan", "needs_review"],
+          "required": [
+            "needs_retry",
+            "needs_replan",
+            "needs_review"
+          ],
           "properties": {
-            "needs_retry": { "type": "integer" },
-            "needs_replan": { "type": "integer" },
-            "needs_review": { "type": "integer" }
+            "needs_retry": {
+              "type": "integer"
+            },
+            "needs_replan": {
+              "type": "integer"
+            },
+            "needs_review": {
+              "type": "integer"
+            }
           }
         },
-        "repos_needing_retry": { "type": "array", "items": { "type": "string" } },
-        "repos_needing_replan": { "type": "array", "items": { "type": "string" } },
-        "repos_needing_review": { "type": "array", "items": { "type": "string" } },
-        "stale_or_superseded_repo_ids": { "type": "array", "items": { "type": "string" } },
-        "blocked_repo_ids": { "type": "array", "items": { "type": "string" } },
-        "completed_repo_ids": { "type": "array", "items": { "type": "string" } }
+        "repos_needing_retry": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "repos_needing_replan": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "repos_needing_review": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stale_or_superseded_repo_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blocked_repo_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "completed_repo_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "repos": {
@@ -54,27 +146,146 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["repo_id", "prior_lifecycle_stage", "planned_lifecycle_stage", "updated_lifecycle_stage", "reconciliation_status", "action_state", "prompt_ids", "blocker_codes", "drift_prompt_ids", "receipt_status"],
+        "required": [
+          "repo_id",
+          "prior_lifecycle_stage",
+          "planned_lifecycle_stage",
+          "updated_lifecycle_stage",
+          "reconciliation_status",
+          "action_state",
+          "prompt_ids",
+          "blocker_codes",
+          "drift_prompt_ids",
+          "receipt_status"
+        ],
         "properties": {
-          "repo_id": { "type": "string" },
-          "prior_lifecycle_stage": { "$ref": "https://playbook.dev/schemas/execution-receipt.schema.json#/$defs/lifecycleStage" },
-          "planned_lifecycle_stage": { "anyOf": [{ "$ref": "https://playbook.dev/schemas/execution-receipt.schema.json#/$defs/lifecycleStage" }, { "type": "null" }] },
-          "updated_lifecycle_stage": { "$ref": "https://playbook.dev/schemas/execution-receipt.schema.json#/$defs/lifecycleStage" },
-          "reconciliation_status": { "enum": ["completed_as_planned", "completed_with_drift", "partial", "failed", "blocked", "not_run", "stale_plan_or_superseded"] },
+          "repo_id": {
+            "type": "string"
+          },
+          "prior_lifecycle_stage": {
+            "$ref": "https://playbook.dev/schemas/execution-receipt.schema.json#/$defs/lifecycleStage"
+          },
+          "planned_lifecycle_stage": {
+            "anyOf": [
+              {
+                "$ref": "https://playbook.dev/schemas/execution-receipt.schema.json#/$defs/lifecycleStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_lifecycle_stage": {
+            "$ref": "https://playbook.dev/schemas/execution-receipt.schema.json#/$defs/lifecycleStage"
+          },
+          "reconciliation_status": {
+            "enum": [
+              "completed_as_planned",
+              "completed_with_drift",
+              "partial",
+              "failed",
+              "blocked",
+              "not_run",
+              "stale_plan_or_superseded"
+            ]
+          },
           "action_state": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["needs_retry", "needs_replan", "needs_review"],
+            "required": [
+              "needs_retry",
+              "needs_replan",
+              "needs_review"
+            ],
             "properties": {
-              "needs_retry": { "type": "boolean" },
-              "needs_replan": { "type": "boolean" },
-              "needs_review": { "type": "boolean" }
+              "needs_retry": {
+                "type": "boolean"
+              },
+              "needs_replan": {
+                "type": "boolean"
+              },
+              "needs_review": {
+                "type": "boolean"
+              }
             }
           },
-          "prompt_ids": { "type": "array", "items": { "type": "string" } },
-          "blocker_codes": { "type": "array", "items": { "type": "string" } },
-          "drift_prompt_ids": { "type": "array", "items": { "type": "string" } },
-          "receipt_status": { "enum": ["success", "failed", "partial_success", "mismatch", "not_run", "unknown"] }
+          "prompt_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocker_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "drift_prompt_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "receipt_status": {
+            "enum": [
+              "success",
+              "failed",
+              "partial_success",
+              "mismatch",
+              "not_run",
+              "unknown"
+            ]
+          }
+        }
+      }
+    },
+    "story_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "artifact_path",
+        "suggested_route",
+        "execution_lane"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "ready",
+            "in_progress",
+            "blocked",
+            "done",
+            "archived"
+          ]
+        },
+        "artifact_path": {
+          "type": "string",
+          "const": ".playbook/stories.json"
+        },
+        "suggested_route": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "execution_lane": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     }

@@ -1,6 +1,7 @@
 import type { RouteDecision } from './types.js';
 import { resolveDeterministicTaskRoute } from './deterministicRouter.js';
 import type { LearningStateSnapshotArtifact } from '../telemetry/learningState.js';
+import type { StoryPlanningReference } from '../story/stories.js';
 
 type SourceArtifactState = {
   available: boolean;
@@ -18,6 +19,7 @@ export type BuildExecutionPlanInput = {
   generatedAt?: string;
   sourceArtifacts: ExecutionPlanSourceArtifacts;
   learningStateSnapshot?: LearningStateSnapshotArtifact;
+  story?: StoryPlanningReference;
 };
 
 export type ExecutionPlanArtifact = {
@@ -43,6 +45,7 @@ export type ExecutionPlanArtifact = {
   worker_ready: boolean;
   open_questions: string[];
   warnings: string[];
+  story_reference?: StoryPlanningReference;
 };
 
 const sortUnique = (values: readonly string[]): string[] => [...new Set(values)].sort((a, b) => a.localeCompare(b));
@@ -117,7 +120,8 @@ export const buildExecutionPlan = (input: BuildExecutionPlanInput): ExecutionPla
       recommended_pr_size: 'small',
       worker_ready: false,
       open_questions: [...openQuestions].sort((a, b) => a.localeCompare(b)),
-      warnings: sortUnique(warnings)
+      warnings: sortUnique(warnings),
+      ...(input.story ? { story_reference: input.story } : {})
     };
   }
 
@@ -210,6 +214,7 @@ export const buildExecutionPlan = (input: BuildExecutionPlanInput): ExecutionPla
     recommended_pr_size: input.decision.estimatedChangeSurface,
     worker_ready: input.decision.route === 'deterministic_local' && input.decision.missingPrerequisites.length === 0,
     open_questions: [...openQuestions].sort((a, b) => a.localeCompare(b)),
-    warnings: sortUnique(warnings)
+    warnings: sortUnique(warnings),
+    ...(input.story ? { story_reference: input.story } : {})
   };
 };

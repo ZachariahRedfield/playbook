@@ -56,6 +56,27 @@ describe('runStory', () => {
     expect(artifact.stories[0]?.status).toBe('ready');
   });
 
+
+  it('routes a canonical story through the story plan subcommand', async () => {
+    const repo = makeRepo();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    let exitCode = await runStory(repo, ['create', '--id', 'story-plan', '--title', 'Update command docs', '--type', 'governance', '--source', 'manual', '--severity', 'medium', '--priority', 'high', '--confidence', 'high', '--rationale', 'Need linked planning', '--acceptance', 'Emit route plan', '--suggested-route', 'docs_only'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    logSpy.mockClear();
+    exitCode = await runStory(repo, ['status', 'story-plan', '--status', 'ready'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    logSpy.mockClear();
+    exitCode = await runStory(repo, ['plan', 'story-plan'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+    expect(payload.command).toBe('route');
+    expect(payload.story.id).toBe('story-plan');
+    expect(payload.executionPlan.story_reference.id).toBe('story-plan');
+  });
+
   it('derives read-only story candidates and promotes one explicitly into the canonical backlog artifact', async () => {
     const repo = makeRepo();
     writeArtifact(repo, '.playbook/improvement-candidates.json', {

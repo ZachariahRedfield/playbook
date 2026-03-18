@@ -313,7 +313,13 @@ declare module "@zachariahredfield/playbook-engine" {
   export const readStoriesArtifact: (...args: any[]) => StoriesArtifact;
   export const sortStoriesForBacklog: (...args: any[]) => StoryRecord[];
   export const summarizeStoriesBacklog: (...args: any[]) => StoryBacklogSummary;
+  export type StoryPlanningReference = { id: string; title: string; status: StoryStatus; artifact_path: '.playbook/stories.json'; suggested_route: string | null; execution_lane: string | null; };
+  export type StoryLifecycleEvent = 'planned' | 'receipt_blocked' | 'receipt_completed';
   export const findStoryById: (...args: any[]) => StoryRecord | null;
+  export const toStoryPlanningReference: (...args: any[]) => StoryPlanningReference;
+  export const buildStoryRouteTask: (...args: any[]) => string;
+  export const deriveStoryLifecycleStatus: (...args: any[]) => StoryStatus | null;
+  export const transitionStoryFromEvent: (...args: any[]) => StoriesArtifact;
   export const validateStoriesArtifact: (...args: any[]) => string[];
   export const upsertStory: (...args: any[]) => StoriesArtifact;
   export const updateStoryStatus: (...args: any[]) => StoriesArtifact;

@@ -16,6 +16,17 @@ export type StoryPriority = (typeof STORY_PRIORITIES)[number];
 export type StoryConfidence = (typeof STORY_CONFIDENCES)[number];
 export type StoryStatus = (typeof STORY_STATUSES)[number];
 
+export type StoryPlanningReference = {
+  id: string;
+  title: string;
+  status: StoryStatus;
+  artifact_path: typeof STORIES_RELATIVE_PATH;
+  suggested_route: string | null;
+  execution_lane: string | null;
+};
+
+export type StoryLifecycleEvent = 'planned' | 'receipt_blocked' | 'receipt_completed';
+
 export type StoryRecord = {
   id: string;
   repo: string;
@@ -113,6 +124,67 @@ export const summarizeStoriesBacklog = (artifact: StoriesArtifact): StoryBacklog
 
 export const findStoryById = (artifact: StoriesArtifact, storyId: string): StoryRecord | null =>
   artifact.stories.find((story) => story.id === storyId) ?? null;
+
+export const toStoryPlanningReference = (story: StoryRecord): StoryPlanningReference => ({
+  id: story.id,
+  title: story.title,
+  status: story.status,
+  artifact_path: STORIES_RELATIVE_PATH,
+  suggested_route: story.suggested_route,
+  execution_lane: story.execution_lane
+});
+
+const STORY_ROUTE_TASK_PREFIX: Record<Exclude<StoryType, 'research'> | 'research', string> = {
+  bug: 'fix cli command',
+  feature: 'implement cli command',
+  governance: 'update command docs',
+  maintenance: 'update cli command',
+  research: 'document command research'
+};
+
+export const buildStoryRouteTask = (story: StoryRecord): string => {
+  const routeHint = story.suggested_route?.trim().toLowerCase() ?? null;
+  const base = routeHint === 'docs_only'
+    ? 'update command docs'
+    : routeHint === 'contracts_schema'
+      ? 'update contract schema'
+      : routeHint === 'cli_command'
+        ? 'update cli command'
+        : routeHint === 'engine_scoring'
+          ? 'update engine scoring'
+          : routeHint === 'pattern_learning'
+            ? 'update pattern learning'
+            : STORY_ROUTE_TASK_PREFIX[story.type];
+  return `${base}: ${story.title}`;
+};
+
+export const deriveStoryLifecycleStatus = (story: StoryRecord, event: StoryLifecycleEvent): StoryStatus | null => {
+  if (story.status === 'archived' || story.status === 'done') {
+    return null;
+  }
+  if (event === 'planned') {
+    return story.status === 'ready' ? 'in_progress' : null;
+  }
+  if (event === 'receipt_blocked') {
+    return story.status === 'ready' || story.status === 'in_progress' ? 'blocked' : null;
+  }
+  if (event === 'receipt_completed') {
+    return story.status === 'in_progress' ? 'done' : null;
+  }
+  return null;
+};
+
+export const transitionStoryFromEvent = (artifact: StoriesArtifact, storyId: string, event: StoryLifecycleEvent): StoriesArtifact => {
+  const story = findStoryById(artifact, storyId);
+  if (!story) {
+    return artifact;
+  }
+  const nextStatus = deriveStoryLifecycleStatus(story, event);
+  if (!nextStatus || nextStatus == story.status) {
+    return artifact;
+  }
+  return updateStoryStatus(artifact, storyId, nextStatus);
+};
 
 const unique = (values: string[]): string[] => [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 

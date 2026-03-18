@@ -100,6 +100,7 @@ describe("runReceipt", () => {
         repos: [],
       },
       next_queue: { queue_source: "updated_state", work_items: [] },
+      story_transition: null,
     });
     loadReplayExecutionOutcomeInput.mockReturnValue({
       outcomeInput: {
@@ -181,6 +182,7 @@ describe("runReceipt", () => {
     expect(payload.written_artifacts.execution_outcome_input).toBe(
       ".playbook/execution-outcome-input.json",
     );
+    expect(payload.story_transition).toBeNull();
 
     logSpy.mockRestore();
   });
