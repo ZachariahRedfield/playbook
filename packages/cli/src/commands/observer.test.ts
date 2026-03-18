@@ -502,7 +502,7 @@ describe('observer server', () => {
     expect(uiScriptText).toContain('node-state-');
     expect(uiScriptText).toContain("document.getElementById('controlLoopSummaryPanel')");
     expect(uiScriptText).toContain('renderControlLoopSummary');
-    expect(uiScriptText).toContain('Backlog Summary');
+    expect(uiScriptText).toContain("document.getElementById('backlogSummaryPanel')");
     expect(uiScriptText).toContain('const loadBacklog = async () =>');
     expect(uiScriptText).toContain('const loadStoryDetail = async () =>');
     expect(uiScriptText).toContain('canonical story artifact only');
