@@ -13,8 +13,12 @@ describe('improvement candidates contract', () => {
     const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8')) as {
       properties?: {
         thresholds?: { properties?: { minimum_recurrence?: { const?: number }; minimum_confidence?: { const?: number } } };
+        opportunity_analysis?: { properties?: { top_recommendation?: unknown; secondary_queue?: unknown } };
       };
-      $defs?: { ImprovementCandidate?: { properties?: { category?: { enum?: string[] } } } };
+      $defs?: {
+        ImprovementCandidate?: { properties?: { category?: { enum?: string[] } } };
+        ImprovementOpportunity?: { properties?: { heuristic_class?: { enum?: string[] } } };
+      };
     };
 
     expect(schema.properties?.thresholds?.properties?.minimum_recurrence?.const).toBe(3);
@@ -25,6 +29,15 @@ describe('improvement candidates contract', () => {
       'worker_prompts',
       'validation_efficiency',
       'ontology'
+    ]);
+    expect(schema.properties?.opportunity_analysis?.properties?.top_recommendation).toBeDefined();
+    expect(schema.properties?.opportunity_analysis?.properties?.secondary_queue).toBeDefined();
+    expect(schema.$defs?.ImprovementOpportunity?.properties?.heuristic_class?.enum).toEqual([
+      'duplicated_derivation_logic',
+      'broad_query_fanout',
+      'missing_invalidation_boundary',
+      'repeated_recompute_loops',
+      'canonical_id_inconsistency'
     ]);
   });
 });

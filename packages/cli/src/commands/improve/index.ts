@@ -18,9 +18,9 @@ type ImproveOptions = {
 
 const printImproveHelp = (): void => {
   printCommandHelp({
-    usage: 'playbook improve [commands|apply-safe|approve <proposal_id>] [options]',
+    usage: 'playbook improve [opportunities|commands|apply-safe|approve <proposal_id>] [options]',
     description: 'Generate, apply, and approve deterministic improvement proposals.',
-    options: ['commands                  Emit command improvement recommendations', 'apply-safe                Apply auto-safe improvement proposals', 'approve <proposal_id>      Approve governance-gated proposal', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
+    options: ['opportunities             Report ranked next-best improvement opportunities', 'commands                  Emit command improvement recommendations', 'apply-safe                Apply auto-safe improvement proposals', 'approve <proposal_id>      Approve governance-gated proposal', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
     artifacts: ['.playbook/improvement-candidates.json (write/read)', '.playbook/command-improvements.json (write/read via improve commands)', '.playbook/improvement-approvals.json (write for approve)']
   });
 };
@@ -108,6 +108,37 @@ const printConversationPrompts = (artifact: ImprovementCandidatesArtifact): void
 };
 
 
+
+const renderOpportunityText = (artifact: ImprovementCandidatesArtifact['opportunity_analysis']): void => {
+  console.log('Next best improvement analysis');
+  console.log('─────────────────────────────');
+  console.log(`Generated at: ${artifact.generatedAt}`);
+  console.log(`Report only: ${artifact.reportOnly ? 'yes' : 'no'}`);
+  console.log(`Files scanned: ${artifact.sourceArtifacts.filesScanned}`);
+  console.log('');
+
+  const items = artifact.top_recommendation ? [artifact.top_recommendation, ...artifact.secondary_queue] : artifact.secondary_queue;
+  if (items.length === 0) {
+    console.log('No high-confidence opportunities detected.');
+    return;
+  }
+
+  items.forEach((entry: ImprovementCandidatesArtifact['opportunity_analysis']['secondary_queue'][number], index: number) => {
+    const label = index === 0 ? 'BEST NEXT TARGET' : `QUEUE #${index}`;
+    console.log(`${label}: ${entry.title}`);
+    console.log(`- heuristic: ${entry.heuristic_class}`);
+    console.log(`- priority: ${entry.priority_score}, confidence: ${entry.confidence}`);
+    console.log(`- why it matters: ${entry.why_it_matters}`);
+    console.log(`- likely change shape: ${entry.likely_change_shape}`);
+    console.log(`- rationale: ${entry.rationale.join(' ')}`);
+    console.log('- evidence:');
+    entry.evidence.forEach((pointer: ImprovementCandidatesArtifact['opportunity_analysis']['secondary_queue'][number]['evidence'][number]) => {
+      console.log(`  - ${pointer.file}:${pointer.lines.join(',')} — ${pointer.detail}`);
+    });
+    console.log('');
+  });
+};
+
 const renderCommandImprovementsText = (artifact: {
   generatedAt: string;
   proposals: Array<{
@@ -185,6 +216,38 @@ const renderCommandImprovementsText = (artifact: {
   }
 };
 
+export const runImproveOpportunities = async (cwd: string, options: ImproveOptions): Promise<number> => {
+  if (options.help) {
+    printImproveHelp();
+    return ExitCode.Success;
+  }
+
+  const tracker = createCommandQualityTracker(cwd, 'improve-opportunities');
+  const artifact = generateImprovementCandidates(cwd).opportunity_analysis;
+
+  if (options.format === 'json') {
+    emitJsonOutput({ cwd, command: 'improve-opportunities', payload: artifact });
+    tracker.finish({
+      inputsSummary: 'mode=opportunities',
+      successStatus: 'success',
+      warningsCount: artifact.secondary_queue.length
+    });
+    return ExitCode.Success;
+  }
+
+  if (!options.quiet) {
+    renderOpportunityText(artifact);
+  }
+
+  tracker.finish({
+    inputsSummary: 'mode=opportunities',
+    downstreamArtifactsProduced: ['.playbook/next-best-improvement.json'],
+    successStatus: 'success',
+    warningsCount: artifact.secondary_queue.length
+  });
+  return ExitCode.Success;
+};
+
 export const runImproveCommands = async (cwd: string, options: ImproveOptions): Promise<number> => {
   if (options.help) {
     printImproveHelp();
@@ -245,6 +308,8 @@ export const runImprove = async (cwd: string, options: ImproveOptions): Promise<
 
   if (!options.quiet) {
     renderText(artifact);
+    console.log('');
+    renderOpportunityText(artifact.opportunity_analysis);
     printConversationPrompts(artifact);
   }
 

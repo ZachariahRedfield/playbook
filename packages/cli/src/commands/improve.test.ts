@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 import { listRegisteredCommands } from './index.js';
-import { runImprove, runImproveCommands, runImproveApplySafe, runImproveApprove } from './improve.js';
+import { runImprove, runImproveCommands, runImproveOpportunities, runImproveApplySafe, runImproveApprove } from './improve.js';
 
 const createRepo = (): string => fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-improve-cli-'));
 
@@ -111,6 +111,7 @@ describe('runImprove', () => {
     expect(candidates.some((candidate) => ['AUTO-SAFE', 'CONVERSATIONAL', 'GOVERNANCE'].includes(candidate.gating_tier))).toBe(true);
     expect(candidates.every((candidate) => typeof candidate.confidence_score === 'number')).toBe(true);
     expect(Array.isArray(payload.rejected_candidates)).toBe(true);
+    expect((payload.opportunity_analysis as Record<string, unknown>).kind).toBe('opportunity-analysis');
 
     const artifactPath = path.join(repo, '.playbook', 'improvement-candidates.json');
     expect(fs.existsSync(artifactPath)).toBe(true);
@@ -119,6 +120,36 @@ describe('runImprove', () => {
     fs.rmSync(repo, { recursive: true, force: true });
   });
 
+  it('supports opportunity-analysis subview in json mode', async () => {
+    const repo = createRepo();
+    seedRepo(repo);
+    const fanoutPath = path.join(repo, 'packages', 'cli', 'src', 'fanout.ts');
+    fs.mkdirSync(path.dirname(fanoutPath), { recursive: true });
+    fs.writeFileSync(
+      fanoutPath,
+      [
+        "const refs = [",
+        "  '.playbook/one.json',",
+        "  '.playbook/two.json',",
+        "  '.playbook/three.json',",
+        "  '.playbook/four.json',",
+        "  '.playbook/five.json'",
+        '];'
+      ].join('\n')
+    );
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runImproveOpportunities(repo, { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+    expect(payload.kind).toBe('opportunity-analysis');
+    expect(payload.top_recommendation).toBeTruthy();
+    expect(Array.isArray(payload.secondary_queue)).toBe(true);
+
+    logSpy.mockRestore();
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
 
   it('supports command improvement subview', async () => {
     const repo = createRepo();
@@ -165,9 +196,6 @@ describe('runImprove', () => {
 
     fs.rmSync(repo, { recursive: true, force: true });
   });
-});
-
-
 
   it('returns deterministic failure when approve is missing proposal id', async () => {
     const repo = createRepo();
@@ -182,6 +210,7 @@ describe('runImprove', () => {
 
     logSpy.mockRestore();
   });
+});
 
 describe('command registry', () => {
   it('registers improve command', () => {

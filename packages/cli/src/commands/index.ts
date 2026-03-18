@@ -412,12 +412,17 @@ const commandRunners: Record<
     const {
       runImprove,
       runImproveCommands,
+      runImproveOpportunities,
       runImproveApplySafe,
       runImproveApprove,
     } = await import("./improve.js");
     const help =
       parseFlag(commandArgs, "--help") || parseFlag(commandArgs, "-h");
     const subcommand = commandArgs.find((arg) => !arg.startsWith("-"));
+
+    if (subcommand === "opportunities") {
+      return runImproveOpportunities(cwd, { format, quiet, help });
+    }
 
     if (subcommand === "commands") {
       return runImproveCommands(cwd, { format, quiet, help });

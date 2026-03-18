@@ -239,6 +239,9 @@ export type {
 } from './query/testHotspots.js';
 
 export { runDocsAudit } from './docs/audit.js';
+export { analyzeImprovementOpportunities, OPPORTUNITY_ANALYSIS_RELATIVE_PATH, OPPORTUNITY_ANALYSIS_SCHEMA_VERSION } from './improvement/opportunityAnalysis.js';
+export type { OpportunityAnalysisArtifact, ImprovementOpportunity, OpportunityEvidencePointer, OpportunityHeuristicClass } from './improvement/opportunityAnalysis.js';
+
 export {
   IMPROVEMENT_CANDIDATES_SCHEMA_VERSION,
   IMPROVEMENT_CANDIDATES_RELATIVE_PATH,

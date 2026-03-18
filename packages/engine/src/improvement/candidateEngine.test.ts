@@ -346,3 +346,44 @@ describe('router recommendation engine', () => {
     fs.rmSync(repo, { recursive: true, force: true });
   });
 });
+
+
+describe('opportunity analysis', () => {
+  it('returns a deterministic ranked next-best improvement report with evidence pointers', () => {
+    const repo = createRepo();
+    writeLearningState(repo, 0.3);
+
+    const fanoutFile = path.join(repo, 'packages', 'cli', 'src', 'commands', 'fanout.ts');
+    fs.mkdirSync(path.dirname(fanoutFile), { recursive: true });
+    fs.writeFileSync(
+      fanoutFile,
+      [
+        "const artifacts = [",
+        "  '.playbook/a.json',",
+        "  '.playbook/b.json',",
+        "  '.playbook/c.json',",
+        "  '.playbook/d.json',",
+        "  '.playbook/e.json',",
+        "  '.playbook/f.json'",
+        '];'
+      ].join('\n')
+    );
+
+    const derivationFiles = ['one.ts', 'two.ts', 'three.ts', 'four.ts'].map((name) => path.join(repo, 'packages', 'engine', 'src', name));
+    for (const file of derivationFiles) {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, "export const artifact = '.playbook/shared.json';\n");
+    }
+
+    const artifact = generateImprovementCandidates(repo);
+    const analysis = artifact.opportunity_analysis;
+
+    expect(analysis.top_recommendation).toBeDefined();
+    expect(analysis.top_recommendation?.evidence.length).toBeGreaterThan(0);
+    expect(analysis.top_recommendation?.why_it_matters.length).toBeGreaterThan(0);
+    expect(analysis.top_recommendation?.likely_change_shape.length).toBeGreaterThan(0);
+    expect(analysis.secondary_queue.every((entry, index, list) => index === 0 || list[index - 1]!.priority_score >= entry.priority_score)).toBe(true);
+
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+});

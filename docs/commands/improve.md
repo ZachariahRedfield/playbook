@@ -7,6 +7,7 @@ Generate deterministic improvement candidates from repository memory events and 
 ```bash
 pnpm playbook improve
 pnpm playbook improve --json
+pnpm playbook improve opportunities --json
 pnpm playbook improve commands --json
 pnpm playbook improve apply-safe --json
 pnpm playbook improve approve <proposal_id> --json
@@ -14,7 +15,8 @@ pnpm playbook improve approve <proposal_id> --json
 
 ## Subcommands
 
-- `improve` — generate candidates and write deterministic artifacts.
+- `improve` — generate candidates, ranked next-best-improvement analysis, and write deterministic artifacts.
+- `improve opportunities` — report the highest-leverage next improvement target plus a ranked secondary queue.
 - `improve commands` — emit deterministic command-surface improvement recommendations.
 - `improve apply-safe` — apply auto-safe proposals only.
 - `improve approve <proposal_id>` — apply explicit human approval for governance-gated candidates.
@@ -76,3 +78,27 @@ Command proposals include deterministic evidence and governance metadata:
 - `confidence_score`
 - `gating_tier`
 - `blocking_reasons`
+
+## Next best improvement analysis
+
+`playbook improve opportunities` is a report-only MVP that ranks improvement candidates based on architectural leverage, not just surface-level code issues.
+
+Default output answers:
+
+- what seam is the best next target
+- why it matters
+- what the likely change shape is
+
+Current deterministic heuristic classes:
+
+- duplicated derivation logic
+- broad query fanout
+- missing invalidation boundary
+- repeated recompute loops
+- canonical ID inconsistency in derived-state paths
+
+Doctrine alignment:
+
+- Rule: Playbook should rank improvement candidates based on architectural leverage, not just surface-level code issues.
+- Pattern: High-value improvement candidates often appear as duplicated derivation, missing invalidation boundaries, or repeated non-canonical data flows.
+- Failure Mode: A governed tool that cannot surface the next best improvement remains dependent on manual senior-engineer initiative selection.

@@ -12,7 +12,8 @@
     "thresholds",
     "sourceArtifacts",
     "summary",
-    "candidates"
+    "candidates",
+    "opportunity_analysis"
   ],
   "properties": {
     "schemaVersion": {
@@ -106,6 +107,83 @@
       "items": {
         "$ref": "#/$defs/ImprovementCandidate"
       }
+    },
+    "opportunity_analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "generatedAt",
+        "proposalOnly",
+        "reportOnly",
+        "sourceArtifacts",
+        "top_recommendation",
+        "secondary_queue"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0"
+        },
+        "kind": {
+          "const": "opportunity-analysis"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "proposalOnly": {
+          "const": true
+        },
+        "reportOnly": {
+          "const": true
+        },
+        "sourceArtifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scannedRoots",
+            "filesScanned",
+            "doctrineSources"
+          ],
+          "properties": {
+            "scannedRoots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "filesScanned": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "doctrineSources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "top_recommendation": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/ImprovementOpportunity"
+            }
+          ]
+        },
+        "secondary_queue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ImprovementOpportunity"
+          }
+        }
+      }
     }
   },
   "$defs": {
@@ -117,7 +195,7 @@
         "category",
         "observation",
         "recurrence_count",
-        "confidence",
+        "confidence_score",
         "suggested_action",
         "improvement_tier",
         "evidence"
@@ -179,6 +257,102 @@
               "minItems": 1
             }
           }
+        },
+        "confidence_score": {
+          "type": "number",
+          "minimum": 0.6,
+          "maximum": 1
+        }
+      }
+    },
+    "ImprovementOpportunity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opportunity_id",
+        "title",
+        "heuristic_class",
+        "priority_score",
+        "confidence",
+        "why_it_matters",
+        "likely_change_shape",
+        "rationale",
+        "evidence"
+      ],
+      "properties": {
+        "opportunity_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "heuristic_class": {
+          "type": "string",
+          "enum": [
+            "duplicated_derivation_logic",
+            "broad_query_fanout",
+            "missing_invalidation_boundary",
+            "repeated_recompute_loops",
+            "canonical_id_inconsistency"
+          ]
+        },
+        "priority_score": {
+          "type": "number",
+          "minimum": 0
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "why_it_matters": {
+          "type": "string",
+          "minLength": 1
+        },
+        "likely_change_shape": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OpportunityEvidencePointer"
+          }
+        }
+      }
+    },
+    "OpportunityEvidencePointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "lines",
+        "detail"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }

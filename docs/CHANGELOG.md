@@ -1,3 +1,8 @@
+- WHAT: Added a report-only `pnpm playbook improve opportunities --json` MVP that scans repository source roots with deterministic heuristics, ranks one next-best improvement target plus a secondary queue, and emits rationale/evidence/change-shape guidance for duplicated derivation, broad query fanout, missing invalidation boundaries, repeated recompute loops, and canonical-ID inconsistency seams. WHY: Playbook can now surface the next highest-leverage architecture/codebase improvement instead of depending on a human to pick the next target.
+- Rule: Playbook should rank improvement candidates based on architectural leverage, not just surface-level code issues.
+- Pattern: High-value improvement candidates often appear as duplicated derivation, missing invalidation boundaries, or repeated non-canonical data flows.
+- Failure Mode: A governed tool that cannot surface the next best improvement remains dependent on manual senior-engineer initiative selection.
+
 - WHAT: Unified bootstrap-proof CLI availability through one canonical resolver shared by engine evaluation and CLI `status proof` execution, including support for the current invoking Playbook binary plus the repo-local `pnpm exec playbook --version` / `pnpm playbook --version` paths. WHY: External `--repo` proof runs must classify blockers using the same CLI gate as engine proof logic so CLI availability drift does not mask downstream repo-state blockers.
 - Rule: Bootstrap readiness must use one canonical CLI-resolution gate across engine and CLI layers.
 - Failure Mode: External integration tests can drift from engine tests when command availability is inferred differently at different layers.

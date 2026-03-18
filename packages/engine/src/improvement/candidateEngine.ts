@@ -26,6 +26,7 @@ import {
   type CommandImprovementsArtifact
 } from './commandProposals.js';
 import { readJsonIfExists, writeDeterministicJsonAtomic } from '../learning/io.js';
+import { analyzeImprovementOpportunities, type OpportunityAnalysisArtifact } from './opportunityAnalysis.js';
 
 export { KNOWLEDGE_CANDIDATES_RELATIVE_PATH, KNOWLEDGE_PROMOTIONS_RELATIVE_PATH } from './doctrinePromotion.js';
 
@@ -139,6 +140,7 @@ export type ImprovementCandidatesArtifact = {
   doctrine_candidates: DoctrinePromotionCandidatesArtifact;
   doctrine_promotions: DoctrinePromotionsArtifact;
   command_improvements: CommandImprovementsArtifact;
+  opportunity_analysis: OpportunityAnalysisArtifact;
   candidates: ImprovementCandidate[];
   rejected_candidates: RejectedImprovementCandidate[];
 };
@@ -747,6 +749,7 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     compactedLearning
   });
   const commandImprovements = generateCommandImprovementProposals(repoRoot, events);
+  const opportunityAnalysis = analyzeImprovementOpportunities(repoRoot);
 
   const summary = {
     AUTO_SAFE: candidates.filter((candidate) => candidate.improvement_tier === 'auto_safe').length,
@@ -774,6 +777,7 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     doctrine_candidates: doctrineArtifacts.candidatesArtifact,
     doctrine_promotions: doctrineArtifacts.promotionsArtifact,
     command_improvements: commandImprovements,
+    opportunity_analysis: opportunityAnalysis,
     candidates,
     rejected_candidates: rejectedCandidates
   };
