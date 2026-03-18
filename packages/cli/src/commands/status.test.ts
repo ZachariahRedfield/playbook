@@ -434,8 +434,83 @@ describe('runStatus', () => {
     expect(payload.mode).toBe('updated');
     expect(payload.updated_state.kind).toBe('fleet-adoption-updated-state');
     expect(payload.next_queue.queue_source).toBe('updated_state');
+    expect(payload.promotion).toMatchObject({
+      staged_generation: true,
+      staged_artifact_path: '.playbook/staged/workflow-status-updated/execution-updated-state.json',
+      validation_passed: true,
+      promoted: true,
+      committed_state_preserved: true,
+      blocked_reason: null
+    });
     const artifactPath = path.join(cwd, '.playbook', 'execution-updated-state.json');
     expect(fs.existsSync(artifactPath)).toBe(true);
+    const stagedPath = path.join(cwd, '.playbook', 'staged', 'workflow-status-updated', 'execution-updated-state.json');
+    expect(fs.existsSync(stagedPath)).toBe(true);
+    logSpy.mockRestore();
+  });
+
+
+  it('blocks promotion and preserves committed updated-state when staged validation fails', async () => {
+    const { runStatus } = await import('./status.js');
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-status-updated-blocked-'));
+    fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
+    const committedPath = path.join(cwd, '.playbook', 'execution-updated-state.json');
+    fs.writeFileSync(committedPath, JSON.stringify({ kind: 'prior-updated-state', preserved: true }, null, 2), 'utf8');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    buildFleetUpdatedAdoptionState.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'fleet-adoption-updated-state',
+      generated_at: '2026-01-01T00:00:00.000Z',
+      execution_plan_digest: 'abc123',
+      session_id: 'session-1',
+      summary: {
+        repos_total: 99,
+        by_reconciliation_status: {
+          completed_as_planned: 1,
+          completed_with_drift: 0,
+          partial: 0,
+          failed: 0,
+          blocked: 0,
+          not_run: 0,
+          stale_plan_or_superseded: 0
+        },
+        action_counts: {
+          needs_retry: 0,
+          needs_replan: 0,
+          needs_review: 0
+        },
+        repos_needing_retry: [],
+        repos_needing_replan: [],
+        repos_needing_review: [],
+        stale_or_superseded_repo_ids: [],
+        blocked_repo_ids: [],
+        completed_repo_ids: ['repo-a']
+      },
+      repos: [{
+        repo_id: 'repo-a',
+        prior_lifecycle_stage: 'planned_apply_pending',
+        planned_lifecycle_stage: 'ready',
+        updated_lifecycle_stage: 'ready',
+        reconciliation_status: 'completed_as_planned',
+        action_state: { needs_retry: false, needs_replan: false, needs_review: false },
+        prompt_ids: ['wave_1:apply_lane:repo-a'],
+        blocker_codes: [],
+        drift_prompt_ids: [],
+        receipt_status: 'success'
+      }]
+    });
+
+    const exitCode = await runStatus(cwd, { ci: false, format: 'json', quiet: false, scope: 'updated' });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.promotion.promoted).toBe(false);
+    expect(payload.promotion.validation_passed).toBe(false);
+    expect(payload.promotion.blocked_reason).toContain('summary.repos_total must match repos length');
+    expect(JSON.parse(fs.readFileSync(committedPath, 'utf8'))).toEqual({ kind: 'prior-updated-state', preserved: true });
+    const stagedPath = path.join(cwd, '.playbook', 'staged', 'workflow-status-updated', 'execution-updated-state.json');
+    expect(fs.existsSync(stagedPath)).toBe(true);
     logSpy.mockRestore();
   });
 
