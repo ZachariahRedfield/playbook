@@ -13,9 +13,7 @@ describe('runContracts', () => {
     const schemas = payload.schemas as Record<string, unknown>;
     expect(Array.isArray(schemas.memoryArtifacts)).toBe(true);
     expect(Array.isArray(schemas.commandOutputs)).toBe(true);
-    expect((schemas.memoryArtifacts as Array<{ id: string; path: string }>).find((entry) => entry.id === 'repository-memory-event')?.path).toBe(
-      '.playbook/memory/events/*.json'
-    );
+    expect((schemas.memoryArtifacts as Array<{ id: string }>).map((entry) => entry.id)).toContain('stories-backlog');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('query.memoryKnowledge');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('knowledge');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('pattern-graph');
@@ -34,6 +32,8 @@ describe('runContracts', () => {
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('policy-apply-result');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('session-evidence-envelope');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('pr-review');
+    expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('story');
+    expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('stories');
   });
 
   it('keeps schema registration identifiers and paths stable', async () => {
@@ -53,7 +53,8 @@ describe('runContracts', () => {
         { id: 'promoted-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
         { id: 'retired-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
         { id: 'memory-replay-result', version: '1.0', path: '.playbook/memory/replay/*.json' },
-        { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json' }
+        { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json' },
+        { id: 'stories-backlog', version: '1.0', path: '.playbook/stories.json' }
       ],
       commandOutputs: [
         { id: 'query.memoryKnowledge', version: '1.0', path: 'schema://cli/query' },
@@ -76,6 +77,8 @@ describe('runContracts', () => {
         { id: 'cycle-history', version: '1.0', path: 'packages/contracts/src/cycle-history.schema.json' },
         { id: 'session-evidence-envelope', version: '1.0', path: 'packages/contracts/src/session-evidence-envelope.schema.json' },
         { id: 'pr-review', version: '1.0', path: 'packages/contracts/src/pr-review.schema.json' },
+        { id: 'story', version: '1.0', path: 'packages/contracts/src/story.schema.json' },
+        { id: 'stories', version: '1.0', path: 'packages/contracts/src/stories.schema.json' },
         { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
         { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
         { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },

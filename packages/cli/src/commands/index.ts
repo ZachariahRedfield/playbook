@@ -385,6 +385,10 @@ const commandRunners: Record<
     const { runMemory } = await import("./memory.js");
     return runMemory(cwd, commandArgs, { format, quiet });
   },
+  story: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runStory } = await import("./story.js");
+    return runStory(cwd, commandArgs, { format, quiet });
+  },
   knowledge: async ({ cwd, commandArgs, format, quiet }) => {
     const { runKnowledge } = await import("./knowledge.js");
     return runKnowledge(cwd, commandArgs, { format, quiet });
@@ -616,6 +620,7 @@ const commandOrder = [
   "architecture",
   "session",
   "patterns",
+  "story",
   "learn",
   "memory",
   "improve",

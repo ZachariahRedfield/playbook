@@ -756,3 +756,10 @@ This receipt is designed to feed future prioritization cleanly: `verification_su
 - Rule: identical readiness input must produce identical queue ordering, wave assignment, and execution-plan packaging.
 - Pattern: execute grouped lanes in stage order (`init` -> `index` -> `verify/plan` -> `apply`) and keep one repo in one active lane per wave to reduce conflicts.
 - Failure Mode: queue drift appears when dependent actions are run before prerequisite lane completion or when a repo is split across conflicting same-wave lanes.
+
+
+- `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
+
+- Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
+- Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
+- Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.

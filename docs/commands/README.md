@@ -549,3 +549,10 @@ Use query surfaces to inspect state:
 - `pnpm playbook patterns generalized --json` returns high-portability read-only/manual-only candidate recommendations (no auto-promotion).
 - `pnpm playbook patterns repo-delta --left <repoId> --right <repoId> --json` reports governed artifact deltas between two repositories.
 - Cross-repo comparison is read-only in this phase: no cross-repo mutation, no automatic doctrine updates, and no non-governed artifact ingestion.
+
+
+- `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
+
+- Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
+- Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
+- Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.

@@ -177,6 +177,9 @@ export type { OrchestratorContract, OrchestratorLane, OrchestratorPlan, RepoShap
 export type { AiContract, LoadedAiContract, AiContractSource } from './ai/aiContract.js';
 
 export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } from './schema/cliSchemas.js';
+
+export { STORIES_SCHEMA_VERSION, STORIES_RELATIVE_PATH, STORY_TYPES, STORY_SEVERITIES, STORY_PRIORITIES, STORY_CONFIDENCES, STORY_STATUSES, createDefaultStoriesArtifact, validateStoryRecord, validateStoriesArtifact, readStoriesArtifact, createStoryRecord, upsertStory, updateStoryStatus } from './story/stories.js';
+export type { StoryType, StorySeverity, StoryPriority, StoryConfidence, StoryStatus, StoryRecord, StoriesArtifact, CreateStoryInput } from './story/stories.js';
 export type { CliSchemaCommand, JsonSchema } from './schema/cliSchemas.js';
 export type { WorkflowPromotion, WorkflowPromotionStatus, WorkflowPromotionValidationStatus } from './schema/workflowPromotion.js';
 
