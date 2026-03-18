@@ -2141,3 +2141,5 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Next dependency-ordered step completed: post-receipt reconciliation now writes canonical updated adoption state, and deterministic queue derivation from updated-state now drives retry/replan/review routing without re-reading raw receipts.
 
 - Outcome ingestion + reconciliation is complete, and queue derivation from updated-state is now the canonical next-step driver for adoption execution control flow.
+- Execution outcome ingestion boundary is now explicit: `pnpm playbook receipt ingest` consumes only explicit execution results, writes `.playbook/execution-outcome-input.json`, and closes the loop through receipt, updated-state, and next-queue deterministically.
+- Roadmap closure status: execution receipt ✅, reconciliation ✅, queue derivation ✅, loop closure ✅.

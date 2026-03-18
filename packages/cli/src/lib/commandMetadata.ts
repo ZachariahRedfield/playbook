@@ -255,6 +255,19 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true
   },
   {
+    name: 'receipt',
+    description: 'Ingest deterministic execution results into receipt, updated-state, and next-queue outputs',
+    category: 'Repository tools',
+    role: 'remediation',
+    lifecycle: 'canonical',
+    discoverability: 'secondary',
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: 'receipt ingest .playbook/execution-results.json --json',
+    machineReadable: true
+  },
+  {
     name: 'schema',
     description: 'Print JSON Schemas for Playbook CLI command outputs',
     category: 'Repository tools',

@@ -205,6 +205,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook audit architecture --json`
 - `rules`: List loaded verify and analyze rules
   - Example: `pnpm playbook rules --json`
+- `receipt`: Ingest deterministic execution results into receipt, updated-state, and next-queue outputs
+  - Example: `pnpm playbook receipt ingest .playbook/execution-results.json --json`
 - `schema`: Print JSON Schemas for Playbook CLI command outputs
   - Example: `pnpm playbook schema verify --json`
 - `context`: Print deterministic CLI and architecture context for tools and agents
@@ -293,6 +295,7 @@ Do not hand-edit entries inside the managed markers.
 | `docs` | `pnpm playbook docs audit --json` |
 | `audit` | `pnpm playbook audit architecture --json` |
 | `rules` | `pnpm playbook rules --json` |
+| `receipt` | `pnpm playbook receipt ingest .playbook/execution-results.json --json` |
 | `schema` | `pnpm playbook schema verify --json` |
 | `context` | `pnpm playbook context --json` |
 | `ai-context` | `pnpm playbook ai-context --json` |

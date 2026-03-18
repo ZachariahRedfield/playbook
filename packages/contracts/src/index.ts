@@ -1,5 +1,6 @@
 export const PLAYBOOK_SCHEMA_PATHS = {
   executionPlan: 'packages/contracts/src/execution-plan.schema.json',
+  executionOutcomeInput: 'packages/contracts/src/execution-outcome-input.schema.json',
   executionReceipt: 'packages/contracts/src/execution-receipt.schema.json',
   executionUpdatedState: 'packages/contracts/src/execution-updated-state.schema.json',
   worksetPlan: 'packages/contracts/src/workset-plan.schema.json',

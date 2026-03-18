@@ -9,7 +9,9 @@ import {
   buildFleetCodexExecutionPlan,
   buildFleetExecutionReceipt,
   buildFleetUpdatedAdoptionState,
+  defaultExecutionOutcomeInput,
   deriveNextAdoptionQueueFromUpdatedState,
+  normalizeExecutionOutcomeInput,
   buildRepoAdoptionReadiness,
   computeCrossRepoPatternLearning,
   readCrossRepoPatternsArtifact,
@@ -546,7 +548,7 @@ const observerDashboardHtml = (): string => `<!doctype html>
           <div class="card"><h3>Fleet Readiness Summary</h3><div id="fleetSummaryPanel" class="meta">Fleet readiness summary loads from connected repos.</div></div>
           <div class="card"><h3>Adoption Work Queue</h3><div id="queueSummaryPanel" class="meta">Adoption work queue loads from connected repos.</div></div>
           <div class="card"><h3>Codex Execution Plan</h3><div id="executionPlanPanel" class="meta">Codex execution packaging loads from queue state.</div></div>
-          <div class="card"><h3>Execution Outcome Receipt</h3><div id="executionReceiptPanel" class="meta">Execution outcome receipt loads from plan, queue, readiness, and ingested outcomes.</div></div>
+          <div class="card"><h3>Execution Outcome Receipt</h3><div id="executionReceiptPanel" class="meta">Execution outcome receipt loads from the canonical ingested outcome artifact and flows through receipt → updated-state → next-queue.</div></div>
           <div class="card"><h3>Reconciled Updated State</h3><div id="updatedStatePanel" class="meta">Reconciled updated state closes the loop from receipt into canonical adoption state.</div></div>
           <div class="card"><h3>Next Queue (Derived from Updated State)</h3><div id="nextQueuePanel" class="meta">Next adoption queue is derived deterministically from updated state only.</div></div>
           <div class="card"><h3>Cross-Repo Intelligence</h3>
@@ -663,8 +665,8 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
     const executionPlan = buildFleetCodexExecutionPlan(queue);
     const outcomePath = path.join(observerRoot, '.playbook', 'execution-outcome-input.json');
     const outcomeInput = fs.existsSync(outcomePath)
-      ? (JSON.parse(fs.readFileSync(outcomePath, 'utf8')) as FleetExecutionOutcomeInput)
-      : { schemaVersion: '1.0', kind: 'fleet-adoption-execution-outcome-input', generated_at: new Date(0).toISOString(), session_id: 'unrecorded-session', prompt_outcomes: [] };
+      ? normalizeExecutionOutcomeInput(JSON.parse(fs.readFileSync(outcomePath, 'utf8')) as FleetExecutionOutcomeInput)
+      : defaultExecutionOutcomeInput();
     const receipt = buildFleetExecutionReceipt(executionPlan, queue, fleet, outcomeInput);
     const updatedState = buildFleetUpdatedAdoptionState(executionPlan, queue, fleet, receipt);
     if (pathname === '/api/readiness/updated-state') {

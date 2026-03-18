@@ -436,6 +436,18 @@
       "example": "pnpm playbook query modules --json"
     },
     {
+      "name": "receipt",
+      "category": "Repository tools",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook receipt ingest .playbook/execution-results.json --json"
+    },
+    {
       "name": "review-pr",
       "category": "Repository tools",
       "role": "governance",
@@ -594,6 +606,7 @@
     "plan",
     "policy",
     "query",
+    "receipt",
     "review-pr",
     "route",
     "rules",

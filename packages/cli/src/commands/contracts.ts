@@ -35,6 +35,7 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'pattern-graph', version: '1.0', path: 'packages/contracts/src/pattern-graph.schema.json' },
   { id: 'cross-repo-candidates', version: '1.0', path: 'packages/contracts/src/cross-repo-candidates.schema.json' },
   { id: 'task-execution-profile', version: '1.0', path: 'packages/contracts/src/task-execution-profile.schema.json' },
+  { id: 'execution-outcome-input', version: '1.0', path: 'packages/contracts/src/execution-outcome-input.schema.json' },
   { id: 'execution-plan', version: '1.0', path: 'packages/contracts/src/execution-plan.schema.json' },
   { id: 'workset-plan', version: '1.0', path: 'packages/contracts/src/workset-plan.schema.json' },
   { id: 'outcome-telemetry', version: '1.0', path: 'packages/contracts/src/outcome-telemetry.schema.json' },

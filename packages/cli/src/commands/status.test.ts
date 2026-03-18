@@ -22,8 +22,10 @@ const buildFleetCodexExecutionPlan = vi.fn();
 const buildFleetExecutionReceipt = vi.fn();
 const buildFleetUpdatedAdoptionState = vi.fn();
 const deriveNextAdoptionQueueFromUpdatedState = vi.fn();
+const defaultExecutionOutcomeInput = vi.fn();
+const normalizeExecutionOutcomeInput = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState, defaultExecutionOutcomeInput, normalizeExecutionOutcomeInput }));
 
 const makeAnalyzeReport = (overrides?: Partial<AnalyzeReport>): AnalyzeReport => ({
   repoPath: '/tmp/repo',
@@ -58,6 +60,8 @@ describe('runStatus', () => {
     buildFleetExecutionReceipt.mockReset();
     buildFleetUpdatedAdoptionState.mockReset();
     deriveNextAdoptionQueueFromUpdatedState.mockReset();
+    defaultExecutionOutcomeInput.mockReset();
+    normalizeExecutionOutcomeInput.mockReset();
     buildRepoAdoptionReadiness.mockReturnValue({
       schemaVersion: '1.0',
       connection_status: 'connected',
@@ -168,6 +172,8 @@ describe('runStatus', () => {
       },
       repos: []
     });
+    defaultExecutionOutcomeInput.mockReturnValue({ schemaVersion: '1.0', kind: 'fleet-adoption-execution-outcome-input', generated_at: new Date(0).toISOString(), session_id: 'unrecorded-session', prompt_outcomes: [] });
+    normalizeExecutionOutcomeInput.mockImplementation((value: unknown) => value);
     deriveNextAdoptionQueueFromUpdatedState.mockReturnValue({
       schemaVersion: '1.0',
       kind: 'fleet-adoption-work-queue',

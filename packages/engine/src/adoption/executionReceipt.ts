@@ -32,6 +32,7 @@ export type ExecutionPromptOutcomeInput = {
   status: ExecutionObservedStatus;
   verification_passed?: boolean | null;
   notes?: string;
+  observed_transition?: LifecycleTransition;
   blockers?: Array<{ blocker_code: string; message: string; evidence?: string }>;
   artifact_deltas?: ExecutionArtifactEvidence[];
 };
@@ -147,8 +148,12 @@ const transitionForItem = (item: AdoptionWorkItem): LifecycleTransition => ({
 const observedTransitionForPrompt = (
   prompt: CodexExecutionPrompt,
   queue: FleetAdoptionWorkQueue,
-  fleet: FleetAdoptionReadinessSummary
+  fleet: FleetAdoptionReadinessSummary,
+  input?: ExecutionPromptOutcomeInput
 ): LifecycleTransition => {
+  if (input?.observed_transition) {
+    return input.observed_transition;
+  }
   const item = queue.work_items.find((entry) => entry.repo_id === prompt.repo_id && entry.parallel_group.replace(/\s+/g, '_') === prompt.prompt_id.split(':')[1]);
   const from = item?.lifecycle_stage ?? 'not_connected';
   const repo = fleet.repos_by_priority.find((entry) => entry.repo_id === prompt.repo_id);
@@ -200,7 +205,7 @@ export const buildFleetExecutionReceipt = (
     if (!item) throw new Error(`missing queue item for prompt ${prompt.prompt_id}`);
     const input = inputByPrompt.get(prompt.prompt_id);
     const intended = transitionForItem(item);
-    const observed = observedTransitionForPrompt(prompt, queue, fleet);
+    const observed = observedTransitionForPrompt(prompt, queue, fleet, input);
     const verificationPassed = Boolean(input?.verification_passed) && intended.to === observed.to;
     const status = comparePromptOutcome(input?.status ?? 'not_run', verificationPassed, intended, observed);
     const evidence = [
@@ -239,8 +244,8 @@ export const buildFleetExecutionReceipt = (
     plan.codex_prompts.flatMap((prompt) => {
       const input = inputByPrompt.get(prompt.prompt_id);
       const deltas = input?.artifact_deltas ?? artifactEvidenceForStage(
-        observedTransitionForPrompt(prompt, queue, fleet).from,
-        observedTransitionForPrompt(prompt, queue, fleet).to
+        observedTransitionForPrompt(prompt, queue, fleet, input).from,
+        observedTransitionForPrompt(prompt, queue, fleet, input).to
       );
       return deltas.map((delta) => JSON.stringify(delta));
     })

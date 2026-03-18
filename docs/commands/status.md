@@ -8,7 +8,7 @@ Deterministic adoption/readiness summary for governed Playbook usage.
 - `pnpm playbook status fleet --json`: fleet-level aggregate readiness summary using connected Observer repos.
 - `pnpm playbook status queue --json`: deterministic read-only adoption work-queue from fleet readiness.
 - `pnpm playbook status execute --json`: deterministic Codex-ready execution-plan packaging derived from the queue.
-- `pnpm playbook status receipt --json`: canonical planned-vs-actual execution receipt derived from readiness, queue, plan, and ingested execution outcomes.
+- `pnpm playbook status receipt --json`: canonical planned-vs-actual execution receipt derived from queue, plan, and `.playbook/execution-outcome-input.json` when present.
 - `pnpm playbook status updated --json`: reconciled updated adoption state derived from prior state plus the canonical execution receipt; writes `.playbook/execution-updated-state.json` and returns `next_queue`, which is derived downstream from updated-state only.
 
 If no Observer registry exists, fleet mode falls back to the current repository as a single-repo fleet.
@@ -155,15 +155,15 @@ Canonical ordering comparator:
 ### Planned vs actual semantics
 
 - **Planned lifecycle move** is derived from the queue/execution-plan lane.
-- **Observed lifecycle move** is derived from current readiness artifacts after execution.
-- **Success** requires both a successful ingested prompt outcome and governed evidence that the repo reached the planned lifecycle target.
-- **Mismatch** occurs when the operator-reported result says success but governed lifecycle evidence does not match the planned target.
+- **Observed lifecycle move** is sourced from ingested execution outcome input (`observed_transition` when provided, otherwise deterministic status-to-transition mapping).
+- **Success** requires a successful ingested prompt outcome whose observed transition reaches the planned lifecycle target.
+- **Mismatch** occurs when the ingested result reports success but the ingested observed transition does not match the planned target.
 - **Partial success** captures incomplete forward progress without full target completion.
 
 Governance notes:
 
 - **Rule**: Prefer governed artifact evidence over operator claims when proving lifecycle transitions.
-- **Pattern**: Reuse readiness + queue + execution plan instead of inventing a separate outcome reasoner.
+- **Pattern**: Ingest explicit execution results once, write the canonical outcome input artifact, then drive receipt -> updated-state -> next queue from that input.
 - **Failure Mode**: Retry drift occurs when failed or mismatched prompts are not surfaced back into the next queue.
 
 ## Planned vs actual lifecycle chain

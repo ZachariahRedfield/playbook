@@ -10,8 +10,10 @@ import {
   buildFleetCodexExecutionPlan,
   buildFleetExecutionReceipt,
   buildFleetUpdatedAdoptionState,
+  defaultExecutionOutcomeInput,
   deriveNextAdoptionQueueFromUpdatedState,
   buildRepoAdoptionReadiness,
+  normalizeExecutionOutcomeInput,
   type FleetAdoptionWorkQueue,
   type FleetCodexExecutionPlan,
   type FleetAdoptionReadinessSummary,
@@ -60,7 +62,6 @@ type StatusQueueResult = {
   queue: FleetAdoptionWorkQueue;
 };
 
-
 type StatusExecutionResult = {
   schemaVersion: '1.0';
   command: 'status';
@@ -74,7 +75,6 @@ type StatusReceiptResult = {
   mode: 'receipt';
   receipt: FleetExecutionReceipt;
 };
-
 
 type StatusUpdatedStateResult = {
   schemaVersion: '1.0';
@@ -100,25 +100,23 @@ type TopIssue = {
   description: string;
 };
 
-
-const EXECUTION_OUTCOME_INPUT_RELATIVE_PATH = path.join('.playbook', 'execution-outcome-input.json');
+export const EXECUTION_OUTCOME_INPUT_RELATIVE_PATH = path.join('.playbook', 'execution-outcome-input.json');
 const UPDATED_STATE_RELATIVE_PATH = path.join('.playbook', 'execution-updated-state.json');
 
-const defaultOutcomeInput = (): FleetExecutionOutcomeInput => ({
-  schemaVersion: '1.0',
-  kind: 'fleet-adoption-execution-outcome-input',
-  generated_at: new Date(0).toISOString(),
-  session_id: 'unrecorded-session',
-  prompt_outcomes: []
-});
-
-const readExecutionOutcomeInput = (cwd: string): FleetExecutionOutcomeInput => {
+export const readExecutionOutcomeInput = (cwd: string): FleetExecutionOutcomeInput => {
   const targetPath = path.join(cwd, EXECUTION_OUTCOME_INPUT_RELATIVE_PATH);
   if (!fs.existsSync(targetPath)) {
-    return defaultOutcomeInput();
+    return defaultExecutionOutcomeInput();
   }
 
-  return JSON.parse(fs.readFileSync(targetPath, 'utf8')) as FleetExecutionOutcomeInput;
+  return normalizeExecutionOutcomeInput(JSON.parse(fs.readFileSync(targetPath, 'utf8')) as FleetExecutionOutcomeInput);
+};
+
+export const writeExecutionOutcomeInput = (cwd: string, outcomeInput: FleetExecutionOutcomeInput): string => {
+  const targetPath = path.join(cwd, EXECUTION_OUTCOME_INPUT_RELATIVE_PATH);
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.writeFileSync(targetPath, `${JSON.stringify(normalizeExecutionOutcomeInput(outcomeInput), null, 2)}\n`);
+  return targetPath;
 };
 
 const readRepoIndexSummary = (cwd: string): RepoIndexSummary | null => {
@@ -196,7 +194,7 @@ const toStatusResult = async (cwd: string): Promise<{ result: StatusResult; exit
   return { result, exitCode, topIssue: await resolveTopIssue(cwd, verify, analyze), repoRoot: analyze.repoPath };
 };
 
-const toFleetStatusResult = (cwd: string): StatusFleetResult => {
+export const toFleetStatusResult = (cwd: string): StatusFleetResult => {
   const registryPath = path.join(cwd, '.playbook', 'observer', 'repos.json');
   const registry = fs.existsSync(registryPath)
     ? (JSON.parse(fs.readFileSync(registryPath, 'utf8')) as ObserverRegistry)
@@ -219,7 +217,7 @@ const toFleetStatusResult = (cwd: string): StatusFleetResult => {
   };
 };
 
-const toQueueStatusResult = (cwd: string): StatusQueueResult => {
+export const toQueueStatusResult = (cwd: string): StatusQueueResult => {
   const fleet = toFleetStatusResult(cwd).fleet;
   return {
     schemaVersion: '1.0',
@@ -229,8 +227,7 @@ const toQueueStatusResult = (cwd: string): StatusQueueResult => {
   };
 };
 
-
-const toExecutionStatusResult = (cwd: string): StatusExecutionResult => {
+export const toExecutionStatusResult = (cwd: string): StatusExecutionResult => {
   const queue = toQueueStatusResult(cwd).queue;
   return {
     schemaVersion: '1.0',
@@ -240,7 +237,7 @@ const toExecutionStatusResult = (cwd: string): StatusExecutionResult => {
   };
 };
 
-const computeReceipt = (cwd: string): { fleet: FleetAdoptionReadinessSummary; queue: FleetAdoptionWorkQueue; executionPlan: FleetCodexExecutionPlan; receipt: FleetExecutionReceipt } => {
+export const computeReceipt = (cwd: string): { fleet: FleetAdoptionReadinessSummary; queue: FleetAdoptionWorkQueue; executionPlan: FleetCodexExecutionPlan; receipt: FleetExecutionReceipt } => {
   const fleet = toFleetStatusResult(cwd).fleet;
   const queue = buildFleetAdoptionWorkQueue(fleet);
   const executionPlan = buildFleetCodexExecutionPlan(queue);

@@ -26,6 +26,11 @@
 
 ## Unreleased
 
+- WHAT: Added `pnpm playbook receipt ingest <execution-results.json> --json` plus a new deterministic execution-outcome ingestion layer that maps explicit `ExecutionResult[]` input into `.playbook/execution-outcome-input.json`, then drives `receipt -> updated_state -> next_queue` in one pass. Extended the outcome-input contract/schema with optional `observed_transition`, updated Observer to read the canonical ingested artifact, and documented the full control loop end-to-end. WHY: Closes the execution control loop without inferring execution outcomes from repo state and guarantees that identical execution input produces identical downstream adoption artifacts.
+- Rule: Do not infer execution outcomes from repo state — only consume explicit execution results.
+- Pattern: `state -> queue -> execution plan -> execution result -> receipt -> updated-state -> next queue` is the canonical closed-loop ingestion path.
+- Failure Mode: Splitting execution ingestion from receipt/reconciliation semantics creates nondeterministic control-loop cycles.
+
 - WHAT: Hardened the shared staged-artifact workflow with rollback-safe promotion, clearer failure reporting, and cleanup guarantees; converted `scripts/sync-templates.mjs` and the legacy managed-docs updater onto the staged pipeline; and replaced contract snapshot refresh's Vitest/Vite execution path with a built-CLI generator that validates schemas before promotion. WHY: This removes the remaining direct-write fragility in touched artifact writers and makes snapshot refresh deterministic without depending on optional `@esbuild/linux-x64` installation shape.
 - Rule: Generated artifacts must be produced in staging and promoted only after validation succeeds.
 - Pattern: Shared staged-artifact orchestration should provide generation isolation, candidate validation, and gated promotion.

@@ -47,6 +47,7 @@ Do not hand-edit entries inside the managed markers.
 | `docs` | Audit documentation governance surfaces and contracts | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook docs audit --json` |
 | `audit` | Audit deterministic architecture guardrails and platform hardening controls | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook audit architecture --json` |
 | `rules` | List loaded verify and analyze rules | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook rules --json` |
+| `receipt` | Ingest deterministic execution results into receipt, updated-state, and next-queue outputs | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook receipt ingest .playbook/execution-results.json --json` |
 | `schema` | Print JSON Schemas for Playbook CLI command outputs | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook schema verify --json` |
 | `context` | Print deterministic CLI and architecture context for tools and agents | canonical | bootstrap | primary | P3 | Current (implemented) | `pnpm playbook context --json` |
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | canonical | bootstrap | primary | P1 | Current (implemented) | `pnpm playbook ai-context --json` |

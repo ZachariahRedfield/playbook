@@ -227,6 +227,14 @@ const commandRunners: Record<string, (context: CommandContext) => Promise<Comman
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
+  receipt: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runReceipt } = await import('./receipt.js');
+    return runReceipt(cwd, commandArgs, {
+      format,
+      quiet,
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   apply: async ({ cwd, commandArgs, ci, format, quiet }) => {
     const { runApply } = await import('./apply.js');
     return runApply(cwd, {
@@ -484,6 +492,7 @@ const commandOrder = [
   'apply',
   'fix',
   'doctor',
+  'receipt',
   'status',
   'upgrade',
   'diagram',

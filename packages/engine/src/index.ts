@@ -31,6 +31,8 @@ export type { FleetCodexExecutionPlan, CodexExecutionWave, CodexExecutionWorkerL
 export { buildFleetExecutionReceipt } from './adoption/executionReceipt.js';
 export type { FleetExecutionOutcomeInput, ExecutionPromptOutcomeInput, FleetExecutionReceipt, ExecutionPromptResult, ExecutionWaveResult, ExecutionRepoResult, ExecutionArtifactEvidence, ExecutionBlocker, ExecutionVerificationSummary, ExecutionObservedStatus, ExecutionComparisonStatus, LifecycleTransition } from './adoption/executionReceipt.js';
 export { buildFleetUpdatedAdoptionState } from './adoption/executionUpdatedState.js';
+export { ingestExecutionResults, mapExecutionResultsToOutcomeInput, normalizeExecutionOutcomeInput, defaultExecutionOutcomeInput } from './adoption/executionIngestion.js';
+export type { ExecutionResult, FleetExecutionIngestionResult } from './adoption/executionIngestion.js';
 export type { FleetUpdatedAdoptionState, ReconciledRepoState, ReconciliationStatus } from './adoption/executionUpdatedState.js';
 export { deriveNextAdoptionQueueFromUpdatedState } from './adoption/updatedStateQueue.js';
 

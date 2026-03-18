@@ -17,6 +17,7 @@ Playbook is best understood as **deterministic repo intelligence + governance + 
 - **Read substrate**: `ai-context`, `ai-contract`, `index`, `query`, `knowledge`, `deps`, `ask --repo-context`, `explain`
 - **Governance kernel**: `verify`
 - **Change bridge**: `plan -> apply -> verify`
+- **Execution closure**: `receipt ingest -> status receipt -> status updated`
 - **Delivery surfaces**: one engine used via CLI, CI, automation, and integrations
 
 This framing is the core promise: deterministic evidence over ad-hoc inference, and reviewed intent before execution.

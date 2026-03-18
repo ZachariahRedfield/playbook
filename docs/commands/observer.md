@@ -206,7 +206,7 @@ Observer now exposes `/api/readiness/receipt`, `/api/readiness/updated-state`, a
 - a `Next Queue (Derived from Updated State)` panel with retry/replan items, wave grouping, and prompt lineage
 - planned vs actual drift
 
-These panels are read-only-friendly: the receipt remains the canonical planned-vs-actual contract, updated state is derived deterministically from current readiness, work queue, execution plan, receipt, and `.playbook/execution-outcome-input.json` when present, and the next queue is then derived from updated state only. Updated state separates what happened from what action is needed next so CLI, Observer, and automation layers do not overload one enum with multiple meanings.
+These panels are read-only-friendly: the receipt remains the canonical planned-vs-actual contract, updated state is derived deterministically from the canonical ingested execution outcome artifact plus the current queue/plan context, and the next queue is then derived from updated state only. Updated state separates what happened from what action is needed next so CLI, Observer, and automation layers do not overload one enum with multiple meanings.
 
 - **Rule**: Observer outcome views must stay evidence-backed and must not auto-execute repo commands.
 - **Pattern**: Surface retry/drift summaries next to readiness and queue state so the next prioritization pass stays deterministic.
@@ -220,6 +220,6 @@ Updated-state next-queue routing is deterministic and non-heuristic:
 - `stale_plan_or_superseded` routes to `replan`.
 - `completed_with_drift` stays review-only and does not auto-retry.
 
-- **Rule**: Once updated-state exists, Observer must derive the next queue from updated-state instead of raw receipt parsing.
+- **Rule**: Observer must surface receipt, updated-state, and next-queue from the same ingested execution outcome input; no bypass path should recompute queue semantics outside that loop.
 - **Pattern**: Observer now visualizes `updated state -> next queue` as explicit downstream control-plane stages.
 - **Failure Mode**: Mixing readiness-derived and updated-state-derived queue routing creates split-brain fleet execution.
