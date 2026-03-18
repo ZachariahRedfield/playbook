@@ -265,6 +265,90 @@ Playbook governance execution follows a staged flow:
 
 In the Toroidal Flow overlay, this execution flow is the **forward execution arc** and `apply` is treated as a midpoint for full-cycle architecture framing rather than a terminal endpoint.
 
+## Future planning-layer seam: repo-scoped Stories / Backlog
+
+Playbook's current deterministic runtime already distinguishes repository findings, plans, worker lanes, and execution receipts. A future repo-scoped Stories / Backlog layer should sit **between** detection and execution rather than replacing either side.
+
+Canonical future lifecycle:
+
+`Detection -> Story -> Plan -> Execution -> Receipt`
+
+Separation of concerns:
+
+- **Detection / findings**: granular evidence emitted by analysis, verify, readiness, observer, or other governed signals.
+- **Story**: the durable scoped unit of work for one repository.
+- **Backlog**: the per-repo queue/view of stories.
+- **Plan**: deterministic execution strategy generated from a story.
+- **Workers**: PR-sized implementation lanes derived from a plan.
+- **Receipt**: observed execution outcome tied back to what actually happened.
+
+Why this seam is needed:
+
+- findings are often too granular for humans to manage directly.
+- deterministic systems can surface many correct warnings without telling operators which related signals should become one durable work item.
+- execution artifacts are intentionally transient/planned outputs, while stories must persist across sessions, retries, and alternative execution attempts.
+
+Pattern: Detection -> Story -> Plan -> Execution -> Receipt.
+Pattern: Detection needs durable interpretation.
+Rule: Stories must be structured first, narrative second.
+Failure Mode: Backlog spam from raw findings.
+
+### Proposed future Story model
+
+This is a documentation-only architecture target, not an implemented runtime artifact.
+
+```json
+{
+  "id": "story_...",
+  "repo": "repo-id-or-root",
+  "title": "Add deterministic docs audit fix flow",
+  "type": "governance",
+  "source": "detected",
+  "severity": "medium",
+  "priority": "high",
+  "confidence": 0.86,
+  "status": "backlog",
+  "evidence": [],
+  "rationale": "Why this should become durable work.",
+  "acceptance_criteria": [],
+  "dependencies": [],
+  "execution_lane": "safe_single_pr",
+  "suggested_route": "verify_plan_apply"
+}
+```
+
+Minimum structured fields:
+
+- `id`
+- `repo`
+- `title`
+- `type` (`bug`, `architecture`, `governance`, `debt`, `feature`, `docs`, `investigation`)
+- `source` (`detected`, `manual`, `imported`)
+- `severity`
+- `priority`
+- `confidence`
+- `status` (`backlog`, `ready`, `planned`, `in_progress`, `blocked`, `done`, `archived`)
+- `evidence`
+- `rationale`
+- `acceptance_criteria`
+- `dependencies`
+- `execution_lane` (`safe_single_pr`, `safe_parallel`, `needs_human`, `blocked`)
+- `suggested_route`
+
+Design guardrails for the future implementation:
+
+- story fields should be deterministic and queryable before any narrative summary layer.
+- candidate stories derived from findings must support grouping, dedupe, and explicit promotion rather than automatic one-warning-to-one-story conversion.
+- story storage should remain repo-scoped and local-first.
+- observer/UI surfaces may render backlog state later, but UI wrappers must not become the canonical story source of truth.
+- external issue import/export can be additive later, but Playbook should not turn into a generic Jira clone.
+
+Non-goals for this layer:
+
+- no sprint planning, assignees, comments, boards, or generic PM workflow as core architecture scope.
+- no automatic promotion of every finding into a first-class story.
+- no collapsing of Story, Plan, Worker, and Receipt into one shared artifact.
+
 ## Deterministic task and output contracts
 
 The plan/execution pipeline is deterministic by contract:
