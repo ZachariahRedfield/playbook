@@ -19,7 +19,6 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - `node scripts/validate-roadmap-contract.mjs --ci` blocks roadmap/live-command boundary drift by validating roadmap `commands` against `docs/contracts/command-truth.json`.
 - `pnpm playbook docs audit --ci --json` blocks command-truth drift findings marked as errors (for example duplicate command metadata or managed status-table mismatch).
 
-
 ## Product-facing command surface (current)
 
 The following section is generated from shared CLI command metadata.
@@ -59,6 +58,7 @@ Do not hand-edit entries inside the managed markers.
 | `deps` | Print module dependency graph from .playbook/repo-index.json | canonical | repo-intelligence | secondary | Later | Current (implemented) | `pnpm playbook deps workouts --json` |
 | `ask` | Answer repository questions from machine-readable intelligence context | canonical | repo-intelligence | primary | P7 | Current (implemented) | `pnpm playbook ask "where should a new feature live?" --repo-context --json` |
 | `explain` | Explain rules, modules, or architecture from repository intelligence | canonical | repo-intelligence | primary | P6 | Current (implemented) | `pnpm playbook explain architecture --json` |
+| `receipt` | Ingest explicit execution results into receipt, updated-state, and next-queue | canonical | utility | secondary | Later | Current (implemented) | `pnpm playbook receipt ingest execution-results.json --json` |
 | `route` | Classify tasks and emit deterministic proposal-only execution plans for task-specific routing decisions | canonical | repo-intelligence | primary | Later | Current (implemented) | `pnpm playbook route "summarize current repo state" --json` |
 | `architecture` | Verify subsystem registry ownership and architecture mapping integrity | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook architecture verify --json` |
 | `learn` | Draft deterministic knowledge candidates from local diff and repository intelligence | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
@@ -79,7 +79,7 @@ Do not hand-edit entries inside the managed markers.
 - Core flow: [`verify`](verify.md), [`plan`](plan.md), [`apply`](apply.md), [`pilot`](pilot.md)
 - Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md)
 - AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`context`](overview.md)
-- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`observer`](observer.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
+- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`observer`](observer.md), [`receipt`](receipt.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
 
 ### Implemented control-plane command docs
 
@@ -184,7 +184,6 @@ Pattern: **AI Anchor Drift**.
 
 If docs and implementation disagree, treat implementation as source of truth and realign docs.
 
-
 Command reference: [`pnpm playbook docs audit`](docs.md).
 
 ## Execution command-surface normalization (verify / route / orchestrate / execute / telemetry / improve)
@@ -241,6 +240,7 @@ pnpm playbook memory show <id> --json
 ## Knowledge inspection surfaces (`pnpm playbook knowledge ...`)
 
 Command boundary note:
+
 - `memory` = lifecycle/review/mutation surfaces over raw memory artifacts (events, candidates, promoted records).
 - `knowledge` = normalized, read-only inspection/query surface for governed knowledge retrieval and provenance.
 
@@ -299,7 +299,6 @@ pnpm playbook ask "how does auth work?" --repo-context --mode concise
 pnpm playbook ask "how does this module work?" --module workouts --repo-context
 pnpm playbook ask "what modules are affected by this?" --repo-context --json
 ```
-
 
 ## Structured PR intelligence (`pnpm playbook analyze-pr`)
 
@@ -381,7 +380,6 @@ pnpm playbook ask "how does this work?" --module workouts
 pnpm playbook ask "how do I fix this rule violation?" --mode ultra
 ```
 
-
 ## Security contract verification
 
 Run `pnpm test:security` to execute security contract tests and regression tests that validate runtime guards.
@@ -458,7 +456,6 @@ Failure Mode - Auto-Applying Ambiguous Ignores.
 
 Failure Mode - Non-Idempotent Ignore Management.
 
-
 ## Playbook artifact hygiene diagnostics (`doctor`)
 
 `pnpm playbook doctor` includes a **Playbook Artifact Hygiene** section that reports:
@@ -476,9 +473,6 @@ Suggested remediation IDs:
 - `PB013`: update `.gitignore` for runtime artifacts
 - `PB014`: move runtime artifacts to `.playbook/`
 
-
-
-
 ### Deterministic pattern compaction query
 
 `pnpm playbook query patterns` reads `.playbook/patterns.json` generated during `playbook verify` and returns compacted canonical engineering patterns.
@@ -486,7 +480,6 @@ Suggested remediation IDs:
 - Canonical IDs collapse semantically equivalent observations (for example, module test absence variants).
 - Buckets are deterministic: architecture, testing, dependency, documentation, governance.
 - Output is stable machine-readable pattern summaries (`id`, `bucket`, `occurrences`, `examples`).
-
 
 ### Cross-repo pattern learning (`patterns`)
 
@@ -511,7 +504,6 @@ Suggested remediation IDs:
 
 Rule: Module impact and module-scoped ask rely on Playbook-managed index artifacts, not ad-hoc rescans.
 
-
 ## Deterministic Artifact Layer
 
 Rule
@@ -528,7 +520,6 @@ Use query surfaces to inspect state:
 
 - `pnpm playbook query runs`
 - `pnpm playbook query run --id <run-id>`
-
 
 `pnpm playbook patterns cross-repo --json` now emits a read-only governed comparison artifact at `.playbook/cross-repo-patterns.json` with deterministic `source_repos`, pairwise `comparisons`, and evidence-backed `candidate_patterns`.
 

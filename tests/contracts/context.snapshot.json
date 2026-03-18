@@ -73,7 +73,8 @@
       "telemetry",
       "policy",
       "agent",
-      "observer"
+      "observer",
+      "receipt"
     ]
   }
 }
