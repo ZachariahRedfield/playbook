@@ -96,3 +96,29 @@ Implementation note:
 
 - `playbook pilot --repo <path>` is the canonical top-level surface for first external baseline analysis.
 - If the target repository is not present locally, treat the command list as runbook contract and execute when the pilot workspace is mounted.
+
+
+## Pilot retrospective doctrine and next priorities
+
+The first external pilot is now considered product-defining evidence rather than a one-off validation run.
+
+Key retrospective findings:
+
+- Playbook is operational in a real external repo.
+- Governance materially improved the pilot by clarifying what was authoritative and what remained incomplete.
+- Product improvements were real, but the biggest remaining gaps are now concentrated in external bootstrap, runtime health, improvement prioritization, doctrine extraction, and human interpretation of dense truth.
+
+Priority direction exposed by the pilot:
+
+1. external consumer bootstrap proof
+2. environment/runtime health diagnostics
+3. next-best-improvement analysis
+4. post-merge doctrine extraction
+
+Doctrine promoted from the pilot:
+
+- stabilize tooling surface before governed product work
+- first governed improvements should target correctness/performance seams with repeated logic and clear invariants
+- shared aggregation boundary for reads, targeted invalidation boundary for writes
+- mutation path -> affected canonical IDs -> centralized recompute
+- tooling migration incomplete until runtime + governance bootstrap proof passes

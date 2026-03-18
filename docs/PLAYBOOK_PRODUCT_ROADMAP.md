@@ -248,6 +248,38 @@ Current slice establishes:
 Reference plan:
 
 - `docs/roadmap/EXTERNAL_PILOT_FAWXZZY_FITNESS.md`
+- `docs/pilots/FAWXZZY_FITNESS_PILOT_RETROSPECTIVE.md`
+
+Pilot retrospective doctrine now elevates the following priorities:
+
+- external consumer bootstrap proof
+- environment/runtime health diagnostics
+- next-best-improvement analysis
+- post-merge doctrine extraction
+
+Pattern — System -> Interpretation Gap
+Deterministic output can still be hard to use when human interpretation cost stays too high.
+
+Pattern — Interpretation Layer
+Playbook should derive human-facing summaries from deterministic truth without creating a second source of truth.
+
+Pattern — Progressive Disclosure
+Default product surfaces should reveal depth in layers rather than dumping full system density by default.
+
+Pattern — Single Next Action
+When evidence is sufficient, product surfaces should converge on one recommended next operator move.
+
+Pattern — State -> Narrative Compression
+Dense but correct state should be compressible into readable governed narrative.
+
+Rule — Stabilize Tooling Surface Before Governed Product Work
+External runtime/bootstrap reliability must be proven before higher-order governed product work can be treated as complete.
+
+Failure Mode — Correct-but-Dense Truth Reduces Adoption
+Correct outputs that require system knowledge to interpret reduce actionability and adoption.
+
+Failure Mode — Superficial Integration Without Bootstrap Proof
+A repo can appear integrated while still failing real governed consumption due to missing bootstrap/runtime/artifact guarantees.
 
 Rule â€” Machine-Consumed Artifacts Must Be CLI-Written
 If downstream commands read generated JSON artifacts, those artifacts must be written by the CLI itself rather than relying on shell redirection.

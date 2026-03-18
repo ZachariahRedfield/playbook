@@ -17,6 +17,63 @@ Boundary rule: research docs describe conceptual models; architecture/runtime do
 
 Rule: architecture documents describe current-state design and bounded staged capability, not live command inventory status.
 
+
+## External pilot doctrine boundary
+
+The first external pilot clarified a core architecture need: deterministic system truth is necessary but not sufficient for adoption.
+
+- **System truth** remains canonical, governed, and machine-readable.
+- **Interpretation** is an additive representational layer that makes deterministic truth readable for humans.
+- **Governance** still attaches to canonical artifacts and deterministic workflows, not to presentation logic.
+
+Pattern: System -> Interpretation Gap.
+Pattern: Interpretation Layer.
+Pattern: State -> Narrative Compression.
+
+Failure Mode: Correct-but-dense outputs that require system knowledge reduce actionability and adoption.
+Failure Mode: A repo can look integrated while still failing real governed consumption due to missing bootstrap/runtime/artifact guarantees.
+
+### Interpretation-layer boundary
+
+The interpretation layer is architecturally constrained:
+
+- it does not modify source-of-truth artifacts
+- it does not introduce nondeterministic state
+- it derives human-facing summaries from deterministic system truth
+
+Rule: Interpretation is representational only; canonical artifacts remain the sole source of truth.
+
+### Reliability-before-governed-improvement doctrine
+
+The pilot also clarified ordering doctrine for external adoption:
+
+- stabilize tooling surface before governed product work
+- tooling migration is incomplete until runtime + governance bootstrap proof passes
+- first governed improvements should target correctness/performance seams with repeated logic and clear invariants
+
+Rule: External adoption work must clear bootstrap/runtime/governance proof before higher-level product doctrine is considered complete.
+
+### Read/write boundary doctrine
+
+Architecture should keep read aggregation and write invalidation cleanly separated.
+
+- **Pattern**: Shared aggregation boundary for reads, targeted invalidation boundary for writes.
+- **Pattern**: Mutation path -> affected canonical IDs -> centralized recompute.
+- Reads should compose through a shared aggregation layer so summaries, diagnostics, and explain surfaces consume the same truth.
+- Writes should map mutations to affected canonical IDs and trigger centralized recompute instead of ad hoc local refresh paths.
+
+Rule: Shared read aggregation and targeted write invalidation are required to keep deterministic truth coherent across product surfaces.
+
+### Human-facing system compression
+
+When system state grows dense, architecture should support compression layers rather than forcing consumers to reconstruct meaning themselves.
+
+- Progressive disclosure keeps system depth available without making it mandatory.
+- Single next action reduces ambiguity when the system has enough evidence to recommend a path.
+- Narrative compression makes dense but correct state usable for real operators.
+
+Rule: Architecture may add representational compression layers, but only as deterministic views over existing governed artifacts.
+
 ### Observer readiness boundary
 
 The observer server/UI registration list is not equivalent to observability completeness. Observer surfaces compute deterministic readiness from repo-local `.playbook` directory and governed artifact presence only, and expose readiness state (`connected_only`, `playbook_detected`, `partially_observable`, `observable`) as additive metadata over repo registration records.

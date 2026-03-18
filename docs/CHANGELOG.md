@@ -174,6 +174,19 @@
 
 # Changelog
 
+- WHAT: Added first-external-pilot doctrine documentation across new repo-level pattern, UI, architecture, retrospective, and roadmap surfaces (`docs/PATTERNS.md`, `docs/UI_GUIDELINES.md`, `docs/ARCHITECTURE.md`, `docs/pilots/FAWXZZY_FITNESS_PILOT_RETROSPECTIVE.md`, `docs/roadmap/EXTERNAL_PILOT_FAWXZZY_FITNESS.md`, `docs/PLAYBOOK_PRODUCT_ROADMAP.md`). WHY: Formalizes the Fawxzzy Fitness pilot as governed product doctrine so interpretation gaps, bootstrap proof requirements, and pilot-derived read/write patterns stop living as tribal knowledge.
+- Pattern: System -> Interpretation Gap.
+- Pattern: Interpretation Layer.
+- Pattern: Progressive Disclosure.
+- Pattern: Single Next Action.
+- Pattern: State -> Narrative Compression.
+- Pattern: Shared aggregation boundary for reads, targeted invalidation boundary for writes.
+- Pattern: Mutation path -> affected canonical IDs -> centralized recompute.
+- Failure Mode: Correct-but-dense outputs that require system knowledge reduce actionability and adoption.
+- Failure Mode: A repo can look integrated while still failing real governed consumption due to missing bootstrap/runtime/artifact guarantees.
+- Rule: Interpretation layers are representational only and must not mutate source-of-truth artifacts or introduce nondeterministic state.
+- Rule: Tooling migration is incomplete until runtime + governance bootstrap proof passes.
+
 - WHAT: Added `pnpm playbook receipt ingest <file> --json` plus a deterministic engine ingestion layer that converts explicit execution results into `.playbook/execution-outcome-input.json`, canonical receipt output, reconciled updated-state, and next-queue derived from updated-state only; receipt/observer surfaces now honor explicit observed transitions instead of inferring outcomes from repo state. WHY: Closes the adoption control loop with a single explicit execution-ingestion boundary so repeated ingest input produces the same receipt, updated-state, and downstream queue.
 - WHAT: Introduced a shared `workflow-promotion` contract/schema for staged workflow writebacks, refactored `pnpm playbook status updated --json` to emit the normalized receipt, and moved `pnpm playbook route --json` onto the same staged candidate -> validation -> promotion flow for `.playbook/execution-plan.json`. WHY: This unifies durable workflow promotion semantics across repo-visible outputs so automation, Observer, and future orchestration surfaces can reason about one deterministic contract instead of command-local metadata fragments.
 - Rule: Durable workflow outputs must expose normalized staged-promotion metadata when they write repo-visible state.
