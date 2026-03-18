@@ -12,6 +12,9 @@ import {
   buildFleetUpdatedAdoptionState,
   deriveNextAdoptionQueueFromUpdatedState,
   buildRepoAdoptionReadiness,
+  runBootstrapProof,
+  defaultBootstrapCliResolutionCommands,
+  type BootstrapCliResolutionCommand,
   type FleetAdoptionWorkQueue,
   type FleetCodexExecutionPlan,
   type FleetAdoptionReadinessSummary,
@@ -31,7 +34,7 @@ type StatusOptions = {
   ci: boolean;
   format: 'text' | 'json';
   quiet: boolean;
-  scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated';
+  scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated' | 'proof';
 };
 
 type StatusResult = {
@@ -85,6 +88,14 @@ type StatusUpdatedStateResult = {
   updated_state: FleetUpdatedAdoptionState;
   next_queue: FleetAdoptionWorkQueue;
   promotion: WorkflowPromotion;
+};
+
+
+type StatusProofResult = {
+  schemaVersion: '1.0';
+  command: 'status';
+  mode: 'proof';
+  proof: ReturnType<typeof runBootstrapProof>;
 };
 
 type ObserverRegistry = {
@@ -307,6 +318,38 @@ const toReceiptStatusResult = (cwd: string): StatusReceiptResult => {
   };
 };
 
+
+const currentBootstrapCliResolutionCommand = (): BootstrapCliResolutionCommand | null => {
+  const scriptPath = process.argv[1];
+  if (typeof scriptPath !== 'string' || scriptPath.trim().length === 0) {
+    return null;
+  }
+
+  return {
+    label: `current Playbook CLI (${path.basename(scriptPath)}) --version`,
+    command: process.execPath,
+    args: [scriptPath, '--version']
+  };
+};
+
+const bootstrapCliResolutionCommands = (): BootstrapCliResolutionCommand[] => {
+  const current = currentBootstrapCliResolutionCommand();
+  return current ? [current, ...defaultBootstrapCliResolutionCommands()] : defaultBootstrapCliResolutionCommands();
+};
+
+const toProofStatusResult = (cwd: string): { result: StatusProofResult; exitCode: ExitCode } => {
+  const proof = runBootstrapProof(cwd, { cliResolutionCommands: bootstrapCliResolutionCommands() });
+  return {
+    result: {
+      schemaVersion: '1.0',
+      command: 'status',
+      mode: 'proof',
+      proof
+    },
+    exitCode: proof.ok ? ExitCode.Success : ExitCode.Failure
+  };
+};
+
 const toUpdatedStateStatusResult = (cwd: string): { result: StatusUpdatedStateResult; exitCode: ExitCode } => {
   const { fleet, queue, executionPlan, receipt } = computeReceipt(cwd);
   const updatedState = buildFleetUpdatedAdoptionState(executionPlan, queue, fleet, receipt);
@@ -442,6 +485,26 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
         console.log(`Drift: ${receiptResult.receipt.verification_summary.mismatch_count}`);
       }
       return ExitCode.Success;
+    }
+
+    if (options.scope === 'proof') {
+      const { result: proofResult, exitCode } = toProofStatusResult(cwd);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(proofResult, null, 2));
+      } else {
+        console.log('Current state');
+        console.log(proofResult.proof.summary.current_state);
+        console.log('');
+        console.log('Why');
+        console.log(proofResult.proof.summary.why);
+        console.log('');
+        console.log('What next');
+        console.log(proofResult.proof.summary.what_next);
+        console.log('');
+        console.log(`Failing stage: ${proofResult.proof.diagnostics.failing_stage ?? 'none'}`);
+        console.log(`Failing category: ${proofResult.proof.diagnostics.failing_category ?? 'none'}`);
+      }
+      return exitCode;
     }
 
     if (options.scope === 'updated') {

@@ -10,6 +10,7 @@ Deterministic adoption/readiness summary for governed Playbook usage.
 - `pnpm playbook status execute --json`: deterministic Codex-ready execution-plan packaging derived from the queue.
 - `pnpm playbook status receipt --json`: canonical planned-vs-actual execution receipt derived from queue/plan context plus explicit ingested execution outcomes from `.playbook/execution-outcome-input.json`.
 - `pnpm playbook status updated --json`: reconciled updated adoption state derived from prior state plus the canonical execution receipt; writes `.playbook/execution-updated-state.json` through the shared workflow-promotion contract and returns `next_queue`, which is derived downstream from updated-state only.
+- `pnpm playbook status proof --json`: deterministic external-consumer bootstrap proof that validates runtime, CLI resolution, initialization, required docs/artifacts, execution state, and governance contract readiness end to end.
 
 If no Observer registry exists, fleet mode falls back to the current repository as a single-repo fleet.
 
@@ -239,3 +240,45 @@ Playbook notes:
 - **Rule**: Do not derive next actions from raw receipt once updated-state exists.
 - **Pattern**: Updated-state is the canonical driver for the next adoption work queue.
 - **Failure Mode**: Deriving queue from both readiness and updated-state creates split-brain control flow and nondeterministic execution loops.
+
+## Bootstrap proof (`status proof`)
+
+`pnpm playbook status proof --json` is the first-class external-consumer bootstrap proof flow. It is read-only and deterministic: it does not write repo artifacts, and it classifies the first failing bootstrap stage before returning the single highest-priority next action.
+
+Stages are evaluated in order:
+
+1. `runtime`: Node/pnpm availability
+2. `cli`: local Playbook CLI resolution via `pnpm exec playbook --version`
+3. `initialization`: Playbook config/bootstrap presence
+4. `docs`: required bootstrap docs (`ARCHITECTURE`, `CHANGELOG`, `PLAYBOOK_CHECKLIST`, `PLAYBOOK_NOTES`)
+5. `artifacts`: `.playbook/repo-index.json`, `.playbook/repo-graph.json`, `.playbook/plan.json`
+6. `execution-state`: `.playbook/policy-apply-result.json` and any already-enforced runtime state such as `.playbook/last-run.json` when governance requires it
+7. `governance`: governed `verify` contract checks
+
+Failure categories are explicit and machine-readable:
+
+- `runtime_unavailable`
+- `binary_resolution_failed`
+- `repo_not_initialized`
+- `required_docs_missing`
+- `required_artifacts_missing`
+- `execution_state_missing`
+- `governance_contract_failed`
+
+Human output answers three questions in order:
+
+1. current state
+2. why
+3. what next
+
+Rule:
+
+- A tooling migration is incomplete until the repo can both run Playbook and satisfy its enforced artifact/governance bootstrap contract.
+
+Pattern:
+
+- External consumer bootstrap proof should verify runtime, governance artifacts, and execution state in one deterministic flow.
+
+Failure Mode:
+
+- A repo can appear integrated because commands exist locally while still failing as a real governed consumer due to missing runtime/artifact/bootstrap guarantees.
