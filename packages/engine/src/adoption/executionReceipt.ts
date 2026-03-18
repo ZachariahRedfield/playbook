@@ -211,6 +211,7 @@ const transitionForItem = (item: AdoptionWorkItem): LifecycleTransition => ({
 const observedTransitionForPrompt = (
   prompt: CodexExecutionPrompt,
   queue: FleetAdoptionWorkQueue,
+  fleet: FleetAdoptionReadinessSummary,
   input: ExecutionPromptOutcomeInput | undefined,
 ): LifecycleTransition => {
   const item = queue.work_items.find(
@@ -223,7 +224,10 @@ const observedTransitionForPrompt = (
   if (input?.observed_transition) {
     return input.observed_transition;
   }
-  return { from, to: from };
+  const repo = fleet.repos_by_priority.find(
+    (entry) => entry.repo_id === prompt.repo_id,
+  );
+  return { from, to: repo?.lifecycle_stage ?? from };
 };
 
 const comparePromptOutcome = (
@@ -292,7 +296,7 @@ export const buildFleetExecutionReceipt = (
         throw new Error(`missing queue item for prompt ${prompt.prompt_id}`);
       const input = inputByPrompt.get(prompt.prompt_id);
       const intended = transitionForItem(item);
-      const observed = observedTransitionForPrompt(prompt, queue, input);
+      const observed = observedTransitionForPrompt(prompt, queue, fleet, input);
       const verificationPassed =
         Boolean(input?.verification_passed) && intended.to === observed.to;
       const status = comparePromptOutcome(
@@ -346,7 +350,7 @@ export const buildFleetExecutionReceipt = (
   const artifactDeltas = sortStrings(
     plan.codex_prompts.flatMap((prompt) => {
       const input = inputByPrompt.get(prompt.prompt_id);
-      const observed = observedTransitionForPrompt(prompt, queue, input);
+      const observed = observedTransitionForPrompt(prompt, queue, fleet, input);
       const deltas =
         input?.artifact_deltas ??
         artifactEvidenceForStage(observed.from, observed.to);
