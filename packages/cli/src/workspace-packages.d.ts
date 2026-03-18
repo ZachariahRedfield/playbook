@@ -302,6 +302,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export type StoryStatus = 'proposed' | 'ready' | 'in_progress' | 'blocked' | 'done' | 'archived';
   export type StoryRecord = { id: string; repo: string; title: string; type: string; source: string; severity: string; priority: string; confidence: string; status: StoryStatus; evidence: string[]; rationale: string; acceptance_criteria: string[]; dependencies: string[]; execution_lane: string | null; suggested_route: string | null; };
   export type StoriesArtifact = { schemaVersion: '1.0'; repo: string; stories: StoryRecord[]; };
+  export type StoryBacklogSummary = { counts_by_status: Record<StoryStatus, number>; highest_priority_ready_story: StoryRecord | null; blocked_stories: StoryRecord[]; primary_next_action: string | null; };
   export const STORIES_RELATIVE_PATH: '.playbook/stories.json';
   export const STORY_TYPES: readonly string[];
   export const STORY_SEVERITIES: readonly string[];
@@ -310,6 +311,9 @@ declare module "@zachariahredfield/playbook-engine" {
   export const STORY_STATUSES: readonly StoryStatus[];
   export const createStoryRecord: (...args: any[]) => StoryRecord;
   export const readStoriesArtifact: (...args: any[]) => StoriesArtifact;
+  export const sortStoriesForBacklog: (...args: any[]) => StoryRecord[];
+  export const summarizeStoriesBacklog: (...args: any[]) => StoryBacklogSummary;
+  export const findStoryById: (...args: any[]) => StoryRecord | null;
   export const validateStoriesArtifact: (...args: any[]) => string[];
   export const upsertStory: (...args: any[]) => StoriesArtifact;
   export const updateStoryStatus: (...args: any[]) => StoriesArtifact;

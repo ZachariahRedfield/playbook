@@ -1,5 +1,10 @@
 ## 2026-03-18 — Deterministic execution replay and drift inspection
 
+- WHAT: Extended Observer with a read-only repo backlog planning surface sourced from the canonical `.playbook/stories.json` artifact, including backlog summary counts, highest-priority ready story, blocked-story visibility, story detail drilldown, and linked evidence/route/status context in repo view. WHY: Observer can now surface durable planning state between findings and execution without becoming a second story system.
+- Rule: Observer may render backlog state, but it must not become the canonical story source of truth.
+- Pattern: Story visibility belongs between findings and execution surfaces in the repo control view.
+- Failure Mode: If the UI becomes the primary story system, deterministic planning state fragments across layers.
+
 - WHAT: Added `pnpm playbook receipt replay --json`, a read-only deterministic replay flow that reloads the canonical execution outcome input artifact, regenerates receipt / updated-state / next-queue from the current execution loop, and compares replay output against committed updated-state-derived downstream truth. WHY: Closed-loop execution now has a first-class debugging and regression surface for proving that identical canonical inputs reproduce identical downstream state.
 - WHAT: Added stable replay classifications (`completed_as_planned`, `completed_with_drift`, `mismatch`, `stale_plan_or_superseded`) backed only by deterministic evidence already present in the canonical receipt and updated-state artifacts, plus focused regression coverage for deterministic replay and mismatch preservation. WHY: Operators need an explainable, machine-readable signal for whether execution matched the plan, drifted, or was superseded without inventing alternate simulation state.
 - Rule: Replay must derive from canonical execution artifacts rather than alternate simulation state.

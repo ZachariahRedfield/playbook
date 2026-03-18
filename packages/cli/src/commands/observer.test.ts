@@ -217,6 +217,12 @@ describe('observer server', () => {
     expect(reposJson.repo_count).toBe(1);
     expect(reposJson.repos.map((entry) => entry.id)).toEqual(['repo-nested']);
 
+    const uiResponse = await fetch(`http://127.0.0.1:${port}/`);
+    const uiHtml = await uiResponse.text();
+    expect(uiHtml).toContain('Backlog Summary');
+    expect(uiHtml).toContain('Backlog List');
+    expect(uiHtml).toContain('Story Detail');
+
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
     expect(uiScriptText).toContain('No repos connected in');
@@ -249,6 +255,12 @@ describe('observer server', () => {
     const reposJson = await repos.json() as { repos: Array<{ id: string }> };
     expect(reposJson.repos.length).toBeGreaterThan(0);
 
+    const uiResponse = await fetch(`http://127.0.0.1:${port}/`);
+    const uiHtml = await uiResponse.text();
+    expect(uiHtml).toContain('Backlog Summary');
+    expect(uiHtml).toContain('Backlog List');
+    expect(uiHtml).toContain('Story Detail');
+
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
 
@@ -280,6 +292,20 @@ describe('observer server', () => {
     fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.playbook', 'session.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'session', id: 'session-a' }, null, 2));
     fs.writeFileSync(path.join(repo, '.playbook', 'system-map.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'system-map', layers: [], nodes: [], edges: [] }, null, 2));
+    fs.writeFileSync(path.join(repo, '.playbook', 'stories.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      repo: 'repo-a',
+      stories: [
+        {
+          id: 'story-ready', repo: 'repo-a', title: 'Render backlog summary', type: 'feature', source: 'manual', severity: 'high', priority: 'urgent', confidence: 'high', status: 'ready',
+          evidence: ['session.json', 'cycle-history.json'], rationale: 'Observer should reflect canonical story state.', acceptance_criteria: ['Show summary', 'Link evidence'], dependencies: [], execution_lane: 'safe_single_pr', suggested_route: 'playbook route "render backlog summary" --json'
+        },
+        {
+          id: 'story-blocked', repo: 'repo-a', title: 'Blocked story', type: 'governance', source: 'manual', severity: 'medium', priority: 'high', confidence: 'medium', status: 'blocked',
+          evidence: ['policy-evaluation.json'], rationale: 'Blocked until evidence is available.', acceptance_criteria: ['Unblock later'], dependencies: ['story-ready'], execution_lane: null, suggested_route: null
+        }
+      ]
+    }, null, 2));
 
     expect(await runObserver(cwd, ['repo', 'add', repo, '--id', 'repo-a'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
 
@@ -358,9 +384,26 @@ describe('observer server', () => {
 
     const repoResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a`);
     expect(repoResponse.status).toBe(200);
-    const repoJson = await repoResponse.json() as { repo: { id: string }; readiness: { readiness_state: string } };
+    const repoJson = await repoResponse.json() as { repo: { id: string }; readiness: { readiness_state: string }; backlog: { summary: { highest_priority_ready_story: { id: string } | null; blocked_stories: Array<{ id: string }>; primary_next_action: string | null } } };
     expect(repoJson.repo.id).toBe('repo-a');
     expect(repoJson.readiness.readiness_state).toBe('partially_observable');
+    expect(repoJson.backlog.summary.highest_priority_ready_story?.id).toBe('story-ready');
+    expect(repoJson.backlog.summary.blocked_stories.map((story) => story.id)).toEqual(['story-blocked']);
+    expect(repoJson.backlog.summary.primary_next_action).toContain('story-ready');
+
+    const backlogResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/backlog`);
+    expect(backlogResponse.status).toBe(200);
+    const backlogJson = await backlogResponse.json() as { backlog: { artifact_path: string; stories: Array<{ id: string }> } };
+    expect(backlogJson.backlog.artifact_path).toBe('.playbook/stories.json');
+    expect(backlogJson.backlog.stories.map((story) => story.id)).toEqual(['story-ready', 'story-blocked']);
+
+    const storyDetailResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/backlog/stories/story-ready`);
+    expect(storyDetailResponse.status).toBe(200);
+    const storyDetailJson = await storyDetailResponse.json() as { detail: { story: { id: string; suggested_route: string | null }; linked_evidence: Array<{ artifact_path: string }>; linked_status: { readiness_state: string }; raw_artifact_path: string } };
+    expect(storyDetailJson.detail.story.id).toBe('story-ready');
+    expect(storyDetailJson.detail.linked_status.readiness_state).toBe('partially_observable');
+    expect(storyDetailJson.detail.linked_evidence.map((entry) => entry.artifact_path)).toContain('.playbook/session.json');
+    expect(storyDetailJson.detail.raw_artifact_path).toBe('.playbook/stories.json');
 
     const artifactResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/artifacts/session`);
     expect(artifactResponse.status).toBe(200);
@@ -461,6 +504,12 @@ describe('observer server', () => {
     expect(byId.ready?.cross_repo_eligible).toBe(true);
     expect(typeof byId.ready?.last_artifact_update_time).toBe('string');
 
+    const uiResponse = await fetch(`http://127.0.0.1:${port}/`);
+    const uiHtml = await uiResponse.text();
+    expect(uiHtml).toContain('Backlog Summary');
+    expect(uiHtml).toContain('Backlog List');
+    expect(uiHtml).toContain('Story Detail');
+
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
     expect(uiScriptText).toContain('readiness: ');
@@ -471,6 +520,14 @@ describe('observer server', () => {
     expect(uiScriptText).toContain('node-state-');
     expect(uiScriptText).toContain("document.getElementById('controlLoopSummaryPanel')");
     expect(uiScriptText).toContain('renderControlLoopSummary');
+    expect(uiScriptText).toContain("document.getElementById('backlogSummaryPanel')");
+    expect(uiScriptText).toContain("document.getElementById('backlogListPanel')");
+    expect(uiScriptText).toContain("document.getElementById('storyDetailPanel')");
+    expect(uiScriptText).toContain('const loadBacklog = async () =>');
+    expect(uiScriptText).toContain('const loadStoryDetail = async () =>');
+    expect(uiScriptText).toContain('/backlog');
+    expect(uiScriptText).toContain('/backlog/stories/');
+    expect(uiScriptText).toContain('.playbook/stories.json');
     expect(uiScriptText).toContain('summary-strip');
     expect(uiScriptText).toContain('summary-pill');
     expect(uiScriptText).toContain('narrative-secondary');

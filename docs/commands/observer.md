@@ -252,3 +252,24 @@ Updated-state next-queue routing is deterministic and non-heuristic:
 - **Pattern**: Observer should behave like a runtime inspector with interpretation, not a second source of truth.
 - **Pattern**: Default control-plane views should compress state into state / why / next step.
 - **Failure Mode**: A data-rich Observer that defaults to dense artifact text increases operator friction even when the underlying control system is correct.
+
+## Backlog planning surface
+
+Observer now exposes repo-scoped backlog visibility as a **read-only planning surface** backed by the canonical `.playbook/stories.json` artifact. Repo view adds:
+
+- backlog summary counts by status
+- highest-priority ready story
+- blocked-story visibility
+- one obvious next action when canonical story state makes it clear
+- story detail with evidence, rationale, acceptance criteria, dependencies, execution lane, suggested route, and linked repo/readiness status
+- deep disclosure for the raw story artifact and linked evidence paths
+
+API additions:
+
+- `GET /repos/:id/backlog`
+- `GET /repos/:id/backlog/stories/:storyId`
+- `GET /repos/:id` now includes additive `backlog` summary data
+
+Rule: Observer may render backlog state, but it must not become the canonical story source of truth.
+Pattern: Story visibility belongs between findings and execution surfaces in the repo control view.
+Failure Mode: If the UI becomes the primary story system, deterministic planning state fragments across layers.

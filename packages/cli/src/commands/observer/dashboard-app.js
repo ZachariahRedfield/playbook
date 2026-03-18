@@ -55,6 +55,9 @@ const updatedStatePanelEl = document.getElementById('updatedStatePanel');
 const nextQueuePanelEl = document.getElementById('nextQueuePanel');
 const executionPlanPanelEl = document.getElementById('executionPlanPanel');
 const controlLoopSummaryPanelEl = document.getElementById('controlLoopSummaryPanel');
+const backlogSummaryPanelEl = document.getElementById('backlogSummaryPanel');
+const backlogListPanelEl = document.getElementById('backlogListPanel');
+const storyDetailPanelEl = document.getElementById('storyDetailPanel');
 let selectedRepoId = null;
 let selectedBlueprintNodeId = null;
 let homeRepoId = null;
@@ -68,6 +71,9 @@ let latestExecutionReceiptPayload = null;
 let latestPromotionPayload = null;
 let latestUpdatedStatePayload = null;
 let latestNextQueuePayload = null;
+let latestBacklogPayload = null;
+let latestStoryDetailPayload = null;
+let selectedStoryId = null;
 
 const NODE_LINKED_ARTIFACT = {
   'cycle-state': 'cycle-state',
@@ -145,6 +151,110 @@ const computePlanStatus = () => {
   if (Array.isArray(plan.codex_prompts) && plan.codex_prompts.length > 0) return 'ready';
   return 'idle';
 };
+
+
+const storyStatusOrder = ['ready', 'in_progress', 'blocked', 'proposed', 'done', 'archived'];
+
+const renderLinkButton = (repoId, storyId, label) => '<button class="repo" data-story-repo="' + escapeHtml(repoId) + '" data-story-id="' + escapeHtml(storyId) + '">' + escapeHtml(label) + '</button>';
+
+const attachStoryHandlers = () => {
+  for (const el of document.querySelectorAll('[data-story-id]')) {
+    el.onclick = async () => {
+      selectedRepoId = el.getAttribute('data-story-repo');
+      selectedStoryId = el.getAttribute('data-story-id');
+      await loadRepoDetail();
+      renderRepos();
+    };
+  }
+};
+
+const renderBacklogSummary = (repoId, backlog, readiness) => {
+  if (!backlog || !backlog.summary) {
+    backlogSummaryPanelEl.innerHTML = '<div class="empty-state">No canonical backlog artifact detected yet.</div>';
+    return;
+  }
+  const summary = backlog.summary;
+  const counts = summary.counts_by_status || {};
+  const highest = summary.highest_priority_ready_story;
+  const blocked = Array.isArray(summary.blocked_stories) ? summary.blocked_stories : [];
+  backlogSummaryPanelEl.innerHTML =
+    '<div class="summary-strip">' +
+    storyStatusOrder.map((status) => renderSummaryMetric(status.replace('_', ' '), String(counts[status] || 0))).join('') +
+    '</div>' +
+    '<div class="narrative-primary"><strong>Primary next action:</strong> ' + escapeHtml(summary.primary_next_action || 'No obvious next action yet.') + '</div>' +
+    '<div class="meta"><strong>Highest-priority ready story:</strong> ' + (highest ? renderLinkButton(repoId, highest.id, highest.id + ' • ' + highest.title) : 'none') + '</div>' +
+    '<div class="meta"><strong>Blocked stories:</strong> ' + (blocked.length ? blocked.map((story) => renderLinkButton(repoId, story.id, story.id)).join(' ') : 'none') + '</div>' +
+    '<details class="narrative-secondary"><summary>Reasons / blockers</summary><ul>' +
+    (blocked.length ? blocked.map((story) => '<li>' + escapeHtml(story.id + ': ' + (story.dependencies.length ? 'depends on ' + story.dependencies.join(', ') : 'blocked without explicit dependency list')) + '</li>').join('') : '<li>none</li>') +
+    '</ul></details>' +
+    '<details class="raw-truth-note"><summary>Deep/raw backlog artifact</summary><div><code>' + escapeHtml(backlog.artifact_path || '.playbook/stories.json') + '</code></div>' + format(backlog) + '</details>';
+  attachStoryHandlers();
+};
+
+const renderBacklogList = (repoId, backlog) => {
+  const stories = backlog && Array.isArray(backlog.stories) ? backlog.stories : [];
+  if (!stories.length) {
+    backlogListPanelEl.innerHTML = '<div class="empty-state">No canonical stories found in .playbook/stories.json.</div>';
+    return;
+  }
+  backlogListPanelEl.innerHTML = '<div><strong>Backlog list</strong><ul>' + stories.map((story) =>
+    '<li>' + renderLinkButton(repoId, story.id, story.id + ' • ' + story.title) +
+    '<div class="meta">status: ' + escapeHtml(story.status) + ' • priority: ' + escapeHtml(story.priority) + ' • route: ' + escapeHtml(story.suggested_route || 'n/a') + '</div></li>'
+  ).join('') + '</ul></div>';
+  attachStoryHandlers();
+};
+
+const renderStoryDetail = (detail) => {
+  if (!detail || !detail.story) {
+    storyDetailPanelEl.innerHTML = '<div class="empty-state">Select a story to inspect evidence, rationale, dependencies, lane, and suggested route.</div>';
+    return;
+  }
+  const story = detail.story;
+  const evidence = Array.isArray(detail.linked_evidence) ? detail.linked_evidence : [];
+  storyDetailPanelEl.innerHTML =
+    '<div class="summary-strip">' +
+    renderSummaryMetric('Status', story.status) +
+    renderSummaryMetric('Priority', story.priority) +
+    renderSummaryMetric('Execution lane', story.execution_lane || 'n/a') +
+    renderSummaryMetric('Suggested route', story.suggested_route || 'n/a') +
+    '</div>' +
+    '<div class="narrative-primary"><strong>' + escapeHtml(story.title) + '</strong></div>' +
+    '<div><strong>Rationale:</strong> ' + escapeHtml(story.rationale || 'none') + '</div>' +
+    '<div><strong>Acceptance criteria</strong><ul>' + ((story.acceptance_criteria || []).length ? story.acceptance_criteria.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Dependencies</strong><ul>' + ((story.dependencies || []).length ? story.dependencies.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Current status linkage:</strong> ' + escapeHtml((detail.linked_status && detail.linked_status.readiness_state) || 'unknown') + ' / ' + escapeHtml((detail.linked_status && detail.linked_status.lifecycle_stage) || 'unknown') + '</div>' +
+    '<details class="narrative-secondary"><summary>Evidence / route</summary><div><strong>Evidence</strong><ul>' + (evidence.length ? evidence.map((item) => '<li>' + escapeHtml(item.label + ' → ' + item.artifact_path) + '</li>').join('') : '<li>none</li>') + '</ul></div><div><strong>Suggested route</strong><ul><li>' + escapeHtml((detail.linked_route && detail.linked_route.label) || story.suggested_route || 'none') + '</li></ul></div></details>' +
+    '<details class="raw-truth-note"><summary>Deep/raw story artifact</summary><div><code>' + escapeHtml(detail.raw_artifact_path || '.playbook/stories.json') + '</code></div>' + format(detail) + '</details>';
+};
+
+const loadBacklog = async () => {
+  if (!selectedRepoId) {
+    latestBacklogPayload = null;
+    backlogSummaryPanelEl.innerHTML = '<div class="empty-state">Select a repo to load backlog summary.</div>';
+    backlogListPanelEl.innerHTML = '<div class="empty-state">Select a repo to load backlog list.</div>';
+    renderStoryDetail(null);
+    return;
+  }
+  const payload = await getJson('/repos/' + encodeURIComponent(selectedRepoId) + '/backlog');
+  latestBacklogPayload = payload;
+  renderBacklogSummary(selectedRepoId, payload.backlog, payload.readiness || null);
+  renderBacklogList(selectedRepoId, payload.backlog);
+  const stories = payload.backlog && Array.isArray(payload.backlog.stories) ? payload.backlog.stories : [];
+  if (!selectedStoryId || !stories.find((story) => story.id === selectedStoryId)) selectedStoryId = stories[0] ? stories[0].id : null;
+  if (selectedStoryId) await loadStoryDetail();
+  else renderStoryDetail(null);
+};
+
+const loadStoryDetail = async () => {
+  if (!selectedRepoId || !selectedStoryId) {
+    latestStoryDetailPayload = null;
+    renderStoryDetail(null);
+    return;
+  }
+  latestStoryDetailPayload = await getJson('/repos/' + encodeURIComponent(selectedRepoId) + '/backlog/stories/' + encodeURIComponent(selectedStoryId));
+  renderStoryDetail(latestStoryDetailPayload.detail || null);
+};
+
 
 const renderControlLoopSummary = () => {
   if (activeView === 'repo') {
@@ -452,6 +562,7 @@ const loadRepoDetail = async () => {
   }
 
   latestRepoPayload = await getJson('/repos/' + encodeURIComponent(selectedRepoId));
+  latestBacklogPayload = latestRepoPayload.backlog ? { backlog: latestRepoPayload.backlog, readiness: latestRepoPayload.readiness } : null;
   repoTitleEl.textContent = 'Repo: ' + latestRepoPayload.repo.id;
   const readiness = latestRepoPayload.readiness || {};
   const missing = Array.isArray(readiness.missing_artifacts) && readiness.missing_artifacts.length > 0 ? readiness.missing_artifacts.join(', ') : 'none';
@@ -471,6 +582,7 @@ const loadRepoDetail = async () => {
   removeRepoEl.style.display = '';
   await loadArtifact();
   await loadBlueprint();
+  await loadBacklog();
   renderControlLoopSummary();
 };
 

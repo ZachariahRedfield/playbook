@@ -40,7 +40,79 @@ export type StoriesArtifact = {
   stories: StoryRecord[];
 };
 
+export type StoryBacklogSummary = {
+  counts_by_status: Record<StoryStatus, number>;
+  highest_priority_ready_story: StoryRecord | null;
+  blocked_stories: StoryRecord[];
+  primary_next_action: string | null;
+};
+
 export type CreateStoryInput = Omit<StoryRecord, 'repo' | 'status'> & { status?: StoryStatus };
+
+
+const PRIORITY_RANK: Record<StoryPriority, number> = {
+  urgent: 0,
+  high: 1,
+  medium: 2,
+  low: 3
+};
+
+const SEVERITY_RANK: Record<StorySeverity, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3
+};
+
+const CONFIDENCE_RANK: Record<StoryConfidence, number> = {
+  high: 0,
+  medium: 1,
+  low: 2
+};
+
+const compareStories = (left: StoryRecord, right: StoryRecord): number => {
+  const priorityDelta = PRIORITY_RANK[left.priority] - PRIORITY_RANK[right.priority];
+  if (priorityDelta !== 0) return priorityDelta;
+  const severityDelta = SEVERITY_RANK[left.severity] - SEVERITY_RANK[right.severity];
+  if (severityDelta !== 0) return severityDelta;
+  const confidenceDelta = CONFIDENCE_RANK[left.confidence] - CONFIDENCE_RANK[right.confidence];
+  if (confidenceDelta !== 0) return confidenceDelta;
+  return left.id.localeCompare(right.id);
+};
+
+export const sortStoriesForBacklog = (stories: StoryRecord[]): StoryRecord[] => [...stories].sort(compareStories);
+
+export const summarizeStoriesBacklog = (artifact: StoriesArtifact): StoryBacklogSummary => {
+  const countsByStatus = STORY_STATUSES.reduce((acc, status) => ({ ...acc, [status]: 0 }), {} as Record<StoryStatus, number>);
+  for (const story of artifact.stories) {
+    countsByStatus[story.status] += 1;
+  }
+
+  const sortedStories = sortStoriesForBacklog(artifact.stories);
+  const highestPriorityReadyStory = sortedStories.find((story) => story.status === 'ready') ?? null;
+  const blockedStories = sortedStories.filter((story) => story.status === 'blocked');
+  const inProgressStory = sortedStories.find((story) => story.status === 'in_progress') ?? null;
+  const proposedStory = sortedStories.find((story) => story.status === 'proposed') ?? null;
+  const primaryNextAction = highestPriorityReadyStory
+    ? `Route ${highestPriorityReadyStory.id} via ${highestPriorityReadyStory.suggested_route ?? 'playbook route'}`
+    : inProgressStory
+      ? `Continue ${inProgressStory.id} in ${inProgressStory.execution_lane ?? 'current lane'}`
+      : blockedStories[0]
+        ? `Unblock ${blockedStories[0].id} dependencies before planning execution.`
+        : proposedStory
+          ? `Promote ${proposedStory.id} from proposed to ready when evidence is sufficient.`
+          : null;
+
+  return {
+    counts_by_status: countsByStatus,
+    highest_priority_ready_story: highestPriorityReadyStory,
+    blocked_stories: blockedStories,
+    primary_next_action: primaryNextAction
+  };
+};
+
+export const findStoryById = (artifact: StoriesArtifact, storyId: string): StoryRecord | null =>
+  artifact.stories.find((story) => story.id === storyId) ?? null;
 
 const unique = (values: string[]): string[] => [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 
