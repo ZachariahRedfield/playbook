@@ -9,6 +9,8 @@ const buildFleetAdoptionReadinessSummary = vi.fn();
 const buildFleetAdoptionWorkQueue = vi.fn();
 const buildFleetCodexExecutionPlan = vi.fn();
 const ingestExecutionResults = vi.fn();
+const loadReplayExecutionOutcomeInput = vi.fn();
+const replayExecutionOutcomeInput = vi.fn();
 
 vi.mock("@zachariahredfield/playbook-engine", () => ({
   buildRepoAdoptionReadiness,
@@ -16,6 +18,11 @@ vi.mock("@zachariahredfield/playbook-engine", () => ({
   buildFleetAdoptionWorkQueue,
   buildFleetCodexExecutionPlan,
   ingestExecutionResults,
+}));
+
+vi.mock("./execution/replay.js", () => ({
+  loadReplayExecutionOutcomeInput,
+  replayExecutionOutcomeInput,
 }));
 
 const makeTempDir = (): string =>
@@ -94,6 +101,47 @@ describe("runReceipt", () => {
       },
       next_queue: { queue_source: "updated_state", work_items: [] },
     });
+    loadReplayExecutionOutcomeInput.mockReturnValue({
+      outcomeInput: {
+        schemaVersion: "1.0",
+        kind: "fleet-adoption-execution-outcome-input",
+        generated_at: "2026-01-03T00:00:00.000Z",
+        session_id: "session-1",
+        prompt_outcomes: [],
+      },
+      inputArtifactPath: ".playbook/execution-outcome-input.json",
+      replayMode: "current",
+    });
+    replayExecutionOutcomeInput.mockReturnValue({
+      schemaVersion: "1.0",
+      kind: "fleet-adoption-execution-replay",
+      generated_at: "2026-01-03T00:00:00.000Z",
+      input_artifact_path: ".playbook/execution-outcome-input.json",
+      classification: "completed_as_planned",
+      deterministic: true,
+      replay_mode: "current",
+      receipt: { kind: "fleet-adoption-execution-receipt" },
+      updated_state: { kind: "fleet-adoption-updated-state" },
+      next_queue: { kind: "fleet-adoption-work-queue", queue_source: "updated_state" },
+      evidence: {
+        replay_deterministic: true,
+        committed_updated_state: { matches: true, compared: true, path: ".playbook/execution-updated-state.json", differences: [] },
+        derived_next_queue_from_committed_updated_state: { matches: true, compared: true, path: ".playbook/execution-updated-state.json -> derived next_queue", differences: [] },
+        drift_summary: {
+          mismatch_count: 0,
+          stale_or_superseded_count: 0,
+          completed_with_drift_count: 0,
+          retry_count: 0,
+          review_count: 0,
+        },
+      },
+      summary: {
+        what_happened: "Replay reproduced the canonical execution downstream state without drift.",
+        matched_plan: true,
+        changed: ["replay reproduced the currently committed downstream state"],
+        next_steps: ["No action required; replay matched the canonical downstream state."],
+      },
+    });
   });
 
   it("writes execution outcome input and returns the control-loop payload", async () => {
@@ -133,6 +181,27 @@ describe("runReceipt", () => {
     expect(payload.written_artifacts.execution_outcome_input).toBe(
       ".playbook/execution-outcome-input.json",
     );
+
+    logSpy.mockRestore();
+  });
+
+  it("replays the canonical execution outcome input in json mode", async () => {
+    const cwd = makeTempDir();
+    const { runReceipt } = await import("./receipt.js");
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    const exitCode = await runReceipt(cwd, ["replay"], {
+      format: "json",
+      quiet: false,
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(loadReplayExecutionOutcomeInput).toHaveBeenCalledWith(cwd, undefined);
+    expect(replayExecutionOutcomeInput).toHaveBeenCalled();
+    const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+    expect(payload.command).toBe("receipt");
+    expect(payload.mode).toBe("replay");
+    expect(payload.classification).toBe("completed_as_planned");
 
     logSpy.mockRestore();
   });

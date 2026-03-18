@@ -5,10 +5,15 @@ import {
   parseExecutionResults,
   persistExecutionControlLoop,
 } from "./execution/receiptIngest.js";
+import {
+  loadReplayExecutionOutcomeInput,
+  replayExecutionOutcomeInput,
+  type ExecutionReplayResult,
+} from "./execution/replay.js";
 
 type ReceiptOptions = { format: "text" | "json"; quiet: boolean };
 
-type ReceiptResult = {
+type ReceiptIngestResult = {
   schemaVersion: "1.0";
   command: "receipt";
   mode: "ingest";
@@ -27,9 +32,15 @@ const readOptionValue = (args: string[], optionName: string): string | null => {
   return prefixed ? prefixed.slice(optionName.length + 1) || null : null;
 };
 
+type ReceiptReplayCliResult = {
+  schemaVersion: "1.0";
+  command: "receipt";
+  mode: "replay";
+} & ExecutionReplayResult;
+
 const printHelp = (): void => {
   console.log(
-    `Usage: playbook receipt ingest <file> [--json]\n\nSubcommands:\n  ingest <file>    Ingest explicit execution results into receipt -> updated-state -> next-queue`,
+    `Usage: playbook receipt <subcommand> [options]\n\nSubcommands:\n  ingest <file>    Ingest explicit execution results into receipt -> updated-state -> next-queue\n  replay           Re-run canonical receipt -> updated-state -> next-queue from an execution outcome input artifact`,
   );
 };
 
@@ -44,11 +55,49 @@ export const runReceipt = async (
       printHelp();
       return subcommand ? ExitCode.Success : ExitCode.Failure;
     }
-    if (subcommand !== "ingest") {
+    if (subcommand !== "ingest" && subcommand !== "replay") {
       throw new Error(
-        "playbook receipt: unsupported subcommand. Use `playbook receipt ingest <file>`.",
+        "playbook receipt: unsupported subcommand. Use `playbook receipt ingest <file>` or `playbook receipt replay`.",
       );
     }
+
+    if (subcommand === "replay") {
+      const inputPath =
+        readOptionValue(args, "--input") ??
+        readOptionValue(args, "--file") ??
+        undefined;
+      const { outcomeInput, inputArtifactPath, replayMode } =
+        loadReplayExecutionOutcomeInput(cwd, inputPath);
+      const replayed = replayExecutionOutcomeInput(cwd, outcomeInput, {
+        inputArtifactPath,
+        replayMode,
+      });
+
+      const payload: ReceiptReplayCliResult = {
+        ...replayed,
+        command: "receipt",
+        mode: "replay",
+      };
+
+      if (options.format === "json")
+        console.log(JSON.stringify(payload, null, 2));
+      else if (!options.quiet) {
+        console.log(`Replay classification: ${payload.classification}`);
+        console.log(
+          `Replay deterministic: ${payload.deterministic ? "yes" : "no"}`,
+        );
+        console.log(
+          `Matched plan: ${payload.summary.matched_plan ? "yes" : "no"}`,
+        );
+        console.log(`Changed: ${payload.summary.changed.join("; ")}`);
+        console.log(`What happened: ${payload.summary.what_happened}`);
+        console.log(`Next: ${payload.summary.next_steps.join(" ")}`);
+      }
+      return payload.classification === "mismatch"
+        ? ExitCode.Failure
+        : ExitCode.Success;
+    }
+
     const ingestArgs = args
       .slice(args.indexOf("ingest") + 1)
       .filter((arg) => !arg.startsWith("--"));
@@ -63,7 +112,7 @@ export const runReceipt = async (
     );
     const ingested = persistExecutionControlLoop(cwd, executionResults);
 
-    const payload: ReceiptResult = {
+    const payload: ReceiptIngestResult = {
       schemaVersion: "1.0",
       command: "receipt",
       mode: "ingest",

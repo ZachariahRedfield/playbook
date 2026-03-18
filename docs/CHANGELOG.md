@@ -1,3 +1,11 @@
+## 2026-03-18 — Deterministic execution replay and drift inspection
+
+- WHAT: Added `pnpm playbook receipt replay --json`, a read-only deterministic replay flow that reloads the canonical execution outcome input artifact, regenerates receipt / updated-state / next-queue from the current execution loop, and compares replay output against committed updated-state-derived downstream truth. WHY: Closed-loop execution now has a first-class debugging and regression surface for proving that identical canonical inputs reproduce identical downstream state.
+- WHAT: Added stable replay classifications (`completed_as_planned`, `completed_with_drift`, `mismatch`, `stale_plan_or_superseded`) backed only by deterministic evidence already present in the canonical receipt and updated-state artifacts, plus focused regression coverage for deterministic replay and mismatch preservation. WHY: Operators need an explainable, machine-readable signal for whether execution matched the plan, drifted, or was superseded without inventing alternate simulation state.
+- Rule: Replay must derive from canonical execution artifacts rather than alternate simulation state.
+- Pattern: Drift visibility should be a first-class signal layered over the receipt/update loop.
+- Failure Mode: Without replay and drift classification, closed-loop automation becomes harder to debug, test, and trust.
+
 - WHAT: Refactored Observer’s default control-plane presentation so repo and fleet views now open with a compact Control-Loop Summary, dense readiness/queue/plan/receipt panels now use progressive disclosure (`state / why / next step` first, blockers/reasoning second, raw truth refs third), and raw canonical artifacts remain accessible through the existing artifact viewer. WHY: Operators should understand the deterministic control loop in seconds without losing access to governed receipts, promotion metadata, execution-plan detail, or other source-of-truth artifacts.
 - Pattern: Observer should behave like a runtime inspector with interpretation, not a second source of truth.
 - Pattern: Default control-plane views should compress state into state / why / next step.
