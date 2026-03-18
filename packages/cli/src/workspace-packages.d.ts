@@ -18,6 +18,7 @@ declare module "@zachariahredfield/playbook-node" {
 declare module "@zachariahredfield/playbook-engine" {
   export const loadConfig: (...args: any[]) => Promise<any>;
   export const generateRepositoryHealth: (...args: any[]) => any;
+  export const buildBootstrapProof: (...args: any[]) => any;
   export const buildRepoAdoptionReadiness: (...args: any[]) => any;
   export const buildFleetAdoptionReadinessSummary: (...args: any[]) => any;
   export const buildFleetAdoptionWorkQueue: (...args: any[]) => any;
@@ -25,6 +26,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const buildFleetExecutionReceipt: (...args: any[]) => any;
   export const buildFleetUpdatedAdoptionState: (...args: any[]) => any;
   export const deriveNextAdoptionQueueFromUpdatedState: (...args: any[]) => any;
+  export type BootstrapProofResult = any;
   export type RepoAdoptionReadiness = any;
   export type FleetAdoptionReadinessSummary = any;
   export type FleetAdoptionWorkQueue = any;

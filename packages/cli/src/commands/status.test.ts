@@ -15,6 +15,7 @@ vi.mock('./analyze.js', () => ({ collectAnalyzeReport, ensureRepoIndex }));
 vi.mock('./doctor.js', () => ({ collectDoctorReport }));
 vi.mock('./verify.js', () => ({ collectVerifyReport }));
 
+const buildBootstrapProof = vi.fn();
 const buildRepoAdoptionReadiness = vi.fn();
 const buildFleetAdoptionReadinessSummary = vi.fn();
 const buildFleetAdoptionWorkQueue = vi.fn();
@@ -23,7 +24,7 @@ const buildFleetExecutionReceipt = vi.fn();
 const buildFleetUpdatedAdoptionState = vi.fn();
 const deriveNextAdoptionQueueFromUpdatedState = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ buildBootstrapProof, buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState }));
 
 const makeAnalyzeReport = (overrides?: Partial<AnalyzeReport>): AnalyzeReport => ({
   repoPath: '/tmp/repo',
@@ -51,6 +52,7 @@ describe('runStatus', () => {
     collectVerifyReport.mockReset();
     ensureRepoIndex.mockReset();
     ensureRepoIndex.mockImplementation(async (repoRoot: string) => `${repoRoot}/.playbook/repo-index.json`);
+    buildBootstrapProof.mockReset();
     buildRepoAdoptionReadiness.mockReset();
     buildFleetAdoptionReadinessSummary.mockReset();
     buildFleetAdoptionWorkQueue.mockReset();
@@ -58,6 +60,26 @@ describe('runStatus', () => {
     buildFleetExecutionReceipt.mockReset();
     buildFleetUpdatedAdoptionState.mockReset();
     deriveNextAdoptionQueueFromUpdatedState.mockReset();
+    buildBootstrapProof.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'bootstrap-proof',
+      proof_passed: true,
+      failure_category: null,
+      current_state: 'Repository passed the external-consumer bootstrap proof.',
+      why: 'All bootstrap checks passed.',
+      what_next: 'No remediation is required.',
+      highest_priority_next_action: null,
+      checks: [],
+      diagnostics: {
+        runtime: { available: true, command: 'node --version', version: process.version, detail: 'ok' },
+        cli_resolution: { resolved: true, command: 'playbook context --json', detail: 'ok' },
+        repo_initialization: { initialized: true, required_paths: [] },
+        governance_docs: [],
+        governed_artifacts: [],
+        execution_state: [],
+        governance_contract: { passed: true, failures: [], warnings: [] }
+      }
+    });
     buildRepoAdoptionReadiness.mockReturnValue({
       schemaVersion: '1.0',
       connection_status: 'connected',
@@ -513,6 +535,78 @@ describe('runStatus', () => {
     expect(JSON.parse(fs.readFileSync(committedPath, 'utf8'))).toEqual({ kind: 'prior-updated-state', preserved: true });
     const stagedPath = path.join(cwd, '.playbook', 'staged', 'workflow-status-updated', 'execution-updated-state.json');
     expect(fs.existsSync(stagedPath)).toBe(true);
+    logSpy.mockRestore();
+  });
+
+
+  it('prints bootstrap proof JSON output when bootstrap scope is requested', async () => {
+    const { runStatus } = await import('./status.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    collectVerifyReport.mockResolvedValue(makeVerifyReport());
+    buildBootstrapProof.mockReturnValueOnce({
+      schemaVersion: '1.0',
+      kind: 'bootstrap-proof',
+      proof_passed: false,
+      failure_category: 'required_artifacts_missing',
+      current_state: 'Repository failed bootstrap proof at governed_artifacts.',
+      why: 'Plan artifact is missing.',
+      what_next: 'Run the governed bootstrap flow.',
+      highest_priority_next_action: 'pnpm playbook plan --json',
+      checks: [
+        {
+          id: 'bootstrap-proof.governed-artifacts',
+          stage: 'governed_artifacts',
+          status: 'fail',
+          category: 'required_artifacts_missing',
+          summary: 'Governed artifacts are missing or invalid.',
+          detail: 'Plan artifact is missing.',
+          evidence: ['.playbook/plan.json:missing'],
+          next_action: 'pnpm playbook plan --json'
+        }
+      ],
+      diagnostics: {
+        runtime: { available: true, command: 'node --version', version: process.version, detail: 'ok' },
+        cli_resolution: { resolved: true, command: 'playbook context --json', detail: 'ok' },
+        repo_initialization: { initialized: true, required_paths: [] },
+        governance_docs: [],
+        governed_artifacts: [{ path: '.playbook/plan.json', present: false, valid: false, detail: 'Plan artifact is missing.' }],
+        execution_state: [],
+        governance_contract: { passed: true, failures: [], warnings: [] }
+      }
+    });
+
+    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'json', quiet: false, scope: 'bootstrap' });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload).toMatchObject({
+      command: 'status',
+      mode: 'bootstrap',
+      bootstrap: {
+        proof_passed: false,
+        failure_category: 'required_artifacts_missing',
+        highest_priority_next_action: 'pnpm playbook plan --json'
+      }
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('renders bootstrap proof text output in current state / why / what next order', async () => {
+    const { runStatus } = await import('./status.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    collectVerifyReport.mockResolvedValue(makeVerifyReport());
+
+    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'text', quiet: false, scope: 'bootstrap' });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
+    expect(output).toContain('Current state');
+    expect(output).toContain('Why');
+    expect(output).toContain('What next');
+
     logSpy.mockRestore();
   });
 

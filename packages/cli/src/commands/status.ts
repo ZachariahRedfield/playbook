@@ -11,6 +11,7 @@ import {
   buildFleetExecutionReceipt,
   buildFleetUpdatedAdoptionState,
   deriveNextAdoptionQueueFromUpdatedState,
+  buildBootstrapProof,
   buildRepoAdoptionReadiness,
   type FleetAdoptionWorkQueue,
   type FleetCodexExecutionPlan,
@@ -18,7 +19,8 @@ import {
   type FleetExecutionOutcomeInput,
   type FleetExecutionReceipt,
   type FleetUpdatedAdoptionState,
-  type RepoAdoptionReadiness
+  type RepoAdoptionReadiness,
+  type BootstrapProofResult
 } from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,7 +33,7 @@ type StatusOptions = {
   ci: boolean;
   format: 'text' | 'json';
   quiet: boolean;
-  scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated';
+  scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated' | 'bootstrap';
 };
 
 type StatusResult = {
@@ -77,6 +79,15 @@ type StatusReceiptResult = {
   receipt: FleetExecutionReceipt;
 };
 
+
+
+
+type BootstrapScopeResult = {
+  schemaVersion: '1.0';
+  command: 'status';
+  mode: 'bootstrap';
+  bootstrap: BootstrapProofResult;
+};
 
 type StatusUpdatedStateResult = {
   schemaVersion: '1.0';
@@ -307,6 +318,108 @@ const toReceiptStatusResult = (cwd: string): StatusReceiptResult => {
   };
 };
 
+const runRuntimeProof = (): BootstrapProofResult['diagnostics']['runtime'] => {
+  try {
+    const version = process.version;
+    return {
+      available: true,
+      command: `${process.execPath} --version`,
+      version,
+      detail: `Node runtime resolved successfully at ${process.execPath}.`
+    };
+  } catch (error) {
+    return {
+      available: false,
+      command: `${process.execPath} --version`,
+      version: null,
+      detail: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
+
+const runCliResolutionProof = async (cwd: string): Promise<BootstrapProofResult['diagnostics']['cli_resolution']> => {
+  try {
+    const cliEntry = process.argv[1];
+    if (!cliEntry) {
+      return {
+        resolved: false,
+        command: 'playbook context --json',
+        detail: 'Current CLI entrypoint could not be determined from process arguments.'
+      };
+    }
+
+    const child = await import('node:child_process');
+    const result = child.spawnSync(process.execPath, [cliEntry, 'context', '--json'], {
+      cwd,
+      encoding: 'utf8',
+      env: { ...process.env, PLAYBOOK_BOOTSTRAP_PROOF_CHILD: '1' }
+    });
+
+    if (result.status === 0) {
+      return {
+        resolved: true,
+        command: `${process.execPath} ${cliEntry} context --json`,
+        detail: 'CLI self-resolution check completed successfully.'
+      };
+    }
+
+    const stderr = typeof result.stderr === 'string' && result.stderr.trim().length > 0 ? result.stderr.trim() : 'Unknown CLI resolution failure.';
+    return {
+      resolved: false,
+      command: `${process.execPath} ${cliEntry} context --json`,
+      detail: stderr
+    };
+  } catch (error) {
+    return {
+      resolved: false,
+      command: 'playbook context --json',
+      detail: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
+
+const toBootstrapStatusResult = async (cwd: string): Promise<{ result: BootstrapScopeResult; exitCode: ExitCode }> => {
+  const verify = await collectVerifyReport(cwd);
+  const runtime = runRuntimeProof();
+  const cliResolution = await runCliResolutionProof(cwd);
+  const bootstrap = buildBootstrapProof({
+    repoRoot: cwd,
+    runtime,
+    cliResolution,
+    governanceContract: {
+      passed: verify.ok,
+      failures: verify.failures.map((failure) => ({ id: failure.id, message: failure.message })),
+      warnings: verify.warnings.map((warning) => ({ id: warning.id, message: warning.message }))
+    }
+  });
+
+  return {
+    exitCode: bootstrap.proof_passed ? ExitCode.Success : ExitCode.Failure,
+    result: {
+      schemaVersion: '1.0',
+      command: 'status',
+      mode: 'bootstrap',
+      bootstrap
+    }
+  };
+};
+
+const printBootstrapHuman = (bootstrap: BootstrapProofResult): void => {
+  console.log('Current state');
+  console.log(`  ${bootstrap.current_state}`);
+  console.log('');
+  console.log('Why');
+  console.log(`  ${bootstrap.why}`);
+  console.log('');
+  console.log('What next');
+  console.log(`  ${bootstrap.what_next}`);
+  console.log('');
+  console.log('Checks');
+  for (const check of bootstrap.checks) {
+    console.log(`  - [${check.status.toUpperCase()}] ${check.stage}: ${check.summary}`);
+  }
+};
+
 const toUpdatedStateStatusResult = (cwd: string): { result: StatusUpdatedStateResult; exitCode: ExitCode } => {
   const { fleet, queue, executionPlan, receipt } = computeReceipt(cwd);
   const updatedState = buildFleetUpdatedAdoptionState(executionPlan, queue, fleet, receipt);
@@ -442,6 +555,16 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
         console.log(`Drift: ${receiptResult.receipt.verification_summary.mismatch_count}`);
       }
       return ExitCode.Success;
+    }
+
+    if (options.scope === 'bootstrap') {
+      const { result: bootstrapResult, exitCode } = await toBootstrapStatusResult(cwd);
+      if (options.format === 'json') {
+        console.log(JSON.stringify(bootstrapResult, null, 2));
+      } else {
+        printBootstrapHuman(bootstrapResult.bootstrap);
+      }
+      return exitCode;
     }
 
     if (options.scope === 'updated') {
