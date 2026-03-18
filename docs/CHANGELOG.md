@@ -27,6 +27,8 @@
 
 ## Unreleased
 
+- WHAT: Updated the north-star roadmap and architecture doctrine to add a planned `Repo-Scoped Stories / Backlog System` as a future Playbook-native planning layer between detection and execution, including the canonical `Detection -> Story -> Plan -> Execution -> Receipt` framing, a proposed minimum Story model, and explicit non-goals to prevent Jira-clone drift. WHY: Playbook already detects findings and now has stronger execution/readiness foundations, but it still needs a durable repo-scoped interpretation layer so raw findings and human ideas can become structured action units without collapsing stories, plans, workers, and receipts into one artifact.
+
 - WHAT: Hardened the shared staged-artifact workflow with rollback-safe promotion, clearer failure reporting, and cleanup guarantees; converted `scripts/sync-templates.mjs` and the legacy managed-docs updater onto the staged pipeline; and replaced contract snapshot refresh's Vitest/Vite execution path with a built-CLI generator that validates schemas before promotion. WHY: This removes the remaining direct-write fragility in touched artifact writers and makes snapshot refresh deterministic without depending on optional `@esbuild/linux-x64` installation shape.
 - Rule: Generated artifacts must be produced in staging and promoted only after validation succeeds.
 - Pattern: Shared staged-artifact orchestration should provide generation isolation, candidate validation, and gated promotion.

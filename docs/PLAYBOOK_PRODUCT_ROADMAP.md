@@ -513,15 +513,16 @@ Failure Mode: Roadmap inflation from treating platform direction as near-term co
 3. control plane (policy, approvals, mutation scopes, adapter boundaries, export rules)
 4. PR review loop hardening (session/evidence-attached review intelligence + policy-gated actioning)
 5. longitudinal learning / knowledge persistence / promotion layers
-6. automation synthesis consuming governed/promoted knowledge
-7. outcome feedback / automation runtime learning
-8. broader execution orchestration hardening
-9. multi-repo transfer (explicit promotion only)
-10. governed interface/API surfaces for multi-repo control planes
-11. workspace/tenant governance + optional hosted deployment model
-12. packaging/SKU architecture (Open Core -> Team -> Enterprise)
-13. broader interface surfaces
-14. capability / model routing
+6. repo-scoped Stories / Backlog system (durable interpretation layer between detection and execution)
+7. automation synthesis consuming governed/promoted knowledge
+8. outcome feedback / automation runtime learning
+9. broader execution orchestration hardening
+10. multi-repo transfer (explicit promotion only)
+11. governed interface/API surfaces for multi-repo control planes
+12. workspace/tenant governance + optional hosted deployment model
+13. packaging/SKU architecture (Open Core -> Team -> Enterprise)
+14. broader interface surfaces
+15. capability / model routing
 
 This ordering is a dependency recommendation, not an active delivery commitment.
 
@@ -626,7 +627,47 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - after Session + Evidence, Control Plane, and PR Review Loop architecture layers; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 8. Knowledge Query / Inspection Surfaces
+
+#### 8. Repo-Scoped Stories / Backlog System
+
+- **Why this layer exists**
+  - deterministic detection can surface many correct findings, blockers, readiness gaps, architecture issues, and feature opportunities, but those raw outputs are too granular to act as the durable human planning unit.
+  - Playbook needs a repo-native interpretation layer that persists across sessions and execution attempts without collapsing findings, plans, workers, and receipts into one artifact.
+  - the target shape is `Detection -> Story -> Plan -> Execution -> Receipt`, where Story is the durable repo-scoped action unit and Backlog is the per-repo queue/view over those stories.
+- **Already exists today**
+  - Playbook already emits deterministic findings, readiness gaps, execution plans, worker-lane proposals, and execution receipts that can become evidence inputs for future stories.
+  - Observer already provides a repo-scoped read-only surface that can later host backlog visibility without becoming the canonical source of story state.
+- **Partially defined**
+  - current docs distinguish findings, plans, workers, and receipts, but there is not yet a canonical story/backlog artifact or deterministic promotion flow from candidate finding clusters into durable repo work items.
+- **Future MVP scope**
+  - repo-local story storage.
+  - manual story creation for human-originated work.
+  - candidate story derivation from detected findings with grouping, dedupe, and explicit promotion into backlog.
+  - deterministic priority scoring.
+  - backlog list in Observer or equivalent repo UI.
+  - story detail carrying evidence, rationale, acceptance criteria, dependencies, execution lane, and suggested route.
+- **Future evolution**
+  - candidate normalization and dedupe across repeated findings.
+  - dependency-aware story ordering.
+  - generate execution plans from stories.
+  - split stories into PR-sized Codex worker lanes.
+  - tie receipts and observed outcomes back to stories.
+  - optional GitHub issue import/export later, without making external issue systems the canonical source of truth.
+- **Non-goals / guardrails**
+  - do not build a generic PM suite inside Playbook.
+  - do not add sprint planning, assignees, comments, boards, or generic ticket workflow as core scope.
+  - do not automatically promote every finding into a first-class story.
+  - do not collapse Story, Plan, Worker, and Receipt into one artifact.
+- **Execution window**
+  - dependency-ordered after session/evidence, control-plane, observer/readiness, and repo-longitudinal-state hardening so the backlog layer can consume stable deterministic evidence.
+  - planned as a near-future initiative after current hardening/stabilization work, not as the immediate top priority in the current 4-week execution window.
+
+Pattern: Detection -> Story -> Plan -> Execution -> Receipt.
+Pattern: Detection needs durable interpretation.
+Rule: Stories must be structured first, narrative second.
+Failure Mode: Backlog spam from raw findings.
+
+#### 9. Knowledge Query / Inspection Surfaces
 
 - **Already exists today**
   - deterministic read-runtime intelligence surfaces (`index`, `query`, `ask`, `explain`) already establish contract-first inspection behavior for repository intelligence artifacts.
@@ -639,7 +680,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - dependency-ordered after Repo Longitudinal State + Knowledge Promotion and before broader automation synthesis or expanded agent/runtime surfaces.
 
-#### 9. Automation Synthesis (Governed Knowledge Consumption)
+#### 10. Automation Synthesis (Governed Knowledge Consumption)
 
 - **Already exists today**
   - directional architecture/vision language establishes that synthesis remains future-scoped and governance-gated.
@@ -654,7 +695,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - dependency-ordered after Knowledge Query / Inspection Surfaces and before broader orchestration/interface expansion; remains outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 10. Outcome Feedback + Automation Runtime Learning
+#### 11. Outcome Feedback + Automation Runtime Learning
 
 - **Already exists today**
   - directional architecture language already requires runtime monitoring, rollback readiness, and evidence-linked automation trust posture.
@@ -668,7 +709,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - dependency-ordered after Automation Synthesis (Governed Knowledge Consumption) and before broader orchestration/interface expansion; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 11. Governed Cross-Repo Pattern Promotion / Transfer
+#### 12. Governed Cross-Repo Pattern Promotion / Transfer
 
 - **Already exists today**
   - external repository targeting and bounded pilot execution exist today through `--repo` and `playbook pilot --repo <path>`, while repo-local/private-first boundaries remain explicit.
@@ -682,7 +723,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - dependency-ordered after Outcome Feedback + Automation Runtime Learning and before broader interface/platform expansion; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 12. Governed Interface / API Surfaces for Multi-Repo Control Planes
+#### 13. Governed Interface / API Surfaces for Multi-Repo Control Planes
 
 - **Already exists today**
   - CLI-first deterministic runtime contracts and control-plane guardrails establish the base semantics that future server/API wrappers must preserve.
@@ -696,7 +737,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - dependency-ordered after Governed Cross-Repo Pattern Promotion / Transfer and before broader interface packaging; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 13. Workspace / Tenant Governance + Optional Hosted Deployment Model
+#### 14. Workspace / Tenant Governance + Optional Hosted Deployment Model
 
 - **Already exists today**
   - control-plane, session/evidence, and governed interface contracts already establish deterministic runtime and per-repo trust boundaries that this layer must preserve.
@@ -711,7 +752,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - dependency-ordered after Governed Interface / API Surfaces for Multi-Repo Control Planes and before broader interface packaging; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-#### 14. Packaging / SKU Architecture (Open Core -> Team -> Enterprise)
+#### 15. Packaging / SKU Architecture (Open Core -> Team -> Enterprise)
 
 - **Already exists today**
   - open-core CLI-first, offline-capable, private-first deterministic runtime posture and optional hosted-layer language already exist across strategy and architecture docs.
@@ -724,7 +765,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - dependency-ordered after Workspace/Tenant Governance + Optional Hosted Deployment Model; directional/planned unless explicitly promoted in roadmap status.
 
-#### 15. Review + Execution Orchestration
+#### 16. Review + Execution Orchestration
 
 - **Already exists today**
   - reviewed `verify -> plan -> apply -> verify` execution loops, CLI-first execution, and CI-safe remediation workflows are implemented.
@@ -735,7 +776,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - near-term work is limited to current remediation contract hardening; broader orchestration expansion is outside the 4-week plan.
 
-#### 16. Interface Surfaces
+#### 17. Interface Surfaces
 
 - **Already exists today**
   - CLI, JSON command contracts, GitHub/CI formatting surfaces, AI contract/bootstrap artifacts, and demo/docs surfaces are implemented.
@@ -746,7 +787,7 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - outside the current near-term execution window except for current product-truth/documentation packaging work.
 
-#### 17. Capability / Model Routing
+#### 18. Capability / Model Routing
 
 - **Already exists today**
   - deterministic routing is presently command- and contract-driven rather than model-driven; Playbook prefers explicit command surfaces and repository intelligence artifacts over open-ended inference.
