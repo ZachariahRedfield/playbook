@@ -61,6 +61,7 @@ Do not hand-edit entries inside the managed markers.
 | `receipt` | Ingest explicit execution results into receipt, updated-state, and next-queue | canonical | utility | secondary | Later | Current (implemented) | `pnpm playbook receipt ingest execution-results.json --json` |
 | `route` | Classify tasks and emit deterministic proposal-only execution plans for task-specific routing decisions | canonical | repo-intelligence | primary | Later | Current (implemented) | `pnpm playbook route "summarize current repo state" --json` |
 | `architecture` | Verify subsystem registry ownership and architecture mapping integrity | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook architecture verify --json` |
+| `story` | Manage canonical repo-local story backlog state | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook story list --json` |
 | `learn` | Draft deterministic knowledge candidates from local diff and repository intelligence | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 | `memory` | Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook memory events --json` |
 | `improve` | Generate deterministic improvement candidates from memory events and learning-state signals | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook improve --json` |
@@ -549,3 +550,10 @@ Use query surfaces to inspect state:
 - `pnpm playbook patterns generalized --json` returns high-portability read-only/manual-only candidate recommendations (no auto-promotion).
 - `pnpm playbook patterns repo-delta --left <repoId> --right <repoId> --json` reports governed artifact deltas between two repositories.
 - Cross-repo comparison is read-only in this phase: no cross-repo mutation, no automatic doctrine updates, and no non-governed artifact ingestion.
+
+
+- `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
+
+- Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
+- Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
+- Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.

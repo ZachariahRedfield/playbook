@@ -299,6 +299,21 @@ declare module "@zachariahredfield/playbook-engine" {
   export const summarizePortabilityOutcomes: (...args: any[]) => any[];
   export const validateArtifacts: (...args: any[]) => any;
 
+  export type StoryStatus = 'proposed' | 'ready' | 'in_progress' | 'blocked' | 'done' | 'archived';
+  export type StoryRecord = { id: string; repo: string; title: string; type: string; source: string; severity: string; priority: string; confidence: string; status: StoryStatus; evidence: string[]; rationale: string; acceptance_criteria: string[]; dependencies: string[]; execution_lane: string | null; suggested_route: string | null; };
+  export type StoriesArtifact = { schemaVersion: '1.0'; repo: string; stories: StoryRecord[]; };
+  export const STORIES_RELATIVE_PATH: '.playbook/stories.json';
+  export const STORY_TYPES: readonly string[];
+  export const STORY_SEVERITIES: readonly string[];
+  export const STORY_PRIORITIES: readonly string[];
+  export const STORY_CONFIDENCES: readonly string[];
+  export const STORY_STATUSES: readonly StoryStatus[];
+  export const createStoryRecord: (...args: any[]) => StoryRecord;
+  export const readStoriesArtifact: (...args: any[]) => StoriesArtifact;
+  export const validateStoriesArtifact: (...args: any[]) => string[];
+  export const upsertStory: (...args: any[]) => StoriesArtifact;
+  export const updateStoryStatus: (...args: any[]) => StoriesArtifact;
+
   export type ImprovementCandidatesArtifact = any;
   export type ImprovementActionArtifact = any;
   export type ImprovementGovernanceApprovalArtifact = any;

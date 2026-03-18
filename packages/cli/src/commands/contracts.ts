@@ -26,7 +26,8 @@ const memoryArtifactSchemas: RegisteredSchema[] = [
   { id: 'promoted-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
   { id: 'retired-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
   { id: 'memory-replay-result', version: '1.0', path: '.playbook/memory/replay/*.json' },
-  { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json' }
+  { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json' },
+  { id: 'stories-backlog', version: '1.0', path: '.playbook/stories.json' }
 ];
 
 const additiveCommandOutputSchemas: RegisteredSchema[] = [
@@ -50,6 +51,8 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'cycle-history', version: '1.0', path: 'packages/contracts/src/cycle-history.schema.json' },
   { id: 'session-evidence-envelope', version: '1.0', path: 'packages/contracts/src/session-evidence-envelope.schema.json' },
   { id: 'pr-review', version: '1.0', path: 'packages/contracts/src/pr-review.schema.json' },
+  { id: 'story', version: '1.0', path: 'packages/contracts/src/story.schema.json' },
+  { id: 'stories', version: '1.0', path: 'packages/contracts/src/stories.schema.json' },
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
   { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
   { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },

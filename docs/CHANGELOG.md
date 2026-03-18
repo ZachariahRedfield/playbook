@@ -516,3 +516,10 @@
 - Added lane-level worker-ready Codex prompts and tests for parallel docs+cli routing, engine conflict isolation, ambiguous blocking, unsupported prerequisites, and mixed worksets.
 
 - Added deterministic execution receipt / outcome-ingestion support so adoption execution can compare planned vs observed lifecycle transitions and feed retry prioritization.
+
+
+- `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
+
+- Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
+- Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
+- Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.

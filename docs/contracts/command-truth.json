@@ -532,6 +532,18 @@
       "example": "pnpm playbook status --json"
     },
     {
+      "name": "story",
+      "category": "Repository tools",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "primary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook story list --json"
+    },
+    {
       "name": "telemetry",
       "category": "Utility",
       "role": "utility",
@@ -611,6 +623,7 @@
     "route",
     "rules",
     "security",
+    "story",
     "verify",
     "workers"
   ],

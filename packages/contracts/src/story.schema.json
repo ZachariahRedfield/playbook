@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/story.schema.json",
+  "title": "Playbook Story",
+  "description": "Canonical structured story record for repo-scoped backlog state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "repo",
+    "title",
+    "type",
+    "source",
+    "severity",
+    "priority",
+    "confidence",
+    "status",
+    "evidence",
+    "rationale",
+    "acceptance_criteria",
+    "dependencies",
+    "execution_lane",
+    "suggested_route"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "repo": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "type": { "type": "string", "enum": ["bug", "feature", "governance", "maintenance", "research"] },
+    "source": { "type": "string", "minLength": 1 },
+    "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+    "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+    "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+    "status": { "type": "string", "enum": ["proposed", "ready", "in_progress", "blocked", "done", "archived"] },
+    "evidence": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "rationale": { "type": "string" },
+    "acceptance_criteria": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "dependencies": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "execution_lane": { "type": ["string", "null"] },
+    "suggested_route": { "type": ["string", "null"] }
+  }
+}

@@ -2267,3 +2267,10 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Next dependency-ordered step completed: post-receipt reconciliation now writes canonical updated adoption state, and deterministic queue derivation from updated-state now drives retry/replan/review routing without re-reading raw receipts.
 
 - Outcome ingestion + reconciliation is complete, and queue derivation from updated-state is now the canonical next-step driver for adoption execution control flow.
+
+
+- `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
+
+- Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
+- Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
+- Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.

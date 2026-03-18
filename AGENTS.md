@@ -219,6 +219,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook contracts --json`
 - `architecture`: Verify subsystem registry ownership and architecture mapping integrity
   - Example: `pnpm playbook architecture verify --json`
+- `story`: Manage canonical repo-local story backlog state
+  - Example: `pnpm playbook story list --json`
 - `observer`: Manage deterministic local observer registry and read-only local API server
   - Example: `pnpm playbook observer serve --port 4300`
 
@@ -310,6 +312,7 @@ Do not hand-edit entries inside the managed markers.
 | `receipt` | `pnpm playbook receipt ingest execution-results.json --json` |
 | `route` | `pnpm playbook route "summarize current repo state" --json` |
 | `architecture` | `pnpm playbook architecture verify --json` |
+| `story` | `pnpm playbook story list --json` |
 | `learn` | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 | `memory` | `pnpm playbook memory events --json` |
 | `improve` | `pnpm playbook improve --json` |

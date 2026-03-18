@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/stories.schema.json",
+  "title": "Playbook Stories Backlog",
+  "description": "Canonical repo-local backlog envelope for durable story state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "repo", "stories"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "repo": { "type": "string", "minLength": 1 },
+    "stories": {
+      "type": "array",
+      "items": { "$ref": "https://playbook.dev/schemas/story.schema.json" }
+    }
+  }
+}

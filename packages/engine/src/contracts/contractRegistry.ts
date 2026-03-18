@@ -89,7 +89,8 @@ const runtimeDefaults: RuntimeDefaultArtifact[] = [
   { path: '.playbook/pr-review.json', producer: 'review-pr' },
   { path: '.playbook/session.json', producer: 'session' },
   { path: '.playbook/repo-graph.json', producer: 'index' },
-  { path: '.playbook/repo-index.json', producer: 'index' }
+  { path: '.playbook/repo-index.json', producer: 'index' },
+  { path: '.playbook/stories.json', producer: 'story' }
 ];
 
 const contractArtifacts = ['docs/contracts/ARTIFACT_EVOLUTION_POLICY.md', 'docs/contracts/COMMAND_CONTRACTS_V1.md'] as const;

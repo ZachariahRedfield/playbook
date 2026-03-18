@@ -63,6 +63,10 @@
       {
         "path": ".playbook/repo-index.json",
         "producer": "index"
+      },
+      {
+        "path": ".playbook/stories.json",
+        "producer": "story"
       }
     ],
     "contracts": [
@@ -132,6 +136,11 @@
         "id": "knowledge-candidate-output",
         "version": "1.0",
         "path": ".playbook/knowledge/candidates.json"
+      },
+      {
+        "id": "stories-backlog",
+        "version": "1.0",
+        "path": ".playbook/stories.json"
       }
     ],
     "commandOutputs": [
@@ -234,6 +243,16 @@
         "id": "pr-review",
         "version": "1.0",
         "path": "packages/contracts/src/pr-review.schema.json"
+      },
+      {
+        "id": "story",
+        "version": "1.0",
+        "path": "packages/contracts/src/story.schema.json"
+      },
+      {
+        "id": "stories",
+        "version": "1.0",
+        "path": "packages/contracts/src/stories.schema.json"
       },
       {
         "id": "explain.memoryKnowledge",
