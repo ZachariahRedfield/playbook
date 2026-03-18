@@ -134,6 +134,17 @@ Default data posture:
 
 No control-plane decision should imply automatic cross-repo memory transfer or implicit external publication.
 
+## Workflow-produced artifact promotion
+
+Higher-level workflow outputs that materialize durable repo-visible state must follow the same safety boundary as lower-level generated artifacts.
+
+Rule: Higher-level workflow outputs must use staged generation and gated promotion when they produce durable repo-visible artifacts.
+Pattern: Treat workflow outputs like governed candidate artifacts, not direct writes.
+Pattern: Generate candidate workflow outputs in isolated staging, validate deterministically, then promote only approved outputs.
+Failure Mode: Multi-step workflow outputs that bypass staged promotion create unsafe partial state and weaken deterministic repo governance.
+
+This applies to workflow receipts, updated-state projections, demo sync/apply writebacks, observer/export outputs, and any cross-repo planning artifacts that may become committed state.
+
 ## Fail-closed enforcement model
 
 Execution must fail closed when:

@@ -23,6 +23,7 @@ import {
   type RepoAdoptionReadiness
 } from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import type { AnalyzeReport } from './analyze.js';
 import type { VerifyReport } from './verify.js';
@@ -76,12 +77,23 @@ type StatusReceiptResult = {
   receipt: FleetExecutionReceipt;
 };
 
+
+type WorkflowPromotionStatus = {
+  staged_generation: true;
+  staged_artifact_path: string;
+  validation_passed: boolean;
+  promoted: boolean;
+  committed_state_preserved: boolean;
+  blocked_reason: string | null;
+};
+
 type StatusUpdatedStateResult = {
   schemaVersion: '1.0';
   command: 'status';
   mode: 'updated';
   updated_state: FleetUpdatedAdoptionState;
   next_queue: FleetAdoptionWorkQueue;
+  promotion: WorkflowPromotionStatus;
 };
 
 type ObserverRegistry = {
@@ -102,6 +114,7 @@ type TopIssue = {
 
 export const EXECUTION_OUTCOME_INPUT_RELATIVE_PATH = path.join('.playbook', 'execution-outcome-input.json');
 const UPDATED_STATE_RELATIVE_PATH = path.join('.playbook', 'execution-updated-state.json');
+const UPDATED_STATE_STAGING_RELATIVE_PATH = path.join('.playbook', 'staged', 'workflow-status-updated', 'execution-updated-state.json');
 
 export const readExecutionOutcomeInput = (cwd: string): FleetExecutionOutcomeInput => {
   const targetPath = path.join(cwd, EXECUTION_OUTCOME_INPUT_RELATIVE_PATH);
@@ -238,6 +251,76 @@ export const toExecutionStatusResult = (cwd: string): StatusExecutionResult => {
 };
 
 export const computeReceipt = (cwd: string): { fleet: FleetAdoptionReadinessSummary; queue: FleetAdoptionWorkQueue; executionPlan: FleetCodexExecutionPlan; receipt: FleetExecutionReceipt } => {
+
+const stableStringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}
+`;
+
+const validateUpdatedStateArtifact = (updatedState: FleetUpdatedAdoptionState, nextQueue: FleetAdoptionWorkQueue): string[] => {
+  const errors: string[] = [];
+  if (updatedState.schemaVersion !== '1.0') errors.push('schemaVersion must be 1.0');
+  if (updatedState.kind !== 'fleet-adoption-updated-state') errors.push('kind must be fleet-adoption-updated-state');
+  if (!Array.isArray(updatedState.repos)) errors.push('repos must be an array');
+  if (!updatedState.summary || typeof updatedState.summary !== 'object') errors.push('summary must be present');
+  if (nextQueue.queue_source !== 'updated_state') errors.push('next queue must be derived from updated_state');
+  if (Array.isArray(updatedState.repos) && updatedState.summary?.repos_total !== updatedState.repos.length) {
+    errors.push('summary.repos_total must match repos length');
+  }
+  return errors;
+};
+
+const promoteWorkflowArtifact = (stagedPath: string, destinationPath: string): void => {
+  fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+  const backupRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-promotion-'));
+  const backupPath = path.join(backupRoot, 'artifact-backup.json');
+  const destinationExisted = fs.existsSync(destinationPath);
+  try {
+    if (destinationExisted) {
+      fs.copyFileSync(destinationPath, backupPath);
+    }
+    fs.copyFileSync(stagedPath, destinationPath);
+  } catch (error) {
+    if (destinationExisted && fs.existsSync(backupPath)) {
+      fs.copyFileSync(backupPath, destinationPath);
+    } else {
+      fs.rmSync(destinationPath, { force: true });
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`failed promoting staged workflow artifact; committed state restored. ${message}`);
+  } finally {
+    fs.rmSync(backupRoot, { recursive: true, force: true });
+  }
+};
+
+const stageAndPromoteUpdatedStateArtifact = (cwd: string, updatedState: FleetUpdatedAdoptionState, nextQueue: FleetAdoptionWorkQueue): WorkflowPromotionStatus => {
+  const stagedPath = path.join(cwd, UPDATED_STATE_STAGING_RELATIVE_PATH);
+  const destinationPath = path.join(cwd, UPDATED_STATE_RELATIVE_PATH);
+  fs.mkdirSync(path.dirname(stagedPath), { recursive: true });
+  fs.writeFileSync(stagedPath, stableStringify(updatedState), 'utf8');
+
+  const validationErrors = validateUpdatedStateArtifact(updatedState, nextQueue);
+  if (validationErrors.length > 0) {
+    return {
+      staged_generation: true,
+      staged_artifact_path: UPDATED_STATE_STAGING_RELATIVE_PATH,
+      validation_passed: false,
+      promoted: false,
+      committed_state_preserved: true,
+      blocked_reason: validationErrors.join('; ')
+    };
+  }
+
+  promoteWorkflowArtifact(stagedPath, destinationPath);
+  return {
+    staged_generation: true,
+    staged_artifact_path: UPDATED_STATE_STAGING_RELATIVE_PATH,
+    validation_passed: true,
+    promoted: true,
+    committed_state_preserved: true,
+    blocked_reason: null
+  };
+};
+
+const computeReceipt = (cwd: string): { fleet: FleetAdoptionReadinessSummary; queue: FleetAdoptionWorkQueue; executionPlan: FleetCodexExecutionPlan; receipt: FleetExecutionReceipt } => {
   const fleet = toFleetStatusResult(cwd).fleet;
   const queue = buildFleetAdoptionWorkQueue(fleet);
   const executionPlan = buildFleetCodexExecutionPlan(queue);
@@ -255,17 +338,21 @@ const toReceiptStatusResult = (cwd: string): StatusReceiptResult => {
   };
 };
 
-const toUpdatedStateStatusResult = (cwd: string): StatusUpdatedStateResult => {
+const toUpdatedStateStatusResult = (cwd: string): { result: StatusUpdatedStateResult; exitCode: ExitCode } => {
   const { fleet, queue, executionPlan, receipt } = computeReceipt(cwd);
   const updatedState = buildFleetUpdatedAdoptionState(executionPlan, queue, fleet, receipt);
-  fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, UPDATED_STATE_RELATIVE_PATH), JSON.stringify(updatedState, null, 2));
+  const nextQueue = deriveNextAdoptionQueueFromUpdatedState(updatedState);
+  const promotion = stageAndPromoteUpdatedStateArtifact(cwd, updatedState, nextQueue);
   return {
-    schemaVersion: '1.0',
-    command: 'status',
-    mode: 'updated',
-    updated_state: updatedState,
-    next_queue: deriveNextAdoptionQueueFromUpdatedState(updatedState)
+    exitCode: promotion.promoted ? ExitCode.Success : ExitCode.Failure,
+    result: {
+      schemaVersion: '1.0',
+      command: 'status',
+      mode: 'updated',
+      updated_state: updatedState,
+      next_queue: nextQueue,
+      promotion
+    }
   };
 };
 
@@ -389,7 +476,7 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
     }
 
     if (options.scope === 'updated') {
-      const updatedResult = toUpdatedStateStatusResult(cwd);
+      const { result: updatedResult, exitCode } = toUpdatedStateStatusResult(cwd);
       if (options.format === 'json') {
         console.log(JSON.stringify(updatedResult, null, 2));
       } else {
@@ -401,8 +488,10 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
         console.log(`Needs replan: ${updatedResult.updated_state.summary.repos_needing_replan.length}`);
         console.log(`Needs review: ${updatedResult.updated_state.summary.repos_needing_review.length}`);
         console.log(`Next queue items: ${updatedResult.next_queue.work_items.length}`);
+        console.log(`Promotion: ${updatedResult.promotion.promoted ? 'promoted' : `blocked (${updatedResult.promotion.blocked_reason ?? 'validation failed'})`}`);
+        console.log(`Staged artifact: ${updatedResult.promotion.staged_artifact_path}`);
       }
-      return ExitCode.Success;
+      return exitCode;
     }
 
     const { result, exitCode, topIssue, repoRoot } = await toStatusResult(cwd);
