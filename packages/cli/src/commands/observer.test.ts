@@ -525,7 +525,9 @@ describe('observer server', () => {
     expect(uiScriptText).toContain("document.getElementById('storyDetailPanel')");
     expect(uiScriptText).toContain('const loadBacklog = async () =>');
     expect(uiScriptText).toContain('const loadStoryDetail = async () =>');
-    expect(uiScriptText).toContain('canonical story artifact only');
+    expect(uiScriptText).toContain('/backlog');
+    expect(uiScriptText).toContain('/backlog/stories/');
+    expect(uiScriptText).toContain('.playbook/stories.json');
     expect(uiScriptText).toContain('summary-strip');
     expect(uiScriptText).toContain('summary-pill');
     expect(uiScriptText).toContain('narrative-secondary');
