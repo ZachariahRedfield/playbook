@@ -543,7 +543,7 @@ describe('runStatus', () => {
   });
 
 
-  it('supports proof scope with stable json output', async () => {
+  it('supports proof scope with additive-safe json output', async () => {
     const { runStatus } = await import('./status.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -583,16 +583,36 @@ describe('runStatus', () => {
     expect(exitCode).toBe(ExitCode.Failure);
 
     const payload = JSON.parse(logSpy.mock.calls.map((call) => String(call[0])).join('\n'));
-    expect(payload).toEqual({
+    expect(payload).toMatchObject({
       schemaVersion: '1.0',
       command: 'status',
       mode: 'proof',
-      proof: expect.objectContaining({
+      proof: {
         ok: false,
         current_state: 'docs_blocked',
-        diagnostics: expect.objectContaining({ failing_stage: 'docs', failing_category: 'required_docs_missing' })
-      })
+        diagnostics: { failing_stage: 'docs', failing_category: 'required_docs_missing' }
+      },
+      interpretation: {
+        pattern: 'interpretation-layer',
+        progressive_disclosure: {
+          default_view: {
+            state: 'docs_blocked',
+            why: 'Bootstrap docs are missing. missing required bootstrap doc: docs/ARCHITECTURE.md',
+            next_step: {
+              command: 'Run `pnpm playbook init`.',
+              priority: 'primary'
+            }
+          },
+          secondary_view: {
+            blockers: ['Failing stage: docs', 'Failing category: required_docs_missing']
+          }
+        }
+      }
     });
+    expect(payload.interpretation.progressive_disclosure.deep_view.raw_truth_refs).toEqual(
+      expect.arrayContaining(['proof.summary', 'proof.diagnostics'])
+    );
+    expect(payload.proof.summary.what_next).toBe('Run `pnpm playbook init`.');
 
     logSpy.mockRestore();
   });

@@ -271,6 +271,21 @@ Stages are evaluated in order:
 6. `execution-state`: `.playbook/policy-apply-result.json` and any already-enforced runtime state such as `.playbook/last-run.json` when governance requires it
 7. `governance`: governed `verify` contract checks
 
+
+JSON proof output preserves the canonical `proof` object and may also include additive `interpretation` metadata when Playbook is intentionally exposing the same `state` / `why` / `next_step` narrative layer used by other user-facing status surfaces.
+
+Pattern:
+
+- Interpretation-layer metadata may be additive to raw deterministic truth, but must remain explicitly governed.
+
+Rule:
+
+- JSON automation contracts should distinguish required truth fields from additive interpretation metadata.
+
+Failure Mode:
+
+- Exact deep-equality tests on additive command contracts cause false-negative CI failures after intentional metadata growth.
+
 Failure categories are explicit and machine-readable:
 
 - `runtime_unavailable`
