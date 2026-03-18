@@ -1,0 +1,109 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+export type WorkflowPromotion = {
+  schemaVersion: '1.0';
+  kind: 'workflow-promotion';
+  workflow_kind: string;
+  staged_generation: true;
+  candidate_artifact_path: string;
+  staged_artifact_path: string;
+  committed_target_path: string;
+  validation_status: 'passed' | 'blocked';
+  validation_passed: boolean;
+  promotion_status: 'promoted' | 'blocked';
+  promoted: boolean;
+  committed_state_preserved: boolean;
+  blocked_reason: string | null;
+  error_summary: string | null;
+  generated_at: string;
+  summary: string;
+};
+
+const stableStringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
+
+const promoteWorkflowArtifact = (stagedPath: string, destinationPath: string): void => {
+  fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+  const backupRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-promotion-'));
+  const backupPath = path.join(backupRoot, 'artifact-backup.json');
+  const destinationExisted = fs.existsSync(destinationPath);
+  try {
+    if (destinationExisted) {
+      fs.copyFileSync(destinationPath, backupPath);
+    }
+    fs.copyFileSync(stagedPath, destinationPath);
+  } catch (error) {
+    if (destinationExisted && fs.existsSync(backupPath)) {
+      fs.copyFileSync(backupPath, destinationPath);
+    } else {
+      fs.rmSync(destinationPath, { force: true });
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`failed promoting staged workflow artifact; committed state restored. ${message}`);
+  } finally {
+    fs.rmSync(backupRoot, { recursive: true, force: true });
+  }
+};
+
+type StageWorkflowArtifactInput = {
+  cwd: string;
+  workflowKind: string;
+  candidateRelativePath: string;
+  committedRelativePath: string;
+  artifact: unknown;
+  validate: () => string[];
+  generatedAt?: string;
+  successSummary: string;
+  blockedSummary?: string;
+};
+
+export const stageWorkflowArtifact = (input: StageWorkflowArtifactInput): WorkflowPromotion => {
+  const stagedPath = path.join(input.cwd, input.candidateRelativePath);
+  const committedPath = path.join(input.cwd, input.committedRelativePath);
+
+  fs.mkdirSync(path.dirname(stagedPath), { recursive: true });
+  fs.writeFileSync(stagedPath, stableStringify(input.artifact), 'utf8');
+
+  const validationErrors = input.validate();
+  if (validationErrors.length > 0) {
+    const blockedReason = validationErrors.join('; ');
+    return {
+      schemaVersion: '1.0',
+      kind: 'workflow-promotion',
+      workflow_kind: input.workflowKind,
+      staged_generation: true,
+      candidate_artifact_path: input.candidateRelativePath,
+      staged_artifact_path: input.candidateRelativePath,
+      committed_target_path: input.committedRelativePath,
+      validation_status: 'blocked',
+      validation_passed: false,
+      promotion_status: 'blocked',
+      promoted: false,
+      committed_state_preserved: true,
+      blocked_reason: blockedReason,
+      error_summary: blockedReason,
+      generated_at: input.generatedAt ?? new Date(0).toISOString(),
+      summary: input.blockedSummary ?? `Staged ${input.workflowKind} candidate blocked before promotion.`
+    };
+  }
+
+  promoteWorkflowArtifact(stagedPath, committedPath);
+  return {
+    schemaVersion: '1.0',
+    kind: 'workflow-promotion',
+    workflow_kind: input.workflowKind,
+    staged_generation: true,
+    candidate_artifact_path: input.candidateRelativePath,
+    staged_artifact_path: input.candidateRelativePath,
+    committed_target_path: input.committedRelativePath,
+    validation_status: 'passed',
+    validation_passed: true,
+    promotion_status: 'promoted',
+    promoted: true,
+    committed_state_preserved: true,
+    blocked_reason: null,
+    error_summary: null,
+    generated_at: input.generatedAt ?? new Date(0).toISOString(),
+    summary: input.successSummary
+  };
+};

@@ -429,9 +429,15 @@ describe('runStatus', () => {
     expect(payload.updated_state.kind).toBe('fleet-adoption-updated-state');
     expect(payload.next_queue.queue_source).toBe('updated_state');
     expect(payload.promotion).toMatchObject({
+      kind: 'workflow-promotion',
+      workflow_kind: 'status-updated',
       staged_generation: true,
+      candidate_artifact_path: '.playbook/staged/workflow-status-updated/execution-updated-state.json',
       staged_artifact_path: '.playbook/staged/workflow-status-updated/execution-updated-state.json',
+      committed_target_path: '.playbook/execution-updated-state.json',
+      validation_status: 'passed',
       validation_passed: true,
+      promotion_status: 'promoted',
       promoted: true,
       committed_state_preserved: true,
       blocked_reason: null
@@ -500,7 +506,9 @@ describe('runStatus', () => {
     expect(exitCode).toBe(ExitCode.Failure);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.promotion.promoted).toBe(false);
+    expect(payload.promotion.promotion_status).toBe('blocked');
     expect(payload.promotion.validation_passed).toBe(false);
+    expect(payload.promotion.validation_status).toBe('blocked');
     expect(payload.promotion.blocked_reason).toContain('summary.repos_total must match repos length');
     expect(JSON.parse(fs.readFileSync(committedPath, 'utf8'))).toEqual({ kind: 'prior-updated-state', preserved: true });
     const stagedPath = path.join(cwd, '.playbook', 'staged', 'workflow-status-updated', 'execution-updated-state.json');

@@ -163,8 +163,11 @@ Artifact-producing pipelines in this repository follow one sequencing rule: gene
 Implementation note: shared staging helpers live in `scripts/staged-artifact-workflow.mjs` and are used by managed docs refresh, contract snapshot refresh, template sync, and fallback release asset packaging so sequencing logic stays consistent across pipelines.
 
 - Rule: Generated artifacts must be produced in staging and promoted only after validation succeeds.
+- Rule: Durable workflow outputs must expose normalized staged-promotion metadata when they write repo-visible state.
 - Pattern: Shared staged-artifact orchestration should provide generation isolation, candidate validation, and gated promotion.
+- Pattern: Reuse one shared workflow promotion contract instead of command-local promotion result shapes.
 - Failure Mode: Environment-sensitive generation paths and direct committed-output writes undermine deterministic artifact governance.
+- Failure Mode: Ad hoc workflow promotion metadata fragments governance semantics and makes Observer/orchestration reasoning inconsistent.
 - Snapshot refresh invariant: `node scripts/update-contract-snapshots.mjs` now refreshes snapshots through a built-CLI generator path that avoids Vitest/Vite/esbuild optional-native resolution; the only prerequisite is a current local build (`pnpm -r build`).
 
 ## Product-state anchoring rule

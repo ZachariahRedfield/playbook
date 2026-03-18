@@ -21,10 +21,11 @@ import {
   type RepoAdoptionReadiness
 } from '@zachariahredfield/playbook-engine';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import type { AnalyzeReport } from './analyze.js';
 import type { VerifyReport } from './verify.js';
+import { stageWorkflowArtifact } from '../lib/workflowPromotion.js';
+import type { WorkflowPromotion } from '../lib/workflowPromotion.js';
 
 type StatusOptions = {
   ci: boolean;
@@ -77,22 +78,13 @@ type StatusReceiptResult = {
 };
 
 
-type WorkflowPromotionStatus = {
-  staged_generation: true;
-  staged_artifact_path: string;
-  validation_passed: boolean;
-  promoted: boolean;
-  committed_state_preserved: boolean;
-  blocked_reason: string | null;
-};
-
 type StatusUpdatedStateResult = {
   schemaVersion: '1.0';
   command: 'status';
   mode: 'updated';
   updated_state: FleetUpdatedAdoptionState;
   next_queue: FleetAdoptionWorkQueue;
-  promotion: WorkflowPromotionStatus;
+  promotion: WorkflowPromotion;
 };
 
 type ObserverRegistry = {
@@ -253,9 +245,6 @@ const toExecutionStatusResult = (cwd: string): StatusExecutionResult => {
 };
 
 
-const stableStringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}
-`;
-
 const validateUpdatedStateArtifact = (updatedState: FleetUpdatedAdoptionState, nextQueue: FleetAdoptionWorkQueue): string[] => {
   const errors: string[] = [];
   if (updatedState.schemaVersion !== '1.0') errors.push('schemaVersion must be 1.0');
@@ -269,57 +258,18 @@ const validateUpdatedStateArtifact = (updatedState: FleetUpdatedAdoptionState, n
   return errors;
 };
 
-const promoteWorkflowArtifact = (stagedPath: string, destinationPath: string): void => {
-  fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
-  const backupRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-workflow-promotion-'));
-  const backupPath = path.join(backupRoot, 'artifact-backup.json');
-  const destinationExisted = fs.existsSync(destinationPath);
-  try {
-    if (destinationExisted) {
-      fs.copyFileSync(destinationPath, backupPath);
-    }
-    fs.copyFileSync(stagedPath, destinationPath);
-  } catch (error) {
-    if (destinationExisted && fs.existsSync(backupPath)) {
-      fs.copyFileSync(backupPath, destinationPath);
-    } else {
-      fs.rmSync(destinationPath, { force: true });
-    }
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`failed promoting staged workflow artifact; committed state restored. ${message}`);
-  } finally {
-    fs.rmSync(backupRoot, { recursive: true, force: true });
-  }
-};
-
-const stageAndPromoteUpdatedStateArtifact = (cwd: string, updatedState: FleetUpdatedAdoptionState, nextQueue: FleetAdoptionWorkQueue): WorkflowPromotionStatus => {
-  const stagedPath = path.join(cwd, UPDATED_STATE_STAGING_RELATIVE_PATH);
-  const destinationPath = path.join(cwd, UPDATED_STATE_RELATIVE_PATH);
-  fs.mkdirSync(path.dirname(stagedPath), { recursive: true });
-  fs.writeFileSync(stagedPath, stableStringify(updatedState), 'utf8');
-
-  const validationErrors = validateUpdatedStateArtifact(updatedState, nextQueue);
-  if (validationErrors.length > 0) {
-    return {
-      staged_generation: true,
-      staged_artifact_path: UPDATED_STATE_STAGING_RELATIVE_PATH,
-      validation_passed: false,
-      promoted: false,
-      committed_state_preserved: true,
-      blocked_reason: validationErrors.join('; ')
-    };
-  }
-
-  promoteWorkflowArtifact(stagedPath, destinationPath);
-  return {
-    staged_generation: true,
-    staged_artifact_path: UPDATED_STATE_STAGING_RELATIVE_PATH,
-    validation_passed: true,
-    promoted: true,
-    committed_state_preserved: true,
-    blocked_reason: null
-  };
-};
+const stageAndPromoteUpdatedStateArtifact = (cwd: string, updatedState: FleetUpdatedAdoptionState, nextQueue: FleetAdoptionWorkQueue): WorkflowPromotion =>
+  stageWorkflowArtifact({
+    cwd,
+    workflowKind: 'status-updated',
+    candidateRelativePath: UPDATED_STATE_STAGING_RELATIVE_PATH,
+    committedRelativePath: UPDATED_STATE_RELATIVE_PATH,
+    artifact: updatedState,
+    validate: () => validateUpdatedStateArtifact(updatedState, nextQueue),
+    generatedAt: updatedState.generated_at,
+    successSummary: 'Staged updated-state candidate validated and promoted into committed adoption state.',
+    blockedSummary: 'Staged updated-state candidate blocked; committed adoption state preserved.'
+  });
 
 const computeReceipt = (cwd: string): { fleet: FleetAdoptionReadinessSummary; queue: FleetAdoptionWorkQueue; executionPlan: FleetCodexExecutionPlan; receipt: FleetExecutionReceipt } => {
   const fleet = toFleetStatusResult(cwd).fleet;

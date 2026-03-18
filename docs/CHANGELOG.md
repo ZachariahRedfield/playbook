@@ -173,6 +173,11 @@
 
 # Changelog
 
+- WHAT: Introduced a shared `workflow-promotion` contract/schema for staged workflow writebacks, refactored `pnpm playbook status updated --json` to emit the normalized receipt, and moved `pnpm playbook route --json` onto the same staged candidate -> validation -> promotion flow for `.playbook/execution-plan.json`. WHY: This unifies durable workflow promotion semantics across repo-visible outputs so automation, Observer, and future orchestration surfaces can reason about one deterministic contract instead of command-local metadata fragments.
+- Rule: Durable workflow outputs must expose normalized staged-promotion metadata when they write repo-visible state.
+- Pattern: Reuse one shared workflow promotion contract instead of command-local promotion result shapes.
+- Failure Mode: Ad hoc workflow promotion metadata fragments governance semantics and makes Observer/orchestration reasoning inconsistent.
+
 - WHAT: Moved `pnpm playbook status updated --json` onto a workflow-level staged artifact path that writes `.playbook/staged/workflow-status-updated/execution-updated-state.json`, validates the candidate updated-state before promotion, preserves the committed `.playbook/execution-updated-state.json` on validation failure, and exposes promotion status/blocked semantics directly in the status receipt payload. WHY: This turns a higher-level adoption/execution workflow output into a governed candidate artifact so cross-repo execution state cannot partially overwrite committed control-plane state.
 - Rule: Higher-level workflow outputs must use staged generation and gated promotion when they produce durable repo-visible artifacts.
 - Pattern: Treat workflow outputs like governed candidate artifacts, not direct writes.

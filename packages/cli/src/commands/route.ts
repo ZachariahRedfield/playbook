@@ -13,6 +13,8 @@ import {
 import { ExitCode } from '../lib/cliContract.js';
 import { createCommandQualityTracker } from '../lib/commandQuality.js';
 import { emitCommandFailure, printCommandHelp } from '../lib/commandSurface.js';
+import { stageWorkflowArtifact } from '../lib/workflowPromotion.js';
+import type { WorkflowPromotion } from '../lib/workflowPromotion.js';
 
 type RouteOptions = {
   format: 'text' | 'json';
@@ -29,6 +31,7 @@ type RouteOutput = {
   why: string;
   requiredInputs: string[];
   executionPlan: ExecutionPlanArtifact;
+  promotion: WorkflowPromotion;
   codexPrompt?: string;
 };
 
@@ -58,6 +61,7 @@ const toOutput = (
   task: string,
   decision: RouteDecision,
   executionPlan: ExecutionPlanArtifact,
+  promotion: WorkflowPromotion,
   codexPrompt: string | undefined
 ): RouteOutput => ({
   schemaVersion: '1.0',
@@ -67,6 +71,7 @@ const toOutput = (
   why: decision.why,
   requiredInputs: decision.requiredInputs,
   executionPlan,
+  promotion,
   codexPrompt
 });
 
@@ -184,10 +189,24 @@ export const runRoute = async (cwd: string, commandArgs: string[], options: Rout
   });
 
   const codexPrompt = options.codexPrompt ? compileCodexPrompt(task, decision, executionPlan) : undefined;
-  const output = toOutput(task, decision, executionPlan, codexPrompt);
-
-  fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, EXECUTION_PLAN_PATH), `${JSON.stringify(executionPlan, null, 2)}\n`, 'utf8');
+  const promotion = stageWorkflowArtifact({
+    cwd,
+    workflowKind: 'route-execution-plan',
+    candidateRelativePath: '.playbook/staged/workflow-route/execution-plan.json',
+    committedRelativePath: EXECUTION_PLAN_PATH,
+    artifact: executionPlan,
+    validate: () => {
+      const errors: string[] = [];
+      if (executionPlan.schemaVersion !== '1.0') errors.push('schemaVersion must be 1.0');
+      if (executionPlan.kind !== 'execution-plan') errors.push('kind must be execution-plan');
+      if (!Array.isArray(executionPlan.required_validations)) errors.push('required_validations must be an array');
+      return errors;
+    },
+    generatedAt: executionPlan.generatedAt,
+    successSummary: 'Staged execution-plan candidate validated and promoted into the committed route artifact.',
+    blockedSummary: 'Staged execution-plan candidate blocked; committed route artifact preserved.'
+  });
+  const output = toOutput(task, decision, executionPlan, promotion, codexPrompt);
 
   safeRecordRepositoryEvent(() => {
     recordRouteDecision(cwd, {

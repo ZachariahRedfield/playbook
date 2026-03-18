@@ -141,9 +141,13 @@ Higher-level workflow outputs that materialize durable repo-visible state must f
 Rule: Higher-level workflow outputs must use staged generation and gated promotion when they produce durable repo-visible artifacts.
 Pattern: Treat workflow outputs like governed candidate artifacts, not direct writes.
 Pattern: Generate candidate workflow outputs in isolated staging, validate deterministically, then promote only approved outputs.
+Pattern: Reuse one shared workflow promotion contract instead of command-local promotion result shapes.
 Failure Mode: Multi-step workflow outputs that bypass staged promotion create unsafe partial state and weaken deterministic repo governance.
+Failure Mode: Ad hoc workflow promotion metadata fragments governance semantics and makes Observer/orchestration reasoning inconsistent.
 
-This applies to workflow receipts, updated-state projections, demo sync/apply writebacks, observer/export outputs, and any cross-repo planning artifacts that may become committed state.
+Shared contract: `packages/contracts/src/workflow-promotion.schema.json` defines the normalized staged-promotion receipt for durable workflow outputs.
+
+This applies to workflow receipts, updated-state projections, route/demo/apply writebacks, observer/export outputs, and any cross-repo planning artifacts that may become committed state.
 
 ## Fail-closed enforcement model
 

@@ -16,13 +16,14 @@ pnpm playbook route "update command docs" --codex-prompt
 
 - `--help` is side-effect free and does not write `.playbook/execution-plan.json`.
 - Missing `<task>` emits a deterministic error envelope in `--json` mode.
-- Successful runs always write `.playbook/execution-plan.json` and print a stable route payload.
+- Successful runs always stage, validate, and promote `.playbook/execution-plan.json` and print a stable route payload.
 
 ## Output contract
 
-Routing returns command metadata plus an `executionPlan` payload and writes:
+Routing returns command metadata plus an `executionPlan` payload and a normalized `promotion` receipt. It writes:
 
-- `.playbook/execution-plan.json`
+- staged candidate: `.playbook/staged/workflow-route/execution-plan.json`
+- committed artifact: `.playbook/execution-plan.json`
 
 Execution plan fields include:
 

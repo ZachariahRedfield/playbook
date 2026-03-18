@@ -22,6 +22,7 @@ describe('runContracts', () => {
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('cross-repo-candidates');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('task-execution-profile');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('execution-plan');
+    expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('workflow-promotion');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('outcome-telemetry');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('learning-state');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('improvement-candidates');
@@ -61,6 +62,7 @@ describe('runContracts', () => {
         { id: 'cross-repo-candidates', version: '1.0', path: 'packages/contracts/src/cross-repo-candidates.schema.json' },
         { id: 'task-execution-profile', version: '1.0', path: 'packages/contracts/src/task-execution-profile.schema.json' },
         { id: 'execution-plan', version: '1.0', path: 'packages/contracts/src/execution-plan.schema.json' },
+        { id: 'workflow-promotion', version: '1.0', path: 'packages/contracts/src/workflow-promotion.schema.json' },
         { id: 'workset-plan', version: '1.0', path: 'packages/contracts/src/workset-plan.schema.json' },
         { id: 'outcome-telemetry', version: '1.0', path: 'packages/contracts/src/outcome-telemetry.schema.json' },
         { id: 'learning-state', version: '1.0', path: 'packages/contracts/src/learning-state.schema.json' },

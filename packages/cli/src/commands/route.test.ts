@@ -111,6 +111,15 @@ describe('runRoute', () => {
     expect(payload.selectedRoute).toBe('deterministic_local');
     expect(payload.task).toBe('update command docs');
     expect(payload.executionPlan.kind).toBe('execution-plan');
+    expect(payload.promotion).toMatchObject({
+      kind: 'workflow-promotion',
+      workflow_kind: 'route-execution-plan',
+      candidate_artifact_path: '.playbook/staged/workflow-route/execution-plan.json',
+      committed_target_path: '.playbook/execution-plan.json',
+      validation_status: 'passed',
+      promotion_status: 'promoted',
+      promoted: true
+    });
     expect(payload.codexPrompt).toBe('compiled prompt');
 
     expect(buildExecutionPlan).toHaveBeenCalledWith(
@@ -122,6 +131,7 @@ describe('runRoute', () => {
 
     const persisted = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'execution-plan.json'), 'utf8'));
     expect(persisted.kind).toBe('execution-plan');
+    expect(fs.existsSync(path.join(repo, '.playbook', 'staged', 'workflow-route', 'execution-plan.json'))).toBe(true);
 
     expect(compileCodexPrompt).toHaveBeenCalled();
 

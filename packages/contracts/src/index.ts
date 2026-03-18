@@ -2,6 +2,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   executionPlan: 'packages/contracts/src/execution-plan.schema.json',
   executionReceipt: 'packages/contracts/src/execution-receipt.schema.json',
   executionUpdatedState: 'packages/contracts/src/execution-updated-state.schema.json',
+  workflowPromotion: 'packages/contracts/src/workflow-promotion.schema.json',
   worksetPlan: 'packages/contracts/src/workset-plan.schema.json',
   laneState: 'packages/contracts/src/lane-state.schema.json',
   workerAssignments: 'packages/contracts/src/worker-assignments.schema.json',

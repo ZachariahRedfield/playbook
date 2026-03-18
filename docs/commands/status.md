@@ -9,7 +9,7 @@ Deterministic adoption/readiness summary for governed Playbook usage.
 - `pnpm playbook status queue --json`: deterministic read-only adoption work-queue from fleet readiness.
 - `pnpm playbook status execute --json`: deterministic Codex-ready execution-plan packaging derived from the queue.
 - `pnpm playbook status receipt --json`: canonical planned-vs-actual execution receipt derived from readiness, queue, plan, and ingested execution outcomes.
-- `pnpm playbook status updated --json`: reconciled updated adoption state derived from prior state plus the canonical execution receipt; writes `.playbook/execution-updated-state.json` and returns `next_queue`, which is derived downstream from updated-state only.
+- `pnpm playbook status updated --json`: reconciled updated adoption state derived from prior state plus the canonical execution receipt; writes `.playbook/execution-updated-state.json` through the shared workflow-promotion contract and returns `next_queue`, which is derived downstream from updated-state only.
 
 If no Observer registry exists, fleet mode falls back to the current repository as a single-repo fleet.
 
@@ -194,6 +194,22 @@ Each repo also carries `action_state` booleans:
 
 Summary aggregation keeps observed outcome counts (`by_reconciliation_status`) separate from follow-up routing counts (`action_counts`). In particular, `completed_with_drift` is a successful observed outcome class and does **not** automatically imply retry.
 
+
+
+## Workflow promotion metadata
+
+`status updated --json` now returns a normalized `promotion` receipt using the shared workflow-promotion contract.
+
+Fields include:
+
+- `workflow_kind`: `status-updated`
+- `candidate_artifact_path`: `.playbook/staged/workflow-status-updated/execution-updated-state.json`
+- `committed_target_path`: `.playbook/execution-updated-state.json`
+- `validation_status` / `promotion_status`
+- `blocked_reason` / `error_summary` when promotion is blocked
+- `committed_state_preserved` when prior committed state remains intact
+
+Backward-compatible aliases remain available for existing consumers: `staged_artifact_path`, `validation_passed`, and `promoted`.
 
 ## Updated-state-driven next queue
 

@@ -166,6 +166,11 @@
         "path": "packages/contracts/src/execution-plan.schema.json"
       },
       {
+        "id": "workflow-promotion",
+        "version": "1.0",
+        "path": "packages/contracts/src/workflow-promotion.schema.json"
+      },
+      {
         "id": "workset-plan",
         "version": "1.0",
         "path": "packages/contracts/src/workset-plan.schema.json"
