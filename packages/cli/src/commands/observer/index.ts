@@ -726,6 +726,9 @@ const observerDashboardHtml = (): string => `<!doctype html>
           <div class="card"><h2>Control-Loop Summary</h2><div id="controlLoopSummaryPanel" class="meta">Control-loop summary loads from governed readiness artifacts.</div></div>
           <div id="repoViewPanel">
           <div class="card"><h2 id="repoTitle">Repo Detail</h2><div id="repoDetail" class="meta">Select a repo.</div><button id="removeRepo" style="display:none">Remove repo</button></div>
+          <div class="card"><h3>Backlog Summary</h3><div id="backlogSummaryPanel" class="meta">Backlog summary loads from the canonical story artifact only.</div></div>
+          <div class="card"><h3>Backlog List</h3><div id="backlogListPanel" class="meta">Backlog list loads from .playbook/stories.json.</div></div>
+          <div class="card"><h3>Story Detail</h3><div id="storyDetailPanel" class="meta">Select a story to inspect details.</div></div>
           <div class="card"><h3>System Blueprint</h3><div id="blueprintMeta" class="meta">Select a repo.</div><svg id="blueprintPanel" class="blueprint" viewBox="0 0 980 420" aria-label="System Blueprint"></svg></div>
           <div class="card"><h3>Artifact Detail Viewer</h3><select id="artifactKind"></select><div id="artifactPanel"></div></div>
           </div>

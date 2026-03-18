@@ -217,6 +217,12 @@ describe('observer server', () => {
     expect(reposJson.repo_count).toBe(1);
     expect(reposJson.repos.map((entry) => entry.id)).toEqual(['repo-nested']);
 
+    const uiResponse = await fetch(`http://127.0.0.1:${port}/`);
+    const uiHtml = await uiResponse.text();
+    expect(uiHtml).toContain('Backlog Summary');
+    expect(uiHtml).toContain('Backlog List');
+    expect(uiHtml).toContain('Story Detail');
+
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
     expect(uiScriptText).toContain('No repos connected in');
@@ -248,6 +254,12 @@ describe('observer server', () => {
     const repos = await fetch(`http://127.0.0.1:${port}/repos`);
     const reposJson = await repos.json() as { repos: Array<{ id: string }> };
     expect(reposJson.repos.length).toBeGreaterThan(0);
+
+    const uiResponse = await fetch(`http://127.0.0.1:${port}/`);
+    const uiHtml = await uiResponse.text();
+    expect(uiHtml).toContain('Backlog Summary');
+    expect(uiHtml).toContain('Backlog List');
+    expect(uiHtml).toContain('Story Detail');
 
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
@@ -492,6 +504,12 @@ describe('observer server', () => {
     expect(byId.ready?.cross_repo_eligible).toBe(true);
     expect(typeof byId.ready?.last_artifact_update_time).toBe('string');
 
+    const uiResponse = await fetch(`http://127.0.0.1:${port}/`);
+    const uiHtml = await uiResponse.text();
+    expect(uiHtml).toContain('Backlog Summary');
+    expect(uiHtml).toContain('Backlog List');
+    expect(uiHtml).toContain('Story Detail');
+
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
     expect(uiScriptText).toContain('readiness: ');
@@ -503,6 +521,8 @@ describe('observer server', () => {
     expect(uiScriptText).toContain("document.getElementById('controlLoopSummaryPanel')");
     expect(uiScriptText).toContain('renderControlLoopSummary');
     expect(uiScriptText).toContain("document.getElementById('backlogSummaryPanel')");
+    expect(uiScriptText).toContain("document.getElementById('backlogListPanel')");
+    expect(uiScriptText).toContain("document.getElementById('storyDetailPanel')");
     expect(uiScriptText).toContain('const loadBacklog = async () =>');
     expect(uiScriptText).toContain('const loadStoryDetail = async () =>');
     expect(uiScriptText).toContain('canonical story artifact only');
