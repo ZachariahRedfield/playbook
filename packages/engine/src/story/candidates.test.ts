@@ -6,12 +6,6 @@ import { generateStoryCandidates, promoteStoryCandidate, STORY_CANDIDATES_RELATI
 
 const tempDirs: string[] = [];
 
-const createRepoRoot = (): string => {
-  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-story-'));
-  tempDirs.push(repoRoot);
-  return repoRoot;
-};
-
 const writeJson = (repoRoot: string, relativePath: string, payload: unknown): void => {
   const target = path.join(repoRoot, relativePath);
   fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -24,7 +18,9 @@ afterEach(() => {
 
 describe('story candidates', () => {
   it('derives grouped candidates from deterministic evidence without mutating canonical backlog', () => {
-    const repoRoot = createRepoRoot();
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-story-'));
+    tempDirs.push(repoRoot);
+    fs.mkdirSync(path.join(repoRoot, '.playbook'), { recursive: true });
     expect(typeof repoRoot).toBe('string');
     expect(repoRoot.length).toBeGreaterThan(0);
     const repoName = path.basename(repoRoot);
@@ -75,7 +71,9 @@ describe('story candidates', () => {
   });
 
   it('promotes one candidate explicitly into canonical backlog state', () => {
-    const repoRoot = createRepoRoot();
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-story-'));
+    tempDirs.push(repoRoot);
+    fs.mkdirSync(path.join(repoRoot, '.playbook'), { recursive: true });
     expect(typeof repoRoot).toBe('string');
     expect(repoRoot.length).toBeGreaterThan(0);
     writeJson(repoRoot, '.playbook/repo-index.json', { framework: 'node' });
