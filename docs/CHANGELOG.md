@@ -10,6 +10,13 @@
 
 ### CLI
 
+- WHAT: Removed fallback build bootstrapping from `scripts/prepare-cli-wrapper-runtime.mjs` so wrapper runtime staging is now pure verify+copy and fails deterministically when required `dist` artifacts are missing. WHY: Keeps monorepo `pnpm -r build` deterministic and prevents wrapper packaging from mutating upstream build state.
+- WHAT: Kept cli-wrapper runtime staging packaging-only via `prepack`, retained deterministic no-op `build`, and removed `prepublishOnly` from wrapper lifecycle behavior. WHY: Ensures staging runs only when producing wrapper artifacts while preserving the self-contained tarball contract.
+- WHAT: Regenerated managed architecture diagrams after wrapper dependency-surface cleanup to keep docs and diagram checks aligned. WHY: Prevents CI drift from stale generated architecture output.
+- Failure Mode: Wrapper runtime staging that builds upstream packages creates nondeterministic CI/build-order behavior in parallel monorepo builds.
+- Pattern: Self-contained fallback wrapper runtime should be staged in packaging lifecycle hooks, not workspace build.
+- Rule: Packaging scripts may verify prerequisite build artifacts, but they must not silently bootstrap upstream builds.
+
 - WHAT: Added deterministic Codex execution-plan packaging on top of adoption queue output (`pnpm playbook status execute --json`) with a stable `fleet-adoption-codex-execution-plan` contract (`waves`, `worker_lanes`, `codex_prompts`, `execution_notes`, `blocked_followups`), observer API/UI integration (`GET /api/readiness/execute` + dashboard execution-plan card), and focused determinism/dependency/conflict/governance-note tests. WHY: Converts the adoption queue into copy-paste-ready parallel worker plans while preserving read-only deterministic planning boundaries.
 - WHAT: Canonicalized execution-plan ordering to explicit lifecycle lane priority (`connect` -> `init` -> `index` -> `verify/plan` -> `apply`) with prompt ordering (`wave` -> lane priority -> `repo_id` -> `item_id`) and aligned regression expectations to that contract. WHY: Prevents deterministic-but-misleading lexical ordering (for example `index` before `init`) and eliminates future test/contract drift.
 - Rule: Execution-plan output must remain deterministic and read-only for identical queue inputs.
