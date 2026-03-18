@@ -243,6 +243,8 @@ Do not hand-edit entries inside the managed markers.
 
 ### Utility
 
+- `receipt`: Ingest explicit execution results into receipt, updated-state, and next-queue
+  - Example: `pnpm playbook receipt ingest execution-results.json --json`
 - `learn`: Draft deterministic knowledge candidates from local diff and repository intelligence
   - Example: `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json`
 - `memory`: Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion
@@ -305,6 +307,7 @@ Do not hand-edit entries inside the managed markers.
 | `deps` | `pnpm playbook deps workouts --json` |
 | `ask` | `pnpm playbook ask "where should a new feature live?" --repo-context --json` |
 | `explain` | `pnpm playbook explain architecture --json` |
+| `receipt` | `pnpm playbook receipt ingest execution-results.json --json` |
 | `route` | `pnpm playbook route "summarize current repo state" --json` |
 | `architecture` | `pnpm playbook architecture verify --json` |
 | `learn` | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |

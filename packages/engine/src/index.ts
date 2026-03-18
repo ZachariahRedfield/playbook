@@ -175,6 +175,9 @@ export type { AiContract, LoadedAiContract, AiContractSource } from './ai/aiCont
 export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } from './schema/cliSchemas.js';
 export type { CliSchemaCommand, JsonSchema } from './schema/cliSchemas.js';
 export type { WorkflowPromotion, WorkflowPromotionStatus, WorkflowPromotionValidationStatus } from './schema/workflowPromotion.js';
+
+export { buildExecutionOutcomeInputFromResults, ingestExecutionResults } from './adoption/executionOutcomeIngestion.js';
+export type { ExecutionResult, IngestExecutionResultsOutput } from './adoption/executionOutcomeIngestion.js';
 export { VERTEX_KIND, EDGE_KIND } from './schema/graphMemory.js';
 export { buildGraphSnapshot } from './graph/buildGraphSnapshot.js';
 export { groupDeterministicMemory } from './graph/groupDeterministicMemory.js';

@@ -17,7 +17,6 @@ The repo registry command maintains:
 
 - `<observer-root>/.playbook/observer/repos.json`
 
-
 Observer root resolution is deterministic:
 
 1. explicit `--root <path>`
@@ -63,7 +62,6 @@ Supported `:kind` values:
 - `pr-review`
 - `session`
 - `system-map`
-
 
 ### Fast debug checklist ("where did my repos go?")
 
@@ -173,7 +171,6 @@ Rule: An observer UI must distinguish registration state from actual observabili
 Pattern: Connected repo → readiness detection → artifact observation.
 Failure Mode: If empty repos look the same as fully observed repos, operators will misread what Playbook actually knows.
 
-
 ## System blueprint artifact behavior
 
 Observer never generates a system-map artifact. It only reads `.playbook/system-map.json` if present in a connected repo and exposes it through `/snapshot` and `/repos/:id/artifacts/system-map`.
@@ -206,12 +203,11 @@ Observer now exposes `/api/readiness/receipt`, `/api/readiness/updated-state`, a
 - a `Next Queue (Derived from Updated State)` panel with retry/replan items, wave grouping, and prompt lineage
 - planned vs actual drift
 
-These panels are read-only-friendly: the receipt remains the canonical planned-vs-actual contract, updated state is derived deterministically from current readiness, work queue, execution plan, receipt, and `.playbook/execution-outcome-input.json` when present, and the next queue is then derived from updated state only. Updated state separates what happened from what action is needed next so CLI, Observer, and automation layers do not overload one enum with multiple meanings.
+These panels are read-only-friendly: the receipt remains the canonical planned-vs-actual contract, observed execution outcomes come only from `.playbook/execution-outcome-input.json`, updated state is derived deterministically from the receipt, and the next queue is then derived from updated state only. Updated state separates what happened from what action is needed next so CLI, Observer, and automation layers do not overload one enum with multiple meanings.
 
 - **Rule**: Observer outcome views must stay evidence-backed and must not auto-execute repo commands.
 - **Pattern**: Surface retry/drift summaries next to readiness and queue state so the next prioritization pass stays deterministic.
 - **Failure Mode**: Operators can lose remediation continuity when failed prompts are visible in logs but not reflected in the next queue.
-
 
 Updated-state next-queue routing is deterministic and non-heuristic:
 

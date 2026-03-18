@@ -8,7 +8,7 @@ Deterministic adoption/readiness summary for governed Playbook usage.
 - `pnpm playbook status fleet --json`: fleet-level aggregate readiness summary using connected Observer repos.
 - `pnpm playbook status queue --json`: deterministic read-only adoption work-queue from fleet readiness.
 - `pnpm playbook status execute --json`: deterministic Codex-ready execution-plan packaging derived from the queue.
-- `pnpm playbook status receipt --json`: canonical planned-vs-actual execution receipt derived from readiness, queue, plan, and ingested execution outcomes.
+- `pnpm playbook status receipt --json`: canonical planned-vs-actual execution receipt derived from queue/plan context plus explicit ingested execution outcomes from `.playbook/execution-outcome-input.json`.
 - `pnpm playbook status updated --json`: reconciled updated adoption state derived from prior state plus the canonical execution receipt; writes `.playbook/execution-updated-state.json` through the shared workflow-promotion contract and returns `next_queue`, which is derived downstream from updated-state only.
 
 If no Observer registry exists, fleet mode falls back to the current repository as a single-repo fleet.
@@ -57,7 +57,6 @@ Priority order:
 6. `ready`
 
 Within a priority stage, repos are sorted by blocker severity, then `repo_id` to keep output stable and deterministic.
-
 
 ## Adoption work-queue JSON contract highlights
 
@@ -171,7 +170,7 @@ Governance notes:
 Use the following deterministic chain without inventing a second outcome model:
 
 1. **Execution plan** (`status execute`) is the operator/worker packaging artifact.
-2. **Execution receipt** (`status receipt`) is the canonical planned-vs-actual contract.
+2. **Execution receipt** (`status receipt`) is the canonical planned-vs-actual contract, and its observed outcomes come only from explicit execution ingestion.
 3. **Updated state** (`status updated`) reconciles prior readiness + queue + plan + receipt into the next canonical adoption state.
 
 Updated state separates **observed reconciliation outcome** from **derived next-action metadata**.
@@ -193,8 +192,6 @@ Each repo also carries `action_state` booleans:
 - `needs_review`
 
 Summary aggregation keeps observed outcome counts (`by_reconciliation_status`) separate from follow-up routing counts (`action_counts`). In particular, `completed_with_drift` is a successful observed outcome class and does **not** automatically imply retry.
-
-
 
 ## Workflow promotion metadata
 

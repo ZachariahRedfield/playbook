@@ -16,6 +16,7 @@
 
 - WHAT: Hardened execution updated-state semantics so `reconciliation_status` now represents observed outcome only, while follow-up routing is carried separately in `action_state` / `action_counts` (`needs_retry`, `needs_replan`, `needs_review`). WHY: Prevents control-plane ambiguity where drift, blockage, and retry behavior were being collapsed into one overloaded enum.
 - WHAT: Added deterministic adoption-state reconciliation after execution receipt ingestion, including `fleet-adoption-updated-state`, `.playbook/execution-updated-state.json`, a new `pnpm playbook status updated --json` scope, and Observer receipt-vs-updated-state separation with retry derivation sourced from reconciled state. WHY: Closes the loop from planned execution into canonical post-receipt adoption state without inventing a second outcome model beyond the receipt contract.
+
 ## 2026-03-16 — Docs truth-boundary canonicalization
 
 - WHAT: Formalized `.playbook/pr-review.json` as a governed control-plane artifact emitted by `pnpm playbook review-pr` on every run without changing review logic; added deterministic artifact persistence, schema contract registration (`packages/contracts/src/pr-review.schema.json`), `playbook explain artifact .playbook/pr-review.json` summaries, and session evidence envelope linkage (`pr_review` lineage stage + artifact reference) with focused CLI/contract tests. WHY: Converts previously ephemeral PR review output into an auditable, reusable, explainable control-plane artifact for higher-level automation.
@@ -119,7 +120,6 @@
 - Rule: During infrastructure validation, scanner DB freshness should not hard-block unrelated artifact publication paths.
 - Pattern: Treat external scanner-data freshness as an observable signal, not a mandatory blocker, unless the milestone is security hardening.
 
-
 - WHAT: Reworked `pnpm release:fallback:proof` consumer artifact validation to enforce the real lifecycle (`index -> verify -> plan -> apply`), replacing opaque file-exists checks with deterministic artifact contract diagnostics (`missing_prerequisite_artifact`, `stale_artifact`, `invalid_artifact`) that include artifact path, producer command, remediation text, and severity. WHY: Fixes contract drift where proof required non-existent `.playbook/last-run.json` / `.playbook/findings.json` artifacts and makes downstream remediation actionable.
 
 - WHAT: Hardened `publish-npm` tag reruns to skip `pnpm publish` when the exact package version is already present on npm (`npm view <pkg>@<version>`), then continue to fallback pack/upload steps. WHY: The `v0.1.8` publish run stopped at the first pre-upload blocker (`pnpm publish` version-already-exists), so release fallback tarball upload never executed and proof checks observed a 404 missing asset.
@@ -135,7 +135,6 @@
 - WHAT: Recorded first `v0.1.2` fallback proof outcomes from this branch run: producer proof currently fails with release asset download HTTP 403 (`playbook-cli-0.1.2.tgz` unavailable) and the provided consumer path proof command fails with local path `ENOENT` (`C:\Users\zjhre\dev\fawxzzyFitness` not mounted in this environment). WHY: Makes producer/consumer proof status explicit until the tagged release is published and consumer validation is rerun in an environment with the target repo path.
 
 - WHAT: Added `scripts/release-fallback-proof.mjs` plus `pnpm release:fallback:proof` to validate deterministic GitHub fallback tarball availability and (optionally) execute a consumer-repo fallback smoke ladder (`npm install` -> package miss -> fallback tarball install -> `verify/plan/apply` + artifact assertions), and updated release docs with the canonical `PLAYBOOK_OFFICIAL_FALLBACK_SPEC` pinning contract. WHY: Provides a single deterministic proof workflow that validates real release-asset consumption boundaries between Playbook producer releases and downstream consumer CI.
-
 
 - WHAT: Hardened release distribution so tag publishes now include `@fawxzzy/playbook-cli` and attach a deterministic GitHub release fallback tarball named `playbook-cli-<version>.tgz` (for example `playbook-cli-0.1.2.tgz`) generated from `packages/cli-wrapper`, with an explicit tag/package version parity gate before upload. WHY: Fixes pinned-but-missing fallback artifact failures in downstream CI by ensuring the official fallback URL resolves to a real immutable release asset.
 - WHAT: Upgraded Observer UI blueprint from static map to governed state/activity system view by deriving deterministic node states (`active|available|missing|stale|idle`) from readiness/artifact truth, highlighting runtime/review flow edges, adding selected-node inspection metadata with artifact linkage, and making Playbook self-observation a collapsible secondary panel so blueprint + repo detail remain primary; added focused observer UI tests for node-state rendering hooks, selected-node surfaces, collapsible self panel markup, and missing-artifact blueprint degradation. WHY: Improves operational usability without introducing UI-owned truth or any mutation behavior.
@@ -173,6 +172,7 @@
 
 # Changelog
 
+- WHAT: Added `pnpm playbook receipt ingest <file> --json` plus a deterministic engine ingestion layer that converts explicit execution results into `.playbook/execution-outcome-input.json`, canonical receipt output, reconciled updated-state, and next-queue derived from updated-state only; receipt/observer surfaces now honor explicit observed transitions instead of inferring outcomes from repo state. WHY: Closes the adoption control loop with a single explicit execution-ingestion boundary so repeated ingest input produces the same receipt, updated-state, and downstream queue.
 - WHAT: Introduced a shared `workflow-promotion` contract/schema for staged workflow writebacks, refactored `pnpm playbook status updated --json` to emit the normalized receipt, and moved `pnpm playbook route --json` onto the same staged candidate -> validation -> promotion flow for `.playbook/execution-plan.json`. WHY: This unifies durable workflow promotion semantics across repo-visible outputs so automation, Observer, and future orchestration surfaces can reason about one deterministic contract instead of command-local metadata fragments.
 - Rule: Durable workflow outputs must expose normalized staged-promotion metadata when they write repo-visible state.
 - Pattern: Reuse one shared workflow promotion contract instead of command-local promotion result shapes.
@@ -193,6 +193,7 @@
 - Added deterministic doctrine promotion generation for governed knowledge lifecycle transitions (`candidate`, `compacted`, `promoted`, `retired`) with persisted artifacts at `.playbook/knowledge-candidates.json` and `.playbook/knowledge-promotions.json`.
 - Wired doctrine lifecycle visibility into `playbook improve` output while keeping promotions recommendation-first and governance-gated.
 - Added engine tests for candidate creation, promotion transitions, insufficient evidence handling, retirement proposals, and governance-gated promotions.
+
 ### Added
 
 - WHAT: Extended `playbook explain artifact` to recognize `.playbook/cycle-state.json` as a first-class explainable artifact (via the existing artifact introspection path), surfacing cycle metadata, ordered step outcomes/durations, `artifacts_written`, and optional `failed_step` in JSON/text output with deterministic tests for success/failure variants. WHY: Keeps runtime orchestration outcomes interpretable through the same explain surfaces used for architecture and subsystem intelligence, avoiding opaque cycle logs for operators and automation.
@@ -224,7 +225,6 @@
 - feat(architecture): introduce subsystem registry and architecture verification
   - WHAT: Add `.playbook/architecture/subsystems.json` as the canonical subsystem registry plus `playbook architecture verify` to validate artifact ownership and command mapping deterministically.
   - WHY: Make Playbook architecture machine-readable and enforceable to prevent artifact ownership drift.
-
 
 - WHAT: Implemented the Phase 9 worker assignment slice with additive `worker-assignments` contract/schema (`packages/contracts/src/worker-assignments.schema.json`), deterministic `assignWorkersToLanes(laneState)` engine logic, and new `pnpm playbook workers` / `pnpm playbook workers assign` CLI surfaces that write `.playbook/worker-assignments.json` plus `.playbook/prompts/<lane_id>.md` for ready lanes only. WHY: Adds dependency-aware, proposal-only worker handoff infrastructure while preserving blocked lanes, deterministic ordering, and no worker/branch/PR automation.
 
@@ -410,7 +410,6 @@
 - WHAT: Verify diff-base selection falls back to `HEAD~1` when `merge-base(main, HEAD) == HEAD`. WHY: Prevents empty diffs after commits on `main`, so the notes-on-changes gate still evaluates real changes.
 - WHAT: Smoke testing validates the built CLI (`packages/cli/dist/main.js`) and exercises `init` + `verify` behavior. WHY: Confirms shipped CLI behavior end-to-end, not only typechecks/unit tests.
 
-
 ### Added
 
 - WHAT: Extended `playbook knowledge portability` into deterministic inspection views for recommendations, outcomes, and confidence recalibration (with stable JSON shapes, explicit missing-artifact errors, and side-effect-free help behavior) while preserving existing scoring/recalibration engines. WHY: Keeps cross-repo transfer decisions and confidence drift inspectable for humans and automation without hidden logic paths.
@@ -460,8 +459,6 @@
 - Added JSON schema support for `pnpm playbook docs audit --json` via `pnpm playbook schema docs`.
 - Integrated docs audit into Playbook CI and agent-facing validation guidance.
 - Completed first docs-governance cleanup pass by removing idea leakage from runtime/workflow/index docs, archiving superseded migration reporting, and deleting obsolete roadmap-update migration guidance.
-
-
 
 - Added `workset-plan` artifact contract and `.playbook/workset-plan.json` output for `orchestrate --tasks-file`.
 - Added deterministic lane planner that groups compatible surfaces, separates conflict surfaces, respects dependency levels, and blocks ambiguous/unsupported tasks conservatively.
