@@ -586,8 +586,10 @@ describe("observer server", () => {
         2,
       ),
     );
+    // Repo promotion-layer joins are repo-scoped and read promoted memory from
+    // `.playbook/memory/knowledge/patterns.json`, distinct from global lineage views.
     fs.writeFileSync(
-      path.join(repo, ".playbook", "patterns.json"),
+      path.join(repo, ".playbook", "memory", "knowledge", "patterns.json"),
       JSON.stringify(
         {
           schemaVersion: "1.0",

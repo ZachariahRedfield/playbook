@@ -70,7 +70,7 @@ describe('runPromote', () => {
     expect(payload.pattern.storySeed.title).toBe('Seed layering story');
     expect(payload.receipt.outcome).toBe('promoted');
     expect(fs.existsSync(path.join(home, 'staged', 'promotions', 'patterns.json'))).toBe(true);
-    expect(JSON.parse(fs.readFileSync(path.join(home, 'patterns.json'), 'utf8')).patterns).toHaveLength(1);
+    expect(JSON.parse(fs.readFileSync(path.join(home, '.playbook/patterns.json'), 'utf8')).patterns).toHaveLength(1);
   });
 
   it('persists repeated promotion receipts in deterministic canonical order', () => {
@@ -131,7 +131,8 @@ describe('runPromote', () => {
     const repo = mkd('repo-pattern-seed-');
     process.env.PLAYBOOK_HOME = home;
     writeJson(home, '.playbook/observer/repos.json', { schemaVersion: '1.0', kind: 'repo-registry', repos: [{ id: path.basename(repo), root: repo }] });
-    writeJson(home, 'patterns.json', {
+    // `.playbook/patterns.json` is the canonical promoted-pattern artifact under PLAYBOOK_HOME.
+    writeJson(home, '.playbook/patterns.json', {
       schemaVersion: '1.0',
       kind: 'promoted-patterns',
       patterns: [{
@@ -168,6 +169,6 @@ describe('runPromote', () => {
     expect(payload.story.provenance.pattern_id).toBe('pattern.layering');
     expect(payload.story.provenance.source_ref).toBe('global/patterns/pattern.layering');
     expect(JSON.parse(fs.readFileSync(path.join(repo, '.playbook/stories.json'), 'utf8')).stories).toHaveLength(1);
-    expect(JSON.parse(fs.readFileSync(path.join(home, 'patterns.json'), 'utf8')).patterns).toHaveLength(1);
+    expect(JSON.parse(fs.readFileSync(path.join(home, '.playbook/patterns.json'), 'utf8')).patterns).toHaveLength(1);
   });
 });
