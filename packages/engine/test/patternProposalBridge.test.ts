@@ -21,39 +21,46 @@ const writeCrossRepoCandidates = (repoRoot: string, artifact: CrossRepoCandidate
 };
 
 describe('pattern proposal bridge', () => {
-  it('builds filtered proposals deterministically from candidate families', () => {
+  it('builds filtered proposals deterministically from cross-repo candidates', () => {
     const artifact = buildPatternProposalArtifact({
       schemaVersion: '1.0',
       kind: 'cross-repo-candidates',
       generatedAt: '2026-01-03T00:00:00.000Z',
       repositories: ['a', 'b', 'c'],
-      families: [
+      candidates: [
         {
-          pattern_family: 'layering',
-          repo_count: 3,
-          candidate_count: 6,
-          mean_confidence: 0.84,
-          repos: ['b', 'a', 'c'],
-          first_seen: '2026-01-01T00:00:00.000Z',
-          last_seen: '2026-01-03T00:00:00.000Z'
+          id: 'candidate.layering.001',
+          title: 'Portable governed artifact pattern: layering',
+          when: 'When a, b, c all emit governed evidence for layering.',
+          then: 'Then review layering as a portable cross-repo pattern candidate.',
+          because: 'Cross-repo evidence shows layering across 3 repositories.',
+          normalizationKey: 'artifact-pattern::layering',
+          sourceRefs: [
+            'a::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-a',
+            'b::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-b',
+            'c::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-c'
+          ],
+          storySeed: {
+            title: 'Review portable pattern: layering',
+            rationale: 'Cross-repo evidence shows layering across 3 repositories.',
+            acceptanceCriteria: ['Verify evidence', 'Keep references only']
+          },
+          fingerprint: 'finger-layering'
         },
         {
-          pattern_family: 'query-before-mutation',
-          repo_count: 1,
-          candidate_count: 2,
-          mean_confidence: 0.99,
-          repos: ['a'],
-          first_seen: '2026-01-01T00:00:00.000Z',
-          last_seen: '2026-01-03T00:00:00.000Z'
-        },
-        {
-          pattern_family: 'modularity',
-          repo_count: 2,
-          candidate_count: 3,
-          mean_confidence: 0.61,
-          repos: ['a', 'c'],
-          first_seen: '2026-01-01T00:00:00.000Z',
-          last_seen: '2026-01-03T00:00:00.000Z'
+          id: 'candidate.query-before-mutation.001',
+          title: 'Portable governed artifact pattern: query-before-mutation',
+          when: 'When only a emits evidence.',
+          then: 'Then review cautiously.',
+          because: 'Only one repository contributes evidence.',
+          normalizationKey: 'artifact-pattern::query-before-mutation',
+          sourceRefs: ['a::pattern-candidates::.playbook/pattern-candidates.json::/candidates/1::digest-a'],
+          storySeed: {
+            title: 'Review portable pattern: query-before-mutation',
+            rationale: 'Only one repository contributes evidence.',
+            acceptanceCriteria: ['Verify evidence']
+          },
+          fingerprint: 'finger-query'
         }
       ]
     });
@@ -61,13 +68,13 @@ describe('pattern proposal bridge', () => {
     expect(artifact.kind).toBe('pattern-proposals');
     expect(artifact.proposals).toHaveLength(1);
     expect(artifact.proposals[0]).toMatchObject({
-      proposal_id: 'proposal.layering.generalization',
-      pattern_family: 'layering',
+      proposal_id: 'proposal.artifact-pattern-layering.generalization',
+      pattern_family: 'artifact-pattern::layering',
       candidate_repos: ['a', 'b', 'c'],
-      mean_confidence: 0.84,
-      portability_score: 0.92,
+      mean_confidence: 1,
+      portability_score: 1,
       proposed_action: 'append_instance',
-      target_pattern: 'pattern.layering'
+      target_pattern: 'pattern.artifact-pattern-layering'
     });
     expect(artifact.proposals[0].portability_rationale).toContain('Portable across 3 repos');
     expect(artifact.proposals[0].evidence).toHaveLength(3);
@@ -81,15 +88,24 @@ describe('pattern proposal bridge', () => {
       kind: 'cross-repo-candidates',
       generatedAt: '2026-01-03T00:00:00.000Z',
       repositories: ['playbook', 'fawxzzy-fitness'],
-      families: [
+      candidates: [
         {
-          pattern_family: 'layering',
-          repo_count: 2,
-          candidate_count: 4,
-          mean_confidence: 0.84,
-          repos: ['playbook', 'fawxzzy-fitness'],
-          first_seen: '2026-01-01T00:00:00.000Z',
-          last_seen: '2026-01-03T00:00:00.000Z'
+          id: 'candidate.layering.001',
+          title: 'Portable governed artifact pattern: layering',
+          when: 'When playbook and fawxzzy-fitness emit evidence.',
+          then: 'Then review layering as a portable cross-repo pattern candidate.',
+          because: 'Cross-repo evidence shows layering across 2 repositories.',
+          normalizationKey: 'artifact-pattern::layering',
+          sourceRefs: [
+            'fawxzzy-fitness::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-fitness',
+            'playbook::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-playbook'
+          ],
+          storySeed: {
+            title: 'Review portable pattern: layering',
+            rationale: 'Cross-repo evidence shows layering across 2 repositories.',
+            acceptanceCriteria: ['Verify evidence', 'Keep references only']
+          },
+          fingerprint: 'finger-layering'
         }
       ]
     });
@@ -100,7 +116,7 @@ describe('pattern proposal bridge', () => {
     expect(fs.existsSync(path.join(repoRoot, '.playbook', 'pattern-graph.json'))).toBe(false);
     const loaded = readPatternProposalArtifact(repoRoot);
     expect(loaded.proposals).toHaveLength(1);
-    expect(loaded.proposals[0].target_pattern).toBe('pattern.layering');
+    expect(loaded.proposals[0].target_pattern).toBe('pattern.artifact-pattern-layering');
   });
 
   it('explicitly promotes a cross-repo proposal into memory knowledge and repo stories', () => {
@@ -110,25 +126,34 @@ describe('pattern proposal bridge', () => {
       kind: 'cross-repo-candidates',
       generatedAt: '2026-01-03T00:00:00.000Z',
       repositories: ['playbook', 'fawxzzy-fitness'],
-      families: [{
-        pattern_family: 'layering',
-        repo_count: 2,
-        candidate_count: 4,
-        mean_confidence: 0.84,
-        repos: ['playbook', 'fawxzzy-fitness'],
-        first_seen: '2026-01-01T00:00:00.000Z',
-        last_seen: '2026-01-03T00:00:00.000Z'
+      candidates: [{
+        id: 'candidate.layering.001',
+        title: 'Portable governed artifact pattern: layering',
+        when: 'When playbook and fawxzzy-fitness emit evidence.',
+        then: 'Then review layering as a portable cross-repo pattern candidate.',
+        because: 'Cross-repo evidence shows layering across 2 repositories.',
+        normalizationKey: 'artifact-pattern::layering',
+        sourceRefs: [
+          'fawxzzy-fitness::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-fitness',
+          'playbook::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-playbook'
+        ],
+        storySeed: {
+          title: 'Review portable pattern: layering',
+          rationale: 'Cross-repo evidence shows layering across 2 repositories.',
+          acceptanceCriteria: ['Verify evidence', 'Keep references only']
+        },
+        fingerprint: 'finger-layering'
       }]
     });
     writePatternProposalArtifact(repoRoot, generatePatternProposalArtifact(repoRoot));
 
-    const memoryPromotion = promotePatternProposalToMemory(repoRoot, 'proposal.layering.generalization');
+    const memoryPromotion = promotePatternProposalToMemory(repoRoot, 'proposal.artifact-pattern-layering.generalization');
     expect(memoryPromotion.target).toBe('memory');
     expect(memoryPromotion.memory?.promoted.kind).toBe('pattern');
 
-    const storyPromotion = promotePatternProposalToStory(repoRoot, 'proposal.layering.generalization', 'playbook');
+    const storyPromotion = promotePatternProposalToStory(repoRoot, 'proposal.artifact-pattern-layering.generalization', 'playbook');
     expect(storyPromotion.target).toBe('story');
-    expect(storyPromotion.story?.id).toBe('cross-repo-layering-playbook');
+    expect(storyPromotion.story?.id).toBe('cross-repo-artifact-pattern-layering-playbook');
     expect(fs.existsSync(path.join(repoRoot, '.playbook', 'stories.json'))).toBe(true);
   });
 });

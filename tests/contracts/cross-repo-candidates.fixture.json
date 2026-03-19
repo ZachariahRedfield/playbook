@@ -6,30 +6,28 @@
     "ZachariahRedfield/fawxzzy-fitness",
     "ZachariahRedfield/playbook"
   ],
-  "families": [
+  "candidates": [
     {
-      "pattern_family": "deterministic-contracts",
-      "repo_count": 2,
-      "candidate_count": 3,
-      "mean_confidence": 0.8,
-      "repos": [
-        "ZachariahRedfield/fawxzzy-fitness",
-        "ZachariahRedfield/playbook"
+      "id": "candidate.artifact-pattern-pattern-cycle-state-portable-governed-artifact-pattern-cycle-state-zachariahredfield-fawxzzy-fitness-zachariahredfield-playbook-cycle-state-2.1c4eb07f1a8e",
+      "title": "Portable governed artifact pattern: cycle-state",
+      "when": "When ZachariahRedfield/fawxzzy-fitness, ZachariahRedfield/playbook all emit governed evidence for portable governed artifact pattern: cycle-state.",
+      "then": "Then review Portable governed artifact pattern: cycle-state as a portable cross-repo pattern candidate without copying source artifact bodies.",
+      "because": "Cross-repo evidence shows portable governed artifact pattern: cycle-state across 2 repositories using only governed references.",
+      "normalizationKey": "artifact-pattern::pattern-cycle-state::portable-governed-artifact-pattern-cycle-state::zachariahredfield-fawxzzy-fitness-zachariahredfield-playbook::cycle-state::2",
+      "sourceRefs": [
+        "ZachariahRedfield/fawxzzy-fitness::cycle-state::.playbook/cycle-state.json::/kind::digest-fitness",
+        "ZachariahRedfield/playbook::cycle-state::.playbook/cycle-state.json::/kind::digest-playbook"
       ],
-      "first_seen": "2026-02-28T00:00:00.000Z",
-      "last_seen": "2026-03-14T00:00:00.000Z"
-    },
-    {
-      "pattern_family": "layering",
-      "repo_count": 2,
-      "candidate_count": 5,
-      "mean_confidence": 0.83,
-      "repos": [
-        "ZachariahRedfield/fawxzzy-fitness",
-        "ZachariahRedfield/playbook"
-      ],
-      "first_seen": "2026-03-01T00:00:00.000Z",
-      "last_seen": "2026-03-14T00:00:00.000Z"
+      "storySeed": {
+        "title": "Review portable pattern: Portable governed artifact pattern: cycle-state",
+        "rationale": "Cross-repo evidence shows portable governed artifact pattern: cycle-state across 2 repositories using only governed references.",
+        "acceptanceCriteria": [
+          "Verify governed evidence for Portable governed artifact pattern: cycle-state across 2 repositories.",
+          "Decide whether the normalized candidate should advance through explicit promotion.",
+          "Keep promotion evidence limited to source references rather than copied artifact bodies."
+        ]
+      },
+      "fingerprint": "fe8f79b9d2157ca56c2acbe9ccfba7d7c97cff3dd8a33c04f5571bb7f7eb8ebb"
     }
   ]
 }
