@@ -101,7 +101,8 @@ The operator-facing flow is intentionally progressive:
 1. **Global Promotion Layer** shows the compact pattern candidate and promoted pattern surfaces.
 2. **Global Pattern Lineage** lists promoted patterns with linked-story counts by repo.
 3. **Pattern detail** expands provenance/source refs and the repo stories whose promotion provenance points back to the same global candidate.
-4. **Story detail** remains the canonical repo-local drilldown for downstream execution context.
+4. **Story detail** remains the canonical repo-local drilldown for downstream execution context and now includes the same advisory `pattern_context` that story-backed planning used.
+5. **Execution-plan detail** exposes the same `pattern_context` through the existing artifact viewer path for `execution-plan`.
 
 The lineage contract is additive and read-only:
 
@@ -109,10 +110,14 @@ The lineage contract is additive and read-only:
 - provenance/source refs remain visible on pattern detail
 - raw artifact inspection still routes through the existing artifact viewer and deep disclosure panels
 - no new canonical write paths are introduced beyond existing explicit promotion actions
+- pattern context remains read-only advisory metadata; it never mutates queue or backlog state by itself
 
 Rule: Lineage should be reconstructed from provenance, not maintained through redundant backlinks in v1.
 Pattern: Progressive disclosure turns dense deterministic truth into usable operator understanding.
 Failure Mode: Promotion data that exists only in files but not in the operator surface becomes effectively non-operational.
+Rule: Global knowledge may suggest local work, but only repo-local stories may enter execution planning.
+Pattern: Promoted patterns are advisory planning context, not a second planner.
+Failure Mode: Letting patterns influence execution outside story-backed plans creates a second control path.
 
 ### Readiness and observability status
 

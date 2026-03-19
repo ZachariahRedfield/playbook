@@ -39,6 +39,7 @@ Routing returns command metadata plus an `executionPlan` payload and a normalize
 Execution plan fields include:
 
 - `schemaVersion`, `kind`, `generatedAt`, `proposalOnly`
+- `pattern_context` (read-only advisory matches from promoted patterns when routing from a story)
 - `task_family`, `route_id`
 - `rule_packs`, `required_validations`, `optional_validations`
 - `parallel_lanes`, `mutation_allowed`, `missing_prerequisites`
@@ -69,7 +70,6 @@ Rule: Router classification must prefer conservative correctness over aggressive
 Pattern: Deterministic task-family classification reduces routing ambiguity and review burden.
 
 Failure Mode: Ambiguous tasks routed optimistically will under-scope validation and create fragile plans.
-
 
 ### Learning-state refinement guardrails (Phase 8 Router Lane 3)
 
@@ -109,10 +109,11 @@ Compiled prompt sections are deterministic and include:
 
 The compiled prompt is guidance-only. It does **not** launch workers, create branches, open PRs, or mutate the repository autonomously.
 
-
 ## Story-linked planning
 
-`playbook route --story <id> --json` resolves the canonical story from `.playbook/stories.json`, derives a deterministic task statement, and writes the normal `.playbook/execution-plan.json` artifact with stable `story_reference` metadata.
+`playbook route --story <id> --json` resolves the canonical story from `.playbook/stories.json`, derives a deterministic task statement, and writes the normal `.playbook/execution-plan.json` artifact with stable `story_reference` metadata plus a read-only `pattern_context` envelope.
+
+`pattern_context` is advisory only and includes matched `pattern_id` values, why each pattern matched, provenance references, and freshness/status metadata. Absence of matches degrades to an empty ordered list.
 
 - Pattern: Story is durable intent; Plan is execution shape; Receipt is observed outcome.
 - Rule: Story, Plan, Worker, and Receipt must remain separate governed artifacts even when linked.

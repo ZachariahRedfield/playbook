@@ -76,13 +76,15 @@ declare module "@zachariahredfield/playbook-engine" {
   export const readModuleContextDigest: (...args: any[]) => any;
   export const readRepositoryGraph: (...args: any[]) => any;
   export const summarizeRepositoryGraph: (...args: any[]) => any;
-  export const REPOSITORY_GRAPH_RELATIVE_PATH: '.playbook/repo-graph.json';
-  export const MODULE_CONTEXT_DIR_RELATIVE_PATH: '.playbook/context/modules';
+  export const REPOSITORY_GRAPH_RELATIVE_PATH: ".playbook/repo-graph.json";
+  export const MODULE_CONTEXT_DIR_RELATIVE_PATH: ".playbook/context/modules";
   export const loadAiContract: (...args: any[]) => any;
   export const buildContractRegistry: (...args: any[]) => any;
   export type OrchestratorContract = any;
   export type OrchestratorLane = any;
-  export const buildOrchestratorContract: (...args: any[]) => OrchestratorContract;
+  export const buildOrchestratorContract: (
+    ...args: any[]
+  ) => OrchestratorContract;
   export type CompileOrchestratorArtifactsResult = {
     contract: {
       goal: string;
@@ -99,7 +101,9 @@ declare module "@zachariahredfield/playbook-engine" {
     outputDir: string;
     relativeOutputDir: string;
   };
-  export const compileOrchestratorArtifacts: (...args: any[]) => CompileOrchestratorArtifactsResult;
+  export const compileOrchestratorArtifacts: (
+    ...args: any[]
+  ) => CompileOrchestratorArtifactsResult;
 
   export const queryRepositoryIndex: (...args: any[]) => any;
   export const queryDependencies: (...args: any[]) => any;
@@ -113,72 +117,118 @@ declare module "@zachariahredfield/playbook-engine" {
   export type DependenciesQueryResult = any;
   export type ImpactQueryResult = any;
   export type RiskQueryResult = any;
-  export type DocsCoverageModuleResult = { module: string; documented: boolean; sources: string[] };
-  export type DocsCoverageSummary = { totalModules: number; documentedModules: number; undocumentedModules: number };
+  export type DocsCoverageModuleResult = {
+    module: string;
+    documented: boolean;
+    sources: string[];
+  };
+  export type DocsCoverageSummary = {
+    totalModules: number;
+    documentedModules: number;
+    undocumentedModules: number;
+  };
   export type DocsCoverageQueryResult = {
-    schemaVersion: '1.0';
-    command: 'query';
-    type: 'docs-coverage';
+    schemaVersion: "1.0";
+    command: "query";
+    type: "docs-coverage";
     modules: DocsCoverageModuleResult[];
     summary: DocsCoverageSummary;
   };
-  export type RuleOwnershipEntry = { ruleId: string; area: string; owners: string[]; remediationType: string };
+  export type RuleOwnershipEntry = {
+    ruleId: string;
+    area: string;
+    owners: string[];
+    remediationType: string;
+  };
   export type RuleOwnersQueryResult =
-    | { schemaVersion: '1.0'; command: 'query'; type: 'rule-owners'; rules: RuleOwnershipEntry[] }
-    | { schemaVersion: '1.0'; command: 'query'; type: 'rule-owners'; rule: RuleOwnershipEntry };
+    | {
+        schemaVersion: "1.0";
+        command: "query";
+        type: "rule-owners";
+        rules: RuleOwnershipEntry[];
+      }
+    | {
+        schemaVersion: "1.0";
+        command: "query";
+        type: "rule-owners";
+        rule: RuleOwnershipEntry;
+      };
   export type ModuleOwnershipStatus =
-    | 'configured'
-    | 'no-metadata-configured'
-    | 'intentionally-unowned'
-    | 'inherited-default'
-    | 'unresolved-mapping';
+    | "configured"
+    | "no-metadata-configured"
+    | "intentionally-unowned"
+    | "inherited-default"
+    | "unresolved-mapping";
   export type ModuleOwnershipEntry = {
     name: string;
     owners: string[];
     area: string;
-    ownership: { status: ModuleOwnershipStatus; source: string; sourceLocation?: string };
+    ownership: {
+      status: ModuleOwnershipStatus;
+      source: string;
+      sourceLocation?: string;
+    };
   };
   export type ModuleOwnersQueryResult =
     | {
-        schemaVersion: '1.0';
-        command: 'query';
-        type: 'module-owners';
-        contract: { minimumFields: ['owners', 'area', 'sourceLocation']; metadataPath: '.playbook/module-owners.json' };
+        schemaVersion: "1.0";
+        command: "query";
+        type: "module-owners";
+        contract: {
+          minimumFields: ["owners", "area", "sourceLocation"];
+          metadataPath: ".playbook/module-owners.json";
+        };
         diagnostics: string[];
         modules: ModuleOwnershipEntry[];
       }
     | {
-        schemaVersion: '1.0';
-        command: 'query';
-        type: 'module-owners';
-        contract: { minimumFields: ['owners', 'area', 'sourceLocation']; metadataPath: '.playbook/module-owners.json' };
+        schemaVersion: "1.0";
+        command: "query";
+        type: "module-owners";
+        contract: {
+          minimumFields: ["owners", "area", "sourceLocation"];
+          metadataPath: ".playbook/module-owners.json";
+        };
         diagnostics: string[];
         module: ModuleOwnershipEntry;
       };
 
-  export type TestHotspotType = 'broad-retrieval' | 'repeated-fixture-setup' | 'repeated-cli-runner' | 'manual-json-contract-plumbing';
+  export type TestHotspotType =
+    | "broad-retrieval"
+    | "repeated-fixture-setup"
+    | "repeated-cli-runner"
+    | "manual-json-contract-plumbing";
   export type TestHotspot = {
     type: TestHotspotType;
     file: string;
     line: number;
-    confidence: 'high' | 'medium';
+    confidence: "high" | "medium";
     currentPattern: string;
     suggestedReplacementHelper: string;
-    automationSafety: 'safe-mechanical-refactor' | 'review-required';
+    automationSafety: "safe-mechanical-refactor" | "review-required";
   };
   export type TestHotspotsQueryResult = {
-    schemaVersion: '1.0';
-    command: 'query';
-    type: 'test-hotspots';
+    schemaVersion: "1.0";
+    command: "query";
+    type: "test-hotspots";
     hotspots: TestHotspot[];
-    summary: { totalHotspots: number; byType: Array<{ type: TestHotspotType; count: number }> };
+    summary: {
+      totalHotspots: number;
+      byType: Array<{ type: TestHotspotType; count: number }>;
+    };
   };
 
   export type ModuleContextDigest = any;
   export type GraphNeighborhoodSummary = {
-    node: { id: string; kind: 'module' | 'repository' | 'rule'; name: string };
-    outgoing: Array<{ kind: 'contains' | 'depends_on' | 'governed_by'; target: string }>;
-    incoming: Array<{ kind: 'contains' | 'depends_on' | 'governed_by'; source: string }>;
+    node: { id: string; kind: "module" | "repository" | "rule"; name: string };
+    outgoing: Array<{
+      kind: "contains" | "depends_on" | "governed_by";
+      target: string;
+    }>;
+    incoming: Array<{
+      kind: "contains" | "depends_on" | "governed_by";
+      source: string;
+    }>;
   };
   export type RepositoryModule = any;
   export const answerRepositoryQuestion: (...args: any[]) => any;
@@ -249,7 +299,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const validateSessionSnapshot: (...args: any[]) => any;
 
   export type RouteDecision = {
-    route: 'deterministic_local' | 'model_reasoning' | 'hybrid' | 'unsupported';
+    route: "deterministic_local" | "model_reasoning" | "hybrid" | "unsupported";
     why: string;
     requiredInputs: string[];
     missingPrerequisites: string[];
@@ -276,15 +326,30 @@ declare module "@zachariahredfield/playbook-engine" {
   export const buildWorksetPlan: (...args: any[]) => WorksetPlanArtifact;
   export const deriveLaneState: (...args: any[]) => LaneStateArtifact;
   export type WorkerAssignmentsArtifact = any;
-  export const assignWorkersToLanes: (...args: any[]) => WorkerAssignmentsArtifact;
+  export const assignWorkersToLanes: (
+    ...args: any[]
+  ) => WorkerAssignmentsArtifact;
   export const buildAssignedPrompt: (...args: any[]) => string;
-  export type LaneLifecycleTransition = { action: 'start' | 'complete'; lane_id: string };
-  export type LaneLifecycleTransitionResult = { laneState: LaneStateArtifact; applied: boolean; reason?: string };
-  export const applyLaneLifecycleTransition: (...args: any[]) => LaneLifecycleTransitionResult;
+  export type LaneLifecycleTransition = {
+    action: "start" | "complete";
+    lane_id: string;
+  };
+  export type LaneLifecycleTransitionResult = {
+    laneState: LaneStateArtifact;
+    applied: boolean;
+    reason?: string;
+  };
+  export const applyLaneLifecycleTransition: (
+    ...args: any[]
+  ) => LaneLifecycleTransitionResult;
   export type OutcomeTelemetryArtifact = any;
   export type ProcessTelemetryArtifact = any;
-  export const normalizeOutcomeTelemetryArtifact: (...args: any[]) => OutcomeTelemetryArtifact;
-  export const normalizeProcessTelemetryArtifact: (...args: any[]) => ProcessTelemetryArtifact;
+  export const normalizeOutcomeTelemetryArtifact: (
+    ...args: any[]
+  ) => OutcomeTelemetryArtifact;
+  export const normalizeProcessTelemetryArtifact: (
+    ...args: any[]
+  ) => ProcessTelemetryArtifact;
   export const summarizeStructuralTelemetry: (...args: any[]) => any;
   export const summarizeLaneOutcomeScores: (...args: any[]) => any;
   export const summarizeCycleTelemetry: (...args: any[]) => any;
@@ -292,29 +357,81 @@ declare module "@zachariahredfield/playbook-engine" {
   export type CycleHistoryArtifact = any;
   export type CycleStateArtifact = any;
   export type LearningStateSnapshotArtifact = any;
-  export const POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json';
+  export const POLICY_EVALUATION_RELATIVE_PATH: ".playbook/policy-evaluation.json";
   export const evaluateImprovementPolicy: (...args: any[]) => any;
   export type PolicyEvaluationEntry = any;
   export type PolicyEvaluationArtifact = any;
   export const buildPolicyPreflight: (...args: any[]) => any;
   export type PolicyPreflightProposal = any;
   export type PolicyPreflightArtifact = any;
-  export const deriveLearningStateSnapshot: (...args: any[]) => LearningStateSnapshotArtifact;
+  export const deriveLearningStateSnapshot: (
+    ...args: any[]
+  ) => LearningStateSnapshotArtifact;
   export type LearningCompactionArtifact = any;
-  export const generateLearningCompactionArtifact: (...args: any[]) => LearningCompactionArtifact;
+  export const generateLearningCompactionArtifact: (
+    ...args: any[]
+  ) => LearningCompactionArtifact;
   export const writeLearningCompactionArtifact: (...args: any[]) => string;
   export type PortabilityOutcomesArtifact = any;
-  export const readPortabilityOutcomesArtifact: (...args: any[]) => PortabilityOutcomesArtifact;
-  export const appendPortabilityOutcomes: (...args: any[]) => PortabilityOutcomesArtifact;
+  export const readPortabilityOutcomesArtifact: (
+    ...args: any[]
+  ) => PortabilityOutcomesArtifact;
+  export const appendPortabilityOutcomes: (
+    ...args: any[]
+  ) => PortabilityOutcomesArtifact;
   export const summarizePortabilityOutcomes: (...args: any[]) => any[];
   export const validateArtifacts: (...args: any[]) => any;
 
-  export type StoryStatus = 'proposed' | 'ready' | 'in_progress' | 'blocked' | 'done' | 'archived';
-  export type StoryReconciliationStatus = 'pending_plan' | 'in_progress' | 'completed' | 'blocked';
-  export type StoryRecord = { story_reference?: string; id: string; repo: string; title: string; type: string; source: string; severity: string; priority: string; confidence: string; status: StoryStatus; evidence: string[]; rationale: string; acceptance_criteria: string[]; dependencies: string[]; execution_lane: string | null; suggested_route: string | null; last_plan_ref?: string | null; last_receipt_ref?: string | null; last_updated_state_ref?: string | null; reconciliation_status?: StoryReconciliationStatus | null; planned_at?: string | null; last_receipt_at?: string | null; last_updated_state_at?: string | null; reconciled_at?: string | null; };
-  export type StoriesArtifact = { schemaVersion: '1.0'; repo: string; stories: StoryRecord[]; };
-  export type StoryBacklogSummary = { counts_by_status: Record<StoryStatus, number>; highest_priority_ready_story: StoryRecord | null; blocked_stories: StoryRecord[]; primary_next_action: string | null; };
-  export const STORIES_RELATIVE_PATH: '.playbook/stories.json';
+  export type StoryStatus =
+    | "proposed"
+    | "ready"
+    | "in_progress"
+    | "blocked"
+    | "done"
+    | "archived";
+  export type StoryReconciliationStatus =
+    | "pending_plan"
+    | "in_progress"
+    | "completed"
+    | "blocked";
+  export type StoryRecord = {
+    story_reference?: string;
+    id: string;
+    repo: string;
+    title: string;
+    type: string;
+    source: string;
+    severity: string;
+    priority: string;
+    confidence: string;
+    status: StoryStatus;
+    evidence: string[];
+    rationale: string;
+    acceptance_criteria: string[];
+    dependencies: string[];
+    execution_lane: string | null;
+    suggested_route: string | null;
+    last_plan_ref?: string | null;
+    last_receipt_ref?: string | null;
+    last_updated_state_ref?: string | null;
+    reconciliation_status?: StoryReconciliationStatus | null;
+    planned_at?: string | null;
+    last_receipt_at?: string | null;
+    last_updated_state_at?: string | null;
+    reconciled_at?: string | null;
+  };
+  export type StoriesArtifact = {
+    schemaVersion: "1.0";
+    repo: string;
+    stories: StoryRecord[];
+  };
+  export type StoryBacklogSummary = {
+    counts_by_status: Record<StoryStatus, number>;
+    highest_priority_ready_story: StoryRecord | null;
+    blocked_stories: StoryRecord[];
+    primary_next_action: string | null;
+  };
+  export const STORIES_RELATIVE_PATH: ".playbook/stories.json";
   export const STORY_TYPES: readonly string[];
   export const STORY_SEVERITIES: readonly string[];
   export const STORY_PRIORITIES: readonly string[];
@@ -324,37 +441,107 @@ declare module "@zachariahredfield/playbook-engine" {
   export const readStoriesArtifact: (...args: any[]) => StoriesArtifact;
   export const sortStoriesForBacklog: (...args: any[]) => StoryRecord[];
   export const summarizeStoriesBacklog: (...args: any[]) => StoryBacklogSummary;
-  export type StoryPlanningReference = { story_reference: string; id: string; title: string; status: StoryStatus; artifact_path: '.playbook/stories.json'; suggested_route: string | null; execution_lane: string | null; };
-  export type StoryLifecycleEvent = 'planned' | 'receipt_blocked' | 'receipt_completed';
-  export type StoryTransitionPreview = { story_id: string; previous_status: StoryStatus; next_status: StoryStatus; };
+  export type StoryPlanningReference = {
+    story_reference: string;
+    id: string;
+    title: string;
+    status: StoryStatus;
+    artifact_path: ".playbook/stories.json";
+    suggested_route: string | null;
+    execution_lane: string | null;
+  };
+  export type StoryLifecycleEvent =
+    | "planned"
+    | "receipt_blocked"
+    | "receipt_completed";
+  export type StoryTransitionPreview = {
+    story_id: string;
+    previous_status: StoryStatus;
+    next_status: StoryStatus;
+  };
   export const findStoryById: (...args: any[]) => StoryRecord | null;
   export const buildStableStoryReference: (...args: any[]) => string;
-  export const toStoryPlanningReference: (...args: any[]) => StoryPlanningReference;
+  export const toStoryPlanningReference: (
+    ...args: any[]
+  ) => StoryPlanningReference;
   export const buildStoryRouteTask: (...args: any[]) => string;
-  export const deriveStoryLifecycleStatus: (...args: any[]) => StoryStatus | null;
-  export const deriveStoryTransitionPreview: (...args: any[]) => StoryTransitionPreview | null;
+  export const deriveStoryLifecycleStatus: (
+    ...args: any[]
+  ) => StoryStatus | null;
+  export const deriveStoryTransitionPreview: (
+    ...args: any[]
+  ) => StoryTransitionPreview | null;
   export const transitionStoryFromEvent: (...args: any[]) => StoriesArtifact;
   export const linkStoryToPlan: (...args: any[]) => StoriesArtifact;
-  export const reconcileStoryExecution: (...args: any[]) => { artifact: StoriesArtifact; outcome: 'applied' | 'noop' | 'conflict' };
+  export const reconcileStoryExecution: (...args: any[]) => {
+    artifact: StoriesArtifact;
+    outcome: "applied" | "noop" | "conflict";
+  };
   export const validateStoriesArtifact: (...args: any[]) => string[];
   export const upsertStory: (...args: any[]) => StoriesArtifact;
   export const updateStoryStatus: (...args: any[]) => StoriesArtifact;
 
-  export type StoryCandidateRecord = StoryRecord & { candidate_fingerprint: string; candidate_id: string; grouping_keys: string[]; source_signals: string[]; source_artifacts: string[]; promotion_hint: string; explanation: string[]; };
-  export type StoryCandidatesArtifact = { schemaVersion: '1.0'; kind: 'story-candidates'; generatedAt: string; repo: string; readOnly: true; sourceArtifacts: { readiness: string[]; improvementCandidatesPath: string; updatedStatePath: string; routerRecommendationsPath: string; }; candidates: StoryCandidateRecord[]; };
-  export const STORY_CANDIDATES_RELATIVE_PATH: '.playbook/story-candidates.json';
-  export const generateStoryCandidates: (...args: any[]) => StoryCandidatesArtifact;
+  export type StoryPatternContextMatch = {
+    pattern_id: string;
+    why_matched: string;
+    provenance_refs: string[];
+    freshness: { status: string; promoted_at: string | null };
+  };
+  export type StoryPatternContext = { patterns: StoryPatternContextMatch[] };
+  export const buildStoryPatternContext: (
+    ...args: any[]
+  ) => StoryPatternContext;
+
+  export type StoryCandidateRecord = StoryRecord & {
+    candidate_fingerprint: string;
+    candidate_id: string;
+    grouping_keys: string[];
+    source_signals: string[];
+    source_artifacts: string[];
+    promotion_hint: string;
+    explanation: string[];
+  };
+  export type StoryCandidatesArtifact = {
+    schemaVersion: "1.0";
+    kind: "story-candidates";
+    generatedAt: string;
+    repo: string;
+    readOnly: true;
+    sourceArtifacts: {
+      readiness: string[];
+      improvementCandidatesPath: string;
+      updatedStatePath: string;
+      routerRecommendationsPath: string;
+    };
+    candidates: StoryCandidateRecord[];
+  };
+  export const STORY_CANDIDATES_RELATIVE_PATH: ".playbook/story-candidates.json";
+  export const generateStoryCandidates: (
+    ...args: any[]
+  ) => StoryCandidatesArtifact;
   export const writeStoryCandidatesArtifact: (...args: any[]) => string;
-  export const readStoryCandidatesArtifact: (...args: any[]) => StoryCandidatesArtifact;
-  export const promoteStoryCandidate: (...args: any[]) => { story: StoryRecord; artifact: StoriesArtifact; artifactPath: string; };
+  export const readStoryCandidatesArtifact: (
+    ...args: any[]
+  ) => StoryCandidatesArtifact;
+  export const promoteStoryCandidate: (...args: any[]) => {
+    story: StoryRecord;
+    artifact: StoriesArtifact;
+    artifactPath: string;
+  };
 
   export type ImprovementCandidatesArtifact = any;
   export type ImprovementActionArtifact = any;
   export type ImprovementGovernanceApprovalArtifact = any;
-  export const generateImprovementCandidates: (...args: any[]) => ImprovementCandidatesArtifact;
+  export const generateImprovementCandidates: (
+    ...args: any[]
+  ) => ImprovementCandidatesArtifact;
   export const writeImprovementCandidatesArtifact: (...args: any[]) => string;
-  export const applyAutoSafeImprovements: (...args: any[]) => ImprovementActionArtifact;
-  export const approveGovernanceImprovement: (...args: any[]) => ImprovementGovernanceApprovalArtifact;
+  export const applyAutoSafeImprovements: (
+    ...args: any[]
+  ) => ImprovementActionArtifact;
+  export const approveGovernanceImprovement: (
+    ...args: any[]
+  ) => ImprovementGovernanceApprovalArtifact;
 
   export const listRuntimeRuns: (...args: any[]) => any[];
   export const readRuntimeRun: (...args: any[]) => any;
@@ -370,8 +557,11 @@ declare module "@zachariahredfield/playbook-engine" {
   export const readExecutionRun: (...args: any[]) => any;
   export const getLatestMutableRun: (...args: any[]) => any;
   export const executionRunPath: (...args: any[]) => string;
-  export const writeSystemMapArtifact: (...args: any[]) => { artifactPath: string; artifact: any };
-  export const SYSTEM_MAP_RELATIVE_PATH: '.playbook/system-map.json';
+  export const writeSystemMapArtifact: (...args: any[]) => {
+    artifactPath: string;
+    artifact: any;
+  };
+  export const SYSTEM_MAP_RELATIVE_PATH: ".playbook/system-map.json";
 
   export const initializeSession: (...args: any[]) => any;
   export const readSession: (...args: any[]) => any;

@@ -563,7 +563,6 @@ Use query surfaces to inspect state:
 - `pnpm playbook patterns proposals promote --proposal <proposal-id> --target memory|story [--repo <repo-id>] --json` keeps cross-repo promotion explicit while writing into governed memory or backlog surfaces.
 - Cross-repo comparison may suggest promotion, but promotion remains explicit: no automatic doctrine updates, no hidden story mutation, and no non-governed artifact ingestion.
 
-
 - `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
 - `playbook story candidates --json` derives and writes the non-canonical inspectable candidate artifact at `.playbook/story-candidates.json` without mutating `.playbook/stories.json`.
 - `playbook story promote <candidate-id> --json` explicitly promotes one candidate into the canonical backlog artifact.
@@ -579,7 +578,6 @@ Use query surfaces to inspect state:
 - Failure Mode: Raw finding -> automatic story conversion creates backlog spam and weak planning signal.
 - Failure Mode: Letting patterns enter execution directly creates a second control path and breaks operator trust.
 
-
 - `playbook story plan <id> --json`: generate a route/execution plan from canonical story intent while keeping story, plan, worker, and receipt as separate linked artifacts.
 - `playbook route --story <id> --json`: derive a deterministic route directly from a story id and stamp stable `story_reference` metadata into the generated execution plan.
 
@@ -590,3 +588,5 @@ Use query surfaces to inspect state:
 - `pnpm playbook promote pattern-recall <pattern-id> --reason <text> --json`
 - `pnpm playbook patterns transfer export --pattern <id> --target-repo <repo-id> --json`
 - `pnpm playbook patterns transfer import --file <path> --repo <repo-id> --json`
+- `playbook route --story <id> --json`: derive a deterministic route directly from a story id and stamp stable `story_reference` metadata plus advisory `pattern_context` into the generated execution plan.
+- Promoted global patterns may inform story-backed planning through read-only advisory context, but only repo-local stories remain execution authority.

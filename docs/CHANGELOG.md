@@ -288,6 +288,14 @@
 
 # Changelog
 
+## 2026-03-19 — Advisory pattern context for story-backed planning
+
+- WHAT: Added deterministic read-only `pattern_context` matching for `playbook story plan <id>` / `playbook route --story <id>` using promoted-pattern provenance, normalization keys, and explicit pattern references; the generated execution plan now carries stable advisory pattern ids, match reasons, provenance refs, and freshness/status metadata. WHY: Promoted knowledge should inform story-backed planning without becoming execution authority or mutating backlog/queue state.
+- WHAT: Surfaced the same advisory pattern context in Observer story detail and execution-plan artifact detail, and extended tests to prove empty-match degradation, stable ordering, and story-only execution authority. WHY: Operators need consistent planning context across CLI and Observer without creating a second control path.
+- Rule: Global knowledge may suggest local work, but only repo-local stories may enter execution planning.
+- Pattern: Promoted patterns are advisory planning context, not a second planner.
+- Failure Mode: Letting patterns influence execution outside story-backed plans creates a second control path.
+
 - WHAT: Added a first-class external-consumer bootstrap proof flow at `pnpm playbook status proof --json`, backed by deterministic engine diagnostics that validate runtime availability, `pnpm exec playbook` CLI resolution, initialization, required bootstrap docs, required artifacts, execution-state prerequisites, and final governance contract health without mutating repo state; added stable JSON/human summary output plus regression coverage for ready/missing-docs/missing-execution-state/CLI-resolution cases. WHY: A tooling migration is incomplete until a repository can prove it is a real governed Playbook consumer instead of merely exposing command names.
 - WHAT: Added `pnpm playbook receipt ingest <file> --json` plus a deterministic engine ingestion layer that converts explicit execution results into `.playbook/execution-outcome-input.json`, canonical receipt output, reconciled updated-state, and next-queue derived from updated-state only; receipt/observer surfaces now honor explicit observed transitions instead of inferring outcomes from repo state. WHY: Closes the adoption control loop with a single explicit execution-ingestion boundary so repeated ingest input produces the same receipt, updated-state, and downstream queue.
 - WHAT: Introduced a shared `workflow-promotion` contract/schema for staged workflow writebacks, refactored `pnpm playbook status updated --json` to emit the normalized receipt, and moved `pnpm playbook route --json` onto the same staged candidate -> validation -> promotion flow for `.playbook/execution-plan.json`. WHY: This unifies durable workflow promotion semantics across repo-visible outputs so automation, Observer, and future orchestration surfaces can reason about one deterministic contract instead of command-local metadata fragments.
@@ -582,7 +590,6 @@
 - Added lane-level worker-ready Codex prompts and tests for parallel docs+cli routing, engine conflict isolation, ambiguous blocking, unsupported prerequisites, and mixed worksets.
 
 - Added deterministic execution receipt / outcome-ingestion support so adoption execution can compare planned vs observed lifecycle transitions and feed retry prioritization.
-
 
 - `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
 

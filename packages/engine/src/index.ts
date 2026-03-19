@@ -180,6 +180,8 @@ export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } 
 
 export { STORIES_SCHEMA_VERSION, STORIES_RELATIVE_PATH, STORY_TYPES, STORY_SEVERITIES, STORY_PRIORITIES, STORY_CONFIDENCES, STORY_STATUSES, createDefaultStoriesArtifact, validateStoryRecord, validateStoriesArtifact, readStoriesArtifact, createStoryRecord, upsertStory, updateStoryStatus, sortStoriesForBacklog, summarizeStoriesBacklog, findStoryById, buildStableStoryReference, toStoryPlanningReference, buildStoryRouteTask, deriveStoryLifecycleStatus, deriveStoryTransitionPreview, transitionStoryFromEvent, linkStoryToPlan, reconcileStoryExecution } from './story/stories.js';
 export type { StoryType, StorySeverity, StoryPriority, StoryConfidence, StoryStatus, StoryPromotionProvenance, StoryRecord, StoriesArtifact, StoryBacklogSummary, CreateStoryInput, StoryPlanningReference, StoryLifecycleEvent, StoryTransitionPreview, StoryReconciliationStatus } from './story/stories.js';
+export { buildStoryPatternContext } from './story/patternContext.js';
+export type { StoryPatternContext, StoryPatternContextMatch } from './story/patternContext.js';
 export { STORY_CANDIDATES_SCHEMA_VERSION, STORY_CANDIDATES_RELATIVE_PATH, generateStoryCandidates, writeStoryCandidatesArtifact, readStoryCandidatesArtifact, promoteStoryCandidate } from './story/candidates.js';
 export type { StoryCandidateInput, StoryCandidateRecord, StoryCandidatesArtifact, StoryCandidateGenerationResult } from './story/candidates.js';
 export {

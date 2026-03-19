@@ -75,7 +75,6 @@ pnpm playbook ignore apply --repo "<target-repo-path>" --safe-defaults
 
 `pnpm playbook doctor` now includes a **Playbook Artifact Hygiene** section to detect artifact misuse and suggest deterministic fixes.
 
-
 ## Quick Start (canonical ladder)
 
 Playbook operator workflows assume a **repo-local CLI install** (for example `node_modules/.bin/playbook` via `pnpm playbook ...`), so clean machines and CI do not depend on PATH-global Playbook binaries.
@@ -181,13 +180,13 @@ pnpm pilot "C:\Users\zjhre\dev\FawxzzyFitness"
 
 Artifacts written in the target repository:
 
-- `.playbook/repo-index.json` *(runtime-only, gitignored)*
-- `.playbook/repo-graph.json` *(runtime-only, gitignored)*
-- `.playbook/findings.json` *(runtime-only, gitignored)*
-- `.playbook/plan.json` *(runtime-only, gitignored)*
-- `.playbook/pilot-summary.json` *(runtime-only, gitignored)*
-- `.playbook/runtime/current/*` *(runtime-only, gitignored)*
-- `.playbook/runtime/cycles/*` *(runtime-only, gitignored)*
+- `.playbook/repo-index.json` _(runtime-only, gitignored)_
+- `.playbook/repo-graph.json` _(runtime-only, gitignored)_
+- `.playbook/findings.json` _(runtime-only, gitignored)_
+- `.playbook/plan.json` _(runtime-only, gitignored)_
+- `.playbook/pilot-summary.json` _(runtime-only, gitignored)_
+- `.playbook/runtime/current/*` _(runtime-only, gitignored)_
+- `.playbook/runtime/cycles/*` _(runtime-only, gitignored)_
 - `.playbook/runtime/history/*`
 
 Rule - Repeated Multi-Step Operator Flows Deserve a First-Class Command.
@@ -394,7 +393,6 @@ pnpm playbook ask "what modules are affected by this?" --repo-context --json
 
 If `.playbook/repo-index.json` is missing, ask returns deterministic remediation guidance to run `pnpm playbook index` and retry.
 
-
 ### Structured PR intelligence (`pnpm playbook analyze-pr`)
 
 Use `pnpm playbook analyze-pr` for deterministic, machine-readable change analysis from local git diff + `.playbook/repo-index.json`.
@@ -462,7 +460,6 @@ Managed command docs are generated and validated through a staged artifact pipel
 Session knowledge hygiene is available via `pnpm playbook session cleanup --hygiene --dry-run --json-report .playbook/session-cleanup.report.json` for deterministic normalize/deduplicate/truncate/prune reporting.
 Session continuity is repo-scoped and deterministic via `.playbook/session.json` with `pnpm playbook session show`, `pnpm playbook session pin <artifact>`, `pnpm playbook session resume`, and `pnpm playbook session clear`.
 
-
 ## Demo
 
 See [`playbook-demo`](https://github.com/ZachariahRedfield/playbook-demo), also discoverable via `pnpm playbook demo`.
@@ -475,7 +472,6 @@ See [`playbook-demo`](https://github.com/ZachariahRedfield/playbook-demo), also 
 - Rule: `explain <module>` examples in docs/demo must reference a module that is guaranteed to exist in `.playbook/repo-index.json`.
 - Pattern: Add a single demo refresh script to regenerate index/explain/rules/verify/plan/apply/diagram/doctor outputs deterministically.
 - Pattern: Cross-repo demo artifact refresh automation should run in dedicated maintenance workflows and open PRs against `ZachariahRedfield/playbook-demo` instead of mutating `main` directly.
-
 
 ## Canonical remediation workflow
 
@@ -538,7 +534,6 @@ guarantees the following baseline project artifacts:
 - `docs/PLAYBOOK_NOTES.md`
 
 Other documentation such as `docs/PROJECT_GOVERNANCE.md` may be present depending on repository governance policies, but it is not required by the default scaffold.
-
 
 ## CLI command contract patterns
 
@@ -706,7 +701,6 @@ A full local example is available at `.github/workflows/playbook-action-example.
 - [SECURITY.md](SECURITY.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
-
 `pnpm test:security` runs security contract and regression tests.
 
 ## Deterministic execution runs
@@ -757,11 +751,11 @@ This receipt is designed to feed future prioritization cleanly: `verification_su
 - Pattern: execute grouped lanes in stage order (`init` -> `index` -> `verify/plan` -> `apply`) and keep one repo in one active lane per wave to reduce conflicts.
 - Failure Mode: queue drift appears when dependent actions are run before prerequisite lane completion or when a repo is split across conflicting same-wave lanes.
 
-
 - `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
 - `playbook story candidates --json` derives and writes the non-canonical inspectable candidate artifact at `.playbook/story-candidates.json` without mutating `.playbook/stories.json`.
 - `playbook story promote <candidate-id> --json` explicitly promotes one candidate into the canonical backlog artifact.
 - `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` explicitly seeds a repo-local story from promoted global pattern metadata while still writing only `.playbook/stories.json` in the target repo.
+- `playbook route --story <id> --json` and `playbook story plan <id> --json` now attach read-only advisory `pattern_context` from promoted patterns, but only the repo-local story remains execution authority.
 - `playbook promote` now emits deterministic audited receipts to `.playbook/promotion-receipts.json` for promoted, noop, and conflict outcomes so canonical knowledge mutation attempts remain inspectable through the same artifact-viewer path used elsewhere.
 - `pnpm playbook patterns proposals --json` groups cross-repo comparisons into promotable portable-pattern/story candidates with evidence lineage and explicit governed promotion targets.
 - `pnpm playbook patterns proposals promote --target memory` now lands as candidate-only input in `.playbook/memory/candidates.json`; it never auto-promotes imported/reused patterns into enforced doctrine.
