@@ -219,9 +219,9 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook contracts --json`
 - `architecture`: Verify subsystem registry ownership and architecture mapping integrity
   - Example: `pnpm playbook architecture verify --json`
-- `promote`: Promote reviewed story and pattern candidates into canonical artifacts
+- `promote`: Promote reviewed repo-local stories and reusable pattern candidates into canonical artifacts
   - Example: `pnpm playbook promote story repo/<repo-id>/story-candidates/<candidate-id> --json`
-- `story`: Manage canonical repo-local story backlog state
+- `story`: Manage the canonical repo-local story backlog state
   - Example: `pnpm playbook story list --json`
 - `observer`: Manage deterministic local observer registry and read-only local API server
   - Example: `pnpm playbook observer serve --port 4300`

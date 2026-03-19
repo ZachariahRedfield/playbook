@@ -61,8 +61,8 @@ Do not hand-edit entries inside the managed markers.
 | `receipt` | Ingest explicit execution results into receipt, updated-state, and next-queue | canonical | utility | secondary | Later | Current (implemented) | `pnpm playbook receipt ingest execution-results.json --json` |
 | `route` | Classify tasks and emit deterministic proposal-only execution plans for task-specific routing decisions | canonical | repo-intelligence | primary | Later | Current (implemented) | `pnpm playbook route "summarize current repo state" --json` |
 | `architecture` | Verify subsystem registry ownership and architecture mapping integrity | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook architecture verify --json` |
-| `promote` | Promote reviewed story and pattern candidates into canonical artifacts | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook promote story repo/<repo-id>/story-candidates/<candidate-id> --json` |
-| `story` | Manage canonical repo-local story backlog state | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook story list --json` |
+| `promote` | Promote reviewed repo-local stories and reusable pattern candidates into canonical artifacts | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook promote story repo/<repo-id>/story-candidates/<candidate-id> --json` |
+| `story` | Manage the canonical repo-local story backlog state | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook story list --json` |
 | `learn` | Draft deterministic knowledge candidates from local diff and repository intelligence | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook learn draft --json --out .playbook/knowledge/candidates.json` |
 | `memory` | Inspect, review, and curate repository memory artifacts with explicit human-reviewed doctrine promotion | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook memory events --json` |
 | `improve` | Generate deterministic improvement candidates from memory events and learning-state signals | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook improve --json` |
@@ -81,7 +81,7 @@ Do not hand-edit entries inside the managed markers.
 - Core flow: [`verify`](verify.md), [`plan`](plan.md), [`apply`](apply.md), [`pilot`](pilot.md)
 - Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md)
 - AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`context`](overview.md)
-- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`observer`](observer.md), [`receipt`](receipt.md), [`learn`](learn.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
+- Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`story`](story.md), [`promote`](promote.md), [`observer`](observer.md), [`receipt`](receipt.md), [`learn`](learn.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
 - `status proof` is the canonical external-consumer bootstrap proof surface for proving runtime + CLI + docs/artifact + execution/governance readiness in one read-only flow. Its required automation truth stays in the canonical `proof` payload; additive interpretation metadata must be explicitly governed when present.
 
 ### Implemented control-plane command docs
@@ -154,6 +154,10 @@ The CLI registry currently also exposes utility commands not treated as part of 
 <!-- PLAYBOOK:DOCS_UTILITY_COMMANDS_END -->
 
 Source of truth: shared command metadata in `packages/cli/src/lib/commandMetadata.ts` and generated truth contract `docs/contracts/command-truth.json`.
+
+- Rule: One canonical command matrix per lifecycle seam.
+- Pattern: Prefer one explicit promotion surface over many near-synonyms.
+- Failure Mode: Promotion surface sprawl makes governance legible in code but confusing to operators.
 
 ## Artifact workflow governance
 

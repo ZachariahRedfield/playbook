@@ -24,7 +24,7 @@ Failure Mode: Business docs drifting away from runtime truth.
 
 ## Strategic direction
 
-Recent implementation note: deterministic promotion receipts now accompany `pnpm playbook promote story ...` and `pnpm playbook promote pattern ...`, persisting audited `promoted` / `noop` / `conflict` outcomes to `.playbook/promotion-receipts.json` and making promotion an explicit audited write boundary visible through Observer artifact inspection.
+Recent implementation note: deterministic promotion receipts now accompany top-level `pnpm playbook promote ...` flows, persisting audited `promoted` / `noop` / `conflict` outcomes to `.playbook/promotion-receipts.json` and making promotion an explicit audited write boundary visible through Observer artifact inspection.
 
 Recent implementation note: fleet-level readiness aggregation is now available in current command surfaces (`pnpm playbook status fleet --json`, Observer `GET /api/readiness/fleet`, and Observer dashboard fleet summary card) to prioritize cross-repo adoption without replacing repo-first workflows.
 Recent implementation note: deterministic adoption work-queue planning is also available (`pnpm playbook status queue --json`, Observer `GET /api/readiness/queue`, and Observer dashboard work-queue panel) to translate readiness state into ordered, wave-based, parallel-safe execution plans.
@@ -2276,10 +2276,12 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 
 - `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
 - `playbook story candidates --json` derives and writes the non-canonical inspectable candidate artifact at `.playbook/story-candidates.json` without mutating `.playbook/stories.json`.
-- `playbook story promote <candidate-id> --json` explicitly promotes one candidate into the canonical backlog artifact.
-- `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` seeds a repo-local story from promoted global pattern metadata while preserving `.playbook/stories.json` as the only execution-relevant backlog surface.
+- `playbook story promote <candidate-id> --json` is the preferred in-repo promotion surface for repo-local story candidates.
+- `playbook promote story repo/<repo-id>/story-candidates/<candidate-id> --json` is the preferred top-level explicit promotion surface when operators need multi-repo or Playbook-home context.
+- `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` seeds a repo-local story from promoted global reusable pattern memory while preserving `.playbook/stories.json` as the only execution-relevant backlog surface.
 - `playbook patterns proposals --json` groups cross-repo comparisons into promotable portable-pattern/story candidates with evidence lineage and explicit governed promotion targets.
-- `playbook patterns proposals promote --proposal <proposal-id> --target memory|story [--repo <repo-id>] --json` keeps cross-repo adoption explicit while bridging into reusable memory or canonical backlog surfaces.
+- `playbook patterns proposals promote --proposal <proposal-id> --target memory|story [--repo <repo-id>] --json` is the preferred cross-repo promotion bridge into global reusable pattern memory or canonical repo-local backlog surfaces.
+- `playbook patterns promote --id <pattern-id> --decision approve|reject` remains supported as a narrower legacy review surface, not the preferred general promotion seam.
 
 - Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
 - Rule: Global knowledge may suggest local work, but only repo-local stories may enter execution planning.

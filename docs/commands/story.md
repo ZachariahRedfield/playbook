@@ -1,6 +1,6 @@
 # `playbook story`
 
-Manage the canonical repo-local story backlog artifact at `.playbook/stories.json` while keeping derived story candidates in the non-canonical `.playbook/story-candidates.json` artifact.
+Manage the canonical repo-local story backlog artifact at `.playbook/stories.json` while keeping derived story candidates in the non-canonical `.playbook/story-candidates.json` artifact. Use `story` for repo-local backlog work; use [`promote`](promote.md) when you need the top-level explicit promotion surface across repos or from global pattern-backed sources.
 
 ## Subcommands
 
@@ -24,3 +24,17 @@ Pattern: Candidate stories require grouping, dedupe, and explicit promotion.
 Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.
 
 Failure Mode: Raw finding -> automatic story conversion creates backlog spam and weak planning signal.
+
+
+## Promotion seam
+
+For repo-local story candidates, `pnpm playbook story promote <candidate-id> --json` is the preferred in-repo promotion command.
+
+If you need to promote into a repo backlog from Playbook home, another repo, or a global pattern-backed source, use [`pnpm playbook promote story ...`](promote.md) instead.
+
+Storage terms:
+
+- **Repo-local story backlog**: `.playbook/stories.json`
+- **Story candidates**: `.playbook/story-candidates.json`
+
+Rule: Repo-local stories are the only backlog surface that may feed execution planning.
