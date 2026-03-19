@@ -17,27 +17,29 @@ const findStoryById = vi.fn();
 const buildStoryRouteTask = vi.fn();
 const toStoryPlanningReference = vi.fn();
 const deriveStoryTransitionPreview = vi.fn();
-const transitionStoryFromEvent = vi.fn();
 const validateStoriesArtifact = vi.fn(() => []);
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({
-  routeTask,
-  buildExecutionPlan,
-  compileCodexPrompt,
-  recordRouteDecision,
-  safeRecordRepositoryEvent,
-  appendCommandExecutionQualityRecord,
-  recordCommandExecution,
-  recordCommandQuality,
-  readStoriesArtifact,
-  findStoryById,
-  buildStoryRouteTask,
-  toStoryPlanningReference,
-  deriveStoryTransitionPreview,
-  transitionStoryFromEvent,
-  validateStoriesArtifact,
-  STORIES_RELATIVE_PATH: '.playbook/stories.json'
-}));
+vi.mock('@zachariahredfield/playbook-engine', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@zachariahredfield/playbook-engine')>();
+  return {
+    ...actual,
+    routeTask,
+    buildExecutionPlan,
+    compileCodexPrompt,
+    recordRouteDecision,
+    safeRecordRepositoryEvent,
+    appendCommandExecutionQualityRecord,
+    recordCommandExecution,
+    recordCommandQuality,
+    readStoriesArtifact,
+    findStoryById,
+    buildStoryRouteTask,
+    toStoryPlanningReference,
+    deriveStoryTransitionPreview,
+    validateStoriesArtifact,
+    STORIES_RELATIVE_PATH: '.playbook/stories.json'
+  };
+});
 
 describe('runRoute', () => {
   it('returns deterministic failure for missing task argument', async () => {
@@ -184,11 +186,6 @@ describe('runRoute', () => {
       story_id: 'story-1',
       previous_status: 'ready',
       next_status: 'in_progress'
-    });
-    transitionStoryFromEvent.mockReturnValue({
-      schemaVersion: '1.0',
-      repo: 'repo',
-      stories: [{ ...story, status: 'in_progress' }]
     });
     routeTask.mockReturnValue({
       route: 'deterministic_local',
