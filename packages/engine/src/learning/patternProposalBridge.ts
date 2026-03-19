@@ -9,7 +9,6 @@ import { type CrossRepoCandidatesArtifact, readCrossRepoCandidatesArtifact } fro
 export const PATTERN_PROPOSALS_RELATIVE_PATH = '.playbook/pattern-proposals.json' as const;
 const MEMORY_CANDIDATES_RELATIVE_PATH = '.playbook/memory/candidates.json' as const;
 const MIN_REPO_COUNT = 2;
-const MIN_PORTABILITY_SCORE = 0.65;
 
 type PromotionTarget = {
   kind: 'memory' | 'story';
@@ -60,52 +59,54 @@ const round4 = (value: number): number => Number(value.toFixed(4));
 const slugify = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'candidate';
 const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort((a, b) => a.localeCompare(b));
 
+const repoIdsFromSourceRefs = (sourceRefs: string[]): string[] => uniqueSorted(sourceRefs.map((entry) => entry.split('::')[0] ?? '').filter((entry) => entry.length > 0));
+
 const computeRepoSignal = (repoCount: number, maxRepoCount: number): number => {
   if (maxRepoCount <= 0) return 0;
   return round4(repoCount / maxRepoCount);
 };
 
-const computePortabilityScore = (repoSignal: number, meanConfidence: number): number => round4(0.5 * repoSignal + 0.5 * meanConfidence);
+const computePortabilityScore = (repoSignal: number): number => repoSignal;
 
-const buildPortabilityRationale = (family: CrossRepoCandidatesArtifact['families'][number], portabilityScore: number): string =>
-  `Portable across ${family.repo_count} repos with mean confidence ${round4(family.mean_confidence)} and portability score ${portabilityScore}. Evidence is additive presence across compared repos, so promotion should stay explicit.`;
+const buildPortabilityRationale = (candidate: CrossRepoCandidatesArtifact['candidates'][number], repoIds: string[], portabilityScore: number): string =>
+  `Portable across ${repoIds.length} repos with deterministic normalization key ${candidate.normalizationKey} and portability score ${portabilityScore}. Evidence remains additive source references, so promotion should stay explicit.`;
 
-const buildEvidence = (family: CrossRepoCandidatesArtifact['families'][number], portabilityRationale: string): PatternProposalEvidence[] =>
-  [...family.repos]
-    .sort((left, right) => left.localeCompare(right))
-    .map((repoId) => ({
-      repo_id: repoId,
-      artifact_kind: 'pattern-candidates' as const,
-      semantics: 'presence' as const,
-      why_portable: portabilityRationale
-    }));
+const buildEvidence = (repoIds: string[], portabilityRationale: string): PatternProposalEvidence[] =>
+  repoIds.map((repoId) => ({
+    repo_id: repoId,
+    artifact_kind: 'pattern-candidates' as const,
+    semantics: 'presence' as const,
+    why_portable: portabilityRationale
+  }));
 
 export const buildPatternProposalArtifact = (candidatesArtifact: CrossRepoCandidatesArtifact): PatternProposalArtifact => {
-  const maxRepoCount = candidatesArtifact.families.reduce((max, family) => Math.max(max, family.repo_count), 0);
+  const maxRepoCount = candidatesArtifact.candidates.reduce((max, candidate) => Math.max(max, repoIdsFromSourceRefs(candidate.sourceRefs).length), 0);
 
-  const proposals = candidatesArtifact.families
-    .map((family) => {
-      const repoSignal = computeRepoSignal(family.repo_count, maxRepoCount);
-      const portabilityScore = computePortabilityScore(repoSignal, family.mean_confidence);
-      const portabilityRationale = buildPortabilityRationale(family, portabilityScore);
+  const proposals = candidatesArtifact.candidates
+    .map((candidate) => {
+      const repoIds = repoIdsFromSourceRefs(candidate.sourceRefs);
+      const repoSignal = computeRepoSignal(repoIds.length, maxRepoCount);
+      const portabilityScore = computePortabilityScore(repoSignal);
+      const portabilityRationale = buildPortabilityRationale(candidate, repoIds, portabilityScore);
+      const proposalSlug = slugify(candidate.normalizationKey);
       return {
-        proposal_id: `proposal.${family.pattern_family}.generalization`,
-        pattern_family: family.pattern_family,
-        candidate_repos: [...family.repos].sort((left, right) => left.localeCompare(right)),
-        mean_confidence: round4(family.mean_confidence),
+        proposal_id: `proposal.${proposalSlug}.generalization`,
+        pattern_family: candidate.normalizationKey,
+        candidate_repos: repoIds,
+        mean_confidence: portabilityScore,
         portability_score: portabilityScore,
         proposed_action: 'append_instance' as const,
-        target_pattern: `pattern.${family.pattern_family}`,
-        evidence: buildEvidence(family, portabilityRationale),
+        target_pattern: `pattern.${proposalSlug}`,
+        evidence: buildEvidence(repoIds, portabilityRationale),
         portability_rationale: portabilityRationale,
         promotion_targets: [
-          { kind: 'memory' as const, command: `pnpm playbook patterns proposals promote --proposal proposal.${family.pattern_family}.generalization --target memory --json`, target_artifact: '.playbook/memory/knowledge/patterns.json' },
-          { kind: 'story' as const, command: `pnpm playbook patterns proposals promote --proposal proposal.${family.pattern_family}.generalization --target story --repo <repo-id> --json`, target_artifact: '.playbook/stories.json' }
+          { kind: 'memory' as const, command: `pnpm playbook patterns proposals promote --proposal proposal.${proposalSlug}.generalization --target memory --json`, target_artifact: '.playbook/memory/knowledge/patterns.json' },
+          { kind: 'story' as const, command: `pnpm playbook patterns proposals promote --proposal proposal.${proposalSlug}.generalization --target story --repo <repo-id> --json`, target_artifact: '.playbook/stories.json' }
         ],
-        repo_count: family.repo_count
+        repo_count: repoIds.length
       };
     })
-    .filter((proposal) => proposal.repo_count >= MIN_REPO_COUNT && proposal.portability_score >= MIN_PORTABILITY_SCORE)
+    .filter((proposal) => proposal.repo_count >= MIN_REPO_COUNT)
     .sort(
       (left, right) =>
         right.portability_score - left.portability_score ||

@@ -2,32 +2,25 @@
 
 ## Purpose
 
-`cross-repo-candidates.schema.json` defines a deterministic, additive artifact for normalized candidate family aggregates across repositories.
+`cross-repo-candidates.schema.json` defines a deterministic, additive artifact for read-only cross-repository pattern candidates derived from governed comparison outputs.
 
 Artifact path:
 
 - `.playbook/cross-repo-candidates.json`
 
-Cross-repo candidates represent normalized candidate families across repositories, **not canonical patterns**.
+Cross-repo candidates are derived summaries plus provenance references. They are not canonical patterns, and they never copy source artifact bodies into the shared store.
 
-## Aggregation and normalization overview
+## Derivation overview
 
-Cross-repo candidate aggregation reads each repository-local `.playbook/pattern-candidates.json` artifact as immutable input evidence.
+Cross-repo candidate materialization reuses existing governed cross-repo comparison output.
 
-The aggregation flow is deterministic:
+The deterministic flow is:
 
-1. Load candidate artifacts per repository without mutating repo-local files.
-2. Normalize each candidate `pattern_family` into a canonical family key before grouping.
-3. Merge grouped families across repositories.
-4. Compute aggregate family metrics:
-   - `repo_count`
-   - `candidate_count`
-   - `mean_confidence`
-   - `first_seen`
-   - `last_seen`
-5. Emit `.playbook/cross-repo-candidates.json` with lexicographically sorted `pattern_family` entries and deterministic repo lists.
-
-This preserves repository-local provenance while producing stable cross-repo evidence summaries for downstream review.
+1. Load structured cross-repo comparison/intelligence output.
+2. Select only candidate observations backed by evidence from at least two repositories.
+3. Normalize each candidate into an exact deterministic `normalizationKey`.
+4. Build stable candidate ids from `normalizationKey` plus a hash of sorted `sourceRefs`.
+5. Emit lexicographically sorted candidates with references-only provenance.
 
 ## Contract shape
 
@@ -37,40 +30,37 @@ Top-level fields:
 - `kind`: fixed artifact kind (`cross-repo-candidates`)
 - `generatedAt`: deterministic ISO date-time for the aggregate run
 - `repositories`: deterministic repository identifiers included in the aggregate run
-- `families`: additive list of normalized cross-repo family aggregates
+- `candidates`: additive list of derived cross-repo pattern candidates
 
-Each `families[]` entry contains:
+Each `candidates[]` entry contains:
 
-- `pattern_family`: normalized family identifier
-- `repo_count`: bounded repository count for the family aggregate
-- `candidate_count`: bounded candidate observation count for the family aggregate
-- `mean_confidence`: bounded confidence average (`0..1`)
-- `repos`: deterministic repository identifiers that contributed to the aggregate
-- `first_seen`: earliest deterministic ISO date-time observed for the family
-- `last_seen`: latest deterministic ISO date-time observed for the family
+- `id`: stable candidate id derived from `normalizationKey` and hashed `sourceRefs`
+- `title`: deterministic human-readable summary
+- `when`: bounded trigger context for the candidate
+- `then`: bounded recommended review action
+- `because`: bounded justification derived from cross-repo evidence
+- `normalizationKey`: exact deterministic normalization identity
+- `sourceRefs`: deterministic, sorted provenance references only
+- `storySeed`: deterministic review/backlog seed with title, rationale, and acceptance criteria
+- `fingerprint`: deterministic content fingerprint for the derived candidate
 
 ## Determinism and governance
 
-- Families must be emitted in deterministic order (lexicographic `pattern_family` ordering recommended).
-- Repository identifiers must be emitted in deterministic order.
-- Cross-repo artifacts are append-only aggregates; consumers must treat this artifact as additive history.
-- Per-repo observations remain source-of-truth inputs; cross-repo artifacts summarize but do not replace them.
-- Cross-repo aggregation must remain independent from canonical doctrine promotion.
+- Emit candidates in deterministic order.
+- Emit `sourceRefs` in deterministic order.
+- Tests that assert full artifact equality should inject generation time at the artifact boundary instead of reading wall-clock time inside assertions.
+- Require evidence from at least two repositories before a candidate can appear.
+- Store references only; do not copy source artifact bodies, receipts, or raw governed payloads into the shared artifact.
+- Keep materialization read-only. Promotion remains explicit and out of band.
 
 ## Rule
 
-Cross-repo artifacts must remain deterministic and append-only.
-
-Cross-repo learning must aggregate evidence without mutating per-repo artifacts.
+Cross-repo candidates must be deterministic, references-only summaries derived from governed comparison output.
 
 ## Pattern
 
-Separate per-repo observations from cross-repo aggregates.
-
-Normalize candidate families before computing cross-repo metrics.
+Materialize promotable cross-repo summaries from existing intelligence artifacts instead of rescanning raw repositories.
 
 ## Failure mode
 
-Mixing repo-local signals directly into doctrine candidates introduces architecture bias.
-
-Directly merging candidate IDs across repos causes duplicate abstractions and unstable doctrine proposals.
+Copying artifact bodies into the shared store leaks too much raw state and makes promotion targets unstable.

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://playbook.dev/schemas/cross-repo-candidates.schema.json",
   "title": "Cross-Repository Pattern Candidates Artifact",
-  "description": "Deterministic additive contract for normalized candidate family aggregates across repositories.",
+  "description": "Deterministic additive contract for read-only cross-repository pattern candidates derived from governed comparison outputs.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -10,7 +10,7 @@
     "kind",
     "generatedAt",
     "repositories",
-    "families"
+    "candidates"
   ],
   "properties": {
     "schemaVersion": {
@@ -27,71 +27,62 @@
     },
     "repositories": {
       "type": "array",
-      "description": "Deterministically ordered repository identifiers included in this aggregate run.",
       "items": {
         "type": "string",
         "minLength": 1
       },
       "uniqueItems": true
     },
-    "families": {
+    "candidates": {
       "type": "array",
-      "description": "Additive family aggregates emitted in deterministic pattern_family order.",
       "items": {
-        "$ref": "#/$defs/crossRepoCandidateFamily"
+        "$ref": "#/$defs/crossRepoPatternCandidate"
       }
     }
   },
   "$defs": {
-    "crossRepoCandidateFamily": {
+    "storySeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "rationale", "acceptanceCriteria"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "acceptanceCriteria": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "crossRepoPatternCandidate": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "pattern_family",
-        "repo_count",
-        "candidate_count",
-        "mean_confidence",
-        "repos",
-        "first_seen",
-        "last_seen"
+        "id",
+        "title",
+        "when",
+        "then",
+        "because",
+        "normalizationKey",
+        "sourceRefs",
+        "storySeed",
+        "fingerprint"
       ],
       "properties": {
-        "pattern_family": {
-          "type": "string",
-          "minLength": 1
-        },
-        "repo_count": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 1000000
-        },
-        "candidate_count": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 1000000000
-        },
-        "mean_confidence": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "repos": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "when": { "type": "string", "minLength": 1 },
+        "then": { "type": "string", "minLength": 1 },
+        "because": { "type": "string", "minLength": 1 },
+        "normalizationKey": { "type": "string", "minLength": 1 },
+        "sourceRefs": {
           "type": "array",
-          "description": "Deterministically ordered repository identifiers contributing to this family aggregate.",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "uniqueItems": true
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "minItems": 2
         },
-        "first_seen": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "last_seen": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "storySeed": { "$ref": "#/$defs/storySeed" },
+        "fingerprint": { "type": "string", "minLength": 32 }
       }
     }
   }
