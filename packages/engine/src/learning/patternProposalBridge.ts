@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { promoteMemoryCandidate, type MemoryPromotionResult } from '../memory/knowledge.js';
+
 import type { MemoryReplayCandidate, MemoryReplayResult } from '../schema/memoryReplay.js';
 import { createStoryRecord, createDefaultStoriesArtifact, readStoriesArtifact, upsertStory, validateStoriesArtifact, type StoriesArtifact, type StoryRecord } from '../story/stories.js';
 import { type CrossRepoCandidatesArtifact, readCrossRepoCandidatesArtifact } from './crossRepoCandidateAggregation.js';
@@ -49,7 +49,8 @@ export type PatternProposalPromotionResult = {
   target: 'memory' | 'story';
   proposal_id: string;
   proposal: PatternProposal;
-  memory?: MemoryPromotionResult;
+  candidate_only?: true;
+  memory_candidate_id?: string;
   story?: StoryRecord;
   artifactPath: string;
 };
@@ -100,7 +101,7 @@ export const buildPatternProposalArtifact = (candidatesArtifact: CrossRepoCandid
         evidence: buildEvidence(repoIds, portabilityRationale),
         portability_rationale: portabilityRationale,
         promotion_targets: [
-          { kind: 'memory' as const, command: `pnpm playbook patterns proposals promote --proposal proposal.${proposalSlug}.generalization --target memory --json`, target_artifact: '.playbook/memory/knowledge/patterns.json' },
+          { kind: 'memory' as const, command: `pnpm playbook patterns proposals promote --proposal proposal.${proposalSlug}.generalization --target memory --json`, target_artifact: '.playbook/memory/candidates.json' },
           { kind: 'story' as const, command: `pnpm playbook patterns proposals promote --proposal proposal.${proposalSlug}.generalization --target story --repo <repo-id> --json`, target_artifact: '.playbook/stories.json' }
         ],
         repo_count: repoIds.length
@@ -216,16 +217,16 @@ export const promotePatternProposalToMemory = (cwd: string, proposalId: string):
     generatedAt: new Date().toISOString(),
     candidates: [...current.candidates.filter((entry) => entry.candidateId !== candidate.candidateId), candidate].sort((left, right) => left.candidateId.localeCompare(right.candidateId))
   };
-  writeMemoryCandidatesArtifact(cwd, next);
-  const memory = promoteMemoryCandidate(cwd, candidate.candidateId);
+  const artifactPath = writeMemoryCandidatesArtifact(cwd, next);
   return {
     schemaVersion: '1.0',
     command: 'patterns.proposals.promote',
     target: 'memory',
     proposal_id: proposalId,
     proposal,
-    memory,
-    artifactPath: memory.artifactPath
+    candidate_only: true,
+    memory_candidate_id: candidate.candidateId,
+    artifactPath
   };
 };
 

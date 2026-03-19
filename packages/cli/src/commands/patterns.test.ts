@@ -812,6 +812,7 @@ describe('runPatterns', () => {
     let payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.action).toBe('proposals-promote');
     expect(payload.promotion.target).toBe('memory');
+    expect(payload.promotion.candidate_only).toBe(true);
 
     logSpy.mockClear();
     exitCode = await runPatterns(repo, ['proposals', 'promote', '--proposal', 'proposal.artifact-pattern-layering.generalization', '--target', 'story', '--repo', 'playbook'], {
@@ -827,4 +828,21 @@ describe('runPatterns', () => {
   });
 
 
+});
+
+
+describe('pattern transfer flows', () => {
+  it('exports transfer packages and imports them as candidate-only input', async () => {
+    const repo = createRepo('playbook-cli-pattern-transfer');
+    const pkgPath = path.join(repo, 'patterns.json');
+    fs.writeFileSync(pkgPath, JSON.stringify({ schemaVersion: '1.0', kind: 'promoted-patterns', patterns: [{ id: 'pattern.layering', pattern_family: 'layering', title: 'Layering', description: 'desc', storySeed: { title: 'Seed', summary: 'Sum', acceptance: ['a'] }, source_artifact: '.playbook/pattern-candidates.json', signals: ['signal'], confidence: 0.8, evidence_refs: ['ref'], status: 'active', provenance: { source_ref: 'global/pattern-candidates/pattern-candidate-1', candidate_id: 'pattern-candidate-1', candidate_fingerprint: 'fp-1', promoted_at: '2026-03-19T00:00:00.000Z' }, compatibility: { required_tags: ['node'] }, risk_class: 'medium', known_failure_modes: ['drift'], lifecycle_events: [] }] }, null, 2));
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    expect(await runPatterns(repo, ['transfer', 'export', '--pattern', 'pattern.layering', '--target-repo', 'repo-a', '--target-tag', 'node'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    const exported = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+    expect(exported.package.kind).toBe('pattern-transfer-package');
+    logSpy.mockClear();
+    expect(await runPatterns(repo, ['transfer', 'import', '--file', exported.package_path, '--repo', 'repo-a', '--repo-tag', 'node'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    const imported = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+    expect(imported.import.candidate_only).toBe(true);
+  });
 });

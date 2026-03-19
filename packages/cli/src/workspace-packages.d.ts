@@ -209,6 +209,10 @@ declare module "@zachariahredfield/playbook-engine" {
   export const GLOBAL_PATTERNS_RELATIVE_PATH: string;
   export const materializeStoryFromSource: (...args: any[]) => any;
   export const materializePatternFromCandidate: (...args: any[]) => any;
+  export const transitionPatternLifecycle: (...args: any[]) => any;
+  export const exportPatternTransferPackage: (...args: any[]) => any;
+  export const importPatternTransferPackage: (...args: any[]) => any;
+  export const PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR: string;
   export type PromotionSourceRef = string;
   export type PatternProposalArtifact = any;
   export const explainTarget: (...args: any[]) => any;

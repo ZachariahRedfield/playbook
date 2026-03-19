@@ -4,6 +4,7 @@ import {
   GLOBAL_PATTERNS_RELATIVE_PATH,
   materializePatternFromCandidate,
   materializeStoryFromSource,
+  transitionPatternLifecycle,
   type PromotionSourceRef
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
@@ -74,18 +75,59 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
   const sourceRef = args[1] as PromotionSourceRef | undefined;
   const playbookHome = resolvePlaybookHome(cwd);
 
-  if ((target !== 'story' && target !== 'pattern') || !sourceRef) {
+  if ((target !== 'story' && target !== 'pattern' && target !== 'pattern-retire' && target !== 'pattern-demote' && target !== 'pattern-recall') || (!sourceRef && !['pattern-retire','pattern-demote','pattern-recall'].includes(target ?? ''))) {
     print(options.format, {
       schemaVersion: '1.0',
       command: 'promote',
-      error: 'Usage: playbook promote <story|pattern> <candidate-ref> [--repo <repo-id>] [--story-id <id>] [--pattern-id <id>] --json (story refs: repo/<repo-id>/story-candidates/<candidate-id> | global/pattern-candidates/<candidate-id> | global/patterns/<pattern-id>)'
+      error: 'Usage: playbook promote <story|pattern> <candidate-ref> [--repo <repo-id>] [--story-id <id>] [--pattern-id <id>] --json; or playbook promote pattern-(retire|demote|recall) <pattern-id> --reason <text> --json'
     });
     return ExitCode.Failure;
   }
 
   try {
+
+    if (target === 'pattern-retire' || target === 'pattern-demote' || target === 'pattern-recall') {
+      const patternId = args[1];
+      const reason = readOption(args, '--reason') ?? `${target} requested`;
+      if (!patternId) throw new Error(`playbook promote ${target}: missing required <pattern-id> argument`);
+      const operation = target.replace('pattern-', '') as 'retire' | 'demote' | 'recall';
+      const prepared = transitionPatternLifecycle({ playbookHome, patternId, operation, reason });
+      const workflowKind = `promote-pattern-${operation}`;
+      const promotion = stageWorkflowArtifact({
+        cwd: prepared.targetRoot,
+        workflowKind,
+        candidateRelativePath: prepared.stagedRelativePath,
+        committedRelativePath: prepared.committedRelativePath,
+        artifact: prepared.artifact,
+        validate: () => [],
+        generatedAt: prepared.record.provenance.promoted_at,
+        successSummary: prepared.outcome === 'noop' ? `${operation} no-op for pattern ${prepared.targetId}` : `${operation}d pattern ${prepared.targetId}`,
+        blockedSummary: `Pattern lifecycle update blocked for ${prepared.targetId}`
+      });
+      const receipt = emitPromotionReceipt({
+        cwd: prepared.targetRoot,
+        promotionKind: 'pattern',
+        workflowKind,
+        sourceRef: prepared.sourceRef,
+        sourceFingerprint: prepared.sourceFingerprint,
+        targetArtifactPath: prepared.committedRelativePath,
+        targetId: prepared.targetId,
+        beforeFingerprint: prepared.beforeFingerprint,
+        afterFingerprint: prepared.afterFingerprint,
+        outcome: prepared.outcome,
+        summary: promotion.summary,
+        generatedAt: prepared.record.provenance.promoted_at,
+        conflictReason: prepared.conflictReason ?? null
+      });
+      print(options.format, { schemaVersion: '1.0', command: `promote.pattern.${operation}`, pattern: prepared.record, outcome: prepared.outcome, promotion, receipt });
+      return ExitCode.Success;
+    }
+
+    const requiredSourceRef = sourceRef as PromotionSourceRef | undefined;
+
     if (target === 'story') {
-      const parsedRepoId = /^repo\/([^/]+)\//.exec(sourceRef)?.[1];
+      if (!requiredSourceRef) throw new Error('playbook promote: missing source ref');
+      const parsedRepoId = /^repo\/([^/]+)\//.exec(requiredSourceRef)?.[1];
       const repoId = readOption(args, '--repo') ?? parsedRepoId;
       if (!repoId) {
         throw new Error('playbook promote: story promotion requires --repo <repo-id> or a repo/<repo-id>/... source ref');
@@ -93,7 +135,7 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
       const targetRepoRoot = resolveRepoRootById(playbookHome, cwd, repoId);
       const sourceRepoRoot = parsedRepoId ? resolveRepoRootById(playbookHome, cwd, parsedRepoId) : undefined;
       const prepared = materializeStoryFromSource({
-        sourceRef,
+        sourceRef: requiredSourceRef,
         sourceRepoRoot,
         targetRepoId: repoId,
         targetStoryId: readOption(args, '--story-id'),
@@ -129,7 +171,7 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
       print(options.format, {
         schemaVersion: '1.0',
         command: 'promote.story',
-        source_ref: sourceRef,
+        source_ref: requiredSourceRef,
         repo_id: repoId,
         story: prepared.record,
         noop: prepared.outcome === 'noop',
@@ -140,11 +182,11 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
       return prepared.outcome === 'conflict' ? ExitCode.Failure : ExitCode.Success;
     }
 
-    if (!sourceRef.startsWith('global/pattern-candidates/')) {
+    if (!requiredSourceRef?.startsWith('global/pattern-candidates/')) {
       throw new Error('playbook promote: pattern promotion only supports global/pattern-candidates/<candidate-id> sources');
     }
     const prepared = materializePatternFromCandidate({
-      sourceRef,
+      sourceRef: requiredSourceRef,
       playbookHome,
       targetPatternId: readOption(args, '--pattern-id')
     });

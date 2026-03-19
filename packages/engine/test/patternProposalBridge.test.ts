@@ -149,7 +149,8 @@ describe('pattern proposal bridge', () => {
 
     const memoryPromotion = promotePatternProposalToMemory(repoRoot, 'proposal.artifact-pattern-layering.generalization');
     expect(memoryPromotion.target).toBe('memory');
-    expect(memoryPromotion.memory?.promoted.kind).toBe('pattern');
+    expect(memoryPromotion.candidate_only).toBe(true);
+    expect(memoryPromotion.memory_candidate_id).toBe('cross-repo-artifact-pattern-layering');
 
     const storyPromotion = promotePatternProposalToStory(repoRoot, 'proposal.artifact-pattern-layering.generalization', 'playbook');
     expect(storyPromotion.target).toBe('story');

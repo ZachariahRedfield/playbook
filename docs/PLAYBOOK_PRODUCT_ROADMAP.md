@@ -1178,7 +1178,7 @@ Failure Mode - Non-Idempotent Ignore Management.
 - repository-specific observations stay local to the consuming repo
 - reusable patterns move beyond one repository only through explicit governed promotion/transfer paths
 - transferred reusable patterns must be sanitized, provenance-preserving, and compatibility-scoped
-- receiving repositories treat imported patterns as candidate inputs until local review/adoption
+- receiving repositories treat imported patterns as candidate inputs until local review/adoption; compatibility mismatches fail closed and transferred patterns remain retireable/demotable/recallable after import
 - downstream usage informs Playbook through explicit docs/roadmap/rule/template promotion workflows, not hidden mutation
 
 ### Extension model preference

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { materializePatternFromCandidate, materializeStoryFromSource, readCanonicalPatternsArtifact } from '../src/promotion.js';
+import { materializePatternFromCandidate, materializeStoryFromSource, readCanonicalPatternsArtifact, transitionPatternLifecycle } from '../src/promotion.js';
 
 const tempDirs: string[] = [];
 const mkd = (prefix: string): string => {
@@ -12,7 +12,40 @@ const mkd = (prefix: string): string => {
 };
 const writeJson = (root: string, relativePath: string, value: unknown): void => {
   const filePath = path.join(root, relativePath);
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.mkdirSync(path.dirname(filePath), { recursive: true 
+
+  it('retires, demotes, and recalls promoted patterns deterministically', () => {
+    const home = mkd('playbook-promotion-home-');
+    writeJson(home, 'patterns.json', {
+      schemaVersion: '1.0',
+      kind: 'promoted-patterns',
+      patterns: [{
+        id: 'pattern.layering',
+        pattern_family: 'layering',
+        title: 'Layering',
+        description: 'desc',
+        storySeed: { title: 'Layering story', summary: 'sum', acceptance: ['a'] },
+        source_artifact: '.playbook/pattern-candidates.json',
+        signals: ['a'],
+        confidence: 0.8,
+        evidence_refs: ['ref'],
+        status: 'active',
+        provenance: { source_ref: 'global/pattern-candidates/pattern-candidate-1', candidate_id: 'pattern-candidate-1', candidate_fingerprint: 'fp-1', promoted_at: '2026-03-19T00:00:00.000Z' },
+        lifecycle_events: []
+      }]
+    });
+    const retired = transitionPatternLifecycle({ playbookHome: home, patternId: 'pattern.layering', operation: 'retire', reason: 'obsolete', generatedAt: '2026-03-20T00:00:00.000Z' });
+    writeJson(home, 'patterns.json', retired.artifact);
+    expect(retired.record.status).toBe('retired');
+    const recalled = transitionPatternLifecycle({ playbookHome: home, patternId: 'pattern.layering', operation: 'recall', reason: 'restore', generatedAt: '2026-03-21T00:00:00.000Z' });
+    writeJson(home, 'patterns.json', recalled.artifact);
+    expect(recalled.record.status).toBe('active');
+    const demoted = transitionPatternLifecycle({ playbookHome: home, patternId: 'pattern.layering', operation: 'demote', reason: 'bad transfer', generatedAt: '2026-03-22T00:00:00.000Z' });
+    expect(demoted.record.status).toBe('demoted');
+    expect(demoted.record.lifecycle_events?.map((entry) => entry.operation)).toEqual(['demote', 'promote', 'recall', 'retire'].sort());
+  });
+
+});
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 };
 afterEach(() => {

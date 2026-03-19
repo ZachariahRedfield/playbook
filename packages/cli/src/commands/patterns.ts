@@ -1,4 +1,4 @@
-import { listTopPatterns, promotePatternCandidate, scorePatternGraph } from '@zachariahredfield/playbook-engine';
+import { exportPatternTransferPackage, importPatternTransferPackage, listTopPatterns, PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR, promotePatternCandidate, scorePatternGraph } from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { ExitCode } from '../lib/cliContract.js';
 import { findPatternNode, findRelatedPatterns, readContractPatternGraph, readPatternKnowledgeGraph, summarizePatternLayers } from './patterns/graph.js';
@@ -30,7 +30,7 @@ const emitError = (cwd: string, options: PatternsOptions, message: string): numb
 };
 
 const printHelp = (): void => {
-  console.log('playbook patterns subcommands: list | show <id> | related <id> | layers | score | top [--limit <n>] | outcomes <patternId> | doctrine-candidates | candidates [show <id>|unmatched|link|cross-repo|generalized|portability] | anti-patterns | proposals | cross-repo [--repo <path-or-slug>] | portability | generalized | repo-delta --left <repoId> --right <repoId> | promote --id <pattern-id> --decision approve|reject');
+  console.log('playbook patterns subcommands: list | show <id> | related <id> | layers | score | top [--limit <n>] | outcomes <patternId> | doctrine-candidates | candidates [show <id>|unmatched|link|cross-repo|generalized|portability] | anti-patterns | proposals | transfer export --pattern <id> --target-repo <repo-id> [--risk-class <level>] [--sanitization-status <status>] | transfer import --file <path> --repo <repo-id> [--repo-tag <tag>] | cross-repo [--repo <path-or-slug>] | portability | generalized | repo-delta --left <repoId> --right <repoId> | promote --id <pattern-id> --decision approve|reject');
 };
 
 
@@ -81,6 +81,36 @@ const runTop = (cwd: string, commandArgs: string[], options: PatternsOptions): n
   return ExitCode.Success;
 };
 
+
+const runTransfer = (cwd: string, commandArgs: string[], options: PatternsOptions): number => {
+  const action = commandArgs[1];
+  if (action === 'export') {
+    const patternId = readOptionValue(commandArgs, '--pattern');
+    const targetRepo = readOptionValue(commandArgs, '--target-repo');
+    const riskClass = (readOptionValue(commandArgs, '--risk-class') ?? 'medium') as 'low' | 'medium' | 'high' | 'critical';
+    const sanitizationStatus = (readOptionValue(commandArgs, '--sanitization-status') ?? 'needs-review') as 'sanitized' | 'unsanitized' | 'needs-review';
+    const repoTags = commandArgs.flatMap((arg, index) => arg === '--target-tag' ? [commandArgs[index + 1]] : []).filter(Boolean) as string[];
+    if (!patternId || !targetRepo) return emitError(cwd, options, 'playbook patterns transfer export: requires --pattern <id> and --target-repo <repo-id>.');
+    const result = exportPatternTransferPackage({ playbookHome: cwd, patternId, targetRepoId: targetRepo, targetTags: repoTags, riskClass, sanitizationStatus });
+    const payload = { schemaVersion: '1.0', command: 'patterns', action: 'transfer-export', artifact_dir: PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR, package_path: result.packagePath, package: result.package };
+    if (options.format === 'json') { emitJsonOutput({ cwd, command: 'patterns', payload, outFile: options.outFile }); return ExitCode.Success; }
+    if (!options.quiet) console.log(JSON.stringify(payload, null, 2));
+    return ExitCode.Success;
+  }
+  if (action === 'import') {
+    const file = readOptionValue(commandArgs, '--file');
+    const repoId = readOptionValue(commandArgs, '--repo');
+    const repoTags = commandArgs.flatMap((arg, index) => arg === '--repo-tag' ? [commandArgs[index + 1]] : []).filter(Boolean) as string[];
+    if (!file || !repoId) return emitError(cwd, options, 'playbook patterns transfer import: requires --file <path> and --repo <repo-id>.');
+    const result = importPatternTransferPackage(cwd, file, repoId, repoTags);
+    const payload = { schemaVersion: '1.0', command: 'patterns', action: 'transfer-import', import: result };
+    if (options.format === 'json') { emitJsonOutput({ cwd, command: 'patterns', payload, outFile: options.outFile }); return ExitCode.Success; }
+    if (!options.quiet) console.log(JSON.stringify(payload, null, 2));
+    return ExitCode.Success;
+  }
+  return emitError(cwd, options, 'playbook patterns transfer: use export or import.');
+};
+
 const runPromote = (cwd: string, commandArgs: string[], options: PatternsOptions): number => {
   const id = readOptionValue(commandArgs, '--id');
   const decisionRaw = readOptionValue(commandArgs, '--decision');
@@ -114,7 +144,7 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
           payload: {
             schemaVersion: '1.0',
             command: 'patterns',
-            subcommands: ['list', 'show', 'related', 'layers', 'score', 'top', 'outcomes', 'doctrine-candidates', 'candidates', 'anti-patterns', 'proposals', 'cross-repo', 'portability', 'generalized', 'repo-delta', 'promote']
+            subcommands: ['list', 'show', 'related', 'layers', 'score', 'top', 'outcomes', 'doctrine-candidates', 'candidates', 'anti-patterns', 'proposals', 'transfer', 'cross-repo', 'portability', 'generalized', 'repo-delta', 'promote']
           },
           outFile: options.outFile
         });
@@ -155,6 +185,10 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
 
     if (subcommand === 'proposals') {
       return runPatternsProposals(cwd, commandArgs.slice(1), options);
+    }
+
+    if (subcommand === 'transfer') {
+      return runTransfer(cwd, commandArgs, options);
     }
 
     if (subcommand === 'cross-repo') {
@@ -251,7 +285,7 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
     return emitError(
       cwd,
       options,
-      'playbook patterns: unsupported subcommand. Use list, show <id>, related <id>, layers, score, top [--limit <n>], outcomes <patternId>, doctrine-candidates, candidates [show <id>|unmatched|link|cross-repo|generalized|portability], anti-patterns, proposals, cross-repo [--repo <path-or-slug>], portability, generalized, repo-delta --left <repoId> --right <repoId>, or promote --id <pattern-id> --decision approve|reject.'
+      'playbook patterns: unsupported subcommand. Use list, show <id>, related <id>, layers, score, top [--limit <n>], outcomes <patternId>, doctrine-candidates, candidates [show <id>|unmatched|link|cross-repo|generalized|portability], anti-patterns, proposals, transfer export|import, cross-repo [--repo <path-or-slug>], portability, generalized, repo-delta --left <repoId> --right <repoId>, or promote --id <pattern-id> --decision approve|reject.'
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

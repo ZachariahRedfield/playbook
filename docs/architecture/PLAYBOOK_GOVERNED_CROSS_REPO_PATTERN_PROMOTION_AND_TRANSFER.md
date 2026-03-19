@@ -193,3 +193,10 @@ Recommended architecture ordering:
 - `docs/roadmap/IMPROVEMENTS_BACKLOG.md`
 - `docs/CONSUMER_INTEGRATION_CONTRACT.md`
 - `docs/AUTOMATION_SYNTHESIS_VISION.md`
+
+## Lifecycle completion update
+
+- Promoted reusable patterns now carry explicit states: `active`, `superseded`, `retired`, and `demoted`.
+- Retirement, demotion, and recall are deterministic receipt-emitting operations, not ad hoc file edits.
+- Transfer package imports land in receiving repos as candidate-only pattern input. They do not become governance truth or auto-promoted doctrine.
+- Compatibility mismatch must fail closed. Recalled or demoted transferred patterns remain inspectable through the same lifecycle record.

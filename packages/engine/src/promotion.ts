@@ -45,6 +45,23 @@ export type StoryRecordWithProvenance = StoryRecord & {
   provenance?: StoryPromotionProvenance;
 };
 
+export type PromotedPatternStatus = 'active' | 'superseded' | 'retired' | 'demoted';
+
+export type PatternLifecycleEvent = {
+  operation: 'promote' | 'supersede' | 'retire' | 'demote' | 'recall';
+  at: string;
+  reason: string;
+  actor: 'playbook';
+  from_status: PromotedPatternStatus | null;
+  to_status: PromotedPatternStatus;
+};
+
+export type PatternTransferPackageRef = {
+  package_id: string;
+  exported_at: string;
+  compatibility_status: 'compatible' | 'incompatible';
+};
+
 export type PromotedPatternRecord = {
   id: string;
   pattern_family: string;
@@ -55,13 +72,29 @@ export type PromotedPatternRecord = {
   signals: string[];
   confidence: number;
   evidence_refs: string[];
-  status: 'promoted';
+  status: PromotedPatternStatus;
   provenance: {
     source_ref: `global/pattern-candidates/${string}`;
     candidate_id: string;
     candidate_fingerprint: string;
     promoted_at: string;
   };
+  superseded_by?: string | null;
+  retired_at?: string | null;
+  retirement_reason?: string | null;
+  demoted_at?: string | null;
+  demotion_reason?: string | null;
+  recalled_at?: string | null;
+  recall_reason?: string | null;
+  compatibility?: {
+    target_repo_ids?: string[];
+    repo_globs?: string[];
+    required_tags?: string[];
+  } | null;
+  risk_class?: 'low' | 'medium' | 'high' | 'critical' | null;
+  known_failure_modes?: string[];
+  transferred_from?: PatternTransferPackageRef | null;
+  lifecycle_events?: PatternLifecycleEvent[];
 };
 
 export type CanonicalPatternsArtifact = {
@@ -115,6 +148,12 @@ const readJsonIfPresent = <T>(filePath: string): T | null => {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 };
 
+const sortLifecycleEvents = (events: PatternLifecycleEvent[] = []): PatternLifecycleEvent[] => [...events].sort((left, right) =>
+  left.at.localeCompare(right.at) ||
+  left.operation.localeCompare(right.operation) ||
+  left.to_status.localeCompare(right.to_status) ||
+  left.reason.localeCompare(right.reason));
+
 const defaultPatternsArtifact = (): CanonicalPatternsArtifact => ({
   schemaVersion: '1.0',
   kind: 'promoted-patterns',
@@ -131,7 +170,23 @@ export const readCanonicalPatternsArtifact = (playbookHome: string): CanonicalPa
   return {
     schemaVersion: '1.0',
     kind: 'promoted-patterns',
-    patterns: [...parsed.patterns].sort((left, right) => left.id.localeCompare(right.id))
+    patterns: [...parsed.patterns]
+      .map((pattern) => {
+        const rawStatus = String((pattern as Record<string, unknown>).status ?? 'active');
+        return {
+        ...pattern,
+        status: rawStatus === 'promoted' ? 'active' : rawStatus as PromotedPatternStatus,
+        superseded_by: typeof pattern.superseded_by === 'string' ? pattern.superseded_by : null,
+        retired_at: typeof pattern.retired_at === 'string' ? pattern.retired_at : null,
+        retirement_reason: typeof pattern.retirement_reason === 'string' ? pattern.retirement_reason : null,
+        demoted_at: typeof pattern.demoted_at === 'string' ? pattern.demoted_at : null,
+        demotion_reason: typeof pattern.demotion_reason === 'string' ? pattern.demotion_reason : null,
+        recalled_at: typeof pattern.recalled_at === 'string' ? pattern.recalled_at : null,
+        recall_reason: typeof pattern.recall_reason === 'string' ? pattern.recall_reason : null,
+        lifecycle_events: sortLifecycleEvents(Array.isArray(pattern.lifecycle_events) ? pattern.lifecycle_events as PatternLifecycleEvent[] : [])
+      };
+      })
+      .sort((left, right) => left.id.localeCompare(right.id))
   };
 };
 
@@ -368,13 +423,25 @@ export const materializePatternFromCandidate = (input: {
     signals: sortStrings((Array.isArray(candidate.signals) ? candidate.signals : []).map(String)),
     confidence: Number(candidate.confidence ?? 0),
     evidence_refs: sortStrings((Array.isArray(candidate.evidence_refs) ? candidate.evidence_refs : []).map(String)),
-    status: 'promoted',
+    status: 'active',
     provenance: {
       source_ref: input.sourceRef,
       candidate_id: parsed.candidateId,
       candidate_fingerprint: candidateFingerprint,
       promoted_at: promotedAt
-    }
+    },
+    superseded_by: null,
+    retired_at: null,
+    retirement_reason: null,
+    demoted_at: null,
+    demotion_reason: null,
+    recalled_at: null,
+    recall_reason: null,
+    compatibility: null,
+    risk_class: null,
+    known_failure_modes: [],
+    transferred_from: null,
+    lifecycle_events: [{ operation: 'promote', at: promotedAt, reason: 'Promoted from reviewed global pattern candidate.', actor: 'playbook', from_status: null, to_status: 'active' }]
   };
 
   const current = readCanonicalPatternsArtifact(input.playbookHome);
@@ -404,4 +471,48 @@ export const materializePatternFromCandidate = (input: {
     afterFingerprint: check.outcome === 'promoted' ? fingerprintPromotionValue(nextPattern) : beforeFingerprint,
     conflictReason: check.conflictReason
   };
+};
+
+export type PatternLifecycleOperation = 'retire' | 'demote' | 'recall';
+
+export type PatternLifecycleResult = PreparedPromotion<CanonicalPatternsArtifact, PromotedPatternRecord> & {
+  operation: PatternLifecycleOperation;
+};
+
+const appendLifecycleEvent = (record: PromotedPatternRecord, event: PatternLifecycleEvent): PromotedPatternRecord => ({
+  ...record,
+  lifecycle_events: sortLifecycleEvents([...(record.lifecycle_events ?? []), event])
+});
+
+export const transitionPatternLifecycle = (input: {
+  playbookHome: string;
+  patternId: string;
+  operation: PatternLifecycleOperation;
+  reason: string;
+  generatedAt?: string;
+}): PatternLifecycleResult => {
+  const current = readCanonicalPatternsArtifact(input.playbookHome);
+  const existing = current.patterns.find((entry) => entry.id === input.patternId);
+  if (!existing) throw new Error(`playbook promote: promoted pattern not found: ${input.patternId}`);
+  const timestamp = input.generatedAt ?? new Date().toISOString();
+  const beforeFingerprint = fingerprintPromotionValue(existing);
+  let next: PromotedPatternRecord;
+  if (input.operation === 'retire') {
+    if (existing.status === 'retired') {
+      return { scope: 'global', targetId: existing.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact: current, record: existing, outcome: 'noop', sourceRef: `global/patterns/${existing.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: beforeFingerprint, operation: input.operation };
+    }
+    next = appendLifecycleEvent({ ...existing, status: 'retired', retired_at: timestamp, retirement_reason: input.reason }, { operation: 'retire', at: timestamp, reason: input.reason, actor: 'playbook', from_status: existing.status, to_status: 'retired' });
+  } else if (input.operation === 'demote') {
+    if (existing.status === 'demoted') {
+      return { scope: 'global', targetId: existing.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact: current, record: existing, outcome: 'noop', sourceRef: `global/patterns/${existing.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: beforeFingerprint, operation: input.operation };
+    }
+    next = appendLifecycleEvent({ ...existing, status: 'demoted', demoted_at: timestamp, demotion_reason: input.reason }, { operation: 'demote', at: timestamp, reason: input.reason, actor: 'playbook', from_status: existing.status, to_status: 'demoted' });
+  } else {
+    if (existing.status === 'active') {
+      return { scope: 'global', targetId: existing.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact: current, record: existing, outcome: 'noop', sourceRef: `global/patterns/${existing.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: beforeFingerprint, operation: input.operation };
+    }
+    next = appendLifecycleEvent({ ...existing, status: 'active', recalled_at: timestamp, recall_reason: input.reason }, { operation: 'recall', at: timestamp, reason: input.reason, actor: 'playbook', from_status: existing.status, to_status: 'active' });
+  }
+  const artifact: CanonicalPatternsArtifact = { schemaVersion: '1.0', kind: 'promoted-patterns', patterns: [...current.patterns.filter((entry) => entry.id !== next.id), next].sort((left, right) => left.id.localeCompare(right.id)) };
+  return { scope: 'global', targetId: next.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact, record: next, outcome: 'promoted', sourceRef: `global/patterns/${next.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: fingerprintPromotionValue(next), operation: input.operation };
 };

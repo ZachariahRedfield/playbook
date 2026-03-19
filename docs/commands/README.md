@@ -582,3 +582,11 @@ Use query surfaces to inspect state:
 
 - `playbook story plan <id> --json`: generate a route/execution plan from canonical story intent while keeping story, plan, worker, and receipt as separate linked artifacts.
 - `playbook route --story <id> --json`: derive a deterministic route directly from a story id and stamp stable `story_reference` metadata into the generated execution plan.
+
+## Pattern lifecycle and transfer
+
+- `pnpm playbook promote pattern-retire <pattern-id> --reason <text> --json`
+- `pnpm playbook promote pattern-demote <pattern-id> --reason <text> --json`
+- `pnpm playbook promote pattern-recall <pattern-id> --reason <text> --json`
+- `pnpm playbook patterns transfer export --pattern <id> --target-repo <repo-id> --json`
+- `pnpm playbook patterns transfer import --file <path> --repo <repo-id> --json`

@@ -591,7 +591,8 @@ export {
   PATTERN_PROPOSALS_RELATIVE_PATH
 } from './learning/patternProposalBridge.js';
 export type { PatternProposal, PatternProposalArtifact, PatternProposalPromotionResult, PatternProposalEvidence } from './learning/patternProposalBridge.js';
-export { GLOBAL_PATTERNS_RELATIVE_PATH, readCanonicalPatternsArtifact, materializeStoryFromSource, materializePatternFromCandidate } from './promotion.js';
+export { GLOBAL_PATTERNS_RELATIVE_PATH, readCanonicalPatternsArtifact, materializeStoryFromSource, materializePatternFromCandidate, transitionPatternLifecycle } from './promotion.js';
+export { exportPatternTransferPackage, importPatternTransferPackage, PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR } from './patternTransfer.js';
 export type { PromotionSourceRef, StoryRecordWithProvenance, StoryPromotionProvenance as PromotionStoryProvenance, PromotedPatternRecord, CanonicalPatternsArtifact, PreparedPromotion } from './promotion.js';
 export type { PatternTopologySignature, PatternEquivalenceClass, PatternVariant, PatternTopologyTelemetry, PatternEquivalenceArtifact } from './schema/patternTopology.js';
 

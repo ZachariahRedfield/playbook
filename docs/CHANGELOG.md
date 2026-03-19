@@ -1,3 +1,11 @@
+## 2026-03-19 — Pattern retirement lifecycle and transfer packages
+
+- WHAT: Added explicit promoted-pattern lifecycle states (`active`, `superseded`, `retired`, `demoted`) plus deterministic `playbook promote pattern-retire|pattern-demote|pattern-recall` flows that emit audited promotion receipts. WHY: Promoted knowledge must remain recallable and retireable instead of accumulating as permanent doctrine.
+- WHAT: Added first-class transferable pattern package export/import flows via `pnpm playbook patterns transfer export|import`, with explicit provenance, sanitization status, compatibility metadata, risk class, and known failure modes. WHY: Transferable pattern packages should move reusable abstractions, not silently import repo-local truth.
+- Rule: Promoted knowledge must be retireable, recallable, and compatibility-scoped.
+- Pattern: Transferable pattern packages move abstractions, not repo-local truth.
+- Failure Mode: Knowledge accumulation without retirement or recall turns governed memory into doctrine sprawl.
+
 ## Unreleased
 
 - WHAT: Closed the canonical repo-local story lifecycle by stamping stable `story_reference` metadata into story-linked plans and routes, persisting `.playbook/execution-receipt.json`, and reconciling lightweight plan/receipt/updated-state linkage fields back into `.playbook/stories.json` with deterministic no-op/conflict behavior. WHY: Stories now link durably to execution artifacts without collapsing Story, Plan, Receipt, and Updated-State into one artifact.
