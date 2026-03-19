@@ -290,8 +290,31 @@ describe('observer server', () => {
     const cwd = makeTempDir();
     const repo = path.join(cwd, 'repo-a');
     fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.playbook', 'session.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'session', id: 'session-a' }, null, 2));
     fs.writeFileSync(path.join(repo, '.playbook', 'system-map.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'system-map', layers: [], nodes: [], edges: [] }, null, 2));
+    fs.writeFileSync(path.join(repo, '.playbook', 'pattern-candidates.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'pattern-candidates',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      candidates: [{ id: 'pattern-candidate-repo', title: 'Repo candidate', normalizationKey: 'observer-layer', sourceRefs: ['.playbook/stories.json'], status: 'observed', pattern_family: 'observer', description: 'repo', source_artifact: '.playbook/stories.json', signals: ['join'], confidence: 0.8, evidence_refs: ['.playbook/stories.json'] }]
+    }, null, 2));
+    fs.writeFileSync(path.join(repo, '.playbook', 'patterns.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      command: 'pattern-compaction',
+      patterns: [{ id: 'pattern-promoted-repo', title: 'Repo promoted', normalizationKey: 'observer-layer', promotedFrom: 'story-ready', sourceRefs: ['.playbook/stories.json'] }]
+    }, null, 2));
+    fs.writeFileSync(path.join(cwd, '.playbook', 'pattern-candidates.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'pattern-candidates',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      candidates: [{ id: 'pattern-candidate-global', title: 'Global candidate', normalizationKey: 'observer-layer', sourceRefs: ['.playbook/stories.json'], status: 'observed', pattern_family: 'observer', description: 'global', source_artifact: '.playbook/stories.json', signals: ['join'], confidence: 0.9, evidence_refs: ['.playbook/stories.json'] }]
+    }, null, 2));
+    fs.writeFileSync(path.join(cwd, '.playbook', 'patterns.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      command: 'pattern-compaction',
+      patterns: [{ id: 'pattern-promoted-global', title: 'Global promoted', normalizationKey: 'observer-layer', promotedFrom: 'pattern-candidate-global', sourceRefs: ['.playbook/stories.json'] }]
+    }, null, 2));
     fs.writeFileSync(path.join(repo, '.playbook', 'stories.json'), JSON.stringify({
       schemaVersion: '1.0',
       repo: 'repo-a',
@@ -384,12 +407,14 @@ describe('observer server', () => {
 
     const repoResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a`);
     expect(repoResponse.status).toBe(200);
-    const repoJson = await repoResponse.json() as { repo: { id: string }; readiness: { readiness_state: string }; backlog: { summary: { highest_priority_ready_story: { id: string } | null; blocked_stories: Array<{ id: string }>; primary_next_action: string | null } } };
+    const repoJson = await repoResponse.json() as { repo: { id: string }; readiness: { readiness_state: string }; backlog: { summary: { highest_priority_ready_story: { id: string } | null; blocked_stories: Array<{ id: string }>; primary_next_action: string | null } }; promotion_layer: { joins: { linked_story_ids: string[]; linked_pattern_ids: string[] } } };
     expect(repoJson.repo.id).toBe('repo-a');
     expect(repoJson.readiness.readiness_state).toBe('partially_observable');
     expect(repoJson.backlog.summary.highest_priority_ready_story?.id).toBe('story-ready');
     expect(repoJson.backlog.summary.blocked_stories.map((story) => story.id)).toEqual(['story-blocked']);
     expect(repoJson.backlog.summary.primary_next_action).toContain('story-ready');
+    expect(repoJson.promotion_layer.joins.linked_story_ids).toEqual(['story-ready']);
+    expect(repoJson.promotion_layer.joins.linked_pattern_ids).toEqual(['pattern-promoted-repo']);
 
     const backlogResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/backlog`);
     expect(backlogResponse.status).toBe(200);
@@ -399,11 +424,24 @@ describe('observer server', () => {
 
     const storyDetailResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/backlog/stories/story-ready`);
     expect(storyDetailResponse.status).toBe(200);
-    const storyDetailJson = await storyDetailResponse.json() as { detail: { story: { id: string; suggested_route: string | null }; linked_evidence: Array<{ artifact_path: string }>; linked_status: { readiness_state: string }; raw_artifact_path: string } };
+    const storyDetailJson = await storyDetailResponse.json() as { detail: { story: { id: string; suggested_route: string | null }; linked_evidence: Array<{ artifact_path: string }>; linked_status: { readiness_state: string }; raw_artifact_path: string; related: Array<{ id: string }> } };
     expect(storyDetailJson.detail.story.id).toBe('story-ready');
     expect(storyDetailJson.detail.linked_status.readiness_state).toBe('partially_observable');
     expect(storyDetailJson.detail.linked_evidence.map((entry) => entry.artifact_path)).toContain('.playbook/session.json');
     expect(storyDetailJson.detail.raw_artifact_path).toBe('.playbook/stories.json');
+    expect(storyDetailJson.detail.related.map((entry) => entry.id)).toContain('pattern-promoted-repo');
+
+    const crossRepoPromotionResponse = await fetch(`http://127.0.0.1:${port}/api/cross-repo/promotion-layer`);
+    expect(crossRepoPromotionResponse.status).toBe(200);
+    const crossRepoPromotionJson = await crossRepoPromotionResponse.json() as {
+      promotion_layer: {
+        derived_candidates: { raw_artifact_path: string; patterns: Array<{ id: string }> };
+        promoted_knowledge: { raw_artifact_path: string; patterns: Array<{ id: string }> };
+      };
+    };
+    expect(crossRepoPromotionJson.promotion_layer.derived_candidates.raw_artifact_path).toBe('.playbook/pattern-candidates.json');
+    expect(crossRepoPromotionJson.promotion_layer.derived_candidates.patterns.map((entry) => entry.id)).toEqual(['pattern-candidate-global']);
+    expect(crossRepoPromotionJson.promotion_layer.promoted_knowledge.patterns.map((entry) => entry.id)).toEqual(['pattern-promoted-global']);
 
     const artifactResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/artifacts/session`);
     expect(artifactResponse.status).toBe(200);
@@ -509,6 +547,8 @@ describe('observer server', () => {
     expect(uiHtml).toContain('Backlog Summary');
     expect(uiHtml).toContain('Backlog List');
     expect(uiHtml).toContain('Story Detail');
+    expect(uiHtml).toContain('Promotion Layer');
+    expect(uiHtml).toContain('Global Promotion Layer');
 
     const uiScript = await fetch(`http://127.0.0.1:${port}/ui/app.js`);
     const uiScriptText = await uiScript.text();
@@ -523,11 +563,18 @@ describe('observer server', () => {
     expect(uiScriptText).toContain("document.getElementById('backlogSummaryPanel')");
     expect(uiScriptText).toContain("document.getElementById('backlogListPanel')");
     expect(uiScriptText).toContain("document.getElementById('storyDetailPanel')");
+    expect(uiScriptText).toContain("document.getElementById('promotionLayerPanel')");
+    expect(uiScriptText).toContain("document.getElementById('crossRepoPromotionPanel')");
     expect(uiScriptText).toContain('const loadBacklog = async () =>');
     expect(uiScriptText).toContain('const loadStoryDetail = async () =>');
+    expect(uiScriptText).toContain('const renderPromotionLayer = (payload) =>');
+    expect(uiScriptText).toContain('const renderCrossRepoPromotionLayer = (payload) =>');
     expect(uiScriptText).toContain('/backlog');
     expect(uiScriptText).toContain('/backlog/stories/');
+    expect(uiScriptText).toContain('/api/cross-repo/promotion-layer');
     expect(uiScriptText).toContain('.playbook/stories.json');
+    expect(uiScriptText).toContain('.playbook/pattern-candidates.json');
+    expect(uiScriptText).toContain('.playbook/patterns.json');
     expect(uiScriptText).toContain('summary-strip');
     expect(uiScriptText).toContain('summary-pill');
     expect(uiScriptText).toContain('narrative-secondary');
