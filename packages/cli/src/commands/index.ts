@@ -389,6 +389,10 @@ const commandRunners: Record<
     const { runStory } = await import("./story.js");
     return runStory(cwd, commandArgs, { format, quiet });
   },
+  promote: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runPromote } = await import("./promote.js");
+    return runPromote(cwd, commandArgs, { format, quiet });
+  },
   knowledge: async ({ cwd, commandArgs, format, quiet }) => {
     const { runKnowledge } = await import("./knowledge.js");
     return runKnowledge(cwd, commandArgs, { format, quiet });
@@ -621,6 +625,7 @@ const commandOrder = [
   "session",
   "patterns",
   "story",
+  "promote",
   "learn",
   "memory",
   "improve",

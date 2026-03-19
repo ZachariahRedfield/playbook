@@ -424,6 +424,18 @@
       "example": "pnpm playbook policy evaluate --json"
     },
     {
+      "name": "promote",
+      "category": "Repository tools",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "primary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook promote story repo/<repo-id>/story-candidates/<candidate-id> --json"
+    },
+    {
       "name": "query",
       "category": "Repository intelligence",
       "role": "repo-intelligence",
@@ -617,6 +629,7 @@
     "pilot",
     "plan",
     "policy",
+    "promote",
     "query",
     "receipt",
     "review-pr",
