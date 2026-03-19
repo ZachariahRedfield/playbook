@@ -1,31 +1,24 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { computeCrossRepoPatternLearning, type CrossRepoInput, type CrossRepoPatternsArtifact } from '../scoring/crossRepoPatternLearning.js';
 
-export type CrossRepoCandidateInput = {
+export type CrossRepoCandidateInput = CrossRepoInput;
+
+export type CrossRepoPatternCandidate = {
   id: string;
-  repoPath: string;
-};
-
-type PatternCandidateRecord = {
-  id: string;
-  pattern_family: string;
-  confidence: number;
-};
-
-type PatternCandidatesArtifact = {
-  kind: 'pattern-candidates';
-  generatedAt: string;
-  candidates: PatternCandidateRecord[];
-};
-
-export type CrossRepoCandidateFamilyAggregate = {
-  pattern_family: string;
-  repo_count: number;
-  candidate_count: number;
-  mean_confidence: number;
-  repos: string[];
-  first_seen: string;
-  last_seen: string;
+  title: string;
+  when: string;
+  then: string;
+  because: string;
+  normalizationKey: string;
+  sourceRefs: string[];
+  storySeed: {
+    title: string;
+    rationale: string;
+    acceptanceCriteria: string[];
+  };
+  fingerprint: string;
 };
 
 export type CrossRepoCandidatesArtifact = {
@@ -33,103 +26,91 @@ export type CrossRepoCandidatesArtifact = {
   kind: 'cross-repo-candidates';
   generatedAt: string;
   repositories: string[];
-  families: CrossRepoCandidateFamilyAggregate[];
+  candidates: CrossRepoPatternCandidate[];
 };
 
 const CROSS_REPO_CANDIDATES_RELATIVE_PATH = '.playbook/cross-repo-candidates.json' as const;
-const PATTERN_CANDIDATES_RELATIVE_PATH = '.playbook/pattern-candidates.json' as const;
 const DEFAULT_GENERATED_AT = '1970-01-01T00:00:00.000Z';
 
 const readJson = <T>(targetPath: string): T => JSON.parse(fs.readFileSync(targetPath, 'utf8')) as T;
+const hashText = (value: string): string => crypto.createHash('sha256').update(value, 'utf8').digest('hex');
+const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort((left, right) => left.localeCompare(right));
+const slugify = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'candidate';
+const normalizeToken = (value: string): string => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
 
-const clampConfidence = (value: number): number => Math.max(0, Math.min(1, Number(value.toFixed(4))));
+const toSourceRef = (entry: {
+  repo_id: string;
+  artifact_kind: string;
+  artifact_path: string;
+  pointer: string;
+  value_digest: string | null;
+}): string => [entry.repo_id, entry.artifact_kind, entry.artifact_path, entry.pointer, entry.value_digest ?? 'no-digest'].join('::');
 
-const normalizePatternFamily = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[_\s]+/g, '-')
-    .replace(/-+/g, '-');
+const candidateGeneratedAt = (artifact: CrossRepoPatternsArtifact): string => artifact.generatedAt ?? artifact.generated_at ?? DEFAULT_GENERATED_AT;
+const candidateRepositories = (artifact: CrossRepoPatternsArtifact): string[] => uniqueSorted(
+  (artifact.source_repos ?? []).map((entry) => entry.repo_id).concat((artifact.repositories ?? []).map((entry) => entry.id))
+);
 
-const readPatternCandidatesArtifact = (repoPath: string): PatternCandidatesArtifact => {
-  const artifactPath = path.join(repoPath, PATTERN_CANDIDATES_RELATIVE_PATH);
-  if (!fs.existsSync(artifactPath)) {
-    throw new Error(`playbook cross-repo candidates: missing artifact at ${artifactPath}`);
-  }
+const buildNormalizationKey = (candidate: CrossRepoPatternsArtifact['candidate_patterns'][number], sourceRefs: string[]): string => {
+  const repoIds = uniqueSorted(candidate.evidence.map((entry) => entry.repo_id));
+  const artifactKinds = uniqueSorted(candidate.evidence.map((entry) => entry.artifact_kind));
+  return [
+    normalizeToken(candidate.classification),
+    normalizeToken(candidate.id),
+    normalizeToken(candidate.title),
+    normalizeToken(repoIds.join('-')),
+    normalizeToken(artifactKinds.join('-')),
+    normalizeToken(String(sourceRefs.length))
+  ].filter((entry) => entry.length > 0).join('::');
+};
 
-  const artifact = readJson<PatternCandidatesArtifact>(artifactPath);
-  if (artifact.kind !== 'pattern-candidates') {
-    throw new Error(`playbook cross-repo candidates: invalid artifact kind at ${artifactPath}. Expected "pattern-candidates".`);
-  }
+const toCandidateRecord = (candidate: CrossRepoPatternsArtifact['candidate_patterns'][number]): CrossRepoPatternCandidate | null => {
+  if (candidate.classification === 'gap') return null;
+  const repoIds = uniqueSorted(candidate.evidence.map((entry) => entry.repo_id));
+  if (repoIds.length < 2) return null;
 
-  return artifact;
+  const sourceRefs = uniqueSorted(candidate.evidence.map(toSourceRef));
+  const normalizationKey = buildNormalizationKey(candidate, sourceRefs);
+  const sourceRefHash = hashText(sourceRefs.join('\n'));
+  const id = `candidate.${slugify(normalizationKey)}.${sourceRefHash.slice(0, 12)}`;
+  const because = `Cross-repo evidence shows ${candidate.title.toLowerCase()} across ${repoIds.length} repositories using only governed references.`;
+  const when = `When ${repoIds.join(', ')} all emit governed evidence for ${candidate.title.toLowerCase()}.`;
+  const then = `Then review ${candidate.title} as a portable cross-repo pattern candidate without copying source artifact bodies.`;
+
+  return {
+    id,
+    title: candidate.title,
+    when,
+    then,
+    because,
+    normalizationKey,
+    sourceRefs,
+    storySeed: {
+      title: `Review portable pattern: ${candidate.title}`,
+      rationale: because,
+      acceptanceCriteria: [
+        `Verify governed evidence for ${candidate.title} across ${repoIds.length} repositories.`,
+        'Decide whether the normalized candidate should advance through explicit promotion.',
+        'Keep promotion evidence limited to source references rather than copied artifact bodies.'
+      ]
+    },
+    fingerprint: hashText(JSON.stringify({ normalizationKey, sourceRefs }))
+  };
 };
 
 export const computeCrossRepoCandidateAggregation = (repositories: CrossRepoCandidateInput[]): CrossRepoCandidatesArtifact => {
-  const aggregateByFamily = new Map<
-    string,
-    {
-      repos: Set<string>;
-      candidateCount: number;
-      confidenceSum: number;
-      firstSeen: string;
-      lastSeen: string;
-    }
-  >();
-
-  const repositoryIds = [...new Set(repositories.map((entry) => entry.id))].sort((left, right) => left.localeCompare(right));
-  let generatedAt = DEFAULT_GENERATED_AT;
-
-  for (const repository of repositories) {
-    const artifact = readPatternCandidatesArtifact(repository.repoPath);
-    if (artifact.generatedAt > generatedAt) {
-      generatedAt = artifact.generatedAt;
-    }
-
-    for (const candidate of artifact.candidates) {
-      const patternFamily = normalizePatternFamily(candidate.pattern_family);
-      const aggregate =
-        aggregateByFamily.get(patternFamily) ??
-        {
-          repos: new Set<string>(),
-          candidateCount: 0,
-          confidenceSum: 0,
-          firstSeen: artifact.generatedAt,
-          lastSeen: artifact.generatedAt
-        };
-
-      aggregate.repos.add(repository.id);
-      aggregate.candidateCount += 1;
-      aggregate.confidenceSum += clampConfidence(candidate.confidence);
-      if (artifact.generatedAt < aggregate.firstSeen) {
-        aggregate.firstSeen = artifact.generatedAt;
-      }
-      if (artifact.generatedAt > aggregate.lastSeen) {
-        aggregate.lastSeen = artifact.generatedAt;
-      }
-
-      aggregateByFamily.set(patternFamily, aggregate);
-    }
-  }
-
-  const families: CrossRepoCandidateFamilyAggregate[] = [...aggregateByFamily.entries()]
-    .map(([patternFamily, aggregate]) => ({
-      pattern_family: patternFamily,
-      repo_count: aggregate.repos.size,
-      candidate_count: aggregate.candidateCount,
-      mean_confidence: clampConfidence(aggregate.confidenceSum / aggregate.candidateCount),
-      repos: [...aggregate.repos].sort((left, right) => left.localeCompare(right)),
-      first_seen: aggregate.firstSeen,
-      last_seen: aggregate.lastSeen
-    }))
-    .sort((left, right) => left.pattern_family.localeCompare(right.pattern_family));
+  const patternLearningArtifact = computeCrossRepoPatternLearning(repositories);
+  const candidates = (patternLearningArtifact.candidate_patterns ?? [])
+    .map(toCandidateRecord)
+    .filter((entry): entry is CrossRepoPatternCandidate => entry !== null)
+    .sort((left, right) => left.normalizationKey.localeCompare(right.normalizationKey) || left.id.localeCompare(right.id));
 
   return {
     schemaVersion: '1.0',
     kind: 'cross-repo-candidates',
-    generatedAt,
-    repositories: repositoryIds,
-    families
+    generatedAt: candidateGeneratedAt(patternLearningArtifact),
+    repositories: candidateRepositories(patternLearningArtifact),
+    candidates
   };
 };
 

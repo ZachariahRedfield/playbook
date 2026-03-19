@@ -147,24 +147,39 @@ const writeCrossRepoCandidatesArtifact = (repo: string): void => {
         kind: 'cross-repo-candidates',
         generatedAt: '2026-01-03T00:00:00.000Z',
         repositories: ['playbook', 'fawxzzy-fitness'],
-        families: [
+        candidates: [
           {
-            pattern_family: 'layering',
-            repo_count: 2,
-            candidate_count: 6,
-            mean_confidence: 0.84,
-            repos: ['fawxzzy-fitness', 'playbook'],
-            first_seen: '2026-01-01T00:00:00.000Z',
-            last_seen: '2026-01-03T00:00:00.000Z'
+            id: 'candidate.layering.001',
+            title: 'Portable governed artifact pattern: layering',
+            when: 'When playbook and fawxzzy-fitness emit evidence.',
+            then: 'Then review layering as a portable cross-repo pattern candidate.',
+            because: 'Cross-repo evidence shows layering across 2 repositories.',
+            normalizationKey: 'artifact-pattern::layering',
+            sourceRefs: [
+              'fawxzzy-fitness::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-fitness',
+              'playbook::pattern-candidates::.playbook/pattern-candidates.json::/candidates/0::digest-playbook'
+            ],
+            storySeed: {
+              title: 'Review portable pattern: layering',
+              rationale: 'Cross-repo evidence shows layering across 2 repositories.',
+              acceptanceCriteria: ['Verify evidence', 'Keep references only']
+            },
+            fingerprint: 'finger-layering'
           },
           {
-            pattern_family: 'query-before-mutation',
-            repo_count: 1,
-            candidate_count: 2,
-            mean_confidence: 0.98,
-            repos: ['playbook'],
-            first_seen: '2026-01-02T00:00:00.000Z',
-            last_seen: '2026-01-03T00:00:00.000Z'
+            id: 'candidate.query-before-mutation.001',
+            title: 'Portable governed artifact pattern: query-before-mutation',
+            when: 'When only playbook emits evidence.',
+            then: 'Then review cautiously.',
+            because: 'Only one repository contributes evidence.',
+            normalizationKey: 'artifact-pattern::query-before-mutation',
+            sourceRefs: ['playbook::pattern-candidates::.playbook/pattern-candidates.json::/candidates/1::digest-playbook'],
+            storySeed: {
+              title: 'Review portable pattern: query-before-mutation',
+              rationale: 'Only one repository contributes evidence.',
+              acceptanceCriteria: ['Verify evidence']
+            },
+            fingerprint: 'finger-query'
           }
         ]
       },
@@ -647,7 +662,7 @@ describe('runPatterns', () => {
   });
 
 
-  it('builds governance-safe enrichment proposals from cross-repo candidate families', async () => {
+  it('builds governance-safe enrichment proposals from cross-repo candidates', async () => {
     const repo = createRepo('playbook-cli-patterns-proposals');
     writeCrossRepoCandidatesArtifact(repo);
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -662,10 +677,10 @@ describe('runPatterns', () => {
     expect(payload.action).toBe('proposals');
     expect(payload.proposals).toHaveLength(1);
     expect(payload.proposals[0]).toMatchObject({
-      proposal_id: 'proposal.layering.generalization',
-      pattern_family: 'layering',
+      proposal_id: 'proposal.artifact-pattern-layering.generalization',
+      pattern_family: 'artifact-pattern::layering',
       proposed_action: 'append_instance',
-      target_pattern: 'pattern.layering'
+      target_pattern: 'pattern.artifact-pattern-layering'
     });
     expect(payload.proposals[0].evidence).toHaveLength(2);
     expect(payload.proposals[0].promotion_targets.map((entry: { kind: string }) => entry.kind)).toEqual(['memory', 'story']);
@@ -789,7 +804,7 @@ describe('runPatterns', () => {
     expect(exitCode).toBe(ExitCode.Success);
     logSpy.mockClear();
 
-    exitCode = await runPatterns(repo, ['proposals', 'promote', '--proposal', 'proposal.layering.generalization', '--target', 'memory'], {
+    exitCode = await runPatterns(repo, ['proposals', 'promote', '--proposal', 'proposal.artifact-pattern-layering.generalization', '--target', 'memory'], {
       format: 'json',
       quiet: false
     });
@@ -799,14 +814,14 @@ describe('runPatterns', () => {
     expect(payload.promotion.target).toBe('memory');
 
     logSpy.mockClear();
-    exitCode = await runPatterns(repo, ['proposals', 'promote', '--proposal', 'proposal.layering.generalization', '--target', 'story', '--repo', 'playbook'], {
+    exitCode = await runPatterns(repo, ['proposals', 'promote', '--proposal', 'proposal.artifact-pattern-layering.generalization', '--target', 'story', '--repo', 'playbook'], {
       format: 'json',
       quiet: false
     });
     expect(exitCode).toBe(ExitCode.Success);
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.promotion.target).toBe('story');
-    expect(payload.promotion.story.id).toBe('cross-repo-layering-playbook');
+    expect(payload.promotion.story.id).toBe('cross-repo-artifact-pattern-layering-playbook');
 
     logSpy.mockRestore();
   });
