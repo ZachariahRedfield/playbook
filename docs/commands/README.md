@@ -577,4 +577,4 @@ Use query surfaces to inspect state:
 
 
 - `playbook story plan <id> --json`: generate a route/execution plan from canonical story intent while keeping story, plan, worker, and receipt as separate linked artifacts.
-- `playbook route --story <id> --json`: derive a deterministic route directly from a story id and stamp `story_reference` metadata into the generated execution plan.
+- `playbook route --story <id> --json`: derive a deterministic route directly from a story id and stamp stable `story_reference` metadata into the generated execution plan.

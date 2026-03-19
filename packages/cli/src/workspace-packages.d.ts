@@ -306,7 +306,8 @@ declare module "@zachariahredfield/playbook-engine" {
   export const validateArtifacts: (...args: any[]) => any;
 
   export type StoryStatus = 'proposed' | 'ready' | 'in_progress' | 'blocked' | 'done' | 'archived';
-  export type StoryRecord = { id: string; repo: string; title: string; type: string; source: string; severity: string; priority: string; confidence: string; status: StoryStatus; evidence: string[]; rationale: string; acceptance_criteria: string[]; dependencies: string[]; execution_lane: string | null; suggested_route: string | null; };
+  export type StoryReconciliationStatus = 'pending_plan' | 'in_progress' | 'completed' | 'blocked';
+  export type StoryRecord = { story_reference?: string; id: string; repo: string; title: string; type: string; source: string; severity: string; priority: string; confidence: string; status: StoryStatus; evidence: string[]; rationale: string; acceptance_criteria: string[]; dependencies: string[]; execution_lane: string | null; suggested_route: string | null; last_plan_ref?: string | null; last_receipt_ref?: string | null; last_updated_state_ref?: string | null; reconciliation_status?: StoryReconciliationStatus | null; planned_at?: string | null; last_receipt_at?: string | null; last_updated_state_at?: string | null; reconciled_at?: string | null; };
   export type StoriesArtifact = { schemaVersion: '1.0'; repo: string; stories: StoryRecord[]; };
   export type StoryBacklogSummary = { counts_by_status: Record<StoryStatus, number>; highest_priority_ready_story: StoryRecord | null; blocked_stories: StoryRecord[]; primary_next_action: string | null; };
   export const STORIES_RELATIVE_PATH: '.playbook/stories.json';
@@ -319,15 +320,18 @@ declare module "@zachariahredfield/playbook-engine" {
   export const readStoriesArtifact: (...args: any[]) => StoriesArtifact;
   export const sortStoriesForBacklog: (...args: any[]) => StoryRecord[];
   export const summarizeStoriesBacklog: (...args: any[]) => StoryBacklogSummary;
-  export type StoryPlanningReference = { id: string; title: string; status: StoryStatus; artifact_path: '.playbook/stories.json'; suggested_route: string | null; execution_lane: string | null; };
+  export type StoryPlanningReference = { story_reference: string; id: string; title: string; status: StoryStatus; artifact_path: '.playbook/stories.json'; suggested_route: string | null; execution_lane: string | null; };
   export type StoryLifecycleEvent = 'planned' | 'receipt_blocked' | 'receipt_completed';
   export type StoryTransitionPreview = { story_id: string; previous_status: StoryStatus; next_status: StoryStatus; };
   export const findStoryById: (...args: any[]) => StoryRecord | null;
+  export const buildStableStoryReference: (...args: any[]) => string;
   export const toStoryPlanningReference: (...args: any[]) => StoryPlanningReference;
   export const buildStoryRouteTask: (...args: any[]) => string;
   export const deriveStoryLifecycleStatus: (...args: any[]) => StoryStatus | null;
   export const deriveStoryTransitionPreview: (...args: any[]) => StoryTransitionPreview | null;
   export const transitionStoryFromEvent: (...args: any[]) => StoriesArtifact;
+  export const linkStoryToPlan: (...args: any[]) => StoriesArtifact;
+  export const reconcileStoryExecution: (...args: any[]) => { artifact: StoriesArtifact; outcome: 'applied' | 'noop' | 'conflict' };
   export const validateStoriesArtifact: (...args: any[]) => string[];
   export const upsertStory: (...args: any[]) => StoriesArtifact;
   export const updateStoryStatus: (...args: any[]) => StoriesArtifact;

@@ -112,10 +112,11 @@ The compiled prompt is guidance-only. It does **not** launch workers, create bra
 
 ## Story-linked planning
 
-`playbook route --story <id> --json` resolves the canonical story from `.playbook/stories.json`, derives a deterministic task statement, and writes the normal `.playbook/execution-plan.json` artifact with `story_reference` metadata.
+`playbook route --story <id> --json` resolves the canonical story from `.playbook/stories.json`, derives a deterministic task statement, and writes the normal `.playbook/execution-plan.json` artifact with stable `story_reference` metadata.
 
 - Pattern: Story is durable intent; Plan is execution shape; Receipt is observed outcome.
 - Rule: Story, Plan, Worker, and Receipt must remain separate governed artifacts even when linked.
+- Rule: Story lifecycle transitions must be driven by linked execution artifacts, not UI-only state.
 - Failure Mode: Collapsing planning and execution artifacts into story state destroys clear control-plane boundaries.
 
 When a linked story is `ready`, route promotion may conservatively transition it to `in_progress` because deterministic planning evidence now exists.

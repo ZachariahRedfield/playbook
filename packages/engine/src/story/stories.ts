@@ -16,6 +16,7 @@ export type StoryConfidence = (typeof STORY_CONFIDENCES)[number];
 export type StoryStatus = (typeof STORY_STATUSES)[number];
 
 export type StoryPlanningReference = {
+  story_reference: string;
   id: string;
   title: string;
   status: StoryStatus;
@@ -25,6 +26,7 @@ export type StoryPlanningReference = {
 };
 
 export type StoryLifecycleEvent = 'planned' | 'receipt_blocked' | 'receipt_completed';
+export type StoryReconciliationStatus = 'pending_plan' | 'in_progress' | 'completed' | 'blocked';
 
 export type StoryTransitionPreview = {
   story_id: string;
@@ -44,6 +46,7 @@ export type StoryPromotionProvenance = {
 };
 
 export type StoryRecord = {
+  story_reference?: string;
   id: string;
   repo: string;
   title: string;
@@ -59,6 +62,14 @@ export type StoryRecord = {
   dependencies: string[];
   execution_lane: string | null;
   suggested_route: string | null;
+  last_plan_ref?: string | null;
+  last_receipt_ref?: string | null;
+  last_updated_state_ref?: string | null;
+  reconciliation_status?: StoryReconciliationStatus | null;
+  planned_at?: string | null;
+  last_receipt_at?: string | null;
+  last_updated_state_at?: string | null;
+  reconciled_at?: string | null;
   provenance?: StoryPromotionProvenance;
 };
 
@@ -142,7 +153,10 @@ export const summarizeStoriesBacklog = (artifact: StoriesArtifact): StoryBacklog
 export const findStoryById = (artifact: StoriesArtifact, storyId: string): StoryRecord | null =>
   artifact.stories.find((story) => story.id === storyId) ?? null;
 
+export const buildStableStoryReference = (storyId: string): string => `story:${storyId}`;
+
 export const toStoryPlanningReference = (story: StoryRecord): StoryPlanningReference => ({
+  story_reference: story.story_reference ?? buildStableStoryReference(story.id),
   id: story.id,
   title: story.title,
   status: story.status,
@@ -252,6 +266,15 @@ export const validateStoryRecord = (story: unknown, expectedRepo?: string): stri
   if (!Array.isArray(record.dependencies) || asStringArray(record.dependencies).length !== record.dependencies.length) errors.push('story.dependencies must be an array of strings');
   if (!(record.execution_lane === null || typeof record.execution_lane === 'string')) errors.push('story.execution_lane must be a string or null');
   if (!(record.suggested_route === null || typeof record.suggested_route === 'string')) errors.push('story.suggested_route must be a string or null');
+  if (!(record.story_reference === undefined || typeof record.story_reference === 'string')) errors.push('story.story_reference must be a string when provided');
+  if (!(record.last_plan_ref === undefined || record.last_plan_ref === null || typeof record.last_plan_ref === 'string')) errors.push('story.last_plan_ref must be a string or null when provided');
+  if (!(record.last_receipt_ref === undefined || record.last_receipt_ref === null || typeof record.last_receipt_ref === 'string')) errors.push('story.last_receipt_ref must be a string or null when provided');
+  if (!(record.last_updated_state_ref === undefined || record.last_updated_state_ref === null || typeof record.last_updated_state_ref === 'string')) errors.push('story.last_updated_state_ref must be a string or null when provided');
+  if (!(record.reconciliation_status === undefined || record.reconciliation_status === null || isOneOf(record.reconciliation_status, ['pending_plan', 'in_progress', 'completed', 'blocked'] as const))) errors.push('story.reconciliation_status must be one of: pending_plan, in_progress, completed, blocked');
+  if (!(record.planned_at === undefined || record.planned_at === null || typeof record.planned_at === 'string')) errors.push('story.planned_at must be a string or null when provided');
+  if (!(record.last_receipt_at === undefined || record.last_receipt_at === null || typeof record.last_receipt_at === 'string')) errors.push('story.last_receipt_at must be a string or null when provided');
+  if (!(record.last_updated_state_at === undefined || record.last_updated_state_at === null || typeof record.last_updated_state_at === 'string')) errors.push('story.last_updated_state_at must be a string or null when provided');
+  if (!(record.reconciled_at === undefined || record.reconciled_at === null || typeof record.reconciled_at === 'string')) errors.push('story.reconciled_at must be a string or null when provided');
   if (!(record.provenance === undefined || (typeof record.provenance === 'object' && record.provenance !== null && !Array.isArray(record.provenance)))) {
     errors.push('story.provenance must be an object when provided');
   } else if (record.provenance && typeof record.provenance === 'object' && !Array.isArray(record.provenance)) {
@@ -308,6 +331,7 @@ export const readStoriesArtifact = (repoRoot: string): StoriesArtifact => {
 
 export const createStoryRecord = (repoName: string, input: CreateStoryInput): StoryRecord => ({
   ...input,
+  story_reference: input.story_reference?.trim() || buildStableStoryReference(input.id),
   repo: repoName,
   status: input.status ?? 'proposed',
   evidence: unique(input.evidence),
@@ -318,6 +342,14 @@ export const createStoryRecord = (repoName: string, input: CreateStoryInput): St
   source: input.source.trim(),
   execution_lane: input.execution_lane?.trim() ? input.execution_lane : null,
   suggested_route: input.suggested_route?.trim() ? input.suggested_route : null,
+  last_plan_ref: input.last_plan_ref ?? null,
+  last_receipt_ref: input.last_receipt_ref ?? null,
+  last_updated_state_ref: input.last_updated_state_ref ?? null,
+  reconciliation_status: input.reconciliation_status ?? null,
+  planned_at: input.planned_at ?? null,
+  last_receipt_at: input.last_receipt_at ?? null,
+  last_updated_state_at: input.last_updated_state_at ?? null,
+  reconciled_at: input.reconciled_at ?? null,
   provenance: input.provenance
 });
 
@@ -333,3 +365,60 @@ export const updateStoryStatus = (artifact: StoriesArtifact, storyId: string, st
   ...artifact,
   stories: artifact.stories.map((story) => story.id === storyId ? { ...story, status } : story)
 });
+
+const updateStoryRecord = (artifact: StoriesArtifact, storyId: string, update: (story: StoryRecord) => StoryRecord): StoriesArtifact => ({
+  ...artifact,
+  stories: artifact.stories.map((story) => story.id === storyId ? update(story) : story)
+});
+
+export const linkStoryToPlan = (artifact: StoriesArtifact, storyId: string, planRef: string, plannedAt: string): StoriesArtifact => {
+  const transition = deriveStoryTransitionPreview(artifact, storyId, 'planned');
+  return updateStoryRecord(artifact, storyId, (story) => ({
+    ...story,
+    story_reference: story.story_reference ?? buildStableStoryReference(story.id),
+    status: transition?.next_status ?? story.status,
+    last_plan_ref: planRef,
+    reconciliation_status: transition?.next_status === 'in_progress' || story.status === 'in_progress' ? 'in_progress' : 'pending_plan',
+    planned_at: plannedAt
+  }));
+};
+
+export const reconcileStoryExecution = (
+  artifact: StoriesArtifact,
+  storyId: string,
+  input: {
+    receiptRef: string;
+    updatedStateRef: string;
+    reconciledAt: string;
+    event: Extract<StoryLifecycleEvent, 'receipt_blocked' | 'receipt_completed'>;
+  }
+): { artifact: StoriesArtifact; outcome: 'applied' | 'noop' | 'conflict' } => {
+  const story = findStoryById(artifact, storyId);
+  if (!story) return { artifact, outcome: 'noop' };
+  if (story.last_receipt_ref === input.receiptRef && story.last_updated_state_ref === input.updatedStateRef) {
+    return { artifact, outcome: 'noop' };
+  }
+  if (
+    story.last_receipt_ref &&
+    story.last_receipt_ref !== input.receiptRef &&
+    story.last_updated_state_ref &&
+    story.last_updated_state_ref !== input.updatedStateRef
+  ) {
+    return { artifact, outcome: 'conflict' };
+  }
+  const nextStatus = deriveStoryLifecycleStatus(story, input.event) ?? story.status;
+  return {
+    outcome: 'applied',
+    artifact: updateStoryRecord(artifact, storyId, (current) => ({
+      ...current,
+      story_reference: current.story_reference ?? buildStableStoryReference(current.id),
+      status: nextStatus,
+      last_receipt_ref: input.receiptRef,
+      last_updated_state_ref: input.updatedStateRef,
+      reconciliation_status: input.event === 'receipt_completed' ? 'completed' : 'blocked',
+      last_receipt_at: input.reconciledAt,
+      last_updated_state_at: input.reconciledAt,
+      reconciled_at: input.reconciledAt
+    }))
+  };
+};

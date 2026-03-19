@@ -182,6 +182,9 @@ describe("runReceipt", () => {
     expect(payload.written_artifacts.execution_outcome_input).toBe(
       ".playbook/execution-outcome-input.json",
     );
+    expect(payload.written_artifacts.execution_receipt).toBe(
+      ".playbook/execution-receipt.json",
+    );
     expect(payload.story_transition).toBeNull();
 
     logSpy.mockRestore();

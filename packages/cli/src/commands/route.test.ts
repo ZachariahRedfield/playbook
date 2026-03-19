@@ -172,6 +172,7 @@ describe('runRoute', () => {
     findStoryById.mockImplementation((_artifact, id) => id === 'story-1' ? story : null);
     buildStoryRouteTask.mockReturnValue('update command docs: Update command docs');
     toStoryPlanningReference.mockReturnValue({
+      story_reference: 'story:story-1',
       id: 'story-1',
       title: 'Update command docs',
       status: 'ready',
@@ -227,6 +228,7 @@ describe('runRoute', () => {
       recommended_pr_size: 'small',
       worker_ready: true,
       story_reference: {
+        story_reference: 'story:story-1',
         id: 'story-1',
         title: 'Update command docs',
         status: 'ready',
@@ -240,6 +242,7 @@ describe('runRoute', () => {
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
     expect(payload.story.id).toBe('story-1');
+    expect(payload.executionPlan.story_reference.story_reference).toBe('story:story-1');
     expect(payload.executionPlan.story_reference.id).toBe('story-1');
     expect(payload.story_transition.next_status).toBe('in_progress');
     expect(buildExecutionPlan).toHaveBeenCalledWith(expect.objectContaining({

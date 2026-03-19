@@ -74,6 +74,7 @@ describe('runStory', () => {
     const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
     expect(payload.command).toBe('route');
     expect(payload.story.id).toBe('story-plan');
+    expect(payload.executionPlan.story_reference.story_reference).toBe('story:story-plan');
     expect(payload.executionPlan.story_reference.id).toBe('story-plan');
   });
 

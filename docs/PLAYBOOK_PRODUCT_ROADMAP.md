@@ -2294,4 +2294,6 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 
 - Pattern: Story is durable intent; Plan is execution shape; Receipt is observed outcome.
 - Rule: Story, Plan, Worker, and Receipt must remain separate governed artifacts even when linked.
+- Rule: Story lifecycle transitions must be driven by linked execution artifacts, not UI-only state.
+- Failure Mode: Story status edited independently of receipt/updated-state creates split-brain backlog truth.
 - Failure Mode: Collapsing planning and execution artifacts into story state destroys clear control-plane boundaries.

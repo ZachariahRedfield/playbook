@@ -313,6 +313,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "story_reference",
         "id",
         "title",
         "status",
@@ -321,6 +322,10 @@
         "execution_lane"
       ],
       "properties": {
+        "story_reference": {
+          "type": "string",
+          "minLength": 1
+        },
         "id": {
           "type": "string",
           "minLength": 1

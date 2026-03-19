@@ -9,7 +9,7 @@ import {
   buildRepoAdoptionReadiness,
   readStoriesArtifact,
   findStoryById,
-  transitionStoryFromEvent,
+  reconcileStoryExecution,
   validateStoriesArtifact,
   STORIES_RELATIVE_PATH,
   type StoryPlanningReference,
@@ -39,6 +39,7 @@ export const UPDATED_STATE_STAGING_RELATIVE_PATH = path.join(
 );
 
 const EXECUTION_PLAN_RELATIVE_PATH = path.join(".playbook", "execution-plan.json");
+const EXECUTION_RECEIPT_RELATIVE_PATH = path.join(".playbook", "execution-receipt.json");
 
 type ObserverRegistry = {
   repos: Array<{ id: string; name: string; root: string }>;
@@ -65,6 +66,7 @@ export type PersistedExecutionIngest = ReturnType<typeof ingestExecutionResults>
   story_transition: StoryTransitionResult;
   written_artifacts: {
     execution_outcome_input: string;
+    execution_receipt: string;
     updated_state: string;
     staged_updated_state: string;
     stories?: string;
@@ -117,10 +119,33 @@ const promoteStoryLifecycle = (
   if (!event) {
     return null;
   }
-  const nextArtifact = transitionStoryFromEvent(stories, storyReference.id, event);
+  const { artifact: nextArtifact, outcome } = reconcileStoryExecution(stories, storyReference.id, {
+    receiptRef: EXECUTION_RECEIPT_RELATIVE_PATH,
+    updatedStateRef: UPDATED_STATE_RELATIVE_PATH,
+    reconciledAt: updatedState.generated_at,
+    event
+  });
   const next = findStoryById(nextArtifact, storyReference.id);
-  if (!next || next.status === current.status) {
+  if (!next || outcome === "noop") {
     return null;
+  }
+  if (outcome === "conflict") {
+    return {
+      story_id: storyReference.id,
+      previous_status: current.status,
+      next_status: current.status,
+      promotion: previewWorkflowArtifact({
+        cwd,
+        workflowKind: "story-status",
+        candidateRelativePath: ".playbook/stories.staged.json",
+        committedRelativePath: STORIES_RELATIVE_PATH,
+        artifact: stories,
+        validate: () => ["Story reconciliation conflict: canonical story already links to a different receipt and updated-state reference."],
+        generatedAt: updatedState.generated_at,
+        successSummary: "Story reconciliation preview prepared.",
+        blockedSummary: "Story reconciliation conflict; committed backlog state preserved."
+      })
+    };
   }
   const promotion = stageWorkflowArtifact({
     cwd,
@@ -285,6 +310,12 @@ export const persistExecutionControlLoop = (
     ...(storyReference ? { ...ingested.receipt, story_reference: storyReference } : ingested.receipt),
     workflow_promotion: promotionPreview,
   };
+  writeJsonArtifactAbsolute(
+    path.join(cwd, EXECUTION_RECEIPT_RELATIVE_PATH),
+    receiptWithPromotion as unknown as Record<string, unknown>,
+    "receipt",
+    { envelope: false },
+  );
   const promotion = stageWorkflowArtifact({
     cwd,
     workflowKind: "status-updated",
@@ -310,6 +341,7 @@ export const persistExecutionControlLoop = (
     story_transition: storyTransition,
     written_artifacts: {
       execution_outcome_input: EXECUTION_OUTCOME_INPUT_RELATIVE_PATH,
+      execution_receipt: EXECUTION_RECEIPT_RELATIVE_PATH,
       updated_state: UPDATED_STATE_RELATIVE_PATH,
       staged_updated_state: UPDATED_STATE_STAGING_RELATIVE_PATH,
       ...(storyTransition ? { stories: STORIES_RELATIVE_PATH } : {}),

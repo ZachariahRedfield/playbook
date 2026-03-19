@@ -116,4 +116,8 @@ Without replay and drift classification, closed-loop automation becomes harder t
 
 ## Story linkage
 
-When the committed `.playbook/execution-plan.json` includes `story_reference`, `playbook receipt ingest` preserves that linkage in the receipt and updated-state outputs. Story lifecycle updates remain explicit and conservative: blocked receipt evidence may transition the linked story to `blocked`, and fully completed deterministic outcomes may transition it to `done`.
+When the committed `.playbook/execution-plan.json` includes `story_reference`, `playbook receipt ingest` preserves that linkage in the receipt and updated-state outputs, writes the canonical `.playbook/execution-receipt.json`, and reconciles lightweight linkage fields back into `.playbook/stories.json` through the governed write path only. Story lifecycle updates remain explicit and conservative: blocked receipt evidence may transition the linked story to `blocked`, and fully completed deterministic outcomes may transition it to `done`.
+
+- Rule: Story lifecycle transitions must be driven by linked execution artifacts, not UI-only state.
+- Pattern: Story is durable intent; plan is execution shape; receipt is observed outcome.
+- Failure Mode: Story status edited independently of receipt/updated-state creates split-brain backlog truth.

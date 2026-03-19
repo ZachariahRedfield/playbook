@@ -14,13 +14,16 @@ Manage the canonical repo-local story backlog artifact at `.playbook/stories.jso
 - `playbook story promote <candidate-id> --json`
 
 Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
+Rule: Story lifecycle transitions must be driven by linked execution artifacts, not UI-only state.
 
 Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
+Pattern: Story is durable intent; plan is execution shape; receipt is observed outcome.
 
 Pattern: Findings need durable interpretation before they become backlog work.
 
 Pattern: Candidate stories require grouping, dedupe, and explicit promotion.
 
 Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.
+Failure Mode: Story status edited independently of receipt/updated-state creates split-brain backlog truth.
 
 Failure Mode: Raw finding -> automatic story conversion creates backlog spam and weak planning signal.

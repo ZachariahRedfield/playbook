@@ -1,5 +1,10 @@
 ## Unreleased
 
+- WHAT: Closed the canonical repo-local story lifecycle by stamping stable `story_reference` metadata into story-linked plans and routes, persisting `.playbook/execution-receipt.json`, and reconciling lightweight plan/receipt/updated-state linkage fields back into `.playbook/stories.json` with deterministic no-op/conflict behavior. WHY: Stories now link durably to execution artifacts without collapsing Story, Plan, Receipt, and Updated-State into one artifact.
+- Rule: Story lifecycle transitions must be driven by linked execution artifacts, not UI-only state.
+- Pattern: Story is durable intent; plan is execution shape; receipt is observed outcome.
+- Failure Mode: Story status edited independently of receipt/updated-state creates split-brain backlog truth.
+
 - WHAT: Added deterministic promotion receipts for `playbook promote story` and `playbook promote pattern`, including a new `promotion-receipt` schema, audited noop/conflict outcomes, and `.playbook/promotion-receipts.json` artifact persistence. WHY: Canonical knowledge promotion now leaves an inspectable receipt whenever mutation is attempted, not only when it succeeds.
 - WHAT: Exposed promotion receipt logs through Observer's existing artifact viewer path (`promotion-receipts`) and extended promotion tests to cover repeat noops, conflicts, and deterministic receipt ordering. WHY: Operators need the same provenance/audit visibility for knowledge promotion that they already expect for execution and workflow promotion.
 - Rule: Promotion must emit a deterministic receipt whenever canonical knowledge is mutated or mutation is attempted.

@@ -4,11 +4,14 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   buildStoryRouteTask,
+  buildStableStoryReference,
   createDefaultStoriesArtifact,
   createStoryRecord,
   deriveStoryLifecycleStatus,
   deriveStoryTransitionPreview,
+  linkStoryToPlan,
   readStoriesArtifact,
+  reconcileStoryExecution,
   transitionStoryFromEvent,
   validateStoriesArtifact,
   type StoryRecord,
@@ -24,17 +27,27 @@ const baseStory: StoryRecord = {
   priority: 'high',
   confidence: 'high',
   status: 'ready',
+  story_reference: 'story:story-1',
   evidence: ['objective'],
   rationale: 'Need durable intent',
   acceptance_criteria: ['emit route'],
   dependencies: [],
   execution_lane: null,
-  suggested_route: 'docs_only'
+  suggested_route: 'docs_only',
+  last_plan_ref: null,
+  last_receipt_ref: null,
+  last_updated_state_ref: null,
+  reconciliation_status: null,
+  planned_at: null,
+  last_receipt_at: null,
+  last_updated_state_at: null,
+  reconciled_at: null
 };
 
 describe('story helpers', () => {
   it('derives a deterministic route task from story metadata', () => {
     expect(buildStoryRouteTask(baseStory)).toBe('update command docs: Update command docs');
+    expect(buildStableStoryReference(baseStory.id)).toBe('story:story-1');
   });
 
   it('applies conservative lifecycle transitions only when deterministic evidence exists', () => {
@@ -55,6 +68,31 @@ describe('story helpers', () => {
       stories: [{ ...baseStory, status: 'blocked' }],
     };
     expect(transitionStoryFromEvent(artifact, 'story-1', 'planned')).toEqual(artifact);
+  });
+
+  it('links plans and reconciles receipt linkage idempotently without embedding downstream artifacts', () => {
+    const planned = linkStoryToPlan({ ...createDefaultStoriesArtifact('repo'), stories: [baseStory] }, 'story-1', '.playbook/execution-plan.json', '2026-03-19T00:00:00.000Z');
+    expect(planned.stories[0]?.last_plan_ref).toBe('.playbook/execution-plan.json');
+    expect(planned.stories[0]?.reconciliation_status).toBe('in_progress');
+
+    const reconciled = reconcileStoryExecution(planned, 'story-1', {
+      receiptRef: '.playbook/execution-receipt.json',
+      updatedStateRef: '.playbook/execution-updated-state.json',
+      reconciledAt: '2026-03-19T01:00:00.000Z',
+      event: 'receipt_completed'
+    });
+    expect(reconciled.outcome).toBe('applied');
+    expect(reconciled.artifact.stories[0]?.last_receipt_ref).toBe('.playbook/execution-receipt.json');
+    expect(reconciled.artifact.stories[0]?.last_updated_state_ref).toBe('.playbook/execution-updated-state.json');
+    expect(reconciled.artifact.stories[0]?.reconciliation_status).toBe('completed');
+
+    const replay = reconcileStoryExecution(reconciled.artifact, 'story-1', {
+      receiptRef: '.playbook/execution-receipt.json',
+      updatedStateRef: '.playbook/execution-updated-state.json',
+      reconciledAt: '2026-03-19T01:00:00.000Z',
+      event: 'receipt_completed'
+    });
+    expect(replay.outcome).toBe('noop');
   });
 
   it('preserves backward compatibility for stories without provenance and supports optional provenance on new records', () => {

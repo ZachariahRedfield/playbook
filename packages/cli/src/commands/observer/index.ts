@@ -59,6 +59,17 @@ type ObserverStoryBacklog = {
 
 type ObserverStoryDetail = {
   story: StoryRecord;
+  lifecycle_links: {
+    story_reference: string | null;
+    last_plan_ref: string | null;
+    last_receipt_ref: string | null;
+    last_updated_state_ref: string | null;
+    reconciliation_status: string | null;
+    planned_at: string | null;
+    last_receipt_at: string | null;
+    last_updated_state_at: string | null;
+    reconciled_at: string | null;
+  };
   linked_status: {
     readiness_state: ObserverRepoReadinessState;
     lifecycle_stage: RepoAdoptionReadiness['lifecycle_stage'];
@@ -773,6 +784,17 @@ const buildStoryDetail = (repo: ObserverRepoEntry, storyId: string, readiness: O
   ]);
   return {
     story,
+    lifecycle_links: {
+      story_reference: story.story_reference ?? null,
+      last_plan_ref: story.last_plan_ref ?? null,
+      last_receipt_ref: story.last_receipt_ref ?? null,
+      last_updated_state_ref: story.last_updated_state_ref ?? null,
+      reconciliation_status: story.reconciliation_status ?? null,
+      planned_at: story.planned_at ?? null,
+      last_receipt_at: story.last_receipt_at ?? null,
+      last_updated_state_at: story.last_updated_state_at ?? null,
+      reconciled_at: story.reconciled_at ?? null
+    },
     linked_status: {
       readiness_state: readiness.readiness_state,
       lifecycle_stage: readiness.lifecycle_stage

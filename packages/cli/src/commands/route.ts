@@ -14,7 +14,7 @@ import {
   buildStoryRouteTask,
   toStoryPlanningReference,
   deriveStoryTransitionPreview,
-  transitionStoryFromEvent,
+  linkStoryToPlan,
   validateStoriesArtifact,
   STORIES_RELATIVE_PATH,
   type StoriesArtifact,
@@ -113,7 +113,8 @@ const promoteStoryTransition = (cwd: string, current: StoriesArtifact, storyId: 
   if (!transition) {
     return null;
   }
-  const nextArtifact = transitionStoryFromEvent(current, storyId, 'planned');
+  const generatedAt = new Date().toISOString();
+  const nextArtifact = linkStoryToPlan(current, storyId, EXECUTION_PLAN_PATH, generatedAt);
   const promotion = stageWorkflowArtifact({
     cwd,
     workflowKind: 'story-status',
@@ -121,7 +122,7 @@ const promoteStoryTransition = (cwd: string, current: StoriesArtifact, storyId: 
     committedRelativePath: STORIES_RELATIVE_PATH,
     artifact: nextArtifact,
     validate: () => validateStoriesArtifact(nextArtifact),
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     successSummary: `Updated story ${storyId} to status ${transition.next_status}`,
     blockedSummary: 'Story status update blocked; committed backlog state preserved.'
   });
