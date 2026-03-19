@@ -180,6 +180,11 @@
         "path": "packages/contracts/src/workflow-promotion.schema.json"
       },
       {
+        "id": "promotion-receipt",
+        "version": "1.0",
+        "path": "packages/contracts/src/promotion-receipt.schema.json"
+      },
+      {
         "id": "workset-plan",
         "version": "1.0",
         "path": "packages/contracts/src/workset-plan.schema.json"
