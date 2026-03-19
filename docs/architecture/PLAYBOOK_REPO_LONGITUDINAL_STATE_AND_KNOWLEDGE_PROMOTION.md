@@ -139,6 +139,19 @@ Directional examples (non-final schema names):
 - `.playbook/runtime/knowledge-promotions.json`
 - `.playbook/runtime/knowledge-compaction-log.json`
 
+## Three-layer promotion model
+
+Playbook promotion should keep three storage layers explicit and non-overlapping:
+
+1. **Repo truth**
+   - Canonical repository-local source artifacts such as `.playbook/stories.json`.
+2. **Derived candidates**
+   - Read-only, derived review inputs such as `.playbook/story-candidates.json` and `PLAYBOOK_HOME/pattern-candidates.json`.
+3. **Promoted knowledge**
+   - Canonical promoted reusable knowledge such as `PLAYBOOK_HOME/patterns.json`.
+
+This preserves the boundary between local truth, derived promotion inputs, and globally reusable promoted knowledge without changing control-loop behavior.
+
 ## Guardrails and non-goals
 
 - Not a repositioning of Playbook into a broad autonomous coding agent.

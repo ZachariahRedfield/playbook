@@ -182,6 +182,31 @@ export { STORIES_SCHEMA_VERSION, STORIES_RELATIVE_PATH, STORY_TYPES, STORY_SEVER
 export type { StoryType, StorySeverity, StoryPriority, StoryConfidence, StoryStatus, StoryRecord, StoriesArtifact, StoryBacklogSummary, CreateStoryInput, StoryPlanningReference, StoryLifecycleEvent, StoryTransitionPreview } from './story/stories.js';
 export { STORY_CANDIDATES_SCHEMA_VERSION, STORY_CANDIDATES_RELATIVE_PATH, generateStoryCandidates, writeStoryCandidatesArtifact, readStoryCandidatesArtifact, promoteStoryCandidate } from './story/candidates.js';
 export type { StoryCandidateInput, StoryCandidateRecord, StoryCandidatesArtifact, StoryCandidateGenerationResult } from './story/candidates.js';
+export {
+  GLOBAL_PATTERN_CANDIDATES_SCHEMA_VERSION,
+  GLOBAL_PATTERNS_SCHEMA_VERSION,
+  PLAYBOOK_HOME_ENV,
+  DEFAULT_PLAYBOOK_HOME_DIRNAME,
+  PATTERN_CANDIDATES_FILENAME,
+  PATTERNS_FILENAME,
+  resolvePlaybookHome,
+  createDefaultGlobalPatternCandidatesArtifact,
+  createDefaultGlobalPatternsArtifact,
+  canonicalizePatternCandidateArtifact,
+  canonicalizePatternArtifact,
+  readGlobalPatternCandidatesArtifact,
+  readGlobalPatternsArtifact,
+  writeGlobalPatternCandidatesArtifact,
+  writeGlobalPatternsArtifact
+} from './promotion/globalPatterns.js';
+export type {
+  SourceRef,
+  StoryProvenance,
+  PatternCandidateRecord as GlobalPatternCandidateRecord,
+  PatternCandidateArtifact as GlobalPatternCandidateArtifact,
+  PatternRecord as GlobalPatternRecord,
+  PatternArtifact as GlobalPatternArtifact
+} from './promotion/globalPatterns.js';
 export type { CliSchemaCommand, JsonSchema } from './schema/cliSchemas.js';
 export type { WorkflowPromotion, WorkflowPromotionStatus, WorkflowPromotionValidationStatus } from './schema/workflowPromotion.js';
 

@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   buildStoryRouteTask,
   createDefaultStoriesArtifact,
+  createStoryRecord,
   deriveStoryLifecycleStatus,
   deriveStoryTransitionPreview,
+  readStoriesArtifact,
   transitionStoryFromEvent,
+  validateStoriesArtifact,
   type StoryRecord,
 } from './stories.js';
 
@@ -49,5 +55,26 @@ describe('story helpers', () => {
       stories: [{ ...baseStory, status: 'blocked' }],
     };
     expect(transitionStoryFromEvent(artifact, 'story-1', 'planned')).toEqual(artifact);
+  });
+
+  it('preserves backward compatibility for stories without provenance and supports optional provenance on new records', () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-stories-compat-'));
+    const artifactPath = path.join(repoRoot, '.playbook', 'stories.json');
+    fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
+    fs.writeFileSync(artifactPath, `${JSON.stringify({ schemaVersion: '1.0', repo: 'repo', stories: [baseStory] }, null, 2)}\n`, 'utf8');
+
+    expect(validateStoriesArtifact({ schemaVersion: '1.0', repo: 'repo', stories: [baseStory] })).toEqual([]);
+    expect(readStoriesArtifact(repoRoot).stories[0]).toEqual(baseStory);
+
+    const withProvenance = createStoryRecord('repo', {
+      ...baseStory,
+      repo: undefined as never,
+      status: undefined,
+      provenance: {
+        sourceRefs: [{ repoId: 'repo', artifactPath: '.playbook/story-candidates.json', entryId: 'story-1', fingerprint: 'fp-1' }]
+      }
+    });
+    expect(withProvenance.provenance?.sourceRefs[0]?.entryId).toBe('story-1');
+    fs.rmSync(repoRoot, { recursive: true, force: true });
   });
 });
