@@ -14,6 +14,9 @@ This repository now contains `scripts/demo-refresh.mjs`, which refreshes committ
    - `.playbook/demo-artifacts/**`
    - `.playbook/repo-index.json`
    - `docs/ARCHITECTURE_DIAGRAMS.md`
+   - `docs/contracts/command-truth.json`
+
+`scripts/demo-refresh.mjs` now preflights the cloned demo repo by regenerating `docs/contracts/command-truth.json` from the current branch command metadata before the demo refresh script runs `playbook doctor`. This keeps the demo lifecycle aligned when doctor adds new managed contract requirements.
 
 If `playbook-demo` needs to commit additional generated docs, set `PLAYBOOK_DEMO_EXTRA_ALLOWED_PATHS` in the automation environment as a comma-separated list and document those paths in both repositories.
 
@@ -43,4 +46,3 @@ Automated commits/PRs from `scripts/demo-refresh.mjs` default to feature id:
 
 - Pattern: CLI success must be determined by structured output (`exitCode` + `ok`), not stdout presence.
 - Failure Mode: Treating warnings as errors in machine-readable pipelines causes false negatives.
-

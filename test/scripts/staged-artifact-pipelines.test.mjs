@@ -4,19 +4,31 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+import { resolveReleaseVersionContext } from '../../scripts/pack-release-fallback-asset.mjs';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const updateSnapshotsScript = path.join(repoRoot, 'scripts', 'update-contract-snapshots.mjs');
 const releaseAssetScript = path.join(repoRoot, 'scripts', 'pack-release-fallback-asset.mjs');
 const committedSnapshotPath = path.join(repoRoot, 'tests', 'contracts', 'ai-context.snapshot.json');
 const releaseVersion = JSON.parse(fs.readFileSync(path.join(repoRoot, 'packages', 'cli-wrapper', 'package.json'), 'utf8')).version;
 const releaseAssetPath = path.join(repoRoot, 'dist', 'release', `playbook-cli-${releaseVersion}.tgz`);
 
+const createScriptEnv = (overrides = {}) => {
+  const env = { ...process.env };
+  delete env.PLAYBOOK_RELEASE_VERSION;
+  delete env.GITHUB_REF;
+  delete env.GITHUB_REF_NAME;
+  delete env.GITHUB_REF_TYPE;
+  return { ...env, ...overrides };
+};
+
 const runNode = (scriptPath, env = {}) =>
   spawnSync('node', [scriptPath], {
     cwd: repoRoot,
     encoding: 'utf8',
-    env: { ...process.env, ...env }
+    env: createScriptEnv(env)
   });
 
 test('update-contract-snapshots stages regenerated snapshots and leaves committed snapshots untouched on failed promotion', { timeout: 180000, concurrency: false }, () => {
@@ -36,6 +48,53 @@ test('update-contract-snapshots uses the deterministic generator path instead of
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.doesNotMatch(result.stderr, /@esbuild\/linux-x64/);
   assert.match(result.stdout, /Refreshed \d+ contract snapshot\(s\) via generate → validate → promote\./);
+});
+
+test('resolveReleaseVersionContext prefers explicit release version env', () => {
+  assert.deepEqual(
+    resolveReleaseVersionContext({
+      PLAYBOOK_RELEASE_VERSION: '0.1.8',
+      GITHUB_REF_TYPE: 'tag',
+      GITHUB_REF_NAME: 'v9.9.9'
+    }),
+    { version: '0.1.8', source: 'PLAYBOOK_RELEASE_VERSION' }
+  );
+});
+
+test('resolveReleaseVersionContext accepts semver tag refs only in tag context', () => {
+  assert.deepEqual(
+    resolveReleaseVersionContext({
+      GITHUB_REF_TYPE: 'tag',
+      GITHUB_REF_NAME: `v${releaseVersion}`
+    }),
+    { version: releaseVersion, source: 'GITHUB_REF_NAME' }
+  );
+
+  assert.deepEqual(
+    resolveReleaseVersionContext({
+      GITHUB_REF: `refs/tags/v${releaseVersion}`
+    }),
+    { version: releaseVersion, source: 'GITHUB_REF' }
+  );
+});
+
+test('resolveReleaseVersionContext ignores merge refs and generic non-tag CI metadata', () => {
+  assert.deepEqual(
+    resolveReleaseVersionContext({
+      GITHUB_REF_NAME: '630/merge',
+      GITHUB_REF_TYPE: 'branch',
+      GITHUB_REF: 'refs/pull/630/merge'
+    }),
+    { version: null, source: null }
+  );
+
+  assert.deepEqual(
+    resolveReleaseVersionContext({
+      GITHUB_REF_TYPE: 'tag',
+      GITHUB_REF_NAME: 'release-candidate'
+    }),
+    { version: null, source: null }
+  );
 });
 
 test('pack-release-fallback-asset validates staged tarballs before promotion and preserves committed asset on failure', { timeout: 120000, concurrency: false }, () => {
@@ -64,4 +123,11 @@ test('pack-release-fallback-asset validates staged tarballs before promotion and
     }
     fs.rmSync(tempAssetDir, { recursive: true, force: true });
   }
+});
+
+test('pack-release-fallback-asset enforces explicit release version mismatches only when explicit release context is provided', () => {
+  const result = runNode(releaseAssetScript, { PLAYBOOK_RELEASE_VERSION: '9.9.9' });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Release version \(9\.9\.9\) from PLAYBOOK_RELEASE_VERSION does not match packages\/cli-wrapper version/);
 });

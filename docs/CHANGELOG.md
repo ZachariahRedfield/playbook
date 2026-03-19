@@ -8,6 +8,14 @@
 - Pattern: Observer should lead with signal hierarchy, not raw artifact density.
 - Pattern: Story/backlog visibility should sit above lower-level execution detail when it is the next human planning surface.
 - Failure Mode: A correct control plane with poor signal hierarchy still creates operator drag.
+- WHAT: Hardened `scripts/pack-release-fallback-asset.mjs` release-version detection so fallback packaging now prefers explicit `PLAYBOOK_RELEASE_VERSION`, otherwise accepts only semver-looking Git tag context (`GITHUB_REF_TYPE=tag` or `refs/tags/...`), and ignores generic branch/PR/merge refs such as `630/merge`. Added regression coverage that isolates inherited CI ref metadata from normal test runs while preserving explicit release-version mismatch enforcement. WHY: Ordinary PR/test workflows must not inherit ambient merge metadata and accidentally enter release-version validation.
+- Rule: Release artifact validation must key off explicit release context, not arbitrary CI branch or merge refs.
+- Pattern: Testable packaging pipelines isolate release semantics from normal CI semantics.
+- Failure Mode: Merge-ref metadata such as `123/merge` gets parsed as a release version and breaks ordinary test runs.
+- WHAT: Hardened `scripts/demo-refresh.mjs` to deterministically regenerate `docs/contracts/command-truth.json` inside the cloned `playbook-demo` workspace before its refresh script invokes `playbook doctor`, expanded the demo-refresh allowlist to include that managed contract, and added regression coverage for both direct contract repair and the end-to-end refresh preflight path. WHY: Demo refresh was failing late when doctor introduced `command-truth.json` as a required managed artifact but the demo lifecycle had not regenerated it yet.
+- Rule: When doctor introduces a new required managed artifact, demo refresh must regenerate that artifact in the same lifecycle path.
+- Pattern: Required artifact parity between main repo and demo repo must be enforced by refresh automation, not by manual maintenance.
+- Failure Mode: Validation-first refresh flows fail noisily when required managed artifacts are added upstream but not regenerated in demo sync.
 - Added story-linked routing via `playbook route --story <id>` and `playbook story plan <id>` while preserving Story as durable intent and Plan as separate execution shape.
 - Added `story_reference` metadata propagation from execution plans into receipt and updated-state outputs, plus conservative deterministic story lifecycle transitions for planning, blocked execution, and completed execution evidence.
 

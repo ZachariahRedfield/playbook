@@ -115,6 +115,12 @@ export const toCommandTruth = (commands) => {
   };
 };
 
+export const generateCommandTruthArtifact = async () => {
+  const commands = await loadCommandMetadata();
+  assertUniqueCommandNames(commands);
+  return JSON.stringify(toCommandTruth(commands), null, 2) + '\n';
+};
+
 const renderManagedCommands = (commands) => {
   const lines = [''];
 
@@ -244,6 +250,13 @@ export const generateManagedDocsArtifacts = async () => {
   });
 
   return outputs;
+};
+
+export const writeCommandTruthContract = async (rootDir = repoRoot) => {
+  const truthPath = path.join(rootDir, 'docs/contracts/command-truth.json');
+  await fs.mkdir(path.dirname(truthPath), { recursive: true });
+  await fs.writeFile(truthPath, await generateCommandTruthArtifact());
+  return truthPath;
 };
 
 export const writeManagedDocsArtifacts = async (outputs, rootDir = repoRoot) => {

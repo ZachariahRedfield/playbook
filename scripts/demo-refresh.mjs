@@ -10,11 +10,17 @@ import {
   localCliEntrypoint,
   run
 } from './demo-repo-utils.mjs';
+import { writeCommandTruthContract } from './managed-docs-lib.mjs';
 
 const DEFAULT_REPO_URL = 'https://github.com/ZachariahRedfield/playbook-demo.git';
 const DEFAULT_BASE_BRANCH = 'main';
 const DEFAULT_FEATURE_ID = 'PB-V1-DEMO-REFRESH-001';
-const REQUIRED_ALLOWED_PATHS = ['.playbook/demo-artifacts/', '.playbook/repo-index.json', 'docs/ARCHITECTURE_DIAGRAMS.md'];
+const REQUIRED_ALLOWED_PATHS = [
+  '.playbook/demo-artifacts/',
+  '.playbook/repo-index.json',
+  'docs/ARCHITECTURE_DIAGRAMS.md',
+  'docs/contracts/command-truth.json'
+];
 const DEFAULT_GIT_AUTHOR_NAME = 'playbook-demo-refresh[bot]';
 const DEFAULT_GIT_AUTHOR_EMAIL = 'playbook-demo-refresh[bot]@users.noreply.github.com';
 
@@ -246,6 +252,11 @@ const runRefreshCommand = ({ demoDir, refreshCommand }) => {
   throw new Error(`Command failed (${refreshCommand.command} ${refreshCommand.args.join(' ')}):\n${details}`);
 };
 
+const syncDemoDoctorContracts = async (demoDir) => {
+  await writeCommandTruthContract(demoDir);
+  console.log('Synced required managed docs/contracts before demo refresh: docs/contracts/command-truth.json');
+};
+
 const configureGitIdentity = (demoDir) => {
   const gitAuthorName = process.env.PLAYBOOK_GIT_AUTHOR_NAME ?? DEFAULT_GIT_AUTHOR_NAME;
   const gitAuthorEmail = process.env.PLAYBOOK_GIT_AUTHOR_EMAIL ?? DEFAULT_GIT_AUTHOR_EMAIL;
@@ -294,12 +305,13 @@ const createOrUpdatePullRequest = ({ demoDir, featureId, branch, base, token }) 
   return 'created';
 };
 
-const main = () => {
+const main = async () => {
   const args = parseArgs(process.argv.slice(2));
   assertLocalCliBuild();
 
   const { demoDir } = cloneDemoRepository({ repoUrl: args.repoUrl, prefix: 'playbook-demo-refresh' });
   installNodeDependencies(demoDir);
+  await syncDemoDoctorContracts(demoDir);
 
   const refreshCommand = resolveRefreshCommand(demoDir);
   console.log(`Using refresh command: ${refreshCommand.description}`);
@@ -354,5 +366,8 @@ const main = () => {
 };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
 }

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const args = process.argv.slice(2);
 const PNPM_BIN = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
@@ -50,7 +52,30 @@ const runSteps = (steps) => {
   return { status: 0 };
 };
 
+const runRootScriptTests = () => {
+  const scriptTestsDir = path.join(process.cwd(), 'test', 'scripts');
+  if (!fs.existsSync(scriptTestsDir)) {
+    return { status: 0 };
+  }
+
+  const scriptTests = fs.readdirSync(scriptTestsDir)
+    .filter((entry) => entry.endsWith('.test.mjs'))
+    .sort()
+    .map((entry) => path.join('test', 'scripts', entry));
+
+  if (scriptTests.length === 0) {
+    return { status: 0 };
+  }
+
+  return run('node', ['--test', ...scriptTests]);
+};
+
 if (args.length === 0) {
+  const scriptTestResult = runRootScriptTests();
+  if (scriptTestResult.status !== 0) {
+    process.exit(typeof scriptTestResult.status === 'number' ? scriptTestResult.status : 1);
+  }
+
   const result = run(PNPM_BIN, ['-r', 'test']);
   process.exit(typeof result.status === 'number' ? result.status : 1);
 }

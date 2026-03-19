@@ -11,14 +11,48 @@ const releaseDir = path.join(repoRoot, 'dist', 'release');
 const packageJsonPath = path.join(wrapperDir, 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const packageVersion = packageJson.version;
-const expectedTagVersion = process.env.GITHUB_REF_NAME?.replace(/^v/, '') || process.env.PLAYBOOK_RELEASE_VERSION || null;
+const SEMVER_TAG_PATTERN = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+const EXEC_MAX_BUFFER = 10 * 1024 * 1024;
 
-if (expectedTagVersion && expectedTagVersion !== packageVersion) {
-  throw new Error(`Release version (${expectedTagVersion}) does not match packages/cli-wrapper version (${packageVersion}).`);
-}
+export const normalizeReleaseVersion = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || !SEMVER_TAG_PATTERN.test(trimmed)) {
+    return null;
+  }
+
+  return trimmed.replace(/^v/, '');
+};
+
+export const resolveReleaseVersionContext = (env = process.env) => {
+  const explicitVersion = normalizeReleaseVersion(env.PLAYBOOK_RELEASE_VERSION);
+  if (explicitVersion) {
+    return { version: explicitVersion, source: 'PLAYBOOK_RELEASE_VERSION' };
+  }
+
+  const tagRefName = env.GITHUB_REF_TYPE === 'tag'
+    ? normalizeReleaseVersion(env.GITHUB_REF_NAME)
+    : null;
+  if (tagRefName) {
+    return { version: tagRefName, source: 'GITHUB_REF_NAME' };
+  }
+
+  const rawGithubRef = typeof env.GITHUB_REF === 'string' ? env.GITHUB_REF.trim() : '';
+  if (rawGithubRef.startsWith('refs/tags/')) {
+    const tagFromRef = normalizeReleaseVersion(rawGithubRef.slice('refs/tags/'.length));
+    if (tagFromRef) {
+      return { version: tagFromRef, source: 'GITHUB_REF' };
+    }
+  }
+
+  return { version: null, source: null };
+};
 
 const validateTarball = (tarballPath) => {
-  const tarEntries = execFileSync('tar', ['-tzf', tarballPath], { cwd: repoRoot, encoding: 'utf8' })
+  const tarEntries = execFileSync('tar', ['-tzf', tarballPath], { cwd: repoRoot, encoding: 'utf8', maxBuffer: EXEC_MAX_BUFFER })
     .split('\n')
     .map((entry) => entry.trim())
     .filter(Boolean);
@@ -44,13 +78,19 @@ const validateTarball = (tarballPath) => {
 };
 
 const main = async () => {
+  const releaseContext = resolveReleaseVersionContext();
+  if (releaseContext.version && releaseContext.version !== packageVersion) {
+    throw new Error(`Release version (${releaseContext.version}) from ${releaseContext.source} does not match packages/cli-wrapper version (${packageVersion}).`);
+  }
+
   await withTempDir('playbook-release-asset-', async (stagingDir) => {
     const stagedReleaseDir = path.join(stagingDir, 'release');
     fs.mkdirSync(stagedReleaseDir, { recursive: true });
 
     const packOutput = execFileSync('pnpm', ['pack', '--pack-destination', stagedReleaseDir], {
       cwd: wrapperDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
+      maxBuffer: EXEC_MAX_BUFFER
     });
     if (packOutput) {
       process.stderr.write(packOutput);
@@ -81,7 +121,9 @@ const main = async () => {
   });
 };
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
+}
