@@ -74,6 +74,51 @@ type ObserverStoryDetail = {
     href: string | null;
   } | null;
   raw_artifact_path: '.playbook/stories.json';
+  related?: ObserverJoinLink[];
+};
+
+type ObserverJoinLink = {
+  type: 'story' | 'story-candidate' | 'pattern-candidate' | 'pattern';
+  id: string;
+  title: string;
+  normalizationKey: string | null;
+  promotedFrom: string | null;
+  sourceRefs: string[];
+  origin: 'repo-truth' | 'derived-candidate' | 'promoted-knowledge';
+  raw_artifact_path: string;
+  promote_command: string | null;
+};
+
+type ObserverPromotionLayer = {
+  repo_truth: {
+    raw_artifact_path: '.playbook/stories.json';
+    stories: StoryRecord[];
+  };
+  derived_candidates: {
+    raw_artifact_path: '.playbook/story-candidates.json';
+    stories: Array<Record<string, unknown>>;
+  };
+  promoted_knowledge: {
+    raw_artifact_path: '.playbook/patterns.json';
+    patterns: Array<Record<string, unknown>>;
+  };
+  joins: {
+    linked_story_ids: string[];
+    linked_story_candidate_ids: string[];
+    linked_pattern_candidate_ids: string[];
+    linked_pattern_ids: string[];
+  };
+};
+
+type ObserverGlobalPromotionLayer = {
+  derived_candidates: {
+    raw_artifact_path: '.playbook/pattern-candidates.json';
+    patterns: Array<Record<string, unknown>>;
+  };
+  promoted_knowledge: {
+    raw_artifact_path: '.playbook/patterns.json';
+    patterns: Array<Record<string, unknown>>;
+  };
 };
 
 type ObserverCrossRepoCandidateGroup = {
@@ -145,7 +190,9 @@ const OBSERVER_ARTIFACTS = [
   { kind: 'policy-apply-result', relativePath: '.playbook/policy-apply-result.json' },
   { kind: 'pr-review', relativePath: '.playbook/pr-review.json' },
   { kind: 'session', relativePath: '.playbook/session.json' },
-  { kind: 'system-map', relativePath: '.playbook/system-map.json' }
+  { kind: 'system-map', relativePath: '.playbook/system-map.json' },
+  { kind: 'pattern-candidates', relativePath: '.playbook/pattern-candidates.json' },
+  { kind: 'patterns', relativePath: '.playbook/patterns.json' }
 ] as const;
 
 const READINESS_ARTIFACTS = [
@@ -438,6 +485,111 @@ const readRepoArtifact = (repo: ObserverRepoEntry, kind: ObserverArtifactKind): 
 };
 
 
+const readJsonArtifact = <T>(root: string, relativePath: string, fallback: T): T => {
+  const targetPath = path.join(root, relativePath);
+  if (!fs.existsSync(targetPath)) return fallback;
+  try {
+    return JSON.parse(fs.readFileSync(targetPath, 'utf8')) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const toRecordArray = (value: unknown): Array<Record<string, unknown>> =>
+  Array.isArray(value) ? value.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === 'object') : [];
+
+const listArtifactRecords = (artifact: unknown): Array<Record<string, unknown>> => {
+  if (!artifact || typeof artifact !== 'object') return [];
+  const record = artifact as Record<string, unknown>;
+  return toRecordArray(record.candidates ?? record.patterns ?? record.promotedPatterns ?? record.stories ?? record.entries ?? []);
+};
+
+const toStringList = (value: unknown): string[] =>
+  Array.isArray(value) ? [...new Set(value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0))].sort((left, right) => left.localeCompare(right)) : [];
+
+const toJoinableLink = (entry: Record<string, unknown>, fallbackType: ObserverJoinLink['type'], origin: ObserverJoinLink['origin'], rawArtifactPath: string, promoteCommand: string | null): ObserverJoinLink | null => {
+  const id = typeof entry.id === 'string' && entry.id ? entry.id : typeof entry.candidateId === 'string' && entry.candidateId ? entry.candidateId : typeof entry.knowledgeId === 'string' && entry.knowledgeId ? entry.knowledgeId : null;
+  if (!id) return null;
+  const title = typeof entry.title === 'string' && entry.title ? entry.title : typeof entry.canonicalPatternName === 'string' && entry.canonicalPatternName ? entry.canonicalPatternName : typeof entry.name === 'string' && entry.name ? entry.name : id;
+  return {
+    type: fallbackType,
+    id,
+    title,
+    normalizationKey: typeof entry.normalizationKey === 'string' && entry.normalizationKey ? entry.normalizationKey : null,
+    promotedFrom: typeof entry.promotedFrom === 'string' && entry.promotedFrom ? entry.promotedFrom : typeof entry.sourceCandidateId === 'string' && entry.sourceCandidateId ? entry.sourceCandidateId : null,
+    sourceRefs: toStringList(entry.sourceRefs),
+    origin,
+    raw_artifact_path: rawArtifactPath,
+    promote_command: promoteCommand
+  };
+};
+
+const joinRelatedLinks = (subject: ObserverJoinLink | null, links: ObserverJoinLink[]): ObserverJoinLink[] => {
+  if (!subject) return [];
+  const subjectRefs = new Set(subject.sourceRefs);
+  return links.filter((entry) => {
+    if (entry.id === subject.id && entry.type === subject.type) return false;
+    if (subject.normalizationKey && entry.normalizationKey && subject.normalizationKey === entry.normalizationKey) return true;
+    if (subject.promotedFrom && entry.id === subject.promotedFrom) return true;
+    if (entry.promotedFrom && entry.promotedFrom === subject.id) return true;
+    return entry.sourceRefs.some((ref) => subjectRefs.has(ref));
+  });
+};
+
+const readRepoStoryCandidates = (repo: ObserverRepoEntry): Array<Record<string, unknown>> =>
+  listArtifactRecords(readJsonArtifact<Record<string, unknown>>(repo.root, '.playbook/story-candidates.json', { candidates: [] }));
+
+const readRepoPatternCandidates = (repo: ObserverRepoEntry): Array<Record<string, unknown>> =>
+  listArtifactRecords(readJsonArtifact<Record<string, unknown>>(repo.root, '.playbook/pattern-candidates.json', { candidates: [] }));
+
+const readRepoPromotedPatterns = (repo: ObserverRepoEntry): Array<Record<string, unknown>> =>
+  listArtifactRecords(readJsonArtifact<Record<string, unknown>>(repo.root, '.playbook/patterns.json', { patterns: [] }));
+
+const readGlobalPatternCandidates = (observerRoot: string): Array<Record<string, unknown>> =>
+  listArtifactRecords(readJsonArtifact<Record<string, unknown>>(observerRoot, '.playbook/pattern-candidates.json', { candidates: [] }));
+
+const readGlobalPromotedPatterns = (observerRoot: string): Array<Record<string, unknown>> =>
+  listArtifactRecords(readJsonArtifact<Record<string, unknown>>(observerRoot, '.playbook/patterns.json', { patterns: [] }));
+
+const buildRepoPromotionLayer = (repo: ObserverRepoEntry): ObserverPromotionLayer => {
+  const stories = readRepoStories(repo).stories;
+  const storyCandidates = readRepoStoryCandidates(repo);
+  const patternCandidates = readRepoPatternCandidates(repo);
+  const patterns = readRepoPromotedPatterns(repo);
+  const storyLinks = stories.map((story) => toJoinableLink(story as unknown as Record<string, unknown>, 'story', 'repo-truth', '.playbook/stories.json', null)).filter((entry): entry is ObserverJoinLink => entry !== null);
+  const storyCandidateLinks = storyCandidates.map((entry) => toJoinableLink(entry, 'story-candidate', 'derived-candidate', '.playbook/story-candidates.json', typeof entry.id === 'string' ? `pnpm playbook story promote ${entry.id} --json` : null)).filter((entry): entry is ObserverJoinLink => entry !== null);
+  const patternCandidateLinks = patternCandidates.map((entry) => toJoinableLink(entry, 'pattern-candidate', 'derived-candidate', '.playbook/pattern-candidates.json', typeof entry.id === 'string' ? `pnpm playbook patterns promote --id ${entry.id} --decision approve` : null)).filter((entry): entry is ObserverJoinLink => entry !== null);
+  const patternLinks = patterns.map((entry) => toJoinableLink(entry, 'pattern', 'promoted-knowledge', '.playbook/patterns.json', null)).filter((entry): entry is ObserverJoinLink => entry !== null);
+  const joinedStories = new Set<string>();
+  const joinedStoryCandidates = new Set<string>();
+  const joinedPatternCandidates = new Set<string>();
+  const joinedPatterns = new Set<string>();
+  for (const storyLink of storyLinks) {
+    for (const related of joinRelatedLinks(storyLink, [...storyCandidateLinks, ...patternCandidateLinks, ...patternLinks])) {
+      if (related.type === 'story-candidate') joinedStoryCandidates.add(related.id);
+      if (related.type === 'pattern-candidate') joinedPatternCandidates.add(related.id);
+      if (related.type === 'pattern') joinedPatterns.add(related.id);
+      joinedStories.add(storyLink.id);
+    }
+  }
+  return {
+    repo_truth: { raw_artifact_path: '.playbook/stories.json', stories },
+    derived_candidates: { raw_artifact_path: '.playbook/story-candidates.json', stories: storyCandidates },
+    promoted_knowledge: { raw_artifact_path: '.playbook/patterns.json', patterns },
+    joins: {
+      linked_story_ids: [...joinedStories].sort((l, r) => l.localeCompare(r)),
+      linked_story_candidate_ids: [...joinedStoryCandidates].sort((l, r) => l.localeCompare(r)),
+      linked_pattern_candidate_ids: [...joinedPatternCandidates].sort((l, r) => l.localeCompare(r)),
+      linked_pattern_ids: [...joinedPatterns].sort((l, r) => l.localeCompare(r))
+    }
+  };
+};
+
+const buildGlobalPromotionLayer = (observerRoot: string): ObserverGlobalPromotionLayer => ({
+  derived_candidates: { raw_artifact_path: '.playbook/pattern-candidates.json', patterns: readGlobalPatternCandidates(observerRoot) },
+  promoted_knowledge: { raw_artifact_path: '.playbook/patterns.json', patterns: readGlobalPromotedPatterns(observerRoot) }
+});
+
 const readRepoStories = (repo: ObserverRepoEntry): StoriesArtifact => {
   try {
     return readStoriesArtifact(repo.root);
@@ -477,6 +629,13 @@ const buildStoryDetail = (repo: ObserverRepoEntry, storyId: string, readiness: O
   const story = findStoryById(artifact, storyId);
   if (!story) return null;
   const linkedEvidence = buildStoryEvidenceLinks(repo.id, story);
+  const promotionLayer = buildRepoPromotionLayer(repo);
+  const storyLink = toJoinableLink(story as unknown as Record<string, unknown>, 'story', 'repo-truth', '.playbook/stories.json', null);
+  const related = joinRelatedLinks(storyLink, [
+    ...promotionLayer.derived_candidates.stories.map((entry) => toJoinableLink(entry, 'story-candidate', 'derived-candidate', '.playbook/story-candidates.json', typeof entry.id === 'string' ? `pnpm playbook story promote ${entry.id} --json` : null)).filter((entry): entry is ObserverJoinLink => entry !== null),
+    ...readRepoPatternCandidates(repo).map((entry) => toJoinableLink(entry, 'pattern-candidate', 'derived-candidate', '.playbook/pattern-candidates.json', typeof entry.id === 'string' ? `pnpm playbook patterns promote --id ${entry.id} --decision approve` : null)).filter((entry): entry is ObserverJoinLink => entry !== null),
+    ...promotionLayer.promoted_knowledge.patterns.map((entry) => toJoinableLink(entry, 'pattern', 'promoted-knowledge', '.playbook/patterns.json', null)).filter((entry): entry is ObserverJoinLink => entry !== null)
+  ]);
   return {
     story,
     linked_status: {
@@ -488,8 +647,9 @@ const buildStoryDetail = (repo: ObserverRepoEntry, storyId: string, readiness: O
       label: story.suggested_route,
       href: null
     } : null,
-    raw_artifact_path: '.playbook/stories.json'
-  };
+    raw_artifact_path: '.playbook/stories.json',
+    related
+  } as ObserverStoryDetail & { related: ObserverJoinLink[] };
 };
 
 const repoReadiness = (repo: ObserverRepoEntry): ObserverRepoReadiness => {
@@ -814,6 +974,7 @@ const observerDashboardHtml = (): string => `<!doctype html>
           <div class="card"><h3>Backlog Summary</h3><div id="backlogSummaryPanel" class="meta">Backlog summary loads from the canonical story artifact only.</div></div>
           <div class="card"><h3>Backlog List</h3><div id="backlogListPanel" class="meta">Backlog list loads from .playbook/stories.json.</div></div>
           <div class="card"><h3>Story Detail</h3><div id="storyDetailPanel" class="meta">Select a story to inspect details.</div></div>
+          <div class="card"><h3>Promotion Layer</h3><div id="promotionLayerPanel" class="meta">Repo truth, derived candidates, and promoted knowledge load here.</div></div>
           <div class="card"><h3>System Blueprint</h3><div id="blueprintMeta" class="meta">Select a repo.</div><svg id="blueprintPanel" class="blueprint" viewBox="0 0 980 420" aria-label="System Blueprint"></svg></div>
           <div class="card"><h3>Artifact Detail Viewer</h3><select id="artifactKind"></select><div id="artifactPanel"></div></div>
           </div>
@@ -825,6 +986,7 @@ const observerDashboardHtml = (): string => `<!doctype html>
           <div class="card"><h3>Workflow Promotion State</h3><div id="promotionPanel" class="meta">Promotion state loads from the shared workflow-promotion contract.</div></div>
           <div class="card"><h3>Reconciled Updated State</h3><div id="updatedStatePanel" class="meta">Reconciled updated state closes the loop from receipt into canonical adoption state.</div></div>
           <div class="card"><h3>Next Queue (Derived from Updated State)</h3><div id="nextQueuePanel" class="meta">Next adoption queue is derived deterministically from updated state only.</div></div>
+          <div class="card"><h3>Global Promotion Layer</h3><div id="crossRepoPromotionPanel" class="meta">Global candidates and promoted patterns load here.</div></div>
           <div class="card"><h3>Cross-Repo Intelligence</h3>
             <div class="row"><label class="meta">Left repo</label><select id="compareLeft"></select></div>
             <div class="row"><label class="meta">Right repo</label><select id="compareRight"></select></div>
@@ -1008,6 +1170,17 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
     };
   }
 
+  if (pathname === '/api/cross-repo/promotion-layer') {
+    return {
+      statusCode: 200,
+      payload: {
+        ...base,
+        kind: 'observer-cross-repo-promotion-layer',
+        promotion_layer: buildGlobalPromotionLayer(observerRoot)
+      }
+    };
+  }
+
   if (pathname === '/api/cross-repo/candidates') {
     const artifact = buildCrossRepoArtifact(observerRoot, registry);
     return {
@@ -1083,7 +1256,7 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
       return { statusCode: 404, payload: { ...base, kind: 'observer-server-error', error: 'repo-not-found' } };
     }
     const readiness = repoReadiness(repo);
-    return { statusCode: 200, payload: { ...base, kind: 'observer-server-repo', repo, readiness, backlog: buildRepoBacklog(repo, readiness) } };
+    return { statusCode: 200, payload: { ...base, kind: 'observer-server-repo', repo, readiness, backlog: buildRepoBacklog(repo, readiness), promotion_layer: buildRepoPromotionLayer(repo) } };
   }
 
   const backlogMatch = /^\/repos\/([^/]+)\/backlog$/.exec(pathname);

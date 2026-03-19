@@ -25,7 +25,7 @@ const showObserverBootstrapError = (error) => {
 };
 
 const startObserverDashboard = () => {
-const artifactKinds = ['cycle-state','cycle-history','policy-evaluation','policy-apply-result','pr-review','session','system-map'];
+const artifactKinds = ['cycle-state','cycle-history','policy-evaluation','policy-apply-result','pr-review','session','system-map','pattern-candidates','patterns'];
 const reposEl = document.getElementById('repos');
 const healthEl = document.getElementById('health');
 const repoTitleEl = document.getElementById('repoTitle');
@@ -58,6 +58,8 @@ const controlLoopSummaryPanelEl = document.getElementById('controlLoopSummaryPan
 const backlogSummaryPanelEl = document.getElementById('backlogSummaryPanel');
 const backlogListPanelEl = document.getElementById('backlogListPanel');
 const storyDetailPanelEl = document.getElementById('storyDetailPanel');
+const promotionLayerPanelEl = document.getElementById('promotionLayerPanel');
+const crossRepoPromotionPanelEl = document.getElementById('crossRepoPromotionPanel');
 let selectedRepoId = null;
 let selectedBlueprintNodeId = null;
 let homeRepoId = null;
@@ -73,6 +75,8 @@ let latestUpdatedStatePayload = null;
 let latestNextQueuePayload = null;
 let latestBacklogPayload = null;
 let latestStoryDetailPayload = null;
+let latestRepoPromotionLayerPayload = null;
+let latestCrossRepoPromotionLayerPayload = null;
 let selectedStoryId = null;
 
 const NODE_LINKED_ARTIFACT = {
@@ -131,6 +135,16 @@ const describeBlocker = (value) => {
 
 const renderSummaryMetric = (label, value) => '<div class="summary-metric"><div class="summary-metric-label">' + escapeHtml(label) + '</div><div class="summary-metric-value">' + escapeHtml(value || 'n/a') + '</div></div>';
 const renderSummaryPill = (label, tone) => '<span class="summary-pill ' + escapeHtml(tone || '') + '">' + escapeHtml(label) + '</span>';
+const renderTruthButton = (pathLabel, repoId, artifactKind) => repoId && artifactKinds.includes(artifactKind)
+  ? '<button class="repo" data-truth-repo="' + escapeHtml(repoId) + '" data-truth-kind="' + escapeHtml(artifactKind) + '">' + escapeHtml(pathLabel) + '</button>'
+  : '<code>' + escapeHtml(pathLabel) + '</code>';
+const renderJoinList = (items) => '<ul>' + (items.length ? items.map((item) =>
+  '<li><strong>' + escapeHtml(item.id) + '</strong> • ' + escapeHtml(item.title || item.id) +
+  '<div class="meta">join: normalizationKey=' + escapeHtml(item.normalizationKey || 'n/a') +
+  ' • promotedFrom=' + escapeHtml(item.promotedFrom || 'n/a') +
+  ' • sourceRefs=' + escapeHtml((item.sourceRefs || []).join(', ') || 'none') + '</div>' +
+  (item.promote_command ? '<div class="meta"><code>' + escapeHtml(item.promote_command) + '</code></div>' : '') +
+  '</li>').join('') : '<li>none</li>') + '</ul>';
 
 const renderInterpretation = (interpretation) => {
   const defaultView = interpretation && interpretation.progressive_disclosure && interpretation.progressive_disclosure.default_view;
@@ -198,6 +212,20 @@ const attachStoryHandlers = () => {
   }
 };
 
+const attachTruthHandlers = () => {
+  for (const el of document.querySelectorAll('[data-truth-kind]')) {
+    el.onclick = async () => {
+      const repoId = el.getAttribute('data-truth-repo');
+      const kind = el.getAttribute('data-truth-kind');
+      if (!repoId || !kind) return;
+      selectedRepoId = repoId;
+      if (artifactKinds.includes(kind)) artifactKindEl.value = kind;
+      await loadRepoDetail();
+      renderRepos();
+    };
+  }
+};
+
 const renderBacklogSummary = (repoId, backlog, readiness) => {
   if (!backlog || !backlog.summary) {
     backlogSummaryPanelEl.innerHTML = '<div class="empty-state">No canonical backlog artifact detected yet. Generate or promote candidate stories so planning can sit above lower-level operational detail.</div>';
@@ -234,6 +262,60 @@ const renderBacklogList = (repoId, backlog) => {
   attachStoryHandlers();
 };
 
+const renderPromotionLayer = (payload) => {
+  const layer = payload && payload.promotion_layer;
+  if (!layer) {
+    promotionLayerPanelEl.innerHTML = '<div class="empty-state">Select a repo to inspect repo truth, derived candidates, and promoted knowledge.</div>';
+    return;
+  }
+  const repoTruth = layer.repo_truth || {};
+  const candidates = layer.derived_candidates || {};
+  const promoted = layer.promoted_knowledge || {};
+  const joins = layer.joins || {};
+  promotionLayerPanelEl.innerHTML =
+    '<div class="summary-strip">' +
+    renderSummaryMetric('Repo truth', String((repoTruth.stories || []).length || 0)) +
+    renderSummaryMetric('Derived candidates', String((candidates.stories || []).length || 0)) +
+    renderSummaryMetric('Promoted knowledge', String((promoted.patterns || []).length || 0)) +
+    '</div>' +
+    '<div class="cross-repo-item"><strong>Repo truth</strong><div class="meta">Canonical backlog state only. Truth surface: <code>' + escapeHtml(repoTruth.raw_artifact_path || '.playbook/stories.json') + '</code>.</div><div class="meta">Joined stories: ' + escapeHtml((joins.linked_story_ids || []).join(', ') || 'none') + '</div></div>' +
+    '<div class="cross-repo-item"><strong>Derived candidates</strong><div class="meta">Candidate stories remain advisory until promotion. Truth surface: <code>' + escapeHtml(candidates.raw_artifact_path || '.playbook/story-candidates.json') + '</code>.</div><div class="meta">Joined candidate stories: ' + escapeHtml((joins.linked_story_candidate_ids || []).join(', ') || 'none') + '</div><div class="meta">Joined pattern candidates: ' + escapeHtml((joins.linked_pattern_candidate_ids || []).join(', ') || 'none') + '</div></div>' +
+    '<div class="cross-repo-item"><strong>Promoted knowledge</strong><div class="meta">Promoted repo patterns are durable knowledge. Truth surface: ' + renderTruthButton(promoted.raw_artifact_path || '.playbook/patterns.json', selectedRepoId, 'patterns') + '.</div><div class="meta">Joined patterns: ' + escapeHtml((joins.linked_pattern_ids || []).join(', ') || 'none') + '</div></div>';
+  attachTruthHandlers();
+};
+
+const renderCrossRepoPromotionLayer = (payload) => {
+  const layer = payload && payload.promotion_layer;
+  if (!layer) {
+    crossRepoPromotionPanelEl.innerHTML = '<div class="empty-state">Global promotion layer unavailable.</div>';
+    return;
+  }
+  const candidateRows = toArray(layer.derived_candidates && layer.derived_candidates.patterns).map((entry) => ({
+    id: entry.id || entry.candidateId || 'unknown',
+    title: entry.title || entry.canonicalPatternName || entry.name || entry.id || 'unknown',
+    normalizationKey: entry.normalizationKey || null,
+    promotedFrom: entry.promotedFrom || null,
+    sourceRefs: entry.sourceRefs || [],
+    promote_command: entry.id ? 'pnpm playbook patterns promote --id ' + entry.id + ' --decision approve' : null
+  }));
+  const promotedRows = toArray(layer.promoted_knowledge && layer.promoted_knowledge.patterns).map((entry) => ({
+    id: entry.id || entry.knowledgeId || 'unknown',
+    title: entry.title || entry.canonicalPatternName || entry.name || entry.id || 'unknown',
+    normalizationKey: entry.normalizationKey || null,
+    promotedFrom: entry.promotedFrom || entry.sourceCandidateId || null,
+    sourceRefs: entry.sourceRefs || [],
+    promote_command: null
+  }));
+  crossRepoPromotionPanelEl.innerHTML =
+    '<div class="summary-strip">' +
+    renderSummaryMetric('Global candidates', String(candidateRows.length)) +
+    renderSummaryMetric('Global promoted', String(promotedRows.length)) +
+    renderSummaryMetric('Join keys', 'normalizationKey • promotedFrom • sourceRefs') +
+    '</div>' +
+    '<div class="cross-repo-item"><strong>Derived candidates</strong><div class="meta">Global cross-repo pattern candidates from <code>' + escapeHtml((layer.derived_candidates && layer.derived_candidates.raw_artifact_path) || '.playbook/pattern-candidates.json') + '</code>.</div>' + renderJoinList(candidateRows) + '</div>' +
+    '<div class="cross-repo-item"><strong>Promoted knowledge</strong><div class="meta">Global promoted patterns from <code>' + escapeHtml((layer.promoted_knowledge && layer.promoted_knowledge.raw_artifact_path) || '.playbook/patterns.json') + '</code>.</div>' + renderJoinList(promotedRows) + '</div>';
+};
+
 const renderStoryDetail = (detail) => {
   if (!detail || !detail.story) {
     storyDetailPanelEl.innerHTML = '<div class="empty-state">Select a story to inspect evidence, rationale, dependencies, lane, and suggested route.</div>';
@@ -253,7 +335,7 @@ const renderStoryDetail = (detail) => {
     '<div><strong>Acceptance criteria</strong><ul>' + ((story.acceptance_criteria || []).length ? story.acceptance_criteria.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '<div><strong>Dependencies</strong><ul>' + ((story.dependencies || []).length ? story.dependencies.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '<div><strong>Current status linkage:</strong> ' + escapeHtml((detail.linked_status && detail.linked_status.readiness_state) || 'unknown') + ' / ' + escapeHtml((detail.linked_status && detail.linked_status.lifecycle_stage) || 'unknown') + '</div>' +
-    '<details class="narrative-secondary"><summary>Evidence / route</summary><div><strong>Evidence</strong><ul>' + (evidence.length ? evidence.map((item) => '<li>' + escapeHtml(item.label + ' → ' + item.artifact_path) + '</li>').join('') : '<li>none</li>') + '</ul></div><div><strong>Suggested route</strong><ul><li>' + escapeHtml((detail.linked_route && detail.linked_route.label) || story.suggested_route || 'none') + '</li></ul></div></details>' +
+    '<details class="narrative-secondary"><summary>Evidence / route</summary><div><strong>Evidence</strong><ul>' + (evidence.length ? evidence.map((item) => '<li>' + escapeHtml(item.label + ' → ' + item.artifact_path) + '</li>').join('') : '<li>none</li>') + '</ul></div><div><strong>Suggested route</strong><ul><li>' + escapeHtml((detail.linked_route && detail.linked_route.label) || story.suggested_route || 'none') + '</li></ul></div><div><strong>Join-linked provenance</strong>' + renderJoinList(Array.isArray(detail.related) ? detail.related : []) + '</div></details>' +
     '<details class="raw-truth-note"><summary>Deep/raw story artifact</summary><div><code>' + escapeHtml(detail.raw_artifact_path || '.playbook/stories.json') + '</code></div>' + format(detail) + '</details>';
 };
 
@@ -588,10 +670,12 @@ const loadRepoDetail = async () => {
     blueprintPanelEl.innerHTML = '';
     blueprintMetaEl.innerHTML = 'Connect and select a repo to render the system blueprint.';
     selectedNodeDetailEl.textContent = 'Click a node to inspect layer, state, and artifact linkage.';
+    promotionLayerPanelEl.innerHTML = '<div class="empty-state">Select a repo to inspect repo truth, derived candidates, and promoted knowledge.</div>';
     return;
   }
 
   latestRepoPayload = await getJson('/repos/' + encodeURIComponent(selectedRepoId));
+  latestRepoPromotionLayerPayload = latestRepoPayload;
   latestBacklogPayload = latestRepoPayload.backlog ? { backlog: latestRepoPayload.backlog, readiness: latestRepoPayload.readiness } : null;
   repoTitleEl.textContent = 'Repo: ' + latestRepoPayload.repo.id;
   const readiness = latestRepoPayload.readiness || {};
@@ -613,6 +697,7 @@ const loadRepoDetail = async () => {
   await loadArtifact();
   await loadBlueprint();
   await loadBacklog();
+  renderPromotionLayer(latestRepoPromotionLayerPayload);
   renderControlLoopSummary();
 };
 
@@ -995,6 +1080,9 @@ const loadCrossRepoPair = async () => {
 const loadCrossRepoAggregate = async () => {
   const reposPayload = await getJson('/repos');
   const repos = Array.isArray(reposPayload.repos) ? reposPayload.repos : [];
+  const promotionLayerPayload = await getJson('/api/cross-repo/promotion-layer');
+  latestCrossRepoPromotionLayerPayload = promotionLayerPayload;
+  renderCrossRepoPromotionLayer(promotionLayerPayload);
   if (repos.length < 2) {
     crossRepoPanelEl.innerHTML = '<div class="empty-state">Connect at least 2 repos to compare governed artifacts.</div>';
     return;
@@ -1034,6 +1122,7 @@ const refreshAll = async () => {
     await loadUpdatedState();
     await loadNextQueueSummary();
     await loadExecutionPlanSummary();
+    await loadCrossRepoAggregate();
   } catch (error) {
     healthEl.textContent = 'error: ' + error.message;
   }
