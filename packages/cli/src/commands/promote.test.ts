@@ -47,13 +47,25 @@ describe('runPromote', () => {
     process.env.PLAYBOOK_HOME = home;
     writeJson(home, '.playbook/pattern-candidates.json', {
       schemaVersion: '1.0', kind: 'pattern-candidates', generatedAt: '2026-03-19T00:00:00.000Z',
-      candidates: [{ id: 'pattern-candidate-1', pattern_family: 'layering', title: 'Layering', description: 'desc', source_artifact: '.playbook/pattern-candidates.json', signals: ['a'], confidence: 0.8, evidence_refs: ['ref'], status: 'observed' }]
+      candidates: [{
+        id: 'pattern-candidate-1',
+        pattern_family: 'layering',
+        title: 'Layering',
+        description: 'desc',
+        storySeed: { title: 'Seed layering story', summary: 'Seed summary', acceptance: ['Check layering evidence'] },
+        source_artifact: '.playbook/pattern-candidates.json',
+        signals: ['a'],
+        confidence: 0.8,
+        evidence_refs: ['ref'],
+        status: 'observed'
+      }]
     });
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const exitCode = runPromote(home, ['pattern', 'global/pattern-candidates/pattern-candidate-1', '--pattern-id', 'pattern.layering'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
     expect(payload.pattern.provenance.source_ref).toBe('global/pattern-candidates/pattern-candidate-1');
+    expect(payload.pattern.storySeed.title).toBe('Seed layering story');
     expect(fs.existsSync(path.join(home, 'staged', 'promotions', 'patterns.json'))).toBe(true);
     expect(JSON.parse(fs.readFileSync(path.join(home, 'patterns.json'), 'utf8')).patterns).toHaveLength(1);
   });
@@ -98,5 +110,50 @@ describe('runPromote', () => {
     expect(payload.story.id).toBe('story.governance');
     expect(fs.existsSync(path.join(repo, '.playbook/stories.json'))).toBe(true);
     expect(fs.existsSync(path.join(home, 'patterns.json'))).toBe(false);
+  });
+
+  it('promotes a promoted global pattern into a repo-local story using storySeed metadata while keeping planning story-driven', () => {
+    const home = mkd('playbook-home-');
+    const repo = mkd('repo-pattern-seed-');
+    process.env.PLAYBOOK_HOME = home;
+    writeJson(home, '.playbook/observer/repos.json', { schemaVersion: '1.0', kind: 'repo-registry', repos: [{ id: path.basename(repo), root: repo }] });
+    writeJson(home, 'patterns.json', {
+      schemaVersion: '1.0',
+      kind: 'promoted-patterns',
+      patterns: [{
+        id: 'pattern.layering',
+        pattern_family: 'layering',
+        title: 'Layering',
+        description: 'desc',
+        storySeed: {
+          title: 'Adopt layering locally',
+          summary: 'Seed a repo-local story from promoted knowledge.',
+          acceptance: ['Verify lineage', 'Preserve story-only planning']
+        },
+        source_artifact: '.playbook/pattern-candidates.json',
+        signals: ['a'],
+        confidence: 0.9,
+        evidence_refs: ['ref'],
+        status: 'promoted',
+        provenance: {
+          source_ref: 'global/pattern-candidates/pattern-candidate-1',
+          candidate_id: 'pattern-candidate-1',
+          candidate_fingerprint: 'fp-pattern-1',
+          promoted_at: '2026-03-19T00:00:00.000Z'
+        }
+      }]
+    });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = runPromote(home, ['story', 'global/patterns/pattern.layering', '--repo', path.basename(repo), '--story-id', 'story.layering'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0]));
+    expect(payload.story.id).toBe('story.layering');
+    expect(payload.story.title).toBe('Adopt layering locally');
+    expect(payload.story.rationale).toBe('Seed a repo-local story from promoted knowledge.');
+    expect(payload.story.acceptance_criteria).toEqual(['Preserve story-only planning', 'Verify lineage']);
+    expect(payload.story.provenance.pattern_id).toBe('pattern.layering');
+    expect(payload.story.provenance.source_ref).toBe('global/patterns/pattern.layering');
+    expect(JSON.parse(fs.readFileSync(path.join(repo, '.playbook/stories.json'), 'utf8')).stories).toHaveLength(1);
+    expect(JSON.parse(fs.readFileSync(path.join(home, 'patterns.json'), 'utf8')).patterns).toHaveLength(1);
   });
 });

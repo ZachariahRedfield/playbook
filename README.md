@@ -761,12 +761,16 @@ This receipt is designed to feed future prioritization cleanly: `verification_su
 - `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
 - `playbook story candidates --json` derives and writes the non-canonical inspectable candidate artifact at `.playbook/story-candidates.json` without mutating `.playbook/stories.json`.
 - `playbook story promote <candidate-id> --json` explicitly promotes one candidate into the canonical backlog artifact.
+- `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` explicitly seeds a repo-local story from promoted global pattern metadata while still writing only `.playbook/stories.json` in the target repo.
 - `pnpm playbook patterns proposals --json` groups cross-repo comparisons into promotable portable-pattern/story candidates with evidence lineage and explicit governed promotion targets.
 - `pnpm playbook patterns proposals promote --proposal <proposal-id> --target memory|story [--repo <repo-id>] --json` keeps cross-repo adoption explicit while bridging into reusable memory or canonical backlog surfaces.
 
 - Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
+- Rule: Global knowledge may suggest local work, but only repo-local stories may enter execution planning.
 - Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
 - Pattern: Findings need durable interpretation before they become backlog work.
 - Pattern: Candidate stories require grouping, dedupe, and explicit promotion.
+- Pattern: Reusable knowledge compounds when it can seed bounded local backlog items.
 - Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.
 - Failure Mode: Raw finding -> automatic story conversion creates backlog spam and weak planning signal.
+- Failure Mode: Letting patterns enter execution directly creates a second control path and breaks operator trust.

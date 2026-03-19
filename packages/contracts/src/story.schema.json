@@ -37,6 +37,21 @@
     "acceptance_criteria": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "dependencies": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "execution_lane": { "type": ["string", "null"] },
-    "suggested_route": { "type": ["string", "null"] }
+    "suggested_route": { "type": ["string", "null"] },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_ref", "promoted_from", "source_artifact", "promoted_at"],
+      "properties": {
+        "source_ref": { "type": "string", "minLength": 1 },
+        "promoted_from": { "type": "string", "enum": ["story-candidate", "pattern-candidate", "pattern"] },
+        "candidate_id": { "type": "string", "minLength": 1 },
+        "candidate_fingerprint": { "type": "string", "minLength": 1 },
+        "pattern_id": { "type": "string", "minLength": 1 },
+        "pattern_story_seed_fingerprint": { "type": "string", "minLength": 1 },
+        "source_artifact": { "type": "string", "minLength": 1 },
+        "promoted_at": { "type": "string", "format": "date-time" }
+      }
+    }
   }
 }

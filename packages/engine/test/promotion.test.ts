@@ -38,12 +38,24 @@ describe('promotion materialization', () => {
     const home = mkd('playbook-promotion-home-');
     writeJson(home, '.playbook/pattern-candidates.json', {
       schemaVersion: '1.0', kind: 'pattern-candidates', generatedAt: '2026-03-19T00:00:00.000Z',
-      candidates: [{ id: 'pattern-candidate-1', pattern_family: 'layering', title: 'Layering', description: 'desc', source_artifact: '.playbook/pattern-candidates.json', signals: ['a'], confidence: 0.8, evidence_refs: ['ref'], status: 'observed' }]
+      candidates: [{
+        id: 'pattern-candidate-1',
+        pattern_family: 'layering',
+        title: 'Layering',
+        description: 'desc',
+        storySeed: { title: 'Seed layering story', summary: 'Seed summary', acceptance: ['Check layering evidence'] },
+        source_artifact: '.playbook/pattern-candidates.json',
+        signals: ['a'],
+        confidence: 0.8,
+        evidence_refs: ['ref'],
+        status: 'observed'
+      }]
     });
     const first = materializePatternFromCandidate({ sourceRef: 'global/pattern-candidates/pattern-candidate-1', playbookHome: home, targetPatternId: 'pattern.layering', promotedAt: '2026-03-19T00:00:00.000Z' });
     writeJson(home, 'patterns.json', first.artifact);
     const second = materializePatternFromCandidate({ sourceRef: 'global/pattern-candidates/pattern-candidate-1', playbookHome: home, targetPatternId: 'pattern.layering', promotedAt: '2026-03-19T00:00:00.000Z' });
     expect(first.record.provenance.candidate_id).toBe('pattern-candidate-1');
+    expect(first.record.storySeed.title).toBe('Seed layering story');
     expect(second.noop).toBe(true);
     expect(readCanonicalPatternsArtifact(home).patterns).toHaveLength(1);
   });
@@ -60,6 +72,52 @@ describe('promotion materialization', () => {
     expect(prepared.record.provenance?.promoted_from).toBe('pattern-candidate');
     expect(fs.existsSync(path.join(repo, '.playbook/stories.json'))).toBe(false);
     expect(fs.existsSync(path.join(home, 'patterns.json'))).toBe(false);
+  });
+
+  it('supports promoted global pattern to repo-local story seeding using storySeed metadata and pattern provenance', () => {
+    const home = mkd('playbook-promotion-home-');
+    const repo = mkd('repo-pattern-seed-');
+    writeJson(home, 'patterns.json', {
+      schemaVersion: '1.0',
+      kind: 'promoted-patterns',
+      patterns: [{
+        id: 'pattern.layering',
+        pattern_family: 'layering',
+        title: 'Layering',
+        description: 'desc',
+        storySeed: {
+          title: 'Adopt layering in repo-pattern-seed',
+          summary: 'Use bounded layering adoption as a repo-local story.',
+          acceptance: ['Verify layering evidence', 'Keep execution story-driven']
+        },
+        source_artifact: '.playbook/pattern-candidates.json',
+        signals: ['signal'],
+        confidence: 0.9,
+        evidence_refs: ['ref-a', 'ref-b'],
+        status: 'promoted',
+        provenance: {
+          source_ref: 'global/pattern-candidates/pattern-candidate-1',
+          candidate_id: 'pattern-candidate-1',
+          candidate_fingerprint: 'pattern-fingerprint-1',
+          promoted_at: '2026-03-19T00:00:00.000Z'
+        }
+      }]
+    });
+    const prepared = materializeStoryFromSource({
+      sourceRef: 'global/patterns/pattern.layering',
+      targetRepoId: 'repo-pattern-seed',
+      targetRepoRoot: repo,
+      playbookHome: home,
+      promotedAt: '2026-03-19T00:00:00.000Z'
+    });
+    expect(prepared.record.title).toBe('Adopt layering in repo-pattern-seed');
+    expect(prepared.record.rationale).toBe('Use bounded layering adoption as a repo-local story.');
+    expect(prepared.record.acceptance_criteria).toEqual(['Keep execution story-driven', 'Verify layering evidence']);
+    expect(prepared.record.provenance?.promoted_from).toBe('pattern');
+    expect(prepared.record.provenance?.pattern_id).toBe('pattern.layering');
+    expect(prepared.record.provenance?.source_ref).toBe('global/patterns/pattern.layering');
+    expect(prepared.record.evidence).toContain('patterns.json');
+    expect(fs.existsSync(path.join(repo, '.playbook/stories.json'))).toBe(false);
   });
 
   it('fails clearly on conflicting repeated promotion', () => {

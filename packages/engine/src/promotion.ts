@@ -19,13 +19,24 @@ import { PATTERN_CANDIDATES_RELATIVE_PATH } from './extract/patternCandidates.js
 
 export const GLOBAL_PATTERNS_RELATIVE_PATH = 'patterns.json' as const;
 
-export type PromotionSourceRef = `repo/${string}/story-candidates/${string}` | `global/pattern-candidates/${string}`;
+export type PromotionSourceRef =
+  | `repo/${string}/story-candidates/${string}`
+  | `global/pattern-candidates/${string}`
+  | `global/patterns/${string}`;
+
+export type StorySeed = {
+  title: string;
+  summary: string;
+  acceptance: string[];
+};
 
 export type StoryPromotionProvenance = {
   source_ref: PromotionSourceRef;
-  promoted_from: 'story-candidate' | 'pattern-candidate';
-  candidate_id: string;
-  candidate_fingerprint: string;
+  promoted_from: 'story-candidate' | 'pattern-candidate' | 'pattern';
+  candidate_id?: string;
+  candidate_fingerprint?: string;
+  pattern_id?: string;
+  pattern_story_seed_fingerprint?: string;
   source_artifact: string;
   promoted_at: string;
 };
@@ -39,6 +50,7 @@ export type PromotedPatternRecord = {
   pattern_family: string;
   title: string;
   description: string;
+  storySeed: StorySeed;
   source_artifact: string;
   signals: string[];
   confidence: number;
@@ -76,7 +88,9 @@ const sortStrings = (values: string[]): string[] => [...new Set(values)].sort((a
 
 const asRecord = (value: unknown): Record<string, unknown> | null => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
 
-const parseSourceRef = (sourceRef: string): { scope: 'repo' | 'global'; repoId?: string; kind: 'story-candidates' | 'pattern-candidates'; candidateId: string } => {
+const parseSourceRef = (
+  sourceRef: string
+): { scope: 'repo' | 'global'; repoId?: string; kind: 'story-candidates' | 'pattern-candidates' | 'patterns'; candidateId: string } => {
   const repoMatch = /^repo\/([^/]+)\/story-candidates\/([^/]+)$/.exec(sourceRef);
   if (repoMatch) {
     return { scope: 'repo', repoId: repoMatch[1], kind: 'story-candidates', candidateId: repoMatch[2] };
@@ -84,6 +98,10 @@ const parseSourceRef = (sourceRef: string): { scope: 'repo' | 'global'; repoId?:
   const globalMatch = /^global\/pattern-candidates\/([^/]+)$/.exec(sourceRef);
   if (globalMatch) {
     return { scope: 'global', kind: 'pattern-candidates', candidateId: globalMatch[1] };
+  }
+  const promotedPatternMatch = /^global\/patterns\/([^/]+)$/.exec(sourceRef);
+  if (promotedPatternMatch) {
+    return { scope: 'global', kind: 'patterns', candidateId: promotedPatternMatch[1] };
   }
   throw new Error(`playbook promote: unsupported source ref: ${sourceRef}`);
 };
@@ -140,6 +158,31 @@ const findPatternCandidate = (playbookHome: string, candidateId: string): Record
     throw new Error(`playbook promote: pattern candidate not found: ${candidateId}`);
   }
   return candidate;
+};
+
+const findPromotedPattern = (playbookHome: string, patternId: string): PromotedPatternRecord => {
+  const pattern = readCanonicalPatternsArtifact(playbookHome).patterns.find((entry) => entry.id === patternId);
+  if (!pattern) {
+    throw new Error(`playbook promote: promoted pattern not found: ${patternId}`);
+  }
+  return pattern;
+};
+
+const toStorySeed = (value: unknown, fallback: { title: string; summary: string; acceptance: string[] }): StorySeed => {
+  const record = asRecord(value);
+  const title = typeof record?.title === 'string' && record.title.trim().length > 0 ? record.title.trim() : fallback.title;
+  const summary = typeof record?.summary === 'string' && record.summary.trim().length > 0
+    ? record.summary.trim()
+    : typeof record?.rationale === 'string' && record.rationale.trim().length > 0
+      ? record.rationale.trim()
+      : fallback.summary;
+  const acceptanceSource = Array.isArray(record?.acceptance)
+    ? record.acceptance
+    : Array.isArray(record?.acceptanceCriteria)
+      ? record.acceptanceCriteria
+      : fallback.acceptance;
+  const acceptance = sortStrings(acceptanceSource.map(String).filter((entry) => entry.trim().length > 0));
+  return { title, summary, acceptance };
 };
 
 const validatePreparedStoryArtifact = (artifact: StoriesArtifact): void => {
@@ -200,14 +243,22 @@ export const materializeStoryFromSource = (input: {
         promoted_at: promotedAt
       }
     };
-  } else {
+  } else if (parsed.kind === 'pattern-candidates') {
     const candidate = findPatternCandidate(input.playbookHome, parsed.candidateId);
     const candidateFingerprint = fingerprintOf(candidate);
     const patternFamily = String(candidate.pattern_family ?? 'pattern');
+    const storySeed = toStorySeed(candidate.storySeed, {
+      title: `Adopt pattern ${String(candidate.title ?? parsed.candidateId)}`,
+      summary: String(candidate.description ?? 'Promoted from reviewed global pattern candidate.'),
+      acceptance: [
+        `Review global pattern candidate ${parsed.candidateId}.`,
+        `Decide how ${input.targetRepoId} should adopt ${patternFamily}.`
+      ]
+    });
     nextStory = {
       id: input.targetStoryId ?? `pattern-${patternFamily}`,
       repo: current.repo,
-      title: `Adopt pattern ${String(candidate.title ?? parsed.candidateId)}`,
+      title: storySeed.title,
       type: 'feature',
       source: 'global-pattern-candidate',
       severity: 'medium',
@@ -215,11 +266,8 @@ export const materializeStoryFromSource = (input: {
       confidence: Number(candidate.confidence ?? 0) >= 0.8 ? 'high' : 'medium',
       status: 'proposed',
       evidence: sortStrings([String(candidate.source_artifact ?? PATTERN_CANDIDATES_RELATIVE_PATH), ...((Array.isArray(candidate.evidence_refs) ? candidate.evidence_refs : []).map(String))]),
-      rationale: String(candidate.description ?? 'Promoted from reviewed global pattern candidate.'),
-      acceptance_criteria: sortStrings([
-        `Review global pattern candidate ${parsed.candidateId}.`,
-        `Decide how ${input.targetRepoId} should adopt ${patternFamily}.`
-      ]),
+      rationale: storySeed.summary,
+      acceptance_criteria: storySeed.acceptance,
       dependencies: [],
       execution_lane: 'safe_single_pr',
       suggested_route: 'pattern_learning',
@@ -229,6 +277,42 @@ export const materializeStoryFromSource = (input: {
         candidate_id: parsed.candidateId,
         candidate_fingerprint: candidateFingerprint,
         source_artifact: PATTERN_CANDIDATES_RELATIVE_PATH,
+        promoted_at: promotedAt
+      }
+    };
+  } else {
+    const pattern = findPromotedPattern(input.playbookHome, parsed.candidateId);
+    const storySeed = toStorySeed(pattern.storySeed, {
+      title: `Adopt pattern ${pattern.title}`,
+      summary: pattern.description,
+      acceptance: [
+        `Review promoted pattern ${pattern.id}.`,
+        `Decide how ${input.targetRepoId} should adopt ${pattern.pattern_family}.`
+      ]
+    });
+    const seedFingerprint = fingerprintOf(pattern.storySeed);
+    nextStory = {
+      id: input.targetStoryId ?? `pattern-${pattern.pattern_family}`,
+      repo: current.repo,
+      title: storySeed.title,
+      type: 'feature',
+      source: 'global-pattern',
+      severity: 'medium',
+      priority: 'medium',
+      confidence: pattern.confidence >= 0.8 ? 'high' : 'medium',
+      status: 'proposed',
+      evidence: sortStrings([GLOBAL_PATTERNS_RELATIVE_PATH, pattern.source_artifact, ...pattern.evidence_refs]),
+      rationale: storySeed.summary,
+      acceptance_criteria: storySeed.acceptance,
+      dependencies: [],
+      execution_lane: 'safe_single_pr',
+      suggested_route: 'pattern_learning',
+      provenance: {
+        source_ref: input.sourceRef,
+        promoted_from: 'pattern',
+        pattern_id: pattern.id,
+        pattern_story_seed_fingerprint: seedFingerprint,
+        source_artifact: GLOBAL_PATTERNS_RELATIVE_PATH,
         promoted_at: promotedAt
       }
     };
@@ -266,6 +350,14 @@ export const materializePatternFromCandidate = (input: {
     pattern_family: String(candidate.pattern_family ?? parsed.candidateId),
     title: String(candidate.title ?? parsed.candidateId),
     description: String(candidate.description ?? ''),
+    storySeed: toStorySeed(candidate.storySeed, {
+      title: `Adopt pattern ${String(candidate.title ?? parsed.candidateId)}`,
+      summary: String(candidate.description ?? ''),
+      acceptance: [
+        `Review promoted pattern ${String(candidate.title ?? parsed.candidateId)} for local adoption.`,
+        `Create or refine a repo-local story before execution planning.`
+      ]
+    }),
     source_artifact: String(candidate.source_artifact ?? PATTERN_CANDIDATES_RELATIVE_PATH),
     signals: sortStrings((Array.isArray(candidate.signals) ? candidate.signals : []).map(String)),
     confidence: Number(candidate.confidence ?? 0),

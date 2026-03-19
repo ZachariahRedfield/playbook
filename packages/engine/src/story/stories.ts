@@ -1,7 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { StoryProvenance } from '../promotion/globalPatterns.js';
-
 export const STORIES_SCHEMA_VERSION = '1.0' as const;
 export const STORIES_RELATIVE_PATH = '.playbook/stories.json' as const;
 
@@ -36,9 +34,11 @@ export type StoryTransitionPreview = {
 
 export type StoryPromotionProvenance = {
   source_ref: string;
-  promoted_from: 'story-candidate' | 'pattern-candidate';
-  candidate_id: string;
-  candidate_fingerprint: string;
+  promoted_from: 'story-candidate' | 'pattern-candidate' | 'pattern';
+  candidate_id?: string;
+  candidate_fingerprint?: string;
+  pattern_id?: string;
+  pattern_story_seed_fingerprint?: string;
   source_artifact: string;
   promoted_at: string;
 };
@@ -252,7 +252,21 @@ export const validateStoryRecord = (story: unknown, expectedRepo?: string): stri
   if (!Array.isArray(record.dependencies) || asStringArray(record.dependencies).length !== record.dependencies.length) errors.push('story.dependencies must be an array of strings');
   if (!(record.execution_lane === null || typeof record.execution_lane === 'string')) errors.push('story.execution_lane must be a string or null');
   if (!(record.suggested_route === null || typeof record.suggested_route === 'string')) errors.push('story.suggested_route must be a string or null');
-  if (!(record.provenance === undefined || (typeof record.provenance === 'object' && record.provenance !== null && !Array.isArray(record.provenance)))) errors.push('story.provenance must be an object when provided');
+  if (!(record.provenance === undefined || (typeof record.provenance === 'object' && record.provenance !== null && !Array.isArray(record.provenance)))) {
+    errors.push('story.provenance must be an object when provided');
+  } else if (record.provenance && typeof record.provenance === 'object' && !Array.isArray(record.provenance)) {
+    const provenance = record.provenance as Record<string, unknown>;
+    if (typeof provenance.source_ref !== 'string' || provenance.source_ref.trim().length === 0) errors.push('story.provenance.source_ref must be a non-empty string');
+    if (!isOneOf(provenance.promoted_from, ['story-candidate', 'pattern-candidate', 'pattern'] as const)) {
+      errors.push('story.provenance.promoted_from must be one of: story-candidate, pattern-candidate, pattern');
+    }
+    if (typeof provenance.source_artifact !== 'string' || provenance.source_artifact.trim().length === 0) errors.push('story.provenance.source_artifact must be a non-empty string');
+    if (typeof provenance.promoted_at !== 'string' || provenance.promoted_at.trim().length === 0) errors.push('story.provenance.promoted_at must be a non-empty string');
+    if (!(provenance.candidate_id === undefined || typeof provenance.candidate_id === 'string')) errors.push('story.provenance.candidate_id must be a string when provided');
+    if (!(provenance.candidate_fingerprint === undefined || typeof provenance.candidate_fingerprint === 'string')) errors.push('story.provenance.candidate_fingerprint must be a string when provided');
+    if (!(provenance.pattern_id === undefined || typeof provenance.pattern_id === 'string')) errors.push('story.provenance.pattern_id must be a string when provided');
+    if (!(provenance.pattern_story_seed_fingerprint === undefined || typeof provenance.pattern_story_seed_fingerprint === 'string')) errors.push('story.provenance.pattern_story_seed_fingerprint must be a string when provided');
+  }
   return errors;
 };
 

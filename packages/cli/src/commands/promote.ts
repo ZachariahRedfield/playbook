@@ -78,7 +78,7 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
     print(options.format, {
       schemaVersion: '1.0',
       command: 'promote',
-      error: 'Usage: playbook promote <story|pattern> <candidate-ref> [--repo <repo-id>] [--story-id <id>] [--pattern-id <id>] --json'
+      error: 'Usage: playbook promote <story|pattern> <candidate-ref> [--repo <repo-id>] [--story-id <id>] [--pattern-id <id>] --json (story refs: repo/<repo-id>/story-candidates/<candidate-id> | global/pattern-candidates/<candidate-id> | global/patterns/<pattern-id>)'
     });
     return ExitCode.Failure;
   }
