@@ -134,6 +134,39 @@ Default data posture:
 
 No control-plane decision should imply automatic cross-repo memory transfer or implicit external publication.
 
+## Parallel-safe execution and singleton narrative surfaces
+
+Parallel lane planning and worker assignment reduce overlap, but they do not automatically make every repository surface safe for concurrent edits.
+
+Small set of canonical narrative docs remain singleton write targets even when code ownership is otherwise isolated:
+
+- `docs/CHANGELOG.md`
+- roadmap rollups
+- shared architecture summaries
+- other root-level canonical narrative docs
+
+This creates a distinct boundary:
+
+- **Implementation surfaces**: worker-owned code, tests, module docs, and other isolated files that can be edited directly inside a lane.
+- **Narrative singleton surfaces**: canonical rollups and summaries that should be updated only through deferred consolidation.
+
+Why this matters:
+
+- parallelizable work is not automatically parallel-safe
+- singleton narrative docs become merge hotspots before code ownership does
+- deterministic summaries drift when multiple workers narrate the same change independently
+
+Planned dependency-ordered path for future orchestration hardening:
+
+1. worker partitioning / overlap detection
+2. worker-local fragments / receipts
+3. final deterministic consolidation pass for protected singleton docs
+4. managed subagents / hooks on top of that safer substrate
+
+Rule: Shared singleton docs should be updated through worker-local fragments plus a deterministic consolidation pass, not direct concurrent edits from multiple workers.
+Pattern: Workers own isolated implementation changes; a final consolidator owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.
+Failure Mode: Parallel workers editing the same singleton narrative docs create merge hotspots, inconsistent summaries, and doc drift even when implementation ownership is otherwise well partitioned.
+
 ## Workflow-produced artifact promotion
 
 Higher-level workflow outputs that materialize durable repo-visible state must follow the same safety boundary as lower-level generated artifacts.

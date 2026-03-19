@@ -50,6 +50,7 @@ Canonical roadmap directions for Repository Memory System, Replay / Consolidatio
 
 - Clarify the thinnest viable contract for Playbook-native agents as governed lane executors rather than generic chat surfaces.
 - Define the minimum artifact/runtime seam between `story -> plan -> lane -> execution -> receipt` needed before a first agent runtime slice is worth implementing.
+- Treat worker fragment consolidation for protected singleton docs as a prerequisite for any managed subagent / hooks expansion, then narrow the remaining unresolved agent-runtime questions after that slice is architecture-defined.
 - Identify the first bounded agent roles that improve operator leverage without expanding trust scope too early (for example docs cleanup, upgrade assistance, audit/remediation support).
 - Clarify whether future agent-authoring belongs under Automation Synthesis, Control Plane, or a later reviewed knowledge-consumption layer.
 

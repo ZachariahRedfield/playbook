@@ -728,9 +728,9 @@ Failure Mode: When roadmap docs lag implemented governed surfaces, operator unde
   - suggestion-only vs mutation-capable synthesis boundary needed explicit contract framing for first implementation slices.
 - **Future work**
   - formalize the canonical architecture in `docs/architecture/PLAYBOOK_AUTOMATION_SYNTHESIS_GOVERNED_KNOWLEDGE_CONSUMPTION.md`.
-  - require synthesis to consume only promoted, inspectable, provenance-linked knowledge artifacts and template contracts once `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md` (Phase 14) is in place.
+  - require synthesis to consume only promoted, inspectable, provenance-linked knowledge artifacts and template contracts once `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md` (Phase 15) is in place.
   - require stale/superseded exclusion rules, explicit override policy, and lineage-attached generation outputs before any operationalization path.
-  - Phase 15 thin slice: ship suggestion-generation contracts with policy/provenance/rollback-accountability envelopes, while deferring autonomous mutation/deployment behavior to later phases.
+  - Phase 16 thin slice: ship suggestion-generation contracts with policy/provenance/rollback-accountability envelopes, while deferring autonomous mutation/deployment behavior to later phases.
 - **Execution window**
   - dependency-ordered after Knowledge Query / Inspection Surfaces and before broader orchestration/interface expansion; remains outside the current near-term execution window unless explicitly promoted in roadmap status.
 
@@ -1299,38 +1299,45 @@ Use a layered phase model so each phase compounds directly on the previous one:
    - Router Lane 1 (implemented): additive deterministic `execution-plan` proposal contract (`.playbook/execution-plan.json`) and `playbook route` inspection surface that stays proposal-only, uses task-execution-profile baselines, optionally refines with learning-state evidence, and degrades safely when optional artifacts are missing.
    - Router Lane 3 (implemented): learning-state metrics now conservatively refine route proposals (retry pressure, route efficiency, parallel safety, router fit, validation-cost pressure) with additive `learning_state_available`, `route_confidence`, `open_questions`, and warnings while preserving required validations and deterministic output ordering.
    - Router Lane 4 (implemented): execution-plan outputs are now Codex-worker-ready with additive route fields (`expected_surfaces`, `likely_conflict_surfaces`, `dependency_level`, `recommended_pr_size`, `worker_ready`) and deterministic `playbook route --codex-prompt` compilation into PR-sized proposal-only worker prompts (objective, implementation plan, surfaces, verification, docs updates, and governance block).
-9. **Phase 9 â€” Repository Memory System**  
+9. **Phase 9 â€” Worker Fragment Consolidation for Shared Singleton Docs**  
+   Add a first-class planning slice for deferred consolidation of canonical narrative artifacts so parallel worker execution remains merge-safe before managed subagents/hooks are introduced.
+   - Problem: parallel workers can be isolated across implementation surfaces and still collide on singleton narrative docs such as `docs/CHANGELOG.md`, roadmap rollups, and shared architecture summaries.
+   - Planned approach: workers write structured lane-local fragments / receipts, workers do not directly edit protected singleton narrative docs during parallel execution, and one deterministic final consolidation step updates canonical shared docs.
+   - Worker-owned implementation surfaces remain safe for direct edits; narrative singleton surfaces are updated through consolidation only.
+   - Acceptance criteria: define worker-local fragment / receipt shape, protected singleton doc surfaces, consolidation-step responsibilities, and guardrails that prevent direct concurrent edits to protected singleton docs.
+   - Dependency positioning: place this slice after worker partitioning / lane safety and before full managed subagents / hooks execution because parallelizable work is not automatically parallel-safe.
+10. **Phase 10 â€” Repository Memory System**  
    Establish the temporal memory substrate (session/episodic evidence) while keeping repository structural intelligence (`index`/`graph`) as a distinct deterministic layer.
    - Worker assignment slice (implemented): deterministic proposal-only `worker-assignments` contract generation from lane-state readiness/dependency gates via `pnpm playbook workers` / `pnpm playbook workers assign`, including `.playbook/worker-assignments.json` and `.playbook/prompts/<lane_id>.md` outputs without worker launch or branch/PR automation.
-10. **Phase 10 â€” Replay / Consolidation / Promotion**  
+11. **Phase 11 â€” Replay / Consolidation / Promotion**  
     Add deterministic replay and consolidation pipelines with salience-gated, provenance-preserving promotion queues so fast episodic memory cannot become durable doctrine without review.
-11. **Phase 11 â€” Session + Evidence Layer**  
+12. **Phase 12 â€” Session + Evidence Layer**  
     Session envelope and evidence provenance contracts that bind actor context, command lineage, approvals, and deterministic artifact references.
-12. **Phase 12 â€” Control Plane / Agent Runtime v1**  
+13. **Phase 13 â€” Control Plane / Agent Runtime v1**  
     First-class policy/approval/mutation-boundary architecture that gates privileged execution and keeps agents above (not inside) the deterministic substrate.
-13. **Phase 13 â€” Review + Execution Orchestration**  
+14. **Phase 14 â€” Review + Execution Orchestration**  
     Policy-gated orchestration that consumes repository intelligence + AI contracts + session/evidence + control-plane checks while preserving deterministic mutation workflow.
-14. **Phase 14 â€” Knowledge Query / Inspection Surfaces (Read Runtime) - implemented (hardening)**  
+15. **Phase 15 â€” Knowledge Query / Inspection Surfaces (Read Runtime) - implemented (hardening)**  
     Deterministic, provenance-preserving read-runtime inspection of repository memory and promoted knowledge so humans/CI can query, compare, and audit candidate/promoted/stale states before broader automation consumption.
-15. **Phase 15 â€” Automation Synthesis (Governed Knowledge Consumption)**  
-    Future controlled synthesis that consumes only promoted, inspectable, provenance-linked knowledge artifacts after `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md` (Phase 14) is in place. This phase explicitly excludes raw chat memory, unreviewed candidate knowledge, and undocumented inference as automation-grade input. Initial thin implementation slice is architecture/contracts/docs plus suggestion-generation contracts only (no autonomous mutation-heavy runtime behavior and no autonomous deployment/execution paths).
+16. **Phase 16 â€” Automation Synthesis (Governed Knowledge Consumption)**  
+    Future controlled synthesis that consumes only promoted, inspectable, provenance-linked knowledge artifacts after `docs/architecture/PLAYBOOK_KNOWLEDGE_QUERY_SURFACES.md` (Phase 15) is in place. This phase explicitly excludes raw chat memory, unreviewed candidate knowledge, and undocumented inference as automation-grade input. Initial thin implementation slice is architecture/contracts/docs plus suggestion-generation contracts only (no autonomous mutation-heavy runtime behavior and no autonomous deployment/execution paths).
 
-Phase 15 allowed vs forbidden input examples:
+Phase 16 allowed vs forbidden input examples:
 
 - Allowed: promoted knowledge from deterministic query/inspection surfaces with provenance/freshness metadata attached, used to produce reviewable suggestions.
 - Forbidden: raw transcripts, opaque prompt memory, or unreviewed candidate artifacts used directly for mutation-ready actions.
 
-16. **Phase 16 â€” Outcome Feedback + Automation Runtime Learning (Human-Reviewed)**  
+17. **Phase 17 â€” Outcome Feedback + Automation Runtime Learning (Human-Reviewed)**  
     Governed feedback loops that convert verified runtime outcomes, rollback/deactivation events, and later regressions into provenance-linked repo-local candidate learning artifacts (confidence, template suitability, trigger quality, rollback heuristics, stale-knowledge flags, and trend updates). Outputs remain candidate artifacts until explicit human-reviewed promotion/demotion/supersession.
-17. **Phase 17 â€” Governed Cross-Repo Pattern Promotion / Transfer**  
+18. **Phase 18 â€” Governed Cross-Repo Pattern Promotion / Transfer**  
     Controlled compounding of reusable engineering knowledge across repositories through explicit, provenance-preserving, sanitization-verified, compatibility-gated transfer packages. Imported patterns are candidate inputs until locally reviewed; no hidden telemetry or automatic global sync.
-18. **Phase 18 â€” Governed Interface / API Surfaces for Multi-Repo Control Planes**  
+19. **Phase 19 â€” Governed Interface / API Surfaces for Multi-Repo Control Planes**  
     Optional interface expansion that exposes validated server/API action surfaces over the same deterministic runtime, preserving per-repo policy/provenance boundaries while enabling coordinated multi-repo control-plane workflows.
-19. **Phase 19 â€” Workspace / Tenant Governance + Optional Hosted Deployment Model**  
+20. **Phase 20 â€” Workspace / Tenant Governance + Optional Hosted Deployment Model**  
     Optional workspace/tenant governance and deployment packaging layer over the same deterministic runtime, defining policy inheritance, per-repo accountability, and hosted/self-hosted parity without making cloud connectivity mandatory.
-20. **Phase 20 â€” Autonomous Maintenance (Policy-Gated)**  
+21. **Phase 21 â€” Autonomous Maintenance (Policy-Gated)**  
     Recurring maintenance execution modes with approval and policy controls, layered after governed synthesis, outcome-feedback, cross-repo transfer, governed control-plane interface contracts, and workspace/tenant governance boundaries.
-21. **Phase 21 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
+22. **Phase 22 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
     Broader pattern detection and candidate improvements from repeated findings/remediations/query usage, including advanced clustering, graph-informed learning artifacts, and higher-order synthesis inputs. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
 
 Reasoning for reordering:
@@ -1360,22 +1367,30 @@ TODO (roadmap contract alignment): add explicit feature IDs, dependencies, and v
    - Requires provenance-preserving retrieval and review queues before any doctrine promotion/demotion/supersession.
    - Keeps candidate generation high-recall while preventing low-signal promotion through explicit salience and approval gates.
 
-3. **Control Plane / Agent Runtime v1**
+3. **Worker Fragment Consolidation for Shared Singleton Docs**
+   - Adds the missing planning seam between worker partitioning and future subagent/runtime execution.
+   - Distinguishes worker-owned implementation surfaces from protected singleton narrative surfaces (`docs/CHANGELOG.md`, roadmap rollups, shared summaries).
+   - Requires workers to emit isolated lane-local fragments / receipts and reserves canonical narrative updates for one final deterministic consolidation pass.
+   - Provides the dependency-ordered path `worker partitioning / overlap detection -> worker-local fragments / receipts -> final consolidation pass -> managed subagents / hooks`.
+   - Makes parallel execution safer without claiming full autonomous agents first.
+
+4. **Control Plane / Agent Runtime v1**
    - Builds on memory + replay/consolidation + evidence + policy boundaries, not in parallel with them.
+   - Builds on worker fragment consolidation for protected singleton docs so future managed subagents/hooks do not reopen shared narrative merge hotspots.
    - Keeps the architecture rule explicit: **agents sit on top of the deterministic substrate** (index/graph/verify/plan/apply/contracts), not inside or instead of it.
    - Preserves deterministic governance and human-review boundaries as mandatory runtime gates.
    - Future orchestration scope after deterministic lane contract generation includes: worker launch, merge guards, and orchestration state tracking.
 
-4. **Outcome Learning / Policy Improvement (human-reviewed)**
+5. **Outcome Learning / Policy Improvement (human-reviewed)**
    - Converts reviewed outcomes into ranking/prioritization improvements, not mutation authority expansion.
    - Maintains promotion gates: learning outputs remain candidate artifacts until explicit human-reviewed promotion/demotion decisions.
 
-5. **Autonomous Maintenance (policy-gated, later phase)**
+6. **Autonomous Maintenance (policy-gated, later phase)**
    - Remains dependency-ordered after control-plane trust boundaries and outcome-learning/policy-improvement maturity.
    - Focuses on bounded recurring maintenance workflows under explicit approval and fail-closed policies.
    - Does not imply autonomous doctrine promotion or uncontrolled mutation.
 
-6. **Repository Learning Loop Expansion (later phase)**
+7. **Repository Learning Loop Expansion (later phase)**
    - Distinct from control-plane foundations and from autonomous maintenance.
    - Expands pattern discovery and repository-level learning after the previous trust layers are stable.
 
@@ -1422,7 +1437,7 @@ Rewrite/reorganize these sections in `docs/PLAYBOOK_PRODUCT_ROADMAP.md`:
 - Consolidate **PHASE 2**, **PHASE 3**, **PHASE 4**, **PHASE 5**, **PHASE 6**, and **PHASE 7** into a clear progression: substrate -> knowledge graph -> context compression -> read runtime -> change runtime -> risk-aware execution.
 - Keep **AI Efficiency & Context Compression** as an explicit numbered phase.
 - Move **PR Intelligence (Implemented)** under the read-runtime phase grouping.
-- Add an explicit "Phase 10 prerequisites" block requiring deterministic mutation scope, policy gates, repository-memory boundaries, and contract validation before `pnpm playbook agent` expansion.
+- Add an explicit "Phase 13 prerequisites" block requiring deterministic mutation scope, policy gates, repository-memory boundaries, and contract validation before `pnpm playbook agent` expansion.
 - Add a future **Repository Learning Loop** phase scoped to human-reviewed suggestions only (no autonomous mutation).
 
 ### Documentation Capture Rules (Post-Audit)
@@ -2258,9 +2273,10 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Added `playbook cycle` as the live thin runtime orchestrator over existing primitives (`verify -> route -> orchestrate -> execute -> telemetry -> improve`) with deterministic `.playbook/cycle-state.json` status artifacts.
 - Added deterministic `lane-state` derivation at `.playbook/lane-state.json` so planned lanes become explicit tracked lifecycle state (`blocked`, `ready`, `running`, `completed`, `merge_ready`) with conservative merge and verification posture before any autonomous execution concerns.
 - Added proposal-only lane lifecycle transition commands (`pnpm playbook lanes start <lane_id>`, `pnpm playbook lanes complete <lane_id>`) with strict dependency gating and conservative merge-ready recomputation.
-- Rule — Lane lifecycle transitions must stay stricter than eventual automation behavior.
-- Pattern — Readiness snapshots become operationally useful when they support deterministic state progression.
-- Failure Mode — Static lane-state without lifecycle transitions cannot become a real orchestration layer.
+- Next planned safety slice: **Worker Fragment Consolidation for Shared Singleton Docs**, which will require worker-local fragments / receipts and a final deterministic consolidation pass for canonical narrative docs before future managed subagents/hooks execution.
+- Rule — Shared singleton docs should be updated through worker-local fragments plus a deterministic consolidation pass, not direct concurrent edits from multiple workers.
+- Pattern — Workers own isolated implementation changes; a final consolidator owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.
+- Failure Mode — Parallelizable work is not automatically parallel-safe; allowing every worker to edit the same root-level docs creates merge hotspots, inconsistent summaries, and doc drift.
 
 ### Adoption/readiness status surface (implemented)
 

@@ -8,6 +8,11 @@
 
 ## Unreleased
 
+- WHAT: Added a roadmap/planning slice for **Worker Fragment Consolidation for Shared Singleton Docs** across the product roadmap, execution planning docs, backlog guidance, and control-plane architecture notes. WHY: Parallel workers can be isolated by implementation surface and still collide on singleton narrative docs, so deferred consolidation needs to be explicit before future managed subagents/hooks work expands.
+- Rule: Shared singleton docs should be updated through worker-local fragments plus a deterministic consolidation pass, not direct concurrent edits from multiple workers.
+- Pattern: Workers own isolated implementation changes; a final consolidator owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.
+- Failure Mode: Parallelizable work is not automatically parallel-safe when every worker edits the same singleton narrative surfaces.
+
 - WHAT: Closed the canonical repo-local story lifecycle by stamping stable `story_reference` metadata into story-linked plans and routes, persisting `.playbook/execution-receipt.json`, and reconciling lightweight plan/receipt/updated-state linkage fields back into `.playbook/stories.json` with deterministic no-op/conflict behavior. WHY: Stories now link durably to execution artifacts without collapsing Story, Plan, Receipt, and Updated-State into one artifact.
 - Rule: Story lifecycle transitions must be driven by linked execution artifacts, not UI-only state.
 - Pattern: Story is durable intent; plan is execution shape; receipt is observed outcome.
