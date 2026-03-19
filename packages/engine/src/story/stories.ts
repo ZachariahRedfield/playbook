@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { StoryProvenance } from '../promotion/globalPatterns.js';
 
 export const STORIES_SCHEMA_VERSION = '1.0' as const;
 export const STORIES_RELATIVE_PATH = '.playbook/stories.json' as const;
@@ -49,6 +50,7 @@ export type StoryRecord = {
   dependencies: string[];
   execution_lane: string | null;
   suggested_route: string | null;
+  provenance?: StoryProvenance;
 };
 
 export type StoriesArtifact = {
@@ -241,6 +243,13 @@ export const validateStoryRecord = (story: unknown, expectedRepo?: string): stri
   if (!Array.isArray(record.dependencies) || asStringArray(record.dependencies).length !== record.dependencies.length) errors.push('story.dependencies must be an array of strings');
   if (!(record.execution_lane === null || typeof record.execution_lane === 'string')) errors.push('story.execution_lane must be a string or null');
   if (!(record.suggested_route === null || typeof record.suggested_route === 'string')) errors.push('story.suggested_route must be a string or null');
+  if (record.provenance !== undefined) {
+    if (!record.provenance || typeof record.provenance !== 'object' || Array.isArray(record.provenance)) {
+      errors.push('story.provenance must be an object when provided');
+    } else if (!Array.isArray((record.provenance as { sourceRefs?: unknown }).sourceRefs)) {
+      errors.push('story.provenance.sourceRefs must be an array when provided');
+    }
+  }
   return errors;
 };
 
@@ -291,7 +300,8 @@ export const createStoryRecord = (repoName: string, input: CreateStoryInput): St
   title: input.title.trim(),
   source: input.source.trim(),
   execution_lane: input.execution_lane?.trim() ? input.execution_lane : null,
-  suggested_route: input.suggested_route?.trim() ? input.suggested_route : null
+  suggested_route: input.suggested_route?.trim() ? input.suggested_route : null,
+  provenance: input.provenance
 });
 
 export const upsertStory = (artifact: StoriesArtifact, story: StoryRecord): StoriesArtifact => {
