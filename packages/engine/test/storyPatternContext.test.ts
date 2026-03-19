@@ -61,7 +61,7 @@ describe("buildStoryPatternContext", () => {
                   fingerprint: "fp-z",
                 },
               ],
-              status: "promoted",
+              status: "active",
               promotedAt: "2026-03-19T00:00:00.000Z",
               provenance: {
                 sourceRefs: [
