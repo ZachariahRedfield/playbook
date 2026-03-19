@@ -446,7 +446,7 @@ describe('observer server', () => {
     expect(backlogResponse.status).toBe(200);
     const backlogJson = await backlogResponse.json() as { backlog: { artifact_path: string; stories: Array<{ id: string }> } };
     expect(backlogJson.backlog.artifact_path).toBe('.playbook/stories.json');
-    expect(backlogJson.backlog.stories.map((story) => story.id)).toEqual(['story-ready', 'story-blocked']);
+    expect(backlogJson.backlog.stories.map((story) => story.id)).toEqual(['story-ready', 'story-blocked', 'story-pattern-adoption']);
 
     const storyDetailResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/backlog/stories/story-ready`);
     expect(storyDetailResponse.status).toBe(200);
