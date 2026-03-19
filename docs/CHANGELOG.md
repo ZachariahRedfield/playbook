@@ -10,6 +10,12 @@
 
 ## Unreleased
 
+- WHAT: Realigned CLI Observer and promote fixtures with lifecycle-normalized promoted-pattern storage by making advisory test fixtures explicitly active and by seeding normalized lifecycle defaults on persisted promoted-pattern records used in CLI read paths. WHY: Once lifecycle normalization becomes part of the persisted contract, legacy fixtures stop exercising the same eligibility and shape guarantees as production reads.
+- WHAT: Restored deterministic promote receipt log ordering after lifecycle mutation normalization by sorting receipt artifacts at serialization time with explicit workflow/outcome precedence before tie-breakers. WHY: Promotion audit artifacts should remain deterministic regardless of mutation execution order or shared lifecycle timestamps.
+- Rule: When persisted pattern contracts gain normalized lifecycle fields, every read-path fixture that loads those records must be upgraded to the same normalized shape.
+- Pattern: Deterministic automation artifacts should be explicitly sorted at the serialization boundary instead of relying on mutation execution order.
+- Failure Mode: Lifecycle normalization fixes storage correctness in one path but leaves observer/read fixtures and receipt ordering dependent on legacy assumptions.
+
 - WHAT: Added deterministic promoted-pattern lifecycle mutation support for `pattern-supersede` alongside retire/demote/recall, extended promoted-pattern records with explicit supersession lineage, and filtered story-backed advisory pattern context to active patterns only by default. WHY: Advisory planning should consume only active doctrine while preserving inspectable history for superseded, retired, and demoted knowledge.
 - Rule: Advisory planning may consume only active promoted knowledge by default.
 - Pattern: Lifecycle state is part of knowledge truth, not presentation metadata.

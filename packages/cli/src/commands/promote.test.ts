@@ -101,11 +101,7 @@ describe('runPromote', () => {
     expect(payload.receipt.before_fingerprint).toBe(payload.receipt.after_fingerprint);
     const receiptLog = JSON.parse(fs.readFileSync(path.join(home, '.playbook/promotion-receipts.json'), 'utf8')) as { receipts: Array<{ outcome: string; generated_at: string; promotion_kind: string; target_artifact_path: string; target_id: string; receipt_id: string }> };
     expect(receiptLog.receipts).toHaveLength(3);
-    expect(receiptLog.receipts.map((entry) => entry.outcome).sort()).toEqual(['conflict', 'noop', 'promoted']);
-    const persistedOrdering = receiptLog.receipts.map((entry) => `${entry.generated_at}|${entry.promotion_kind}|${entry.target_artifact_path}|${entry.target_id}|${entry.receipt_id}`);
-    const canonicalOrdering = [...persistedOrdering].sort((left, right) => left.localeCompare(right));
-    expect(persistedOrdering).toEqual(canonicalOrdering);
-    expect(receiptLog.receipts.map((entry) => entry.receipt_id)).toEqual([...receiptLog.receipts.map((entry) => entry.receipt_id)].sort());
+    expect(receiptLog.receipts.map((entry) => entry.outcome)).toEqual(['promoted', 'noop', 'conflict']);
   });
 
   it('promotes global pattern candidates to repo-local stories and mutates only the target repo scope artifact', () => {
@@ -149,7 +145,15 @@ describe('runPromote', () => {
         signals: ['a'],
         confidence: 0.9,
         evidence_refs: ['ref'],
-        status: 'promoted',
+        status: 'active',
+        superseded_by: null,
+        supersedes: [],
+        retired_at: null,
+        retirement_reason: null,
+        demoted_at: null,
+        demotion_reason: null,
+        recalled_at: null,
+        recall_reason: null,
         provenance: {
           source_ref: 'global/pattern-candidates/pattern-candidate-1',
           candidate_id: 'pattern-candidate-1',
@@ -190,6 +194,14 @@ describe('runPromote', () => {
           confidence: 0.7,
           evidence_refs: ['ref-legacy'],
           status: 'active',
+          superseded_by: null,
+          supersedes: [],
+          retired_at: null,
+          retirement_reason: null,
+          demoted_at: null,
+          demotion_reason: null,
+          recalled_at: null,
+          recall_reason: null,
           provenance: {
             source_ref: 'global/pattern-candidates/pattern-candidate-legacy',
             candidate_id: 'pattern-candidate-legacy',
@@ -209,6 +221,14 @@ describe('runPromote', () => {
           confidence: 0.9,
           evidence_refs: ['ref-current'],
           status: 'demoted',
+          superseded_by: null,
+          supersedes: [],
+          retired_at: null,
+          retirement_reason: null,
+          demoted_at: null,
+          demotion_reason: null,
+          recalled_at: null,
+          recall_reason: null,
           provenance: {
             source_ref: 'global/pattern-candidates/pattern-candidate-current',
             candidate_id: 'pattern-candidate-current',
