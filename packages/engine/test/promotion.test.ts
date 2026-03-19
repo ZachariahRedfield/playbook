@@ -164,30 +164,51 @@ describe('promotion materialization', () => {
     expect(readCanonicalPatternsArtifact(home).patterns[0]?.title).toBe('Layering A');
   });
 
-  it('retires, demotes, and recalls promoted patterns deterministically', () => {
+  it('retires, demotes, recalls, and supersedes promoted patterns deterministically', () => {
     const home = mkd('playbook-promotion-home-');
     writeJson(home, 'patterns.json', {
       schemaVersion: '1.0',
       kind: 'promoted-patterns',
-      patterns: [{
-        id: 'pattern.layering',
-        pattern_family: 'layering',
-        title: 'Layering',
-        description: 'desc',
-        storySeed: { title: 'Layering story', summary: 'sum', acceptance: ['a'] },
-        source_artifact: '.playbook/pattern-candidates.json',
-        signals: ['a'],
-        confidence: 0.8,
-        evidence_refs: ['ref'],
-        status: 'active',
-        provenance: {
-          source_ref: 'global/pattern-candidates/pattern-candidate-1',
-          candidate_id: 'pattern-candidate-1',
-          candidate_fingerprint: 'fp-1',
-          promoted_at: '2026-03-19T00:00:00.000Z'
+      patterns: [
+        {
+          id: 'pattern.layering',
+          pattern_family: 'layering',
+          title: 'Layering',
+          description: 'desc',
+          storySeed: { title: 'Layering story', summary: 'sum', acceptance: ['a'] },
+          source_artifact: '.playbook/pattern-candidates.json',
+          signals: ['a'],
+          confidence: 0.8,
+          evidence_refs: ['ref'],
+          status: 'active',
+          provenance: {
+            source_ref: 'global/pattern-candidates/pattern-candidate-1',
+            candidate_id: 'pattern-candidate-1',
+            candidate_fingerprint: 'fp-1',
+            promoted_at: '2026-03-19T00:00:00.000Z'
+          },
+          lifecycle_events: []
         },
-        lifecycle_events: []
-      }]
+        {
+          id: 'pattern.layering.v2',
+          pattern_family: 'layering',
+          title: 'Layering v2',
+          description: 'desc v2',
+          storySeed: { title: 'Layering story v2', summary: 'sum v2', acceptance: ['b'] },
+          source_artifact: '.playbook/pattern-candidates.json',
+          signals: ['b'],
+          confidence: 0.9,
+          evidence_refs: ['ref-2'],
+          status: 'demoted',
+          provenance: {
+            source_ref: 'global/pattern-candidates/pattern-candidate-2',
+            candidate_id: 'pattern-candidate-2',
+            candidate_fingerprint: 'fp-2',
+            promoted_at: '2026-03-19T00:00:00.000Z'
+          },
+          lifecycle_events: []
+        }
+      ]
     });
     const retired = transitionPatternLifecycle({ playbookHome: home, patternId: 'pattern.layering', operation: 'retire', reason: 'obsolete', generatedAt: '2026-03-20T00:00:00.000Z' });
     writeJson(home, 'patterns.json', retired.artifact);
@@ -200,5 +221,31 @@ describe('promotion materialization', () => {
     const demoted = transitionPatternLifecycle({ playbookHome: home, patternId: 'pattern.layering', operation: 'demote', reason: 'bad transfer', generatedAt: '2026-03-22T00:00:00.000Z' });
     expect(demoted.record.status).toBe('demoted');
     expect(demoted.record.lifecycle_events?.map((entry) => entry.operation)).toEqual(['retire', 'recall', 'demote']);
+
+    writeJson(home, 'patterns.json', demoted.artifact);
+    const superseded = transitionPatternLifecycle({
+      playbookHome: home,
+      patternId: 'pattern.layering',
+      operation: 'supersede',
+      supersededByPatternId: 'pattern.layering.v2',
+      reason: 'newer doctrine available',
+      generatedAt: '2026-03-23T00:00:00.000Z'
+    });
+    expect(superseded.record.status).toBe('superseded');
+    expect(superseded.record.superseded_by).toBe('pattern.layering.v2');
+    const successor = superseded.artifact.patterns.find((entry) => entry.id === 'pattern.layering.v2');
+    expect(successor?.status).toBe('active');
+    expect(successor?.supersedes).toEqual(['pattern.layering']);
+
+    writeJson(home, 'patterns.json', superseded.artifact);
+    const supersededNoop = transitionPatternLifecycle({
+      playbookHome: home,
+      patternId: 'pattern.layering',
+      operation: 'supersede',
+      supersededByPatternId: 'pattern.layering.v2',
+      reason: 'newer doctrine available',
+      generatedAt: '2026-03-24T00:00:00.000Z'
+    });
+    expect(supersededNoop.outcome).toBe('noop');
   });
 });

@@ -1674,10 +1674,16 @@ describe("observer pattern context surfaces", () => {
                   fingerprint: "fp-docs",
                 },
               ],
-              status: "demoted",
+              status: "active",
               promotedAt: "2026-03-19T00:00:00.000Z",
-              demoted_at: "2026-03-19T01:00:00.000Z",
-              demotion_reason: "Superseded by newer docs route",
+              supersededBy: null,
+              supersedes: [],
+              retiredAt: null,
+              retirementReason: null,
+              demotedAt: null,
+              demotionReason: null,
+              recalledAt: null,
+              recallReason: null,
               provenance: {
                 sourceRefs: [
                   {
