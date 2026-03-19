@@ -7,7 +7,7 @@ import {
   type PromotionSourceRef
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
-import { stageWorkflowArtifact } from '../lib/workflowPromotion.js';
+import { emitPromotionReceipt, stageWorkflowArtifact } from '../lib/workflowPromotion.js';
 
 const isPlaybookHomeRoot = (candidateRoot: string): boolean => {
   const packageJsonPath = path.join(candidateRoot, 'package.json');
@@ -108,8 +108,23 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
         artifact: prepared.artifact,
         validate: () => [],
         generatedAt: prepared.record.provenance?.promoted_at,
-        successSummary: prepared.noop ? `Promotion no-op for story ${prepared.targetId}` : `Promoted ${prepared.sourceRef} to story ${prepared.targetId}`,
+        successSummary: prepared.outcome === 'noop' ? `Promotion no-op for story ${prepared.targetId}` : `Promoted ${prepared.sourceRef} to story ${prepared.targetId}`,
         blockedSummary: `Story promotion blocked for ${prepared.targetId}`
+      });
+      const receipt = emitPromotionReceipt({
+        cwd: prepared.targetRoot,
+        promotionKind: 'story',
+        workflowKind: 'promote-story',
+        sourceRef: prepared.sourceRef,
+        sourceFingerprint: prepared.sourceFingerprint,
+        targetArtifactPath: prepared.committedRelativePath,
+        targetId: prepared.targetId,
+        beforeFingerprint: prepared.beforeFingerprint,
+        afterFingerprint: prepared.afterFingerprint,
+        outcome: prepared.outcome,
+        summary: prepared.outcome === 'conflict' ? `Conflict promoting ${prepared.sourceRef} to story ${prepared.targetId}` : promotion.summary,
+        generatedAt: prepared.record.provenance?.promoted_at,
+        conflictReason: prepared.conflictReason ?? null
       });
       print(options.format, {
         schemaVersion: '1.0',
@@ -117,10 +132,12 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
         source_ref: sourceRef,
         repo_id: repoId,
         story: prepared.record,
-        noop: prepared.noop,
-        promotion
+        noop: prepared.outcome === 'noop',
+        outcome: prepared.outcome,
+        promotion,
+        receipt
       });
-      return ExitCode.Success;
+      return prepared.outcome === 'conflict' ? ExitCode.Failure : ExitCode.Success;
     }
 
     if (!sourceRef.startsWith('global/pattern-candidates/')) {
@@ -139,19 +156,36 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
       artifact: prepared.artifact,
       validate: () => [],
       generatedAt: prepared.record.provenance.promoted_at,
-      successSummary: prepared.noop ? `Promotion no-op for pattern ${prepared.targetId}` : `Promoted ${prepared.sourceRef} to pattern ${prepared.targetId}`,
+      successSummary: prepared.outcome === 'noop' ? `Promotion no-op for pattern ${prepared.targetId}` : `Promoted ${prepared.sourceRef} to pattern ${prepared.targetId}`,
       blockedSummary: `Pattern promotion blocked for ${prepared.targetId}`
+    });
+    const receipt = emitPromotionReceipt({
+      cwd: prepared.targetRoot,
+      promotionKind: 'pattern',
+      workflowKind: 'promote-pattern',
+      sourceRef: prepared.sourceRef,
+      sourceFingerprint: prepared.sourceFingerprint,
+      targetArtifactPath: prepared.committedRelativePath,
+      targetId: prepared.targetId,
+      beforeFingerprint: prepared.beforeFingerprint,
+      afterFingerprint: prepared.afterFingerprint,
+      outcome: prepared.outcome,
+      summary: prepared.outcome === 'conflict' ? `Conflict promoting ${prepared.sourceRef} to pattern ${prepared.targetId}` : promotion.summary,
+      generatedAt: prepared.record.provenance.promoted_at,
+      conflictReason: prepared.conflictReason ?? null
     });
     print(options.format, {
       schemaVersion: '1.0',
       command: 'promote.pattern',
       source_ref: sourceRef,
       pattern: prepared.record,
-      noop: prepared.noop,
+      noop: prepared.outcome === 'noop',
+      outcome: prepared.outcome,
       artifact_path: GLOBAL_PATTERNS_RELATIVE_PATH,
-      promotion
+      promotion,
+      receipt
     });
-    return ExitCode.Success;
+    return prepared.outcome === 'conflict' ? ExitCode.Failure : ExitCode.Success;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     print(options.format, { schemaVersion: '1.0', command: 'promote', error: message });

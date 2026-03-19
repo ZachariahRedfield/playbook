@@ -1,5 +1,11 @@
 ## Unreleased
 
+- WHAT: Added deterministic promotion receipts for `playbook promote story` and `playbook promote pattern`, including a new `promotion-receipt` schema, audited noop/conflict outcomes, and `.playbook/promotion-receipts.json` artifact persistence. WHY: Canonical knowledge promotion now leaves an inspectable receipt whenever mutation is attempted, not only when it succeeds.
+- WHAT: Exposed promotion receipt logs through Observer's existing artifact viewer path (`promotion-receipts`) and extended promotion tests to cover repeat noops, conflicts, and deterministic receipt ordering. WHY: Operators need the same provenance/audit visibility for knowledge promotion that they already expect for execution and workflow promotion.
+- Rule: Promotion must emit a deterministic receipt whenever canonical knowledge is mutated or mutation is attempted.
+- Pattern: Promotion should be inspectable with the same rigor as execution.
+- Failure Mode: Knowledge writes without receipts create invisible drift and undermine trust in promotion history.
+
 - WHAT: Added explicit repo-local story seeding from promoted global pattern metadata via `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json`, persisted deterministic `storySeed` metadata on promoted patterns, and linked seeded stories back to their source pattern in story provenance without changing story-only planning semantics. WHY: Global reusable knowledge should be able to suggest bounded local backlog work, but execution trust depends on repo stories remaining the only control-loop backlog surface.
 - Rule: Global knowledge may suggest local work, but only repo-local stories may enter execution planning.
 - Pattern: Reusable knowledge compounds when it can seed bounded local backlog items.

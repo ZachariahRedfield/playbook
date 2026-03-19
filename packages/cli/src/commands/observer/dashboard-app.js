@@ -25,7 +25,7 @@ const showObserverBootstrapError = (error) => {
 };
 
 const startObserverDashboard = () => {
-const artifactKinds = ['cycle-state','cycle-history','policy-evaluation','policy-apply-result','pr-review','session','system-map','pattern-candidates','patterns'];
+const artifactKinds = ['cycle-state','cycle-history','policy-evaluation','policy-apply-result','pr-review','session','system-map','pattern-candidates','patterns','promotion-receipts'];
 const reposEl = document.getElementById('repos');
 const healthEl = document.getElementById('health');
 const repoTitleEl = document.getElementById('repoTitle');

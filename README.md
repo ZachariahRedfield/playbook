@@ -762,6 +762,7 @@ This receipt is designed to feed future prioritization cleanly: `verification_su
 - `playbook story candidates --json` derives and writes the non-canonical inspectable candidate artifact at `.playbook/story-candidates.json` without mutating `.playbook/stories.json`.
 - `playbook story promote <candidate-id> --json` explicitly promotes one candidate into the canonical backlog artifact.
 - `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` explicitly seeds a repo-local story from promoted global pattern metadata while still writing only `.playbook/stories.json` in the target repo.
+- `playbook promote` now emits deterministic audited receipts to `.playbook/promotion-receipts.json` for promoted, noop, and conflict outcomes so canonical knowledge mutation attempts remain inspectable through the same artifact-viewer path used elsewhere.
 - `pnpm playbook patterns proposals --json` groups cross-repo comparisons into promotable portable-pattern/story candidates with evidence lineage and explicit governed promotion targets.
 - `pnpm playbook patterns proposals promote --proposal <proposal-id> --target memory|story [--repo <repo-id>] --json` keeps cross-repo adoption explicit while bridging into reusable memory or canonical backlog surfaces.
 

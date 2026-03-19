@@ -78,12 +78,16 @@ export type PreparedPromotion<TArtifact, TRecord> = {
   committedRelativePath: string;
   artifact: TArtifact;
   record: TRecord;
-  noop: boolean;
+  outcome: 'promoted' | 'noop' | 'conflict';
   sourceRef: PromotionSourceRef;
+  sourceFingerprint: string;
+  beforeFingerprint: string | null;
+  afterFingerprint: string | null;
+  conflictReason?: string;
 };
 
 const stableStringify = (value: unknown): string => JSON.stringify(value);
-const fingerprintOf = (value: unknown): string => createHash('sha256').update(stableStringify(value)).digest('hex');
+export const fingerprintPromotionValue = (value: unknown): string => createHash('sha256').update(stableStringify(value)).digest('hex');
 const sortStrings = (values: string[]): string[] => [...new Set(values)].sort((a, b) => a.localeCompare(b));
 
 const asRecord = (value: unknown): Record<string, unknown> | null => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -192,22 +196,18 @@ const validatePreparedStoryArtifact = (artifact: StoriesArtifact): void => {
   }
 };
 
-const withStoryConflictCheck = (existing: StoryRecordWithProvenance | undefined, next: StoryRecordWithProvenance): { noop: boolean } => {
-  if (!existing) return { noop: false };
-  const existingFingerprint = existing.provenance?.candidate_fingerprint ?? null;
-  const nextFingerprint = next.provenance?.candidate_fingerprint ?? null;
-  if (existingFingerprint === nextFingerprint && nextFingerprint) {
-    return { noop: true };
-  }
-  throw new Error(`playbook promote: conflict for story ${next.id}. Existing content differs from candidate fingerprint ${nextFingerprint ?? 'unknown'}.`);
+const withStoryConflictCheck = (existing: StoryRecordWithProvenance | undefined, next: StoryRecordWithProvenance): { outcome: 'promoted' | 'noop' | 'conflict'; conflictReason?: string } => {
+  if (!existing) return { outcome: 'promoted' };
+  const existingFingerprint = existing.provenance?.candidate_fingerprint ?? existing.provenance?.pattern_story_seed_fingerprint ?? null;
+  const nextFingerprint = next.provenance?.candidate_fingerprint ?? next.provenance?.pattern_story_seed_fingerprint ?? null;
+  if (existingFingerprint === nextFingerprint && nextFingerprint) return { outcome: 'noop' };
+  return { outcome: 'conflict', conflictReason: `playbook promote: conflict for story ${next.id}. Existing content differs from candidate fingerprint ${nextFingerprint ?? 'unknown'}.` };
 };
 
-const withPatternConflictCheck = (existing: PromotedPatternRecord | undefined, next: PromotedPatternRecord): { noop: boolean } => {
-  if (!existing) return { noop: false };
-  if (existing.provenance.candidate_fingerprint === next.provenance.candidate_fingerprint) {
-    return { noop: true };
-  }
-  throw new Error(`playbook promote: conflict for pattern ${next.id}. Existing content differs from candidate fingerprint ${next.provenance.candidate_fingerprint}.`);
+const withPatternConflictCheck = (existing: PromotedPatternRecord | undefined, next: PromotedPatternRecord): { outcome: 'promoted' | 'noop' | 'conflict'; conflictReason?: string } => {
+  if (!existing) return { outcome: 'promoted' };
+  if (existing.provenance.candidate_fingerprint === next.provenance.candidate_fingerprint) return { outcome: 'noop' };
+  return { outcome: 'conflict', conflictReason: `playbook promote: conflict for pattern ${next.id}. Existing content differs from candidate fingerprint ${next.provenance.candidate_fingerprint}.` };
 };
 
 export const materializeStoryFromSource = (input: {
@@ -245,7 +245,7 @@ export const materializeStoryFromSource = (input: {
     };
   } else if (parsed.kind === 'pattern-candidates') {
     const candidate = findPatternCandidate(input.playbookHome, parsed.candidateId);
-    const candidateFingerprint = fingerprintOf(candidate);
+    const candidateFingerprint = fingerprintPromotionValue(candidate);
     const patternFamily = String(candidate.pattern_family ?? 'pattern');
     const storySeed = toStorySeed(candidate.storySeed, {
       title: `Adopt pattern ${String(candidate.title ?? parsed.candidateId)}`,
@@ -290,7 +290,7 @@ export const materializeStoryFromSource = (input: {
         `Decide how ${input.targetRepoId} should adopt ${pattern.pattern_family}.`
       ]
     });
-    const seedFingerprint = fingerprintOf(pattern.storySeed);
+    const seedFingerprint = fingerprintPromotionValue(pattern.storySeed);
     nextStory = {
       id: input.targetStoryId ?? `pattern-${pattern.pattern_family}`,
       repo: current.repo,
@@ -319,8 +319,10 @@ export const materializeStoryFromSource = (input: {
   }
 
   const existing = current.stories.find((entry) => entry.id === nextStory.id) as StoryRecordWithProvenance | undefined;
-  const { noop } = withStoryConflictCheck(existing, nextStory);
-  const artifact = noop ? current : upsertStory(current, nextStory);
+  const sourceFingerprint = nextStory.provenance?.candidate_fingerprint ?? nextStory.provenance?.pattern_story_seed_fingerprint ?? fingerprintPromotionValue(nextStory);
+  const beforeFingerprint = existing ? fingerprintPromotionValue(existing) : null;
+  const check = withStoryConflictCheck(existing, nextStory);
+  const artifact = check.outcome === 'promoted' ? upsertStory(current, nextStory) : current;
   validatePreparedStoryArtifact(artifact);
   return {
     scope: 'repo',
@@ -329,9 +331,13 @@ export const materializeStoryFromSource = (input: {
     stagedRelativePath: '.playbook/staged/promotions/stories.json',
     committedRelativePath: STORIES_RELATIVE_PATH,
     artifact,
-    record: noop ? existing! : nextStory,
-    noop,
-    sourceRef: input.sourceRef
+    record: check.outcome === 'promoted' ? nextStory : existing ?? nextStory,
+    outcome: check.outcome,
+    sourceRef: input.sourceRef,
+    sourceFingerprint,
+    beforeFingerprint,
+    afterFingerprint: check.outcome === 'promoted' ? fingerprintPromotionValue(nextStory) : beforeFingerprint,
+    conflictReason: check.conflictReason
   };
 };
 
@@ -344,7 +350,7 @@ export const materializePatternFromCandidate = (input: {
   const parsed = parseSourceRef(input.sourceRef);
   const promotedAt = input.promotedAt ?? new Date().toISOString();
   const candidate = findPatternCandidate(input.playbookHome, parsed.candidateId);
-  const candidateFingerprint = fingerprintOf(candidate);
+  const candidateFingerprint = fingerprintPromotionValue(candidate);
   const nextPattern: PromotedPatternRecord = {
     id: input.targetPatternId ?? String(candidate.pattern_family ?? parsed.candidateId),
     pattern_family: String(candidate.pattern_family ?? parsed.candidateId),
@@ -373,8 +379,9 @@ export const materializePatternFromCandidate = (input: {
 
   const current = readCanonicalPatternsArtifact(input.playbookHome);
   const existing = current.patterns.find((entry) => entry.id === nextPattern.id);
-  const { noop } = withPatternConflictCheck(existing, nextPattern);
-  const artifact: CanonicalPatternsArtifact = noop
+  const beforeFingerprint = existing ? fingerprintPromotionValue(existing) : null;
+  const check = withPatternConflictCheck(existing, nextPattern);
+  const artifact: CanonicalPatternsArtifact = check.outcome !== 'promoted'
     ? current
     : {
         schemaVersion: '1.0',
@@ -389,8 +396,12 @@ export const materializePatternFromCandidate = (input: {
     stagedRelativePath: 'staged/promotions/patterns.json',
     committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH,
     artifact,
-    record: noop ? existing! : nextPattern,
-    noop,
-    sourceRef: input.sourceRef
+    record: check.outcome === 'promoted' ? nextPattern : existing ?? nextPattern,
+    outcome: check.outcome,
+    sourceRef: input.sourceRef,
+    sourceFingerprint: candidateFingerprint,
+    beforeFingerprint,
+    afterFingerprint: check.outcome === 'promoted' ? fingerprintPromotionValue(nextPattern) : beforeFingerprint,
+    conflictReason: check.conflictReason
   };
 };

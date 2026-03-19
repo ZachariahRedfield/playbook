@@ -108,6 +108,10 @@ Candidate artifacts remain non-governing until reviewed and promoted.
 - Repo-local facts remain local by default.
 - Reusable patterns may be intentionally promoted upstream.
 - Promotion must preserve provenance and evidence lineage.
+- Promotion is an audited write boundary: every attempted canonical story/pattern promotion must emit a deterministic receipt at `.playbook/promotion-receipts.json` capturing source lineage, target fingerprints, and outcome (`promoted`, `noop`, or `conflict`).
+- Rule: Promotion must emit a deterministic receipt whenever canonical knowledge is mutated or mutation is attempted.
+- Pattern: Promotion should be inspectable with the same rigor as execution.
+- Failure Mode: Knowledge writes without receipts create invisible drift and undermine trust in promotion history.
 - Candidate knowledge is not enforced governance until reviewed.
 - Stale or contradicted knowledge must be demotable.
 - Memory should be compacted, not accumulated as an undifferentiated log.

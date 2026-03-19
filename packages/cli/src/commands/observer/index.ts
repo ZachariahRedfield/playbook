@@ -223,7 +223,8 @@ const OBSERVER_ARTIFACTS = [
   { kind: 'session', relativePath: '.playbook/session.json' },
   { kind: 'system-map', relativePath: '.playbook/system-map.json' },
   { kind: 'pattern-candidates', relativePath: '.playbook/pattern-candidates.json' },
-  { kind: 'patterns', relativePath: '.playbook/patterns.json' }
+  { kind: 'patterns', relativePath: '.playbook/patterns.json' },
+  { kind: 'promotion-receipts', relativePath: '.playbook/promotion-receipts.json' }
 ] as const;
 
 const READINESS_ARTIFACTS = [
@@ -747,7 +748,7 @@ const buildStoryEvidenceLinks = (repoId: string, story: StoryRecord): ObserverSt
   return links;
 };
 
-const artifactKindsForStoryEvidence = (): string[] => ['cycle-state', 'cycle-history', 'policy-evaluation', 'policy-apply-result', 'pr-review', 'session', 'system-map'];
+const artifactKindsForStoryEvidence = (): string[] => ['cycle-state', 'cycle-history', 'policy-evaluation', 'policy-apply-result', 'pr-review', 'session', 'system-map', 'promotion-receipts'];
 
 const buildRepoBacklog = (repo: ObserverRepoEntry, readiness: ObserverRepoReadiness): ObserverStoryBacklog => {
   const artifact = readRepoStories(repo);

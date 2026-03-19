@@ -167,6 +167,10 @@ Implementation note: shared staging helpers live in `scripts/staged-artifact-wor
 
 - Rule: Generated artifacts must be produced in staging and promoted only after validation succeeds.
 - Rule: Durable workflow outputs must expose normalized staged-promotion metadata when they write repo-visible state.
+- Rule: Promotion must emit a deterministic receipt whenever canonical knowledge is mutated or mutation is attempted.
+- Pattern: Promotion should be inspectable with the same rigor as execution.
+- Failure Mode: Knowledge writes without receipts create invisible drift and undermine trust in promotion history.
+- `pnpm playbook promote ... --json` writes `.playbook/promotion-receipts.json` in the mutated scope so Observer artifact inspection can review promotion provenance, target fingerprints, and noop/conflict outcomes.
 - Pattern: Shared staged-artifact orchestration should provide generation isolation, candidate validation, and gated promotion.
 - Pattern: Reuse one shared workflow promotion contract instead of command-local promotion result shapes.
 - Failure Mode: Environment-sensitive generation paths and direct committed-output writes undermine deterministic artifact governance.

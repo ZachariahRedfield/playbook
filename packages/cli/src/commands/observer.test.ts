@@ -296,6 +296,7 @@ describe('observer server', () => {
     fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.playbook', 'session.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'session', id: 'session-a' }, null, 2));
     fs.writeFileSync(path.join(repo, '.playbook', 'system-map.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'system-map', layers: [], nodes: [], edges: [] }, null, 2));
+    fs.writeFileSync(path.join(repo, '.playbook', 'promotion-receipts.json'), JSON.stringify({ schemaVersion: '1.0', kind: 'promotion-receipt-log', receipts: [{ schemaVersion: '1.0', kind: 'promotion-receipt', receipt_id: 'promotion-receipt:0001', promotion_kind: 'story', workflow_kind: 'promote-story', generated_at: '2026-01-03T00:00:00.000Z', source_ref: 'global/patterns/pattern-promoted-global', source_fingerprint: 'src-fp', target_artifact_path: '.playbook/stories.json', target_id: 'story-pattern-adoption', before_fingerprint: null, after_fingerprint: 'after-fp', outcome: 'promoted', committed: true, committed_state_preserved: false, summary: 'Promoted global/patterns/pattern-promoted-global to story story-pattern-adoption', conflict_reason: null }] }, null, 2));
     fs.writeFileSync(path.join(repo, '.playbook', 'pattern-candidates.json'), JSON.stringify({
       schemaVersion: '1.0',
       kind: 'pattern-candidates',
@@ -520,6 +521,13 @@ describe('observer server', () => {
     expect(systemMapArtifactJson.artifact.kind).toBe('system-map');
     expect(systemMapArtifactJson.artifact.value.kind).toBe('system-map');
 
+    const receiptArtifactResponse = await fetch(`http://127.0.0.1:${port}/repos/repo-a/artifacts/promotion-receipts`);
+    expect(receiptArtifactResponse.status).toBe(200);
+    const receiptArtifactJson = await receiptArtifactResponse.json() as { artifact: { kind: string; value: { kind: string; receipts: Array<{ outcome: string }> } } };
+    expect(receiptArtifactJson.artifact.kind).toBe('promotion-receipts');
+    expect(receiptArtifactJson.artifact.value.kind).toBe('promotion-receipt-log');
+    expect(receiptArtifactJson.artifact.value.receipts.map((entry) => entry.outcome)).toEqual(['promoted']);
+
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });
 
@@ -640,6 +648,7 @@ describe('observer server', () => {
     expect(uiScriptText).toContain('.playbook/stories.json');
     expect(uiScriptText).toContain('.playbook/pattern-candidates.json');
     expect(uiScriptText).toContain('.playbook/patterns.json');
+    expect(uiScriptText).toContain('promotion-receipts');
     expect(uiScriptText).toContain('summary-strip');
     expect(uiScriptText).toContain('summary-pill');
     expect(uiScriptText).toContain('narrative-secondary');
