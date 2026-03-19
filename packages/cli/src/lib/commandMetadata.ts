@@ -560,7 +560,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: "promote",
-    description: "Promote reviewed story and pattern candidates into canonical artifacts",
+    description: "Promote reviewed repo-local stories and reusable pattern candidates into canonical artifacts",
     category: "Repository tools",
     role: "remediation",
     lifecycle: "canonical",
@@ -573,7 +573,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: "story",
-    description: "Manage canonical repo-local story backlog state",
+    description: "Manage the canonical repo-local story backlog state",
     category: "Repository tools",
     role: "remediation",
     lifecycle: "canonical",

@@ -1,6 +1,6 @@
 # `pnpm playbook patterns`
 
-Inspect pattern knowledge graph artifacts and run explicit promotion review decisions.
+Inspect pattern knowledge graph artifacts and run explicit promotion review decisions. This surface now distinguishes repo-local backlog promotion from global reusable pattern promotion.
 
 ## Subcommands
 
@@ -37,6 +37,8 @@ Show highest-ranked patterns by the latest attractor score (`--limit <n>` option
 ### `patterns promote --id <pattern-id> --decision approve|reject`
 
 Apply explicit local promotion decisions for compacted pattern candidates.
+
+Status: supported **legacy review surface**. Prefer [`patterns proposals promote`](promote.md) for new cross-repo promotion doctrine because it makes the source proposal, target scope, and destination artifact explicit.
 
 
 ### `patterns outcomes <patternId>`
@@ -93,8 +95,10 @@ Build governance-safe enrichment proposals from `.playbook/cross-repo-candidates
 
 Explicitly promote one cross-repo proposal into a governed target:
 
-- `--target memory` promotes a portable pattern candidate into reusable memory knowledge.
-- `--target story --repo <repo-id>` promotes a repo-scoped adoption candidate into the canonical backlog artifact.
+- `--target memory` promotes a portable pattern candidate into **global reusable pattern memory** at `.playbook/memory/knowledge/patterns.json`.
+- `--target story --repo <repo-id>` promotes a repo-scoped adoption candidate into the **repo-local story backlog** at `.playbook/stories.json`.
+
+Status: **preferred** cross-repo promotion surface.
 
 ### `patterns cross-repo`
 
@@ -251,3 +255,14 @@ The aggregate score is designed to rank **representational persistence and pract
 - Pattern: Cross-repo comparison becomes useful when it yields promotable pattern/story candidates with evidence.
 - Rule: Cross-repo intelligence may suggest promotion, but promotion must remain explicit.
 - Failure Mode: Raw comparison output without grouping/promotion semantics becomes noisy and underused.
+
+
+## Promotion doctrine
+
+Use these terms consistently when documenting or operating pattern promotion:
+
+- **Global reusable pattern memory**: promoted cross-repo doctrine in `.playbook/memory/knowledge/patterns.json`.
+- **Pattern proposals**: bridge artifacts in `.playbook/pattern-proposals.json` reviewed before promotion.
+- **Repo-local story backlog**: canonical repo execution-planning input in `.playbook/stories.json`.
+
+Rule: Cross-repo pattern knowledge may suggest local work, but only repo-local stories may enter execution planning.
