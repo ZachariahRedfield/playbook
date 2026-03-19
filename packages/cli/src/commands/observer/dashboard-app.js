@@ -99,6 +99,35 @@ const parseTimestamp = (value) => {
 };
 const escapeHtml = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const format = (value) => '<pre>' + JSON.stringify(value, null, 2) + '</pre>';
+const toArray = (value) => Array.isArray(value) ? value : [];
+const describeCommandish = (value) => {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return 'n/a';
+  if (typeof value.command === 'string' && value.command) return value.command;
+  if (typeof value.label === 'string' && value.label) return value.label;
+  if (typeof value.title === 'string' && value.title) return value.title;
+  if (typeof value.message === 'string' && value.message) return value.message;
+  if (typeof value.code === 'string' && value.code) return value.code;
+  return JSON.stringify(value);
+};
+const describeEvidence = (value) => {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return 'n/a';
+  const parts = [];
+  if (value.repo_id) parts.push(value.repo_id);
+  if (value.artifact_kind) parts.push(value.artifact_kind);
+  if (value.pointer) parts.push(value.pointer);
+  if (value.excerpt) parts.push(value.excerpt);
+  return parts.length ? parts.join(' • ') : JSON.stringify(value);
+};
+const describeBlocker = (value) => {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return 'n/a';
+  if (value.message && value.code) return value.code + ': ' + value.message;
+  if (value.message) return value.message;
+  if (value.code) return value.code;
+  return describeCommandish(value);
+};
 
 const renderSummaryMetric = (label, value) => '<div class="summary-metric"><div class="summary-metric-label">' + escapeHtml(label) + '</div><div class="summary-metric-value">' + escapeHtml(value || 'n/a') + '</div></div>';
 const renderSummaryPill = (label, tone) => '<span class="summary-pill ' + escapeHtml(tone || '') + '">' + escapeHtml(label) + '</span>';
@@ -108,25 +137,26 @@ const renderInterpretation = (interpretation) => {
   const secondaryView = interpretation && interpretation.progressive_disclosure && interpretation.progressive_disclosure.secondary_view;
   const deepView = interpretation && interpretation.progressive_disclosure && interpretation.progressive_disclosure.deep_view;
   if (!defaultView) return '';
-  const blockers = secondaryView && Array.isArray(secondaryView.blockers) ? secondaryView.blockers.slice(0, 5) : [];
-  const reasoning = secondaryView && Array.isArray(secondaryView.reasoning) ? secondaryView.reasoning.slice(0, 5) : [];
-  const secondaryActions = secondaryView && Array.isArray(secondaryView.secondary_actions) ? secondaryView.secondary_actions.slice(0, 3) : [];
-  const rawTruthRefs = deepView && Array.isArray(deepView.raw_truth_refs) ? deepView.raw_truth_refs.slice(0, 6) : [];
-  const artifactPaths = deepView && Array.isArray(deepView.artifact_paths) ? deepView.artifact_paths.slice(0, 6) : [];
-  const promotionRefs = deepView && Array.isArray(deepView.promotion_metadata_refs) ? deepView.promotion_metadata_refs.slice(0, 4) : [];
-  const diagnostics = deepView && Array.isArray(deepView.diagnostics) ? deepView.diagnostics.slice(0, 5) : [];
+  const blockers = toArray(secondaryView && secondaryView.blockers).slice(0, 5).map(describeBlocker);
+  const reasoning = toArray(secondaryView && secondaryView.reasoning).slice(0, 5).map(describeBlocker);
+  const secondaryActions = toArray(secondaryView && secondaryView.secondary_actions).slice(0, 3).map(describeCommandish);
+  const rawTruthRefs = toArray(deepView && deepView.raw_truth_refs).slice(0, 6).map(describeBlocker);
+  const artifactPaths = toArray(deepView && deepView.artifact_paths).slice(0, 6).map(describeBlocker);
+  const promotionRefs = toArray(deepView && deepView.promotion_metadata_refs).slice(0, 4).map(describeBlocker);
+  const diagnostics = toArray(deepView && deepView.diagnostics).slice(0, 5).map(describeBlocker);
+  const nextStep = describeCommandish(defaultView.next_step);
   return '<div class="narrative-card">' +
     '<div class="summary-strip">' +
     renderSummaryMetric('Current state', defaultView.state || 'unknown') +
     renderSummaryMetric('Why', defaultView.why || 'n/a') +
-    renderSummaryMetric('Next step', (defaultView.next_step && (defaultView.next_step.command || defaultView.next_step.label)) || 'n/a') +
+    renderSummaryMetric('Next step', nextStep) +
     '</div>' +
-    '<div class="narrative-primary"><strong>Primary next action:</strong> ' + escapeHtml((defaultView.next_step && (defaultView.next_step.command || defaultView.next_step.label)) || 'n/a') + '</div>' +
+    '<div class="narrative-primary"><strong>Primary next action:</strong> ' + escapeHtml(nextStep) + '</div>' +
     (blockers[0] ? '<div class="narrative-secondary"><strong>Key blocker:</strong> ' + escapeHtml(blockers[0]) + '</div>' : '') +
     '<details class="narrative-secondary"><summary>Secondary detail</summary>' +
     '<div><strong>Blockers</strong><ul>' + (blockers.length ? blockers.map((blocker) => '<li>' + escapeHtml(blocker) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '<div><strong>Reasoning</strong><ul>' + (reasoning.length ? reasoning.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
-    '<div><strong>Secondary actions</strong><ul>' + (secondaryActions.length ? secondaryActions.map((item) => '<li>' + escapeHtml(item.command || item.label || 'n/a') + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Secondary actions</strong><ul>' + (secondaryActions.length ? secondaryActions.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '</details>' +
     '<details class="raw-truth-note"><summary>Deep/raw truth references</summary>' +
     '<div><strong>Raw refs</strong><ul>' + (rawTruthRefs.length ? rawTruthRefs.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
@@ -170,7 +200,7 @@ const attachStoryHandlers = () => {
 
 const renderBacklogSummary = (repoId, backlog, readiness) => {
   if (!backlog || !backlog.summary) {
-    backlogSummaryPanelEl.innerHTML = '<div class="empty-state">No canonical backlog artifact detected yet.</div>';
+    backlogSummaryPanelEl.innerHTML = '<div class="empty-state">No canonical backlog artifact detected yet. Generate or promote candidate stories so planning can sit above lower-level operational detail.</div>';
     return;
   }
   const summary = backlog.summary;
@@ -187,14 +217,14 @@ const renderBacklogSummary = (repoId, backlog, readiness) => {
     '<details class="narrative-secondary"><summary>Reasons / blockers</summary><ul>' +
     (blocked.length ? blocked.map((story) => '<li>' + escapeHtml(story.id + ': ' + (story.dependencies.length ? 'depends on ' + story.dependencies.join(', ') : 'blocked without explicit dependency list')) + '</li>').join('') : '<li>none</li>') +
     '</ul></details>' +
-    '<details class="raw-truth-note"><summary>Deep/raw backlog artifact</summary><div><code>' + escapeHtml(backlog.artifact_path || '.playbook/stories.json') + '</code></div>' + format(backlog) + '</details>';
+    '<div class="meta">Raw backlog JSON stays available via the story detail deep disclosure and artifact viewer.</div>';
   attachStoryHandlers();
 };
 
 const renderBacklogList = (repoId, backlog) => {
   const stories = backlog && Array.isArray(backlog.stories) ? backlog.stories : [];
   if (!stories.length) {
-    backlogListPanelEl.innerHTML = '<div class="empty-state">No canonical stories found in .playbook/stories.json.</div>';
+    backlogListPanelEl.innerHTML = '<div class="empty-state">No canonical stories found in .playbook/stories.json. Generate or promote candidate stories to create a planning surface before dropping into execution artifacts.</div>';
     return;
   }
   backlogListPanelEl.innerHTML = '<div><strong>Backlog list</strong><ul>' + stories.map((story) =>
@@ -277,12 +307,12 @@ const renderControlLoopSummary = () => {
     controlLoopSummaryPanelEl.innerHTML =
       '<div class="summary-strip">' +
       renderSummaryMetric('Current state', readiness.lifecycle_stage || readiness.readiness_state || 'unknown') +
-      renderSummaryMetric('Why', (blockers[0] && blockers[0].message) || (missingArtifacts[0] ? 'Missing artifact: ' + missingArtifacts[0] : 'Repo truth surfaces are available for inspection.')) +
-      renderSummaryMetric('Next step', nextStep) +
+      renderSummaryMetric('Why', describeBlocker(blockers[0]) || (missingArtifacts[0] ? 'Missing artifact: ' + missingArtifacts[0] : 'Repo truth surfaces are available for inspection.')) +
+      renderSummaryMetric('Next step', describeCommandish(nextStep)) +
       '</div>' +
       '<div class="summary-pill-row">' + pills.join('') + '</div>' +
       '<details class="narrative-secondary"><summary>Secondary detail</summary>' +
-      '<div><strong>Blockers</strong><ul>' + (blockers.length ? blockers.map((blocker) => '<li>' + escapeHtml((blocker.code || 'blocker') + ': ' + blocker.message) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
+      '<div><strong>Blockers</strong><ul>' + (blockers.length ? blockers.map((blocker) => '<li>' + escapeHtml(describeBlocker(blocker)) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
       '<div><strong>Reasoning</strong><ul><li>' + escapeHtml('Readiness state is derived from canonical repo adoption artifacts only.') + '</li><li>' + escapeHtml('Missing artifacts: ' + (missingArtifacts.length ? missingArtifacts.join(', ') : 'none')) + '</li></ul></div>' +
       '<div><strong>Promotion / receipt summary</strong><ul><li>' + escapeHtml((promotion && (promotion.summary || promotion.promotion_status)) || 'No fleet promotion summary available yet.') + '</li></ul></div>' +
       '<div><strong>Drift indicators</strong><ul><li>' + escapeHtml(planStatus === 'stale' ? 'Updated state contains stale or superseded repo results.' : 'No stale plan indicator for the currently loaded fleet state.') + '</li></ul></div>' +
@@ -578,7 +608,7 @@ const loadRepoDetail = async () => {
     '<div class="meta"><strong>Next command:</strong> ' + escapeHtml(nextStep) + '</div>' +
     '<div class="meta"><strong>Last artifact update:</strong> ' + lastUpdate + '</div>' +
     '<div class="meta"><strong>Missing artifacts:</strong> ' + missing + '</div>' +
-    format(latestRepoPayload.repo);
+    '<div class="meta">Raw repo JSON remains available in the Artifact Detail Viewer and repo API payloads; the repo view now stays story-first.</div>';
   removeRepoEl.style.display = '';
   await loadArtifact();
   await loadBlueprint();
@@ -858,6 +888,22 @@ const renderEvidenceRow = (repoId, evidence) => {
     escapeHtml(artifactPath + ' @ ' + pointer + (excerpt ? ' — ' + excerpt : '')) + '</div></li>';
 };
 
+const renderCrossRepoGroup = (group) => {
+  const patterns = toArray(group.patterns).slice(0, 4);
+  const evidence = toArray(group.top_evidence).slice(0, 3);
+  return '<div class="cross-repo-item">' +
+    '<div class="summary-strip">' +
+    renderSummaryMetric('Pattern kind', group.kind || 'unknown') +
+    renderSummaryMetric('Candidates', String(group.candidate_count || 0)) +
+    renderSummaryMetric('Affected repos', String(group.affected_repo_count || 0)) +
+    '</div>' +
+    '<div class="narrative-primary"><strong>Primary next action:</strong> ' + escapeHtml(group.primary_next_action || 'Inspect evidence and decide whether to promote a portable pattern.') + '</div>' +
+    '<div class="meta"><strong>Repos:</strong> ' + escapeHtml(toArray(group.affected_repos).join(', ') || 'none') + '</div>' +
+    '<div><strong>Top evidence</strong><ul>' + (evidence.length ? evidence.map((item) => '<li>' + escapeHtml(describeEvidence(item)) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
+    '<details class="narrative-secondary"><summary>Pattern rows</summary><ul>' + (patterns.length ? patterns.map((pattern) => '<li>' + escapeHtml(pattern.id + ' • ' + pattern.title + ' • score ' + pattern.portability_score + ' • repos ' + toArray(pattern.supporting_repos).join(', ')) + '</li>').join('') : '<li>none</li>') + '</ul></details>' +
+    '</div>';
+};
+
 const attachDrilldownHandlers = () => {
   for (const el of crossRepoPanelEl.querySelectorAll('[data-drill-repo]')) {
     el.onclick = async () => {
@@ -876,17 +922,28 @@ const renderCrossRepoEvidence = (payload) => {
   const comparison = payload.comparison || null;
   const repoDelta = payload.repo_delta || (comparison && comparison.repo_deltas) || [];
   const candidatePatterns = Array.isArray(payload.candidates) ? payload.candidates : [];
+  const candidateGroups = toArray(payload.candidate_groups || summary.candidate_groups);
+  const deepDisclosure = payload.deep_disclosure || {};
 
   if (summary.candidate_count !== undefined) {
-    crossRepoPanelEl.innerHTML = '<div class="meta"><strong>Source repos:</strong> ' + (summary.source_repos || []).join(', ') + '</div>' +
-      '<div class="meta"><strong>Comparisons:</strong> ' + (summary.comparison_count || 0) + '</div>' +
-      '<div class="meta"><strong>Candidate patterns:</strong> ' + (summary.candidate_count || 0) + '</div>';
+    crossRepoPanelEl.innerHTML = '<div class="cross-repo-list">' +
+      '<div class="cross-repo-item"><div class="summary-strip">' +
+      renderSummaryMetric('Source repos', String(toArray(summary.source_repos).length)) +
+      renderSummaryMetric('Comparisons', String(summary.comparison_count || 0)) +
+      renderSummaryMetric('Candidate patterns', String(summary.candidate_count || 0)) +
+      '</div><div class="narrative-primary"><strong>Primary next action:</strong> ' + escapeHtml(summary.primary_next_action || 'Inspect the strongest portable pattern group.') + '</div><div class="meta"><strong>Repos:</strong> ' + escapeHtml(toArray(summary.source_repos).map((repo) => repo.repo_id || repo).join(', ')) + '</div></div>' +
+      candidateGroups.map(renderCrossRepoGroup).join('') +
+      '</div>';
     return;
   }
 
   const sections = [];
+  if (candidateGroups.length > 0) {
+    sections.push('<div class="cross-repo-item"><strong>Candidate portable patterns</strong><div class="meta">Signal-first grouped view; raw pairwise comparisons remain in deep disclosure.</div></div>');
+    for (const group of candidateGroups) sections.push(renderCrossRepoGroup(group));
+  }
   if (comparison) {
-    sections.push('<div class="cross-repo-item"><strong>Repo deltas</strong><div class="meta">' + escapeHtml((comparison.left_repo_id || '?') + ' vs ' + (comparison.right_repo_id || '?')) + '</div>' + format(repoDelta) + '</div>');
+    sections.push('<details class="cross-repo-item raw-truth-note"><summary>Deep disclosure: pairwise repo delta</summary><div class="meta">' + escapeHtml((comparison.left_repo_id || '?') + ' vs ' + (comparison.right_repo_id || '?')) + '</div>' + format(repoDelta) + '</details>');
     const evidence = [];
     for (const item of repoDelta) {
       const leftEvidence = Array.isArray(item.left_evidence) ? item.left_evidence : [];
@@ -895,7 +952,7 @@ const renderCrossRepoEvidence = (payload) => {
       for (const entry of rightEvidence) evidence.push(renderEvidenceRow(comparison.right_repo_id, entry));
     }
     if (evidence.length > 0) {
-      sections.push('<div class="cross-repo-item"><strong>Evidence drilldown</strong><ul>' + evidence.join('') + '</ul></div>');
+      sections.push('<details class="cross-repo-item raw-truth-note"><summary>Deep disclosure: evidence drilldown</summary><ul>' + evidence.join('') + '</ul></details>');
     }
   }
 
@@ -908,7 +965,11 @@ const renderCrossRepoEvidence = (payload) => {
         rows.push(renderEvidenceRow(sourceRepo || evidence.repo_id || 'unknown', evidence));
       }
     }
-    sections.push('<div class="cross-repo-item"><strong>Candidate portable patterns</strong>' + (rows.length ? '<ul>' + rows.join('') + '</ul>' : '<div class="meta">No evidence rows available.</div>') + '</div>');
+    sections.push('<details class="cross-repo-item raw-truth-note"><summary>Deep disclosure: raw candidate evidence rows</summary>' + (rows.length ? '<ul>' + rows.join('') + '</ul>' : '<div class="meta">No evidence rows available.</div>') + '</details>');
+  }
+
+  if (deepDisclosure.raw_artifact_path) {
+    sections.push('<div class="meta">Raw cross-repo truth remains available at <code>' + escapeHtml(deepDisclosure.raw_artifact_path) + '</code>.</div>');
   }
 
   if (sections.length === 0) {
@@ -943,10 +1004,12 @@ const loadCrossRepoAggregate = async () => {
     getJson('/api/cross-repo/summary'),
     getJson('/api/cross-repo/candidates')
   ]);
-  renderCrossRepoEvidence(summaryPayload);
-  if (Array.isArray(candidatePayload.candidates) && candidatePayload.candidates.length > 0) {
-    renderCrossRepoEvidence(candidatePayload);
-  }
+  renderCrossRepoEvidence({
+    summary: summaryPayload.summary,
+    candidate_groups: candidatePayload.candidate_groups,
+    candidates: candidatePayload.candidates,
+    deep_disclosure: candidatePayload.deep_disclosure
+  });
 };
 
 const refreshAll = async () => {

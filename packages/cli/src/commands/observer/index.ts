@@ -76,6 +76,29 @@ type ObserverStoryDetail = {
   raw_artifact_path: '.playbook/stories.json';
 };
 
+type ObserverCrossRepoCandidateGroup = {
+  kind: string;
+  candidate_count: number;
+  affected_repo_count: number;
+  affected_repos: string[];
+  primary_next_action: string;
+  top_evidence: Array<{
+    repo_id: string;
+    artifact_kind: string;
+    artifact_path: string;
+    pointer: string;
+    excerpt: string;
+  }>;
+  patterns: Array<{
+    id: string;
+    title: string;
+    classification: string;
+    portability_score: number;
+    supporting_repos: string[];
+    evidence_count: number;
+  }>;
+};
+
 type ObserverRepoReadiness = {
   connected: true;
   playbook_detected: boolean;
@@ -626,6 +649,65 @@ const buildCrossRepoArtifact = (observerRoot: string, registry: ObserverRepoRegi
   }
 };
 
+const toCrossRepoCandidateGroups = (artifact: CrossRepoPatternsArtifact): ObserverCrossRepoCandidateGroup[] => {
+  const groups = new Map<string, ObserverCrossRepoCandidateGroup>();
+  for (const candidate of artifact.candidate_patterns) {
+    const kind = candidate.classification || 'uncategorized';
+    const existing: ObserverCrossRepoCandidateGroup = groups.get(kind) ?? {
+      kind,
+      candidate_count: 0,
+      affected_repo_count: 0,
+      affected_repos: [] as string[],
+      primary_next_action: kind === 'gap'
+        ? 'Inspect the raw artifact viewer, then generate or promote the next story candidate for the missing governed surface.'
+        : 'Inspect the strongest evidence, then decide whether to promote this portable pattern through the governed pattern flow.',
+      top_evidence: [],
+      patterns: []
+    };
+    existing.candidate_count += 1;
+    existing.patterns.push({
+      id: candidate.id,
+      title: candidate.title,
+      classification: candidate.classification,
+      portability_score: candidate.portability?.score ?? 0,
+      supporting_repos: [...candidate.supporting_repos],
+      evidence_count: Array.isArray(candidate.evidence) ? candidate.evidence.length : 0
+    });
+    for (const repoId of candidate.supporting_repos) {
+      if (!existing.affected_repos.includes(repoId)) existing.affected_repos.push(repoId);
+    }
+    const evidence = Array.isArray(candidate.evidence) ? candidate.evidence.slice(0, 2) : [];
+    for (const item of evidence) {
+      existing.top_evidence.push({
+        repo_id: item.repo_id,
+        artifact_kind: item.artifact_kind,
+        artifact_path: item.artifact_path,
+        pointer: item.pointer,
+        excerpt: item.excerpt
+      });
+    }
+    groups.set(kind, existing);
+  }
+
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      affected_repos: [...group.affected_repos].sort((left, right) => left.localeCompare(right)),
+      affected_repo_count: group.affected_repos.length,
+      top_evidence: group.top_evidence.slice(0, 3),
+      patterns: [...group.patterns].sort((left, right) =>
+        right.portability_score - left.portability_score ||
+        right.evidence_count - left.evidence_count ||
+        left.id.localeCompare(right.id)
+      )
+    }))
+    .sort((left, right) =>
+      right.candidate_count - left.candidate_count ||
+      right.affected_repo_count - left.affected_repo_count ||
+      left.kind.localeCompare(right.kind)
+    );
+};
+
 const writeJsonResponse = (response: http.ServerResponse, statusCode: number, payload: Record<string, unknown>): void => {
   response.statusCode = statusCode;
   response.setHeader('content-type', 'application/json; charset=utf-8');
@@ -809,7 +891,21 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
 
   if (pathname === '/api/cross-repo/summary') {
     const artifact = buildCrossRepoArtifact(observerRoot, registry);
-    return { statusCode: 200, payload: { ...base, kind: 'observer-cross-repo-summary', summary: { source_repos: artifact.source_repos, candidate_count: artifact.candidate_patterns.length, comparison_count: artifact.comparisons.length } } };
+    const groups = toCrossRepoCandidateGroups(artifact);
+    return {
+      statusCode: 200,
+      payload: {
+        ...base,
+        kind: 'observer-cross-repo-summary',
+        summary: {
+          source_repos: artifact.source_repos,
+          candidate_count: artifact.candidate_patterns.length,
+          comparison_count: artifact.comparisons.length,
+          primary_next_action: groups[0]?.primary_next_action ?? 'Connect at least two observable repos, then review portable-pattern evidence.',
+          candidate_groups: groups
+        }
+      }
+    };
   }
 
   if (pathname === '/api/readiness/fleet') {
@@ -911,7 +1007,19 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
 
   if (pathname === '/api/cross-repo/candidates') {
     const artifact = buildCrossRepoArtifact(observerRoot, registry);
-    return { statusCode: 200, payload: { ...base, kind: 'observer-cross-repo-candidates', candidates: artifact.candidate_patterns } };
+    return {
+      statusCode: 200,
+      payload: {
+        ...base,
+        kind: 'observer-cross-repo-candidates',
+        candidates: artifact.candidate_patterns,
+        candidate_groups: toCrossRepoCandidateGroups(artifact),
+        deep_disclosure: {
+          raw_artifact_path: '.playbook/cross-repo-patterns.json',
+          pairwise_comparison_count: artifact.comparisons.length
+        }
+      }
+    };
   }
 
   if (pathname === '/api/cross-repo/compare' || pathname === '/api/cross-repo/repo-delta') {
@@ -927,7 +1035,18 @@ const observerServerResponse = (observerRoot: string, invocationCwd: string, pat
     if (!comparison) {
       return { statusCode: 404, payload: { ...base, kind: 'observer-server-error', error: 'comparison-not-found' } };
     }
-    return { statusCode: 200, payload: { ...base, kind: pathname.endsWith('repo-delta') ? 'observer-cross-repo-repo-delta' : 'observer-cross-repo-compare', comparison, repo_delta: comparison.repo_deltas } };
+    return {
+      statusCode: 200,
+      payload: {
+        ...base,
+        kind: pathname.endsWith('repo-delta') ? 'observer-cross-repo-repo-delta' : 'observer-cross-repo-compare',
+        comparison,
+        repo_delta: comparison.repo_deltas,
+        deep_disclosure: {
+          raw_artifact_path: '.playbook/cross-repo-patterns.json'
+        }
+      }
+    };
   }
 
   const patternMatch = /^\/api\/cross-repo\/patterns\/([^/]+)$/.exec(pathname);

@@ -1,5 +1,9 @@
 ## Unreleased
 
+- WHAT: Tightened Observer repo and cross-repo operator views so repo mode stays story-first, cross-repo mode groups portable-pattern candidates by kind with one primary next action, raw JSON moved behind deep disclosure, and blocker/next-action rendering now normalizes structured objects instead of leaking `[object Object]`. WHY: A correct read-only control plane still needs strong signal hierarchy so operators can act quickly without losing governed truth surfaces.
+- Pattern: Observer should lead with signal hierarchy, not raw artifact density.
+- Pattern: Story/backlog visibility should sit above lower-level execution detail when it is the next human planning surface.
+- Failure Mode: A correct control plane with poor signal hierarchy still creates operator drag.
 - Added story-linked routing via `playbook route --story <id>` and `playbook story plan <id>` while preserving Story as durable intent and Plan as separate execution shape.
 - Added `story_reference` metadata propagation from execution plans into receipt and updated-state outputs, plus conservative deterministic story lifecycle transitions for planning, blocked execution, and completed execution evidence.
 

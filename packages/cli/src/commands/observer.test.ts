@@ -624,20 +624,26 @@ describe('observer server', () => {
 
     const summary = await fetch(`http://127.0.0.1:${port}/api/cross-repo/summary`);
     expect(summary.status).toBe(200);
-    const summaryJson = await summary.json() as { readOnly: boolean; summary: { candidate_count: number } };
+    const summaryJson = await summary.json() as { readOnly: boolean; summary: { candidate_count: number; candidate_groups: Array<{ kind: string; affected_repo_count: number }>; primary_next_action: string } };
     expect(summaryJson.readOnly).toBe(true);
     expect(summaryJson.summary.candidate_count).toBe(1);
+    expect(summaryJson.summary.candidate_groups[0]?.kind).toBe('artifact-pattern');
+    expect(summaryJson.summary.candidate_groups[0]?.affected_repo_count).toBe(2);
+    expect(summaryJson.summary.primary_next_action).toContain('portable pattern');
 
     const compare = await fetch(`http://127.0.0.1:${port}/api/cross-repo/compare?left=repo-a&right=repo-b`);
     expect(compare.status).toBe(200);
-    const compareJson = await compare.json() as { comparison: { left_repo_id: string; repo_deltas: Array<{ left_evidence: unknown[] }> } };
+    const compareJson = await compare.json() as { comparison: { left_repo_id: string; repo_deltas: Array<{ left_evidence: unknown[] }> }; deep_disclosure: { raw_artifact_path: string } };
     expect(compareJson.comparison.left_repo_id).toBe('repo-a');
     expect(compareJson.comparison.repo_deltas[0]?.left_evidence.length).toBeGreaterThan(0);
+    expect(compareJson.deep_disclosure.raw_artifact_path).toBe('.playbook/cross-repo-patterns.json');
 
     const candidates = await fetch(`http://127.0.0.1:${port}/api/cross-repo/candidates`);
     expect(candidates.status).toBe(200);
-    const candidatesJson = await candidates.json() as { candidates: Array<{ id: string }> };
+    const candidatesJson = await candidates.json() as { candidates: Array<{ id: string }>; candidate_groups: Array<{ primary_next_action: string }>; deep_disclosure: { raw_artifact_path: string } };
     expect(candidatesJson.candidates[0]?.id).toBe('portable-1');
+    expect(candidatesJson.candidate_groups[0]?.primary_next_action).toContain('portable pattern');
+    expect(candidatesJson.deep_disclosure.raw_artifact_path).toBe('.playbook/cross-repo-patterns.json');
 
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });
@@ -674,6 +680,9 @@ describe('observer server', () => {
     expect(uiScriptText).toContain('renderSystemBlueprint');
     expect(uiScriptText).toContain('setActiveView(\'repo\')');
     expect(uiScriptText).toContain('Connect at least 2 repos to compare governed artifacts.');
+    expect(uiScriptText).toContain('No canonical stories found in .playbook/stories.json. Generate or promote candidate stories');
+    expect(uiScriptText).toContain('Signal-first grouped view; raw pairwise comparisons remain in deep disclosure.');
+    expect(uiScriptText).toContain('describeBlocker');
     expect(uiScriptText).toContain('if ((!selectedRepoId || !repos.find((repo) => repo.id === selectedRepoId)) && repos.length > 0)');
 
     const repoPath = path.join(cwd, 'repo-http');
