@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://playbook.dev/schemas/promotion-receipt.schema.json",
   "title": "Playbook Promotion Receipt",
-  "description": "Deterministic audited receipt emitted for each attempted story or pattern promotion.",
+  "description": "Deterministic audited receipt emitted for each attempted story or pattern promotion or lifecycle mutation.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -29,7 +29,17 @@
     "kind": { "type": "string", "const": "promotion-receipt" },
     "receipt_id": { "type": "string", "minLength": 1 },
     "promotion_kind": { "type": "string", "enum": ["story", "pattern"] },
-    "workflow_kind": { "type": "string", "enum": ["promote-story", "promote-pattern"] },
+    "workflow_kind": {
+      "type": "string",
+      "enum": [
+        "promote-story",
+        "promote-pattern",
+        "promote-pattern-retire",
+        "promote-pattern-demote",
+        "promote-pattern-recall",
+        "promote-pattern-supersede"
+      ]
+    },
     "generated_at": { "type": "string", "format": "date-time" },
     "source_ref": { "type": "string", "minLength": 1 },
     "source_fingerprint": { "type": "string", "minLength": 1 },

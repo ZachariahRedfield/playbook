@@ -77,23 +77,29 @@ export const runPromote = (cwd: string, args: string[], options: PromoteOptions)
   const playbookHome = resolvePlaybookHome(cwd);
   const globalPatternStore = resolvePatternKnowledgeStore('global_reusable_pattern_memory', { playbookHome });
 
-  if ((target !== 'story' && target !== 'pattern' && target !== 'pattern-retire' && target !== 'pattern-demote' && target !== 'pattern-recall') || (!sourceRef && !['pattern-retire','pattern-demote','pattern-recall'].includes(target ?? ''))) {
+  if ((target !== 'story' && target !== 'pattern' && target !== 'pattern-retire' && target !== 'pattern-demote' && target !== 'pattern-recall' && target !== 'pattern-supersede') || (!sourceRef && !['pattern-retire','pattern-demote','pattern-recall','pattern-supersede'].includes(target ?? ''))) {
     print(options.format, {
       schemaVersion: '1.0',
       command: 'promote',
-      error: 'Usage: playbook promote <story|pattern> <candidate-ref> [--repo <repo-id>] [--story-id <id>] [--pattern-id <id>] --json; or playbook promote pattern-(retire|demote|recall) <pattern-id> --reason <text> --json'
+      error: 'Usage: playbook promote <story|pattern> <candidate-ref> [--repo <repo-id>] [--story-id <id>] [--pattern-id <id>] --json; or playbook promote pattern-(retire|demote|recall) <pattern-id> --reason <text> --json; or playbook promote pattern-supersede <pattern-id> --by <successor-pattern-id> --reason <text> --json'
     });
     return ExitCode.Failure;
   }
 
   try {
 
-    if (target === 'pattern-retire' || target === 'pattern-demote' || target === 'pattern-recall') {
+    if (target === 'pattern-retire' || target === 'pattern-demote' || target === 'pattern-recall' || target === 'pattern-supersede') {
       const patternId = args[1];
       const reason = readOption(args, '--reason') ?? `${target} requested`;
       if (!patternId) throw new Error(`playbook promote ${target}: missing required <pattern-id> argument`);
-      const operation = target.replace('pattern-', '') as 'retire' | 'demote' | 'recall';
-      const prepared = transitionPatternLifecycle({ playbookHome, patternId, operation, reason });
+      const operation = target.replace('pattern-', '') as 'retire' | 'demote' | 'recall' | 'supersede';
+      const prepared = transitionPatternLifecycle({
+        playbookHome,
+        patternId,
+        operation,
+        reason,
+        supersededByPatternId: operation === 'supersede' ? readOption(args, '--by') : undefined
+      });
       const workflowKind = `promote-pattern-${operation}`;
       const promotion = stageWorkflowArtifact({
         cwd: prepared.targetRoot,

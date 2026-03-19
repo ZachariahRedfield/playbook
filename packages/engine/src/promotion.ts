@@ -81,6 +81,7 @@ export type PromotedPatternRecord = {
     promoted_at: string;
   };
   superseded_by?: string | null;
+  supersedes?: string[];
   retired_at?: string | null;
   retirement_reason?: string | null;
   demoted_at?: string | null;
@@ -178,6 +179,7 @@ export const readCanonicalPatternsArtifact = (playbookHome: string): CanonicalPa
         ...pattern,
         status: rawStatus === 'promoted' ? 'active' : rawStatus as PromotedPatternStatus,
         superseded_by: typeof pattern.superseded_by === 'string' ? pattern.superseded_by : null,
+        supersedes: Array.isArray(pattern.supersedes) ? sortStrings(pattern.supersedes.map(String)) : [],
         retired_at: typeof pattern.retired_at === 'string' ? pattern.retired_at : null,
         retirement_reason: typeof pattern.retirement_reason === 'string' ? pattern.retirement_reason : null,
         demoted_at: typeof pattern.demoted_at === 'string' ? pattern.demoted_at : null,
@@ -432,6 +434,7 @@ export const materializePatternFromCandidate = (input: {
       promoted_at: promotedAt
     },
     superseded_by: null,
+    supersedes: [],
     retired_at: null,
     retirement_reason: null,
     demoted_at: null,
@@ -474,7 +477,7 @@ export const materializePatternFromCandidate = (input: {
   };
 };
 
-export type PatternLifecycleOperation = 'retire' | 'demote' | 'recall';
+export type PatternLifecycleOperation = 'retire' | 'demote' | 'recall' | 'supersede';
 
 export type PatternLifecycleResult = PreparedPromotion<CanonicalPatternsArtifact, PromotedPatternRecord> & {
   operation: PatternLifecycleOperation;
@@ -490,6 +493,7 @@ export const transitionPatternLifecycle = (input: {
   patternId: string;
   operation: PatternLifecycleOperation;
   reason: string;
+  supersededByPatternId?: string;
   generatedAt?: string;
 }): PatternLifecycleResult => {
   const current = readCanonicalPatternsArtifact(input.playbookHome);
@@ -503,6 +507,45 @@ export const transitionPatternLifecycle = (input: {
       return { scope: 'global', targetId: existing.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact: current, record: existing, outcome: 'noop', sourceRef: `global/patterns/${existing.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: beforeFingerprint, operation: input.operation };
     }
     next = appendLifecycleEvent({ ...existing, status: 'retired', retired_at: timestamp, retirement_reason: input.reason }, { operation: 'retire', at: timestamp, reason: input.reason, actor: 'playbook', from_status: existing.status, to_status: 'retired' });
+  } else if (input.operation === 'supersede') {
+    const successorId = input.supersededByPatternId?.trim();
+    if (!successorId) {
+      throw new Error('playbook promote pattern-supersede: missing required --by <successor-pattern-id> argument');
+    }
+    if (successorId === existing.id) {
+      throw new Error(`playbook promote pattern-supersede: pattern ${existing.id} cannot supersede itself`);
+    }
+    const successor = current.patterns.find((entry) => entry.id === successorId);
+    if (!successor) {
+      throw new Error(`playbook promote pattern-supersede: successor pattern not found: ${successorId}`);
+    }
+    if (existing.status === 'superseded' && existing.superseded_by === successorId && (successor.supersedes ?? []).includes(existing.id)) {
+      return { scope: 'global', targetId: existing.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact: current, record: existing, outcome: 'noop', sourceRef: `global/patterns/${existing.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: beforeFingerprint, operation: input.operation };
+    }
+    const nextExisting = appendLifecycleEvent(
+      {
+        ...existing,
+        status: 'superseded',
+        superseded_by: successor.id,
+        retired_at: null,
+        retirement_reason: null
+      },
+      { operation: 'supersede', at: timestamp, reason: input.reason, actor: 'playbook', from_status: existing.status, to_status: 'superseded' }
+    );
+    const nextSuccessor = appendLifecycleEvent(
+      {
+        ...successor,
+        status: successor.status === 'retired' || successor.status === 'demoted' ? 'active' : successor.status,
+        supersedes: sortStrings([...(successor.supersedes ?? []), existing.id]),
+        superseded_by: successor.superseded_by ?? null
+      },
+      { operation: 'recall', at: timestamp, reason: `Activated while superseding ${existing.id}: ${input.reason}`, actor: 'playbook', from_status: successor.status, to_status: 'active' }
+    );
+    const patterns = current.patterns
+      .map((entry) => entry.id === nextExisting.id ? nextExisting : entry.id === nextSuccessor.id ? nextSuccessor : entry)
+      .sort((left, right) => left.id.localeCompare(right.id));
+    const artifact: CanonicalPatternsArtifact = { schemaVersion: '1.0', kind: 'promoted-patterns', patterns };
+    return { scope: 'global', targetId: nextExisting.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact, record: nextExisting, outcome: 'promoted', sourceRef: `global/patterns/${nextExisting.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: fingerprintPromotionValue(nextExisting), operation: input.operation };
   } else if (input.operation === 'demote') {
     if (existing.status === 'demoted') {
       return { scope: 'global', targetId: existing.id, targetRoot: input.playbookHome, stagedRelativePath: 'staged/promotions/patterns.json', committedRelativePath: GLOBAL_PATTERNS_RELATIVE_PATH, artifact: current, record: existing, outcome: 'noop', sourceRef: `global/patterns/${existing.id}`, sourceFingerprint: beforeFingerprint, beforeFingerprint, afterFingerprint: beforeFingerprint, operation: input.operation };

@@ -89,7 +89,7 @@ describe("buildStoryPatternContext", () => {
                   fingerprint: "fp-a",
                 },
               ],
-              status: "promoted",
+              status: "active",
               promotedAt: "2026-03-18T00:00:00.000Z",
               provenance: {
                 sourceRefs: [
@@ -122,6 +122,72 @@ describe("buildStoryPatternContext", () => {
     expect(context.patterns[1]).toMatchObject({
       why_matched: "normalization_key_match",
     });
+  });
+
+  it("excludes non-active patterns from default advisory pattern context", () => {
+    const home = mkd("playbook-pattern-context-filtered-");
+    fs.mkdirSync(path.join(home, ".playbook"), { recursive: true });
+    fs.writeFileSync(
+      path.join(home, ".playbook", "patterns.json"),
+      JSON.stringify(
+        {
+          schemaVersion: "1.0",
+          kind: "patterns",
+          patterns: [
+            {
+              id: "pattern.active",
+              title: "Active",
+              when: "when",
+              then: "then",
+              because: "because",
+              normalizationKey: "pattern-active",
+              sourceRefs: [],
+              status: "active",
+              promotedAt: "2026-03-19T00:00:00.000Z",
+              provenance: { sourceRefs: [] },
+            },
+            {
+              id: "pattern.retired",
+              title: "Retired",
+              when: "when",
+              then: "then",
+              because: "because",
+              normalizationKey: "pattern-retired",
+              sourceRefs: [],
+              status: "retired",
+              promotedAt: "2026-03-19T00:00:00.000Z",
+              provenance: { sourceRefs: [] },
+            },
+            {
+              id: "pattern.superseded",
+              title: "Superseded",
+              when: "when",
+              then: "then",
+              because: "because",
+              normalizationKey: "pattern-superseded",
+              sourceRefs: [],
+              status: "superseded",
+              promotedAt: "2026-03-19T00:00:00.000Z",
+              provenance: { sourceRefs: [] },
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+    );
+
+    const context = buildStoryPatternContext(
+      baseStory({
+        title: "Use pattern.active pattern.retired pattern.superseded",
+        evidence: ["pattern.active", "pattern.retired", "pattern.superseded"],
+      }),
+      { playbookHome: home },
+    );
+
+    expect(context.patterns.map((entry) => entry.pattern_id)).toEqual([
+      "pattern.active",
+    ]);
   });
 
   it("degrades gracefully when no patterns match", () => {

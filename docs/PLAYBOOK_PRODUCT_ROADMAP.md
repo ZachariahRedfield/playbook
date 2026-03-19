@@ -25,6 +25,7 @@ Failure Mode: Business docs drifting away from runtime truth.
 ## Strategic direction
 
 Recent implementation note: deterministic promotion receipts now accompany top-level `pnpm playbook promote ...` flows, persisting audited `promoted` / `noop` / `conflict` outcomes to `.playbook/promotion-receipts.json` and making promotion an explicit audited write boundary visible through Observer artifact inspection.
+Recent implementation note: promoted reusable patterns now treat lifecycle state as canonical truth (`active`, `superseded`, `retired`, `demoted`), lifecycle mutations reuse audited receipt behavior, and advisory story-backed pattern context excludes non-active promoted knowledge by default to prevent silent guidance drift.
 
 Recent implementation note: fleet-level readiness aggregation is now available in current command surfaces (`pnpm playbook status fleet --json`, Observer `GET /api/readiness/fleet`, and Observer dashboard fleet summary card) to prioritize cross-repo adoption without replacing repo-first workflows.
 Recent implementation note: deterministic adoption work-queue planning is also available (`pnpm playbook status queue --json`, Observer `GET /api/readiness/queue`, and Observer dashboard work-queue panel) to translate readiness state into ordered, wave-based, parallel-safe execution plans.

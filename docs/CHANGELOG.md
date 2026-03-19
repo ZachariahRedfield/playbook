@@ -10,6 +10,11 @@
 
 ## Unreleased
 
+- WHAT: Added deterministic promoted-pattern lifecycle mutation support for `pattern-supersede` alongside retire/demote/recall, extended promoted-pattern records with explicit supersession lineage, and filtered story-backed advisory pattern context to active patterns only by default. WHY: Advisory planning should consume only active doctrine while preserving inspectable history for superseded, retired, and demoted knowledge.
+- Rule: Advisory planning may consume only active promoted knowledge by default.
+- Pattern: Lifecycle state is part of knowledge truth, not presentation metadata.
+- Failure Mode: Stale or superseded patterns leaking into planning context creates silent guidance drift.
+
 - WHAT: Added a roadmap/planning slice for **Worker Fragment Consolidation for Shared Singleton Docs** across the product roadmap, execution planning docs, backlog guidance, and control-plane architecture notes. WHY: Parallel workers can be isolated by implementation surface and still collide on singleton narrative docs, so deferred consolidation needs to be explicit before future managed subagents/hooks work expands.
 - Rule: Shared singleton docs should be updated through worker-local fragments plus a deterministic consolidation pass, not direct concurrent edits from multiple workers.
 - Pattern: Workers own isolated implementation changes; a final consolidator owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.
