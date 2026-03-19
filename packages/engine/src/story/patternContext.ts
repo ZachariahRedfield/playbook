@@ -165,7 +165,8 @@ export const buildStoryPatternContext = (
   const playbookHome = options?.playbookHome ?? resolvePlaybookHome();
   const patternStore = resolvePatternKnowledgeStore('global_reusable_pattern_memory', { playbookHome });
   const patterns = readGlobalPatternsArtifact(playbookHome)
-    .patterns as ExtendedPatternRecord[];
+    .patterns
+    .filter((pattern) => pattern.status === "active") as ExtendedPatternRecord[];
   const matches = patterns
     .flatMap((pattern) => {
       const reason = matchPattern(story, pattern);

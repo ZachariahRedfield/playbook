@@ -86,8 +86,16 @@ describe('global pattern promotion storage', () => {
           because: 'because z',
           normalizationKey: 'z',
           sourceRefs: [{ repoId: 'repo-b', artifactPath: '.playbook/story-candidates.json', entryId: 'candidate-b', fingerprint: 'fp-b' }],
-          status: 'promoted',
+          status: 'active',
           promotedAt: '2026-03-19T00:00:00.000Z',
+          supersededBy: null,
+          supersedes: [],
+          retiredAt: null,
+          retirementReason: null,
+          demotedAt: null,
+          demotionReason: null,
+          recalledAt: null,
+          recallReason: null,
           provenance: {
             sourceRefs: [{ repoId: 'repo-b', artifactPath: '.playbook/story-candidates.json', entryId: 'candidate-b', fingerprint: 'fp-b' }]
           }
@@ -101,8 +109,16 @@ describe('global pattern promotion storage', () => {
           normalizationKey: 'a',
           storySeed: 'story.a',
           sourceRefs: [{ repoId: 'repo-a', artifactPath: '.playbook/story-candidates.json', entryId: 'candidate-a', fingerprint: 'fp-a' }],
-          status: 'promoted',
+          status: 'active',
           promotedAt: '2026-03-18T00:00:00.000Z',
+          supersededBy: null,
+          supersedes: [],
+          retiredAt: null,
+          retirementReason: null,
+          demotedAt: null,
+          demotionReason: null,
+          recalledAt: null,
+          recallReason: null,
           provenance: {
             sourceRefs: [{ repoId: 'repo-a', artifactPath: '.playbook/story-candidates.json', entryId: 'candidate-a', fingerprint: 'fp-a' }]
           }

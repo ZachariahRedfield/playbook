@@ -48,9 +48,17 @@ export type PatternRecord = {
   normalizationKey: string;
   storySeed?: string;
   sourceRefs: SourceRef[];
-  status: string;
+  status: 'active' | 'superseded' | 'retired' | 'demoted';
   promotedAt: string;
   provenance: StoryProvenance;
+  supersededBy?: string | null;
+  supersedes?: string[];
+  retiredAt?: string | null;
+  retirementReason?: string | null;
+  demotedAt?: string | null;
+  demotionReason?: string | null;
+  recalledAt?: string | null;
+  recallReason?: string | null;
 };
 
 export type PatternArtifact = {
@@ -101,6 +109,14 @@ const normalizeCandidate = (value: PatternCandidateRecord): PatternCandidateReco
 
 const normalizePattern = (value: PatternRecord): PatternRecord => ({
   ...value,
+  supersededBy: value.supersededBy ?? null,
+  supersedes: [...new Set(value.supersedes ?? [])].sort((left, right) => left.localeCompare(right)),
+  retiredAt: value.retiredAt ?? null,
+  retirementReason: value.retirementReason ?? null,
+  demotedAt: value.demotedAt ?? null,
+  demotionReason: value.demotionReason ?? null,
+  recalledAt: value.recalledAt ?? null,
+  recallReason: value.recallReason ?? null,
   provenance: {
     sourceRefs: [...value.provenance.sourceRefs].map(normalizeSourceRef).sort((left, right) =>
       left.repoId.localeCompare(right.repoId) ||

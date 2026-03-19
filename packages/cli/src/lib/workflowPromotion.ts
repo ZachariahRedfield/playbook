@@ -162,12 +162,30 @@ const readReceiptLog = (cwd: string): PromotionReceiptLog => {
   };
 };
 
+const workflowKindPrecedence: Record<string, number> = {
+  'promote-story': 10,
+  'promote-pattern': 20,
+  'promote-pattern-retire': 30,
+  'promote-pattern-demote': 40,
+  'promote-pattern-recall': 50,
+  'promote-pattern-supersede': 60
+};
+
+const outcomePrecedence: Record<PromotionReceiptOutcome, number> = {
+  promoted: 10,
+  noop: 20,
+  conflict: 30
+};
+
 const sortReceipts = (receipts: PromotionReceipt[]): PromotionReceipt[] =>
   [...receipts].sort((left, right) =>
-    left.generated_at.localeCompare(right.generated_at) ||
     left.promotion_kind.localeCompare(right.promotion_kind) ||
     left.target_artifact_path.localeCompare(right.target_artifact_path) ||
     left.target_id.localeCompare(right.target_id) ||
+    (workflowKindPrecedence[left.workflow_kind] ?? Number.MAX_SAFE_INTEGER) - (workflowKindPrecedence[right.workflow_kind] ?? Number.MAX_SAFE_INTEGER) ||
+    (outcomePrecedence[left.outcome] ?? Number.MAX_SAFE_INTEGER) - (outcomePrecedence[right.outcome] ?? Number.MAX_SAFE_INTEGER) ||
+    left.generated_at.localeCompare(right.generated_at) ||
+    left.source_ref.localeCompare(right.source_ref) ||
     left.receipt_id.localeCompare(right.receipt_id));
 
 export const emitPromotionReceipt = (input: PromotionAttemptInput): PromotionReceipt => {

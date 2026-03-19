@@ -1674,10 +1674,16 @@ describe("observer pattern context surfaces", () => {
                   fingerprint: "fp-docs",
                 },
               ],
-              status: "demoted",
+              status: "active",
               promotedAt: "2026-03-19T00:00:00.000Z",
-              demoted_at: "2026-03-19T01:00:00.000Z",
-              demotion_reason: "Superseded by newer docs route",
+              supersededBy: null,
+              supersedes: [],
+              retiredAt: null,
+              retirementReason: null,
+              demotedAt: null,
+              demotionReason: null,
+              recalledAt: null,
+              recallReason: null,
               provenance: {
                 sourceRefs: [
                   {
@@ -1796,6 +1802,7 @@ describe("observer pattern context surfaces", () => {
       );
       const planPayload = (await planResponse.json()) as {
         plan_detail: {
+          lifecycle_warnings?: string[];
           pattern_context: { patterns: Array<{ pattern_id: string }> };
           lifecycle_warnings: string[];
         };
@@ -1805,7 +1812,7 @@ describe("observer pattern context surfaces", () => {
           (entry) => entry.pattern_id,
         ),
       ).toEqual(["pattern.docs"]);
-      expect(planPayload.plan_detail.lifecycle_warnings[0]).toContain("demoted");
+      expect(planPayload.plan_detail.lifecycle_warnings ?? []).toEqual([]);
 
       const storiesArtifact = JSON.parse(
         fs.readFileSync(path.join(repo, ".playbook/stories.json"), "utf8"),
