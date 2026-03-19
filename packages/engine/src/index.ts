@@ -234,8 +234,9 @@ export { queryDependencies } from './query/dependencies.js';
 export type { DependenciesQueryResult } from './query/dependencies.js';
 export { queryImpact } from './query/impact.js';
 export type { ImpactQueryResult } from './query/impact.js';
-export { knowledgeInspect, knowledgeList, knowledgeProvenance, knowledgeQuery, knowledgeStale, knowledgeTimeline } from './query/knowledge.js';
+export { knowledgeCompareQuery, knowledgeInspect, knowledgeList, knowledgeProvenance, knowledgeQuery, knowledgeStale, knowledgeSupersession, knowledgeTimeline } from './query/knowledge.js';
 export type {
+  KnowledgeCompareQueryResult,
   KnowledgeInspectResult,
   KnowledgeListResult,
   KnowledgeProvenanceQueryResult,
@@ -243,6 +244,7 @@ export type {
   KnowledgeRecord,
   KnowledgeQueryOptions,
   KnowledgeStaleResult,
+  KnowledgeSupersessionQueryResult,
   KnowledgeSummary,
   KnowledgeTimelineOptions,
   KnowledgeTimelineResult

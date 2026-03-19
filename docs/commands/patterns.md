@@ -2,6 +2,10 @@
 
 Inspect pattern knowledge graph artifacts and run explicit promotion review decisions. This surface now distinguishes repo-local backlog promotion from global reusable pattern promotion.
 
+Lifecycle note:
+
+- Observer and `knowledge` read surfaces normalize global reusable pattern lifecycle state so `active`, `superseded`, `retired`, and `demoted` patterns remain inspectable without introducing any new mutation route.
+
 ## Subcommands
 
 ### `patterns list`
@@ -217,6 +221,8 @@ Hard guarantees:
 - Deterministic sorting ensures stable proposal ordering for review and audit.
 
 - Pattern: Use proposal artifacts to bridge automated discovery and governed doctrine.
+- Pattern: Read-only inspection should reveal lifecycle truth without mutating it.
+- Failure Mode: Operators cannot govern what they cannot inspect.
 - Failure Mode: Direct pattern graph mutation from extraction logic causes irreversible architecture drift.
 
 ## Cross-repo candidate portability scoring

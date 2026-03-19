@@ -36,7 +36,8 @@ describe('knowledge store inspection', () => {
       expect(buildKnowledgeSummary(records)).toEqual({
         total: 6,
         byType: { evidence: 2, candidate: 2, promoted: 1, superseded: 1 },
-        byStatus: { observed: 2, active: 2, stale: 1, retired: 0, superseded: 1 }
+        byStatus: { observed: 2, active: 2, stale: 1, retired: 0, superseded: 1 },
+        byLifecycle: { observed: 2, candidate: 1, active: 1, stale: 1, retired: 0, superseded: 1, demoted: 0 }
       });
     } finally {
       fs.rmSync(root, { recursive: true, force: true });

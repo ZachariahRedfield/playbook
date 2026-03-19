@@ -70,6 +70,7 @@ type ObserverStoryBacklog = {
 type ObserverStoryDetail = {
   story: StoryRecord;
   pattern_context: StoryPatternContext;
+  lifecycle_warnings: string[];
   lifecycle_links: {
     story_reference: string | null;
     last_plan_ref: string | null;
@@ -168,6 +169,9 @@ type ObserverGlobalPatternSummary = {
   title: string;
   candidate_id: string | null;
   promoted_at: string | null;
+  lifecycle_state: string;
+  staleness: 'fresh' | 'stale' | 'unknown';
+  warnings: string[];
   source_refs: string[];
   linked_story_count: number;
   linked_repo_ids: string[];
@@ -178,6 +182,10 @@ type ObserverGlobalPatternDetail = {
   pattern: Record<string, unknown>;
   raw_artifact_path: string;
   linked_stories: ObserverPatternLineageStory[];
+  supersession: {
+    superseded_by: string | null;
+    lifecycle_events: Array<Record<string, unknown>>;
+  };
 };
 
 type ObserverCrossRepoCandidateGroup = {
@@ -892,6 +900,16 @@ const buildGlobalPatternSummary = (
       ? (patternEntry.provenance as Record<string, unknown>)
       : {};
   const linkedStories = buildGlobalPatternStoryLinks(registry, patternEntry);
+  const rawStatus = typeof patternEntry.status === "string" ? patternEntry.status : "active";
+  const lifecycleState = rawStatus === "promoted" ? "active" : rawStatus;
+  const promotedAt = typeof provenance.promoted_at === "string"
+    ? provenance.promoted_at
+    : typeof patternEntry.promotedAt === "string"
+      ? patternEntry.promotedAt
+      : null;
+  const staleness: ObserverGlobalPatternSummary["staleness"] = promotedAt
+    ? (Date.now() - Date.parse(promotedAt) > 1000 * 60 * 60 * 24 * 90 ? "stale" : "fresh")
+    : "unknown";
   return {
     id,
     title:
@@ -902,10 +920,13 @@ const buildGlobalPatternSummary = (
       typeof provenance.candidate_id === "string"
         ? provenance.candidate_id
         : null,
-    promoted_at:
-      typeof provenance.promoted_at === "string"
-        ? provenance.promoted_at
-        : null,
+    promoted_at: promotedAt,
+    lifecycle_state: lifecycleState,
+    staleness,
+    warnings: [
+      lifecycleState !== "active" ? `Pattern is ${lifecycleState}.` : "",
+      staleness === "stale" ? "Pattern has not been refreshed recently; verify downstream stories still align." : "",
+    ].filter((value): value is string => value.length > 0),
     source_refs: toSourceRefList(patternEntry),
     linked_story_count: linkedStories.length,
     linked_repo_ids: [
@@ -939,6 +960,12 @@ const buildGlobalPatternDetail = (
     pattern,
     raw_artifact_path: ".playbook/patterns.json",
     linked_stories: buildGlobalPatternStoryLinks(registry, pattern),
+    supersession: {
+      superseded_by: typeof pattern.superseded_by === "string" ? pattern.superseded_by : null,
+      lifecycle_events: Array.isArray(pattern.lifecycle_events)
+        ? pattern.lifecycle_events.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry))
+        : [],
+    },
   };
 };
 
@@ -1207,6 +1234,7 @@ const buildStoryDetail = (
   const story = findStoryById(artifact, storyId);
   if (!story) return null;
   const linkedEvidence = buildStoryEvidenceLinks(repo.id, story);
+  const patternContext = buildStoryPatternContext(story);
   const promotionLayer = buildRepoPromotionLayer(repo);
   const storyLink = toJoinableLink(
     story as unknown as Record<string, unknown>,
@@ -1256,7 +1284,8 @@ const buildStoryDetail = (
   ]);
   return {
     story,
-    pattern_context: buildStoryPatternContext(story),
+    pattern_context: patternContext,
+    lifecycle_warnings: patternContext.patterns.flatMap((entry) => entry.lifecycle.warnings),
     lifecycle_links: {
       story_reference: story.story_reference ?? null,
       last_plan_ref: story.last_plan_ref ?? null,
@@ -2239,6 +2268,7 @@ const observerServerResponse = (
               plan_detail: {
                 story_id: storyReference,
                 pattern_context: detail.pattern_context,
+                lifecycle_warnings: detail.lifecycle_warnings,
               },
             }
           : {}),

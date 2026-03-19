@@ -26,7 +26,7 @@ export type JsonSchema = {
 const knowledgeRecordSchema: JsonSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['id', 'type', 'createdAt', 'repo', 'source', 'confidence', 'status', 'provenance', 'metadata'],
+  required: ['id', 'type', 'createdAt', 'repo', 'source', 'confidence', 'status', 'lifecycle', 'provenance', 'metadata'],
   properties: {
     id: { type: 'string' },
     type: { enum: ['evidence', 'candidate', 'promoted', 'superseded'] },
@@ -37,13 +37,24 @@ const knowledgeRecordSchema: JsonSchema = {
       additionalProperties: false,
       required: ['kind', 'path', 'command'],
       properties: {
-        kind: { enum: ['memory-event', 'memory-candidate', 'memory-knowledge'] },
+        kind: { enum: ['memory-event', 'memory-candidate', 'memory-knowledge', 'global-pattern-memory'] },
         path: { type: 'string' },
         command: { type: ['string', 'null'] }
       }
     },
     confidence: { type: ['number', 'null'] },
     status: { enum: ['observed', 'active', 'stale', 'retired', 'superseded'] },
+    lifecycle: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['state', 'warnings', 'supersedes', 'supersededBy'],
+      properties: {
+        state: { enum: ['observed', 'candidate', 'active', 'stale', 'retired', 'superseded', 'demoted'] },
+        warnings: { type: 'array', items: { type: 'string' } },
+        supersedes: { type: 'array', items: { type: 'string' } },
+        supersededBy: { type: 'array', items: { type: 'string' } }
+      }
+    },
     provenance: {
       type: 'object',
       additionalProperties: false,
@@ -69,7 +80,7 @@ const knowledgeRecordSchema: JsonSchema = {
 const knowledgeSummarySchema: JsonSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['total', 'byType', 'byStatus'],
+  required: ['total', 'byType', 'byStatus', 'byLifecycle'],
   properties: {
     total: { type: 'integer' },
     byType: {
@@ -94,6 +105,20 @@ const knowledgeSummarySchema: JsonSchema = {
         retired: { type: 'integer' },
         superseded: { type: 'integer' }
       }
+    },
+    byLifecycle: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['observed', 'candidate', 'active', 'stale', 'retired', 'superseded', 'demoted'],
+      properties: {
+        observed: { type: 'integer' },
+        candidate: { type: 'integer' },
+        active: { type: 'integer' },
+        stale: { type: 'integer' },
+        retired: { type: 'integer' },
+        superseded: { type: 'integer' },
+        demoted: { type: 'integer' }
+      }
     }
   }
 };
@@ -104,6 +129,7 @@ const knowledgeFiltersSchema: JsonSchema = {
   properties: {
     type: { enum: ['evidence', 'candidate', 'promoted', 'superseded'] },
     status: { enum: ['observed', 'active', 'stale', 'retired', 'superseded'] },
+    lifecycle: { enum: ['observed', 'candidate', 'active', 'stale', 'retired', 'superseded', 'demoted'] },
     module: { type: 'string' },
     ruleId: { type: 'string' },
     text: { type: 'string' },
@@ -1375,7 +1401,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
         required: ['schemaVersion', 'command', 'error'],
         properties: {
           schemaVersion: { const: '1.0' },
-          command: { enum: ['knowledge-list', 'knowledge-query', 'knowledge-inspect', 'knowledge-timeline', 'knowledge-provenance', 'knowledge-stale'] },
+          command: { enum: ['knowledge-list', 'knowledge-query', 'knowledge-inspect', 'knowledge-compare', 'knowledge-timeline', 'knowledge-provenance', 'knowledge-supersession', 'knowledge-stale'] },
           error: { type: 'string' }
         }
       },
@@ -1391,6 +1417,36 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           knowledge: {
             type: 'array',
             items: knowledgeRecordSchema
+          }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'leftId', 'rightId', 'comparison'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'knowledge-compare' },
+          leftId: { type: 'string' },
+          rightId: { type: 'string' },
+          comparison: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['left', 'right', 'common'],
+            properties: {
+              left: knowledgeRecordSchema,
+              right: knowledgeRecordSchema,
+              common: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['evidenceIds', 'fingerprints', 'relatedRecordIds'],
+                properties: {
+                  evidenceIds: { type: 'array', items: { type: 'string' } },
+                  fingerprints: { type: 'array', items: { type: 'string' } },
+                  relatedRecordIds: { type: 'array', items: { type: 'string' } }
+                }
+              }
+            }
           }
         }
       },
@@ -1421,6 +1477,26 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
               record: knowledgeRecordSchema,
               evidence: { type: 'array', items: knowledgeRecordSchema },
               relatedRecords: { type: 'array', items: knowledgeRecordSchema }
+            }
+          }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'id', 'supersession'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'knowledge-supersession' },
+          id: { type: 'string' },
+          supersession: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['record', 'supersedes', 'supersededBy'],
+            properties: {
+              record: knowledgeRecordSchema,
+              supersedes: { type: 'array', items: knowledgeRecordSchema },
+              supersededBy: { type: 'array', items: knowledgeRecordSchema }
             }
           }
         }

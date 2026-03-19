@@ -1804,6 +1804,7 @@ describe("observer pattern context surfaces", () => {
         plan_detail: {
           lifecycle_warnings?: string[];
           pattern_context: { patterns: Array<{ pattern_id: string }> };
+          lifecycle_warnings: string[];
         };
       };
       expect(

@@ -1,3 +1,4 @@
+import { runKnowledgeCompare } from './compare.js';
 import { emitJsonOutput } from '../../lib/jsonArtifact.js';
 import { ExitCode } from '../../lib/cliContract.js';
 import { runKnowledgeInspect } from './inspect.js';
@@ -7,6 +8,7 @@ import { runKnowledgeProvenance } from './provenance.js';
 import { runKnowledgeQuery } from './query.js';
 import { printKnowledgeHelp, printKnowledgePortabilityHelp, type KnowledgeCommandOptions } from './shared.js';
 import { runKnowledgeStale } from './stale.js';
+import { runKnowledgeSupersession } from './supersession.js';
 import { runKnowledgeTimeline } from './timeline.js';
 
 const renderPortabilityText = (payload: Record<string, unknown>): string => {
@@ -151,6 +153,15 @@ const renderText = (subcommand: string, payload: Record<string, unknown>): strin
     return `Resolved provenance for ${String(payload.id)} (${provenance?.evidence?.length ?? 0} evidence records, ${provenance?.relatedRecords?.length ?? 0} related records).`;
   }
 
+  if (subcommand === 'compare') {
+    return `Compared ${String(payload.leftId)} with ${String(payload.rightId)}.`;
+  }
+
+  if (subcommand === 'supersession') {
+    const supersession = payload.supersession as { supersedes?: unknown[]; supersededBy?: unknown[] } | undefined;
+    return `Resolved supersession for ${String(payload.id)} (${supersession?.supersedes?.length ?? 0} supersedes, ${supersession?.supersededBy?.length ?? 0} superseded-by).`;
+  }
+
   if (subcommand === 'portability') {
     const command = String(payload.command ?? '');
     if (command === 'knowledge-portability-recommendations') {
@@ -202,11 +213,17 @@ export const runKnowledge = async (cwd: string, args: string[], options: Knowled
       if (subcommand === 'inspect') {
         return runKnowledgeInspect(cwd, args);
       }
+      if (subcommand === 'compare') {
+        return runKnowledgeCompare(cwd, args);
+      }
       if (subcommand === 'timeline') {
         return runKnowledgeTimeline(cwd, args);
       }
       if (subcommand === 'provenance') {
         return runKnowledgeProvenance(cwd, args);
+      }
+      if (subcommand === 'supersession') {
+        return runKnowledgeSupersession(cwd, args);
       }
       if (subcommand === 'stale') {
         return runKnowledgeStale(cwd, args);
@@ -215,7 +232,7 @@ export const runKnowledge = async (cwd: string, args: string[], options: Knowled
         return runKnowledgePortability(cwd, parsePortabilityView(args));
       }
 
-      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, inspect, timeline, provenance, stale, or portability.');
+      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, inspect, compare, timeline, provenance, supersession, stale, or portability.');
     })();
 
     if (options.format === 'json') {

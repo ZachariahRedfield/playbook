@@ -10,7 +10,7 @@ Command boundary:
 
 ### `knowledge list`
 
-List all evidence, candidate, promoted, and superseded knowledge records.
+List all evidence, candidate, promoted, superseded, and normalized global reusable pattern records.
 
 ### `knowledge query`
 
@@ -18,6 +18,7 @@ Filter knowledge records with:
 
 - `--type`
 - `--status`
+- `--lifecycle`
 - `--module`
 - `--rule`
 - `--text`
@@ -25,7 +26,11 @@ Filter knowledge records with:
 
 ### `knowledge inspect <id>`
 
-Inspect one knowledge record by id.
+Inspect one knowledge record by id, including normalized lifecycle metadata, warnings, and supersession links.
+
+### `knowledge compare <left-id> <right-id>`
+
+Compare two knowledge records and surface overlapping evidence IDs, fingerprints, and related-record links.
 
 ### `knowledge timeline`
 
@@ -35,9 +40,20 @@ Show the knowledge timeline in deterministic order.
 
 Resolve direct evidence and related-record lineage for one knowledge record.
 
+### `knowledge supersession <id>`
+
+Resolve deterministic `supersedes` / `superseded-by` chains for one knowledge record.
+
 ### `knowledge stale`
 
-List stale candidates plus retired and superseded promoted knowledge.
+List stale candidates plus non-active knowledge (`retired`, `superseded`, and demoted global reusable patterns).
+
+Lifecycle guarantees:
+
+- Query surfaces distinguish `active`, `candidate`, `stale`, `retired`, `superseded`, and `demoted` lifecycle truth explicitly.
+- Read-only inspection reveals lifecycle truth without mutating it.
+- Global reusable patterns are normalized into the same inspection surface as repo-local memory so provenance and supersession remain auditable from one command family.
+- JSON list/query/timeline/stale summaries expose lifecycle counts in `summary.byLifecycle` alongside `byType` and `byStatus` so deterministic consumers can reason about lifecycle distribution without re-aggregating records.
 
 ### `knowledge portability`
 
@@ -59,7 +75,9 @@ Views:
 pnpm playbook knowledge list --json
 pnpm playbook knowledge query --type candidate --json
 pnpm playbook knowledge inspect <id> --json
+pnpm playbook knowledge compare <left-id> <right-id> --json
 pnpm playbook knowledge provenance <id> --json
+pnpm playbook knowledge supersession <id> --json
 pnpm playbook knowledge stale --json
 pnpm playbook knowledge portability
 pnpm playbook knowledge portability --view recommendations
@@ -75,3 +93,4 @@ pnpm playbook knowledge portability --view blocked-transfers --json
 - Read-only command family
 - Deterministic normalized record shape
 - Provenance-preserving output
+- Lifecycle-aware filtering and warnings without introducing mutation routes

@@ -104,8 +104,10 @@ export { canonicalizeCanonicalKey, canonicalizeKnowledgeRecord, canonicalizeKnow
 export { compareCanonicalKnowledge } from './knowledge/compaction/compare.js';
 export {
   buildKnowledgeSummary,
+  compareKnowledge,
   getKnowledgeById,
   getKnowledgeProvenance,
+  getKnowledgeSupersession,
   getKnowledgeTimeline,
   getStaleKnowledge,
   listKnowledge,
@@ -121,6 +123,8 @@ export type { RunCycle, RunCycleMetrics, RunCyclePhaseOutputs } from './knowledg
 export { createEmptyRunCycle } from './knowledge/run-cycle.js';
 export type {
   KnowledgeArtifactType,
+  KnowledgeCompareResult,
+  KnowledgeLifecycleState,
   KnowledgeProvenanceResult,
   KnowledgeQueryOptions,
   KnowledgeRecord,
@@ -128,6 +132,7 @@ export type {
   KnowledgeRecordSource,
   KnowledgeRecordStatus,
   KnowledgeSourceKind,
+  KnowledgeSupersessionResult,
   KnowledgeSummary,
   KnowledgeTimelineOptions
 } from './knowledge/types.js';

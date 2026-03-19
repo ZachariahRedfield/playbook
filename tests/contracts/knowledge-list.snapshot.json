@@ -18,6 +18,15 @@
       "stale": 1,
       "retired": 0,
       "superseded": 1
+    },
+    "byLifecycle": {
+      "observed": 3,
+      "candidate": 1,
+      "active": 1,
+      "stale": 1,
+      "retired": 0,
+      "superseded": 1,
+      "demoted": 0
     }
   },
   "knowledge": [
@@ -75,6 +84,12 @@
             "type": "command"
           }
         ]
+      },
+      "lifecycle": {
+        "state": "observed",
+        "warnings": [],
+        "supersedes": [],
+        "supersededBy": []
       }
     },
     {
@@ -126,6 +141,12 @@
         "supersededBy": [],
         "retiredAt": null,
         "retirementReason": null
+      },
+      "lifecycle": {
+        "state": "active",
+        "warnings": [],
+        "supersedes": [],
+        "supersededBy": []
       }
     },
     {
@@ -176,6 +197,12 @@
           "priorCandidateIds": [],
           "supersedesCandidateIds": []
         }
+      },
+      "lifecycle": {
+        "state": "candidate",
+        "warnings": [],
+        "supersedes": [],
+        "supersededBy": []
       }
     },
     {
@@ -231,6 +258,12 @@
             "reference": "plan-1"
           }
         ]
+      },
+      "lifecycle": {
+        "state": "observed",
+        "warnings": [],
+        "supersedes": [],
+        "supersededBy": []
       }
     },
     {
@@ -286,6 +319,12 @@
             "reference": "verify-1"
           }
         ]
+      },
+      "lifecycle": {
+        "state": "observed",
+        "warnings": [],
+        "supersedes": [],
+        "supersededBy": []
       }
     },
     {
@@ -340,6 +379,16 @@
         ],
         "retiredAt": null,
         "retirementReason": null
+      },
+      "lifecycle": {
+        "state": "superseded",
+        "warnings": [
+          "Knowledge has been superseded by a newer promoted record."
+        ],
+        "supersedes": [],
+        "supersededBy": [
+          "pattern-live"
+        ]
       }
     },
     {
@@ -390,6 +439,14 @@
           "priorCandidateIds": [],
           "supersedesCandidateIds": []
         }
+      },
+      "lifecycle": {
+        "state": "stale",
+        "warnings": [
+          "Candidate is stale and should be revalidated before reuse."
+        ],
+        "supersedes": [],
+        "supersededBy": []
       }
     }
   ]

@@ -1,11 +1,15 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import type {
   KnowledgeArtifactType,
+  KnowledgeCompareResult,
+  KnowledgeLifecycleState,
   KnowledgeProvenanceResult,
   KnowledgeQueryOptions,
   KnowledgeRecord,
   KnowledgeSummary,
+  KnowledgeSupersessionResult,
   KnowledgeTimelineOptions
 } from './types.js';
 
@@ -20,6 +24,8 @@ const KNOWLEDGE_PATHS = [
 ] as const;
 const DEFAULT_STALE_DAYS = 45;
 const EPOCH_ISO = new Date(0).toISOString();
+const PLAYBOOK_HOME_ENV = 'PLAYBOOK_HOME' as const;
+const DEFAULT_PLAYBOOK_HOME_DIRNAME = '.playbook' as const;
 
 type MemoryEventArtifact = {
   kind?: unknown;
@@ -93,6 +99,40 @@ type MemoryKnowledgeEntry = {
   retirementReason?: unknown;
 };
 
+type GlobalPatternLifecycleEvent = {
+  operation?: unknown;
+  at?: unknown;
+  reason?: unknown;
+  from_status?: unknown;
+  to_status?: unknown;
+};
+
+type GlobalPatternEntry = {
+  id?: unknown;
+  title?: unknown;
+  description?: unknown;
+  pattern_family?: unknown;
+  source_artifact?: unknown;
+  signals?: unknown;
+  confidence?: unknown;
+  evidence_refs?: unknown;
+  status?: unknown;
+  provenance?: unknown;
+  superseded_by?: unknown;
+  retired_at?: unknown;
+  retirement_reason?: unknown;
+  demoted_at?: unknown;
+  demotion_reason?: unknown;
+  recalled_at?: unknown;
+  recall_reason?: unknown;
+  lifecycle_events?: unknown;
+};
+
+type GlobalPatternArtifact = {
+  kind?: unknown;
+  patterns?: unknown;
+};
+
 const safeReadJson = <T>(filePath: string): T | null => {
   if (!fs.existsSync(filePath)) {
     return null;
@@ -145,6 +185,10 @@ const resolveRepoName = (projectRoot: string): string => {
 };
 
 const staleCutoffMs = (staleDays: number): number => Date.now() - staleDays * 24 * 60 * 60 * 1000;
+const resolvePlaybookHome = (): string => {
+  const configured = process.env[PLAYBOOK_HOME_ENV]?.trim();
+  return configured && configured.length > 0 ? path.resolve(configured) : path.join(os.homedir(), DEFAULT_PLAYBOOK_HOME_DIRNAME);
+};
 
 const isStaleCandidate = (lastSeenAt: unknown, staleDays: number): boolean => {
   if (typeof lastSeenAt !== 'string') {
@@ -154,6 +198,19 @@ const isStaleCandidate = (lastSeenAt: unknown, staleDays: number): boolean => {
   const parsed = Date.parse(lastSeenAt);
   return !Number.isNaN(parsed) && parsed < staleCutoffMs(staleDays);
 };
+
+const withLifecycle = (
+  record: Omit<KnowledgeRecord, 'lifecycle'>,
+  lifecycle: Partial<KnowledgeRecord['lifecycle']> = {}
+): KnowledgeRecord => ({
+  ...record,
+  lifecycle: {
+    state: lifecycle.state ?? (record.type === 'evidence' ? 'observed' : record.type === 'candidate' ? (record.status === 'stale' ? 'stale' : 'candidate') : record.status),
+    warnings: lifecycle.warnings ?? [],
+    supersedes: lifecycle.supersedes ?? [],
+    supersededBy: lifecycle.supersededBy ?? []
+  }
+});
 
 const sortRecords = (records: KnowledgeRecord[], order: 'asc' | 'desc'): KnowledgeRecord[] => {
   const sorted = [...records].sort((left, right) => {
@@ -213,7 +270,7 @@ const readEvidenceRecords = (projectRoot: string, repo: string): KnowledgeRecord
       const relativePath = toRelativePath(projectRoot, filePath);
       const fingerprint = typeof parsed.eventFingerprint === 'string' ? parsed.eventFingerprint : '';
 
-      return [{
+      return [withLifecycle({
         id: parsed.eventInstanceId,
         type: 'evidence' as const,
         createdAt: toIsoDate(parsed.createdAt),
@@ -246,7 +303,7 @@ const readEvidenceRecords = (projectRoot: string, repo: string): KnowledgeRecord
           salienceInputs: parsed.salienceInputs ?? null,
           sources: Array.isArray(parsed.sources) ? parsed.sources : []
         }
-      } satisfies KnowledgeRecord];
+      })];
     });
 
 const readCandidateRecords = (projectRoot: string, repo: string, staleDays: number): KnowledgeRecord[] => {
@@ -278,7 +335,7 @@ const readCandidateRecords = (projectRoot: string, repo: string, staleDays: numb
       const runId = provenanceEntries.find((item) => typeof item.runId === 'string')?.runId as string | undefined;
       const relativePath = toRelativePath(projectRoot, artifactPath);
 
-      return [{
+      return [withLifecycle({
         id: entry.candidateId,
         type: 'candidate' as const,
         createdAt: toIsoDate(entry.lastSeenAt, toIsoDate(parsed.generatedAt)),
@@ -315,7 +372,10 @@ const readCandidateRecords = (projectRoot: string, repo: string, staleDays: numb
           lastSeenAt: typeof entry.lastSeenAt === 'string' ? toIsoDate(entry.lastSeenAt) : null,
           supersession: entry.supersession ?? null
         }
-      } satisfies KnowledgeRecord];
+      }, {
+        state: isStaleCandidate(entry.lastSeenAt, staleDays) ? 'stale' : 'candidate',
+        warnings: isStaleCandidate(entry.lastSeenAt, staleDays) ? ['Candidate is stale and should be revalidated before reuse.'] : [],
+      })];
     });
 };
 
@@ -360,7 +420,7 @@ const readPromotedRecords = (projectRoot: string, repo: string): KnowledgeRecord
           ...(typeof entry.candidateId === 'string' ? [entry.candidateId] : [])
         ];
 
-        return [{
+        return [withLifecycle({
           id: entry.knowledgeId,
           type: status === 'superseded' ? 'superseded' as KnowledgeArtifactType : 'promoted' as KnowledgeArtifactType,
           createdAt: toIsoDate(entry.promotedAt, toIsoDate(parsed.generatedAt)),
@@ -399,9 +459,109 @@ const readPromotedRecords = (projectRoot: string, repo: string): KnowledgeRecord
             retiredAt: typeof entry.retiredAt === 'string' ? toIsoDate(entry.retiredAt) : null,
             retirementReason: entry.retirementReason ?? null
           }
-        } satisfies KnowledgeRecord];
+        }, {
+          state: status,
+          warnings: status === 'retired'
+            ? ['Knowledge is retired and should be treated as historical context only.']
+            : status === 'superseded'
+              ? ['Knowledge has been superseded by a newer promoted record.']
+              : [],
+          supersedes,
+          supersededBy
+        })];
       });
   });
+
+const readGlobalPatternRecords = (projectRoot: string): KnowledgeRecord[] => {
+  const playbookHome = resolvePlaybookHome();
+  const candidatePath = path.join(playbookHome, '.playbook', 'patterns.json');
+  const compatibilityPath = path.join(playbookHome, 'patterns.json');
+  const resolvedPath = fs.existsSync(candidatePath) ? candidatePath : compatibilityPath;
+  const parsed = safeReadJson<GlobalPatternArtifact>(resolvedPath);
+  if (!parsed || !Array.isArray(parsed.patterns)) {
+    return [];
+  }
+
+  return parsed.patterns.flatMap((value) => {
+    const entry = value as GlobalPatternEntry;
+    if (typeof entry.id !== 'string' || entry.id.trim().length === 0) {
+      return [];
+    }
+    const rawStatus = typeof entry.status === 'string' ? entry.status : 'active';
+    const lifecycleState: KnowledgeLifecycleState =
+      rawStatus === 'promoted' ? 'active'
+        : rawStatus === 'active' || rawStatus === 'superseded' || rawStatus === 'retired' || rawStatus === 'demoted'
+          ? rawStatus
+          : 'active';
+    const status =
+      lifecycleState === 'retired' ? 'retired'
+        : lifecycleState === 'superseded' ? 'superseded'
+        : 'active';
+    const provenanceRecord = entry.provenance && typeof entry.provenance === 'object' && !Array.isArray(entry.provenance)
+      ? entry.provenance as Record<string, unknown>
+      : {};
+    const supersededBy = typeof entry.superseded_by === 'string' && entry.superseded_by ? [entry.superseded_by] : [];
+    const lifecycleEvents = Array.isArray(entry.lifecycle_events) ? entry.lifecycle_events as GlobalPatternLifecycleEvent[] : [];
+    const supersedes = lifecycleEvents
+      .filter((event) => event.operation === 'supersede')
+      .map((event) => (typeof event.reason === 'string' && event.reason.startsWith('supersedes:') ? event.reason.slice('supersedes:'.length).trim() : null))
+      .filter((event): event is string => Boolean(event));
+    const warnings = [
+      lifecycleState !== 'active' ? `Global reusable pattern is ${lifecycleState}.` : '',
+      lifecycleState === 'demoted' ? 'Demoted patterns remain inspectable but should not be treated as active doctrine.' : '',
+    ].filter((value): value is string => value.length > 0);
+
+    return [withLifecycle({
+      id: entry.id,
+      type: status === 'superseded' ? 'superseded' : 'promoted',
+      createdAt: toIsoDate(
+        typeof provenanceRecord.promoted_at === 'string' ? provenanceRecord.promoted_at : entry.retired_at ?? entry.demoted_at ?? entry.recalled_at,
+        EPOCH_ISO
+      ),
+      repo: resolveRepoName(projectRoot),
+      source: {
+        kind: 'global-pattern-memory',
+        path: path.relative(projectRoot, resolvedPath).replaceAll('\\', '/'),
+        command: null
+      },
+      confidence: toNumberOrNull(entry.confidence),
+      status,
+      provenance: {
+        repo: 'global_reusable_pattern_memory',
+        sourceCommand: null,
+        runId: null,
+        sourcePath: path.relative(projectRoot, resolvedPath).replaceAll('\\', '/'),
+        eventIds: [],
+        evidenceIds: toStringArray(entry.evidence_refs),
+        fingerprints: [],
+        relatedRecordIds: [...new Set([...(typeof provenanceRecord.candidate_id === 'string' ? [provenanceRecord.candidate_id] : []), ...supersedes, ...supersededBy])].sort((a,b)=>a.localeCompare(b))
+      },
+      metadata: {
+        kind: 'global-reusable-pattern',
+        title: entry.title ?? entry.id,
+        summary: entry.description ?? null,
+        patternFamily: entry.pattern_family ?? null,
+        sourceArtifact: entry.source_artifact ?? null,
+        evidenceRefs: toStringArray(entry.evidence_refs),
+        signals: toStringArray(entry.signals),
+        candidateId: typeof provenanceRecord.candidate_id === 'string' ? provenanceRecord.candidate_id : null,
+        promotedAt: typeof provenanceRecord.promoted_at === 'string' ? toIsoDate(provenanceRecord.promoted_at) : null,
+        retiredAt: typeof entry.retired_at === 'string' ? toIsoDate(entry.retired_at) : null,
+        retirementReason: entry.retirement_reason ?? null,
+        demotedAt: typeof entry.demoted_at === 'string' ? toIsoDate(entry.demoted_at) : null,
+        demotionReason: entry.demotion_reason ?? null,
+        recalledAt: typeof entry.recalled_at === 'string' ? toIsoDate(entry.recalled_at) : null,
+        recallReason: entry.recall_reason ?? null,
+        lifecycleEvents
+      }
+    }, {
+      state: lifecycleState,
+      warnings,
+      supersedes,
+      supersededBy
+    })];
+  });
+};
 
 const hasModuleMatch = (record: KnowledgeRecord, moduleName: string): boolean => {
   if (typeof record.metadata.module === 'string' && record.metadata.module === moduleName) {
@@ -429,7 +589,8 @@ const collectKnowledgeRecords = (projectRoot: string, staleDays: number): Knowle
   return [
     ...readEvidenceRecords(projectRoot, repo),
     ...readCandidateRecords(projectRoot, repo, staleDays),
-    ...readPromotedRecords(projectRoot, repo)
+    ...readPromotedRecords(projectRoot, repo),
+    ...readGlobalPatternRecords(projectRoot)
   ];
 };
 
@@ -439,7 +600,8 @@ const applyKnowledgeFilters = (records: KnowledgeRecord[], options: KnowledgeQue
     .filter((record) => (options.status ? record.status === options.status : true))
     .filter((record) => (options.module ? hasModuleMatch(record, options.module) : true))
     .filter((record) => (options.ruleId ? hasRuleMatch(record, options.ruleId) : true))
-    .filter((record) => (options.text ? matchesText(record, options.text) : true));
+    .filter((record) => (options.text ? matchesText(record, options.text) : true))
+    .filter((record) => (options.lifecycle ? record.lifecycle.state === options.lifecycle : true));
 
   const ordered = sortRecords(filtered, options.order ?? 'desc');
   return typeof options.limit === 'number' && options.limit >= 0 ? ordered.slice(0, options.limit) : ordered;
@@ -459,6 +621,15 @@ export const buildKnowledgeSummary = (records: KnowledgeRecord[]): KnowledgeSumm
     stale: records.filter((record) => record.status === 'stale').length,
     retired: records.filter((record) => record.status === 'retired').length,
     superseded: records.filter((record) => record.status === 'superseded').length
+  },
+  byLifecycle: {
+    observed: records.filter((record) => record.lifecycle.state === 'observed').length,
+    candidate: records.filter((record) => record.lifecycle.state === 'candidate').length,
+    active: records.filter((record) => record.lifecycle.state === 'active').length,
+    stale: records.filter((record) => record.lifecycle.state === 'stale').length,
+    retired: records.filter((record) => record.lifecycle.state === 'retired').length,
+    superseded: records.filter((record) => record.lifecycle.state === 'superseded').length,
+    demoted: records.filter((record) => record.lifecycle.state === 'demoted').length
   }
 });
 
@@ -513,3 +684,41 @@ export const getStaleKnowledge = (
     ...options,
     order: options.order ?? 'desc'
   }).filter((record) => record.status === 'stale' || record.status === 'retired' || record.status === 'superseded');
+
+export const compareKnowledge = (
+  projectRoot: string,
+  leftId: string,
+  rightId: string,
+  options: Pick<KnowledgeQueryOptions, 'staleDays'> = {}
+): KnowledgeCompareResult | null => {
+  const records = collectKnowledgeRecords(projectRoot, options.staleDays ?? DEFAULT_STALE_DAYS);
+  const left = records.find((record) => record.id === leftId);
+  const right = records.find((record) => record.id === rightId);
+  if (!left || !right) return null;
+  const intersect = (a: string[], b: string[]) => a.filter((entry) => new Set(b).has(entry)).sort((x, y) => x.localeCompare(y));
+  return {
+    left,
+    right,
+    common: {
+      evidenceIds: intersect(left.provenance.evidenceIds, right.provenance.evidenceIds),
+      fingerprints: intersect(left.provenance.fingerprints, right.provenance.fingerprints),
+      relatedRecordIds: intersect(left.provenance.relatedRecordIds, right.provenance.relatedRecordIds)
+    }
+  };
+};
+
+export const getKnowledgeSupersession = (
+  projectRoot: string,
+  id: string,
+  options: Pick<KnowledgeQueryOptions, 'staleDays'> = {}
+): KnowledgeSupersessionResult | null => {
+  const records = collectKnowledgeRecords(projectRoot, options.staleDays ?? DEFAULT_STALE_DAYS);
+  const record = records.find((entry) => entry.id === id);
+  if (!record) return null;
+  const byId = new Map(records.map((entry) => [entry.id, entry]));
+  return {
+    record,
+    supersedes: record.lifecycle.supersedes.map((entry) => byId.get(entry)).filter((entry): entry is KnowledgeRecord => Boolean(entry)),
+    supersededBy: record.lifecycle.supersededBy.map((entry) => byId.get(entry)).filter((entry): entry is KnowledgeRecord => Boolean(entry))
+  };
+};

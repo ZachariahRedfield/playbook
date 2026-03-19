@@ -4,8 +4,10 @@ import { ExitCode } from '../lib/cliContract.js';
 const knowledgeList = vi.fn();
 const knowledgeQuery = vi.fn();
 const knowledgeInspect = vi.fn();
+const knowledgeCompareQuery = vi.fn();
 const knowledgeTimeline = vi.fn();
 const knowledgeProvenance = vi.fn();
+const knowledgeSupersession = vi.fn();
 const knowledgeStale = vi.fn();
 const readCrossRepoPatternsArtifact = vi.fn();
 const readPortabilityOutcomesArtifact = vi.fn();
@@ -16,8 +18,10 @@ vi.mock('@zachariahredfield/playbook-engine', () => ({
   knowledgeList,
   knowledgeQuery,
   knowledgeInspect,
+  knowledgeCompareQuery,
   knowledgeTimeline,
   knowledgeProvenance,
+  knowledgeSupersession,
   knowledgeStale,
   readCrossRepoPatternsArtifact,
   readPortabilityOutcomesArtifact
@@ -223,6 +227,35 @@ describe('runKnowledge', () => {
 
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.command).toBe('knowledge-provenance');
+    logSpy.mockRestore();
+  });
+
+  it('supports compare and supersession subcommands', async () => {
+    const { runKnowledge } = await import('./knowledge.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    knowledgeCompareQuery.mockReturnValue({
+      schemaVersion: '1.0',
+      command: 'knowledge-compare',
+      leftId: 'left',
+      rightId: 'right',
+      comparison: { left: { id: 'left' }, right: { id: 'right' }, common: { evidenceIds: [], fingerprints: [], relatedRecordIds: [] } }
+    });
+    knowledgeSupersession.mockReturnValue({
+      schemaVersion: '1.0',
+      command: 'knowledge-supersession',
+      id: 'pattern-1',
+      supersession: { record: { id: 'pattern-1' }, supersedes: [], supersededBy: [] }
+    });
+
+    let exitCode = await runKnowledge('/repo', ['compare', 'left', 'right'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(knowledgeCompareQuery).toHaveBeenCalledWith('/repo', 'left', 'right', expect.any(Object));
+
+    logSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['supersession', 'pattern-1'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(knowledgeSupersession).toHaveBeenCalledWith('/repo', 'pattern-1', expect.any(Object));
     logSpy.mockRestore();
   });
 

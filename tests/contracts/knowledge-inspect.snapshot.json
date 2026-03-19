@@ -51,6 +51,12 @@
       "supersededBy": [],
       "retiredAt": null,
       "retirementReason": null
+    },
+    "lifecycle": {
+      "state": "active",
+      "warnings": [],
+      "supersedes": [],
+      "supersededBy": []
     }
   }
 }

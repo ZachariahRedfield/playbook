@@ -5,28 +5,46 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "command", "error"],
+      "required": [
+        "schemaVersion",
+        "command",
+        "error"
+      ],
       "properties": {
-        "schemaVersion": { "const": "1.0" },
+        "schemaVersion": {
+          "const": "1.0"
+        },
         "command": {
           "enum": [
             "knowledge-list",
             "knowledge-query",
             "knowledge-inspect",
+            "knowledge-compare",
             "knowledge-timeline",
             "knowledge-provenance",
+            "knowledge-supersession",
             "knowledge-stale"
           ]
         },
-        "error": { "type": "string" }
+        "error": {
+          "type": "string"
+        }
       }
     },
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "command", "filters", "summary", "knowledge"],
+      "required": [
+        "schemaVersion",
+        "command",
+        "filters",
+        "summary",
+        "knowledge"
+      ],
       "properties": {
-        "schemaVersion": { "const": "1.0" },
+        "schemaVersion": {
+          "const": "1.0"
+        },
         "command": {
           "enum": [
             "knowledge-list",
@@ -39,43 +57,156 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "type": { "enum": ["evidence", "candidate", "promoted", "superseded"] },
-            "status": { "enum": ["observed", "active", "stale", "retired", "superseded"] },
-            "module": { "type": "string" },
-            "ruleId": { "type": "string" },
-            "text": { "type": "string" },
-            "limit": { "type": "integer" },
-            "order": { "enum": ["asc", "desc"] },
-            "staleDays": { "type": "integer" }
+            "type": {
+              "enum": [
+                "evidence",
+                "candidate",
+                "promoted",
+                "superseded"
+              ]
+            },
+            "status": {
+              "enum": [
+                "observed",
+                "active",
+                "stale",
+                "retired",
+                "superseded"
+              ]
+            },
+            "lifecycle": {
+              "enum": [
+                "observed",
+                "candidate",
+                "active",
+                "stale",
+                "retired",
+                "superseded",
+                "demoted"
+              ]
+            },
+            "module": {
+              "type": "string"
+            },
+            "ruleId": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "integer"
+            },
+            "order": {
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            },
+            "staleDays": {
+              "type": "integer"
+            }
           }
         },
         "summary": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["total", "byType", "byStatus"],
+          "required": [
+            "total",
+            "byType",
+            "byStatus",
+            "byLifecycle"
+          ],
           "properties": {
-            "total": { "type": "integer" },
+            "total": {
+              "type": "integer"
+            },
             "byType": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["evidence", "candidate", "promoted", "superseded"],
+              "required": [
+                "evidence",
+                "candidate",
+                "promoted",
+                "superseded"
+              ],
               "properties": {
-                "evidence": { "type": "integer" },
-                "candidate": { "type": "integer" },
-                "promoted": { "type": "integer" },
-                "superseded": { "type": "integer" }
+                "evidence": {
+                  "type": "integer"
+                },
+                "candidate": {
+                  "type": "integer"
+                },
+                "promoted": {
+                  "type": "integer"
+                },
+                "superseded": {
+                  "type": "integer"
+                }
               }
             },
             "byStatus": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["observed", "active", "stale", "retired", "superseded"],
+              "required": [
+                "observed",
+                "active",
+                "stale",
+                "retired",
+                "superseded"
+              ],
               "properties": {
-                "observed": { "type": "integer" },
-                "active": { "type": "integer" },
-                "stale": { "type": "integer" },
-                "retired": { "type": "integer" },
-                "superseded": { "type": "integer" }
+                "observed": {
+                  "type": "integer"
+                },
+                "active": {
+                  "type": "integer"
+                },
+                "stale": {
+                  "type": "integer"
+                },
+                "retired": {
+                  "type": "integer"
+                },
+                "superseded": {
+                  "type": "integer"
+                }
+              }
+            },
+            "byLifecycle": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "observed",
+                "candidate",
+                "active",
+                "stale",
+                "retired",
+                "superseded",
+                "demoted"
+              ],
+              "properties": {
+                "observed": {
+                  "type": "integer"
+                },
+                "candidate": {
+                  "type": "integer"
+                },
+                "active": {
+                  "type": "integer"
+                },
+                "stale": {
+                  "type": "integer"
+                },
+                "retired": {
+                  "type": "integer"
+                },
+                "superseded": {
+                  "type": "integer"
+                },
+                "demoted": {
+                  "type": "integer"
+                }
               }
             }
           }
@@ -85,37 +216,176 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "type", "createdAt", "repo", "source", "confidence", "status", "provenance", "metadata"],
+            "required": [
+              "id",
+              "type",
+              "createdAt",
+              "repo",
+              "source",
+              "confidence",
+              "status",
+              "lifecycle",
+              "provenance",
+              "metadata"
+            ],
             "properties": {
-              "id": { "type": "string" },
-              "type": { "enum": ["evidence", "candidate", "promoted", "superseded"] },
-              "createdAt": { "type": "string" },
-              "repo": { "type": "string" },
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "evidence",
+                  "candidate",
+                  "promoted",
+                  "superseded"
+                ]
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "string"
+              },
               "source": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["kind", "path", "command"],
+                "required": [
+                  "kind",
+                  "path",
+                  "command"
+                ],
                 "properties": {
-                  "kind": { "enum": ["memory-event", "memory-candidate", "memory-knowledge"] },
-                  "path": { "type": "string" },
-                  "command": { "type": ["string", "null"] }
+                  "kind": {
+                    "enum": [
+                      "memory-event",
+                      "memory-candidate",
+                      "memory-knowledge",
+                      "global-pattern-memory"
+                    ]
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
                 }
               },
-              "confidence": { "type": ["number", "null"] },
-              "status": { "enum": ["observed", "active", "stale", "retired", "superseded"] },
+              "confidence": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "observed",
+                  "active",
+                  "stale",
+                  "retired",
+                  "superseded"
+                ]
+              },
+              "lifecycle": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state",
+                  "warnings",
+                  "supersedes",
+                  "supersededBy"
+                ],
+                "properties": {
+                  "state": {
+                    "enum": [
+                      "observed",
+                      "candidate",
+                      "active",
+                      "stale",
+                      "retired",
+                      "superseded",
+                      "demoted"
+                    ]
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "supersedes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "supersededBy": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
               "provenance": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["repo", "sourceCommand", "runId", "sourcePath", "eventIds", "evidenceIds", "fingerprints", "relatedRecordIds"],
+                "required": [
+                  "repo",
+                  "sourceCommand",
+                  "runId",
+                  "sourcePath",
+                  "eventIds",
+                  "evidenceIds",
+                  "fingerprints",
+                  "relatedRecordIds"
+                ],
                 "properties": {
-                  "repo": { "type": "string" },
-                  "sourceCommand": { "type": ["string", "null"] },
-                  "runId": { "type": ["string", "null"] },
-                  "sourcePath": { "type": "string" },
-                  "eventIds": { "type": "array", "items": { "type": "string" } },
-                  "evidenceIds": { "type": "array", "items": { "type": "string" } },
-                  "fingerprints": { "type": "array", "items": { "type": "string" } },
-                  "relatedRecordIds": { "type": "array", "items": { "type": "string" } }
+                  "repo": {
+                    "type": "string"
+                  },
+                  "sourceCommand": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "runId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "sourcePath": {
+                    "type": "string"
+                  },
+                  "eventIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "evidenceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "fingerprints": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "relatedRecordIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
                 }
               },
               "metadata": {
@@ -130,45 +400,622 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "command", "id", "knowledge"],
+      "required": [
+        "schemaVersion",
+        "command",
+        "leftId",
+        "rightId",
+        "comparison"
+      ],
       "properties": {
-        "schemaVersion": { "const": "1.0" },
-        "command": { "const": "knowledge-inspect" },
-        "id": { "type": "string" },
+        "schemaVersion": {
+          "const": "1.0"
+        },
+        "command": {
+          "const": "knowledge-compare"
+        },
+        "leftId": {
+          "type": "string"
+        },
+        "rightId": {
+          "type": "string"
+        },
+        "comparison": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "left",
+            "right",
+            "common"
+          ],
+          "properties": {
+            "left": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "type",
+                "createdAt",
+                "repo",
+                "source",
+                "confidence",
+                "status",
+                "lifecycle",
+                "provenance",
+                "metadata"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "evidence",
+                    "candidate",
+                    "promoted",
+                    "superseded"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "repo": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "path",
+                    "command"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "memory-event",
+                        "memory-candidate",
+                        "memory-knowledge",
+                        "global-pattern-memory"
+                      ]
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "command": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "confidence": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "observed",
+                    "active",
+                    "stale",
+                    "retired",
+                    "superseded"
+                  ]
+                },
+                "lifecycle": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state",
+                    "warnings",
+                    "supersedes",
+                    "supersededBy"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "observed",
+                        "candidate",
+                        "active",
+                        "stale",
+                        "retired",
+                        "superseded",
+                        "demoted"
+                      ]
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersedes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersededBy": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "provenance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repo",
+                    "sourceCommand",
+                    "runId",
+                    "sourcePath",
+                    "eventIds",
+                    "evidenceIds",
+                    "fingerprints",
+                    "relatedRecordIds"
+                  ],
+                  "properties": {
+                    "repo": {
+                      "type": "string"
+                    },
+                    "sourceCommand": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "runId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sourcePath": {
+                      "type": "string"
+                    },
+                    "eventIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "fingerprints": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "relatedRecordIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "metadata": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            },
+            "right": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "type",
+                "createdAt",
+                "repo",
+                "source",
+                "confidence",
+                "status",
+                "lifecycle",
+                "provenance",
+                "metadata"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "evidence",
+                    "candidate",
+                    "promoted",
+                    "superseded"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "repo": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "path",
+                    "command"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "memory-event",
+                        "memory-candidate",
+                        "memory-knowledge",
+                        "global-pattern-memory"
+                      ]
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "command": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "confidence": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "observed",
+                    "active",
+                    "stale",
+                    "retired",
+                    "superseded"
+                  ]
+                },
+                "lifecycle": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state",
+                    "warnings",
+                    "supersedes",
+                    "supersededBy"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "observed",
+                        "candidate",
+                        "active",
+                        "stale",
+                        "retired",
+                        "superseded",
+                        "demoted"
+                      ]
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersedes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersededBy": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "provenance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repo",
+                    "sourceCommand",
+                    "runId",
+                    "sourcePath",
+                    "eventIds",
+                    "evidenceIds",
+                    "fingerprints",
+                    "relatedRecordIds"
+                  ],
+                  "properties": {
+                    "repo": {
+                      "type": "string"
+                    },
+                    "sourceCommand": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "runId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sourcePath": {
+                      "type": "string"
+                    },
+                    "eventIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "fingerprints": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "relatedRecordIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "metadata": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            },
+            "common": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "evidenceIds",
+                "fingerprints",
+                "relatedRecordIds"
+              ],
+              "properties": {
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "fingerprints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "relatedRecordIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "command",
+        "id",
+        "knowledge"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0"
+        },
+        "command": {
+          "const": "knowledge-inspect"
+        },
+        "id": {
+          "type": "string"
+        },
         "knowledge": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["id", "type", "createdAt", "repo", "source", "confidence", "status", "provenance", "metadata"],
+          "required": [
+            "id",
+            "type",
+            "createdAt",
+            "repo",
+            "source",
+            "confidence",
+            "status",
+            "lifecycle",
+            "provenance",
+            "metadata"
+          ],
           "properties": {
-            "id": { "type": "string" },
-            "type": { "enum": ["evidence", "candidate", "promoted", "superseded"] },
-            "createdAt": { "type": "string" },
-            "repo": { "type": "string" },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "evidence",
+                "candidate",
+                "promoted",
+                "superseded"
+              ]
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "repo": {
+              "type": "string"
+            },
             "source": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["kind", "path", "command"],
+              "required": [
+                "kind",
+                "path",
+                "command"
+              ],
               "properties": {
-                "kind": { "enum": ["memory-event", "memory-candidate", "memory-knowledge"] },
-                "path": { "type": "string" },
-                "command": { "type": ["string", "null"] }
+                "kind": {
+                  "enum": [
+                    "memory-event",
+                    "memory-candidate",
+                    "memory-knowledge",
+                    "global-pattern-memory"
+                  ]
+                },
+                "path": {
+                  "type": "string"
+                },
+                "command": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
               }
             },
-            "confidence": { "type": ["number", "null"] },
-            "status": { "enum": ["observed", "active", "stale", "retired", "superseded"] },
+            "confidence": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "status": {
+              "enum": [
+                "observed",
+                "active",
+                "stale",
+                "retired",
+                "superseded"
+              ]
+            },
+            "lifecycle": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "state",
+                "warnings",
+                "supersedes",
+                "supersededBy"
+              ],
+              "properties": {
+                "state": {
+                  "enum": [
+                    "observed",
+                    "candidate",
+                    "active",
+                    "stale",
+                    "retired",
+                    "superseded",
+                    "demoted"
+                  ]
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "supersedes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "supersededBy": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
             "provenance": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["repo", "sourceCommand", "runId", "sourcePath", "eventIds", "evidenceIds", "fingerprints", "relatedRecordIds"],
+              "required": [
+                "repo",
+                "sourceCommand",
+                "runId",
+                "sourcePath",
+                "eventIds",
+                "evidenceIds",
+                "fingerprints",
+                "relatedRecordIds"
+              ],
               "properties": {
-                "repo": { "type": "string" },
-                "sourceCommand": { "type": ["string", "null"] },
-                "runId": { "type": ["string", "null"] },
-                "sourcePath": { "type": "string" },
-                "eventIds": { "type": "array", "items": { "type": "string" } },
-                "evidenceIds": { "type": "array", "items": { "type": "string" } },
-                "fingerprints": { "type": "array", "items": { "type": "string" } },
-                "relatedRecordIds": { "type": "array", "items": { "type": "string" } }
+                "repo": {
+                  "type": "string"
+                },
+                "sourceCommand": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "runId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "sourcePath": {
+                  "type": "string"
+                },
+                "eventIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "fingerprints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "relatedRecordIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
               }
             },
             "metadata": {
@@ -182,50 +1029,204 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "command", "id", "provenance"],
+      "required": [
+        "schemaVersion",
+        "command",
+        "id",
+        "provenance"
+      ],
       "properties": {
-        "schemaVersion": { "const": "1.0" },
-        "command": { "const": "knowledge-provenance" },
-        "id": { "type": "string" },
+        "schemaVersion": {
+          "const": "1.0"
+        },
+        "command": {
+          "const": "knowledge-provenance"
+        },
+        "id": {
+          "type": "string"
+        },
         "provenance": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["record", "evidence", "relatedRecords"],
+          "required": [
+            "record",
+            "evidence",
+            "relatedRecords"
+          ],
           "properties": {
             "record": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["id", "type", "createdAt", "repo", "source", "confidence", "status", "provenance", "metadata"],
+              "required": [
+                "id",
+                "type",
+                "createdAt",
+                "repo",
+                "source",
+                "confidence",
+                "status",
+                "lifecycle",
+                "provenance",
+                "metadata"
+              ],
               "properties": {
-                "id": { "type": "string" },
-                "type": { "enum": ["evidence", "candidate", "promoted", "superseded"] },
-                "createdAt": { "type": "string" },
-                "repo": { "type": "string" },
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "evidence",
+                    "candidate",
+                    "promoted",
+                    "superseded"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "repo": {
+                  "type": "string"
+                },
                 "source": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["kind", "path", "command"],
+                  "required": [
+                    "kind",
+                    "path",
+                    "command"
+                  ],
                   "properties": {
-                    "kind": { "enum": ["memory-event", "memory-candidate", "memory-knowledge"] },
-                    "path": { "type": "string" },
-                    "command": { "type": ["string", "null"] }
+                    "kind": {
+                      "enum": [
+                        "memory-event",
+                        "memory-candidate",
+                        "memory-knowledge",
+                        "global-pattern-memory"
+                      ]
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "command": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
                   }
                 },
-                "confidence": { "type": ["number", "null"] },
-                "status": { "enum": ["observed", "active", "stale", "retired", "superseded"] },
+                "confidence": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "observed",
+                    "active",
+                    "stale",
+                    "retired",
+                    "superseded"
+                  ]
+                },
+                "lifecycle": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state",
+                    "warnings",
+                    "supersedes",
+                    "supersededBy"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "observed",
+                        "candidate",
+                        "active",
+                        "stale",
+                        "retired",
+                        "superseded",
+                        "demoted"
+                      ]
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersedes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersededBy": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
                 "provenance": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["repo", "sourceCommand", "runId", "sourcePath", "eventIds", "evidenceIds", "fingerprints", "relatedRecordIds"],
+                  "required": [
+                    "repo",
+                    "sourceCommand",
+                    "runId",
+                    "sourcePath",
+                    "eventIds",
+                    "evidenceIds",
+                    "fingerprints",
+                    "relatedRecordIds"
+                  ],
                   "properties": {
-                    "repo": { "type": "string" },
-                    "sourceCommand": { "type": ["string", "null"] },
-                    "runId": { "type": ["string", "null"] },
-                    "sourcePath": { "type": "string" },
-                    "eventIds": { "type": "array", "items": { "type": "string" } },
-                    "evidenceIds": { "type": "array", "items": { "type": "string" } },
-                    "fingerprints": { "type": "array", "items": { "type": "string" } },
-                    "relatedRecordIds": { "type": "array", "items": { "type": "string" } }
+                    "repo": {
+                      "type": "string"
+                    },
+                    "sourceCommand": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "runId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sourcePath": {
+                      "type": "string"
+                    },
+                    "eventIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "fingerprints": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "relatedRecordIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
                   }
                 },
                 "metadata": {
@@ -234,8 +1235,955 @@
                 }
               }
             },
-            "evidence": { "type": "array", "items": { "type": "object", "minProperties": 1, "additionalProperties": true } },
-            "relatedRecords": { "type": "array", "items": { "type": "object", "minProperties": 1, "additionalProperties": true } }
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "type",
+                  "createdAt",
+                  "repo",
+                  "source",
+                  "confidence",
+                  "status",
+                  "lifecycle",
+                  "provenance",
+                  "metadata"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "evidence",
+                      "candidate",
+                      "promoted",
+                      "superseded"
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "kind",
+                      "path",
+                      "command"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "memory-event",
+                          "memory-candidate",
+                          "memory-knowledge",
+                          "global-pattern-memory"
+                        ]
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "command": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "confidence": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "enum": [
+                      "observed",
+                      "active",
+                      "stale",
+                      "retired",
+                      "superseded"
+                    ]
+                  },
+                  "lifecycle": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "state",
+                      "warnings",
+                      "supersedes",
+                      "supersededBy"
+                    ],
+                    "properties": {
+                      "state": {
+                        "enum": [
+                          "observed",
+                          "candidate",
+                          "active",
+                          "stale",
+                          "retired",
+                          "superseded",
+                          "demoted"
+                        ]
+                      },
+                      "warnings": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersedes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersededBy": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "repo",
+                      "sourceCommand",
+                      "runId",
+                      "sourcePath",
+                      "eventIds",
+                      "evidenceIds",
+                      "fingerprints",
+                      "relatedRecordIds"
+                    ],
+                    "properties": {
+                      "repo": {
+                        "type": "string"
+                      },
+                      "sourceCommand": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "runId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "sourcePath": {
+                        "type": "string"
+                      },
+                      "eventIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "evidenceIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fingerprints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "relatedRecordIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            },
+            "relatedRecords": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "type",
+                  "createdAt",
+                  "repo",
+                  "source",
+                  "confidence",
+                  "status",
+                  "lifecycle",
+                  "provenance",
+                  "metadata"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "evidence",
+                      "candidate",
+                      "promoted",
+                      "superseded"
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "kind",
+                      "path",
+                      "command"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "memory-event",
+                          "memory-candidate",
+                          "memory-knowledge",
+                          "global-pattern-memory"
+                        ]
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "command": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "confidence": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "enum": [
+                      "observed",
+                      "active",
+                      "stale",
+                      "retired",
+                      "superseded"
+                    ]
+                  },
+                  "lifecycle": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "state",
+                      "warnings",
+                      "supersedes",
+                      "supersededBy"
+                    ],
+                    "properties": {
+                      "state": {
+                        "enum": [
+                          "observed",
+                          "candidate",
+                          "active",
+                          "stale",
+                          "retired",
+                          "superseded",
+                          "demoted"
+                        ]
+                      },
+                      "warnings": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersedes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersededBy": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "repo",
+                      "sourceCommand",
+                      "runId",
+                      "sourcePath",
+                      "eventIds",
+                      "evidenceIds",
+                      "fingerprints",
+                      "relatedRecordIds"
+                    ],
+                    "properties": {
+                      "repo": {
+                        "type": "string"
+                      },
+                      "sourceCommand": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "runId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "sourcePath": {
+                        "type": "string"
+                      },
+                      "eventIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "evidenceIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fingerprints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "relatedRecordIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "command",
+        "id",
+        "supersession"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0"
+        },
+        "command": {
+          "const": "knowledge-supersession"
+        },
+        "id": {
+          "type": "string"
+        },
+        "supersession": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "record",
+            "supersedes",
+            "supersededBy"
+          ],
+          "properties": {
+            "record": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "type",
+                "createdAt",
+                "repo",
+                "source",
+                "confidence",
+                "status",
+                "lifecycle",
+                "provenance",
+                "metadata"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "evidence",
+                    "candidate",
+                    "promoted",
+                    "superseded"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "repo": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "path",
+                    "command"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "memory-event",
+                        "memory-candidate",
+                        "memory-knowledge",
+                        "global-pattern-memory"
+                      ]
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "command": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "confidence": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "observed",
+                    "active",
+                    "stale",
+                    "retired",
+                    "superseded"
+                  ]
+                },
+                "lifecycle": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state",
+                    "warnings",
+                    "supersedes",
+                    "supersededBy"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "observed",
+                        "candidate",
+                        "active",
+                        "stale",
+                        "retired",
+                        "superseded",
+                        "demoted"
+                      ]
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersedes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "supersededBy": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "provenance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repo",
+                    "sourceCommand",
+                    "runId",
+                    "sourcePath",
+                    "eventIds",
+                    "evidenceIds",
+                    "fingerprints",
+                    "relatedRecordIds"
+                  ],
+                  "properties": {
+                    "repo": {
+                      "type": "string"
+                    },
+                    "sourceCommand": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "runId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sourcePath": {
+                      "type": "string"
+                    },
+                    "eventIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "fingerprints": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "relatedRecordIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "metadata": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            },
+            "supersedes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "type",
+                  "createdAt",
+                  "repo",
+                  "source",
+                  "confidence",
+                  "status",
+                  "lifecycle",
+                  "provenance",
+                  "metadata"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "evidence",
+                      "candidate",
+                      "promoted",
+                      "superseded"
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "kind",
+                      "path",
+                      "command"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "memory-event",
+                          "memory-candidate",
+                          "memory-knowledge",
+                          "global-pattern-memory"
+                        ]
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "command": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "confidence": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "enum": [
+                      "observed",
+                      "active",
+                      "stale",
+                      "retired",
+                      "superseded"
+                    ]
+                  },
+                  "lifecycle": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "state",
+                      "warnings",
+                      "supersedes",
+                      "supersededBy"
+                    ],
+                    "properties": {
+                      "state": {
+                        "enum": [
+                          "observed",
+                          "candidate",
+                          "active",
+                          "stale",
+                          "retired",
+                          "superseded",
+                          "demoted"
+                        ]
+                      },
+                      "warnings": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersedes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersededBy": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "repo",
+                      "sourceCommand",
+                      "runId",
+                      "sourcePath",
+                      "eventIds",
+                      "evidenceIds",
+                      "fingerprints",
+                      "relatedRecordIds"
+                    ],
+                    "properties": {
+                      "repo": {
+                        "type": "string"
+                      },
+                      "sourceCommand": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "runId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "sourcePath": {
+                        "type": "string"
+                      },
+                      "eventIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "evidenceIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fingerprints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "relatedRecordIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            },
+            "supersededBy": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "type",
+                  "createdAt",
+                  "repo",
+                  "source",
+                  "confidence",
+                  "status",
+                  "lifecycle",
+                  "provenance",
+                  "metadata"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "evidence",
+                      "candidate",
+                      "promoted",
+                      "superseded"
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "kind",
+                      "path",
+                      "command"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "memory-event",
+                          "memory-candidate",
+                          "memory-knowledge",
+                          "global-pattern-memory"
+                        ]
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "command": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "confidence": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "enum": [
+                      "observed",
+                      "active",
+                      "stale",
+                      "retired",
+                      "superseded"
+                    ]
+                  },
+                  "lifecycle": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "state",
+                      "warnings",
+                      "supersedes",
+                      "supersededBy"
+                    ],
+                    "properties": {
+                      "state": {
+                        "enum": [
+                          "observed",
+                          "candidate",
+                          "active",
+                          "stale",
+                          "retired",
+                          "superseded",
+                          "demoted"
+                        ]
+                      },
+                      "warnings": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersedes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "supersededBy": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "repo",
+                      "sourceCommand",
+                      "runId",
+                      "sourcePath",
+                      "eventIds",
+                      "evidenceIds",
+                      "fingerprints",
+                      "relatedRecordIds"
+                    ],
+                    "properties": {
+                      "repo": {
+                        "type": "string"
+                      },
+                      "sourceCommand": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "runId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "sourcePath": {
+                        "type": "string"
+                      },
+                      "eventIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "evidenceIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fingerprints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "relatedRecordIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
           }
         }
       }

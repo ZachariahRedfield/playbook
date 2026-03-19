@@ -19,6 +19,15 @@
       "stale": 1,
       "retired": 0,
       "superseded": 1
+    },
+    "byLifecycle": {
+      "observed": 2,
+      "candidate": 0,
+      "active": 0,
+      "stale": 1,
+      "retired": 0,
+      "superseded": 1,
+      "demoted": 0
     }
   },
   "knowledge": [
@@ -70,6 +79,14 @@
           "priorCandidateIds": [],
           "supersedesCandidateIds": []
         }
+      },
+      "lifecycle": {
+        "state": "stale",
+        "warnings": [
+          "Candidate is stale and should be revalidated before reuse."
+        ],
+        "supersedes": [],
+        "supersededBy": []
       }
     },
     {
@@ -124,6 +141,16 @@
         ],
         "retiredAt": null,
         "retirementReason": null
+      },
+      "lifecycle": {
+        "state": "superseded",
+        "warnings": [
+          "Knowledge has been superseded by a newer promoted record."
+        ],
+        "supersedes": [],
+        "supersededBy": [
+          "pattern-live"
+        ]
       }
     },
     {
@@ -179,6 +206,12 @@
             "reference": "verify-1"
           }
         ]
+      },
+      "lifecycle": {
+        "state": "observed",
+        "warnings": [],
+        "supersedes": [],
+        "supersededBy": []
       }
     },
     {
@@ -234,6 +267,12 @@
             "reference": "plan-1"
           }
         ]
+      },
+      "lifecycle": {
+        "state": "observed",
+        "warnings": [],
+        "supersedes": [],
+        "supersededBy": []
       }
     }
   ]

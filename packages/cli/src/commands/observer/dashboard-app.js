@@ -341,6 +341,8 @@ const renderGlobalPatternList = (payload) => {
   globalPatternListPanelEl.innerHTML = '<ul>' + patterns.map((pattern) =>
     '<li>' + renderGlobalPatternButton(pattern.id, pattern.id + ' • ' + (pattern.title || pattern.id)) +
     '<div class="meta">candidate: ' + escapeHtml(pattern.candidate_id || 'n/a') +
+    ' • lifecycle: ' + escapeHtml(pattern.lifecycle_state || 'unknown') +
+    ' • staleness: ' + escapeHtml(pattern.staleness || 'unknown') +
     ' • linked stories: ' + escapeHtml(String(pattern.linked_story_count || 0)) +
     ' • repos: ' + escapeHtml(toArray(pattern.linked_repo_ids).join(', ') || 'none') + '</div></li>'
   ).join('') + '</ul>';
@@ -358,11 +360,15 @@ const renderGlobalPatternDetail = (payload) => {
   globalPatternDetailPanelEl.innerHTML =
     '<div class="summary-strip">' +
     renderSummaryMetric('Candidate', summary.candidate_id || 'n/a') +
+    renderSummaryMetric('Lifecycle', summary.lifecycle_state || 'unknown') +
+    renderSummaryMetric('Staleness', summary.staleness || 'unknown') +
     renderSummaryMetric('Linked stories', String(summary.linked_story_count || 0)) +
     renderSummaryMetric('Linked repos', String(toArray(summary.linked_repo_ids).length)) +
     '</div>' +
     '<div class="narrative-primary"><strong>' + escapeHtml(summary.title || summary.id || 'unknown') + '</strong></div>' +
+    '<div><strong>Warnings</strong><ul>' + (toArray(summary.warnings).length ? toArray(summary.warnings).map((warning) => '<li>' + escapeHtml(warning) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '<div><strong>Source refs</strong><ul>' + (toArray(summary.source_refs).length ? toArray(summary.source_refs).map((ref) => '<li><code>' + escapeHtml(ref) + '</code></li>').join('') : '<li>none</li>') + '</ul></div>' +
+    '<div><strong>Supersession</strong><ul><li>superseded by: ' + escapeHtml((detail.supersession && detail.supersession.superseded_by) || 'none') + '</li></ul></div>' +
     '<details class="narrative-secondary"><summary>Linked repo stories</summary><ul>' +
     (linkedStories.length ? linkedStories.map((story) => '<li>' + renderLinkButton(story.repo_id, story.story_id, story.repo_id + ' • ' + story.story_id + ' • ' + story.title) +
       '<div class="meta">status: ' + escapeHtml(story.status || 'unknown') + ' • route: ' + escapeHtml(story.suggested_route || 'n/a') +
@@ -391,6 +397,7 @@ const renderStoryDetail = (detail) => {
     '<div><strong>Acceptance criteria</strong><ul>' + ((story.acceptance_criteria || []).length ? story.acceptance_criteria.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '<div><strong>Dependencies</strong><ul>' + ((story.dependencies || []).length ? story.dependencies.map((item) => '<li>' + escapeHtml(item) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '<div><strong>Current status linkage:</strong> ' + escapeHtml((detail.linked_status && detail.linked_status.readiness_state) || 'unknown') + ' / ' + escapeHtml((detail.linked_status && detail.linked_status.lifecycle_stage) || 'unknown') + '</div>' +
+    '<div><strong>Lifecycle warnings</strong><ul>' + (toArray(detail.lifecycle_warnings).length ? toArray(detail.lifecycle_warnings).map((warning) => '<li>' + escapeHtml(warning) + '</li>').join('') : '<li>none</li>') + '</ul></div>' +
     '<details class="narrative-secondary"><summary>Evidence / route</summary><div><strong>Evidence</strong><ul>' + (evidence.length ? evidence.map((item) => '<li>' + escapeHtml(item.label + ' → ' + item.artifact_path) + '</li>').join('') : '<li>none</li>') + '</ul></div><div><strong>Suggested route</strong><ul><li>' + escapeHtml((detail.linked_route && detail.linked_route.label) || story.suggested_route || 'none') + '</li></ul></div><div><strong>Join-linked provenance</strong>' + renderJoinList(Array.isArray(detail.related) ? detail.related : []) + '</div></details>' +
     '<details class="raw-truth-note"><summary>Deep/raw story artifact</summary><div><code>' + escapeHtml(detail.raw_artifact_path || '.playbook/stories.json') + '</code></div>' + format(detail) + '</details>';
 };

@@ -60,8 +60,10 @@ declare module "@zachariahredfield/playbook-engine" {
   export const knowledgeList: (...args: any[]) => any;
   export const knowledgeQuery: (...args: any[]) => any;
   export const knowledgeInspect: (...args: any[]) => any;
+  export const knowledgeCompareQuery: (...args: any[]) => any;
   export const knowledgeTimeline: (...args: any[]) => any;
   export const knowledgeProvenance: (...args: any[]) => any;
+  export const knowledgeSupersession: (...args: any[]) => any;
   export const knowledgeStale: (...args: any[]) => any;
   export const generateRepositoryIndex: (...args: any[]) => any;
   export const generateRepositoryGraph: (...args: any[]) => any;
@@ -487,6 +489,7 @@ declare module "@zachariahredfield/playbook-engine" {
     why_matched: string;
     provenance_refs: string[];
     freshness: { status: string; promoted_at: string | null };
+    lifecycle: { state: string; warnings: string[]; superseded_by: string[] };
   };
   export type StoryPatternContext = { patterns: StoryPatternContextMatch[] };
   export const buildStoryPatternContext: (

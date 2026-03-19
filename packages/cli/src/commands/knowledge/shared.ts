@@ -5,6 +5,7 @@ type KnowledgeStatus = NonNullable<KnowledgeQueryOptions['status']>;
 
 const knowledgeTypes: readonly KnowledgeType[] = ['evidence', 'candidate', 'promoted', 'superseded'] as const;
 const knowledgeStatuses: readonly KnowledgeStatus[] = ['observed', 'active', 'stale', 'retired', 'superseded'] as const;
+const knowledgeLifecycles = ['observed', 'candidate', 'active', 'stale', 'retired', 'superseded', 'demoted'] as const;
 
 export type KnowledgeCommandOptions = {
   format: 'text' | 'json';
@@ -20,14 +21,17 @@ Subcommands:
   list                            List evidence, candidate, promoted, and superseded knowledge records
   query                           Filter knowledge records
   inspect <id>                    Inspect one knowledge record by id
+  compare <left-id> <right-id>    Compare two knowledge records
   timeline                        Show the knowledge timeline
   provenance <id>                 Show provenance and related evidence for one record
+  supersession <id>               Show supersession links for one record
   stale                           Show stale, retired, and superseded records
   portability                     Inspect cross-repo portability scoring evidence
 
 Options:
   --type <type>                Filter by type (evidence|candidate|promoted|superseded)
   --status <status>            Filter by status (observed|active|stale|retired|superseded)
+  --lifecycle <state>          Filter by lifecycle (observed|candidate|active|stale|retired|superseded|demoted)
   --module <module>            Filter by module
   --rule <rule-id>             Filter by rule id
   --text <query>               Full-text filter across serialized records
@@ -115,6 +119,14 @@ export const parseStatusOption = (raw: string | null): KnowledgeStatus | undefin
   throw new Error(`playbook knowledge: invalid --status value "${raw}"`);
 };
 
+export const parseLifecycleOption = (raw: string | null): KnowledgeQueryOptions['lifecycle'] | undefined => {
+  if (raw === null) return undefined;
+  if ((knowledgeLifecycles as readonly string[]).includes(raw)) {
+    return raw as KnowledgeQueryOptions['lifecycle'];
+  }
+  throw new Error(`playbook knowledge: invalid --lifecycle value "${raw}"`);
+};
+
 export const resolveSubcommandArgument = (args: string[]): string | null => {
   const positional = args.filter((arg) => !arg.startsWith('-'));
   if (positional.length < 2) {
@@ -126,6 +138,7 @@ export const resolveSubcommandArgument = (args: string[]): string | null => {
 export const parseKnowledgeFilters = (args: string[]): KnowledgeQueryOptions => ({
   type: parseTypeOption(readOptionValue(args, '--type')),
   status: parseStatusOption(readOptionValue(args, '--status')),
+  lifecycle: parseLifecycleOption(readOptionValue(args, '--lifecycle')),
   module: readOptionValue(args, '--module') ?? undefined,
   ruleId: readOptionValue(args, '--rule') ?? undefined,
   text: readOptionValue(args, '--text') ?? undefined,

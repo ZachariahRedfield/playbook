@@ -1,15 +1,19 @@
 import {
   buildKnowledgeSummary,
+  compareKnowledge,
   getKnowledgeById,
   getKnowledgeProvenance,
+  getKnowledgeSupersession,
   getKnowledgeTimeline,
   getStaleKnowledge,
   listKnowledge,
   queryKnowledge,
+  type KnowledgeCompareResult,
   type KnowledgeProvenanceResult,
   type KnowledgeQueryOptions,
   type KnowledgeRecord,
   type KnowledgeSummary,
+  type KnowledgeSupersessionResult,
   type KnowledgeTimelineOptions
 } from '@zachariahredfield/playbook-core';
 
@@ -44,6 +48,8 @@ export type KnowledgeInspectResult = ReturnType<typeof knowledgeInspect>;
 export type KnowledgeTimelineResult = ReturnType<typeof knowledgeTimeline>;
 export type KnowledgeProvenanceQueryResult = ReturnType<typeof knowledgeProvenance>;
 export type KnowledgeStaleResult = ReturnType<typeof knowledgeStale>;
+export type KnowledgeCompareQueryResult = ReturnType<typeof knowledgeCompareQuery>;
+export type KnowledgeSupersessionQueryResult = ReturnType<typeof knowledgeSupersession>;
 
 export const knowledgeList = (projectRoot: string, options: KnowledgeQueryOptions = {}) =>
   createListPayload('knowledge-list', listKnowledge(projectRoot, options), filterPayload(options));
@@ -91,4 +97,42 @@ export const knowledgeStale = (
   options: Pick<KnowledgeQueryOptions, 'limit' | 'order' | 'staleDays'> = {}
 ) => createListPayload('knowledge-stale', getStaleKnowledge(projectRoot, options), filterPayload(options));
 
-export type { KnowledgeRecord, KnowledgeQueryOptions, KnowledgeTimelineOptions, KnowledgeSummary, KnowledgeProvenanceResult };
+export const knowledgeCompareQuery = (
+  projectRoot: string,
+  leftId: string,
+  rightId: string,
+  options: Pick<KnowledgeQueryOptions, 'staleDays'> = {}
+) => {
+  const comparison = compareKnowledge(projectRoot, leftId, rightId, options);
+  if (!comparison) {
+    throw new Error(`playbook knowledge compare: record not found: ${leftId} or ${rightId}`);
+  }
+  return {
+    schemaVersion: '1.0' as const,
+    command: 'knowledge-compare' as const,
+    leftId,
+    rightId,
+    comparison
+  };
+};
+
+export const knowledgeSupersession = (
+  projectRoot: string,
+  id: string,
+  options: Pick<KnowledgeQueryOptions, 'staleDays'> = {}
+) => {
+  const supersession = getKnowledgeSupersession(projectRoot, id, options);
+  if (!supersession) {
+    throw new Error(`playbook knowledge supersession: record not found: ${id}`);
+  }
+  return {
+    schemaVersion: '1.0' as const,
+    command: 'knowledge-supersession' as const,
+    id,
+    supersession
+  };
+};
+
+export type {
+  KnowledgeRecord, KnowledgeQueryOptions, KnowledgeTimelineOptions, KnowledgeSummary, KnowledgeProvenanceResult, KnowledgeCompareResult, KnowledgeSupersessionResult
+};

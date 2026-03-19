@@ -15,6 +15,11 @@ export type StoryPatternContextMatch = {
     status: string;
     promoted_at: string | null;
   };
+  lifecycle: {
+    state: string;
+    warnings: string[];
+    superseded_by: string[];
+  };
 };
 
 export type StoryPatternContext = {
@@ -174,6 +179,17 @@ export const buildStoryPatternContext = (
           freshness: {
             status: pattern.status,
             promoted_at: pattern.promotedAt ?? null,
+          },
+          lifecycle: {
+            state: pattern.status,
+            warnings: pattern.status === 'active'
+              ? []
+              : [`Pattern ${pattern.id} is ${pattern.status}; inspect lifecycle metadata before reusing it.`],
+            superseded_by: Array.isArray((pattern as PatternRecord & { superseded_by?: unknown }).superseded_by)
+              ? ((pattern as PatternRecord & { superseded_by?: unknown }).superseded_by as string[])
+              : typeof (pattern as PatternRecord & { superseded_by?: unknown }).superseded_by === 'string'
+                ? [(pattern as PatternRecord & { superseded_by?: unknown }).superseded_by as string]
+                : []
           },
           _rank: reason.rank,
         },
