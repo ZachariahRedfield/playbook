@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe('promotion materialization', () => {
-  it('supports repo-local story candidate to story promotion with provenance and only target artifact mutation', () => {
+  it('returns promoted story results with provenance and audited fingerprint metadata for repo-local candidates', () => {
     const repo = mkd('playbook-promotion-repo-');
     writeJson(repo, '.playbook/story-candidates.json', {
       schemaVersion: '1.0', kind: 'story-candidates', generatedAt: '2026-03-19T00:00:00.000Z', repo: 'repo-a', readOnly: true,
@@ -28,13 +28,17 @@ describe('promotion materialization', () => {
       candidates: [{ id: 'story-candidate-1', repo: 'repo-a', title: 'Candidate', type: 'feature', source: 'manual', severity: 'medium', priority: 'high', confidence: 'high', status: 'proposed', evidence: ['e1'], rationale: 'r', acceptance_criteria: [], dependencies: [], execution_lane: null, suggested_route: null, candidate_fingerprint: 'fingerprint-1', candidate_id: 'story-candidate-1', grouping_keys: ['g'], source_signals: ['s'], source_artifacts: ['.playbook/story-candidates.json'], promotion_hint: 'x', explanation: [] }]
     });
     const prepared = materializeStoryFromSource({ sourceRef: 'repo/repo-a/story-candidates/story-candidate-1', targetRepoId: 'repo-a', targetRepoRoot: repo, playbookHome: repo, promotedAt: '2026-03-19T00:00:00.000Z' });
+    expect(prepared.outcome).toBe('promoted');
+    expect(prepared.sourceFingerprint).toBe('fingerprint-1');
+    expect(prepared.beforeFingerprint).toBeNull();
+    expect(prepared.afterFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(prepared.record.provenance?.candidate_fingerprint).toBe('fingerprint-1');
     expect(prepared.committedRelativePath).toBe('.playbook/stories.json');
     expect(fs.existsSync(path.join(repo, '.playbook/stories.json'))).toBe(false);
     expect(fs.existsSync(path.join(repo, 'patterns.json'))).toBe(false);
   });
 
-  it('supports global pattern candidate to pattern promotion with provenance and idempotent repetition', () => {
+  it('returns promoted then noop pattern results with deterministic fingerprint metadata for repeat promotion', () => {
     const home = mkd('playbook-promotion-home-');
     writeJson(home, '.playbook/pattern-candidates.json', {
       schemaVersion: '1.0', kind: 'pattern-candidates', generatedAt: '2026-03-19T00:00:00.000Z',
@@ -54,13 +58,19 @@ describe('promotion materialization', () => {
     const first = materializePatternFromCandidate({ sourceRef: 'global/pattern-candidates/pattern-candidate-1', playbookHome: home, targetPatternId: 'pattern.layering', promotedAt: '2026-03-19T00:00:00.000Z' });
     writeJson(home, 'patterns.json', first.artifact);
     const second = materializePatternFromCandidate({ sourceRef: 'global/pattern-candidates/pattern-candidate-1', playbookHome: home, targetPatternId: 'pattern.layering', promotedAt: '2026-03-19T00:00:00.000Z' });
+    expect(first.outcome).toBe('promoted');
+    expect(first.beforeFingerprint).toBeNull();
+    expect(first.afterFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(first.record.provenance.candidate_id).toBe('pattern-candidate-1');
     expect(first.record.storySeed.title).toBe('Seed layering story');
-    expect(second.noop).toBe(true);
+    expect(second.outcome).toBe('noop');
+    expect(second.sourceFingerprint).toBe(first.sourceFingerprint);
+    expect(second.beforeFingerprint).toBe(first.afterFingerprint);
+    expect(second.afterFingerprint).toBe(first.afterFingerprint);
     expect(readCanonicalPatternsArtifact(home).patterns).toHaveLength(1);
   });
 
-  it('supports global pattern candidate to repo-local story promotion', () => {
+  it('returns promoted story results for global pattern candidate to repo-local story promotion', () => {
     const home = mkd('playbook-promotion-home-');
     const repo = mkd('repo-b-');
     writeJson(home, '.playbook/pattern-candidates.json', {
@@ -68,13 +78,18 @@ describe('promotion materialization', () => {
       candidates: [{ id: 'pattern-candidate-2', pattern_family: 'governance', title: 'Governance', description: 'desc', source_artifact: '.playbook/pattern-candidates.json', signals: ['signal'], confidence: 0.7, evidence_refs: ['ref'], status: 'observed' }]
     });
     const prepared = materializeStoryFromSource({ sourceRef: 'global/pattern-candidates/pattern-candidate-2', targetRepoId: 'repo-b', targetStoryId: 'story.governance', targetRepoRoot: repo, playbookHome: home, promotedAt: '2026-03-19T00:00:00.000Z' });
+    expect(prepared.outcome).toBe('promoted');
     expect(prepared.record.id).toBe('story.governance');
     expect(prepared.record.provenance?.promoted_from).toBe('pattern-candidate');
+    expect(prepared.record.provenance?.candidate_id).toBe('pattern-candidate-2');
+    expect(prepared.sourceFingerprint).toBe(prepared.record.provenance?.candidate_fingerprint);
+    expect(prepared.beforeFingerprint).toBeNull();
+    expect(prepared.afterFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(fs.existsSync(path.join(repo, '.playbook/stories.json'))).toBe(false);
     expect(fs.existsSync(path.join(home, 'patterns.json'))).toBe(false);
   });
 
-  it('supports promoted global pattern to repo-local story seeding using storySeed metadata and pattern provenance', () => {
+  it('returns promoted story results for promoted global pattern seeding using storySeed metadata and pattern provenance', () => {
     const home = mkd('playbook-promotion-home-');
     const repo = mkd('repo-pattern-seed-');
     writeJson(home, 'patterns.json', {
@@ -110,17 +125,20 @@ describe('promotion materialization', () => {
       playbookHome: home,
       promotedAt: '2026-03-19T00:00:00.000Z'
     });
+    expect(prepared.outcome).toBe('promoted');
     expect(prepared.record.title).toBe('Adopt layering in repo-pattern-seed');
     expect(prepared.record.rationale).toBe('Use bounded layering adoption as a repo-local story.');
     expect(prepared.record.acceptance_criteria).toEqual(['Keep execution story-driven', 'Verify layering evidence']);
     expect(prepared.record.provenance?.promoted_from).toBe('pattern');
     expect(prepared.record.provenance?.pattern_id).toBe('pattern.layering');
     expect(prepared.record.provenance?.source_ref).toBe('global/patterns/pattern.layering');
+    expect(prepared.sourceFingerprint).toBe(prepared.record.provenance?.pattern_story_seed_fingerprint);
+    expect(prepared.afterFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(prepared.record.evidence).toContain('patterns.json');
     expect(fs.existsSync(path.join(repo, '.playbook/stories.json'))).toBe(false);
   });
 
-  it('fails clearly on conflicting repeated promotion', () => {
+  it('returns governed conflict outcomes for conflicting repeated promotion instead of throwing', () => {
     const home = mkd('playbook-promotion-home-');
     writeJson(home, '.playbook/pattern-candidates.json', {
       schemaVersion: '1.0', kind: 'pattern-candidates', generatedAt: '2026-03-19T00:00:00.000Z',
@@ -132,6 +150,13 @@ describe('promotion materialization', () => {
       schemaVersion: '1.0', kind: 'pattern-candidates', generatedAt: '2026-03-19T00:00:00.000Z',
       candidates: [{ id: 'pattern-candidate-3', pattern_family: 'layering', title: 'Layering B', description: 'different', source_artifact: '.playbook/pattern-candidates.json', signals: ['b'], confidence: 0.8, evidence_refs: ['ref'], status: 'observed' }]
     });
-    expect(() => materializePatternFromCandidate({ sourceRef: 'global/pattern-candidates/pattern-candidate-3', playbookHome: home, targetPatternId: 'pattern.layering', promotedAt: '2026-03-19T00:00:00.000Z' })).toThrow(/conflict for pattern/);
+    const conflict = materializePatternFromCandidate({ sourceRef: 'global/pattern-candidates/pattern-candidate-3', playbookHome: home, targetPatternId: 'pattern.layering', promotedAt: '2026-03-19T00:00:00.000Z' });
+    expect(conflict.outcome).toBe('conflict');
+    expect(conflict.sourceFingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect(conflict.beforeFingerprint).toBe(first.afterFingerprint);
+    expect(conflict.afterFingerprint).toBe(first.afterFingerprint);
+    expect(conflict.conflictReason).toMatch(/conflict for pattern/);
+    expect(conflict.record.provenance.candidate_id).toBe('pattern-candidate-3');
+    expect(readCanonicalPatternsArtifact(home).patterns[0]?.title).toBe('Layering A');
   });
 });
