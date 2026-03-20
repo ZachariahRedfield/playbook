@@ -135,7 +135,7 @@
           "command": "memory-replay"
         },
         "confidence": 0.8,
-        "status": "active",
+        "status": "stale",
         "provenance": {
           "repo": "playbook-contract-fixture",
           "sourceCommand": "memory-replay",
@@ -174,8 +174,10 @@
           }
         },
         "lifecycle": {
-          "state": "candidate",
-          "warnings": [],
+          "state": "stale",
+          "warnings": [
+            "Candidate is stale and should be revalidated before reuse."
+          ],
           "supersedes": [],
           "supersededBy": []
         }

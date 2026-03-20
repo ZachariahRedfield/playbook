@@ -5,93 +5,31 @@
     "order": "desc"
   },
   "summary": {
-    "total": 7,
+    "total": 6,
     "byType": {
-      "evidence": 3,
+      "evidence": 2,
       "candidate": 2,
       "promoted": 1,
       "superseded": 1
     },
     "byStatus": {
-      "observed": 3,
-      "active": 2,
-      "stale": 1,
+      "observed": 2,
+      "active": 1,
+      "stale": 2,
       "retired": 0,
       "superseded": 1
     },
     "byLifecycle": {
-      "observed": 3,
-      "candidate": 1,
+      "observed": 2,
+      "candidate": 0,
       "active": 1,
-      "stale": 1,
+      "stale": 2,
       "retired": 0,
       "superseded": 1,
       "demoted": 0
     }
   },
   "knowledge": [
-    {
-      "id": "failure_ingest-<RUNTIME_EVENT_ID>",
-      "type": "evidence",
-      "createdAt": "<TIMESTAMP>",
-      "repo": "playbook-contract-fixture",
-      "source": {
-        "kind": "memory-event",
-        "path": ".playbook/memory/events/failure_ingest-<RUNTIME_EVENT_ID>.json",
-        "command": "failure_ingest"
-      },
-      "confidence": null,
-      "status": "observed",
-      "provenance": {
-        "repo": "playbook-contract-fixture",
-        "sourceCommand": "failure_ingest",
-        "runId": null,
-        "sourcePath": ".playbook/memory/events/failure_ingest-<RUNTIME_EVENT_ID>.json",
-        "eventIds": [
-          "failure_ingest-<RUNTIME_EVENT_ID>"
-        ],
-        "evidenceIds": [
-          "failure_ingest-<RUNTIME_EVENT_ID>"
-        ],
-        "fingerprints": [
-          "8dd82420a156a02ff342dfec2d2ba19c"
-        ],
-        "relatedRecordIds": []
-      },
-      "metadata": {
-        "kind": "failure_ingest",
-        "eventFingerprint": "8dd82420a156a02ff342dfec2d2ba19c",
-        "repoRevision": "unknown",
-        "subjectModules": [],
-        "ruleIds": [],
-        "riskSummary": {
-          "level": "high",
-          "signals": [
-            "analyze-pr-bootstrap-failure"
-          ]
-        },
-        "outcome": {
-          "status": "failure",
-          "summary": "playbook analyze-pr: git diff is unavailable because this directory is not a git repository."
-        },
-        "salienceInputs": {
-          "baseRef": null,
-          "command": "analyze-pr"
-        },
-        "sources": [
-          {
-            "reference": "analyze-pr",
-            "type": "command"
-          }
-        ]
-      },
-      "lifecycle": {
-        "state": "observed",
-        "warnings": [],
-        "supersedes": [],
-        "supersededBy": []
-      }
-    },
     {
       "id": "pattern-live",
       "type": "promoted",
@@ -160,7 +98,7 @@
         "command": "memory-replay"
       },
       "confidence": 0.8,
-      "status": "active",
+      "status": "stale",
       "provenance": {
         "repo": "playbook-contract-fixture",
         "sourceCommand": "memory-replay",
@@ -199,8 +137,10 @@
         }
       },
       "lifecycle": {
-        "state": "candidate",
-        "warnings": [],
+        "state": "stale",
+        "warnings": [
+          "Candidate is stale and should be revalidated before reuse."
+        ],
         "supersedes": [],
         "supersededBy": []
       }

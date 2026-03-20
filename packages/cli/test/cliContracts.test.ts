@@ -8,7 +8,7 @@ const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
 const cliEntry = path.join(repoRoot, 'packages', 'cli', 'dist', 'main.js');
 const committedSnapshotDir = path.join(repoRoot, 'tests', 'contracts');
 const snapshotOutputDir = process.env.PLAYBOOK_SNAPSHOT_OUTPUT_DIR ? path.resolve(process.env.PLAYBOOK_SNAPSHOT_OUTPUT_DIR) : committedSnapshotDir;
-const shouldUpdateSnapshots = process.env.UPDATE_CONTRACT_SNAPSHOTS === '1';
+const shouldUpdateSnapshots = process.env.UPDATE_CLI_CONTRACT_SNAPSHOTS === '1' || process.env.UPDATE_CONTRACT_SNAPSHOTS === '1';
 
 function normalizeDynamicContractString(value: string): string {
   return value
