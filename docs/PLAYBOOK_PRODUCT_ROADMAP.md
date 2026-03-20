@@ -32,10 +32,13 @@ Recent implementation note: fleet-level readiness aggregation is now available i
 Recent implementation note: deterministic adoption work-queue planning is also available (`pnpm playbook status queue --json`, Observer `GET /api/readiness/queue`, and Observer dashboard work-queue panel) to translate readiness state into ordered, wave-based, parallel-safe execution plans.
 Recent implementation note: Codex-ready execution packaging now layers on top of the queue (`pnpm playbook status execute --json`, Observer `GET /api/readiness/execute`, and Observer dashboard execution-plan card) to emit wave-scoped worker lanes and copy-paste prompts for parallel repo operations.
 
-Recent implementation note: deterministic test-failure triage is now available through `pnpm playbook test-triage --input <path> --json`, adding a first-class diagnosis artifact for repeated Vitest / pnpm recursive CI failures with stable repair classes, narrow rerun planning, and plan-only low-risk repair guidance.
+Recent implementation note: deterministic test-failure triage is now available through `pnpm playbook test-triage --input <path> --json`, adding a first-class diagnosis artifact for repeated Vitest / pnpm recursive CI failures with stable repair classes, narrow rerun planning, and plan-only low-risk repair guidance. The architectural hardening lesson from stabilizing contract snapshots is now explicit: isolated fixtures surfaced hidden producer/consumer dependencies that shared fixture state had been masking, so diagnosis must stay separate from repair planning and merge-time mutation.
 - Rule: Automate diagnosis first, repair second, merge never.
+- Rule: isolated contract fixtures force hidden producer/consumer dependencies into the open.
 - Pattern: Most repeated CI failures cluster into a small set of deterministic repair classes that can be parsed from test output.
+- Pattern: contract snapshots work best when every consumer command declares its prerequisite artifact producers explicitly.
 - Failure Mode: Teams waste time manually re-deriving the same failure classification logic instead of encoding it as reusable automation.
+- Failure Mode: shared fixture state makes snapshots look stable while silently depending on prior command side effects.
 
 Playbook continues to ship as a deterministic repository intelligence and governance CLI, while deepening into a deterministic reasoning engine behind stable command contracts.
 
