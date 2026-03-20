@@ -328,7 +328,9 @@ describe('runKnowledge', () => {
     rendered = String(logSpy.mock.calls[0]?.[0]);
     expect(rendered).toContain('Pattern: knowledge-contract-portability');
     expect(rendered).toContain('Portability Confidence: 0.82');
-    expect(rendered).toContain('Readiness Score: n/a');
+    expect(rendered).toContain('Readiness Score: 0');
+    expect(rendered).toContain('Recommendation: n/a');
+    expect(rendered).toContain('Gating Tier: GOVERNANCE');
     expect(rendered).toContain('Required Validations: pnpm -r build, pnpm test');
 
     logSpy.mockClear();
