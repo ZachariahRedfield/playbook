@@ -6,7 +6,6 @@ export type { RouteDecision, RouteMutabilityLevel, RouteSafetyConstraints, Route
 export type { AttractorScoreBreakdown, CandidatePattern, PromotedPattern, PromotionDecision, PromotionReviewRecord } from './contracts/patternPromotion.js';
 export type { CrossRepoPatternEvidenceArtifact, PatternPortabilityContract, PatternPortabilityEntry, PortabilityArtifactInput } from './contracts/patternPortabilityContract.js';
 export type { TransferReadinessArtifact, TransferReadinessEntry, TransferReadinessGovernanceAlignment, TransferReadinessPresence, TransferReadinessRecommendation, TransferReadinessValidationCoverage } from './contracts/transferReadinessContract.js';
-export type { PatternTransferCompatibilityMetadata, PatternTransferCompatibilityStatus, PatternTransferGovernanceBoundary, PatternTransferKnownFailureMode, PatternTransferLifecycleHooks, PatternTransferPackage, PatternTransferProvenance, PatternTransferRiskClass, PatternTransferSanitizationStatus } from './contracts/transferPackage.js';
 export type { LaneRuntime, LaneRuntimeState } from './execution/types.js';
 export type { LaneOutcomeScore, RouterAccuracyMetric, CommandSuccessStatus, CommandExecutionQualityRecord, CommandExecutionQualitySummary, CommandExecutionQualityArtifact, CommandQualitySummaryRow, CommandQualitySummaryArtifact } from './telemetry/types.js';
 export type { CompactedLearningSummary, LearningCompactionTimeWindow, LearningLanePattern, LearningRecurringSignal, LearningRoutePattern, LearningValidationPattern, PatternPortabilityScore, PortabilityConfidenceRecalibrationSummary, PortabilityDecisionStatus, PortabilityAdoptionStatus, PortabilityObservedOutcome, PortabilityOutcomeTelemetryRecord, TransferPlanGatingTier, TransferPlanRecord, TransferPlanArtifact } from './learning/types.js';
@@ -93,7 +92,6 @@ export {
 
 export { createPatternPortabilityContract, toCrossRepoPatternEvidenceArtifact, validatePatternPortabilityContract, writeCrossRepoPatternEvidenceArtifact } from './contracts/patternPortabilityContract.js';
 export { normalizeTransferReadinessArtifact } from './contracts/transferReadinessContract.js';
-export { PATTERN_TRANSFER_PACKAGE_SCHEMA_VERSION, normalizePatternTransferPackage, patternTransferCompatibilityStatuses, patternTransferRiskClasses, patternTransferSanitizationStatuses } from './contracts/transferPackage.js';
 
 export { additiveCommandFieldSchemaRegistry, getContractsSchemaRegistry, memoryArtifactSchemaRegistry } from './contracts/schemaRegistry.js';
 

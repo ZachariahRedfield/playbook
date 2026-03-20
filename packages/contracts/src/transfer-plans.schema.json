@@ -4,26 +4,12 @@
   "title": "Transfer Plans Artifact",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "generatedAt", "proposalOnly", "nonAutonomous", "sourceArtifacts", "plans"],
+  "required": ["schemaVersion", "kind", "generatedAt", "transfer_plans"],
   "properties": {
     "schemaVersion": { "type": "string", "const": "1.0" },
     "kind": { "type": "string", "const": "transfer-plans" },
     "generatedAt": { "type": "string" },
-    "proposalOnly": { "type": "boolean", "const": true },
-    "nonAutonomous": { "type": "boolean", "const": true },
-    "sourceArtifacts": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["patternPortabilityPath", "crossRepoPatternsPath", "portabilityConfidencePath", "routerRecommendationsPath", "learningCompactionPath"],
-      "properties": {
-        "patternPortabilityPath": { "type": "string" },
-        "crossRepoPatternsPath": { "type": "string" },
-        "portabilityConfidencePath": { "type": "string" },
-        "routerRecommendationsPath": { "type": "string" },
-        "learningCompactionPath": { "type": "string" }
-      }
-    },
-    "plans": {
+    "transfer_plans": {
       "type": "array",
       "items": { "$ref": "#/$defs/transferPlan" }
     }
@@ -33,36 +19,24 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "transfer_plan_id",
-        "pattern_id",
+        "pattern",
         "source_repo",
         "target_repo",
         "portability_confidence",
-        "target_readiness",
         "touched_subsystems",
-        "required_artifacts",
         "required_validations",
-        "adoption_steps",
-        "risk_signals",
         "blockers",
-        "open_questions",
-        "gating_tier"
+        "open_questions"
       ],
       "properties": {
-        "transfer_plan_id": { "type": "string" },
-        "pattern_id": { "type": "string" },
+        "pattern": { "type": "string" },
         "source_repo": { "type": "string" },
         "target_repo": { "type": "string" },
         "portability_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-        "target_readiness": { "type": "number", "minimum": 0, "maximum": 1 },
         "touched_subsystems": { "type": "array", "items": { "type": "string" } },
-        "required_artifacts": { "type": "array", "items": { "type": "string" } },
         "required_validations": { "type": "array", "items": { "type": "string" } },
-        "adoption_steps": { "type": "array", "items": { "type": "string" } },
-        "risk_signals": { "type": "array", "items": { "type": "string" } },
         "blockers": { "type": "array", "items": { "type": "string" } },
-        "open_questions": { "type": "array", "items": { "type": "string" } },
-        "gating_tier": { "type": "string", "enum": ["CONVERSATIONAL", "GOVERNANCE"] }
+        "open_questions": { "type": "array", "items": { "type": "string" } }
       }
     }
   }

@@ -5,17 +5,17 @@
     "order": "desc"
   },
   "summary": {
-    "total": 3,
+    "total": 2,
     "byType": {
       "evidence": 0,
-      "candidate": 2,
+      "candidate": 1,
       "promoted": 0,
       "superseded": 1
     },
     "byStatus": {
       "observed": 0,
       "active": 0,
-      "stale": 2,
+      "stale": 1,
       "retired": 0,
       "superseded": 1
     },
@@ -23,71 +23,13 @@
       "observed": 0,
       "candidate": 0,
       "active": 0,
-      "stale": 2,
+      "stale": 1,
       "retired": 0,
       "superseded": 1,
       "demoted": 0
     }
   },
   "knowledge": [
-    {
-      "id": "cand-live",
-      "type": "candidate",
-      "createdAt": "<TIMESTAMP>",
-      "repo": "playbook-contract-fixture",
-      "source": {
-        "kind": "memory-candidate",
-        "path": ".playbook/memory/candidates.json",
-        "command": "memory-replay"
-      },
-      "confidence": 0.8,
-      "status": "stale",
-      "provenance": {
-        "repo": "playbook-contract-fixture",
-        "sourceCommand": "memory-replay",
-        "runId": "run-1",
-        "sourcePath": ".playbook/memory/events/event-1.json",
-        "eventIds": [
-          "event-1"
-        ],
-        "evidenceIds": [
-          "event-1"
-        ],
-        "fingerprints": [
-          "fp-1"
-        ],
-        "relatedRecordIds": []
-      },
-      "metadata": {
-        "kind": "pattern",
-        "title": "Live candidate",
-        "summary": "Needs review",
-        "clusterKey": "cluster-live",
-        "salienceScore": 8,
-        "salienceFactors": {
-          "severity": 1
-        },
-        "fingerprint": "fp-1",
-        "module": "module-a",
-        "ruleId": "RULE-1",
-        "failureShape": "shape-a",
-        "eventCount": 1,
-        "lastSeenAt": "2026-02-03T00:00:00.000Z",
-        "supersession": {
-          "evolutionOrdinal": 1,
-          "priorCandidateIds": [],
-          "supersedesCandidateIds": []
-        }
-      },
-      "lifecycle": {
-        "state": "stale",
-        "warnings": [
-          "Candidate is stale and should be revalidated before reuse."
-        ],
-        "supersedes": [],
-        "supersededBy": []
-      }
-    },
     {
       "id": "pattern-old",
       "type": "superseded",

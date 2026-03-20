@@ -12,7 +12,7 @@
 ## 2026-03-19 — Pattern retirement lifecycle and transfer packages
 
 - WHAT: Added explicit promoted-pattern lifecycle states (`active`, `superseded`, `retired`, `demoted`) plus deterministic `playbook promote pattern-retire|pattern-demote|pattern-recall` flows that emit audited promotion receipts. WHY: Promoted knowledge must remain recallable and retireable instead of accumulating as permanent doctrine.
-- WHAT: Expanded transferable pattern package governance so exports include deterministic compatibility gates, candidate-only governance boundaries, and recall/demotion lifecycle hooks, while portability/readiness read models expose blocked imports and missing prerequisites. WHY: Cross-repo transfer should move governed packages with provenance, not auto-import foreign doctrine into execution truth.
+- WHAT: Added first-class transferable pattern package export/import flows via `pnpm playbook patterns transfer export|import`, with explicit provenance, sanitization status, compatibility metadata, risk class, and known failure modes. WHY: Transferable pattern packages should move reusable abstractions, not silently import repo-local truth.
 - Rule: Promoted knowledge must be retireable, recallable, and compatibility-scoped.
 - Pattern: Transferable pattern packages move abstractions, not repo-local truth.
 - Failure Mode: Knowledge accumulation without retirement or recall turns governed memory into doctrine sprawl.

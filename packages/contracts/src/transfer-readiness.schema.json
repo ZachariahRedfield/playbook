@@ -4,77 +4,41 @@
   "title": "Transfer Readiness Artifact",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "generatedAt", "target_repo", "assessments"],
+  "required": ["schemaVersion", "kind", "generatedAt", "readiness"],
   "properties": {
     "schemaVersion": { "type": "string", "const": "1.0" },
     "kind": { "type": "string", "const": "transfer-readiness" },
     "generatedAt": { "type": "string" },
-    "target_repo": { "type": "string" },
-    "assessments": {
+    "readiness": {
       "type": "array",
       "items": { "$ref": "#/$defs/readinessEntry" }
     }
   },
   "$defs": {
-    "presence": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["required", "present", "missing"],
-      "properties": {
-        "required": { "type": "array", "items": { "type": "string" } },
-        "present": { "type": "array", "items": { "type": "string" } },
-        "missing": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "validationCoverage": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["required_validations", "present_validations", "coverage_score"],
-      "properties": {
-        "required_validations": { "type": "array", "items": { "type": "string" } },
-        "present_validations": { "type": "array", "items": { "type": "string" } },
-        "coverage_score": { "type": "number", "minimum": 0, "maximum": 1 }
-      }
-    },
-    "governanceAlignment": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["required_contracts", "present_contracts", "missing_contracts", "alignment_score"],
-      "properties": {
-        "required_contracts": { "type": "array", "items": { "type": "string" } },
-        "present_contracts": { "type": "array", "items": { "type": "string" } },
-        "missing_contracts": { "type": "array", "items": { "type": "string" } },
-        "alignment_score": { "type": "number", "minimum": 0, "maximum": 1 }
-      }
-    },
     "readinessEntry": {
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "pattern",
+        "source_repo",
         "target_repo",
-        "pattern_id",
+        "portability_confidence",
         "readiness_score",
-        "subsystem_presence",
-        "artifact_availability",
-        "validation_coverage",
-        "governance_alignment",
+        "touched_subsystems",
+        "required_validations",
         "blockers",
-        "missing_prerequisites",
-        "open_questions",
-        "recommendation"
+        "open_questions"
       ],
       "properties": {
+        "pattern": { "type": "string" },
+        "source_repo": { "type": "string" },
         "target_repo": { "type": "string" },
-        "pattern_id": { "type": "string" },
+        "portability_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
         "readiness_score": { "type": "number", "minimum": 0, "maximum": 1 },
-        "subsystem_presence": { "$ref": "#/$defs/presence" },
-        "artifact_availability": { "$ref": "#/$defs/presence" },
-        "validation_coverage": { "$ref": "#/$defs/validationCoverage" },
-        "governance_alignment": { "$ref": "#/$defs/governanceAlignment" },
+        "touched_subsystems": { "type": "array", "items": { "type": "string" } },
+        "required_validations": { "type": "array", "items": { "type": "string" } },
         "blockers": { "type": "array", "items": { "type": "string" } },
-        "missing_prerequisites": { "type": "array", "items": { "type": "string" } },
-        "open_questions": { "type": "array", "items": { "type": "string" } },
-        "recommendation": { "type": "string", "enum": ["ready", "partial", "blocked"] }
+        "open_questions": { "type": "array", "items": { "type": "string" } }
       }
     }
   }

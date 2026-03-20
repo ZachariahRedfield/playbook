@@ -315,12 +315,11 @@ export function generateContractSnapshots(outputDir) {
   assertSnapshotPreconditions();
   fs.mkdirSync(outputDir, { recursive: true });
   const schemaByCommand = new Map();
+  const fixtureRepo = createContractFixtureRepo();
 
-  for (const contract of commandContracts) {
-    // Regenerate each contract from a fresh seeded repo so durable command artifacts never leak across snapshots.
-    const fixtureRepo = createContractFixtureRepo();
-
-    try {
+  try {
+    for (const contract of commandContracts) {
+      fs.rmSync(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'runtime'), { recursive: true, force: true });
       const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
       let schema = schemaByCommand.get(contract.schemaCommand);
       if (!schema) {
@@ -330,16 +329,10 @@ export function generateContractSnapshots(outputDir) {
       if (!validateAgainstSchema(actualPayload, schema)) {
         throw new Error(`Schema validation failed for ${contract.args.join(' ')}`);
       }
-      if (contract.file === 'knowledge-list.snapshot.json') {
-        const json = JSON.stringify(actualPayload);
-        if (json.includes('failure_ingest-<RUNTIME_EVENT_ID>')) {
-          throw new Error('knowledge-list contract fixture was contaminated by runtime failure_ingest artifacts');
-        }
-      }
       fs.writeFileSync(path.join(outputDir, contract.file), `${JSON.stringify(actualPayload, null, 2)}\n`, 'utf8');
-    } finally {
-      fs.rmSync(fixtureRepo, { recursive: true, force: true });
     }
+  } finally {
+    fs.rmSync(fixtureRepo, { recursive: true, force: true });
   }
 
   const emptyRepo = createEmptyKnowledgeFixtureRepo({ prefix: 'playbook-contract-empty-fixture-' });

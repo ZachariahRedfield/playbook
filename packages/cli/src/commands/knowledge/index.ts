@@ -86,16 +86,12 @@ Sample Size: ${String(entry.sample_size)}`
 
 
 const renderTransferPlanningText = (entry: Record<string, unknown>): string => `Pattern: ${String(entry.pattern)}
-Source Repo: ${String(entry.source_repo ?? 'n/a')}
+Source Repo: ${String(entry.source_repo)}
 Target Repo: ${String(entry.target_repo)}
-Portability Confidence: ${String(entry.portability_confidence ?? 'n/a')}
+Portability Confidence: ${String(entry.portability_confidence)}
 Readiness Score: ${String(entry.readiness_score ?? 'n/a')}
-Recommendation: ${String(entry.recommendation ?? 'n/a')}
-Gating Tier: ${String(entry.gating_tier ?? 'n/a')}
-Touched Subsystems: ${((entry.touched_subsystems as unknown[] | undefined) ?? (entry.required_subsystems as unknown[] | undefined) ?? []).map(String).join(', ') || 'none'}
-Required Artifacts: ${((entry.required_artifacts as unknown[] | undefined) ?? []).map(String).join(', ') || 'none'}
+Touched Subsystems: ${((entry.touched_subsystems as unknown[] | undefined) ?? []).map(String).join(', ') || 'none'}
 Required Validations: ${((entry.required_validations as unknown[] | undefined) ?? []).map(String).join(', ') || 'none'}
-Missing Prerequisites: ${((entry.missing_prerequisites as unknown[] | undefined) ?? []).map(String).join(', ') || 'none'}
 Blockers: ${((entry.blockers as unknown[] | undefined) ?? []).map(String).join(', ') || 'none'}
 Open Questions: ${((entry.open_questions as unknown[] | undefined) ?? []).map(String).join(', ') || 'none'}`;
 

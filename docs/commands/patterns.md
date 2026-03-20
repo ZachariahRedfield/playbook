@@ -273,27 +273,3 @@ Use these terms consistently when documenting or operating pattern promotion:
 - **Repo-local story backlog**: canonical repo execution-planning input in `.playbook/stories.json`.
 
 Rule: Cross-repo pattern knowledge may suggest local work, but only repo-local stories may enter execution planning.
-
-## `patterns transfer export --pattern <id> --target-repo <repo-id>`
-
-Export a governed cross-repo transfer package from a promoted global reusable pattern.
-
-Guarantees:
-- export reads promoted global reusable patterns only
-- package includes pattern payload, provenance, sanitization status, compatibility metadata, risk class, known failure modes, and recall/demotion lifecycle hooks
-- transfer package is deterministic for the same source pattern, export timestamp, and target repo inputs
-- package governance boundary explicitly records candidate-only import mode and zero execution-planning effect
-
-## `patterns transfer import --file <path> --repo <repo-id>`
-
-Import a transfer package into a receiving repo as candidate input only.
-
-Guarantees:
-- incompatible packages fail closed before candidate mutation
-- imported packages land only in `.playbook/pattern-candidates.json`
-- imports do not update `.playbook/patterns.json` or auto-enter execution planning
-- imported candidate metadata preserves provenance, sanitization/risk details, and lifecycle hooks for later recall or demotion review
-
-Rule: Cross-repo transfer moves governed packages, not auto-enforced truth.
-Pattern: Transfer should preserve provenance and local review boundaries.
-Failure Mode: Importing foreign doctrine directly into execution context breaks private-first governance.

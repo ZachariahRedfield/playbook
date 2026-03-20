@@ -761,8 +761,7 @@ This receipt is designed to feed future prioritization cleanly: `verification_su
 - `playbook promote` now emits deterministic audited receipts to `.playbook/promotion-receipts.json` for promoted, noop, and conflict outcomes so canonical knowledge mutation attempts remain inspectable through the same artifact-viewer path used elsewhere.
 - `pnpm playbook patterns proposals --json` groups cross-repo comparisons into promotable portable-pattern/story candidates with evidence lineage and explicit governed promotion targets.
 - `pnpm playbook patterns proposals promote --target memory` now lands as candidate-only input in `.playbook/memory/candidates.json`; it never auto-promotes imported/reused patterns into enforced doctrine.
-- `pnpm playbook patterns transfer export --pattern <id> --target-repo <repo-id>` now emits deterministic transfer packages with provenance, sanitization status, compatibility metadata, risk class, known failure modes, and lifecycle hooks for later recall/demotion handling.
-- `pnpm playbook patterns transfer import --file <path> --repo <repo-id>` imports those packages as candidate-only pattern input with fail-closed compatibility checks, pending local review, and no direct execution-planning effect.
+- `pnpm playbook patterns transfer export --pattern <id> --target-repo <repo-id>` writes compatibility-scoped transfer packages, and `pnpm playbook patterns transfer import --file <path> --repo <repo-id>` imports them as candidate-only pattern input with fail-closed compatibility checks.
 - `pnpm playbook promote pattern-retire|pattern-demote|pattern-recall <pattern-id> --reason <text>` manages reusable-pattern lifecycle without removing receipt/audit lineage.
 - `pnpm playbook patterns proposals promote --proposal <proposal-id> --target memory|story [--repo <repo-id>] --json` keeps cross-repo adoption explicit while bridging into reusable memory or canonical backlog surfaces.
 

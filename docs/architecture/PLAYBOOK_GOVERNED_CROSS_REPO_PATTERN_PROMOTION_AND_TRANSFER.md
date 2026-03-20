@@ -199,8 +199,4 @@ Recommended architecture ordering:
 - Promoted reusable patterns now carry explicit states: `active`, `superseded`, `retired`, and `demoted`.
 - Retirement, demotion, and recall are deterministic receipt-emitting operations, not ad hoc file edits.
 - Transfer package imports land in receiving repos as candidate-only pattern input. They do not become governance truth or auto-promoted doctrine.
-- Transfer packages must carry provenance, sanitization status, compatibility metadata, risk class, known failure modes, and lifecycle hooks so recall/demotion can be audited without deleting history.
-- Rule: Cross-repo transfer moves governed packages, not auto-enforced truth.
-- Pattern: Transfer should preserve provenance and local review boundaries.
-- Failure Mode: Importing foreign doctrine directly into execution context breaks private-first governance.
 - Compatibility mismatch must fail closed. Recalled or demoted transferred patterns remain inspectable through the same lifecycle record.

@@ -68,39 +68,25 @@ type PortabilityRecalibrationRecord = {
 };
 
 type TransferPlanRecord = {
-  transfer_plan_id: string;
+  pattern: string;
+  source_repo: string;
+  target_repo: string;
+  portability_confidence: number;
+  touched_subsystems: string[];
+  required_validations: string[];
+  blockers: string[];
+  open_questions: string[];
+};
+
+type TransferReadinessRecord = {
   pattern: string;
   source_repo: string;
   target_repo: string;
   portability_confidence: number;
   readiness_score: number;
   touched_subsystems: string[];
-  required_artifacts: string[];
   required_validations: string[];
-  adoption_steps: string[];
-  risk_signals: string[];
   blockers: string[];
-  open_questions: string[];
-  gating_tier: 'CONVERSATIONAL' | 'GOVERNANCE';
-  proposal_only: true;
-  non_autonomous: true;
-};
-
-type TransferReadinessRecord = {
-  pattern: string;
-  target_repo: string;
-  readiness_score: number;
-  recommendation: 'ready' | 'partial' | 'blocked';
-  required_subsystems: string[];
-  missing_subsystems: string[];
-  required_artifacts: string[];
-  missing_artifacts: string[];
-  required_validations: string[];
-  missing_validations: string[];
-  required_contracts: string[];
-  missing_contracts: string[];
-  blockers: string[];
-  missing_prerequisites: string[];
   open_questions: string[];
 };
 
@@ -108,15 +94,14 @@ type TransferPlansArtifact = {
   schemaVersion: '1.0';
   kind: 'transfer-plans';
   generatedAt: string;
-  plans: TransferPlanRecord[];
+  transfer_plans: TransferPlanRecord[];
 };
 
 type TransferReadinessArtifact = {
   schemaVersion: '1.0';
   kind: 'transfer-readiness';
   generatedAt: string;
-  target_repo: string;
-  assessments: TransferReadinessRecord[];
+  readiness: TransferReadinessRecord[];
 };
 
 type CrossRepoAggregate = {
@@ -181,32 +166,24 @@ const sortTransferPlans = (records: TransferPlanRecord[]): TransferPlanRecord[] 
 const readTransferPlansArtifact = (cwd: string): TransferPlansArtifact => {
   const artifactPath = ensureArtifactExists(cwd, TRANSFER_PLANS_RELATIVE_PATH);
   const parsed = JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as Record<string, unknown>;
-  const transferPlans = Array.isArray(parsed.plans) ? parsed.plans : Array.isArray(parsed.transfer_plans) ? parsed.transfer_plans : [];
+  const transferPlans = Array.isArray(parsed.transfer_plans) ? parsed.transfer_plans : [];
 
   return {
     schemaVersion: '1.0',
     kind: 'transfer-plans',
     generatedAt: String(parsed.generatedAt ?? '1970-01-01T00:00:00.000Z'),
-    plans: sortTransferPlans(
+    transfer_plans: sortTransferPlans(
       transferPlans.map((entry: unknown) => {
         const typed = entry as Record<string, unknown>;
         return {
-          transfer_plan_id: String(typed.transfer_plan_id ?? `${String(typed.pattern_id ?? typed.pattern ?? 'unknown')}::${String(typed.target_repo ?? 'unknown')}`),
-          pattern: String(typed.pattern_id ?? typed.pattern ?? 'unknown'),
+          pattern: String(typed.pattern ?? 'unknown'),
           source_repo: String(typed.source_repo ?? 'unknown'),
           target_repo: String(typed.target_repo ?? 'unknown'),
           portability_confidence: Number(typed.portability_confidence ?? 0),
-          readiness_score: Number(typed.target_readiness ?? typed.readiness_score ?? 0),
           touched_subsystems: asTextList(typed.touched_subsystems),
-          required_artifacts: asTextList(typed.required_artifacts),
           required_validations: asTextList(typed.required_validations),
-          adoption_steps: asTextList(typed.adoption_steps),
-          risk_signals: asTextList(typed.risk_signals),
           blockers: asTextList(typed.blockers),
-          open_questions: asTextList(typed.open_questions),
-          gating_tier: String(typed.gating_tier ?? 'GOVERNANCE') === 'CONVERSATIONAL' ? 'CONVERSATIONAL' : 'GOVERNANCE',
-          proposal_only: true,
-          non_autonomous: true
+          open_questions: asTextList(typed.open_questions)
         };
       })
     )
@@ -217,6 +194,7 @@ const sortTransferReadiness = (records: TransferReadinessRecord[]): TransferRead
   [...records].sort(
     (left, right) =>
       right.readiness_score - left.readiness_score ||
+      right.portability_confidence - left.portability_confidence ||
       left.pattern.localeCompare(right.pattern) ||
       left.target_repo.localeCompare(right.target_repo)
   );
@@ -224,35 +202,24 @@ const sortTransferReadiness = (records: TransferReadinessRecord[]): TransferRead
 const readTransferReadinessArtifact = (cwd: string): TransferReadinessArtifact => {
   const artifactPath = ensureArtifactExists(cwd, TRANSFER_READINESS_RELATIVE_PATH);
   const parsed = JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as Record<string, unknown>;
-  const readiness = Array.isArray(parsed.assessments) ? parsed.assessments : Array.isArray(parsed.readiness) ? parsed.readiness : [];
+  const readiness = Array.isArray(parsed.readiness) ? parsed.readiness : [];
 
   return {
     schemaVersion: '1.0',
     kind: 'transfer-readiness',
     generatedAt: String(parsed.generatedAt ?? '1970-01-01T00:00:00.000Z'),
-    target_repo: String(parsed.target_repo ?? 'unknown'),
-    assessments: sortTransferReadiness(
+    readiness: sortTransferReadiness(
       readiness.map((entry: unknown) => {
         const typed = entry as Record<string, unknown>;
-        const subsystemPresence = (typed.subsystem_presence ?? {}) as Record<string, unknown>;
-        const artifactAvailability = (typed.artifact_availability ?? {}) as Record<string, unknown>;
-        const validationCoverage = (typed.validation_coverage ?? {}) as Record<string, unknown>;
-        const governanceAlignment = (typed.governance_alignment ?? {}) as Record<string, unknown>;
         return {
-          pattern: String(typed.pattern_id ?? typed.pattern ?? 'unknown'),
-          target_repo: String(typed.target_repo ?? parsed.target_repo ?? 'unknown'),
+          pattern: String(typed.pattern ?? 'unknown'),
+          source_repo: String(typed.source_repo ?? 'unknown'),
+          target_repo: String(typed.target_repo ?? 'unknown'),
+          portability_confidence: Number(typed.portability_confidence ?? 0),
           readiness_score: Number(typed.readiness_score ?? 0),
-          recommendation: String(typed.recommendation ?? 'partial') === 'ready' ? 'ready' : String(typed.recommendation ?? 'partial') === 'blocked' ? 'blocked' : 'partial',
-          required_subsystems: asTextList(subsystemPresence.required),
-          missing_subsystems: asTextList(subsystemPresence.missing),
-          required_artifacts: asTextList(artifactAvailability.required),
-          missing_artifacts: asTextList(artifactAvailability.missing),
-          required_validations: asTextList(validationCoverage.required_validations ?? typed.required_validations),
-          missing_validations: asTextList(validationCoverage.required_validations).filter((item) => !asTextList(validationCoverage.present_validations).includes(item)),
-          required_contracts: asTextList(governanceAlignment.required_contracts),
-          missing_contracts: asTextList(governanceAlignment.missing_contracts),
+          touched_subsystems: asTextList(typed.touched_subsystems),
+          required_validations: asTextList(typed.required_validations),
           blockers: asTextList(typed.blockers),
-          missing_prerequisites: asTextList(typed.missing_prerequisites),
           open_questions: asTextList(typed.open_questions)
         };
       })
@@ -484,7 +451,7 @@ export const runKnowledgePortability = (
     return {
       schemaVersion: '1.0',
       command: 'knowledge-portability-transfer-plans',
-      transfer_plans: readTransferPlansArtifact(cwd).plans
+      transfer_plans: readTransferPlansArtifact(cwd).transfer_plans
     };
   }
 
@@ -492,7 +459,7 @@ export const runKnowledgePortability = (
     return {
       schemaVersion: '1.0',
       command: 'knowledge-portability-readiness',
-      readiness: readTransferReadinessArtifact(cwd).assessments
+      readiness: readTransferReadinessArtifact(cwd).readiness
     };
   }
 
@@ -500,7 +467,7 @@ export const runKnowledgePortability = (
     return {
       schemaVersion: '1.0',
       command: 'knowledge-portability-blocked-transfers',
-      blocked_transfers: readTransferReadinessArtifact(cwd).assessments.filter((entry) => entry.blockers.length > 0 || entry.recommendation === 'blocked')
+      blocked_transfers: readTransferReadinessArtifact(cwd).readiness.filter((entry) => entry.blockers.length > 0)
     };
   }
 

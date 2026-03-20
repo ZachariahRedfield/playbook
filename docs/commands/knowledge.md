@@ -66,9 +66,9 @@ Views:
 - `recommendations`: transfer recommendations (`pattern`, `source_repo`, `target_repo`, `initial_portability_score`, `decision_status`, `evidence_count`)
 - `outcomes`: decision/adoption outcomes (`pattern`, `source_repo`, `target_repo`, `initial_portability_score`, `adoption_status`, `observed_outcome`, `sample_size`)
 - `recalibration`: confidence updates (`pattern`, `source_repo`, `target_repo`, `initial_portability_score`, `recalibrated_confidence`, `evidence_count`, `sample_size`)
-- `transfer-plans`: proposal-only transfer plan rows from `.playbook/transfer-plans.json` (`pattern`, `source_repo`, `target_repo`, `portability_confidence`, `readiness_score`, `required_artifacts`, `required_validations`, `adoption_steps`, `risk_signals`, `gating_tier`, `blockers`, `open_questions`)
-- `readiness`: compatibility/readiness rows from `.playbook/transfer-readiness.json` (`pattern`, `target_repo`, `readiness_score`, `recommendation`, required/missing subsystems, artifacts, validations, contracts, blockers, missing prerequisites, open questions)
-- `blocked-transfers`: readiness subset where blockers or blocked recommendations are present, preserving the same audit fields used by `readiness`
+- `transfer-plans`: transfer planning artifact rows from `.playbook/transfer-plans.json` (`pattern`, `source_repo`, `target_repo`, `portability_confidence`, `touched_subsystems`, `required_validations`, `blockers`, `open_questions`)
+- `readiness`: target-readiness rows from `.playbook/transfer-readiness.json` (`pattern`, `source_repo`, `target_repo`, `portability_confidence`, `readiness_score`, `touched_subsystems`, `required_validations`, `blockers`, `open_questions`)
+- `blocked-transfers`: readiness subset where blockers are present (same field contract as `readiness`)
 
 ## Examples
 

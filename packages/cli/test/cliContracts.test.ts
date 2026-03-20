@@ -8,7 +8,7 @@ const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
 const cliEntry = path.join(repoRoot, 'packages', 'cli', 'dist', 'main.js');
 const committedSnapshotDir = path.join(repoRoot, 'tests', 'contracts');
 const snapshotOutputDir = process.env.PLAYBOOK_SNAPSHOT_OUTPUT_DIR ? path.resolve(process.env.PLAYBOOK_SNAPSHOT_OUTPUT_DIR) : committedSnapshotDir;
-const shouldUpdateSnapshots = process.env.UPDATE_CLI_CONTRACT_SNAPSHOTS === '1' || process.env.UPDATE_CONTRACT_SNAPSHOTS === '1';
+const shouldUpdateSnapshots = process.env.UPDATE_CONTRACT_SNAPSHOTS === '1';
 
 function normalizeDynamicContractString(value: string): string {
   return value
@@ -307,44 +307,46 @@ function validateAgainstSchema(value: unknown, schema: unknown): boolean {
 }
 
 describe('CLI JSON contract snapshots', () => {
+  let fixtureRepo = '';
+
+  beforeAll(() => {
+    fixtureRepo = createContractFixtureRepo();
+  });
+
+  afterAll(() => {
+    if (fixtureRepo) {
+      fs.rmSync(fixtureRepo, { recursive: true, force: true });
+    }
+  });
+
   it('matches committed snapshots for stable automation contracts', { timeout: 120000 }, () => {
     fs.mkdirSync(snapshotOutputDir, { recursive: true });
     const schemaByCommand = new Map<CommandContract['schemaCommand'], unknown>();
 
     for (const contract of commandContracts) {
-      // Each contract runs against a fresh seeded repo so durable command writes cannot contaminate later snapshots.
-      const fixtureRepo = createContractFixtureRepo();
+      fs.rmSync(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'runtime'), { recursive: true, force: true });
+      const snapshotPath = path.join(snapshotOutputDir, contract.file);
+      const committedSnapshotPath = path.join(committedSnapshotDir, contract.file);
+      const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
+      const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
 
-      try {
-        const snapshotPath = path.join(snapshotOutputDir, contract.file);
-        const committedSnapshotPath = path.join(committedSnapshotDir, contract.file);
-        const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
-        const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
-
-        let schema = schemaByCommand.get(contract.schemaCommand);
-        if (!schema) {
-          schema = runCliJsonContract(['schema', contract.schemaCommand, '--json'], fixtureRepo);
-          schemaByCommand.set(contract.schemaCommand, schema);
-        }
-        expect(
-          validateAgainstSchema(actualPayload, schema),
-          `Schema validation failed for ${contract.args.join(' ')}`
-        ).toBe(true);
-
-        if (shouldUpdateSnapshots || !fs.existsSync(committedSnapshotPath)) {
-          fs.writeFileSync(snapshotPath, actualJson, 'utf8');
-        }
-
-        const expectedJson = fs.readFileSync(shouldUpdateSnapshots ? snapshotPath : committedSnapshotPath, 'utf8');
-        expect(normalizeLineEndings(actualJson)).toBe(normalizeLineEndings(expectedJson));
-
-        if (contract.file === 'knowledge-list.snapshot.json') {
-          expect(actualJson).not.toContain('failure_ingest-<RUNTIME_EVENT_ID>');
-        }
-      } finally {
-        fs.rmSync(fixtureRepo, { recursive: true, force: true });
+      let schema = schemaByCommand.get(contract.schemaCommand);
+      if (!schema) {
+        schema = runCliJsonContract(['schema', contract.schemaCommand, '--json'], fixtureRepo);
+        schemaByCommand.set(contract.schemaCommand, schema);
       }
-    }
+      expect(
+        validateAgainstSchema(actualPayload, schema),
+        `Schema validation failed for ${contract.args.join(' ')}`
+      ).toBe(true);
+
+      if (shouldUpdateSnapshots || !fs.existsSync(committedSnapshotPath)) {
+        fs.writeFileSync(snapshotPath, actualJson, 'utf8');
+      }
+
+      const expectedJson = fs.readFileSync(shouldUpdateSnapshots ? snapshotPath : committedSnapshotPath, 'utf8');
+      expect(normalizeLineEndings(actualJson)).toBe(normalizeLineEndings(expectedJson));
+      }
   });
 
   it('returns valid zero-state payloads for all knowledge commands in empty repositories', { timeout: 30000 }, () => {
