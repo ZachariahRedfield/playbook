@@ -37,6 +37,7 @@
       "test-triage",
       "test-fix-plan",
       "test-autofix",
+      "remediation-status",
       "verify",
       "plan",
       "orchestrate",
