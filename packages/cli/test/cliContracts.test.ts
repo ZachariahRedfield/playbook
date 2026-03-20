@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createEmptyKnowledgeFixtureRepo, createSeededKnowledgeFixtureRepo } from '../../../test/fixtures/knowledge/seededKnowledgeFixture.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
@@ -21,19 +21,6 @@ function normalizeLineEndings(text: string): string {
   return text.replace(/\r\n/g, '\n');
 }
 
-
-const contractMemoryEventsDir = (fixtureRepo: string): string => path.join(fixtureRepo, '.playbook', 'memory', 'events');
-
-const removeRuntimeFailureIngestArtifacts = (fixtureRepo: string): void => {
-  const eventsDir = contractMemoryEventsDir(fixtureRepo);
-  if (!fs.existsSync(eventsDir)) return;
-
-  for (const entry of fs.readdirSync(eventsDir)) {
-    if (!entry.startsWith('failure_ingest-') || !entry.endsWith('.json')) continue;
-    // Stable contract fixtures intentionally keep only the curated seeded memory events.
-    fs.rmSync(path.join(eventsDir, entry), { force: true });
-  }
-};
 type CommandContract = {
   file: string;
   args: readonly string[];
@@ -320,51 +307,44 @@ function validateAgainstSchema(value: unknown, schema: unknown): boolean {
 }
 
 describe('CLI JSON contract snapshots', () => {
-  let fixtureRepo = '';
-
-  beforeAll(() => {
-    fixtureRepo = createContractFixtureRepo();
-  });
-
-  afterAll(() => {
-    if (fixtureRepo) {
-      fs.rmSync(fixtureRepo, { recursive: true, force: true });
-    }
-  });
-
   it('matches committed snapshots for stable automation contracts', { timeout: 120000 }, () => {
     fs.mkdirSync(snapshotOutputDir, { recursive: true });
     const schemaByCommand = new Map<CommandContract['schemaCommand'], unknown>();
 
     for (const contract of commandContracts) {
-      fs.rmSync(path.join(fixtureRepo, '.playbook', 'memory', 'events', 'runtime'), { recursive: true, force: true });
-      removeRuntimeFailureIngestArtifacts(fixtureRepo);
-      const snapshotPath = path.join(snapshotOutputDir, contract.file);
-      const committedSnapshotPath = path.join(committedSnapshotDir, contract.file);
-      const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
-      const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
+      // Each contract runs against a fresh seeded repo so durable command writes cannot contaminate later snapshots.
+      const fixtureRepo = createContractFixtureRepo();
 
-      let schema = schemaByCommand.get(contract.schemaCommand);
-      if (!schema) {
-        schema = runCliJsonContract(['schema', contract.schemaCommand, '--json'], fixtureRepo);
-        schemaByCommand.set(contract.schemaCommand, schema);
-      }
-      expect(
-        validateAgainstSchema(actualPayload, schema),
-        `Schema validation failed for ${contract.args.join(' ')}`
-      ).toBe(true);
+      try {
+        const snapshotPath = path.join(snapshotOutputDir, contract.file);
+        const committedSnapshotPath = path.join(committedSnapshotDir, contract.file);
+        const actualPayload = runCliJsonContract(contract.args, fixtureRepo);
+        const actualJson = `${JSON.stringify(actualPayload, null, 2)}\n`;
 
-      if (shouldUpdateSnapshots || !fs.existsSync(committedSnapshotPath)) {
-        fs.writeFileSync(snapshotPath, actualJson, 'utf8');
-      }
+        let schema = schemaByCommand.get(contract.schemaCommand);
+        if (!schema) {
+          schema = runCliJsonContract(['schema', contract.schemaCommand, '--json'], fixtureRepo);
+          schemaByCommand.set(contract.schemaCommand, schema);
+        }
+        expect(
+          validateAgainstSchema(actualPayload, schema),
+          `Schema validation failed for ${contract.args.join(' ')}`
+        ).toBe(true);
 
-      const expectedJson = fs.readFileSync(shouldUpdateSnapshots ? snapshotPath : committedSnapshotPath, 'utf8');
-      expect(normalizeLineEndings(actualJson)).toBe(normalizeLineEndings(expectedJson));
+        if (shouldUpdateSnapshots || !fs.existsSync(committedSnapshotPath)) {
+          fs.writeFileSync(snapshotPath, actualJson, 'utf8');
+        }
 
-      if (contract.file === 'knowledge-list.snapshot.json') {
-        expect(actualJson).not.toContain('failure_ingest-<RUNTIME_EVENT_ID>');
+        const expectedJson = fs.readFileSync(shouldUpdateSnapshots ? snapshotPath : committedSnapshotPath, 'utf8');
+        expect(normalizeLineEndings(actualJson)).toBe(normalizeLineEndings(expectedJson));
+
+        if (contract.file === 'knowledge-list.snapshot.json') {
+          expect(actualJson).not.toContain('failure_ingest-<RUNTIME_EVENT_ID>');
+        }
+      } finally {
+        fs.rmSync(fixtureRepo, { recursive: true, force: true });
       }
-      }
+    }
   });
 
   it('returns valid zero-state payloads for all knowledge commands in empty repositories', { timeout: 30000 }, () => {
