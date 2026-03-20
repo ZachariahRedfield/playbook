@@ -123,6 +123,11 @@ type DecodedPlanPayload = {
   likelyShellEncodingIssue: boolean;
 };
 
+type NormalizedPlanArtifact = {
+  tasks: PlanTask[];
+  remediation: PlanRemediation;
+};
+
 const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 const UTF16LE_BOM = Buffer.from([0xff, 0xfe]);
 const UTF16BE_BOM = Buffer.from([0xfe, 0xff]);
@@ -188,6 +193,60 @@ const decodePlanPayload = (buffer: Buffer): DecodedPlanPayload => {
   return { text: stripLeadingBom(buffer.toString('utf8')), likelyShellEncodingIssue: false };
 };
 
+const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact => {
+  const normalizedPayload =
+    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+      ? ((payload as Record<string, unknown>).data as Record<string, unknown>)
+      : (payload as Record<string, unknown>);
+
+  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
+    throw new Error('Invalid plan payload: expected an object envelope.');
+  }
+
+  if (normalizedPayload.command === 'plan') {
+    return {
+      tasks: engine.parsePlanArtifact(payload).tasks,
+      remediation: parsePlanRemediation(normalizedPayload.remediation)
+    };
+  }
+
+  if (normalizedPayload.command === 'test-fix-plan') {
+    const parsedPlan = engine.parsePlanArtifact({
+      schemaVersion: normalizedPayload.schemaVersion,
+      command: 'plan',
+      tasks: normalizedPayload.tasks
+    });
+
+    const summary = normalizedPayload.summary;
+    if (!summary || typeof summary !== 'object') {
+      throw new Error('Invalid test-fix-plan payload: summary must be an object.');
+    }
+
+    const typedSummary = summary as Record<string, unknown>;
+    const totalFindings = typedSummary.total_findings;
+    const excludedFindings = typedSummary.excluded_findings;
+    if (!Number.isInteger(totalFindings) || totalFindings < 0) {
+      throw new Error('Invalid test-fix-plan payload: summary.total_findings must be a non-negative integer.');
+    }
+    if (!Number.isInteger(excludedFindings) || excludedFindings < 0) {
+      throw new Error('Invalid test-fix-plan payload: summary.excluded_findings must be a non-negative integer.');
+    }
+
+    return {
+      tasks: parsedPlan.tasks,
+      remediation: buildPlanRemediation({
+        failureCount: totalFindings,
+        stepCount: parsedPlan.tasks.length,
+        unresolvedFailureCount: excludedFindings,
+        unavailableReason:
+          'Test-fix-plan produced no executable low-risk tasks. Review exclusions before attempting apply.'
+      })
+    };
+  }
+
+  throw new Error('Invalid plan payload: command must be "plan" or "test-fix-plan".');
+};
+
 const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
   const resolvedPath = path.resolve(cwd, fromPlan);
 
@@ -214,23 +273,7 @@ const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
     throw new Error(`Invalid plan JSON in ${resolvedPath}: ${message}.${encodingHint}`);
   }
 
-  const parsedPlan = engine.parsePlanArtifact(payload);
-
-  const normalizedPayload =
-    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
-      ? ((payload as Record<string, unknown>).data as Record<string, unknown>)
-      : (payload as Record<string, unknown>);
-
-  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
-    throw new Error('Invalid plan payload: expected an object envelope.');
-  }
-
-  const remediation = parsePlanRemediation(normalizedPayload.remediation);
-
-  return {
-    tasks: parsedPlan.tasks,
-    remediation
-  };
+  return normalizeApplyPlanArtifact(payload);
 };
 
 const loadPolicyEvaluationArtifact = (cwd: string): engine.PolicyEvaluationEntry[] => {

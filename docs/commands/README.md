@@ -614,7 +614,7 @@ Use query surfaces to inspect state:
 
 ## Test-fix planning (`pnpm playbook test-fix-plan`)
 
-`pnpm playbook test-fix-plan --from-triage <artifact> --json` converts the stable `test-triage` diagnosis artifact into the bounded `test-fix-plan` remediation artifact, writing `.playbook/test-fix-plan.json` by default and carrying forward explicit exclusions for risky or unsupported findings.
+`pnpm playbook test-fix-plan --from-triage <artifact> --json` converts the stable `test-triage` diagnosis artifact into the bounded `test-fix-plan` remediation artifact, writing `.playbook/test-fix-plan.json` by default and carrying forward explicit exclusions for risky or unsupported findings. When operators choose to cross the mutation boundary, `pnpm playbook apply --from-plan .playbook/test-fix-plan.json` now reuses the same reviewed `apply --from-plan` execution seam and task selection rules as ordinary plan artifacts.
 
 - Rule: every canonical remediation command must expose one stable artifact contract and one authoritative operator doc.
 - Pattern: add new remediation commands as artifact-producing seams before orchestration wrappers.

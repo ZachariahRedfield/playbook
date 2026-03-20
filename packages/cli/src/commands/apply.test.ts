@@ -31,6 +31,38 @@ const createPlanPayload = () => ({
   tasks: [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }]
 });
 
+
+const createTestFixPlanPayload = () => ({
+  schemaVersion: '1.0',
+  kind: 'test-fix-plan',
+  command: 'test-fix-plan',
+  generatedAt: '1970-01-01T00:00:00.000Z',
+  source: {
+    kind: 'test-triage',
+    command: 'test-triage',
+    generatedAt: '1970-01-01T00:00:00.000Z',
+    path: '.playbook/test-triage.json',
+    input: 'file'
+  },
+  tasks: [{ id: 'task-test-fix', ruleId: 'test-triage.snapshot-refresh', file: 'packages/cli/src/commands/schema.test.ts', action: 'refresh snapshot', autoFix: true }],
+  excluded: [{
+    finding_index: 1,
+    failure_kind: 'environment_limitation',
+    summary: 'Error: Cannot find module @esbuild/linux-x64',
+    reason: 'risky_or_review_required',
+    detail: 'review required',
+    repair_class: 'review_required',
+    file: null,
+    evidence: ['Error: Cannot find module @esbuild/linux-x64']
+  }],
+  summary: {
+    total_findings: 2,
+    eligible_findings: 1,
+    excluded_findings: 1,
+    auto_fix_tasks: 1
+  }
+});
+
 const encodeUtf16Be = (value: string): Buffer => {
   const utf16le = Buffer.from(value, 'utf16le');
   for (let i = 0; i < utf16le.length; i += 2) {
@@ -556,6 +588,62 @@ describe('runApply', () => {
     await expect(
       runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'plan.json', tasks: ['task-missing'] })
     ).rejects.toThrow('Unknown task id(s): task-missing.');
+    expect(applyExecutionPlan).not.toHaveBeenCalled();
+  });
+
+
+  it('accepts test-fix-plan artifacts through --from-plan and derives remediation from exclusions', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-test-fix-plan-'));
+    const planPath = path.join(tmpRoot, 'test-fix-plan.json');
+
+    fs.writeFileSync(planPath, JSON.stringify(createTestFixPlanPayload()));
+
+    parsePlanArtifact.mockReturnValue({
+      tasks: [{ id: 'task-test-fix', ruleId: 'test-triage.snapshot-refresh', file: 'packages/cli/src/commands/schema.test.ts', action: 'refresh snapshot', autoFix: true }]
+    });
+    loadVerifyRules.mockResolvedValue([
+      { id: 'test-triage.snapshot-refresh', description: 'refresh snapshot', check: () => true, fix: vi.fn() }
+    ]);
+    applyExecutionPlan.mockResolvedValue({
+      results: [{ id: 'task-test-fix', ruleId: 'test-triage.snapshot-refresh', file: 'packages/cli/src/commands/schema.test.ts', action: 'refresh snapshot', autoFix: true, status: 'applied' }],
+      summary: { applied: 1, skipped: 0, unsupported: 0, failed: 0 }
+    });
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'test-fix-plan.json' });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(parsePlanArtifact).toHaveBeenCalledWith({
+      schemaVersion: '1.0',
+      command: 'plan',
+      tasks: createTestFixPlanPayload().tasks
+    });
+    expect(applyExecutionPlan).toHaveBeenCalledWith(
+      tmpRoot,
+      [{ id: 'task-test-fix', ruleId: 'test-triage.snapshot-refresh', file: 'packages/cli/src/commands/schema.test.ts', action: 'refresh snapshot', autoFix: true }],
+      { dryRun: false, handlers: { 'test-triage.snapshot-refresh': expect.any(Function) } }
+    );
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.remediation).toEqual({ status: 'ready', totalSteps: 1, unresolvedFailures: 1 });
+
+    logSpy.mockRestore();
+  });
+
+  it('fails clearly when test-fix-plan produces only review-required exclusions', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-test-fix-plan-empty-'));
+    const planPath = path.join(tmpRoot, 'test-fix-plan.json');
+    const payload = createTestFixPlanPayload();
+    payload.tasks = [];
+    payload.summary = { total_findings: 1, eligible_findings: 0, excluded_findings: 1, auto_fix_tasks: 0 };
+    fs.writeFileSync(planPath, JSON.stringify(payload));
+
+    parsePlanArtifact.mockReturnValue({ tasks: [] });
+
+    await expect(runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'test-fix-plan.json' })).rejects.toThrow(
+      'Cannot apply remediation: Test-fix-plan produced no executable low-risk tasks. Review exclusions before attempting apply.'
+    );
     expect(applyExecutionPlan).not.toHaveBeenCalled();
   });
 
