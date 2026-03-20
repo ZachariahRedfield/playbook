@@ -34,6 +34,7 @@
       "analyze-pr",
       "review-pr",
       "ignore",
+      "test-triage",
       "verify",
       "plan",
       "orchestrate",
