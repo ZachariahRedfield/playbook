@@ -1,13 +1,46 @@
 import { describe, expect, it } from 'vitest';
+import { buildTestFixPlanArtifact } from '../src/testFixPlan.js';
 import { buildTestTriageArtifact } from '../src/testTriage.js';
 import {
   appendRemediationHistoryEntry,
   createEmptyRemediationHistoryArtifact,
+  evaluateRepeatRemediationPolicy,
   listPriorSuccessfulRepairClasses,
   listRepeatedFailedRepairAttempts,
   listRunsByFailureSignature,
   nextRemediationHistoryRunId
 } from '../src/testAutofix/remediationHistory.js';
+
+const buildSnapshotTriage = (snapshotIndex: number): ReturnType<typeof buildTestTriageArtifact> => buildTestTriageArtifact([
+  '@fawxzzy/playbook test: FAIL  packages/cli/src/commands/schema.test.ts',
+  '  × renders schema snapshot',
+  `    Snapshot \`renders schema snapshot ${snapshotIndex}\` mismatch`
+].join('\n'), { input: 'file', path: 'failure.log' });
+
+const appendHistoryRun = (base: ReturnType<typeof createEmptyRemediationHistoryArtifact>, options: { signature: string; runId: string; finalStatus: 'fixed' | 'partially_fixed' | 'blocked' | 'not_fixed'; repairClasses: string[]; verificationOk: boolean }) => appendRemediationHistoryEntry(base, {
+  run_id: options.runId,
+  generatedAt: new Date(0).toISOString(),
+  input: { path: 'failure.log' },
+  failure_signatures: [options.signature],
+  triage_classifications: [{
+    failure_signature: options.signature,
+    failure_kind: 'snapshot_drift',
+    repair_class: 'autofix_plan_only',
+    package: '@fawxzzy/playbook',
+    test_file: 'packages/cli/src/commands/schema.test.ts',
+    test_name: 'renders schema snapshot'
+  }],
+  admitted_findings: [options.signature],
+  excluded_findings: [],
+  applied_task_ids: ['task-1'],
+  applied_repair_classes: options.repairClasses,
+  files_touched: ['packages/cli/src/commands/schema.test.ts'],
+  verification_commands: ['pnpm -r test'],
+  verification_outcomes: [{ command: 'pnpm -r test', exitCode: options.verificationOk ? 0 : 1, ok: options.verificationOk }],
+  final_status: options.finalStatus,
+  stop_reasons: [options.verificationOk ? 'Verification passed after apply.' : 'Verification still failed.'],
+  provenance: { failure_log_path: 'failure.log', triage_artifact_path: '.playbook/test-triage.json', fix_plan_artifact_path: '.playbook/test-fix-plan.json', apply_result_path: '.playbook/test-autofix-apply.json', autofix_result_path: '.playbook/test-autofix.json' }
+});
 
 describe('test-autofix remediation history helpers', () => {
   it('derives the same failure signature for equivalent reruns with line noise differences', () => {
@@ -31,58 +64,88 @@ describe('test-autofix remediation history helpers', () => {
   });
 
   it('records history and supports repeated-failure lookup', () => {
-    const triage = buildTestTriageArtifact([
-      '@fawxzzy/playbook test: FAIL  packages/cli/src/commands/schema.test.ts',
-      '  × renders schema snapshot',
-      '    Snapshot `renders schema snapshot 1` mismatch'
-    ].join('\n'), { input: 'file', path: 'failure.log' });
+    const triage = buildSnapshotTriage(1);
     const signature = triage.findings[0]?.failure_signature;
     expect(signature).toBeTruthy();
 
     const base = createEmptyRemediationHistoryArtifact();
     expect(nextRemediationHistoryRunId(base)).toBe('test-autofix-run-0001');
 
-    const success = appendRemediationHistoryEntry(base, {
-      run_id: 'test-autofix-run-0001',
-      generatedAt: new Date(0).toISOString(),
-      input: { path: 'failure.log' },
-      failure_signatures: [signature!],
-      triage_classifications: [{
-        failure_signature: signature!, failure_kind: 'snapshot_drift', repair_class: 'autofix_plan_only', package: '@fawxzzy/playbook', test_file: 'packages/cli/src/commands/schema.test.ts', test_name: 'renders schema snapshot'
-      }],
-      admitted_findings: [signature!],
-      excluded_findings: [],
-      applied_task_ids: ['task-1'],
-      applied_repair_classes: ['snapshot_refresh'],
-      files_touched: ['packages/cli/src/commands/schema.test.ts'],
-      verification_commands: ['pnpm -r test'],
-      verification_outcomes: [{ command: 'pnpm -r test', exitCode: 0, ok: true }],
-      final_status: 'fixed',
-      stop_reasons: ['Verification passed after apply.'],
-      provenance: { failure_log_path: 'failure.log', triage_artifact_path: '.playbook/test-triage.json', fix_plan_artifact_path: '.playbook/test-fix-plan.json', apply_result_path: '.playbook/test-autofix-apply.json', autofix_result_path: '.playbook/test-autofix.json' }
-    });
-    const failed = appendRemediationHistoryEntry(success, {
-      run_id: 'test-autofix-run-0002',
-      generatedAt: new Date(0).toISOString(),
-      input: { path: 'failure.log' },
-      failure_signatures: [signature!],
-      triage_classifications: [{
-        failure_signature: signature!, failure_kind: 'snapshot_drift', repair_class: 'autofix_plan_only', package: '@fawxzzy/playbook', test_file: 'packages/cli/src/commands/schema.test.ts', test_name: 'renders schema snapshot'
-      }],
-      admitted_findings: [signature!],
-      excluded_findings: [],
-      applied_task_ids: ['task-1'],
-      applied_repair_classes: ['snapshot_refresh'],
-      files_touched: ['packages/cli/src/commands/schema.test.ts'],
-      verification_commands: ['pnpm -r test'],
-      verification_outcomes: [{ command: 'pnpm -r test', exitCode: 1, ok: false }],
-      final_status: 'not_fixed',
-      stop_reasons: ['Verification still failed.'],
-      provenance: { failure_log_path: 'failure.log', triage_artifact_path: '.playbook/test-triage.json', fix_plan_artifact_path: '.playbook/test-fix-plan.json', apply_result_path: '.playbook/test-autofix-apply.json', autofix_result_path: '.playbook/test-autofix.json' }
-    });
+    const success = appendHistoryRun(base, { signature: signature!, runId: 'test-autofix-run-0001', finalStatus: 'fixed', repairClasses: ['snapshot_refresh'], verificationOk: true });
+    const failed = appendHistoryRun(success, { signature: signature!, runId: 'test-autofix-run-0002', finalStatus: 'not_fixed', repairClasses: ['snapshot_refresh'], verificationOk: false });
 
     expect(listRunsByFailureSignature(failed, signature!)).toHaveLength(2);
     expect(listPriorSuccessfulRepairClasses(failed, signature!)).toEqual(['snapshot_refresh']);
     expect(listRepeatedFailedRepairAttempts(failed, signature!)).toHaveLength(1);
+  });
+
+  it('allows one bounded repair attempt when no history matches', () => {
+    const triage = buildSnapshotTriage(1);
+    const fixPlan = buildTestFixPlanArtifact(triage);
+
+    const policy = evaluateRepeatRemediationPolicy(triage, fixPlan, createEmptyRemediationHistoryArtifact());
+    expect(policy.retry_policy_decision).toBe('no_history');
+    expect(policy.preferred_repair_class).toBeNull();
+    expect(policy.history_summary.matching_run_ids).toEqual([]);
+  });
+
+  it('surfaces a preferred repair class when prior success exists for the same signature', () => {
+    const triage = buildSnapshotTriage(1);
+    const fixPlan = buildTestFixPlanArtifact(triage);
+    const signature = triage.findings[0]!.failure_signature;
+    const history = appendHistoryRun(createEmptyRemediationHistoryArtifact(), {
+      signature,
+      runId: 'test-autofix-run-0001',
+      finalStatus: 'fixed',
+      repairClasses: ['snapshot_refresh'],
+      verificationOk: true
+    });
+
+    const policy = evaluateRepeatRemediationPolicy(triage, fixPlan, history);
+    expect(policy.retry_policy_decision).toBe('allow_with_preferred_repair_class');
+    expect(policy.preferred_repair_class).toBe('snapshot_refresh');
+    expect(policy.history_summary.prior_successful_repair_classes).toEqual(['snapshot_refresh']);
+  });
+
+  it('blocks mutation when the same repair class already failed twice for the same signature', () => {
+    const triage = buildSnapshotTriage(1);
+    const fixPlan = buildTestFixPlanArtifact(triage);
+    const signature = triage.findings[0]!.failure_signature;
+    let history = createEmptyRemediationHistoryArtifact();
+    history = appendHistoryRun(history, { signature, runId: 'test-autofix-run-0001', finalStatus: 'not_fixed', repairClasses: ['snapshot_refresh'], verificationOk: false });
+    history = appendHistoryRun(history, { signature, runId: 'test-autofix-run-0002', finalStatus: 'blocked', repairClasses: ['snapshot_refresh'], verificationOk: false });
+
+    const policy = evaluateRepeatRemediationPolicy(triage, fixPlan, history);
+    expect(policy.retry_policy_decision).toBe('blocked_repeat_failure');
+    expect(policy.history_summary.repeated_failed_repair_attempts).toEqual([
+      {
+        failure_signature: signature,
+        repair_class: 'snapshot_refresh',
+        count: 2,
+        run_ids: ['test-autofix-run-0001', 'test-autofix-run-0002']
+      }
+    ]);
+  });
+
+  it('keeps mixed repeat history deterministic when prior successful repair evidence exists', () => {
+    const triage = buildTestTriageArtifact([
+      '@fawxzzy/playbook test: FAIL  packages/cli/src/commands/schema.test.ts',
+      '  × renders schema snapshot',
+      '    Snapshot `renders schema snapshot 1` mismatch',
+      '@fawxzzy/playbook test: FAIL  packages/engine/test/testFixPlan.test.ts',
+      '  × sorts stable entries',
+      '    AssertionError: expected [2,1] to equal [1,2]'
+    ].join('\n'), { input: 'file', path: 'failure.log' });
+    const fixPlan = buildTestFixPlanArtifact(triage);
+    const [firstSignature, secondSignature] = triage.findings.map((finding) => finding.failure_signature);
+    let history = createEmptyRemediationHistoryArtifact();
+    history = appendHistoryRun(history, { signature: firstSignature!, runId: 'test-autofix-run-0001', finalStatus: 'fixed', repairClasses: ['snapshot_refresh'], verificationOk: true });
+    history = appendHistoryRun(history, { signature: secondSignature!, runId: 'test-autofix-run-0002', finalStatus: 'not_fixed', repairClasses: ['stale_assertion_update'], verificationOk: false });
+
+    const policy = evaluateRepeatRemediationPolicy(triage, fixPlan, history);
+    expect(policy.retry_policy_decision).toBe('allow_with_preferred_repair_class');
+    expect(policy.preferred_repair_class).toBe('snapshot_refresh');
+    expect(policy.history_summary.matched_signatures).toEqual([firstSignature, secondSignature].sort());
+    expect(policy.history_summary.prior_successful_repair_classes).toEqual(['snapshot_refresh']);
   });
 });

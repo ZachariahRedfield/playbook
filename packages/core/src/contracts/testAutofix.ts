@@ -49,6 +49,30 @@ export type TestAutofixExcludedFindingSummary = {
   }>;
 };
 
+export const testAutofixRetryPolicyDecisions = [
+  'allow_repair',
+  'allow_with_preferred_repair_class',
+  'blocked_repeat_failure',
+  'review_required_repeat_failure',
+  'no_history'
+] as const;
+export type TestAutofixRetryPolicyDecision = (typeof testAutofixRetryPolicyDecisions)[number];
+
+export type TestAutofixHistorySummary = {
+  matched_signatures: string[];
+  matching_run_ids: string[];
+  prior_final_statuses: string[];
+  prior_applied_repair_classes: string[];
+  prior_successful_repair_classes: string[];
+  repeated_failed_repair_attempts: Array<{
+    failure_signature: string;
+    repair_class: string;
+    count: number;
+    run_ids: string[];
+  }>;
+  provenance_run_ids: string[];
+};
+
 export type TestAutofixArtifact = {
   schemaVersion: typeof TEST_AUTOFIX_SCHEMA_VERSION;
   kind: typeof TEST_AUTOFIX_ARTIFACT_KIND;
@@ -60,6 +84,11 @@ export type TestAutofixArtifact = {
   source_fix_plan: TestAutofixSourceReference;
   source_apply: TestAutofixSourceReference;
   remediation_history_path: string;
+  failure_signatures: string[];
+  history_summary: TestAutofixHistorySummary;
+  preferred_repair_class: string | null;
+  retry_policy_decision: TestAutofixRetryPolicyDecision;
+  retry_policy_reason: string;
   apply_result: TestAutofixApplySummary;
   verification_result: TestAutofixVerificationSummary;
   executed_verification_commands: TestAutofixVerificationCommandResult[];

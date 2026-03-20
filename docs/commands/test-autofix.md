@@ -86,6 +86,8 @@ It records:
 
 The remediation history artifact is the trustable evidence layer for bounded self-repair. Each run stores stable failure signatures, triage classifications, admitted vs excluded findings, applied repair classes, verification outcomes, and provenance back to the failure log plus generated artifacts. Repeat detection and any future bounded retry policy must key off those stable signatures and recorded outcomes rather than raw console noise.
 
+
+Repeat-aware remediation is now the explicit policy layer between history and mutation. Before `apply` runs, `test-autofix` evaluates stable failure signatures against `.playbook/test-autofix-history.json` and emits a deterministic retry decision: `no_history`, `allow_repair`, `allow_with_preferred_repair_class`, `blocked_repeat_failure`, or `review_required_repeat_failure`. That policy prevents replaying known-bad repairs, can surface a previously successful repair class as preferred guidance, and still allows only one bounded repair attempt per run without recursive loops.
 Use `pnpm playbook schema test-autofix --json` to inspect the machine-readable schema.
 
 ## Rule / Pattern / Failure Mode

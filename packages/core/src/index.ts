@@ -1,5 +1,5 @@
-export type { TestAutofixArtifact, TestAutofixApplySummary, TestAutofixExcludedFindingSummary, TestAutofixFinalStatus, TestAutofixSourceReference, TestAutofixVerificationCommandResult, TestAutofixVerificationSummary } from './contracts/testAutofix.js';
-export { TEST_AUTOFIX_ARTIFACT_KIND, TEST_AUTOFIX_SCHEMA_VERSION, testAutofixFinalStatuses } from './contracts/testAutofix.js';
+export type { TestAutofixArtifact, TestAutofixApplySummary, TestAutofixExcludedFindingSummary, TestAutofixFinalStatus, TestAutofixHistorySummary, TestAutofixRetryPolicyDecision, TestAutofixSourceReference, TestAutofixVerificationCommandResult, TestAutofixVerificationSummary } from './contracts/testAutofix.js';
+export { TEST_AUTOFIX_ARTIFACT_KIND, TEST_AUTOFIX_SCHEMA_VERSION, testAutofixFinalStatuses, testAutofixRetryPolicyDecisions } from './contracts/testAutofix.js';
 export type { TestFixPlanArtifact, TestFixPlanExclusion, TestFixPlanExclusionReason, TestFixPlanTask, TestFixPlanTaskKind, TestFixPlanTaskProvenance } from './contracts/testFixPlan.js';
 export type { TestAutofixRemediationClassification, TestAutofixRemediationHistoryArtifact, TestAutofixRemediationHistoryEntry, TestAutofixRemediationHistorySourceProvenance, TestAutofixRemediationVerificationOutcome } from './contracts/testAutofixRemediationHistory.js';
 export { TEST_AUTOFIX_REMEDIATION_HISTORY_ARTIFACT_KIND, TEST_AUTOFIX_REMEDIATION_HISTORY_SCHEMA_VERSION } from './contracts/testAutofixRemediationHistory.js';

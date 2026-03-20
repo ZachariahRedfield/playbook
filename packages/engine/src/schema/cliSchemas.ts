@@ -1852,7 +1852,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'input', 'source_triage', 'source_fix_plan', 'apply_result', 'verification_result', 'executed_verification_commands', 'applied_task_ids', 'excluded_finding_summary', 'final_status', 'reason'],
+        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'input', 'source_triage', 'source_fix_plan', 'apply_result', 'verification_result', 'executed_verification_commands', 'applied_task_ids', 'excluded_finding_summary', 'final_status', 'reason', 'failure_signatures', 'history_summary', 'preferred_repair_class', 'retry_policy_decision', 'retry_policy_reason'],
         properties: {
           schemaVersion: { const: '1.0' },
           kind: { const: 'test-autofix' },
@@ -1861,6 +1861,11 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           input: { type: 'string' },
           source_triage: { type: 'object', additionalProperties: false, required: ['path', 'command'], properties: { path: { type: ['string', 'null'] }, command: { const: 'test-triage' } } },
           source_fix_plan: { type: 'object', additionalProperties: false, required: ['path', 'command'], properties: { path: { type: ['string', 'null'] }, command: { const: 'test-fix-plan' } } },
+          failure_signatures: { type: 'array', items: { type: 'string' } },
+          history_summary: { type: 'object', additionalProperties: false, required: ['matched_signatures', 'matching_run_ids', 'prior_final_statuses', 'prior_applied_repair_classes', 'prior_successful_repair_classes', 'repeated_failed_repair_attempts', 'provenance_run_ids'], properties: { matched_signatures: { type: 'array', items: { type: 'string' } }, matching_run_ids: { type: 'array', items: { type: 'string' } }, prior_final_statuses: { type: 'array', items: { type: 'string' } }, prior_applied_repair_classes: { type: 'array', items: { type: 'string' } }, prior_successful_repair_classes: { type: 'array', items: { type: 'string' } }, repeated_failed_repair_attempts: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['failure_signature', 'repair_class', 'count', 'run_ids'], properties: { failure_signature: { type: 'string' }, repair_class: { type: 'string' }, count: { type: 'integer' }, run_ids: { type: 'array', items: { type: 'string' } } } } }, provenance_run_ids: { type: 'array', items: { type: 'string' } } } },
+          preferred_repair_class: { type: ['string', 'null'] },
+          retry_policy_decision: { enum: ['allow_repair', 'allow_with_preferred_repair_class', 'blocked_repeat_failure', 'review_required_repeat_failure', 'no_history'] },
+          retry_policy_reason: { type: 'string' },
           apply_result: { type: 'object', additionalProperties: false, required: ['attempted', 'ok', 'exitCode', 'applied', 'skipped', 'unsupported', 'failed', 'message'], properties: { attempted: { type: 'boolean' }, ok: { type: 'boolean' }, exitCode: { type: 'integer' }, applied: { type: 'integer' }, skipped: { type: 'integer' }, unsupported: { type: 'integer' }, failed: { type: 'integer' }, message: { type: ['string', 'null'] } } },
           verification_result: { type: 'object', additionalProperties: false, required: ['attempted', 'ok', 'total', 'passed', 'failed'], properties: { attempted: { type: 'boolean' }, ok: { type: 'boolean' }, total: { type: 'integer' }, passed: { type: 'integer' }, failed: { type: 'integer' } } },
           executed_verification_commands: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['command', 'exitCode', 'ok'], properties: { command: { type: 'string' }, exitCode: { type: 'integer' }, ok: { type: 'boolean' } } } },

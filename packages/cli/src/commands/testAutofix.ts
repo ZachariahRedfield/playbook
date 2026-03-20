@@ -20,6 +20,24 @@ import { printCommandHelp } from '../lib/commandSurface.js';
 import { runSpawnSync } from '../lib/processRunner.js';
 import { runApply } from './apply.js';
 
+
+type TestAutofixRetryPolicyDecision = 'allow_repair' | 'allow_with_preferred_repair_class' | 'blocked_repeat_failure' | 'review_required_repeat_failure' | 'no_history';
+
+type TestAutofixHistorySummary = {
+  matched_signatures: string[];
+  matching_run_ids: string[];
+  prior_final_statuses: string[];
+  prior_applied_repair_classes: string[];
+  prior_successful_repair_classes: string[];
+  repeated_failed_repair_attempts: Array<{
+    failure_signature: string;
+    repair_class: string;
+    count: number;
+    run_ids: string[];
+  }>;
+  provenance_run_ids: string[];
+};
+
 type TestAutofixOptions = {
   format: 'text' | 'json';
   quiet: boolean;
@@ -83,6 +101,13 @@ type ApplyJsonPayload = {
 
 const engine = engineRuntime as unknown as {
   appendRemediationHistoryEntry: (artifact: RemediationHistoryArtifact, entry: RemediationHistoryEntry) => RemediationHistoryArtifact;
+  evaluateRepeatRemediationPolicy: (triage: TestTriageArtifact, fixPlan: TestFixPlanArtifact, history: RemediationHistoryArtifact) => {
+    failure_signatures: string[];
+    history_summary: TestAutofixHistorySummary;
+    preferred_repair_class: string | null;
+    retry_policy_decision: TestAutofixRetryPolicyDecision;
+    retry_policy_reason: string;
+  };
   buildTestFixPlanArtifact: (triage: TestTriageArtifact) => TestFixPlanArtifact;
   buildTestTriageArtifact: (rawLog: string, source: { input: 'file' | 'stdin'; path: string | null }) => TestTriageArtifact;
   buildTriageClassifications: (entries: RemediationHistoryEntry['triage_classifications']) => RemediationHistoryEntry['triage_classifications'];
@@ -241,7 +266,7 @@ const renderText = (artifact: TestAutofixArtifact, outFile: string): string => {
   return lines.join('\n');
 };
 
-const classifyStopWithoutMutation = (triage: TestTriageArtifact, fixPlan: TestFixPlanArtifact): { finalStatus: TestAutofixFinalStatus; reason: string } | null => {
+const classifyStopWithoutMutation = (triage: TestTriageArtifact, fixPlan: TestFixPlanArtifact, retryPolicy: { retry_policy_decision: TestAutofixRetryPolicyDecision; retry_policy_reason: string }): { finalStatus: TestAutofixFinalStatus; reason: string } | null => {
   if (triage.findings.length === 0) {
     return {
       finalStatus: 'blocked',
@@ -253,6 +278,20 @@ const classifyStopWithoutMutation = (triage: TestTriageArtifact, fixPlan: TestFi
     return {
       finalStatus: 'review_required_only',
       reason: 'All findings were review-required exclusions, so test-autofix preserved the trust boundary and performed no mutation.'
+    };
+  }
+
+  if (retryPolicy.retry_policy_decision === 'blocked_repeat_failure') {
+    return {
+      finalStatus: 'blocked',
+      reason: retryPolicy.retry_policy_reason
+    };
+  }
+
+  if (retryPolicy.retry_policy_decision === 'review_required_repeat_failure') {
+    return {
+      finalStatus: 'review_required_only',
+      reason: retryPolicy.retry_policy_reason
     };
   }
 
@@ -353,7 +392,8 @@ export const runTestAutofix = async (cwd: string, options: TestAutofixOptions): 
     writeJsonArtifact(cwd, DEFAULT_FIX_PLAN_FILE, fixPlan, 'test-autofix');
 
     const excludedSummary = summarizeExcludedFindings(fixPlan);
-    const stop = classifyStopWithoutMutation(triage, fixPlan);
+    const retryPolicy = engine.evaluateRepeatRemediationPolicy(triage, fixPlan, historyBefore);
+    const stop = classifyStopWithoutMutation(triage, fixPlan, retryPolicy);
     const outFile = options.outFile ?? DEFAULT_RESULT_FILE;
     let applyArtifactPath: string | null = null;
     let filesTouched: string[] = [];
@@ -370,6 +410,11 @@ export const runTestAutofix = async (cwd: string, options: TestAutofixOptions): 
         source_fix_plan: { path: DEFAULT_FIX_PLAN_FILE, command: 'test-fix-plan' },
         source_apply: { path: null, command: 'apply' },
         remediation_history_path: DEFAULT_HISTORY_FILE,
+        failure_signatures: retryPolicy.failure_signatures,
+        history_summary: retryPolicy.history_summary,
+        preferred_repair_class: retryPolicy.preferred_repair_class,
+        retry_policy_decision: retryPolicy.retry_policy_decision,
+        retry_policy_reason: retryPolicy.retry_policy_reason,
         apply_result: emptyApplySummary(stop.reason),
         verification_result: emptyVerificationSummary(),
         executed_verification_commands: [],
@@ -449,6 +494,11 @@ export const runTestAutofix = async (cwd: string, options: TestAutofixOptions): 
       source_fix_plan: { path: DEFAULT_FIX_PLAN_FILE, command: 'test-fix-plan' },
       source_apply: { path: applyArtifactPath, command: 'apply' },
       remediation_history_path: DEFAULT_HISTORY_FILE,
+      failure_signatures: retryPolicy.failure_signatures,
+      history_summary: retryPolicy.history_summary,
+      preferred_repair_class: retryPolicy.preferred_repair_class,
+      retry_policy_decision: retryPolicy.retry_policy_decision,
+      retry_policy_reason: retryPolicy.retry_policy_reason,
       apply_result: applySummary,
       verification_result: verificationSummary,
       executed_verification_commands: verificationCommands,

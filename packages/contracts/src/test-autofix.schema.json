@@ -15,6 +15,11 @@
     "source_fix_plan",
     "source_apply",
     "remediation_history_path",
+    "failure_signatures",
+    "history_summary",
+    "preferred_repair_class",
+    "retry_policy_decision",
+    "retry_policy_reason",
     "apply_result",
     "verification_result",
     "executed_verification_commands",
@@ -25,65 +30,273 @@
     "reason"
   ],
   "properties": {
-    "schemaVersion": { "type": "string", "const": "1.0" },
-    "kind": { "type": "string", "const": "test-autofix" },
-    "command": { "type": "string", "const": "test-autofix" },
-    "generatedAt": { "type": "string" },
-    "run_id": { "type": "string" },
-    "input": { "type": "string" },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "const": "test-autofix"
+    },
+    "command": {
+      "type": "string",
+      "const": "test-autofix"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "input": {
+      "type": "string"
+    },
     "source_triage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "command"],
+      "required": [
+        "path",
+        "command"
+      ],
       "properties": {
-        "path": { "type": ["string", "null"] },
-        "command": { "type": "string", "const": "test-triage" }
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "command": {
+          "type": "string",
+          "const": "test-triage"
+        }
       }
     },
     "source_fix_plan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "command"],
+      "required": [
+        "path",
+        "command"
+      ],
       "properties": {
-        "path": { "type": ["string", "null"] },
-        "command": { "type": "string", "const": "test-fix-plan" }
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "command": {
+          "type": "string",
+          "const": "test-fix-plan"
+        }
       }
     },
     "source_apply": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "command"],
+      "required": [
+        "path",
+        "command"
+      ],
       "properties": {
-        "path": { "type": ["string", "null"] },
-        "command": { "type": "string", "const": "apply" }
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "command": {
+          "type": "string",
+          "const": "apply"
+        }
       }
     },
-    "remediation_history_path": { "type": "string" },
+    "remediation_history_path": {
+      "type": "string"
+    },
+    "failure_signatures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "history_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matched_signatures",
+        "matching_run_ids",
+        "prior_final_statuses",
+        "prior_applied_repair_classes",
+        "prior_successful_repair_classes",
+        "repeated_failed_repair_attempts",
+        "provenance_run_ids"
+      ],
+      "properties": {
+        "matched_signatures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "matching_run_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prior_final_statuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prior_applied_repair_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prior_successful_repair_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "repeated_failed_repair_attempts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "failure_signature",
+              "repair_class",
+              "count",
+              "run_ids"
+            ],
+            "properties": {
+              "failure_signature": {
+                "type": "string"
+              },
+              "repair_class": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "run_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "provenance_run_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "preferred_repair_class": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "retry_policy_decision": {
+      "type": "string",
+      "enum": [
+        "allow_repair",
+        "allow_with_preferred_repair_class",
+        "blocked_repeat_failure",
+        "review_required_repeat_failure",
+        "no_history"
+      ]
+    },
+    "retry_policy_reason": {
+      "type": "string"
+    },
     "apply_result": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["attempted", "ok", "exitCode", "applied", "skipped", "unsupported", "failed", "message"],
+      "required": [
+        "attempted",
+        "ok",
+        "exitCode",
+        "applied",
+        "skipped",
+        "unsupported",
+        "failed",
+        "message"
+      ],
       "properties": {
-        "attempted": { "type": "boolean" },
-        "ok": { "type": "boolean" },
-        "exitCode": { "type": "integer" },
-        "applied": { "type": "integer", "minimum": 0 },
-        "skipped": { "type": "integer", "minimum": 0 },
-        "unsupported": { "type": "integer", "minimum": 0 },
-        "failed": { "type": "integer", "minimum": 0 },
-        "message": { "type": ["string", "null"] }
+        "attempted": {
+          "type": "boolean"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "exitCode": {
+          "type": "integer"
+        },
+        "applied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unsupported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "verification_result": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["attempted", "ok", "total", "passed", "failed"],
+      "required": [
+        "attempted",
+        "ok",
+        "total",
+        "passed",
+        "failed"
+      ],
       "properties": {
-        "attempted": { "type": "boolean" },
-        "ok": { "type": "boolean" },
-        "total": { "type": "integer", "minimum": 0 },
-        "passed": { "type": "integer", "minimum": 0 },
-        "failed": { "type": "integer", "minimum": 0 }
+        "attempted": {
+          "type": "boolean"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "executed_verification_commands": {
@@ -91,34 +304,64 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["command", "exitCode", "ok"],
+        "required": [
+          "command",
+          "exitCode",
+          "ok"
+        ],
         "properties": {
-          "command": { "type": "string" },
-          "exitCode": { "type": "integer" },
-          "ok": { "type": "boolean" }
+          "command": {
+            "type": "string"
+          },
+          "exitCode": {
+            "type": "integer"
+          },
+          "ok": {
+            "type": "boolean"
+          }
         }
       }
     },
     "applied_task_ids": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
     "excluded_finding_summary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["total", "review_required", "by_reason"],
+      "required": [
+        "total",
+        "review_required",
+        "by_reason"
+      ],
       "properties": {
-        "total": { "type": "integer", "minimum": 0 },
-        "review_required": { "type": "integer", "minimum": 0 },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "review_required": {
+          "type": "integer",
+          "minimum": 0
+        },
         "by_reason": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["reason", "count"],
+            "required": [
+              "reason",
+              "count"
+            ],
             "properties": {
-              "reason": { "type": "string" },
-              "count": { "type": "integer", "minimum": 0 }
+              "reason": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              }
             }
           }
         }
@@ -126,12 +369,22 @@
     },
     "final_status": {
       "type": "string",
-      "enum": ["fixed", "partially_fixed", "not_fixed", "blocked", "review_required_only"]
+      "enum": [
+        "fixed",
+        "partially_fixed",
+        "not_fixed",
+        "blocked",
+        "review_required_only"
+      ]
     },
     "stop_reasons": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
-    "reason": { "type": "string" }
+    "reason": {
+      "type": "string"
+    }
   }
 }
