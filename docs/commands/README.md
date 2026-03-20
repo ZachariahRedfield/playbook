@@ -52,6 +52,7 @@ Do not hand-edit entries inside the managed markers.
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | canonical | bootstrap | primary | P2 | Current (implemented) | `pnpm playbook ai-contract --json` |
 | `test-triage` | Parse deterministic test failure triage guidance from captured Vitest/pnpm logs | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-triage --input .playbook/ci-failure.log --json` |
 | `test-fix-plan` | Generate a bounded remediation plan from a deterministic test-triage artifact | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json` |
+| `test-autofix` | Orchestrate deterministic test diagnosis, bounded repair, apply, and narrow-first verification | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-autofix --input .playbook/ci-failure.log --json` |
 | `ignore` | Suggest and safely apply ranked .playbookignore recommendations | canonical | remediation | primary | P12 | Current (implemented) | `pnpm playbook ignore suggest --repo ../target-repo --json` |
 | `contracts` | Emit deterministic contract registry for schemas, artifacts, and roadmap status | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook contracts --json` |
 | `index` | Generate machine-readable repository intelligence index | canonical | repo-intelligence | primary | P4 | Current (implemented) | `pnpm playbook index --json` |
@@ -81,7 +82,7 @@ Do not hand-edit entries inside the managed markers.
 ### Implemented command docs
 
 - Core flow: [`verify`](verify.md), [`plan`](plan.md), [`apply`](apply.md), [`pilot`](pilot.md)
-- Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md), [`test-triage`](test-triage.md), [`test-fix-plan`](test-fix-plan.md)
+- Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md), [`test-triage`](test-triage.md), [`test-fix-plan`](test-fix-plan.md), [`test-autofix`](test-autofix.md)
 - AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`context`](overview.md)
 - Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`story`](story.md), [`promote`](promote.md), [`observer`](observer.md), [`receipt`](receipt.md), [`learn`](learn.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
 - `status proof` is the canonical external-consumer bootstrap proof surface for proving runtime + CLI + docs/artifact + execution/governance readiness in one read-only flow. Its required automation truth stays in the canonical `proof` payload; additive interpretation metadata must be explicitly governed when present.

@@ -9,6 +9,16 @@ declare module "@zachariahredfield/playbook-core" {
   export const runArchitectureAudit: (...args: any[]) => any;
   export const loadArchitecture: (...args: any[]) => any;
   export type CommandExecutionQualityArtifact = any;
+  export const TEST_AUTOFIX_ARTIFACT_KIND: any;
+  export const TEST_AUTOFIX_SCHEMA_VERSION: any;
+  export type TestAutofixArtifact = any;
+  export type TestAutofixApplySummary = any;
+  export type TestAutofixExcludedFindingSummary = any;
+  export type TestAutofixFinalStatus = any;
+  export type TestAutofixVerificationCommandResult = any;
+  export type TestAutofixVerificationSummary = any;
+  export type TestFixPlanArtifact = any;
+  export type TestTriageArtifact = any;
 }
 
 declare module "@zachariahredfield/playbook-node" {

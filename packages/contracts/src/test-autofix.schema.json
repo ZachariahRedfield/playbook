@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/test-autofix.schema.json",
+  "title": "PlaybookTestAutofixArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "generatedAt",
+    "input",
+    "source_triage",
+    "source_fix_plan",
+    "apply_result",
+    "verification_result",
+    "executed_verification_commands",
+    "applied_task_ids",
+    "excluded_finding_summary",
+    "final_status",
+    "reason"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "test-autofix" },
+    "command": { "type": "string", "const": "test-autofix" },
+    "generatedAt": { "type": "string" },
+    "input": { "type": "string" },
+    "source_triage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "command"],
+      "properties": {
+        "path": { "type": ["string", "null"] },
+        "command": { "type": "string", "const": "test-triage" }
+      }
+    },
+    "source_fix_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "command"],
+      "properties": {
+        "path": { "type": ["string", "null"] },
+        "command": { "type": "string", "const": "test-fix-plan" }
+      }
+    },
+    "apply_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempted", "ok", "exitCode", "applied", "skipped", "unsupported", "failed", "message"],
+      "properties": {
+        "attempted": { "type": "boolean" },
+        "ok": { "type": "boolean" },
+        "exitCode": { "type": "integer" },
+        "applied": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "unsupported": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "message": { "type": ["string", "null"] }
+      }
+    },
+    "verification_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempted", "ok", "total", "passed", "failed"],
+      "properties": {
+        "attempted": { "type": "boolean" },
+        "ok": { "type": "boolean" },
+        "total": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "executed_verification_commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "exitCode", "ok"],
+        "properties": {
+          "command": { "type": "string" },
+          "exitCode": { "type": "integer" },
+          "ok": { "type": "boolean" }
+        }
+      }
+    },
+    "applied_task_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "excluded_finding_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "review_required", "by_reason"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "review_required": { "type": "integer", "minimum": 0 },
+        "by_reason": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["reason", "count"],
+            "properties": {
+              "reason": { "type": "string" },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "final_status": {
+      "type": "string",
+      "enum": ["fixed", "partially_fixed", "not_fixed", "blocked", "review_required_only"]
+    },
+    "reason": { "type": "string" }
+  }
+}

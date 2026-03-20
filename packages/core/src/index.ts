@@ -1,3 +1,5 @@
+export type { TestAutofixArtifact, TestAutofixApplySummary, TestAutofixExcludedFindingSummary, TestAutofixFinalStatus, TestAutofixSourceReference, TestAutofixVerificationCommandResult, TestAutofixVerificationSummary } from './contracts/testAutofix.js';
+export { TEST_AUTOFIX_ARTIFACT_KIND, TEST_AUTOFIX_SCHEMA_VERSION, testAutofixFinalStatuses } from './contracts/testAutofix.js';
 export type { TestFixPlanArtifact, TestFixPlanExclusion, TestFixPlanExclusionReason, TestFixPlanTask, TestFixPlanTaskKind, TestFixPlanTaskProvenance } from './contracts/testFixPlan.js';
 export { TEST_FIX_PLAN_ARTIFACT_KIND, TEST_FIX_PLAN_SCHEMA_VERSION, testFixPlanExclusionReasons, testFixPlanTaskKinds } from './contracts/testFixPlan.js';
 export type { TestTriageArtifact, TestTriageFailureKind, TestTriageFinding, TestTriageFailureModeNote, TestTriageRepairClass, TestTriageRepairPlan } from './contracts/testTriage.js';

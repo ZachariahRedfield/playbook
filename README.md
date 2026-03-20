@@ -21,6 +21,7 @@ Playbook is best understood as **deterministic repo intelligence + governance + 
 
 This framing is the core promise: deterministic evidence over ad-hoc inference, and reviewed intent before execution.
 
+Recent implementation note: `pnpm playbook test-autofix --input <path> --json` now closes the bounded test-remediation loop by orchestrating `test-triage`, `test-fix-plan`, `apply --from-plan`, and the exact narrow-first rerun plan already emitted by triage, while still preserving the same reviewed execution boundary and explicit final-status classification.
 Recent implementation note: `pnpm playbook test-fix-plan --from-triage <artifact> --json` now exposes the bounded remediation seam after diagnosis, turning only pre-approved low-risk `test-triage` findings into stable apply-compatible tasks while preserving risky or unsupported findings as explicit exclusions. Those artifacts are now accepted directly by `pnpm playbook apply --from-plan`, which reuses the existing approved-plan execution boundary instead of introducing a separate mutation path.
 Recent implementation note: `pnpm playbook learn doctrine --json` now provides a first-class report-only post-merge learning surface that turns merged change summaries into reusable Rule / Pattern / Failure Mode suggestions, notes-update guidance, and candidate future verification checks without auto-promoting doctrine into source-of-truth docs.
 Recent implementation note: promoted reusable patterns now carry explicit lifecycle truth (`active`, `superseded`, `retired`, `demoted`), lifecycle mutations emit audited receipts through `pnpm playbook promote pattern-retire|pattern-demote|pattern-recall|pattern-supersede`, and advisory planning context consumes only active promoted knowledge by default.
@@ -102,6 +103,7 @@ pnpm playbook verify --json
 pnpm playbook plan --json --out .playbook/plan.json
 pnpm playbook apply --from-plan .playbook/plan.json
 pnpm playbook apply --from-plan .playbook/test-fix-plan.json
+pnpm playbook test-autofix --input .playbook/ci-failure.log --json
 pnpm playbook verify --json
 ```
 

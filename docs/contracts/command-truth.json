@@ -568,6 +568,18 @@
       "example": "pnpm playbook telemetry learning --json"
     },
     {
+      "name": "test-autofix",
+      "category": "Repository tools",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook test-autofix --input .playbook/ci-failure.log --json"
+    },
+    {
       "name": "test-fix-plan",
       "category": "Repository tools",
       "role": "remediation",
@@ -661,6 +673,7 @@
     "rules",
     "security",
     "story",
+    "test-autofix",
     "test-fix-plan",
     "test-triage",
     "verify",

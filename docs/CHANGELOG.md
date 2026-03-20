@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- WHAT: Added the first-class `pnpm playbook test-autofix --input <path> [--json] [--out <path>]` orchestration command, result artifact/schema, focused CLI tests, and docs updates so deterministic test diagnosis, bounded repair planning, reviewed execution, and narrow-first verification now compose through one governed wrapper without introducing a parallel mutation executor. WHY: This closes the bounded remediation loop while preserving the existing trust model that all mutation must still pass through `apply --from-plan`.
+- WHAT: Added explicit deterministic stop-condition and final-status classification for bounded self-repair (`fixed`, `partially_fixed`, `not_fixed`, `blocked`, `review_required_only`) plus preserved reasons, excluded-finding summaries, executed rerun commands, and applied task ids in the `test-autofix` artifact. WHY: Self-repair automation is only trustworthy when it explains exactly why it stopped, what it executed, and whether review-only findings remained outside the mutation boundary.
+- Rule: Mutation must always pass through a single governed execution boundary.
+- Pattern: New automation capabilities should orchestrate existing diagnosis, planning, execution, and verification seams instead of inventing a parallel executor.
+- Failure Mode: Self-repair systems that skip explicit result classification and stop conditions become noisy, unsafe, and hard to trust.
+
 - WHAT: Hardened remediation bridge docs across command guides, the command status index, and roadmap notes so the trust boundary is stated the same way everywhere: `test-triage` is diagnosis, `test-fix-plan` is bounded repair planning, and `apply` remains reviewed execution. WHY: Operators need the wording layer to make mutation authority legible, especially for risky findings that stay review-required instead of turning into executable work by documentation implication.
 - Rule: trust-boundary docs must evolve at the same time as remediation command surfaces.
 - Pattern: diagnosis -> planning -> execution should be documented as separate stages with different mutation authority.
@@ -33,6 +39,12 @@
 - Failure Mode: Knowledge accumulation without retirement or recall turns governed memory into doctrine sprawl.
 
 ## Unreleased
+
+- WHAT: Added the first-class `pnpm playbook test-autofix --input <path> [--json] [--out <path>]` orchestration command, result artifact/schema, focused CLI tests, and docs updates so deterministic test diagnosis, bounded repair planning, reviewed execution, and narrow-first verification now compose through one governed wrapper without introducing a parallel mutation executor. WHY: This closes the bounded remediation loop while preserving the existing trust model that all mutation must still pass through `apply --from-plan`.
+- WHAT: Added explicit deterministic stop-condition and final-status classification for bounded self-repair (`fixed`, `partially_fixed`, `not_fixed`, `blocked`, `review_required_only`) plus preserved reasons, excluded-finding summaries, executed rerun commands, and applied task ids in the `test-autofix` artifact. WHY: Self-repair automation is only trustworthy when it explains exactly why it stopped, what it executed, and whether review-only findings remained outside the mutation boundary.
+- Rule: Mutation must always pass through a single governed execution boundary.
+- Pattern: New automation capabilities should orchestrate existing diagnosis, planning, execution, and verification seams instead of inventing a parallel executor.
+- Failure Mode: Self-repair systems that skip explicit result classification and stop conditions become noisy, unsafe, and hard to trust.
 
 - WHAT: Realigned CLI Observer and promote fixtures with lifecycle-normalized promoted-pattern storage by making advisory test fixtures explicitly active and by seeding normalized lifecycle defaults on persisted promoted-pattern records used in CLI read paths. WHY: Once lifecycle normalization becomes part of the persisted contract, legacy fixtures stop exercising the same eligibility and shape guarantees as production reads.
 - WHAT: Restored deterministic promote receipt log ordering after lifecycle mutation normalization by sorting receipt artifacts at serialization time with explicit workflow/outcome precedence before tie-breakers. WHY: Promotion audit artifacts should remain deterministic regardless of mutation execution order or shared lifecycle timestamps.
@@ -178,6 +190,12 @@
 - WHAT: Added deterministic `.playbook/cycle-history.json` runtime evidence tracking derived from `.playbook/cycle-state.json` (schema contract, contracts registry wiring, explain support, and append-safe cycle runtime writes with chronological ordering) plus focused tests for creation, append behavior, duration aggregation, and success/failure guards. WHY: Preserves thin cycle orchestration behavior while providing governed historical evidence for runtime analysis and telemetry without recomputing orchestration logic.
 
 ## Unreleased
+
+- WHAT: Added the first-class `pnpm playbook test-autofix --input <path> [--json] [--out <path>]` orchestration command, result artifact/schema, focused CLI tests, and docs updates so deterministic test diagnosis, bounded repair planning, reviewed execution, and narrow-first verification now compose through one governed wrapper without introducing a parallel mutation executor. WHY: This closes the bounded remediation loop while preserving the existing trust model that all mutation must still pass through `apply --from-plan`.
+- WHAT: Added explicit deterministic stop-condition and final-status classification for bounded self-repair (`fixed`, `partially_fixed`, `not_fixed`, `blocked`, `review_required_only`) plus preserved reasons, excluded-finding summaries, executed rerun commands, and applied task ids in the `test-autofix` artifact. WHY: Self-repair automation is only trustworthy when it explains exactly why it stopped, what it executed, and whether review-only findings remained outside the mutation boundary.
+- Rule: Mutation must always pass through a single governed execution boundary.
+- Pattern: New automation capabilities should orchestrate existing diagnosis, planning, execution, and verification seams instead of inventing a parallel executor.
+- Failure Mode: Self-repair systems that skip explicit result classification and stop conditions become noisy, unsafe, and hard to trust.
 
 - Added `pnpm playbook test-triage --input <path> [--json]` plus the first-class `test-triage` artifact/schema for deterministic parsing of captured Vitest and pnpm recursive CI failures into repair classes, narrow rerun plans, and plan-only low-risk repair guidance.
 

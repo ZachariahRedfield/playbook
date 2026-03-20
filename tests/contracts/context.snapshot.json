@@ -36,6 +36,7 @@
       "ignore",
       "test-triage",
       "test-fix-plan",
+      "test-autofix",
       "verify",
       "plan",
       "orchestrate",

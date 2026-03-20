@@ -168,6 +168,16 @@ const commandRunners: Record<
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
+  'test-autofix': async ({ cwd, commandArgs, format, quiet }) => {
+    const { runTestAutofix } = await import("./testAutofix.js");
+    return runTestAutofix(cwd, {
+      format,
+      quiet,
+      input: parseOptionValue(commandArgs, '--input'),
+      outFile: parseOptionValue(commandArgs, '--out'),
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   "analyze-pr": async ({ cwd, commandArgs, format, quiet }) => {
     const { runAnalyzePr } = await import("./analyzePr.js");
     return runAnalyzePr(cwd, commandArgs, {
@@ -614,6 +624,7 @@ const commandOrder = [
   "ignore",
   "test-triage",
   "test-fix-plan",
+  "test-autofix",
   "verify",
   "plan",
   "orchestrate",

@@ -18,7 +18,9 @@ export type CliSchemaCommand =
   | 'contracts'
   | 'ignore'
   | 'learn'
-  | 'test-triage';
+  | 'test-triage'
+  | 'test-fix-plan'
+  | 'test-autofix';
 
 export type JsonSchema = {
   [key: string]: unknown;
@@ -1780,6 +1782,96 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       }
     }
   },
+
+  'test-fix-plan': {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookTestFixPlanOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'error'],
+        properties: {
+          schemaVersion: { type: 'string' },
+          command: { const: 'test-fix-plan' },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'tasks', 'excluded', 'summary'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          kind: { const: 'test-fix-plan' },
+          command: { const: 'test-fix-plan' },
+          generatedAt: { type: 'string' },
+          source: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['kind', 'command', 'generatedAt', 'path', 'input'],
+            properties: {
+              kind: { const: 'test-triage' },
+              command: { const: 'test-triage' },
+              generatedAt: { type: 'string' },
+              path: { type: ['string', 'null'] },
+              input: { enum: ['file', 'stdin'] }
+            }
+          },
+          tasks: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          excluded: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          summary: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['total_findings', 'eligible_findings', 'excluded_findings', 'auto_fix_tasks'],
+            properties: {
+              total_findings: { type: 'integer' },
+              eligible_findings: { type: 'integer' },
+              excluded_findings: { type: 'integer' },
+              auto_fix_tasks: { type: 'integer' }
+            }
+          }
+        }
+      }
+    ]
+  },
+  'test-autofix': {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookTestAutofixOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'error'],
+        properties: {
+          schemaVersion: { type: 'string' },
+          command: { const: 'test-autofix' },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'input', 'source_triage', 'source_fix_plan', 'apply_result', 'verification_result', 'executed_verification_commands', 'applied_task_ids', 'excluded_finding_summary', 'final_status', 'reason'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          kind: { const: 'test-autofix' },
+          command: { const: 'test-autofix' },
+          generatedAt: { type: 'string' },
+          input: { type: 'string' },
+          source_triage: { type: 'object', additionalProperties: false, required: ['path', 'command'], properties: { path: { type: ['string', 'null'] }, command: { const: 'test-triage' } } },
+          source_fix_plan: { type: 'object', additionalProperties: false, required: ['path', 'command'], properties: { path: { type: ['string', 'null'] }, command: { const: 'test-fix-plan' } } },
+          apply_result: { type: 'object', additionalProperties: false, required: ['attempted', 'ok', 'exitCode', 'applied', 'skipped', 'unsupported', 'failed', 'message'], properties: { attempted: { type: 'boolean' }, ok: { type: 'boolean' }, exitCode: { type: 'integer' }, applied: { type: 'integer' }, skipped: { type: 'integer' }, unsupported: { type: 'integer' }, failed: { type: 'integer' }, message: { type: ['string', 'null'] } } },
+          verification_result: { type: 'object', additionalProperties: false, required: ['attempted', 'ok', 'total', 'passed', 'failed'], properties: { attempted: { type: 'boolean' }, ok: { type: 'boolean' }, total: { type: 'integer' }, passed: { type: 'integer' }, failed: { type: 'integer' } } },
+          executed_verification_commands: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['command', 'exitCode', 'ok'], properties: { command: { type: 'string' }, exitCode: { type: 'integer' }, ok: { type: 'boolean' } } } },
+          applied_task_ids: { type: 'array', items: { type: 'string' } },
+          excluded_finding_summary: { type: 'object', additionalProperties: false, required: ['total', 'review_required', 'by_reason'], properties: { total: { type: 'integer' }, review_required: { type: 'integer' }, by_reason: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['reason', 'count'], properties: { reason: { type: 'string' }, count: { type: 'integer' } } } } } },
+          final_status: { enum: ['fixed', 'partially_fixed', 'not_fixed', 'blocked', 'review_required_only'] },
+          reason: { type: 'string' }
+        }
+      }
+    ]
+  },
   'test-triage': {
     $schema: JSON_SCHEMA_DRAFT,
     title: 'PlaybookTestTriageOutput',
@@ -1890,7 +1982,9 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   ignore: cliSchemas.ignore,
   learn: cliSchemas.learn,
   query: cliSchemas.query,
-  'test-triage': cliSchemas['test-triage']
+  'test-triage': cliSchemas['test-triage'],
+  'test-fix-plan': cliSchemas['test-fix-plan'],
+  'test-autofix': cliSchemas['test-autofix']
 });
 
 export const getCliSchema = (command: CliSchemaCommand): JsonSchema => cliSchemas[command];
