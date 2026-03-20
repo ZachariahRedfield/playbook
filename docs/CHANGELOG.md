@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- WHAT: Hardened remediation bridge docs across command guides, the command status index, and roadmap notes so the trust boundary is stated the same way everywhere: `test-triage` is diagnosis, `test-fix-plan` is bounded repair planning, and `apply` remains reviewed execution. WHY: Operators need the wording layer to make mutation authority legible, especially for risky findings that stay review-required instead of turning into executable work by documentation implication.
+- Rule: trust-boundary docs must evolve at the same time as remediation command surfaces.
+- Pattern: diagnosis -> planning -> execution should be documented as separate stages with different mutation authority.
+- Failure Mode: operators assume diagnosis commands mutate state if docs blur planning and execution boundaries.
+
 - Added `pnpm playbook test-triage --input <path> [--json]` plus the first-class `test-triage` artifact/schema for deterministic parsing of captured Vitest and pnpm recursive CI failures into repair classes, narrow rerun plans, and plan-only low-risk repair guidance.
 - WHAT: Captured the follow-up architectural lesson from test-triage and contract snapshot stabilization across roadmap/command/trust-model docs: isolated contract fixtures exposed hidden producer/consumer dependencies that shared fixture state had been masking, so diagnosis stays first, repair planning stays second, and merge-time automation must not mutate blindly around missing prerequisite artifacts. WHY: This keeps future fixture/snapshot work aligned with the deterministic test-triage contract instead of relearning the same side-effect dependency mistake.
 

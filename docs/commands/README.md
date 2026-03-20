@@ -614,8 +614,18 @@ Use query surfaces to inspect state:
 
 ## Test-fix planning (`pnpm playbook test-fix-plan`)
 
-`pnpm playbook test-fix-plan --from-triage <artifact> --json` converts the stable `test-triage` diagnosis artifact into the bounded `test-fix-plan` remediation artifact, writing `.playbook/test-fix-plan.json` by default and carrying forward explicit exclusions for risky or unsupported findings. When operators choose to cross the mutation boundary, `pnpm playbook apply --from-plan .playbook/test-fix-plan.json` now reuses the same reviewed `apply --from-plan` execution seam and task selection rules as ordinary plan artifacts.
+`pnpm playbook test-fix-plan --from-triage <artifact> --json` converts the stable `test-triage` diagnosis artifact into the bounded `test-fix-plan` remediation artifact, writing `.playbook/test-fix-plan.json` by default and carrying forward explicit exclusions for risky or unsupported findings. When operators choose to cross the mutation boundary, `pnpm playbook apply --from-plan .playbook/test-fix-plan.json` reuses the same reviewed `apply --from-plan` execution seam and task selection rules as ordinary plan artifacts.
 
+Architecture note:
+
+- `test-triage` = diagnosis.
+- `test-fix-plan` = bounded repair planning.
+- `apply` = reviewed execution.
+- Risky findings remain review-required and must not be converted into executable tasks by diagnosis or planning docs.
+
+- Rule: trust-boundary docs must evolve at the same time as remediation command surfaces.
 - Rule: every canonical remediation command must expose one stable artifact contract and one authoritative operator doc.
+- Pattern: diagnosis -> planning -> execution should be documented as separate stages with different mutation authority.
 - Pattern: add new remediation commands as artifact-producing seams before orchestration wrappers.
+- Failure Mode: operators assume diagnosis commands mutate state if docs blur planning and execution boundaries.
 - Failure Mode: hidden CLI-only behavior without contract/docs coverage drifts faster than engine truth.

@@ -13,12 +13,13 @@ pnpm playbook schema test-fix-plan --json
 
 ## Scope and governance boundary
 
-`test-fix-plan` is the remediation seam between diagnosis and mutation.
+`test-fix-plan` is the bounded repair-planning seam between diagnosis and execution.
 
-- It consumes the first-class `test-triage` artifact instead of raw CI logs.
-- It emits executable tasks only for pre-approved low-risk classes.
+- `test-triage` stays diagnosis-only: it classifies failure shape and does not mutate repository state.
+- `test-fix-plan` stays planning-only: it consumes the first-class `test-triage` artifact instead of raw CI logs and emits executable tasks only for pre-approved low-risk classes.
+- `apply` stays reviewed execution: operators must still choose to run `pnpm playbook apply --from-plan .playbook/test-fix-plan.json` before any repository mutation occurs.
 - It writes the stable `test-fix-plan` artifact to `.playbook/test-fix-plan.json` by default.
-- It preserves risky or unsupported findings as explicit exclusions with provenance.
+- It preserves risky or unsupported findings as explicit exclusions with provenance and leaves them review-required.
 - It keeps the downstream surface apply-compatible without allowing hidden CLI-only mutation behavior.
 
 Rule: every canonical remediation command must expose one stable artifact contract and one authoritative operator doc.
@@ -36,7 +37,7 @@ Failure Mode: hidden CLI-only behavior without contract/docs coverage drifts fas
 - `fixture_normalization`
 - `deterministic_ordering_stabilization`
 
-Everything else is recorded under `excluded[]` with a deterministic reason.
+Everything else is recorded under `excluded[]` with a deterministic reason and remains review-required instead of being silently downgraded into executable work.
 
 ## Output contract
 
