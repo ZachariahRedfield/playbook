@@ -283,6 +283,11 @@
         "id": "test-triage",
         "version": "1.0",
         "path": "packages/contracts/src/test-triage.schema.json"
+      },
+      {
+        "id": "test-fix-plan",
+        "version": "1.0",
+        "path": "packages/contracts/src/test-fix-plan.schema.json"
       }
     ]
   }

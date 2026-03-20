@@ -17,6 +17,7 @@ pnpm playbook schema test-triage --json
 - It parses repeated CI failure shapes into deterministic repair classes.
 - It emits the smallest rerun commands first.
 - It generates repair planning guidance and a Codex-ready prompt for low-risk test-only classes.
+- It can feed a first-class `test-fix-plan` artifact that turns only pre-approved low-risk findings into apply-compatible remediation tasks.
 - It does **not** auto-edit production logic in this first slice.
 - It preserves the governance boundary: diagnosis first, repair planning second, and no blind merge-time mutation.
 
@@ -63,3 +64,18 @@ JSON output includes:
 - `repair_plan.codex_prompt`
 
 Use `pnpm playbook schema test-triage --json` to inspect the stable machine-readable envelope.
+
+## Follow-on `test-fix-plan` contract
+
+`test-fix-plan` is the bounded remediation artifact derived from `test-triage`.
+
+- It preserves triage provenance for every executable task.
+- It only emits apply-compatible tasks for four approved low-risk classes: snapshot refresh, stale assertion update, fixture normalization, and deterministic ordering stabilization.
+- It excludes risky or unsupported findings with explicit reasons instead of manufacturing speculative edits.
+- Task entries retain the standard `id`, `ruleId`, `file`, `action`, and `autoFix` fields so existing plan/apply machinery can consume them deterministically.
+
+Rule: diagnosis artifacts may only produce executable tasks for pre-approved low-risk repair classes.
+
+Pattern: convert parsed failure classes into explicit bounded plan tasks before any mutation step.
+
+Failure Mode: parsing CI logs directly into code edits bypasses the remediation trust boundary and makes automation untrustworthy.

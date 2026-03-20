@@ -1,3 +1,5 @@
+export type { TestFixPlanArtifact, TestFixPlanExclusion, TestFixPlanExclusionReason, TestFixPlanTask, TestFixPlanTaskKind, TestFixPlanTaskProvenance } from './contracts/testFixPlan.js';
+export { TEST_FIX_PLAN_ARTIFACT_KIND, TEST_FIX_PLAN_SCHEMA_VERSION, testFixPlanExclusionReasons, testFixPlanTaskKinds } from './contracts/testFixPlan.js';
 export type { TestTriageArtifact, TestTriageFailureKind, TestTriageFinding, TestTriageFailureModeNote, TestTriageRepairClass, TestTriageRepairPlan } from './contracts/testTriage.js';
 export { TEST_TRIAGE_ARTIFACT_KIND, TEST_TRIAGE_SCHEMA_VERSION, testTriageFailureKinds, testTriageRepairClasses } from './contracts/testTriage.js';
 export type { SessionContract, SessionPinnedArtifact, SessionPinnedArtifactKind, SessionStep, ResumeSessionResult } from './contracts/session.js';

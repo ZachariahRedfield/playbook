@@ -23,5 +23,6 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   prReview: 'packages/contracts/src/pr-review.schema.json',
   story: 'packages/contracts/src/story.schema.json',
   stories: 'packages/contracts/src/stories.schema.json',
-  testTriage: 'packages/contracts/src/test-triage.schema.json'
+  testTriage: 'packages/contracts/src/test-triage.schema.json',
+  testFixPlan: 'packages/contracts/src/test-fix-plan.schema.json'
 } as const;

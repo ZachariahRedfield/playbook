@@ -58,6 +58,7 @@ Default safety posture:
 Contract snapshot hardening reinforced a core remediation boundary: isolate diagnosis from repair. When fixtures were split so each contract test owned its own inputs, they exposed hidden producer/consumer dependencies that earlier shared fixture state had been masking.
 
 - `test-triage` belongs on the diagnosis side of the boundary: classify failure shape first, then plan repair.
+- `test-fix-plan` is the bounded bridge artifact: it may only convert pre-approved low-risk diagnosis classes into apply-compatible tasks with preserved provenance.
 - Merge-time automation must not paper over missing prerequisite artifacts by mutating repo state blindly.
 - Consumer commands and snapshot tests should declare prerequisite artifact producers explicitly instead of relying on prior command side effects.
 

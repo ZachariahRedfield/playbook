@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/test-fix-plan.schema.json",
+  "title": "PlaybookTestFixPlanArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "command", "generatedAt", "source", "tasks", "excluded", "summary"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "test-fix-plan" },
+    "command": { "type": "string", "const": "test-fix-plan" },
+    "generatedAt": { "type": "string" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "command", "generatedAt", "path", "input"],
+      "properties": {
+        "kind": { "type": "string", "const": "test-triage" },
+        "command": { "type": "string", "const": "test-triage" },
+        "generatedAt": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "input": { "enum": ["file", "stdin"] }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "ruleId", "file", "action", "autoFix", "task_kind", "provenance"],
+        "properties": {
+          "id": { "type": "string" },
+          "ruleId": { "type": "string" },
+          "file": { "type": ["string", "null"] },
+          "action": { "type": "string" },
+          "autoFix": { "type": "boolean", "const": true },
+          "task_kind": { "enum": ["snapshot_refresh", "stale_assertion_update", "fixture_normalization", "deterministic_ordering_stabilization"] },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["finding_index", "failure_kind", "repair_class", "summary", "test_name", "verification_commands", "evidence"],
+            "properties": {
+              "finding_index": { "type": "integer", "minimum": 0 },
+              "failure_kind": { "type": "string" },
+              "repair_class": { "type": "string" },
+              "summary": { "type": "string" },
+              "test_name": { "type": ["string", "null"] },
+              "verification_commands": { "type": "array", "items": { "type": "string" } },
+              "evidence": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["finding_index", "failure_kind", "summary", "reason", "detail", "repair_class", "file", "evidence"],
+        "properties": {
+          "finding_index": { "type": "integer", "minimum": 0 },
+          "failure_kind": { "type": "string" },
+          "summary": { "type": "string" },
+          "reason": { "enum": ["not_auto_fixable", "unsupported_failure_kind", "missing_target_file", "risky_or_review_required"] },
+          "detail": { "type": "string" },
+          "repair_class": { "type": "string" },
+          "file": { "type": ["string", "null"] },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_findings", "eligible_findings", "excluded_findings", "auto_fix_tasks"],
+      "properties": {
+        "total_findings": { "type": "integer", "minimum": 0 },
+        "eligible_findings": { "type": "integer", "minimum": 0 },
+        "excluded_findings": { "type": "integer", "minimum": 0 },
+        "auto_fix_tasks": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

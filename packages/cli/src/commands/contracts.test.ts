@@ -86,7 +86,8 @@ describe('runContracts', () => {
         { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
         { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },
         { id: 'analyze-pr.context.sources[].promoted-knowledge', version: '1.0', path: 'schema://cli/analyze-pr' },
-        { id: 'test-triage', version: '1.0', path: 'packages/contracts/src/test-triage.schema.json' }
+        { id: 'test-triage', version: '1.0', path: 'packages/contracts/src/test-triage.schema.json' },
+        { id: 'test-fix-plan', version: '1.0', path: 'packages/contracts/src/test-fix-plan.schema.json' }
       ]
     });
 
