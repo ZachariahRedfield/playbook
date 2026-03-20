@@ -18,7 +18,8 @@ export type CliSchemaCommand =
   | 'contracts'
   | 'ignore'
   | 'learn'
-  | 'test-triage';
+  | 'test-triage'
+  | 'test-fix-plan';
 
 export type JsonSchema = {
   [key: string]: unknown;
@@ -1867,6 +1868,92 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       }
     ]
   },
+  'test-fix-plan': {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookTestFixPlanOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'error'],
+        properties: {
+          schemaVersion: { type: 'string' },
+          command: { const: 'test-fix-plan' },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'status', 'summary', 'artifact_path', 'actions', 'blocked_findings', 'verification_commands', 'governance'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          kind: { const: 'test-fix-plan' },
+          command: { const: 'test-fix-plan' },
+          generatedAt: { type: 'string' },
+          source: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['from_triage'],
+            properties: { from_triage: { type: ['string', 'null'] } }
+          },
+          status: { enum: ['ready', 'rejected'] },
+          summary: { type: 'string' },
+          artifact_path: { type: ['string', 'null'] },
+          actions: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['finding_key', 'repair_class', 'failure_kind', 'package', 'test_file', 'test_name', 'summary', 'files_to_modify', 'strategy', 'docs_update_recommendation', 'verification_commands'],
+              properties: {
+                finding_key: { type: 'string' },
+                repair_class: { const: 'autofix_plan_only' },
+                failure_kind: { type: 'string' },
+                package: { type: ['string', 'null'] },
+                test_file: { type: ['string', 'null'] },
+                test_name: { type: ['string', 'null'] },
+                summary: { type: 'string' },
+                files_to_modify: { type: 'array', items: { type: 'string' } },
+                strategy: { type: 'string' },
+                docs_update_recommendation: { type: 'string' },
+                verification_commands: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          },
+          blocked_findings: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['finding_key', 'failure_kind', 'repair_class', 'package', 'test_file', 'test_name', 'summary', 'reason'],
+              properties: {
+                finding_key: { type: 'string' },
+                failure_kind: { type: 'string' },
+                repair_class: { type: 'string' },
+                package: { type: ['string', 'null'] },
+                test_file: { type: ['string', 'null'] },
+                test_name: { type: ['string', 'null'] },
+                summary: { type: 'string' },
+                reason: { type: 'string' }
+              }
+            }
+          },
+          verification_commands: { type: 'array', items: { type: 'string' } },
+          governance: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['rule', 'pattern', 'failure_mode'],
+            properties: {
+              rule: { type: 'string' },
+              pattern: { type: 'string' },
+              failure_mode: { type: 'string' }
+            }
+          }
+        }
+      }
+    ]
+  }
 
 };
 
@@ -1890,7 +1977,8 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   ignore: cliSchemas.ignore,
   learn: cliSchemas.learn,
   query: cliSchemas.query,
-  'test-triage': cliSchemas['test-triage']
+  'test-triage': cliSchemas['test-triage'],
+  'test-fix-plan': cliSchemas['test-fix-plan']
 });
 
 export const getCliSchema = (command: CliSchemaCommand): JsonSchema => cliSchemas[command];

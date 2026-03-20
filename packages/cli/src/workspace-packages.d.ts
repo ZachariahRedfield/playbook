@@ -388,6 +388,9 @@ declare module "@zachariahredfield/playbook-engine" {
 
   export const buildTestTriageArtifact: (...args: any[]) => any;
   export const renderTestTriageText: (...args: any[]) => string;
+  export const buildTestFixPlanArtifact: (...args: any[]) => any;
+  export const readTestTriageArtifact: (...args: any[]) => any;
+  export const renderTestFixPlanText: (...args: any[]) => string;
   export type TestTriageArtifact = any;
   export type TestTriageFailureKind = any;
   export type TestTriageFinding = any;

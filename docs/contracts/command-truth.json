@@ -568,6 +568,18 @@
       "example": "pnpm playbook telemetry learning --json"
     },
     {
+      "name": "test-fix-plan",
+      "category": "Repository tools",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json"
+    },
+    {
       "name": "test-triage",
       "category": "Repository tools",
       "role": "remediation",
@@ -649,6 +661,7 @@
     "rules",
     "security",
     "story",
+    "test-fix-plan",
     "test-triage",
     "verify",
     "workers"

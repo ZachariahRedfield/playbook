@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/test-fix-plan.schema.json",
+  "title": "PlaybookTestFixPlanArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "generatedAt",
+    "source",
+    "status",
+    "summary",
+    "artifact_path",
+    "actions",
+    "blocked_findings",
+    "verification_commands",
+    "governance"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "test-fix-plan" },
+    "command": { "type": "string", "const": "test-fix-plan" },
+    "generatedAt": { "type": "string" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from_triage"],
+      "properties": {
+        "from_triage": { "type": ["string", "null"] }
+      }
+    },
+    "status": { "enum": ["ready", "rejected"] },
+    "summary": { "type": "string" },
+    "artifact_path": { "type": ["string", "null"] },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_key",
+          "repair_class",
+          "failure_kind",
+          "package",
+          "test_file",
+          "test_name",
+          "summary",
+          "files_to_modify",
+          "strategy",
+          "docs_update_recommendation",
+          "verification_commands"
+        ],
+        "properties": {
+          "finding_key": { "type": "string" },
+          "repair_class": { "const": "autofix_plan_only" },
+          "failure_kind": { "type": "string" },
+          "package": { "type": ["string", "null"] },
+          "test_file": { "type": ["string", "null"] },
+          "test_name": { "type": ["string", "null"] },
+          "summary": { "type": "string" },
+          "files_to_modify": { "type": "array", "items": { "type": "string" } },
+          "strategy": { "type": "string" },
+          "docs_update_recommendation": { "type": "string" },
+          "verification_commands": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "blocked_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_key",
+          "failure_kind",
+          "repair_class",
+          "package",
+          "test_file",
+          "test_name",
+          "summary",
+          "reason"
+        ],
+        "properties": {
+          "finding_key": { "type": "string" },
+          "failure_kind": { "type": "string" },
+          "repair_class": { "type": "string" },
+          "package": { "type": ["string", "null"] },
+          "test_file": { "type": ["string", "null"] },
+          "test_name": { "type": ["string", "null"] },
+          "summary": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "verification_commands": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "pattern", "failure_mode"],
+      "properties": {
+        "rule": { "type": "string" },
+        "pattern": { "type": "string" },
+        "failure_mode": { "type": "string" }
+      }
+    }
+  }
+}

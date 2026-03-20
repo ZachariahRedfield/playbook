@@ -21,6 +21,7 @@ Playbook is best understood as **deterministic repo intelligence + governance + 
 
 This framing is the core promise: deterministic evidence over ad-hoc inference, and reviewed intent before execution.
 
+Recent implementation note: `pnpm playbook test-fix-plan --from-triage <artifact> --json` now turns diagnosis-only `test-triage` output into a stable repair-planning artifact that accepts only low-risk test-only findings, rejects review-required findings, and writes a deterministic `.playbook/test-fix-plan.json` seam before any orchestration wrapper.
 Recent implementation note: `pnpm playbook learn doctrine --json` now provides a first-class report-only post-merge learning surface that turns merged change summaries into reusable Rule / Pattern / Failure Mode suggestions, notes-update guidance, and candidate future verification checks without auto-promoting doctrine into source-of-truth docs.
 Recent implementation note: promoted reusable patterns now carry explicit lifecycle truth (`active`, `superseded`, `retired`, `demoted`), lifecycle mutations emit audited receipts through `pnpm playbook promote pattern-retire|pattern-demote|pattern-recall|pattern-supersede`, and advisory planning context consumes only active promoted knowledge by default.
 Recent implementation note: `pnpm playbook receipt ingest --json` now converts receipts, drift signals, rollback/deactivation notes, promotion history, and later portability outcomes into reviewable `.playbook/memory/lifecycle-candidates.json` rows that stay candidate-only until explicit human lifecycle review.

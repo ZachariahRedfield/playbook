@@ -51,6 +51,7 @@ Do not hand-edit entries inside the managed markers.
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | canonical | bootstrap | primary | P1 | Current (implemented) | `pnpm playbook ai-context --json` |
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | canonical | bootstrap | primary | P2 | Current (implemented) | `pnpm playbook ai-contract --json` |
 | `test-triage` | Parse deterministic test failure triage guidance from captured Vitest/pnpm logs | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-triage --input .playbook/ci-failure.log --json` |
+| `test-fix-plan` | Build deterministic test-only fix planning from a test-triage artifact | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json` |
 | `ignore` | Suggest and safely apply ranked .playbookignore recommendations | canonical | remediation | primary | P12 | Current (implemented) | `pnpm playbook ignore suggest --repo ../target-repo --json` |
 | `contracts` | Emit deterministic contract registry for schemas, artifacts, and roadmap status | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook contracts --json` |
 | `index` | Generate machine-readable repository intelligence index | canonical | repo-intelligence | primary | P4 | Current (implemented) | `pnpm playbook index --json` |

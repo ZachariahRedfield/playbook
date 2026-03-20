@@ -705,4 +705,5 @@ export type { ArchitectureValidationResult, ValidateArtifactsOptions } from "./a
 export { appendCommandExecutionQualityRecord, readCommandExecutionQualityArtifact, summarizeCommandExecutionQuality, summarizeCommandQualityByCommand, buildCommandQualitySummaryArtifact, COMMAND_QUALITY_SUMMARY_COMMANDS } from './telemetry/commandQuality.js';
 
 export { buildTestTriageArtifact, renderTestTriageText } from './testTriage.js';
+export { buildTestFixPlanArtifact, readTestTriageArtifact, renderTestFixPlanText } from './testFixPlan.js';
 export type { TestTriageArtifact, TestTriageFailureKind, TestTriageFinding, TestTriageFailureModeNote, TestTriageRepairClass, TestTriageRepairPlan } from '@zachariahredfield/playbook-core';

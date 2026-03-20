@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added `pnpm playbook test-fix-plan --from-triage <artifact> [--out <path>] [--json]` plus the first-class `test-fix-plan` artifact/schema for deterministic low-risk test-only repair planning from `test-triage` output, with stable rejection of review-required findings and default artifact writing to `.playbook/test-fix-plan.json`.
+- WHAT: Split diagnosis and repair planning into separate canonical command seams by adding `test-fix-plan` as the artifact-producing consumer of `test-triage`, wiring command metadata/truth surfaces/docs, and refusing to silently promote risky findings into fix automation. WHY: Low-risk remediation should be composable and contract-backed without collapsing the governance boundary between diagnosis and behavior-changing review.
+
 - Added `pnpm playbook test-triage --input <path> [--json]` plus the first-class `test-triage` artifact/schema for deterministic parsing of captured Vitest and pnpm recursive CI failures into repair classes, narrow rerun plans, and plan-only low-risk repair guidance.
 - WHAT: Captured the follow-up architectural lesson from test-triage and contract snapshot stabilization across roadmap/command/trust-model docs: isolated contract fixtures exposed hidden producer/consumer dependencies that shared fixture state had been masking, so diagnosis stays first, repair planning stays second, and merge-time automation must not mutate blindly around missing prerequisite artifacts. WHY: This keeps future fixture/snapshot work aligned with the deterministic test-triage contract instead of relearning the same side-effect dependency mistake.
 

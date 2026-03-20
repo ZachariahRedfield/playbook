@@ -158,6 +158,16 @@ const commandRunners: Record<
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
+  'test-fix-plan': async ({ cwd, commandArgs, format, quiet }) => {
+    const { runTestFixPlan } = await import("./testFixPlan.js");
+    return runTestFixPlan(cwd, {
+      format,
+      quiet,
+      fromTriage: parseOptionValue(commandArgs, '--from-triage'),
+      outFile: parseOptionValue(commandArgs, '--out'),
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   "analyze-pr": async ({ cwd, commandArgs, format, quiet }) => {
     const { runAnalyzePr } = await import("./analyzePr.js");
     return runAnalyzePr(cwd, commandArgs, {
@@ -603,6 +613,7 @@ const commandOrder = [
   "review-pr",
   "ignore",
   "test-triage",
+  "test-fix-plan",
   "verify",
   "plan",
   "orchestrate",

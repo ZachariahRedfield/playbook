@@ -1,5 +1,7 @@
 export type { TestTriageArtifact, TestTriageFailureKind, TestTriageFinding, TestTriageFailureModeNote, TestTriageRepairClass, TestTriageRepairPlan } from './contracts/testTriage.js';
 export { TEST_TRIAGE_ARTIFACT_KIND, TEST_TRIAGE_SCHEMA_VERSION, testTriageFailureKinds, testTriageRepairClasses } from './contracts/testTriage.js';
+export type { TestFixPlanArtifact, TestFixPlanAction, TestFixPlanBlockedFinding, TestFixPlanStatus } from './contracts/testFixPlan.js';
+export { TEST_FIX_PLAN_ARTIFACT_KIND, TEST_FIX_PLAN_SCHEMA_VERSION, testFixPlanStatusValues } from './contracts/testFixPlan.js';
 export type { SessionContract, SessionPinnedArtifact, SessionPinnedArtifactKind, SessionStep, ResumeSessionResult } from './contracts/session.js';
 export type { ArchitectureRegistry, ArtifactLineage, ArtifactOwnership, CommandInspection, Subsystem, SubsystemDependencies } from './architecture/types.js';
 export type { ArtifactOwnershipDetails, CommandInspectionDetails, SubsystemOwnership } from './architecture/introspection.js';
