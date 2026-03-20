@@ -568,6 +568,18 @@
       "example": "pnpm playbook telemetry learning --json"
     },
     {
+      "name": "test-triage",
+      "category": "Repository tools",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook test-triage --input .playbook/ci-failure.log --json"
+    },
+    {
       "name": "upgrade",
       "category": "Utility",
       "role": "utility",
@@ -637,6 +649,7 @@
     "rules",
     "security",
     "story",
+    "test-triage",
     "verify",
     "workers"
   ],

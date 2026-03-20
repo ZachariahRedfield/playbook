@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added `pnpm playbook test-triage --input <path> [--json]` plus the first-class `test-triage` artifact/schema for deterministic parsing of captured Vitest and pnpm recursive CI failures into repair classes, narrow rerun plans, and plan-only low-risk repair guidance.
+
 - WHAT: Added deterministic pattern lifecycle candidate generation at `.playbook/memory/lifecycle-candidates.json` and wired `receipt ingest` to convert execution receipts, drift signals, promotion history, rollback/deactivation notes, and later portability outcomes into reviewable freshness/demotion/supersession recommendations with exact evidence links and target pattern ids. WHY: Outcome feedback should produce explainable, provenance-linked lifecycle candidates instead of hidden doctrine edits or numerology-only freshness logic.
 - Rule: Runtime outcomes may suggest knowledge changes, but may not mutate promoted knowledge automatically.
 - Pattern: Outcome feedback should produce reviewable lifecycle candidates, not hidden doctrine edits.
@@ -163,6 +165,8 @@
 - WHAT: Added deterministic `.playbook/cycle-history.json` runtime evidence tracking derived from `.playbook/cycle-state.json` (schema contract, contracts registry wiring, explain support, and append-safe cycle runtime writes with chronological ordering) plus focused tests for creation, append behavior, duration aggregation, and success/failure guards. WHY: Preserves thin cycle orchestration behavior while providing governed historical evidence for runtime analysis and telemetry without recomputing orchestration logic.
 
 ## Unreleased
+
+- Added `pnpm playbook test-triage --input <path> [--json]` plus the first-class `test-triage` artifact/schema for deterministic parsing of captured Vitest and pnpm recursive CI failures into repair classes, narrow rerun plans, and plan-only low-risk repair guidance.
 
 - WHAT: Added a first-class `pnpm playbook learn doctrine --json` report-only post-merge doctrine extraction flow that turns merged change summaries, PR summaries, or fixture inputs into deterministic concise summaries plus reusable Rule / Pattern / Failure Mode candidates, suggested notes updates, and possible future verification checks. Seeded the first release with pilot doctrines for artifact governance / staged promotion, the shared workflow-promotion contract, shared aggregation boundaries, and centralized recompute. WHY: Valuable engineering doctrine was still getting trapped in conversations and PR context instead of being extracted into reusable system knowledge after work landed.
 - Pattern: Post-merge learning should extract reusable doctrine from real code changes.

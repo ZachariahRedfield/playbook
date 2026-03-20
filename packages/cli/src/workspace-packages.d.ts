@@ -386,6 +386,15 @@ declare module "@zachariahredfield/playbook-engine" {
   export const summarizePortabilityOutcomes: (...args: any[]) => any[];
   export const validateArtifacts: (...args: any[]) => any;
 
+  export const buildTestTriageArtifact: (...args: any[]) => any;
+  export const renderTestTriageText: (...args: any[]) => string;
+  export type TestTriageArtifact = any;
+  export type TestTriageFailureKind = any;
+  export type TestTriageFinding = any;
+  export type TestTriageFailureModeNote = any;
+  export type TestTriageRepairClass = any;
+  export type TestTriageRepairPlan = any;
+
   export type StoryStatus =
     | "proposed"
     | "ready"

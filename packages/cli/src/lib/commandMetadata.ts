@@ -339,6 +339,19 @@ export const commandMetadata: CommandMetadata[] = [
   },
 
   {
+    name: "test-triage",
+    description: "Parse deterministic test failure triage guidance from captured Vitest/pnpm logs",
+    category: "Repository tools",
+    role: "remediation",
+    lifecycle: "canonical",
+    discoverability: "secondary",
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: "test-triage --input .playbook/ci-failure.log --json",
+    machineReadable: true,
+  },
+  {
     name: "ignore",
     description:
       "Suggest and safely apply ranked .playbookignore recommendations",

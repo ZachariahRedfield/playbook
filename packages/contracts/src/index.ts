@@ -22,5 +22,6 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   sessionEvidenceEnvelope: 'packages/contracts/src/session-evidence-envelope.schema.json',
   prReview: 'packages/contracts/src/pr-review.schema.json',
   story: 'packages/contracts/src/story.schema.json',
-  stories: 'packages/contracts/src/stories.schema.json'
+  stories: 'packages/contracts/src/stories.schema.json',
+  testTriage: 'packages/contracts/src/test-triage.schema.json'
 } as const;

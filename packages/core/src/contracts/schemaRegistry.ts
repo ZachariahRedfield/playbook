@@ -106,7 +106,8 @@ export const additiveCommandFieldSchemaRegistry: RegisteredSchemaContract[] = [
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain', kind: 'command-output' },
   { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan', kind: 'command-output' },
   { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr', kind: 'command-output' },
-  { id: 'analyze-pr.context.sources[].promoted-knowledge', version: '1.0', path: 'schema://cli/analyze-pr', kind: 'command-output' }
+  { id: 'analyze-pr.context.sources[].promoted-knowledge', version: '1.0', path: 'schema://cli/analyze-pr', kind: 'command-output' },
+  { id: 'test-triage', version: '1.0', path: 'packages/contracts/src/test-triage.schema.json', kind: 'command-output' }
 ] as const;
 
 export const getContractsSchemaRegistry = (): { memoryArtifacts: RegisteredSchemaContract[]; commandOutputs: RegisteredSchemaContract[] } => ({

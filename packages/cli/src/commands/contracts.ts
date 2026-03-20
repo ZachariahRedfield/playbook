@@ -57,7 +57,8 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
   { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
   { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },
-  { id: 'analyze-pr.context.sources[].promoted-knowledge', version: '1.0', path: 'schema://cli/analyze-pr' }
+  { id: 'analyze-pr.context.sources[].promoted-knowledge', version: '1.0', path: 'schema://cli/analyze-pr' },
+  { id: 'test-triage', version: '1.0', path: 'packages/contracts/src/test-triage.schema.json' }
 ];
 
 const printText = (outPath: string): void => {

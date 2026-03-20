@@ -149,6 +149,15 @@ const commandRunners: Record<
     const { runIgnore } = await import("./ignore.js");
     return runIgnore(cwd, commandArgs, { format, quiet });
   },
+  'test-triage': async ({ cwd, commandArgs, format, quiet }) => {
+    const { runTestTriage } = await import("./testTriage.js");
+    return runTestTriage(cwd, {
+      format,
+      quiet,
+      input: parseOptionValue(commandArgs, '--input'),
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   "analyze-pr": async ({ cwd, commandArgs, format, quiet }) => {
     const { runAnalyzePr } = await import("./analyzePr.js");
     return runAnalyzePr(cwd, commandArgs, {
@@ -593,6 +602,7 @@ const commandOrder = [
   "analyze-pr",
   "review-pr",
   "ignore",
+  "test-triage",
   "verify",
   "plan",
   "orchestrate",

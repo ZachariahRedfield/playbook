@@ -9,7 +9,7 @@ type SchemaOptions = {
 const firstPositionalArg = (args: string[]): string | undefined => args.find((arg) => !arg.startsWith('-'));
 
 const printUsage = (): void => {
-  console.error('Usage: playbook schema [rules|explain|index|graph|verify|plan|context|ai-context|ai-contract|doctor|analyze-pr|query|knowledge|docs|contracts|ignore|learn] [--json]');
+  console.error('Usage: playbook schema [rules|explain|index|graph|verify|plan|context|ai-context|ai-contract|doctor|analyze-pr|query|knowledge|docs|contracts|ignore|learn|test-triage] [--json]');
 };
 
 const renderTextSummary = (command?: string): void => {

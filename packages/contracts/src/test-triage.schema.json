@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/test-triage.schema.json",
+  "title": "PlaybookTestTriageArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "generatedAt",
+    "source",
+    "findings",
+    "rerun_plan",
+    "repair_plan"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "test-triage" },
+    "command": { "type": "string", "const": "test-triage" },
+    "generatedAt": { "type": "string" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "path"],
+      "properties": {
+        "input": { "enum": ["file", "stdin"] },
+        "path": { "type": ["string", "null"] }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "failure_kind",
+          "confidence",
+          "package",
+          "test_file",
+          "test_name",
+          "likely_files_to_modify",
+          "suggested_fix_strategy",
+          "verification_commands",
+          "docs_update_recommendation",
+          "rule_pattern_failure_mode",
+          "repair_class",
+          "summary",
+          "evidence"
+        ],
+        "properties": {
+          "failure_kind": {
+            "enum": [
+              "snapshot_drift",
+              "stale_assertion",
+              "fixture_drift",
+              "ordering_drift",
+              "missing_artifact",
+              "environment_limitation",
+              "likely_regression"
+            ]
+          },
+          "confidence": { "type": "number" },
+          "package": { "type": ["string", "null"] },
+          "test_file": { "type": ["string", "null"] },
+          "test_name": { "type": ["string", "null"] },
+          "likely_files_to_modify": { "type": "array", "items": { "type": "string" } },
+          "suggested_fix_strategy": { "type": "string" },
+          "verification_commands": { "type": "array", "items": { "type": "string" } },
+          "docs_update_recommendation": { "type": "string" },
+          "rule_pattern_failure_mode": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["rule", "pattern", "failure_mode"],
+            "properties": {
+              "rule": { "type": "string" },
+              "pattern": { "type": "string" },
+              "failure_mode": { "type": "string" }
+            }
+          },
+          "repair_class": { "enum": ["autofix_plan_only", "review_required"] },
+          "summary": { "type": "string" },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "rerun_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "commands"],
+      "properties": {
+        "strategy": { "type": "string", "const": "file_first_then_package_then_workspace" },
+        "commands": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "repair_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "codex_prompt", "suggested_actions"],
+      "properties": {
+        "summary": { "type": "string" },
+        "codex_prompt": { "type": "string" },
+        "suggested_actions": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
