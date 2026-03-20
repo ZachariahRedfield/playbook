@@ -378,6 +378,20 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true,
   },
   {
+    name: "remediation-status",
+    description:
+      "Inspect recent test-autofix remediation history, repeat-policy decisions, and retry guidance",
+    category: "Repository tools",
+    role: "remediation",
+    lifecycle: "canonical",
+    discoverability: "secondary",
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: "remediation-status --json",
+    machineReadable: true,
+  },
+  {
     name: "ignore",
     description:
       "Suggest and safely apply ranked .playbookignore recommendations",

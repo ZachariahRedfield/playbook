@@ -3,6 +3,8 @@ export { TEST_AUTOFIX_ARTIFACT_KIND, TEST_AUTOFIX_SCHEMA_VERSION, testAutofixFin
 export type { TestFixPlanArtifact, TestFixPlanExclusion, TestFixPlanExclusionReason, TestFixPlanTask, TestFixPlanTaskKind, TestFixPlanTaskProvenance } from './contracts/testFixPlan.js';
 export type { TestAutofixRemediationClassification, TestAutofixRemediationHistoryArtifact, TestAutofixRemediationHistoryEntry, TestAutofixRemediationHistorySourceProvenance, TestAutofixRemediationVerificationOutcome } from './contracts/testAutofixRemediationHistory.js';
 export { TEST_AUTOFIX_REMEDIATION_HISTORY_ARTIFACT_KIND, TEST_AUTOFIX_REMEDIATION_HISTORY_SCHEMA_VERSION } from './contracts/testAutofixRemediationHistory.js';
+export type { RemediationStatusArtifact, RemediationStatusLatestRun, RemediationStatusPolicyDecisionSummary, RemediationStatusPreferredRepairClassSummary, RemediationStatusRecentFinalStatus, RemediationStatusSignatureSummary } from './contracts/remediationStatus.js';
+export { REMEDIATION_STATUS_ARTIFACT_KIND, REMEDIATION_STATUS_SCHEMA_VERSION } from './contracts/remediationStatus.js';
 export { TEST_FIX_PLAN_ARTIFACT_KIND, TEST_FIX_PLAN_SCHEMA_VERSION, testFixPlanExclusionReasons, testFixPlanTaskKinds } from './contracts/testFixPlan.js';
 export type { TestTriageArtifact, TestTriageFailureKind, TestTriageFinding, TestTriageFailureModeNote, TestTriageRepairClass, TestTriageRepairPlan } from './contracts/testTriage.js';
 export { TEST_TRIAGE_ARTIFACT_KIND, TEST_TRIAGE_SCHEMA_VERSION, testTriageFailureKinds, testTriageRepairClasses } from './contracts/testTriage.js';

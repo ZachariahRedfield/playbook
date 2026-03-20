@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/remediation-status.schema.json",
+  "title": "PlaybookRemediationStatusArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "generatedAt",
+    "source",
+    "latest_run",
+    "blocked_signatures",
+    "review_required_signatures",
+    "safe_to_retry_signatures",
+    "stable_failure_signatures",
+    "repeat_policy_decisions",
+    "preferred_repair_classes",
+    "recent_final_statuses",
+    "remediation_history",
+    "latest_result"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "remediation-status" },
+    "command": { "type": "string", "const": "remediation-status" },
+    "generatedAt": { "type": "string" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["latest_result_path", "remediation_history_path"],
+      "properties": {
+        "latest_result_path": { "type": "string" },
+        "remediation_history_path": { "type": "string" }
+      }
+    },
+    "latest_run": { "type": "object", "additionalProperties": true },
+    "blocked_signatures": { "type": "array", "items": { "type": "string" } },
+    "review_required_signatures": { "type": "array", "items": { "type": "string" } },
+    "safe_to_retry_signatures": { "type": "array", "items": { "type": "string" } },
+    "stable_failure_signatures": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "repeat_policy_decisions": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "preferred_repair_classes": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "recent_final_statuses": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "remediation_history": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "latest_result": { "type": "object", "additionalProperties": true }
+  }
+}

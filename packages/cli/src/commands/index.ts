@@ -178,6 +178,16 @@ const commandRunners: Record<
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
+  'remediation-status': async ({ cwd, commandArgs, format, quiet }) => {
+    const { runRemediationStatus } = await import("./remediationStatus.js");
+    return runRemediationStatus(cwd, {
+      format,
+      quiet,
+      latestResultPath: parseOptionValue(commandArgs, '--latest-result'),
+      historyPath: parseOptionValue(commandArgs, '--history'),
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   "analyze-pr": async ({ cwd, commandArgs, format, quiet }) => {
     const { runAnalyzePr } = await import("./analyzePr.js");
     return runAnalyzePr(cwd, commandArgs, {
@@ -625,6 +635,7 @@ const commandOrder = [
   "test-triage",
   "test-fix-plan",
   "test-autofix",
+  "remediation-status",
   "verify",
   "plan",
   "orchestrate",

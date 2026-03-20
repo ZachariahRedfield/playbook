@@ -20,7 +20,8 @@ export type CliSchemaCommand =
   | 'learn'
   | 'test-triage'
   | 'test-fix-plan'
-  | 'test-autofix';
+  | 'test-autofix'
+  | 'remediation-status';
 
 export type JsonSchema = {
   [key: string]: unknown;
@@ -1835,6 +1836,44 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       }
     ]
   },
+  'remediation-status': {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookRemediationStatusOutput',
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'error'],
+        properties: {
+          schemaVersion: { type: 'string' },
+          command: { const: 'remediation-status' },
+          error: { type: 'string' }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'latest_run', 'blocked_signatures', 'review_required_signatures', 'safe_to_retry_signatures', 'stable_failure_signatures', 'repeat_policy_decisions', 'preferred_repair_classes', 'recent_final_statuses', 'remediation_history', 'latest_result'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          kind: { const: 'remediation-status' },
+          command: { const: 'remediation-status' },
+          generatedAt: { type: 'string' },
+          source: { type: 'object', additionalProperties: false, required: ['latest_result_path', 'remediation_history_path'], properties: { latest_result_path: { type: 'string' }, remediation_history_path: { type: 'string' } } },
+          latest_run: { type: 'object', additionalProperties: true },
+          blocked_signatures: { type: 'array', items: { type: 'string' } },
+          review_required_signatures: { type: 'array', items: { type: 'string' } },
+          safe_to_retry_signatures: { type: 'array', items: { type: 'string' } },
+          stable_failure_signatures: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          repeat_policy_decisions: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          preferred_repair_classes: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          recent_final_statuses: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          remediation_history: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          latest_result: { type: 'object', additionalProperties: true }
+        }
+      }
+    ]
+  },
   'test-autofix': {
     $schema: JSON_SCHEMA_DRAFT,
     title: 'PlaybookTestAutofixOutput',
@@ -1989,7 +2028,8 @@ export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
   query: cliSchemas.query,
   'test-triage': cliSchemas['test-triage'],
   'test-fix-plan': cliSchemas['test-fix-plan'],
-  'test-autofix': cliSchemas['test-autofix']
+  'test-autofix': cliSchemas['test-autofix'],
+  'remediation-status': cliSchemas['remediation-status']
 });
 
 export const getCliSchema = (command: CliSchemaCommand): JsonSchema => cliSchemas[command];
