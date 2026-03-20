@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added `pnpm playbook test-triage --input <path> [--json]` plus the first-class `test-triage` artifact/schema for deterministic parsing of captured Vitest and pnpm recursive CI failures into repair classes, narrow rerun plans, and plan-only low-risk repair guidance.
+- WHAT: Captured the follow-up architectural lesson from test-triage and contract snapshot stabilization across roadmap/command/trust-model docs: isolated contract fixtures exposed hidden producer/consumer dependencies that shared fixture state had been masking, so diagnosis stays first, repair planning stays second, and merge-time automation must not mutate blindly around missing prerequisite artifacts. WHY: This keeps future fixture/snapshot work aligned with the deterministic test-triage contract instead of relearning the same side-effect dependency mistake.
 
 - WHAT: Added deterministic pattern lifecycle candidate generation at `.playbook/memory/lifecycle-candidates.json` and wired `receipt ingest` to convert execution receipts, drift signals, promotion history, rollback/deactivation notes, and later portability outcomes into reviewable freshness/demotion/supersession recommendations with exact evidence links and target pattern ids. WHY: Outcome feedback should produce explainable, provenance-linked lifecycle candidates instead of hidden doctrine edits or numerology-only freshness logic.
 - Rule: Runtime outcomes may suggest knowledge changes, but may not mutate promoted knowledge automatically.
