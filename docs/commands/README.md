@@ -51,6 +51,7 @@ Do not hand-edit entries inside the managed markers.
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | canonical | bootstrap | primary | P1 | Current (implemented) | `pnpm playbook ai-context --json` |
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | canonical | bootstrap | primary | P2 | Current (implemented) | `pnpm playbook ai-contract --json` |
 | `test-triage` | Parse deterministic test failure triage guidance from captured Vitest/pnpm logs | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-triage --input .playbook/ci-failure.log --json` |
+| `test-fix-plan` | Generate a bounded remediation plan from a deterministic test-triage artifact | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json` |
 | `ignore` | Suggest and safely apply ranked .playbookignore recommendations | canonical | remediation | primary | P12 | Current (implemented) | `pnpm playbook ignore suggest --repo ../target-repo --json` |
 | `contracts` | Emit deterministic contract registry for schemas, artifacts, and roadmap status | utility | utility | secondary | Later | Current (implemented) | `pnpm playbook contracts --json` |
 | `index` | Generate machine-readable repository intelligence index | canonical | repo-intelligence | primary | P4 | Current (implemented) | `pnpm playbook index --json` |
@@ -80,7 +81,7 @@ Do not hand-edit entries inside the managed markers.
 ### Implemented command docs
 
 - Core flow: [`verify`](verify.md), [`plan`](plan.md), [`apply`](apply.md), [`pilot`](pilot.md)
-- Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md), [`test-triage`](test-triage.md)
+- Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md), [`test-triage`](test-triage.md), [`test-fix-plan`](test-fix-plan.md)
 - AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`context`](overview.md)
 - Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`story`](story.md), [`promote`](promote.md), [`observer`](observer.md), [`receipt`](receipt.md), [`learn`](learn.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
 - `status proof` is the canonical external-consumer bootstrap proof surface for proving runtime + CLI + docs/artifact + execution/governance readiness in one read-only flow. Its required automation truth stays in the canonical `proof` payload; additive interpretation metadata must be explicitly governed when present.
@@ -609,3 +610,12 @@ Use query surfaces to inspect state:
 - `pnpm playbook patterns transfer import --file <path> --repo <repo-id> --json`
 - `playbook route --story <id> --json`: derive a deterministic route directly from a story id and stamp stable `story_reference` metadata plus advisory `pattern_context` into the generated execution plan.
 - Promoted global patterns may inform story-backed planning through read-only advisory context, but only repo-local stories remain execution authority.
+
+
+## Test-fix planning (`pnpm playbook test-fix-plan`)
+
+`pnpm playbook test-fix-plan --from-triage <artifact> --json` converts the stable `test-triage` diagnosis artifact into the bounded `test-fix-plan` remediation artifact, writing `.playbook/test-fix-plan.json` by default and carrying forward explicit exclusions for risky or unsupported findings.
+
+- Rule: every canonical remediation command must expose one stable artifact contract and one authoritative operator doc.
+- Pattern: add new remediation commands as artifact-producing seams before orchestration wrappers.
+- Failure Mode: hidden CLI-only behavior without contract/docs coverage drifts faster than engine truth.

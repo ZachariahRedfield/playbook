@@ -215,6 +215,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook ai-contract --json`
 - `test-triage`: Parse deterministic test failure triage guidance from captured Vitest/pnpm logs
   - Example: `pnpm playbook test-triage --input .playbook/ci-failure.log --json`
+- `test-fix-plan`: Generate a bounded remediation plan from a deterministic test-triage artifact
+  - Example: `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json`
 - `ignore`: Suggest and safely apply ranked .playbookignore recommendations
   - Example: `pnpm playbook ignore suggest --repo ../target-repo --json`
 - `contracts`: Emit deterministic contract registry for schemas, artifacts, and roadmap status
@@ -306,6 +308,7 @@ Do not hand-edit entries inside the managed markers.
 | `ai-context` | `pnpm playbook ai-context --json` |
 | `ai-contract` | `pnpm playbook ai-contract --json` |
 | `test-triage` | `pnpm playbook test-triage --input .playbook/ci-failure.log --json` |
+| `test-fix-plan` | `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json` |
 | `ignore` | `pnpm playbook ignore suggest --repo ../target-repo --json` |
 | `contracts` | `pnpm playbook contracts --json` |
 | `index` | `pnpm playbook index --json` |
