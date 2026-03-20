@@ -29,6 +29,7 @@ Trust boundary wording stays explicit:
 - `test-fix-plan` = bounded repair planning
 - `apply --from-plan` = reviewed execution
 - `test-autofix` = orchestration only
+- `remediation-status` = inspection/reporting
 
 Risky findings remain review-required and do not become executable automatically.
 New automation still produces and consumes plan artifacts instead of inventing a direct mutation path.
