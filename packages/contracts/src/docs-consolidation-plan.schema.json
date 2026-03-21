@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/docs-consolidation-plan.schema.json",
+  "title": "Docs Consolidation Plan Artifact",
+  "description": "Apply-compatible plan artifact for reviewed writes into protected singleton docs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "command",
+    "kind",
+    "artifactPath",
+    "sourceArtifactPath",
+    "mutationBoundary",
+    "tasks",
+    "summary",
+    "approvedGroups",
+    "exclusions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "command": {
+      "type": "string",
+      "const": "docs consolidate-plan"
+    },
+    "kind": {
+      "type": "string",
+      "const": "docs-consolidation-plan"
+    },
+    "artifactPath": {
+      "type": "string",
+      "const": ".playbook/docs-consolidation-plan.json"
+    },
+    "sourceArtifactPath": {
+      "type": "string",
+      "const": ".playbook/docs-consolidation.json"
+    },
+    "mutationBoundary": {
+      "type": "string",
+      "const": "apply-only"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateGroupCount",
+        "executableTaskCount",
+        "exclusionCount"
+      ],
+      "properties": {
+        "candidateGroupCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "executableTaskCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "exclusionCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "approvedGroups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "targetDoc",
+          "sectionKey",
+          "fragmentIds",
+          "laneIds",
+          "operation",
+          "taskId"
+        ],
+        "properties": {
+          "targetDoc": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sectionKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fragmentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "laneIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "taskId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "startMarker", "endMarker", "content"],
+                "properties": {
+                  "type": {
+                    "const": "replace-managed-block"
+                  },
+                  "startMarker": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "endMarker": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "startMarker", "endMarker", "content"],
+                "properties": {
+                  "type": {
+                    "const": "append-managed-block"
+                  },
+                  "startMarker": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "endMarker": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "anchor", "content"],
+                "properties": {
+                  "type": {
+                    "const": "insert-under-anchor"
+                  },
+                  "anchor": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "exclusionKey",
+          "targetDoc",
+          "sectionKey",
+          "fragmentIds",
+          "laneIds",
+          "reason",
+          "message"
+        ],
+        "properties": {
+          "exclusionKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetDoc": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sectionKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fragmentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "laneIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "reason": {
+            "enum": [
+              "duplicate",
+              "conflict",
+              "unsupported_fragment_format",
+              "invalid_fragment_payload",
+              "mixed_group_operations",
+              "missing_required_field",
+              "missing_anchor"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

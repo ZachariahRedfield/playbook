@@ -9,6 +9,7 @@ pnpm playbook docs audit
 pnpm playbook docs audit --json
 pnpm playbook docs audit --ci --json
 pnpm playbook docs consolidate --json
+pnpm playbook docs consolidate-plan --json
 ```
 
 ## Checks
@@ -33,13 +34,14 @@ pnpm playbook docs consolidate --json
 - Rule: Compatibility stubs and archive/history docs are intentionally preserved but excluded from active-surface drift checks.
 - Failure Mode: Active-surface drift occurs when front-door docs regress to legacy package examples, superseded doc links, or analyze-first serious-user workflows.
 
-
 ## Consolidation seam
 
 `pnpm playbook docs consolidate` is the proposal-only consolidation seam for protected singleton docs. It reads worker fragments plus the protected-surface registry, writes `.playbook/docs-consolidation.json`, and emits one compact lead-agent integration brief.
 
-- Rule: Consolidation is the only write boundary for protected singleton narrative docs.
-- Pattern: Workers propose; consolidator integrates.
-- Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
+`pnpm playbook docs consolidate-plan` compiles the reviewed, conflict-free subset of that artifact into `.playbook/docs-consolidation-plan.json`, but does not mutate docs directly. Execute reviewed writes only with `pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json`.
+
+- Rule: Consolidation planning may prepare reviewed writes, but `apply` remains the only mutation boundary.
+- Pattern: Workers propose, consolidator compiles, apply executes.
+- Failure Mode: Letting docs consolidation mutate directly creates a shadow executor and breaks the single reviewed write boundary.
 
 Command reference: [`pnpm playbook docs consolidate`](docs-consolidate.md).

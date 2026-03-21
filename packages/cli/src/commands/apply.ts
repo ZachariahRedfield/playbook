@@ -1,20 +1,20 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import * as engine from '@zachariahredfield/playbook-engine';
-import { ExitCode } from '../lib/cliContract.js';
-import { writeJsonArtifactAbsolute } from '../lib/jsonArtifact.js';
-import { loadVerifyRules } from '../lib/loadVerifyRules.js';
-import { warn } from '../lib/output.js';
+import fs from "node:fs";
+import path from "node:path";
+import * as engine from "@zachariahredfield/playbook-engine";
+import { ExitCode } from "../lib/cliContract.js";
+import { writeJsonArtifactAbsolute } from "../lib/jsonArtifact.js";
+import { loadVerifyRules } from "../lib/loadVerifyRules.js";
+import { warn } from "../lib/output.js";
 import {
   buildPlanRemediation,
   deriveVerifyFailureFacts,
   parsePlanRemediation,
   remediationToApplyPrecondition,
-  type PlanRemediation
-} from '../lib/remediationContract.js';
+  type PlanRemediation,
+} from "../lib/remediationContract.js";
 
 type ApplyOptions = {
-  format: 'text' | 'json';
+  format: "text" | "json";
   ci: boolean;
   quiet: boolean;
   help?: boolean;
@@ -25,7 +25,7 @@ type ApplyOptions = {
   runId?: string;
 };
 
-type ApplyMode = 'standard' | 'policy-check' | 'policy';
+type ApplyMode = "standard" | "policy-check" | "policy";
 
 type ApplyResult = {
   id: string;
@@ -33,13 +33,13 @@ type ApplyResult = {
   file: string | null;
   action: string;
   autoFix: boolean;
-  status: 'applied' | 'skipped' | 'unsupported' | 'failed';
+  status: "applied" | "skipped" | "unsupported" | "failed";
   message?: string;
 };
 
 type ApplyJsonResult = {
-  schemaVersion: '1.0';
-  command: 'apply';
+  schemaVersion: "1.0";
+  command: "apply";
   ok: boolean;
   exitCode: number;
   remediation: PlanRemediation;
@@ -67,9 +67,9 @@ type PlanSelection = {
 };
 
 type PolicyCheckJsonResult = {
-  schemaVersion: '1.0';
-  command: 'apply';
-  mode: 'policy-check';
+  schemaVersion: "1.0";
+  command: "apply";
+  mode: "policy-check";
   ok: true;
   exitCode: number;
   eligible: engine.PolicyPreflightProposal[];
@@ -85,7 +85,7 @@ type PolicyCheckJsonResult = {
 
 type PolicyApplyResultEntry = {
   proposal_id: string;
-  decision: 'safe' | 'requires_review' | 'blocked';
+  decision: "safe" | "requires_review" | "blocked";
   reason: string;
 };
 
@@ -94,8 +94,8 @@ type PolicyApplyFailureEntry = PolicyApplyResultEntry & {
 };
 
 type PolicyApplyResultArtifact = {
-  schemaVersion: '1.0';
-  kind: 'policy-apply-result';
+  schemaVersion: "1.0";
+  kind: "policy-apply-result";
   executed: PolicyApplyResultEntry[];
   skipped_requires_review: PolicyApplyResultEntry[];
   skipped_blocked: PolicyApplyResultEntry[];
@@ -110,9 +110,9 @@ type PolicyApplyResultArtifact = {
 };
 
 type PolicyApplyJsonResult = {
-  schemaVersion: '1.0';
-  command: 'apply';
-  mode: 'policy';
+  schemaVersion: "1.0";
+  command: "apply";
+  mode: "policy";
   ok: boolean;
   exitCode: number;
   resultArtifact: string;
@@ -131,11 +131,13 @@ type NormalizedPlanArtifact = {
 const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 const UTF16LE_BOM = Buffer.from([0xff, 0xfe]);
 const UTF16BE_BOM = Buffer.from([0xfe, 0xff]);
-const POLICY_APPLY_RESULT_RELATIVE_PATH = '.playbook/policy-apply-result.json' as const;
+const POLICY_APPLY_RESULT_RELATIVE_PATH =
+  ".playbook/policy-apply-result.json" as const;
 
-const stripLeadingBom = (text: string): string => (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
+const stripLeadingBom = (text: string): string =>
+  text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
 
-const inferUtf16WithoutBom = (buffer: Buffer): 'utf16le' | 'utf16be' | null => {
+const inferUtf16WithoutBom = (buffer: Buffer): "utf16le" | "utf16be" | null => {
   if (buffer.length < 4 || buffer.length % 2 !== 0) {
     return null;
   }
@@ -154,11 +156,11 @@ const inferUtf16WithoutBom = (buffer: Buffer): 'utf16le' | 'utf16be' | null => {
 
   const threshold = Math.max(2, Math.floor(pairCount * 0.6));
   if (oddNulls >= threshold && evenNulls === 0) {
-    return 'utf16le';
+    return "utf16le";
   }
 
   if (evenNulls >= threshold && oddNulls === 0) {
-    return 'utf16be';
+    return "utf16be";
   }
 
   return null;
@@ -166,75 +168,131 @@ const inferUtf16WithoutBom = (buffer: Buffer): 'utf16le' | 'utf16be' | null => {
 
 const decodePlanPayload = (buffer: Buffer): DecodedPlanPayload => {
   if (buffer.subarray(0, UTF8_BOM.length).equals(UTF8_BOM)) {
-    return { text: stripLeadingBom(buffer.toString('utf8')), likelyShellEncodingIssue: false };
+    return {
+      text: stripLeadingBom(buffer.toString("utf8")),
+      likelyShellEncodingIssue: false,
+    };
   }
 
   if (buffer.subarray(0, UTF16LE_BOM.length).equals(UTF16LE_BOM)) {
-    return { text: stripLeadingBom(buffer.subarray(UTF16LE_BOM.length).toString('utf16le')), likelyShellEncodingIssue: true };
+    return {
+      text: stripLeadingBom(
+        buffer.subarray(UTF16LE_BOM.length).toString("utf16le"),
+      ),
+      likelyShellEncodingIssue: true,
+    };
   }
 
   if (buffer.subarray(0, UTF16BE_BOM.length).equals(UTF16BE_BOM)) {
     const littleEndianBuffer = Buffer.from(buffer.subarray(UTF16BE_BOM.length));
     littleEndianBuffer.swap16();
-    return { text: stripLeadingBom(littleEndianBuffer.toString('utf16le')), likelyShellEncodingIssue: true };
+    return {
+      text: stripLeadingBom(littleEndianBuffer.toString("utf16le")),
+      likelyShellEncodingIssue: true,
+    };
   }
 
   const inferredUtf16 = inferUtf16WithoutBom(buffer);
-  if (inferredUtf16 === 'utf16le') {
-    return { text: stripLeadingBom(buffer.toString('utf16le')), likelyShellEncodingIssue: true };
+  if (inferredUtf16 === "utf16le") {
+    return {
+      text: stripLeadingBom(buffer.toString("utf16le")),
+      likelyShellEncodingIssue: true,
+    };
   }
 
-  if (inferredUtf16 === 'utf16be') {
+  if (inferredUtf16 === "utf16be") {
     const littleEndianBuffer = Buffer.from(buffer);
     littleEndianBuffer.swap16();
-    return { text: stripLeadingBom(littleEndianBuffer.toString('utf16le')), likelyShellEncodingIssue: true };
+    return {
+      text: stripLeadingBom(littleEndianBuffer.toString("utf16le")),
+      likelyShellEncodingIssue: true,
+    };
   }
 
-  return { text: stripLeadingBom(buffer.toString('utf8')), likelyShellEncodingIssue: false };
+  return {
+    text: stripLeadingBom(buffer.toString("utf8")),
+    likelyShellEncodingIssue: false,
+  };
 };
 
-
-const readRequiredNonNegativeInteger = (value: unknown, fieldName: string): number => {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
-    throw new Error(`Invalid test-fix-plan payload: ${fieldName} must be a non-negative integer.`);
+const readRequiredNonNegativeInteger = (
+  value: unknown,
+  fieldName: string,
+): number => {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+    throw new Error(
+      `Invalid test-fix-plan payload: ${fieldName} must be a non-negative integer.`,
+    );
   }
 
   return value;
 };
 
-
-const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact => {
+const normalizeApplyPlanArtifact = (
+  payload: unknown,
+): NormalizedPlanArtifact => {
   const normalizedPayload =
-    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload
       ? ((payload as Record<string, unknown>).data as Record<string, unknown>)
       : (payload as Record<string, unknown>);
 
-  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
-    throw new Error('Invalid plan payload: expected an object envelope.');
+  if (!normalizedPayload || typeof normalizedPayload !== "object") {
+    throw new Error("Invalid plan payload: expected an object envelope.");
   }
 
-  if (normalizedPayload.command === 'plan') {
+  if (normalizedPayload.command === "plan") {
     return {
       tasks: engine.parsePlanArtifact(payload).tasks,
-      remediation: parsePlanRemediation(normalizedPayload.remediation)
+      remediation: parsePlanRemediation(normalizedPayload.remediation),
     };
   }
 
-  if (normalizedPayload.command === 'test-fix-plan') {
+  if (normalizedPayload.command === "docs consolidate-plan") {
+    const typedPayload = normalizedPayload as Record<string, unknown>;
+    return {
+      tasks: engine.parsePlanArtifact(normalizedPayload).tasks,
+      remediation: buildPlanRemediation({
+        failureCount: Array.isArray(typedPayload.tasks)
+          ? typedPayload.tasks.length
+          : 0,
+        stepCount: Array.isArray(typedPayload.tasks)
+          ? typedPayload.tasks.length
+          : 0,
+        unresolvedFailureCount: Array.isArray(typedPayload.exclusions)
+          ? typedPayload.exclusions.length
+          : 0,
+        unavailableReason:
+          "Docs consolidation planning may prepare reviewed writes, but apply remains the only mutation boundary.",
+      }),
+    };
+  }
+
+  if (normalizedPayload.command === "test-fix-plan") {
     const parsedPlan = engine.parsePlanArtifact({
       schemaVersion: normalizedPayload.schemaVersion,
-      command: 'plan',
-      tasks: normalizedPayload.tasks
+      command: "plan",
+      tasks: normalizedPayload.tasks,
     });
 
     const summary = normalizedPayload.summary;
-    if (!summary || typeof summary !== 'object') {
-      throw new Error('Invalid test-fix-plan payload: summary must be an object.');
+    if (!summary || typeof summary !== "object") {
+      throw new Error(
+        "Invalid test-fix-plan payload: summary must be an object.",
+      );
     }
 
     const typedSummary = summary as Record<string, unknown>;
-    const totalFindings = readRequiredNonNegativeInteger(typedSummary.total_findings, 'summary.total_findings');
-    const excludedFindings = readRequiredNonNegativeInteger(typedSummary.excluded_findings, 'summary.excluded_findings');
+    const totalFindings = readRequiredNonNegativeInteger(
+      typedSummary.total_findings,
+      "summary.total_findings",
+    );
+    const excludedFindings = readRequiredNonNegativeInteger(
+      typedSummary.excluded_findings,
+      "summary.excluded_findings",
+    );
 
     return {
       tasks: parsedPlan.tasks,
@@ -243,18 +301,20 @@ const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact =>
         stepCount: parsedPlan.tasks.length,
         unresolvedFailureCount: excludedFindings,
         unavailableReason:
-          'Test-fix-plan produced no executable low-risk tasks. Review exclusions before attempting apply.'
-      })
+          "Test-fix-plan produced no executable low-risk tasks. Review exclusions before attempting apply.",
+      }),
     };
   }
 
-  throw new Error('Invalid plan payload: command must be "plan" or "test-fix-plan".');
+  throw new Error(
+    'Invalid plan payload: command must be "plan", "docs consolidate-plan", or "test-fix-plan".',
+  );
 };
 
 const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
   const resolvedPath = path.resolve(cwd, fromPlan);
 
-  let rawPayload = '';
+  let rawPayload = "";
   let likelyShellEncodingIssue = false;
   try {
     const rawBytes = fs.readFileSync(resolvedPath);
@@ -272,98 +332,123 @@ const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const encodingHint = likelyShellEncodingIssue
-      ? ' The file appears to use a shell-specific encoding (for example UTF-16/BOM from PowerShell redirection). Re-write the plan file as UTF-8 and retry.'
-      : '';
-    throw new Error(`Invalid plan JSON in ${resolvedPath}: ${message}.${encodingHint}`);
+      ? " The file appears to use a shell-specific encoding (for example UTF-16/BOM from PowerShell redirection). Re-write the plan file as UTF-8 and retry."
+      : "";
+    throw new Error(
+      `Invalid plan JSON in ${resolvedPath}: ${message}.${encodingHint}`,
+    );
   }
 
   return normalizeApplyPlanArtifact(payload);
 };
 
-const loadPolicyEvaluationArtifact = (cwd: string): engine.PolicyEvaluationEntry[] => {
+const loadPolicyEvaluationArtifact = (
+  cwd: string,
+): engine.PolicyEvaluationEntry[] => {
   const policyPath = path.resolve(cwd, engine.POLICY_EVALUATION_RELATIVE_PATH);
 
   let payload: unknown;
   try {
-    const rawText = fs.readFileSync(policyPath, 'utf8');
+    const rawText = fs.readFileSync(policyPath, "utf8");
     payload = JSON.parse(rawText);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `Unable to read policy evaluation artifact at ${policyPath}: ${message}. Run \`pnpm playbook policy evaluate --json\` first.`
+      `Unable to read policy evaluation artifact at ${policyPath}: ${message}. Run \`pnpm playbook policy evaluate --json\` first.`,
     );
   }
 
   const normalizedPayload =
-    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload
       ? ((payload as Record<string, unknown>).data as Record<string, unknown>)
       : (payload as Record<string, unknown>);
 
   const evaluations = normalizedPayload?.evaluations;
   if (!Array.isArray(evaluations)) {
     throw new Error(
-      `Invalid policy evaluation artifact at ${policyPath}: expected \`evaluations\` array. Run \`pnpm playbook policy evaluate --json\` to regenerate.`
+      `Invalid policy evaluation artifact at ${policyPath}: expected \`evaluations\` array. Run \`pnpm playbook policy evaluate --json\` to regenerate.`,
     );
   }
 
   return evaluations.map((entry) => {
-    if (!entry || typeof entry !== 'object') {
-      throw new Error(`Invalid policy evaluation artifact at ${policyPath}: evaluations must contain objects.`);
+    if (!entry || typeof entry !== "object") {
+      throw new Error(
+        `Invalid policy evaluation artifact at ${policyPath}: evaluations must contain objects.`,
+      );
     }
 
     const proposalId = (entry as Record<string, unknown>).proposal_id;
     const decision = (entry as Record<string, unknown>).decision;
     const reason = (entry as Record<string, unknown>).reason;
 
-    if (typeof proposalId !== 'string' || typeof reason !== 'string') {
+    if (typeof proposalId !== "string" || typeof reason !== "string") {
       throw new Error(
-        `Invalid policy evaluation artifact at ${policyPath}: each evaluation must include string proposal_id and reason.`
+        `Invalid policy evaluation artifact at ${policyPath}: each evaluation must include string proposal_id and reason.`,
       );
     }
 
-    if (decision !== 'safe' && decision !== 'requires_review' && decision !== 'blocked') {
+    if (
+      decision !== "safe" &&
+      decision !== "requires_review" &&
+      decision !== "blocked"
+    ) {
       throw new Error(
-        `Invalid policy evaluation artifact at ${policyPath}: unsupported decision \`${String(decision)}\` for proposal ${proposalId}.`
+        `Invalid policy evaluation artifact at ${policyPath}: unsupported decision \`${String(decision)}\` for proposal ${proposalId}.`,
       );
     }
 
     return {
       proposal_id: proposalId,
       decision,
-      reason
+      reason,
     };
   });
 };
 
+const byProposalId = <T extends { proposal_id: string }>(
+  left: T,
+  right: T,
+): number => left.proposal_id.localeCompare(right.proposal_id);
 
-const byProposalId = <T extends { proposal_id: string }>(left: T, right: T): number => left.proposal_id.localeCompare(right.proposal_id);
-
-export const validatePolicyApplyResultArtifact = (artifact: PolicyApplyResultArtifact): string[] => {
+export const validatePolicyApplyResultArtifact = (
+  artifact: PolicyApplyResultArtifact,
+): string[] => {
   const errors: string[] = [];
 
-  if (artifact.schemaVersion !== '1.0') {
+  if (artifact.schemaVersion !== "1.0") {
     errors.push('schemaVersion must be "1.0"');
   }
-  if (artifact.kind !== 'policy-apply-result') {
+  if (artifact.kind !== "policy-apply-result") {
     errors.push('kind must be "policy-apply-result"');
   }
 
-  const validateEntry = (entry: PolicyApplyResultEntry | PolicyApplyFailureEntry, field: string): void => {
-    if (typeof entry.proposal_id !== 'string' || entry.proposal_id.length === 0) {
+  const validateEntry = (
+    entry: PolicyApplyResultEntry | PolicyApplyFailureEntry,
+    field: string,
+  ): void => {
+    if (
+      typeof entry.proposal_id !== "string" ||
+      entry.proposal_id.length === 0
+    ) {
       errors.push(`${field}[].proposal_id must be a non-empty string`);
     }
-    if (!['safe', 'requires_review', 'blocked'].includes(entry.decision)) {
-      errors.push(`${field}[].decision must be one of safe, requires_review, blocked`);
+    if (!["safe", "requires_review", "blocked"].includes(entry.decision)) {
+      errors.push(
+        `${field}[].decision must be one of safe, requires_review, blocked`,
+      );
     }
-    if (typeof entry.reason !== 'string' || entry.reason.length === 0) {
+    if (typeof entry.reason !== "string" || entry.reason.length === 0) {
       errors.push(`${field}[].reason must be a non-empty string`);
     }
   };
 
   for (const [field, list] of [
-    ['executed', artifact.executed],
-    ['skipped_requires_review', artifact.skipped_requires_review],
-    ['skipped_blocked', artifact.skipped_blocked]
+    ["executed", artifact.executed],
+    ["skipped_requires_review", artifact.skipped_requires_review],
+    ["skipped_blocked", artifact.skipped_blocked],
   ] as const) {
     if (!Array.isArray(list)) {
       errors.push(`${field} must be an array`);
@@ -374,37 +459,51 @@ export const validatePolicyApplyResultArtifact = (artifact: PolicyApplyResultArt
       validateEntry(entry, field);
     }
 
-    const sortedIds = [...list].map((entry) => entry.proposal_id).sort((left, right) => left.localeCompare(right));
+    const sortedIds = [...list]
+      .map((entry) => entry.proposal_id)
+      .sort((left, right) => left.localeCompare(right));
     const currentIds = list.map((entry) => entry.proposal_id);
-    if (sortedIds.join('\u0000') !== currentIds.join('\u0000')) {
+    if (sortedIds.join("\u0000") !== currentIds.join("\u0000")) {
       errors.push(`${field} must be deterministically ordered by proposal_id`);
     }
   }
 
   if (!Array.isArray(artifact.failed_execution)) {
-    errors.push('failed_execution must be an array');
+    errors.push("failed_execution must be an array");
   } else {
     for (const entry of artifact.failed_execution) {
-      validateEntry(entry, 'failed_execution');
-      if (typeof entry.error !== 'string' || entry.error.length === 0) {
-        errors.push('failed_execution[].error must be a non-empty string');
+      validateEntry(entry, "failed_execution");
+      if (typeof entry.error !== "string" || entry.error.length === 0) {
+        errors.push("failed_execution[].error must be a non-empty string");
       }
     }
 
-    const sortedIds = [...artifact.failed_execution].map((entry) => entry.proposal_id).sort((left, right) => left.localeCompare(right));
-    const currentIds = artifact.failed_execution.map((entry) => entry.proposal_id);
-    if (sortedIds.join('\u0000') !== currentIds.join('\u0000')) {
-      errors.push('failed_execution must be deterministically ordered by proposal_id');
+    const sortedIds = [...artifact.failed_execution]
+      .map((entry) => entry.proposal_id)
+      .sort((left, right) => left.localeCompare(right));
+    const currentIds = artifact.failed_execution.map(
+      (entry) => entry.proposal_id,
+    );
+    if (sortedIds.join("\u0000") !== currentIds.join("\u0000")) {
+      errors.push(
+        "failed_execution must be deterministically ordered by proposal_id",
+      );
     }
   }
 
-  if (!artifact.summary || typeof artifact.summary !== 'object') {
-    errors.push('summary must be an object');
+  if (!artifact.summary || typeof artifact.summary !== "object") {
+    errors.push("summary must be an object");
   } else {
     const summary = artifact.summary;
-    for (const field of ['executed', 'skipped_requires_review', 'skipped_blocked', 'failed_execution', 'total'] as const) {
+    for (const field of [
+      "executed",
+      "skipped_requires_review",
+      "skipped_blocked",
+      "failed_execution",
+      "total",
+    ] as const) {
       const value = summary[field];
-      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+      if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
         errors.push(`summary.${field} must be a non-negative integer`);
       }
     }
@@ -413,19 +512,28 @@ export const validatePolicyApplyResultArtifact = (artifact: PolicyApplyResultArt
   return errors;
 };
 
-const executeSafePolicyProposal = (cwd: string, proposal: engine.PolicyEvaluationEntry): string | null => {
-  const candidatesPath = path.resolve(cwd, '.playbook/improvement-candidates.json');
+const executeSafePolicyProposal = (
+  cwd: string,
+  proposal: engine.PolicyEvaluationEntry,
+): string | null => {
+  const candidatesPath = path.resolve(
+    cwd,
+    ".playbook/improvement-candidates.json",
+  );
 
   let payload: unknown;
   try {
-    payload = JSON.parse(fs.readFileSync(candidatesPath, 'utf8'));
+    payload = JSON.parse(fs.readFileSync(candidatesPath, "utf8"));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return `Unable to read improvement candidates at ${candidatesPath}: ${message}. Run \`pnpm playbook improve --json\` first.`;
   }
 
   const normalizedPayload =
-    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload
       ? ((payload as Record<string, unknown>).data as Record<string, unknown>)
       : (payload as Record<string, unknown>);
   const candidates = normalizedPayload?.candidates;
@@ -434,11 +542,14 @@ const executeSafePolicyProposal = (cwd: string, proposal: engine.PolicyEvaluatio
   }
 
   const exists = candidates.some((candidate) => {
-    if (!candidate || typeof candidate !== 'object') {
+    if (!candidate || typeof candidate !== "object") {
       return false;
     }
 
-    return (candidate as Record<string, unknown>).candidate_id === proposal.proposal_id;
+    return (
+      (candidate as Record<string, unknown>).candidate_id ===
+      proposal.proposal_id
+    );
   });
 
   if (!exists) {
@@ -449,7 +560,9 @@ const executeSafePolicyProposal = (cwd: string, proposal: engine.PolicyEvaluatio
 };
 
 const runPolicyApply = (cwd: string): PolicyApplyJsonResult => {
-  const preflight = engine.buildPolicyPreflight(loadPolicyEvaluationArtifact(cwd));
+  const preflight = engine.buildPolicyPreflight(
+    loadPolicyEvaluationArtifact(cwd),
+  );
   const executed: PolicyApplyResultEntry[] = [];
   const failedExecution: PolicyApplyFailureEntry[] = [];
 
@@ -464,13 +577,15 @@ const runPolicyApply = (cwd: string): PolicyApplyJsonResult => {
   }
 
   const deterministicExecuted = [...executed].sort(byProposalId);
-  const deterministicSkippedRequiresReview = [...preflight.requires_review].sort(byProposalId);
+  const deterministicSkippedRequiresReview = [
+    ...preflight.requires_review,
+  ].sort(byProposalId);
   const deterministicSkippedBlocked = [...preflight.blocked].sort(byProposalId);
   const deterministicFailedExecution = [...failedExecution].sort(byProposalId);
 
   const resultArtifact: PolicyApplyResultArtifact = {
-    schemaVersion: '1.0',
-    kind: 'policy-apply-result',
+    schemaVersion: "1.0",
+    kind: "policy-apply-result",
     executed: deterministicExecuted,
     skipped_requires_review: deterministicSkippedRequiresReview,
     skipped_blocked: deterministicSkippedBlocked,
@@ -480,34 +595,47 @@ const runPolicyApply = (cwd: string): PolicyApplyJsonResult => {
       skipped_requires_review: deterministicSkippedRequiresReview.length,
       skipped_blocked: deterministicSkippedBlocked.length,
       failed_execution: deterministicFailedExecution.length,
-      total: preflight.summary.total
-    }
+      total: preflight.summary.total,
+    },
   };
 
   const validationErrors = validatePolicyApplyResultArtifact(resultArtifact);
   if (validationErrors.length > 0) {
-    warn(`playbook apply --policy: warning: policy-apply-result artifact failed schema validation: ${validationErrors.join('; ')}`);
+    warn(
+      `playbook apply --policy: warning: policy-apply-result artifact failed schema validation: ${validationErrors.join("; ")}`,
+    );
   }
 
-  const resultArtifactPath = path.resolve(cwd, POLICY_APPLY_RESULT_RELATIVE_PATH);
-  writeJsonArtifactAbsolute(resultArtifactPath, resultArtifact as Record<string, unknown>, 'apply', { envelope: false });
+  const resultArtifactPath = path.resolve(
+    cwd,
+    POLICY_APPLY_RESULT_RELATIVE_PATH,
+  );
+  writeJsonArtifactAbsolute(
+    resultArtifactPath,
+    resultArtifact as Record<string, unknown>,
+    "apply",
+    { envelope: false },
+  );
 
-  const exitCode = deterministicFailedExecution.length > 0 ? ExitCode.Failure : ExitCode.Success;
+  const exitCode =
+    deterministicFailedExecution.length > 0
+      ? ExitCode.Failure
+      : ExitCode.Success;
   return {
     ...resultArtifact,
-    schemaVersion: '1.0',
-    command: 'apply',
-    mode: 'policy',
+    schemaVersion: "1.0",
+    command: "apply",
+    mode: "policy",
     ok: exitCode === ExitCode.Success,
     exitCode,
-    resultArtifact: POLICY_APPLY_RESULT_RELATIVE_PATH
+    resultArtifact: POLICY_APPLY_RESULT_RELATIVE_PATH,
   };
 };
 
-
-
-
-const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | undefined): PlanTask[] => {
+const selectPlanTasks = (
+  tasks: PlanTask[],
+  selectedTaskIds: string[] | undefined,
+): PlanTask[] => {
   if (!selectedTaskIds) {
     return tasks;
   }
@@ -516,13 +644,15 @@ const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | undefine
   const uniqueIds = [...new Set(normalizedIds)];
 
   if (uniqueIds.length === 0) {
-    throw new Error('No task ids were provided. Supply at least one --task <task-id>.');
+    throw new Error(
+      "No task ids were provided. Supply at least one --task <task-id>.",
+    );
   }
 
   const availableTaskIds = new Set(tasks.map((task) => task.id));
   const unknownTaskIds = uniqueIds.filter((id) => !availableTaskIds.has(id));
   if (unknownTaskIds.length > 0) {
-    throw new Error(`Unknown task id(s): ${unknownTaskIds.join(', ')}.`);
+    throw new Error(`Unknown task id(s): ${unknownTaskIds.join(", ")}.`);
   }
 
   const selectedTaskIdsSet = new Set(uniqueIds);
@@ -530,39 +660,42 @@ const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | undefine
 };
 
 const renderTextApply = (result: ApplyJsonResult): void => {
-  console.log('Apply');
-  console.log('────────');
-  console.log('');
+  console.log("Apply");
+  console.log("────────");
+  console.log("");
   console.log(`Applied: ${result.summary.applied}`);
   console.log(`Skipped: ${result.summary.skipped}`);
   console.log(`Unsupported: ${result.summary.unsupported}`);
   console.log(`Failed: ${result.summary.failed}`);
-  console.log('');
+  console.log("");
 
   if (result.results.length === 0) {
-    console.log('(none)');
+    console.log("(none)");
     return;
   }
 
   for (const entry of result.results) {
-    const target = entry.file ?? '(no file)';
+    const target = entry.file ?? "(no file)";
     console.log(`${entry.id} ${entry.ruleId} ${entry.status} ${target}`);
   }
 };
 
 const renderTextPolicyCheck = (result: PolicyCheckJsonResult): void => {
-  console.log('Apply policy preflight (read-only)');
-  console.log('────────────────────────────────');
+  console.log("Apply policy preflight (read-only)");
+  console.log("────────────────────────────────");
   console.log(`Eligible: ${result.summary.eligible}`);
   console.log(`Requires review: ${result.summary.requires_review}`);
   console.log(`Blocked: ${result.summary.blocked}`);
   console.log(`Total: ${result.summary.total}`);
 
-  const printGroup = (title: string, entries: engine.PolicyPreflightProposal[]): void => {
-    console.log('');
+  const printGroup = (
+    title: string,
+    entries: engine.PolicyPreflightProposal[],
+  ): void => {
+    console.log("");
     console.log(`${title}:`);
     if (entries.length === 0) {
-      console.log('  (none)');
+      console.log("  (none)");
       return;
     }
 
@@ -571,68 +704,96 @@ const renderTextPolicyCheck = (result: PolicyCheckJsonResult): void => {
     }
   };
 
-  printGroup('eligible', result.eligible);
-  printGroup('requires_review', result.requires_review);
-  printGroup('blocked', result.blocked);
+  printGroup("eligible", result.eligible);
+  printGroup("requires_review", result.requires_review);
+  printGroup("blocked", result.blocked);
 };
 
 const printApplyHelp = (): void => {
-  console.log('Usage: playbook apply [options]');
-  console.log('');
-  console.log('Execute deterministic auto-fixable plan tasks from generated or saved plan artifacts.');
-  console.log('');
-  console.log('Options:');
-  console.log('  --policy-check             Read-only preflight of policy-evaluated proposal eligibility');
-  console.log('  --policy                   Controlled policy-gated execution for safe proposals only');
-  console.log('  --from-plan <path>         Apply tasks from a previously saved `playbook plan --json` artifact');
-  console.log('  --task <id>                Apply only selected task ID (repeatable; requires --from-plan)');
-  console.log('  --json                     Alias for --format=json');
-  console.log('  --format <text|json>       Output format');
-  console.log('  --quiet                    Suppress success output in text mode');
-  console.log('  --help                     Show help');
+  console.log("Usage: playbook apply [options]");
+  console.log("");
+  console.log(
+    "Execute deterministic auto-fixable plan tasks from generated or saved plan artifacts.",
+  );
+  console.log("");
+  console.log("Options:");
+  console.log(
+    "  --policy-check             Read-only preflight of policy-evaluated proposal eligibility",
+  );
+  console.log(
+    "  --policy                   Controlled policy-gated execution for safe proposals only",
+  );
+  console.log(
+    "  --from-plan <path>         Apply tasks from a previously saved `playbook plan --json` artifact",
+  );
+  console.log(
+    "  --task <id>                Apply only selected task ID (repeatable; requires --from-plan)",
+  );
+  console.log("  --json                     Alias for --format=json");
+  console.log("  --format <text|json>       Output format");
+  console.log(
+    "  --quiet                    Suppress success output in text mode",
+  );
+  console.log("  --help                     Show help");
 };
 
 const resolveApplyMode = (options: ApplyOptions): ApplyMode => {
   if (options.policyCheck) {
-    return 'policy-check';
+    return "policy-check";
   }
 
   if (options.policy) {
-    return 'policy';
+    return "policy";
   }
 
-  return 'standard';
+  return "standard";
 };
 
 const validateApplyOptions = (options: ApplyOptions, mode: ApplyMode): void => {
-  if (mode === 'policy-check') {
+  if (mode === "policy-check") {
     if (options.policy) {
-      throw new Error('The --policy flag cannot be combined with --policy-check.');
+      throw new Error(
+        "The --policy flag cannot be combined with --policy-check.",
+      );
     }
     if (options.fromPlan) {
-      throw new Error('The --policy-check flag is read-only and cannot be combined with --from-plan.');
+      throw new Error(
+        "The --policy-check flag is read-only and cannot be combined with --from-plan.",
+      );
     }
     if ((options.tasks?.length ?? 0) > 0) {
-      throw new Error('The --policy-check flag is read-only and cannot be combined with --task.');
+      throw new Error(
+        "The --policy-check flag is read-only and cannot be combined with --task.",
+      );
     }
   }
 
-  if (mode === 'policy') {
+  if (mode === "policy") {
     if (options.fromPlan) {
-      throw new Error('The --policy flag cannot be combined with --from-plan.');
+      throw new Error("The --policy flag cannot be combined with --from-plan.");
     }
     if ((options.tasks?.length ?? 0) > 0) {
-      throw new Error('The --policy flag cannot be combined with --task.');
+      throw new Error("The --policy flag cannot be combined with --task.");
     }
   }
 
-  if (mode === 'standard' && (options.tasks?.length ?? 0) > 0 && !options.fromPlan) {
-    throw new Error('The --task flag requires --from-plan so task selection is tied to a reviewed artifact.');
+  if (
+    mode === "standard" &&
+    (options.tasks?.length ?? 0) > 0 &&
+    !options.fromPlan
+  ) {
+    throw new Error(
+      "The --task flag requires --from-plan so task selection is tied to a reviewed artifact.",
+    );
   }
 };
 
-const emitApplyOutput = (options: ApplyOptions, payload: ApplyJsonResult, renderText: (result: ApplyJsonResult) => void): number => {
-  if (options.format === 'json') {
+const emitApplyOutput = (
+  options: ApplyOptions,
+  payload: ApplyJsonResult,
+  renderText: (result: ApplyJsonResult) => void,
+): number => {
+  if (options.format === "json") {
     console.log(JSON.stringify(payload, null, 2));
     return payload.exitCode;
   }
@@ -644,8 +805,11 @@ const emitApplyOutput = (options: ApplyOptions, payload: ApplyJsonResult, render
   return payload.exitCode;
 };
 
-const emitPolicyCheckOutput = (options: ApplyOptions, payload: PolicyCheckJsonResult): number => {
-  if (options.format === 'json') {
+const emitPolicyCheckOutput = (
+  options: ApplyOptions,
+  payload: PolicyCheckJsonResult,
+): number => {
+  if (options.format === "json") {
     console.log(JSON.stringify(payload, null, 2));
     return ExitCode.Success;
   }
@@ -657,17 +821,22 @@ const emitPolicyCheckOutput = (options: ApplyOptions, payload: PolicyCheckJsonRe
   return ExitCode.Success;
 };
 
-const emitPolicyApplyOutput = (options: ApplyOptions, payload: PolicyApplyJsonResult): number => {
-  if (options.format === 'json') {
+const emitPolicyApplyOutput = (
+  options: ApplyOptions,
+  payload: PolicyApplyJsonResult,
+): number => {
+  if (options.format === "json") {
     console.log(JSON.stringify(payload, null, 2));
     return payload.exitCode;
   }
 
   if (!options.quiet) {
-    console.log('Apply policy execution (safe proposals only)');
-    console.log('──────────────────────────────────────────');
+    console.log("Apply policy execution (safe proposals only)");
+    console.log("──────────────────────────────────────────");
     console.log(`Executed: ${payload.summary.executed}`);
-    console.log(`Skipped (requires_review): ${payload.summary.skipped_requires_review}`);
+    console.log(
+      `Skipped (requires_review): ${payload.summary.skipped_requires_review}`,
+    );
     console.log(`Skipped (blocked): ${payload.summary.skipped_blocked}`);
     console.log(`Failed execution: ${payload.summary.failed_execution}`);
     console.log(`Result artifact: ${payload.resultArtifact}`);
@@ -676,34 +845,37 @@ const emitPolicyApplyOutput = (options: ApplyOptions, payload: PolicyApplyJsonRe
   return payload.exitCode;
 };
 
-const attachApplyRunArtifacts = (cwd: string, runId: string, fromPlan: string | undefined): void => {
+const attachApplyRunArtifacts = (
+  cwd: string,
+  runId: string,
+  fromPlan: string | undefined,
+): void => {
   const runArtifactPath = engine.executionRunPath(cwd, runId);
   engine.attachSessionRunState(cwd, {
-    step: 'apply',
+    step: "apply",
     runId,
-    goal: 'apply deterministic remediation plan',
+    goal: "apply deterministic remediation plan",
     artifacts: [
-      { artifact: runArtifactPath, kind: 'run' },
-      ...(fromPlan ? [{ artifact: fromPlan, kind: 'plan' as const }] : [])
-    ]
+      { artifact: runArtifactPath, kind: "run" },
+      ...(fromPlan ? [{ artifact: fromPlan, kind: "plan" as const }] : []),
+    ],
   });
 };
 
-
 const attachPolicyArtifactsToSession = (cwd: string): void => {
   const artifacts = [
-    '.playbook/improvement-candidates.json',
-    '.playbook/policy-evaluation.json',
-    '.playbook/policy-apply-result.json'
+    ".playbook/improvement-candidates.json",
+    ".playbook/policy-evaluation.json",
+    ".playbook/policy-apply-result.json",
   ];
 
   for (const artifact of artifacts) {
     if (fs.existsSync(path.resolve(cwd, artifact))) {
-      engine.pinSessionArtifact(cwd, artifact, 'artifact');
+      engine.pinSessionArtifact(cwd, artifact, "artifact");
     }
   }
 
-  engine.updateSession(cwd, { currentStep: 'apply' });
+  engine.updateSession(cwd, { currentStep: "apply" });
 };
 
 const runPolicyCheckFlow = (cwd: string, options: ApplyOptions): number => {
@@ -711,10 +883,10 @@ const runPolicyCheckFlow = (cwd: string, options: ApplyOptions): number => {
   const preflight = engine.buildPolicyPreflight(evaluations);
   const payload: PolicyCheckJsonResult = {
     ...preflight,
-    command: 'apply',
-    mode: 'policy-check',
+    command: "apply",
+    mode: "policy-check",
     ok: true,
-    exitCode: ExitCode.Success
+    exitCode: ExitCode.Success,
   };
 
   attachPolicyArtifactsToSession(cwd);
@@ -727,22 +899,34 @@ const runPolicyApplyFlow = (cwd: string, options: ApplyOptions): number => {
   return emitPolicyApplyOutput(options, payload);
 };
 
-
-const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
+const resolveRunId = (
+  cwd: string,
+  requestedRunId: string | undefined,
+): string => {
   if (requestedRunId) {
     return requestedRunId;
   }
 
-  const latest = engine.getLatestMutableRun ? engine.getLatestMutableRun(cwd) : null;
+  const latest = engine.getLatestMutableRun
+    ? engine.getLatestMutableRun(cwd)
+    : null;
   if (latest) {
     return latest.id;
   }
 
-  const intent = engine.createExecutionIntent('apply deterministic remediation plan', ['plan', 'apply', 'verify'], ['approved-plan-required'], 'user');
+  const intent = engine.createExecutionIntent(
+    "apply deterministic remediation plan",
+    ["plan", "apply", "verify"],
+    ["approved-plan-required"],
+    "user",
+  );
   return engine.createExecutionRun(cwd, intent).id;
 };
 
-export const runApply = async (cwd: string, options: ApplyOptions): Promise<number> => {
+export const runApply = async (
+  cwd: string,
+  options: ApplyOptions,
+): Promise<number> => {
   if (options.help) {
     printApplyHelp();
     return ExitCode.Success;
@@ -751,21 +935,28 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   const mode = resolveApplyMode(options);
   validateApplyOptions(options, mode);
 
-  if (mode === 'policy-check') {
+  if (mode === "policy-check") {
     return runPolicyCheckFlow(cwd, options);
   }
 
-  if (mode === 'policy') {
+  if (mode === "policy") {
     return runPolicyApplyFlow(cwd, options);
   }
 
-  const routeDecision = engine.routeTask(cwd, 'apply approved remediation plan', {
-    taskKind: 'patch_execution',
-    hasApprovedPlan: true,
-    safetyConstraints: { allowRepositoryMutation: true, requiresApprovedPlan: true }
-  });
+  const routeDecision = engine.routeTask(
+    cwd,
+    "apply approved remediation plan",
+    {
+      taskKind: "patch_execution",
+      hasApprovedPlan: true,
+      safetyConstraints: {
+        allowRepositoryMutation: true,
+        requiresApprovedPlan: true,
+      },
+    },
+  );
 
-  if (routeDecision.route === 'unsupported') {
+  if (routeDecision.route === "unsupported") {
     throw new Error(`Cannot execute apply flow: ${routeDecision.why}`);
   }
 
@@ -778,38 +969,49 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
         const failureFacts = deriveVerifyFailureFacts(generatedPlan.verify);
         return {
           tasks: generatedPlan.tasks,
-          remediation: buildPlanRemediation({ failureCount: failureFacts.failureCount, stepCount: generatedPlan.tasks.length })
+          remediation: buildPlanRemediation({
+            failureCount: failureFacts.failureCount,
+            stepCount: generatedPlan.tasks.length,
+          }),
         };
       })();
   const applyPrecondition = remediationToApplyPrecondition(plan.remediation);
 
-  if (applyPrecondition.action === 'fail') {
+  if (applyPrecondition.action === "fail") {
     throw new Error(`Cannot apply remediation: ${applyPrecondition.message}`);
   }
 
-  if (applyPrecondition.action === 'no_op') {
+  if (applyPrecondition.action === "no_op") {
     const payload: ApplyJsonResult = {
-      schemaVersion: '1.0',
-      command: 'apply',
-        ok: true,
+      schemaVersion: "1.0",
+      command: "apply",
+      ok: true,
       exitCode: ExitCode.Success,
       remediation: plan.remediation,
       message: applyPrecondition.message,
       results: [],
-      summary: { applied: 0, skipped: 0, unsupported: 0, failed: 0 }
+      summary: { applied: 0, skipped: 0, unsupported: 0, failed: 0 },
     };
 
     engine.appendExecutionStep(cwd, runId, {
-      kind: 'apply',
-      status: 'skipped',
+      kind: "apply",
+      status: "skipped",
       inputs: { fromPlan: options.fromPlan ?? null, selectedTaskCount: 0 },
       outputs: payload.summary,
-      evidence: options.fromPlan ? [{ id: 'evidence-plan-artifact', kind: 'artifact', ref: options.fromPlan }] : []
+      evidence: options.fromPlan
+        ? [
+            {
+              id: "evidence-plan-artifact",
+              kind: "artifact",
+              ref: options.fromPlan,
+            },
+          ]
+        : [],
     });
 
     attachApplyRunArtifacts(cwd, runId, options.fromPlan);
 
-    if (options.format === 'json') {
+    if (options.format === "json") {
       console.log(JSON.stringify(payload, null, 2));
       return ExitCode.Success;
     }
@@ -825,7 +1027,10 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   engine.validateRemediationPlan(cwd, selectedTasks);
   const verifyRules = await loadVerifyRules(cwd);
 
-  const handlers: Record<string, NonNullable<(typeof verifyRules)[number]['fix']>> = {};
+  const handlers: Record<
+    string,
+    NonNullable<(typeof verifyRules)[number]["fix"]>
+  > = {};
   for (const task of selectedTasks) {
     const pluginRule = verifyRules.find((rule) => rule.id === task.ruleId);
     if (pluginRule?.fix) {
@@ -833,37 +1038,49 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     }
   }
 
-  const execution = await engine.applyExecutionPlan(cwd, selectedTasks, { dryRun: false, handlers });
+  const execution = await engine.applyExecutionPlan(cwd, selectedTasks, {
+    dryRun: false,
+    handlers,
+  });
 
-  const exitCode = execution.summary.failed > 0 ? ExitCode.Failure : ExitCode.Success;
+  const exitCode =
+    execution.summary.failed > 0 ? ExitCode.Failure : ExitCode.Success;
   const payload: ApplyJsonResult = {
-    schemaVersion: '1.0',
-    command: 'apply',
+    schemaVersion: "1.0",
+    command: "apply",
     ok: exitCode === ExitCode.Success,
     exitCode,
     remediation: plan.remediation,
     message: applyPrecondition.message,
     results: execution.results,
-    summary: execution.summary
+    summary: execution.summary,
   };
 
   engine.appendExecutionStep(cwd, runId, {
-    kind: 'apply',
-    status: exitCode === ExitCode.Success ? 'passed' : 'failed',
+    kind: "apply",
+    status: exitCode === ExitCode.Success ? "passed" : "failed",
     inputs: {
       fromPlan: options.fromPlan ?? null,
-      selectedTaskCount: selectedTasks.length
+      selectedTaskCount: selectedTasks.length,
     },
     outputs: payload.summary,
     evidence: [
-      ...(options.fromPlan ? [{ id: 'evidence-plan-artifact', kind: 'artifact' as const, ref: options.fromPlan }] : []),
+      ...(options.fromPlan
+        ? [
+            {
+              id: "evidence-plan-artifact",
+              kind: "artifact" as const,
+              ref: options.fromPlan,
+            },
+          ]
+        : []),
       ...execution.results.map((result: ApplyResult, index: number) => ({
-        id: `evidence-apply-${String(index + 1).padStart(3, '0')}`,
-        kind: 'log' as const,
+        id: `evidence-apply-${String(index + 1).padStart(3, "0")}`,
+        kind: "log" as const,
         ref: `${result.ruleId}:${result.status}`,
-        note: result.message
-      }))
-    ]
+        note: result.message,
+      })),
+    ],
   });
 
   attachApplyRunArtifacts(cwd, runId, options.fromPlan);

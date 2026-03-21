@@ -1,27 +1,43 @@
-import type { FixHandler, PlanTask } from './types.js';
-import { loadConfig } from '../config/load.js';
-import { getChangedFiles } from '../git/diff.js';
-import { resolveDiffBase } from '../git/base.js';
-import { loadPlugins } from '../plugins/loadPlugins.js';
-import { getRegisteredRules, registerRule, resetPluginRegistry } from '../plugins/pluginRegistry.js';
-import { getCoreRules } from '../rules/coreRules.js';
-import { defaultFixHandlers } from './defaultFixHandlers.js';
-import { FixExecutor, HandlerResolver } from './fixExecutor.js';
-import { PlanGenerator } from './planGenerator.js';
-import { RuleRunner } from './ruleRunner.js';
-import type { VerifyReport } from '../report/types.js';
-import { verifyRepo } from '../verify/index.js';
-import { generateRepositoryHealth } from '../doctor/index.js';
-import { buildApplyMemoryEvent, buildPlanMemoryEvent, captureMemoryRuntimeEventSafe } from '../memory/runtimeEvents.js';
-export { renderLanePrompt, writeLanePrompts, buildLanePromptFilename } from './lanePrompts.js';
-export type { LanePromptSpec, RenderLanePromptInput, WriteLanePromptsInput } from './lanePrompts.js';
+import type { FixHandler, PlanTask } from "./types.js";
+import { loadConfig } from "../config/load.js";
+import { getChangedFiles } from "../git/diff.js";
+import { resolveDiffBase } from "../git/base.js";
+import { loadPlugins } from "../plugins/loadPlugins.js";
+import {
+  getRegisteredRules,
+  registerRule,
+  resetPluginRegistry,
+} from "../plugins/pluginRegistry.js";
+import { getCoreRules } from "../rules/coreRules.js";
+import { defaultFixHandlers } from "./defaultFixHandlers.js";
+import { FixExecutor, HandlerResolver } from "./fixExecutor.js";
+import { PlanGenerator } from "./planGenerator.js";
+import { RuleRunner } from "./ruleRunner.js";
+import type { VerifyReport } from "../report/types.js";
+import { verifyRepo } from "../verify/index.js";
+import { generateRepositoryHealth } from "../doctor/index.js";
+import {
+  buildApplyMemoryEvent,
+  buildPlanMemoryEvent,
+  captureMemoryRuntimeEventSafe,
+} from "../memory/runtimeEvents.js";
+export {
+  renderLanePrompt,
+  writeLanePrompts,
+  buildLanePromptFilename,
+} from "./lanePrompts.js";
+export type {
+  LanePromptSpec,
+  RenderLanePromptInput,
+  WriteLanePromptsInput,
+} from "./lanePrompts.js";
 
 export type PlanContract = {
   verify: {
-    ok: VerifyReport['ok'];
-    summary: VerifyReport['summary'];
-    failures: VerifyReport['failures'];
-    warnings: VerifyReport['warnings'];
+    ok: VerifyReport["ok"];
+    summary: VerifyReport["summary"];
+    failures: VerifyReport["failures"];
+    warnings: VerifyReport["warnings"];
   };
   tasks: PlanTask[];
 };
@@ -45,15 +61,24 @@ const buildArtifactHygieneTasks = (repoRoot: string): PlanTask[] => {
   return hygiene.suggestions.map((suggestion) => ({
     id: `task-artifact-${suggestion.id.toLowerCase()}`,
     ruleId: suggestion.id,
-    file: suggestion.id === 'PB013' ? '.gitignore' : suggestion.id === 'PB012' ? '.playbookignore' : null,
+    file:
+      suggestion.id === "PB013"
+        ? ".gitignore"
+        : suggestion.id === "PB012"
+          ? ".playbookignore"
+          : null,
     action: suggestion.title,
-    autoFix: true
+    autoFix: true,
   }));
 };
 
-const collectExecutionInputs = (repoRoot: string): { changedFiles: string[] } => {
+const collectExecutionInputs = (
+  repoRoot: string,
+): { changedFiles: string[] } => {
   const base = resolveDiffBase(repoRoot);
-  const changedFiles = base.baseSha ? getChangedFiles(repoRoot, base.baseSha) : [];
+  const changedFiles = base.baseSha
+    ? getChangedFiles(repoRoot, base.baseSha)
+    : [];
   return { changedFiles };
 };
 
@@ -68,10 +93,15 @@ const collectRules = (repoRoot: string) => {
 export const runRuleExecution = (repoRoot: string) => {
   const rules = collectRules(repoRoot);
   const runner = new RuleRunner(rules);
-  return runner.run({ repoRoot, changedFiles: collectExecutionInputs(repoRoot).changedFiles });
+  return runner.run({
+    repoRoot,
+    changedFiles: collectExecutionInputs(repoRoot).changedFiles,
+  });
 };
 
-export const generateExecutionPlan = (repoRoot: string): { tasks: PlanTask[] } => {
+export const generateExecutionPlan = (
+  repoRoot: string,
+): { tasks: PlanTask[] } => {
   const findings = runRuleExecution(repoRoot);
   const planner = new PlanGenerator({ projectRoot: repoRoot });
   const plan = planner.generate(findings.failures);
@@ -82,10 +112,10 @@ export const generateExecutionPlan = (repoRoot: string): { tasks: PlanTask[] } =
       repoId: repoRoot,
       verifyReport: {
         ok: findings.failures.length === 0,
-        failures: findings.failures
+        failures: findings.failures,
       },
-      tasks: plan.tasks
-    })
+      tasks: plan.tasks,
+    }),
   );
 
   return plan;
@@ -102,8 +132,8 @@ export const generatePlanContract = (repoRoot: string): PlanContract => {
     buildPlanMemoryEvent({
       repoId: repoRoot,
       verifyReport: verify,
-      tasks
-    })
+      tasks,
+    }),
   );
 
   return {
@@ -111,9 +141,9 @@ export const generatePlanContract = (repoRoot: string): PlanContract => {
       ok: verify.ok,
       summary: verify.summary,
       failures: verify.failures,
-      warnings: verify.warnings
+      warnings: verify.warnings,
     },
-    tasks
+    tasks,
   };
 };
 
@@ -124,12 +154,18 @@ export const applyExecutionPlan = async (
     dryRun: boolean;
     handlers?: Record<string, FixHandler | undefined>;
     postApplyVerificationArtifact?: string;
-    postApplyVerification?: Pick<VerifyReport, 'ok' | 'summary'>;
-  }
+    postApplyVerification?: Pick<VerifyReport, "ok" | "summary">;
+  },
 ) => {
-  const resolver = new HandlerResolver({ builtIn: defaultFixHandlers, plugin: options.handlers });
+  const resolver = new HandlerResolver({
+    builtIn: defaultFixHandlers,
+    plugin: options.handlers,
+  });
   const executor = new FixExecutor(resolver);
-  const result = await executor.apply(tasks, { repoRoot, dryRun: options.dryRun });
+  const result = await executor.apply(tasks, {
+    repoRoot,
+    dryRun: options.dryRun,
+  });
 
   captureMemoryRuntimeEventSafe(
     repoRoot,
@@ -138,14 +174,17 @@ export const applyExecutionPlan = async (
       result,
       tasks,
       postApplyVerificationArtifact: options.postApplyVerificationArtifact,
-      postApplyVerification: options.postApplyVerification
-    })
+      postApplyVerification: options.postApplyVerification,
+    }),
   );
 
   return result;
 };
 
-export const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | undefined): PlanTask[] => {
+export const selectPlanTasks = (
+  tasks: PlanTask[],
+  selectedTaskIds: string[] | undefined,
+): PlanTask[] => {
   if (!selectedTaskIds) {
     return tasks;
   }
@@ -154,19 +193,21 @@ export const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | u
   const uniqueIds = [...new Set(normalizedIds)];
 
   if (uniqueIds.length === 0) {
-    throw new Error('No task ids were provided. Supply at least one --task <task-id>.');
+    throw new Error(
+      "No task ids were provided. Supply at least one --task <task-id>.",
+    );
   }
 
   const availableTaskIds = new Set(tasks.map((task) => task.id));
   const unknownTaskIds = uniqueIds.filter((id) => !availableTaskIds.has(id));
   if (unknownTaskIds.length > 0) {
-    throw new Error(`Unknown task id(s): ${unknownTaskIds.join(', ')}.`);
+    throw new Error(`Unknown task id(s): ${unknownTaskIds.join(", ")}.`);
   }
 
   const selectedIdSet = new Set(uniqueIds);
   const selectedTasks = tasks.filter((task) => selectedIdSet.has(task.id));
   if (selectedTasks.length === 0) {
-    throw new Error('No matching tasks were selected from the plan artifact.');
+    throw new Error("No matching tasks were selected from the plan artifact.");
   }
 
   return selectedTasks;
@@ -174,64 +215,83 @@ export const selectPlanTasks = (tasks: PlanTask[], selectedTaskIds: string[] | u
 
 export const parsePlanArtifact = (payload: unknown): { tasks: PlanTask[] } => {
   const normalizedPayload =
-    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload
       ? (payload as ArtifactEnvelope).data
       : payload;
 
-  if (!normalizedPayload || typeof normalizedPayload !== 'object') {
-    throw new Error('Invalid plan payload: expected an object envelope.');
+  if (!normalizedPayload || typeof normalizedPayload !== "object") {
+    throw new Error("Invalid plan payload: expected an object envelope.");
   }
 
   const envelope = normalizedPayload as SerializedPlanEnvelope;
 
-  if (envelope.schemaVersion !== '1.0') {
-    throw new Error(`Unsupported plan schemaVersion: ${String(envelope.schemaVersion ?? 'undefined')}.`);
+  if (envelope.schemaVersion !== "1.0") {
+    throw new Error(
+      `Unsupported plan schemaVersion: ${String(envelope.schemaVersion ?? "undefined")}.`,
+    );
   }
 
-  if (envelope.command !== 'plan') {
-    throw new Error('Invalid plan payload: command must be "plan".');
+  if (
+    envelope.command !== "plan" &&
+    envelope.command !== "docs consolidate-plan"
+  ) {
+    throw new Error(
+      'Invalid plan payload: command must be "plan" or "docs consolidate-plan".',
+    );
   }
 
   if (!Array.isArray(envelope.tasks)) {
-    throw new Error('Invalid plan payload: tasks must be an array.');
+    throw new Error("Invalid plan payload: tasks must be an array.");
   }
 
   const tasks = envelope.tasks.map((task) => {
-    if (!task || typeof task !== 'object') {
-      throw new Error('Invalid plan payload: each task must be an object.');
+    if (!task || typeof task !== "object") {
+      throw new Error("Invalid plan payload: each task must be an object.");
     }
 
     const typedTask = task as Record<string, unknown>;
     if (
-      typeof typedTask.id !== 'string' ||
-      typeof typedTask.ruleId !== 'string' ||
-      typeof typedTask.action !== 'string' ||
-      typeof typedTask.autoFix !== 'boolean'
+      typeof typedTask.id !== "string" ||
+      typeof typedTask.ruleId !== "string" ||
+      typeof typedTask.action !== "string" ||
+      typeof typedTask.autoFix !== "boolean"
     ) {
-      throw new Error('Invalid plan payload: each task must include id, ruleId, action, and autoFix.');
+      throw new Error(
+        "Invalid plan payload: each task must include id, ruleId, action, and autoFix.",
+      );
     }
 
-    if (typedTask.file !== null && typeof typedTask.file !== 'string') {
-      throw new Error('Invalid plan payload: task.file must be a string or null.');
+    if (typedTask.file !== null && typeof typedTask.file !== "string") {
+      throw new Error(
+        "Invalid plan payload: task.file must be a string or null.",
+      );
     }
 
-    return {
+    const normalizedTask = {
       id: typedTask.id,
       ruleId: typedTask.ruleId,
       file: typedTask.file ?? null,
       action: typedTask.action,
       autoFix: typedTask.autoFix,
-      ...(typedTask.advisory && typeof typedTask.advisory === 'object'
-        ? { advisory: typedTask.advisory as PlanTask['advisory'] }
-        : {})
+      ...(typedTask.advisory && typeof typedTask.advisory === "object"
+        ? { advisory: typedTask.advisory as PlanTask["advisory"] }
+        : {}),
+      ...(typedTask.execution && typeof typedTask.execution === "object"
+        ? { execution: typedTask.execution as PlanTask["execution"] }
+        : {}),
     } as PlanTask;
+
+    return normalizedTask;
   });
 
   return { tasks };
 };
 
-export { RuleRunner } from './ruleRunner.js';
-export { PlanGenerator } from './planGenerator.js';
-export { FixExecutor, HandlerResolver } from './fixExecutor.js';
-export { defaultFixHandlers } from './defaultFixHandlers.js';
-export type { PlanTask, RuleFailure, Rule, FixHandler } from './types.js';
+export { RuleRunner } from "./ruleRunner.js";
+export { PlanGenerator } from "./planGenerator.js";
+export { FixExecutor, HandlerResolver } from "./fixExecutor.js";
+export { defaultFixHandlers } from "./defaultFixHandlers.js";
+export type { PlanTask, RuleFailure, Rule, FixHandler } from "./types.js";

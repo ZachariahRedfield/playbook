@@ -22,7 +22,6 @@ Pattern: Product Story Follows Architecture.
 Rule: Roadmap sequencing must preserve CLI-first, offline-capable, private-first operation.
 Failure Mode: Business docs drifting away from runtime truth.
 
-
 ## Phase 9 — Unified Doctrine Loop (Self-Improving Playbook Core)
 
 Phase 9 unifies Phase 7/8 knowledge, promotion, story, and lifecycle systems into one closed deterministic product loop.
@@ -80,7 +79,6 @@ Pattern: Product direction should be expressed as small, shippable stories rathe
 Rule: Systems are adopted as documentation contracts before becoming enforced tooling.
 Failure Mode: Introducing workflow tooling before teams have consistent conceptual usage leads to abandonment.
 
-
 Recent implementation note: `pnpm playbook test-autofix --input <path> --json` now closes the bounded test-remediation loop using the existing seams only: diagnosis through `test-triage`, planning through `test-fix-plan`, reviewed mutation through `apply --from-plan`, and narrow-first verification through the rerun commands already emitted by triage. The result is recorded as a first-class `test-autofix` artifact with deterministic stop conditions and final-status classification, while risky findings remain review-required and never become executable automatically. It now also appends first-class remediation history under `.playbook/test-autofix-history.json`, making diagnosis -> planning -> execution -> verification -> history the minimal trustworthy remediation loop for future repeat detection and bounded retry policy. Stable failure signatures and recorded outcomes now form the evidence layer that self-repair must consult before it is allowed to make better future repair decisions.
 Recent implementation note: `pnpm playbook test-fix-plan --from-triage <artifact> --json` now turns first-class `test-triage` diagnosis artifacts into stable bounded remediation artifacts, keeping low-risk auto-fix planning explicit and rejecting risky findings as review-only exclusions instead of hidden mutation behavior. The trust-model wording is now explicit across docs: `test-triage` is diagnosis, `test-fix-plan` is bounded repair planning, and `apply --from-plan` is reviewed execution. Risky findings remain review-required and do not cross into executable tasks automatically. `apply --from-plan` consumes that artifact through the existing reviewed-plan execution boundary rather than creating a parallel mutation executor.
 
@@ -97,6 +95,7 @@ Recent implementation note: deterministic adoption work-queue planning is also a
 Recent implementation note: Codex-ready execution packaging now layers on top of the queue (`pnpm playbook status execute --json`, Observer `GET /api/readiness/execute`, and Observer dashboard execution-plan card) to emit wave-scoped worker lanes and copy-paste prompts for parallel repo operations.
 
 Recent implementation note: deterministic test-failure triage is now available through `pnpm playbook test-triage --input <path> --json`, adding a first-class diagnosis artifact for repeated Vitest / pnpm recursive CI failures with stable repair classes, narrow rerun planning, and plan-only low-risk repair guidance. The architectural hardening lesson from stabilizing contract snapshots is now explicit: isolated fixtures surfaced hidden producer/consumer dependencies that shared fixture state had been masking, so diagnosis must stay separate from repair planning and merge-time mutation.
+
 - Rule: Automate diagnosis first, repair second, merge never.
 - Rule: isolated contract fixtures force hidden producer/consumer dependencies into the open.
 - Pattern: Most repeated CI failures cluster into a small set of deterministic repair classes that can be parsed from test output.
@@ -775,7 +774,6 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 - **Execution window**
   - after Session + Evidence, Control Plane, and PR Review Loop architecture layers; outside the current near-term execution window unless explicitly promoted in roadmap status.
 
-
 #### 8. Repo-Scoped Stories / Backlog System
 
 - **Why this layer exists**
@@ -1420,9 +1418,11 @@ Use a layered phase model so each phase compounds directly on the previous one:
    - Next hardening step: add reviewed consolidation execution / merge-guard controls so canonical narrative docs can move from proposal-only review artifacts to a governed merge boundary with deterministic conflict enforcement.
    - Dependency positioning: this slice now sits after worker partitioning / lane safety and before reviewed consolidation execution / merge-guard hardening for future managed subagents / hooks execution.
 10. **Phase 10 â€” Repository Memory System**  
-   Establish the temporal memory substrate (session/episodic evidence) while keeping repository structural intelligence (`index`/`graph`) as a distinct deterministic layer.
-   - Worker assignment slice (implemented): deterministic proposal-only `worker-assignments` contract generation from lane-state readiness/dependency gates via `pnpm playbook workers` / `pnpm playbook workers assign`, including `.playbook/worker-assignments.json` and `.playbook/prompts/<lane_id>.md` outputs without worker launch or branch/PR automation.
-   - Prompt-thin artifact-rich refinement (implemented): worker prompts now separate direct-edit ownership from fragment-only protected singleton docs so humans get bounded execution instructions while `.playbook` artifacts keep the full machine contract.
+    Establish the temporal memory substrate (session/episodic evidence) while keeping repository structural intelligence (`index`/`graph`) as a distinct deterministic layer.
+
+- Worker assignment slice (implemented): deterministic proposal-only `worker-assignments` contract generation from lane-state readiness/dependency gates via `pnpm playbook workers` / `pnpm playbook workers assign`, including `.playbook/worker-assignments.json` and `.playbook/prompts/<lane_id>.md` outputs without worker launch or branch/PR automation.
+- Prompt-thin artifact-rich refinement (implemented): worker prompts now separate direct-edit ownership from fragment-only protected singleton docs so humans get bounded execution instructions while `.playbook` artifacts keep the full machine contract.
+
 11. **Phase 11 â€” Replay / Consolidation / Promotion**  
     Add deterministic replay and consolidation pipelines with salience-gated, provenance-preserving promotion queues so fast episodic memory cannot become durable doctrine without review.
 12. **Phase 12 â€” Session + Evidence Layer**  
@@ -2387,7 +2387,7 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Added `playbook cycle` as the live thin runtime orchestrator over existing primitives (`verify -> route -> orchestrate -> execute -> telemetry -> improve`) with deterministic `.playbook/cycle-state.json` status artifacts.
 - Added deterministic `lane-state` derivation at `.playbook/lane-state.json` so planned lanes become explicit tracked lifecycle state (`blocked`, `ready`, `running`, `completed`, `merge_ready`) with conservative merge and verification posture before any autonomous execution concerns.
 - Added proposal-only lane lifecycle transition commands (`pnpm playbook lanes start <lane_id>`, `pnpm playbook lanes complete <lane_id>`) with strict dependency gating and conservative merge-ready recomputation.
-- Implemented safety slice: **Worker Fragment Consolidation for Shared Singleton Docs** now ships as proposal-only `pnpm playbook docs consolidate --json`, which reads worker fragments plus the protected-surface registry and emits `.playbook/docs-consolidation.json` together with one compact lead-agent integration brief while leaving canonical doc mutation manual in v1.
+- Implemented safety slice: **Worker Fragment Consolidation for Shared Singleton Docs** now ships as proposal-only `pnpm playbook docs consolidate --json`, which reads worker fragments plus the protected-surface registry and emits `.playbook/docs-consolidation.json` together with one compact lead-agent integration brief. The follow-on `pnpm playbook docs consolidate-plan --json` compiles approved bounded writes into `.playbook/docs-consolidation-plan.json`, but `apply` remains the only mutation boundary.
 - Rule — Consolidation is the only write boundary for protected singleton narrative docs.
 - Pattern — Workers propose; consolidator integrates.
 - Failure Mode — Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
@@ -2413,7 +2413,6 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 
 - Outcome ingestion + reconciliation is complete, and queue derivation from updated-state is now the canonical next-step driver for adoption execution control flow.
 
-
 - `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
 - `playbook story candidates --json` derives and writes the non-canonical inspectable candidate artifact at `.playbook/story-candidates.json` without mutating `.playbook/stories.json`.
 - `playbook story promote <candidate-id> --json` is the preferred in-repo promotion surface for repo-local story candidates.
@@ -2436,7 +2435,6 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Pattern: Scope-first resolution beats path inference.
 - Failure Mode: Storage-path drift makes governance legible in code but confusing to operators.
 - Failure Mode: Raw finding -> automatic story conversion creates backlog spam and weak planning signal.
-
 
 - Pattern: Story is durable intent; Plan is execution shape; Receipt is observed outcome.
 - Rule: Story, Plan, Worker, and Receipt must remain separate governed artifacts even when linked.

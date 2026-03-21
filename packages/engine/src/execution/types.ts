@@ -8,7 +8,33 @@ export type RuleFailure = {
 export type Rule = {
   id: string;
   description: string;
-  check(context: { repoRoot: string; changedFiles: string[] }): { failures: RuleFailure[] };
+  check(context: { repoRoot: string; changedFiles: string[] }): {
+    failures: RuleFailure[];
+  };
+};
+
+export type DocsConsolidationTaskExecution = {
+  kind: "docs-consolidation";
+  fragmentIds: string[];
+  sectionKey: string;
+  operation:
+    | {
+        type: "replace-managed-block";
+        startMarker: string;
+        endMarker: string;
+        content: string;
+      }
+    | {
+        type: "append-managed-block";
+        startMarker: string;
+        endMarker: string;
+        content: string;
+      }
+    | {
+        type: "insert-under-anchor";
+        anchor: string;
+        content: string;
+      };
 };
 
 export type PlanTask = {
@@ -17,6 +43,7 @@ export type PlanTask = {
   file: string | null;
   action: string;
   autoFix: boolean;
+  execution?: DocsConsolidationTaskExecution;
   advisory?: {
     outcomeLearning?: {
       influencedByKnowledgeIds: string[];
@@ -42,7 +69,7 @@ export type FixHandlerContext = {
   task: Readonly<PlanTask>;
 };
 
-export type FixHandlerStatus = 'applied' | 'skipped' | 'unsupported';
+export type FixHandlerStatus = "applied" | "skipped" | "unsupported";
 
 export type FixHandlerResult = {
   status: FixHandlerStatus;
@@ -60,4 +87,6 @@ export type FixHandlerResult = {
  * - Throw to signal failed execution.
  * - Keep mutations bounded to deterministic file edits that correspond to the task.
  */
-export type FixHandler = (context: FixHandlerContext) => Promise<FixHandlerResult>;
+export type FixHandler = (
+  context: FixHandlerContext,
+) => Promise<FixHandlerResult>;

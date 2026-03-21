@@ -1,28 +1,49 @@
-import { runDocsAudit, runDocsConsolidation } from '@zachariahredfield/playbook-engine';
-import { ExitCode } from '../lib/cliContract.js';
+import {
+  runDocsAudit,
+  runDocsConsolidation,
+  compileDocsConsolidationPlan,
+} from "@zachariahredfield/playbook-engine";
+import { ExitCode } from "../lib/cliContract.js";
 
 type DocsOptions = {
   ci: boolean;
-  format: 'text' | 'json';
+  format: "text" | "json";
   quiet: boolean;
 };
 
 const printTextUsage = (): void => {
-  console.log('Usage: playbook docs <audit|consolidate> [--json] [--ci]');
+  console.log(
+    "Usage: playbook docs <audit|consolidate|consolidate-plan> [--json] [--ci]",
+  );
 };
 
-
-const printConsolidationReport = (result: ReturnType<typeof runDocsConsolidation>): void => {
-  console.log('playbook docs consolidate: OK');
+const printConsolidationReport = (
+  result: ReturnType<typeof runDocsConsolidation>,
+): void => {
+  console.log("playbook docs consolidate: OK");
   console.log(`Artifact: ${result.artifactPath}`);
-  console.log(`Fragments: ${result.artifact.summary.fragmentCount} (issues: ${result.artifact.summary.issueCount})`);
-  console.log('');
+  console.log(
+    `Fragments: ${result.artifact.summary.fragmentCount} (issues: ${result.artifact.summary.issueCount})`,
+  );
+  console.log("");
   console.log(result.artifact.brief);
+};
+
+const printConsolidationPlanReport = (
+  artifact: ReturnType<typeof compileDocsConsolidationPlan>,
+): void => {
+  console.log("playbook docs consolidate-plan: OK");
+  console.log(`Artifact: ${artifact.artifactPath}`);
+  console.log(
+    `Executable tasks: ${artifact.summary.executableTaskCount} (exclusions: ${artifact.summary.exclusionCount})`,
+  );
 };
 
 const printHumanReport = (result: ReturnType<typeof runDocsAudit>): void => {
   console.log(`playbook docs audit: ${result.status.toUpperCase()}`);
-  console.log(`Findings: ${result.findings.length} (errors: ${result.summary.errors}, warnings: ${result.summary.warnings})`);
+  console.log(
+    `Findings: ${result.findings.length} (errors: ${result.summary.errors}, warnings: ${result.summary.warnings})`,
+  );
 
   const grouped = new Map<string, typeof result.findings>();
   for (const finding of result.findings) {
@@ -32,7 +53,7 @@ const printHumanReport = (result: ReturnType<typeof runDocsAudit>): void => {
   }
 
   for (const [ruleId, findings] of grouped.entries()) {
-    console.log('');
+    console.log("");
     console.log(`Rule: ${ruleId}`);
     for (const finding of findings) {
       console.log(`- [${finding.level}] ${finding.message}`);
@@ -47,20 +68,24 @@ const printHumanReport = (result: ReturnType<typeof runDocsAudit>): void => {
   }
 };
 
-export const runDocs = async (cwd: string, commandArgs: string[], options: DocsOptions): Promise<number> => {
-  const subcommand = commandArgs.find((arg) => !arg.startsWith('-'));
+export const runDocs = async (
+  cwd: string,
+  commandArgs: string[],
+  options: DocsOptions,
+): Promise<number> => {
+  const subcommand = commandArgs.find((arg) => !arg.startsWith("-"));
 
-  if (subcommand === 'consolidate') {
+  if (subcommand === "consolidate") {
     const result = runDocsConsolidation(cwd);
     const payload = {
-      schemaVersion: '1.0',
-      command: 'docs consolidate',
+      schemaVersion: "1.0",
+      command: "docs consolidate",
       ok: result.ok,
       artifactPath: result.artifactPath,
-      artifact: result.artifact
+      artifact: result.artifact,
     };
 
-    if (options.format === 'json') {
+    if (options.format === "json") {
       console.log(JSON.stringify(payload, null, 2));
     } else if (!(options.quiet && result.ok)) {
       printConsolidationReport(result);
@@ -69,7 +94,26 @@ export const runDocs = async (cwd: string, commandArgs: string[], options: DocsO
     return ExitCode.Success;
   }
 
-  if (subcommand !== 'audit') {
+  if (subcommand === "consolidate-plan") {
+    const artifact = compileDocsConsolidationPlan(cwd);
+    const payload = {
+      schemaVersion: "1.0",
+      command: "docs consolidate-plan",
+      ok: artifact.summary.executableTaskCount > 0,
+      artifactPath: artifact.artifactPath,
+      artifact,
+    };
+
+    if (options.format === "json") {
+      console.log(JSON.stringify(payload, null, 2));
+    } else if (!(options.quiet && payload.ok)) {
+      printConsolidationPlanReport(artifact);
+    }
+
+    return ExitCode.Success;
+  }
+
+  if (subcommand !== "audit") {
     if (!options.quiet) {
       printTextUsage();
     }
@@ -78,12 +122,12 @@ export const runDocs = async (cwd: string, commandArgs: string[], options: DocsO
 
   const result = runDocsAudit(cwd);
   const payload = {
-    schemaVersion: '1.0',
-    command: 'docs audit',
-    ...result
+    schemaVersion: "1.0",
+    command: "docs audit",
+    ...result,
   };
 
-  if (options.format === 'json') {
+  if (options.format === "json") {
     console.log(JSON.stringify(payload, null, 2));
   } else if (!(options.quiet && result.ok)) {
     printHumanReport(result);

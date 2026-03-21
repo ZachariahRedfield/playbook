@@ -1,9 +1,11 @@
+- WHAT: Added `pnpm playbook docs consolidate-plan --json`, a first-class `docs-consolidation-plan` contract/schema, and apply-compatible bounded docs write tasks (replace managed block, append managed block, insert under explicit anchor) compiled from `.playbook/docs-consolidation.json`. Conflicts, markdown-only fragments, invalid payloads, and missing anchors now stay in explicit exclusions while `pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json` remains the only mutation path. WHY: This adds the missing reviewed write seam for protected singleton docs without creating a shadow executor.
 - WHAT: Added deterministic `autofix_confidence` scoring, `confidence_reasoning`, `--dry-run` support, and confidence-threshold mutation gating to `test-autofix`, then wired CI/PR reporting to render those artifact-backed decisions while protected branches stay dry-run-only. WHY: Self-repair earns trust only when mutation is explainable, previewable, and gated by canonical runtime artifacts rather than workflow-local heuristics.
+
 # Changelog
 
 ## Unreleased
 
-- WHAT: Updated docs consolidation fixture assertions to pin the current canonical worker-fragment lane ids (`lane-1`, etc.) and verify byte-stable artifact text plus stable fragment ordering across repeated runs. WHY: Once `lane_id` is part of the persisted worker-fragment contract, determinism tests must assert canonical contract fields instead of stale legacy fixture nicknames. 
+- WHAT: Updated docs consolidation fixture assertions to pin the current canonical worker-fragment lane ids (`lane-1`, etc.) and verify byte-stable artifact text plus stable fragment ordering across repeated runs. WHY: Once `lane_id` is part of the persisted worker-fragment contract, determinism tests must assert canonical contract fields instead of stale legacy fixture nicknames.
 - Rule: Determinism tests should pin canonical contract fields, not outdated fixture nicknames.
 - Pattern: Workers emit fragments; consolidator owns final singleton narrative artifact.
 - Failure Mode: Legacy fixture lane names can make deterministic consolidation look broken when only canonical lane-id normalization changed.
@@ -410,6 +412,7 @@
 - Added focused tests for `--help`, missing prerequisites, and stable JSON error/result structure across the normalized command set.
 - Extended command-quality telemetry coverage so `verify`, `route`, `orchestrate`, `execute`, `telemetry`, and `improve` all emit deterministic command-quality records and repository memory `command_execution` events with stable append-safe artifacts.
 - Implemented evidence-backed command improvement proposals in `improvement_engine` from `.playbook/telemetry/command-quality.json`, optional command-quality summaries, and normalized memory events; persisted recommendation-first output to `.playbook/command-improvements.json`; and exposed deterministic inspection via `playbook improve commands` with governance/evidence gating and deterministic ordering tests.
+
 ## 2026-03-19 — Advisory pattern context for story-backed planning
 
 - WHAT: Added deterministic read-only `pattern_context` matching for `playbook story plan <id>` / `playbook route --story <id>` using promoted-pattern provenance, normalization keys, and explicit pattern references; the generated execution plan now carries stable advisory pattern ids, match reasons, provenance refs, and freshness/status metadata. WHY: Promoted knowledge should inform story-backed planning without becoming execution authority or mutating backlog/queue state.

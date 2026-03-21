@@ -1,16 +1,15 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { buildContractRegistry } from '@zachariahredfield/playbook-engine';
-import { ExitCode } from '../lib/cliContract.js';
+import fs from "node:fs";
+import path from "node:path";
+import { buildContractRegistry } from "@zachariahredfield/playbook-engine";
+import { ExitCode } from "../lib/cliContract.js";
 
 type ContractsOptions = {
-  format: 'text' | 'json';
+  format: "text" | "json";
   quiet: boolean;
   out?: string;
 };
 
-const DEFAULT_OUTPUT_PATH = '.playbook/contracts-registry.json';
-
+const DEFAULT_OUTPUT_PATH = ".playbook/contracts-registry.json";
 
 type RegisteredSchema = {
   id: string;
@@ -19,79 +18,248 @@ type RegisteredSchema = {
 };
 
 const memoryArtifactSchemas: RegisteredSchema[] = [
-  { id: 'repository-memory-event', version: '1.0', path: '.playbook/memory/events/*.json' },
-  { id: 'repository-memory-index', version: '1.0', path: '.playbook/memory/index.json' },
-  { id: 'memory-event', version: '1.0.0', path: '.playbook/memory/events/runtime/*.json' },
-  { id: 'candidate-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/candidates/*.json' },
-  { id: 'promoted-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
-  { id: 'retired-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
-  { id: 'memory-replay-result', version: '1.0', path: '.playbook/memory/replay/*.json' },
-  { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json' },
-  { id: 'stories-backlog', version: '1.0', path: '.playbook/stories.json' },
-  { id: 'test-autofix-remediation-history', version: '1.0', path: '.playbook/test-autofix-history.json' }
+  {
+    id: "repository-memory-event",
+    version: "1.0",
+    path: ".playbook/memory/events/*.json",
+  },
+  {
+    id: "repository-memory-index",
+    version: "1.0",
+    path: ".playbook/memory/index.json",
+  },
+  {
+    id: "memory-event",
+    version: "1.0.0",
+    path: ".playbook/memory/events/runtime/*.json",
+  },
+  {
+    id: "candidate-knowledge-record",
+    version: "1.0.0",
+    path: ".playbook/memory/knowledge/candidates/*.json",
+  },
+  {
+    id: "promoted-knowledge-record",
+    version: "1.0.0",
+    path: ".playbook/memory/knowledge/promoted/*.json",
+  },
+  {
+    id: "retired-knowledge-record",
+    version: "1.0.0",
+    path: ".playbook/memory/knowledge/promoted/*.json",
+  },
+  {
+    id: "memory-replay-result",
+    version: "1.0",
+    path: ".playbook/memory/replay/*.json",
+  },
+  {
+    id: "knowledge-candidate-output",
+    version: "1.0",
+    path: ".playbook/knowledge/candidates.json",
+  },
+  { id: "stories-backlog", version: "1.0", path: ".playbook/stories.json" },
+  {
+    id: "test-autofix-remediation-history",
+    version: "1.0",
+    path: ".playbook/test-autofix-history.json",
+  },
 ];
 
 const additiveCommandOutputSchemas: RegisteredSchema[] = [
-  { id: 'query.memoryKnowledge', version: '1.0', path: 'schema://cli/query' },
-  { id: 'knowledge', version: '1.0', path: 'packages/contracts/src/knowledge.schema.json' },
-  { id: 'pattern-graph', version: '1.0', path: 'packages/contracts/src/pattern-graph.schema.json' },
-  { id: 'cross-repo-candidates', version: '1.0', path: 'packages/contracts/src/cross-repo-candidates.schema.json' },
-  { id: 'task-execution-profile', version: '1.0', path: 'packages/contracts/src/task-execution-profile.schema.json' },
-  { id: 'execution-plan', version: '1.0', path: 'packages/contracts/src/execution-plan.schema.json' },
-  { id: 'workflow-promotion', version: '1.0', path: 'packages/contracts/src/workflow-promotion.schema.json' },
-  { id: 'promotion-receipt', version: '1.0', path: 'packages/contracts/src/promotion-receipt.schema.json' },
-  { id: 'workset-plan', version: '1.0', path: 'packages/contracts/src/workset-plan.schema.json' },
-  { id: 'outcome-telemetry', version: '1.0', path: 'packages/contracts/src/outcome-telemetry.schema.json' },
-  { id: 'learning-state', version: '1.0', path: 'packages/contracts/src/learning-state.schema.json' },
-  { id: 'improvement-candidates', version: '1.0', path: 'packages/contracts/src/improvement-candidates.schema.json' },
-  { id: 'policy-evaluation', version: '1.0', path: 'packages/contracts/src/policy-evaluation.schema.json' },
-  { id: 'policy-apply-result', version: '1.0', path: 'packages/contracts/src/policy-apply-result.schema.json' },
-  { id: 'lane-state', version: '1.0', path: 'packages/contracts/src/lane-state.schema.json' },
-  { id: 'worker-assignments', version: '1.0', path: 'packages/contracts/src/worker-assignments.schema.json' },
-  { id: 'worker-fragment', version: '1.0', path: 'packages/contracts/src/worker-fragment.schema.json' },
-  { id: 'repository-events', version: '1.0', path: 'packages/contracts/src/repository-events.schema.json' },
-  { id: 'cycle-state', version: '1.0', path: 'packages/contracts/src/cycle-state.schema.json' },
-  { id: 'cycle-history', version: '1.0', path: 'packages/contracts/src/cycle-history.schema.json' },
-  { id: 'session-evidence-envelope', version: '1.0', path: 'packages/contracts/src/session-evidence-envelope.schema.json' },
-  { id: 'pr-review', version: '1.0', path: 'packages/contracts/src/pr-review.schema.json' },
-  { id: 'story', version: '1.0', path: 'packages/contracts/src/story.schema.json' },
-  { id: 'stories', version: '1.0', path: 'packages/contracts/src/stories.schema.json' },
-  { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },
-  { id: 'plan.tasks[].advisory.outcomeLearning', version: '1.0', path: 'schema://cli/plan' },
-  { id: 'analyze-pr.preventionGuidance', version: '1.0', path: 'schema://cli/analyze-pr' },
-  { id: 'analyze-pr.context.sources[].promoted-knowledge', version: '1.0', path: 'schema://cli/analyze-pr' },
-  { id: 'test-triage', version: '1.0', path: 'packages/contracts/src/test-triage.schema.json' },
-  { id: 'test-fix-plan', version: '1.0', path: 'packages/contracts/src/test-fix-plan.schema.json' },
-  { id: 'test-autofix', version: '1.0', path: 'packages/contracts/src/test-autofix.schema.json' },
-  { id: 'test-autofix-remediation-history', version: '1.0', path: 'packages/contracts/src/test-autofix-remediation-history.schema.json' }
+  { id: "query.memoryKnowledge", version: "1.0", path: "schema://cli/query" },
+  {
+    id: "knowledge",
+    version: "1.0",
+    path: "packages/contracts/src/knowledge.schema.json",
+  },
+  {
+    id: "pattern-graph",
+    version: "1.0",
+    path: "packages/contracts/src/pattern-graph.schema.json",
+  },
+  {
+    id: "cross-repo-candidates",
+    version: "1.0",
+    path: "packages/contracts/src/cross-repo-candidates.schema.json",
+  },
+  {
+    id: "task-execution-profile",
+    version: "1.0",
+    path: "packages/contracts/src/task-execution-profile.schema.json",
+  },
+  {
+    id: "execution-plan",
+    version: "1.0",
+    path: "packages/contracts/src/execution-plan.schema.json",
+  },
+  {
+    id: "workflow-promotion",
+    version: "1.0",
+    path: "packages/contracts/src/workflow-promotion.schema.json",
+  },
+  {
+    id: "promotion-receipt",
+    version: "1.0",
+    path: "packages/contracts/src/promotion-receipt.schema.json",
+  },
+  {
+    id: "workset-plan",
+    version: "1.0",
+    path: "packages/contracts/src/workset-plan.schema.json",
+  },
+  {
+    id: "outcome-telemetry",
+    version: "1.0",
+    path: "packages/contracts/src/outcome-telemetry.schema.json",
+  },
+  {
+    id: "learning-state",
+    version: "1.0",
+    path: "packages/contracts/src/learning-state.schema.json",
+  },
+  {
+    id: "improvement-candidates",
+    version: "1.0",
+    path: "packages/contracts/src/improvement-candidates.schema.json",
+  },
+  {
+    id: "policy-evaluation",
+    version: "1.0",
+    path: "packages/contracts/src/policy-evaluation.schema.json",
+  },
+  {
+    id: "policy-apply-result",
+    version: "1.0",
+    path: "packages/contracts/src/policy-apply-result.schema.json",
+  },
+  {
+    id: "lane-state",
+    version: "1.0",
+    path: "packages/contracts/src/lane-state.schema.json",
+  },
+  {
+    id: "worker-assignments",
+    version: "1.0",
+    path: "packages/contracts/src/worker-assignments.schema.json",
+  },
+  {
+    id: "worker-fragment",
+    version: "1.0",
+    path: "packages/contracts/src/worker-fragment.schema.json",
+  },
+  {
+    id: "repository-events",
+    version: "1.0",
+    path: "packages/contracts/src/repository-events.schema.json",
+  },
+  {
+    id: "cycle-state",
+    version: "1.0",
+    path: "packages/contracts/src/cycle-state.schema.json",
+  },
+  {
+    id: "cycle-history",
+    version: "1.0",
+    path: "packages/contracts/src/cycle-history.schema.json",
+  },
+  {
+    id: "session-evidence-envelope",
+    version: "1.0",
+    path: "packages/contracts/src/session-evidence-envelope.schema.json",
+  },
+  {
+    id: "pr-review",
+    version: "1.0",
+    path: "packages/contracts/src/pr-review.schema.json",
+  },
+  {
+    id: "story",
+    version: "1.0",
+    path: "packages/contracts/src/story.schema.json",
+  },
+  {
+    id: "stories",
+    version: "1.0",
+    path: "packages/contracts/src/stories.schema.json",
+  },
+  {
+    id: "explain.memoryKnowledge",
+    version: "1.0",
+    path: "schema://cli/explain",
+  },
+  {
+    id: "plan.tasks[].advisory.outcomeLearning",
+    version: "1.0",
+    path: "schema://cli/plan",
+  },
+  {
+    id: "analyze-pr.preventionGuidance",
+    version: "1.0",
+    path: "schema://cli/analyze-pr",
+  },
+  {
+    id: "analyze-pr.context.sources[].promoted-knowledge",
+    version: "1.0",
+    path: "schema://cli/analyze-pr",
+  },
+  {
+    id: "test-triage",
+    version: "1.0",
+    path: "packages/contracts/src/test-triage.schema.json",
+  },
+  {
+    id: "test-fix-plan",
+    version: "1.0",
+    path: "packages/contracts/src/test-fix-plan.schema.json",
+  },
+  {
+    id: "test-autofix",
+    version: "1.0",
+    path: "packages/contracts/src/test-autofix.schema.json",
+  },
+  {
+    id: "test-autofix-remediation-history",
+    version: "1.0",
+    path: "packages/contracts/src/test-autofix-remediation-history.schema.json",
+  },
+  {
+    id: "docs-consolidation-plan",
+    version: "1.0",
+    path: "packages/contracts/src/docs-consolidation-plan.schema.json",
+  },
 ];
 
 const printText = (outPath: string): void => {
-  console.log('Playbook Contracts Registry');
-  console.log('');
+  console.log("Playbook Contracts Registry");
+  console.log("");
   console.log(`Wrote contract registry: ${outPath}`);
-  console.log('Use --json for machine-readable output.');
+  console.log("Use --json for machine-readable output.");
 };
 
-export const runContracts = async (cwd: string, options: ContractsOptions): Promise<number> => {
+export const runContracts = async (
+  cwd: string,
+  options: ContractsOptions,
+): Promise<number> => {
   const payload = {
     ...buildContractRegistry(cwd),
     schemas: {
       memoryArtifacts: [...memoryArtifactSchemas],
-      commandOutputs: [...additiveCommandOutputSchemas]
-    }
+      commandOutputs: [...additiveCommandOutputSchemas],
+    },
   };
   const outputPath = options.out ?? DEFAULT_OUTPUT_PATH;
   const absoluteOutputPath = path.resolve(cwd, outputPath);
   const outputJson = `${JSON.stringify(payload, null, 2)}\n`;
-  const shouldWriteArtifact = options.out !== undefined || options.format !== 'json';
+  const shouldWriteArtifact =
+    options.out !== undefined || options.format !== "json";
 
   if (shouldWriteArtifact) {
     fs.mkdirSync(path.dirname(absoluteOutputPath), { recursive: true });
-    fs.writeFileSync(absoluteOutputPath, outputJson, 'utf8');
+    fs.writeFileSync(absoluteOutputPath, outputJson, "utf8");
   }
 
-  if (options.format === 'json') {
+  if (options.format === "json") {
     console.log(outputJson.trimEnd());
     return ExitCode.Success;
   }
@@ -100,9 +268,11 @@ export const runContracts = async (cwd: string, options: ContractsOptions): Prom
     if (shouldWriteArtifact) {
       printText(outputPath);
     } else {
-      console.log('Playbook Contracts Registry');
-      console.log('');
-      console.log('Use --json --out <path> to write the contract registry artifact.');
+      console.log("Playbook Contracts Registry");
+      console.log("");
+      console.log(
+        "Use --json --out <path> to write the contract registry artifact.",
+      );
     }
   }
 
