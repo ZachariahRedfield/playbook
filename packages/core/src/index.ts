@@ -8,13 +8,18 @@ export type {
   RemediationStatusBlockedSignatureSummary,
   RemediationStatusConfidenceBucket,
   RemediationStatusConservativeConfidenceSignal,
+  RemediationStatusDryRunApplyDelta,
+  RemediationStatusFailureClassRollup,
   RemediationStatusFailureClassSummary,
   RemediationStatusLatestRun,
+  RemediationStatusManualReviewPressure,
   RemediationStatusPolicyDecisionSummary,
   RemediationStatusPreferredRepairClassSummary,
   RemediationStatusRecentFinalStatus,
+  RemediationStatusRepairClassRollup,
   RemediationStatusSignatureSummary,
-  RemediationStatusTelemetry
+  RemediationStatusTelemetry,
+  RemediationStatusThresholdCounterfactual
 } from './contracts/remediationStatus.js';
 export { REMEDIATION_STATUS_ARTIFACT_KIND, REMEDIATION_STATUS_SCHEMA_VERSION } from './contracts/remediationStatus.js';
 export { TEST_FIX_PLAN_ARTIFACT_KIND, TEST_FIX_PLAN_SCHEMA_VERSION, testFixPlanExclusionReasons, testFixPlanTaskKinds } from './contracts/testFixPlan.js';

@@ -1853,7 +1853,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'latest_run', 'blocked_signatures', 'review_required_signatures', 'safe_to_retry_signatures', 'stable_failure_signatures', 'repeat_policy_decisions', 'preferred_repair_classes', 'recent_final_statuses', 'remediation_history', 'latest_result'],
+        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'latest_run', 'blocked_signatures', 'review_required_signatures', 'safe_to_retry_signatures', 'stable_failure_signatures', 'repeat_policy_decisions', 'preferred_repair_classes', 'recent_final_statuses', 'telemetry', 'remediation_history', 'latest_result'],
         properties: {
           schemaVersion: { const: '1.0' },
           kind: { const: 'remediation-status' },
@@ -1868,6 +1868,28 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           repeat_policy_decisions: { type: 'array', items: { type: 'object', additionalProperties: true } },
           preferred_repair_classes: { type: 'array', items: { type: 'object', additionalProperties: true } },
           recent_final_statuses: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          telemetry: {
+            type: 'object',
+            additionalProperties: true,
+            required: ['confidence_buckets', 'failure_classes', 'blocked_low_confidence_runs', 'top_repeated_blocked_signatures', 'dry_run_runs', 'apply_runs', 'dry_run_to_apply_ratio', 'repeat_policy_block_counts', 'conservative_confidence_signal', 'failure_class_rollup', 'repair_class_rollup', 'blocked_signature_rollup', 'threshold_counterfactuals', 'dry_run_vs_apply_delta', 'manual_review_pressure'],
+            properties: {
+              confidence_buckets: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              failure_classes: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              blocked_low_confidence_runs: { type: 'integer' },
+              top_repeated_blocked_signatures: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              dry_run_runs: { type: 'integer' },
+              apply_runs: { type: 'integer' },
+              dry_run_to_apply_ratio: { type: 'string' },
+              repeat_policy_block_counts: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              conservative_confidence_signal: { type: 'object', additionalProperties: true },
+              failure_class_rollup: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              repair_class_rollup: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              blocked_signature_rollup: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              threshold_counterfactuals: { type: 'array', items: { type: 'object', additionalProperties: true } },
+              dry_run_vs_apply_delta: { type: 'object', additionalProperties: true },
+              manual_review_pressure: { type: 'object', additionalProperties: true }
+            }
+          },
           remediation_history: { type: 'array', items: { type: 'object', additionalProperties: true } },
           latest_result: { type: 'object', additionalProperties: true }
         }

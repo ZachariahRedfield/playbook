@@ -24,6 +24,7 @@ It is read-only and aggregates the canonical remediation artifacts already produ
 - preferred repair classes from prior success
 - blocked, review-required, and safe-to-retry signatures
 - recent final statuses and remediation history
+- soak-oriented advisory rollups for failure classes, repair classes, blocked signatures, threshold counterfactuals, dry-run/apply deltas, and manual-review pressure
 
 This command does **not** mutate repository state.
 It does **not** run `apply`.
@@ -49,6 +50,7 @@ Text mode highlights:
 - signatures currently safe to retry
 - recent repeated failures
 - recent final statuses
+- deterministic soak summaries for threshold tuning and recurring-failure analysis
 
 JSON mode returns the full machine-readable remediation-status read model for automation.
 
@@ -88,3 +90,21 @@ If either artifact is missing or invalid, the command fails clearly instead of i
 - Rule: Retry policy is only as trustworthy as the durability of the history it reads.
 - Pattern: Transport should hydrate canonical artifacts, not invent workflow-local state.
 - Failure Mode: Per-run ephemeral history makes repeat-aware policy look real while silently acting stateless.
+
+
+## Soak analysis doctrine
+
+`remediation-status` is now the canonical read-only soak surface for threshold tuning and recurring-failure analysis. The new read-model sections stay bucketed and deterministic so operators can reason from artifact truth instead of anecdotes:
+
+- `failure_class_rollup`
+- `repair_class_rollup`
+- `blocked_signature_rollup`
+- `threshold_counterfactuals`
+- `dry_run_vs_apply_delta`
+- `manual_review_pressure`
+
+These sections reuse the existing remediation-history artifact only. They do not create a second state store, they do not change retry authority, and they do not make policy decisions on their own. Within `threshold_counterfactuals`, `latest_run_would_clear` is anchored to the newest remediation-history entry in evidence order (falling back to the latest result only when history is empty) so the boolean stays aligned with the same newest-first history surface that operators review elsewhere.
+
+- Rule: Telemetry may tune policy, but it must not become a second policy engine.
+- Pattern: One read-only summary surface should answer most soak questions.
+- Failure Mode: Operators start tuning thresholds from anecdotes instead of artifact truth.

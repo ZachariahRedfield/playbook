@@ -64,6 +64,12 @@ describe('runRemediationStatus', () => {
     expect(payload.safe_to_retry_signatures).toEqual(['sig-b']);
     expect(payload.telemetry.confidence_buckets.at(-1)).toMatchObject({ key: '0.85-0.95', total_runs: 1, success_rate: 1 });
     expect(payload.telemetry.failure_classes).toEqual([{ failure_class: 'snapshot_drift', total_runs: 1, fixed: 1, partially_fixed: 0, not_fixed: 0, blocked: 0, success_rate: 1 }]);
+    expect(payload.telemetry.failure_class_rollup).toEqual([{ failure_class: 'snapshot_drift', total_runs: 1, fixed: 1, partially_fixed: 0, not_fixed: 0, blocked: 0, success_rate: 1, dry_run_runs: 0, apply_runs: 1, latest_run_id: 'test-autofix-run-0002', sample_failure_signatures: ['sig-b'] }]);
+    expect(payload.telemetry.threshold_counterfactuals).toEqual([
+      { threshold: 0.5, eligible_runs: 1, successful_eligible_runs: 1, blocked_low_confidence_runs: 0, blocked_runs_that_would_clear: 0, latest_run_would_clear: true, advisory_note: 'Advisory only: no blocked_low_confidence runs would have cleared this threshold.' },
+      { threshold: 0.7, eligible_runs: 1, successful_eligible_runs: 1, blocked_low_confidence_runs: 0, blocked_runs_that_would_clear: 0, latest_run_would_clear: true, advisory_note: 'Advisory only: no blocked_low_confidence runs would have cleared this threshold.' },
+      { threshold: 0.85, eligible_runs: 1, successful_eligible_runs: 1, blocked_low_confidence_runs: 0, blocked_runs_that_would_clear: 0, latest_run_would_clear: true, advisory_note: 'Advisory only: no blocked_low_confidence runs would have cleared this threshold.' }
+    ]);
   });
 
   it('surfaces blocked repeat-failure status and deterministic history ordering in text mode', async () => {
@@ -87,6 +93,35 @@ describe('runRemediationStatus', () => {
     expect(output).toContain('Recent repeated failures');
     expect(output).toContain('Calibration telemetry');
     expect(output).toContain('Confidence buckets');
+    expect(output).toContain('Failure-class rollup');
+    expect(output).toContain('Repair-class rollup');
+    expect(output).toContain('Threshold counterfactuals');
+    expect(output).toContain('Dry-run vs apply delta');
+    expect(output).toContain('Manual review pressure');
+  });
+
+  it('degrades safely with partial history records in JSON mode', async () => {
+    const repo = createRepo();
+    writeArtifact(repo, '.playbook/test-autofix.json', baseLatest({ run_id: 'test-autofix-run-0004', failure_signatures: ['sig-c'], final_status: 'review_required_only', retry_policy_decision: 'review_required_repeat_failure', preferred_repair_class: null, would_apply: false }));
+    writeArtifact(repo, '.playbook/test-autofix-history.json', baseHistory([
+      {
+        run_id: 'test-autofix-run-0004', generatedAt: '2026-03-20T00:00:00.000Z', input: { path: 'failure.log' }, failure_signatures: ['sig-c'], triage_classifications: [], admitted_findings: [], excluded_findings: [], applied_task_ids: [], applied_repair_classes: [], files_touched: [], verification_commands: [], verification_outcomes: [], final_status: 'review_required_only', stop_reasons: ['manual review'], provenance: { failure_log_path: 'failure.log', triage_artifact_path: 't', fix_plan_artifact_path: 'f', apply_result_path: null, autofix_result_path: 'r' }
+      }
+    ]));
+
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runRemediationStatus(repo, { format: 'json', quiet: false });
+    const payload = JSON.parse(String(spy.mock.calls.at(-1)?.[0]));
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(payload.telemetry.manual_review_pressure).toEqual({
+      review_required_runs: 1,
+      blocked_runs: 0,
+      total_manual_pressure_runs: 1,
+      top_review_required_signatures: [{ failure_signature: 'sig-c', blocked_count: 1, latest_run_id: 'test-autofix-run-0004', latest_generatedAt: '2026-03-20T00:00:00.000Z', historical_success_count: 0 }],
+      top_blocked_signatures: [],
+      advisory_note: 'Advisory only: highlights where operators may need to inspect recurring failures before tuning thresholds.'
+    });
   });
 
   it('registers the remediation-status command', () => {

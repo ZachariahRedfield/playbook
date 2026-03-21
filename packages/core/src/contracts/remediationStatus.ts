@@ -89,6 +89,61 @@ export type RemediationStatusBlockedSignatureSummary = {
   historical_success_count: number;
 };
 
+
+export type RemediationStatusFailureClassRollup = {
+  failure_class: string;
+  total_runs: number;
+  fixed: number;
+  partially_fixed: number;
+  not_fixed: number;
+  blocked: number;
+  success_rate: number;
+  dry_run_runs: number;
+  apply_runs: number;
+  latest_run_id: string;
+  sample_failure_signatures: string[];
+};
+
+export type RemediationStatusRepairClassRollup = {
+  repair_class: string;
+  total_runs: number;
+  successful_runs: number;
+  blocked_runs: number;
+  not_fixed_runs: number;
+  success_rate: number;
+  latest_run_id: string;
+  failure_classes: string[];
+};
+
+export type RemediationStatusThresholdCounterfactual = {
+  threshold: number;
+  eligible_runs: number;
+  successful_eligible_runs: number;
+  blocked_low_confidence_runs: number;
+  blocked_runs_that_would_clear: number;
+  latest_run_would_clear: boolean;
+  advisory_note: string;
+};
+
+export type RemediationStatusDryRunApplyDelta = {
+  dry_run_runs: number;
+  apply_runs: number;
+  dry_run_success_rate: number;
+  apply_success_rate: number;
+  success_rate_delta: number;
+  blocked_delta: number;
+  advisory_note: string;
+};
+
+export type RemediationStatusManualReviewPressure = {
+  review_required_runs: number;
+  blocked_runs: number;
+  total_manual_pressure_runs: number;
+  top_review_required_signatures: RemediationStatusBlockedSignatureSummary[];
+  top_blocked_signatures: RemediationStatusBlockedSignatureSummary[];
+  advisory_note: string;
+};
+
 export type RemediationStatusConservativeConfidenceSignal = {
   confidence_may_be_conservative: boolean;
   reasoning: string;
@@ -109,6 +164,12 @@ export type RemediationStatusTelemetry = {
     count: number;
   }>;
   conservative_confidence_signal: RemediationStatusConservativeConfidenceSignal;
+  failure_class_rollup: RemediationStatusFailureClassRollup[];
+  repair_class_rollup: RemediationStatusRepairClassRollup[];
+  blocked_signature_rollup: RemediationStatusBlockedSignatureSummary[];
+  threshold_counterfactuals: RemediationStatusThresholdCounterfactual[];
+  dry_run_vs_apply_delta: RemediationStatusDryRunApplyDelta;
+  manual_review_pressure: RemediationStatusManualReviewPressure;
 };
 
 export type RemediationStatusArtifact = {

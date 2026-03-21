@@ -29,6 +29,12 @@ type RemediationStatusArtifact = {
     dry_run_to_apply_ratio: string;
     repeat_policy_block_counts: Array<{ decision: string; count: number }>;
     conservative_confidence_signal: { confidence_may_be_conservative: boolean; reasoning: string };
+    failure_class_rollup: Array<{ failure_class: string; total_runs: number; success_rate: number; dry_run_runs: number; apply_runs: number; latest_run_id: string; sample_failure_signatures: string[] }>;
+    repair_class_rollup: Array<{ repair_class: string; total_runs: number; successful_runs: number; blocked_runs: number; not_fixed_runs: number; success_rate: number; latest_run_id: string; failure_classes: string[] }>;
+    blocked_signature_rollup: Array<{ failure_signature: string; blocked_count: number; historical_success_count: number; latest_run_id: string }>;
+    threshold_counterfactuals: Array<{ threshold: number; eligible_runs: number; successful_eligible_runs: number; blocked_low_confidence_runs: number; blocked_runs_that_would_clear: number; latest_run_would_clear: boolean; advisory_note: string }>;
+    dry_run_vs_apply_delta: { dry_run_runs: number; apply_runs: number; dry_run_success_rate: number; apply_success_rate: number; success_rate_delta: number; blocked_delta: number; advisory_note: string };
+    manual_review_pressure: { review_required_runs: number; blocked_runs: number; total_manual_pressure_runs: number; top_review_required_signatures: Array<{ failure_signature: string; blocked_count: number }>; top_blocked_signatures: Array<{ failure_signature: string; blocked_count: number }>; advisory_note: string };
   };
   remediation_history: Array<{ run_id: string }>;
 };
@@ -129,6 +135,50 @@ const renderText = (artifact: RemediationStatusArtifact): string => {
     for (const entry of artifact.telemetry.top_repeated_blocked_signatures) {
       lines.push(`- ${entry.failure_signature}: blocked=${entry.blocked_count}, prior_successes=${entry.historical_success_count}`);
     }
+  }
+
+  if (artifact.telemetry.failure_class_rollup.length > 0) {
+    lines.push('', 'Failure-class rollup');
+    for (const summary of artifact.telemetry.failure_class_rollup) {
+      lines.push(`- ${summary.failure_class}: runs=${summary.total_runs}, success_rate=${summary.success_rate}, dry_run=${summary.dry_run_runs}, apply=${summary.apply_runs}, latest=${summary.latest_run_id}`);
+      if (summary.sample_failure_signatures.length > 0) lines.push(`  Sample signatures: ${summary.sample_failure_signatures.join(', ')}`);
+    }
+  }
+
+  if (artifact.telemetry.repair_class_rollup.length > 0) {
+    lines.push('', 'Repair-class rollup');
+    for (const summary of artifact.telemetry.repair_class_rollup) {
+      lines.push(`- ${summary.repair_class}: runs=${summary.total_runs}, successful=${summary.successful_runs}, blocked=${summary.blocked_runs}, not_fixed=${summary.not_fixed_runs}, success_rate=${summary.success_rate}`);
+      if (summary.failure_classes.length > 0) lines.push(`  Failure classes: ${summary.failure_classes.join(', ')}`);
+    }
+  }
+
+  if (artifact.telemetry.blocked_signature_rollup.length > 0) {
+    lines.push('', 'Blocked signature rollup');
+    for (const entry of artifact.telemetry.blocked_signature_rollup.slice(0, 5)) {
+      lines.push(`- ${entry.failure_signature}: blocked=${entry.blocked_count}, prior_successes=${entry.historical_success_count}, latest=${entry.latest_run_id}`);
+    }
+  }
+
+  if (artifact.telemetry.threshold_counterfactuals.length > 0) {
+    lines.push('', 'Threshold counterfactuals');
+    for (const entry of artifact.telemetry.threshold_counterfactuals) {
+      lines.push(`- threshold=${entry.threshold}: eligible=${entry.eligible_runs}, successful_eligible=${entry.successful_eligible_runs}, blocked_low_confidence=${entry.blocked_low_confidence_runs}, would_clear=${entry.blocked_runs_that_would_clear}, latest_would_clear=${entry.latest_run_would_clear ? 'yes' : 'no'}`);
+    }
+  }
+
+  lines.push('', 'Dry-run vs apply delta');
+  lines.push(`- dry_run_runs=${artifact.telemetry.dry_run_vs_apply_delta.dry_run_runs}, apply_runs=${artifact.telemetry.dry_run_vs_apply_delta.apply_runs}, dry_run_success_rate=${artifact.telemetry.dry_run_vs_apply_delta.dry_run_success_rate}, apply_success_rate=${artifact.telemetry.dry_run_vs_apply_delta.apply_success_rate}, success_rate_delta=${artifact.telemetry.dry_run_vs_apply_delta.success_rate_delta}, blocked_delta=${artifact.telemetry.dry_run_vs_apply_delta.blocked_delta}`);
+  lines.push(`  ${artifact.telemetry.dry_run_vs_apply_delta.advisory_note}`);
+
+  lines.push('', 'Manual review pressure');
+  lines.push(`- review_required_runs=${artifact.telemetry.manual_review_pressure.review_required_runs}, blocked_runs=${artifact.telemetry.manual_review_pressure.blocked_runs}, total_manual_pressure_runs=${artifact.telemetry.manual_review_pressure.total_manual_pressure_runs}`);
+  lines.push(`  ${artifact.telemetry.manual_review_pressure.advisory_note}`);
+  for (const entry of artifact.telemetry.manual_review_pressure.top_review_required_signatures.slice(0, 3)) {
+    lines.push(`  review-required: ${entry.failure_signature} (${entry.blocked_count})`);
+  }
+  for (const entry of artifact.telemetry.manual_review_pressure.top_blocked_signatures.slice(0, 3)) {
+    lines.push(`  blocked: ${entry.failure_signature} (${entry.blocked_count})`);
   }
 
   const repeatedFailures = artifact.stable_failure_signatures.filter((entry: RemediationStatusArtifact['stable_failure_signatures'][number]) => entry.occurrences > 1);
