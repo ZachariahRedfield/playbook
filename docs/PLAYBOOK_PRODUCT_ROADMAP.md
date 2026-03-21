@@ -2389,9 +2389,13 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Added proposal-only lane lifecycle transition commands (`pnpm playbook lanes start <lane_id>`, `pnpm playbook lanes complete <lane_id>`) with strict dependency gating and conservative merge-ready recomputation.
 - Implemented safety slice: **Worker Fragment Consolidation for Shared Singleton Docs** now ships as proposal-only `pnpm playbook docs consolidate --json`, which reads worker fragments plus the protected-surface registry and emits `.playbook/docs-consolidation.json` together with one compact lead-agent integration brief while leaving canonical doc mutation manual in v1.
 - Extended the seam with `pnpm playbook docs consolidate-plan --json`, which compiles reviewed, conflict-free managed-write tasks into `.playbook/docs-consolidation-plan.json` while leaving conflicting or ambiguous targets excluded until a human resolves them. Canonical protected-doc mutation still crosses the boundary only through `pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json`.
+- Extended orchestration state so `workset-plan`, `lane-state`, and `execution-state` carry compact protected-doc consolidation status; lanes with protected singleton doc work now remain non-`merge_ready` until consolidation is either not applicable or fully applied, while text surfaces emit only compact summary strings plus the next command.
 - Rule — Consolidation is the only write boundary for protected singleton narrative docs.
+- Rule — Merge readiness must account for unresolved protected singleton doc consolidation.
 - Pattern — Workers propose; consolidator integrates.
+- Pattern — Shared narrative work is complete only when consolidation is complete.
 - Failure Mode — Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
+- Failure Mode — Marking lanes merge-ready before protected-doc integration recreates manual merge hotspots under a deterministic-looking surface.
 - Next planned safety slice: **Reviewed consolidation execution / merge-guard layer**, requiring reviewed consolidation application for canonical narrative docs, deterministic merge/conflict enforcement on protected singleton surfaces, and guarded promotion from proposal-only consolidation artifacts into canonical doc updates before future managed subagents/hooks execution.
 - Rule — Shared singleton docs should be updated through worker-local fragments plus a reviewed deterministic consolidation boundary, not direct concurrent edits from multiple workers.
 - Rule — Implemented state and next-state must never overlap in roadmap language.

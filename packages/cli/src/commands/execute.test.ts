@@ -37,7 +37,13 @@ const writeWorksetPlan = (repo: string): void => {
         dependency_level: 'low',
         recommended_pr_size: 'small',
         worker_ready: true,
-        codex_prompt: 'Prompt lane 1'
+        codex_prompt: 'Prompt lane 1',
+        protected_doc_consolidation: {
+          has_protected_doc_work: false,
+          stage: 'not_applicable',
+          summary: 'no protected-doc work',
+          next_command: null
+        }
       },
       {
         lane_id: 'lane-2',
@@ -53,7 +59,13 @@ const writeWorksetPlan = (repo: string): void => {
         dependency_level: 'medium',
         recommended_pr_size: 'small',
         worker_ready: true,
-        codex_prompt: 'Prompt lane 2'
+        codex_prompt: 'Prompt lane 2',
+        protected_doc_consolidation: {
+          has_protected_doc_work: false,
+          stage: 'not_applicable',
+          summary: 'no protected-doc work',
+          next_command: null
+        }
       }
     ],
     blocked_tasks: [],

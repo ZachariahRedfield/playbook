@@ -6,6 +6,11 @@
 # Changelog
 
 ## Unreleased
+- WHAT: Extended workset/lane/execution orchestration state with compact protected-doc consolidation status so merge readiness now stays false until protected singleton doc consolidation is either not applicable or fully applied, while text surfaces only emit short human summaries plus the next command and `.playbook` artifacts retain raw details. WHY: Prevents lanes with unresolved singleton-doc work from appearing merge-ready before the reviewed consolidation boundary is actually resolved.
+- Rule: Merge readiness must account for unresolved protected singleton doc consolidation.
+- Pattern: Shared narrative work is complete only when consolidation is complete.
+- Failure Mode: Marking lanes merge-ready before protected-doc integration recreates manual merge hotspots under a deterministic-looking surface.
+
 - WHAT: Synced `packages/core/src/contracts/schemaRegistry.ts` with the new `docs-consolidation-plan` command-output schema and added a focused core contract test so reviewed plan artifacts stay registered consistently across Playbook packages. WHY: CI contract tests should fail on the first real registry drift, not on later remediation/reporting steps.
 - Rule: CI remediation/reporting steps are not the root cause when the workflow explicitly says it is preserving an earlier `pnpm test` failure.
 - Pattern: Fix the first failing test block in the log, not trailing warning/reporting steps.

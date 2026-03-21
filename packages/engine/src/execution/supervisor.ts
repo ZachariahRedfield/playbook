@@ -29,7 +29,7 @@ export type WorkerResult = {
 export interface ExecutionRun {
   runId: string;
   startedAt: string;
-  lanes: Record<string, LaneRuntime>;
+  lanes: Record<string, LaneRuntime & { protected_doc_consolidation?: { has_protected_doc_work: boolean; stage: 'not_applicable' | 'pending' | 'blocked' | 'plan_ready' | 'applied'; summary: string; next_command: string | null } }>;
 }
 
 type ExecutionStateArtifact = {
@@ -37,7 +37,7 @@ type ExecutionStateArtifact = {
   run_id: string;
   started_at: string;
   status: 'running' | 'completed' | 'failed';
-  lanes: Record<string, LaneRuntime>;
+  lanes: Record<string, LaneRuntime & { protected_doc_consolidation?: { has_protected_doc_work: boolean; stage: 'not_applicable' | 'pending' | 'blocked' | 'plan_ready' | 'applied'; summary: string; next_command: string | null } }>;
   workers: Record<string, { lane_id: string; status: 'running' | 'completed' | 'failed'; retries: number; summary?: string }>;
 };
 
@@ -236,7 +236,8 @@ export async function startExecution(worksetPlan: WorksetPlanArtifact, repoRoot 
         lane.lane_id,
         {
           lane_id: lane.lane_id,
-          state: lane.worker_ready ? ('ready' as LaneRuntimeState) : ('blocked' as LaneRuntimeState)
+          state: lane.worker_ready ? ('ready' as LaneRuntimeState) : ('blocked' as LaneRuntimeState),
+          protected_doc_consolidation: lane.protected_doc_consolidation
         }
       ])
   );

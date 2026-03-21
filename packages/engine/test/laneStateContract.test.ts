@@ -47,7 +47,8 @@ describe('lane state artifact contract', () => {
         'assignment_confidence',
         'verification_summary',
         'merge_ready',
-        'worker_ready'
+        'worker_ready',
+        'protected_doc_consolidation'
       ])
     );
 

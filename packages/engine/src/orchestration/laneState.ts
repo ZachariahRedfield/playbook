@@ -1,4 +1,5 @@
 import type { WorksetPlanArtifact, WorksetLane } from './worksetPlan.js';
+import type { ProtectedDocConsolidationStatus } from './protectedDocConsolidation.js';
 
 export type LaneExecutionStatus = 'blocked' | 'ready' | 'running' | 'completed' | 'merge_ready';
 
@@ -22,6 +23,7 @@ export type LaneStateEntry = {
   };
   merge_ready: boolean;
   worker_ready: boolean;
+  protected_doc_consolidation: ProtectedDocConsolidationStatus;
 };
 
 export type LaneStateArtifact = {
@@ -110,6 +112,9 @@ const verificationNotesForStatus = (
   if (lane.likely_conflict_surfaces.length > 0) {
     notes.push('shared-risk surfaces require explicit merge coordination before verification sign-off');
   }
+  if (lane.protected_doc_consolidation.stage !== 'not_applicable') {
+    notes.push(lane.protected_doc_consolidation.summary);
+  }
 
   return sortUnique(notes.length > 0 ? notes : ['verification remains pending under deterministic proposal-only controls']);
 };
@@ -181,7 +186,8 @@ const toLaneStateEntry = (
       notes: verificationNotesForStatus(lane, status, reasons, dependencyGates)
     },
     merge_ready: false,
-    worker_ready: lane.worker_ready
+    worker_ready: lane.worker_ready,
+    protected_doc_consolidation: lane.protected_doc_consolidation
   };
 };
 
@@ -201,13 +207,16 @@ const recomputeMergeReadyStatuses = (
 
     const sourceLane = lanesById.get(entry.lane_id);
     const hasConflictSurfaces = Boolean(sourceLane && sourceLane.likely_conflict_surfaces.length > 0);
+    const consolidationResolved =
+      entry.protected_doc_consolidation.stage === 'not_applicable' || entry.protected_doc_consolidation.stage === 'applied';
     const mergeReady =
       entry.status === 'completed' &&
       entry.worker_ready &&
       entry.dependencies_satisfied &&
       !hasConflictSurfaces &&
       !hasBlockedTasks &&
-      noUnresolvedLanes;
+      noUnresolvedLanes &&
+      consolidationResolved;
 
     if (mergeReady) {
       return {
@@ -277,7 +286,8 @@ const deriveFromOverrides = (
         notes: ['blocked task must be refined before lane execution or verification can begin']
       },
       merge_ready: false,
-      worker_ready: false
+      worker_ready: false,
+      protected_doc_consolidation: { has_protected_doc_work: false, stage: 'not_applicable', summary: 'no protected-doc work', next_command: null }
     }));
 
   const mergedEntries = [...laneEntries, ...blockedTaskEntries].sort((left, right) => left.lane_id.localeCompare(right.lane_id));
@@ -302,7 +312,11 @@ const deriveFromOverrides = (
       reasons: sortUnique([
         ...(lane.status === 'blocked' ? lane.blocked_reasons : []),
         ...(lane.status !== 'merge_ready' ? ['lane has not reached merge_ready lifecycle state'] : []),
-        ...(lane.worker_ready ? [] : ['worker prerequisites are not satisfied'])
+        ...(lane.worker_ready ? [] : ['worker prerequisites are not satisfied']),
+        ...(lane.protected_doc_consolidation.stage === 'pending' ? ['pending protected-doc consolidation'] : []),
+        ...(lane.protected_doc_consolidation.stage === 'blocked' ? ['blocked by conflicts'] : []),
+        ...(lane.protected_doc_consolidation.stage === 'plan_ready' ? ['pending protected-doc consolidation'] : []),
+        ...(lane.protected_doc_consolidation.stage === 'applied' || lane.protected_doc_consolidation.stage === 'not_applicable' ? [] : (lane.protected_doc_consolidation.next_command ? [`next command: ${lane.protected_doc_consolidation.next_command}`] : []))
       ])
     }))
     .sort((left, right) => left.lane_id.localeCompare(right.lane_id));
