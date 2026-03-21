@@ -81,9 +81,9 @@ const createDocsConsolidationPlanPayload = () => ({
       blockId: 'changelog-release-notes',
       startMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->',
       endMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->',
-      content: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+      content: `<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
 - Added docs consolidation plan.
-<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->'
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->`
     },
     provenance: {
       source_artifact_path: '.playbook/docs-consolidation.json',
