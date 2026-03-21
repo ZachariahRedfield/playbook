@@ -44,7 +44,6 @@ Apply explicit local promotion decisions for compacted pattern candidates.
 
 Status: supported **legacy review surface**. Prefer [`patterns proposals promote`](promote.md) for new cross-repo promotion doctrine because it makes the source proposal, target scope, and destination artifact explicit.
 
-
 ### `patterns outcomes <patternId>`
 
 Show outcome-oriented inspection signals for a pattern id, including:
@@ -61,7 +60,6 @@ List promoted/high-strength patterns as doctrine candidates ranked by strength.
 ### `patterns anti-patterns`
 
 Show anti-pattern risk signals inferred from low-strength patterns.
-
 
 ### `patterns candidates`
 
@@ -99,7 +97,7 @@ Build governance-safe enrichment proposals from `.playbook/cross-repo-candidates
 
 Explicitly promote one cross-repo proposal into a governed target:
 
-- `--target memory` promotes a portable pattern candidate into **global reusable pattern memory** at `.playbook/memory/knowledge/patterns.json`.
+- `--target memory` promotes a portable pattern candidate into **global reusable pattern memory** at `.playbook/patterns.json` under `PLAYBOOK_HOME`, with deterministic compat-read support for legacy `patterns.json`.
 - `--target story --repo <repo-id>` promotes a repo-scoped adoption candidate into the **repo-local story backlog** at `.playbook/stories.json`.
 
 Status: **preferred** cross-repo promotion surface.
@@ -123,8 +121,6 @@ List patterns with portability score `> 0.85` (portable doctrine candidates).
 
 Compare shared patterns between two repository ids in the cross-repo artifact and report strength/attractor/fitness deltas.
 
-
-
 ## Pattern candidate extraction overview
 
 Automatic extraction emits `.playbook/pattern-candidates.json` from deterministic repository artifacts.
@@ -143,7 +139,6 @@ Determinism guarantees:
 - stable ordering by `detector`, then `id`
 - normalized confidence in `[0,1]` with fixed 2-decimal precision
 - deterministic missing-artifact errors for absent required sources
-
 
 ## Candidate linking workflow
 
@@ -200,9 +195,6 @@ pnpm playbook patterns generalized --json
 pnpm playbook patterns repo-delta repo-a repo-b --json
 pnpm playbook patterns promote --id <pattern-id> --decision approve --json
 ```
-
-
-
 
 ## Proposal lifecycle governance
 
@@ -262,12 +254,11 @@ The aggregate score is designed to rank **representational persistence and pract
 - Rule: Cross-repo intelligence may suggest promotion, but promotion must remain explicit.
 - Failure Mode: Raw comparison output without grouping/promotion semantics becomes noisy and underused.
 
-
 ## Promotion doctrine
 
 Use these terms consistently when documenting or operating pattern promotion:
 
-- **Global reusable pattern memory**: promoted cross-repo doctrine in `.playbook/memory/knowledge/patterns.json`.
+- **Global reusable pattern memory**: promoted cross-repo doctrine in `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`).
 - **Pattern proposals**: bridge artifacts in `.playbook/pattern-proposals.json` reviewed before promotion.
 - Canonical reusable pattern storage contract: repo-local memory -> `.playbook/memory/knowledge/patterns.json`, global reusable pattern memory -> `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`), cross-repo proposal bridge -> `.playbook/pattern-proposals.json`.
 - **Repo-local story backlog**: canonical repo execution-planning input in `.playbook/stories.json`.
@@ -279,6 +270,7 @@ Rule: Cross-repo pattern knowledge may suggest local work, but only repo-local s
 Export a governed cross-repo transfer package from a promoted global reusable pattern.
 
 Guarantees:
+
 - export reads promoted global reusable patterns only
 - package includes pattern payload, provenance, sanitization status, compatibility metadata, risk class, known failure modes, and recall/demotion lifecycle hooks
 - transfer package is deterministic for the same source pattern, export timestamp, and target repo inputs
@@ -289,6 +281,7 @@ Guarantees:
 Import a transfer package into a receiving repo as candidate input only.
 
 Guarantees:
+
 - incompatible packages fail closed before candidate mutation
 - imported packages land only in `.playbook/pattern-candidates.json`
 - imports do not update `.playbook/patterns.json` or auto-enter execution planning

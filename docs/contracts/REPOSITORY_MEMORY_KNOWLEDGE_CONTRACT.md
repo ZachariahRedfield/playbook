@@ -21,7 +21,10 @@ Define deterministic replay/consolidation behavior for `.playbook/memory/*` epis
    - `.playbook/memory/knowledge/patterns.json`
    - `.playbook/memory/knowledge/failure-modes.json`
    - `.playbook/memory/knowledge/invariants.json`
-6. **Doctrine/policy memory**
+6. **Global reusable pattern memory (cross-repo doctrine)**
+   - `.playbook/patterns.json` under `PLAYBOOK_HOME`
+   - deterministic compat-read legacy path: `patterns.json` under `PLAYBOOK_HOME`
+7. **Doctrine/policy memory**
    - rules, contracts, docs, and remediation templates
 
 Pattern: Structural Graph + Memory Graph/Index.
@@ -43,8 +46,9 @@ Promotion requirements:
 - supersession links (`supersedes`, `supersededBy`) where applicable
 
 Rule: **Working Memory Is Not Doctrine**.
+Rule: **One canonical storage contract per knowledge scope**.
 
-Promotion into `.playbook/memory/knowledge/*` does **not** automatically rewrite committed rules/docs/contracts.
+Promotion into `.playbook/memory/knowledge/*` does **not** automatically rewrite committed rules/docs/contracts. Cross-repo reusable doctrine resolves scope-first to `.playbook/patterns.json` under `PLAYBOOK_HOME`, with deterministic compat-read behavior for legacy `patterns.json`.
 
 ## Pruning semantics
 
@@ -66,6 +70,8 @@ Memory-aware retrieval should compose:
 4. committed governance doctrine where explicitly reviewed and adopted
 
 Rule: **Retrieval Must Return Provenance**.
+Pattern: **Scope-First Resolution Beats Path Inference**.
+Failure Mode: **Storage-Path Drift Makes Governance Legible In Code But Confusing To Operators**.
 
 ## Failure modes
 

@@ -3,6 +3,7 @@
 Inspect normalized knowledge artifacts through read-only deterministic surfaces.
 
 Command boundary:
+
 - `pnpm playbook memory ...` is the raw lifecycle/review/mutation surface for memory artifacts.
 - `pnpm playbook knowledge ...` is the normalized read-only inspection/query surface.
 
@@ -53,7 +54,7 @@ Lifecycle guarantees:
 - Query surfaces distinguish `active`, `candidate`, `stale`, `retired`, `superseded`, and `demoted` lifecycle truth explicitly.
 - Read-only inspection reveals lifecycle truth without mutating it.
 - Lifecycle recommendations surface as candidate records sourced from `.playbook/memory/lifecycle-candidates.json`; they remain advisory-only and retain exact evidence references plus target pattern ids.
-- Global reusable patterns are normalized into the same inspection surface as repo-local memory so provenance and supersession remain auditable from one command family.
+- Global reusable patterns are normalized into the same inspection surface as repo-local memory so provenance and supersession remain auditable from one command family. Scope-first resolution keeps global reads pinned to `.playbook/patterns.json` under `PLAYBOOK_HOME` while still allowing deterministic compat reads from legacy `patterns.json`.
 - JSON list/query/timeline/stale summaries expose lifecycle counts in `summary.byLifecycle` alongside `byType` and `byStatus` so deterministic consumers can reason about lifecycle distribution without re-aggregating records.
 
 ### `knowledge portability`
