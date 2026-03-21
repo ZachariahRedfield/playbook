@@ -21,6 +21,12 @@ Playbook is best understood as **deterministic repo intelligence + governance + 
 
 This framing is the core promise: deterministic evidence over ad-hoc inference, and reviewed intent before execution.
 
+Operator-facing text surfaces should stay brief-thin: lead with decision/status, affected surfaces, blockers, and next action, while leaving machine-heavy state in JSON contracts and `.playbook/*` artifacts.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.
+
 Recent implementation note: `pnpm playbook test-autofix --input <path> --json` now closes the bounded test-remediation loop by orchestrating `test-triage`, `test-fix-plan`, `apply --from-plan`, and the exact narrow-first rerun plan already emitted by triage, while still preserving the same reviewed execution boundary and explicit final-status classification.
 Recent implementation note: `test-autofix` now also persists `.playbook/test-autofix-history.json` as the evidence layer for bounded self-repair, recording stable failure signatures, admitted vs excluded findings, applied repair classes, verification outcomes, and provenance back to the failure log, triage artifact, fix-plan artifact, apply result, and final autofix artifact so repeat detection can become trustworthy before retry policy is automated.
 Recent implementation note: `pnpm playbook test-fix-plan --from-triage <artifact> --json` now exposes the bounded remediation seam after diagnosis, turning only pre-approved low-risk `test-triage` findings into stable apply-compatible tasks while preserving risky or unsupported findings as explicit exclusions. Those artifacts are now accepted directly by `pnpm playbook apply --from-plan`, which reuses the existing approved-plan execution boundary instead of introducing a separate mutation path.

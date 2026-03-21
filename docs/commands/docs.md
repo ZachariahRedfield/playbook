@@ -37,7 +37,7 @@ pnpm playbook docs consolidate-plan --json
 
 ## Consolidation seam
 
-`pnpm playbook docs consolidate` is the proposal-only consolidation seam for protected singleton docs. It reads worker fragments plus the protected-surface registry, writes `.playbook/docs-consolidation.json`, and emits one compact lead-agent integration brief.
+`pnpm playbook docs consolidate` is the proposal-only consolidation seam for protected singleton docs. It reads worker fragments plus the protected-surface registry, writes `.playbook/docs-consolidation.json`, and emits one compact operator brief centered on decision, affected surfaces, blockers, and next action.
 
 - Rule: Consolidation is the only write boundary for protected singleton narrative docs.
 - Pattern: Workers propose; consolidator integrates.

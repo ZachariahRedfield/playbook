@@ -83,9 +83,14 @@ Candidates are emitted only when both thresholds are met:
 
 ## Text summary sections
 
-- `AUTO-SAFE improvements`
-- `CONVERSATIONAL improvements`
-- `GOVERNANCE improvements`
+Text mode now leads with a compact operator brief:
+
+- decision/status
+- affected surfaces
+- blockers
+- next action
+
+Ranked proposals and opportunity queues remain brief-thin in text mode, while `.playbook/improvement-candidates.json`, `.playbook/router-recommendations.json`, and `.playbook/command-improvements.json` keep the full machine detail.
 
 
 ## Command proposal fields
@@ -129,3 +134,7 @@ Doctrine alignment:
 - Rule: Playbook should rank improvement candidates based on architectural leverage, not just surface-level code issues.
 - Pattern: High-value improvement candidates often appear as duplicated derivation, missing invalidation boundaries, or repeated non-canonical data flows.
 - Failure Mode: A governed tool that cannot surface the next best improvement remains dependent on manual senior-engineer initiative selection.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.

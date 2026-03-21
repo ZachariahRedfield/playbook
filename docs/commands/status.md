@@ -30,6 +30,21 @@ Pattern: Single Next Action.
 Pattern: State → Narrative Compression.
 Failure Mode: Building polished summaries before underlying diagnostics and recommendation signals exist leads to attractive but weak UX.
 
+## Human-facing text posture
+
+Default text mode across repo, fleet, queue, execute, receipt, updated, and proof scopes now compresses status into a compact operator brief:
+
+- decision/status
+- affected surfaces
+- blockers
+- next action
+
+The underlying JSON contracts and `.playbook/*` artifacts remain the source of truth for automation and deep inspection.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.
+
 ## Repo readiness JSON contract highlights
 
 - `connection_status`: `connected` | `not_connected`

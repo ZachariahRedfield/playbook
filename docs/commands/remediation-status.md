@@ -42,17 +42,16 @@ Operator trust depends on keeping the seams explicit:
 
 ## Output
 
-Text mode highlights:
+Text mode now defaults to a compact operator brief organized as:
 
-- latest run status, mode, and confidence
-- blocked signatures
-- preferred repair guidance
-- signatures currently safe to retry
-- recent repeated failures
-- recent final statuses
-- deterministic soak summaries for threshold tuning and recurring-failure analysis
+- decision/status
+- affected surfaces
+- blockers
+- next action
 
-JSON mode returns the full machine-readable remediation-status read model for automation.
+The brief intentionally keeps machine-heavy soak detail in `.playbook/test-autofix.json`, `.playbook/test-autofix-history.json`, and JSON output instead of expanding raw telemetry onto the default human surface.
+
+JSON mode returns the full machine-readable remediation-status read model for automation without contract drift.
 
 
 ## CI + PR feedback transport
@@ -108,3 +107,7 @@ These sections reuse the existing remediation-history artifact only. They do not
 - Rule: Telemetry may tune policy, but it must not become a second policy engine.
 - Pattern: One read-only summary surface should answer most soak questions.
 - Failure Mode: Operators start tuning thresholds from anecdotes instead of artifact truth.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.

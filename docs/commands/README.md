@@ -502,6 +502,8 @@ When JSON artifacts are captured through script wrappers and shell redirection, 
 Failure Mode â€” Human-Readable Wrapper Leakage
 Operator-friendly wrapper output is acceptable on stdout, but it must never leak into persisted JSON artifacts that are intended for later programmatic reads.
 
+Human-facing text surfaces should prefer compact briefs that answer decision/status, affected surfaces, blockers, and next action, while `.playbook/*` artifacts and `--json` preserve machine detail for automation.
+
 Failure Mode â€” Opaque JSON Parse Crash
 When corrupted runtime artifacts are parsed without a guardrail, later commands fail far from the original write site, making the real bug harder to diagnose.
 

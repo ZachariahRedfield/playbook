@@ -41,6 +41,7 @@ type RemediationStatusArtifact = {
 import { ExitCode } from '../lib/cliContract.js';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { printCommandHelp } from '../lib/commandSurface.js';
+import { renderBriefOutput } from '../lib/briefOutput.js';
 
 type RemediationStatusOptions = {
   format: 'text' | 'json';
@@ -74,130 +75,56 @@ const readRequiredArtifact = <T>(cwd: string, artifactPath: string, command: str
 };
 
 const renderText = (artifact: RemediationStatusArtifact): string => {
-  const lines = [
-    'Remediation status',
-    '──────────────────',
-    `Latest run: ${artifact.latest_run.run_id}`,
-    `Latest status: ${artifact.latest_run.final_status}`,
-    `Latest retry decision: ${artifact.latest_run.retry_policy_decision}`,
-    `Preferred repair class: ${artifact.latest_run.preferred_repair_class ?? '(none)'}`,
-    `Blocked signatures: ${artifact.blocked_signatures.length}`,
-    `Review-required signatures: ${artifact.review_required_signatures.length}`,
-    `Safe-to-retry signatures: ${artifact.safe_to_retry_signatures.length}`,
-    `History entries: ${artifact.remediation_history.length}`
-  ];
+  const latestBlocked = artifact.blocked_signatures[0];
+  const latestReviewRequired = artifact.review_required_signatures[0];
+  const latestRetryable = artifact.safe_to_retry_signatures[0];
+  const repeatedFailure = artifact.stable_failure_signatures.find((entry) => entry.occurrences > 1);
+  const preferredRepair = artifact.preferred_repair_classes[0];
 
-  if (artifact.blocked_signatures.length > 0) {
-    lines.push('', 'Blocked signatures');
-    for (const signature of artifact.blocked_signatures) lines.push(`- ${signature}`);
-  }
-
-  if (artifact.review_required_signatures.length > 0) {
-    lines.push('', 'Review-required signatures');
-    for (const signature of artifact.review_required_signatures) lines.push(`- ${signature}`);
-  }
-
-  if (artifact.safe_to_retry_signatures.length > 0) {
-    lines.push('', 'Safe to retry');
-    for (const signature of artifact.safe_to_retry_signatures) lines.push(`- ${signature}`);
-  }
-
-  if (artifact.preferred_repair_classes.length > 0) {
-    lines.push('', 'Preferred repair guidance');
-    for (const summary of artifact.preferred_repair_classes) {
-      lines.push(`- ${summary.repair_class} (${summary.success_count} prior success${summary.success_count === 1 ? '' : 'es'})`);
-      lines.push(`  Signatures: ${summary.failure_signatures.join(', ')}`);
-    }
-  }
-
-  lines.push('', 'Calibration telemetry');
-  lines.push(`- Dry-run/apply ratio: ${artifact.telemetry.dry_run_to_apply_ratio}`);
-  lines.push(`- blocked_low_confidence runs: ${artifact.telemetry.blocked_low_confidence_runs}`);
-  lines.push(`- Conservative-confidence advisory: ${artifact.telemetry.conservative_confidence_signal.confidence_may_be_conservative ? 'yes' : 'no'}`);
-  lines.push(`  ${artifact.telemetry.conservative_confidence_signal.reasoning}`);
-
-  if (artifact.telemetry.confidence_buckets.length > 0) {
-    lines.push('', 'Confidence buckets');
-    for (const bucket of artifact.telemetry.confidence_buckets) {
-      lines.push(`- ${bucket.key}: runs=${bucket.total_runs}, fixed=${bucket.fixed}, partially_fixed=${bucket.partially_fixed}, not_fixed=${bucket.not_fixed}, blocked=${bucket.blocked}, success_rate=${bucket.success_rate}`);
-    }
-  }
-
-  if (artifact.telemetry.failure_classes.length > 0) {
-    lines.push('', 'Failure-class success rates');
-    for (const summary of artifact.telemetry.failure_classes) {
-      lines.push(`- ${summary.failure_class}: runs=${summary.total_runs}, success_rate=${summary.success_rate}`);
-    }
-  }
-
-  if (artifact.telemetry.top_repeated_blocked_signatures.length > 0) {
-    lines.push('', 'Top blocked_low_confidence signatures');
-    for (const entry of artifact.telemetry.top_repeated_blocked_signatures) {
-      lines.push(`- ${entry.failure_signature}: blocked=${entry.blocked_count}, prior_successes=${entry.historical_success_count}`);
-    }
-  }
-
-  if (artifact.telemetry.failure_class_rollup.length > 0) {
-    lines.push('', 'Failure-class rollup');
-    for (const summary of artifact.telemetry.failure_class_rollup) {
-      lines.push(`- ${summary.failure_class}: runs=${summary.total_runs}, success_rate=${summary.success_rate}, dry_run=${summary.dry_run_runs}, apply=${summary.apply_runs}, latest=${summary.latest_run_id}`);
-      if (summary.sample_failure_signatures.length > 0) lines.push(`  Sample signatures: ${summary.sample_failure_signatures.join(', ')}`);
-    }
-  }
-
-  if (artifact.telemetry.repair_class_rollup.length > 0) {
-    lines.push('', 'Repair-class rollup');
-    for (const summary of artifact.telemetry.repair_class_rollup) {
-      lines.push(`- ${summary.repair_class}: runs=${summary.total_runs}, successful=${summary.successful_runs}, blocked=${summary.blocked_runs}, not_fixed=${summary.not_fixed_runs}, success_rate=${summary.success_rate}`);
-      if (summary.failure_classes.length > 0) lines.push(`  Failure classes: ${summary.failure_classes.join(', ')}`);
-    }
-  }
-
-  if (artifact.telemetry.blocked_signature_rollup.length > 0) {
-    lines.push('', 'Blocked signature rollup');
-    for (const entry of artifact.telemetry.blocked_signature_rollup.slice(0, 5)) {
-      lines.push(`- ${entry.failure_signature}: blocked=${entry.blocked_count}, prior_successes=${entry.historical_success_count}, latest=${entry.latest_run_id}`);
-    }
-  }
-
-  if (artifact.telemetry.threshold_counterfactuals.length > 0) {
-    lines.push('', 'Threshold counterfactuals');
-    for (const entry of artifact.telemetry.threshold_counterfactuals) {
-      lines.push(`- threshold=${entry.threshold}: eligible=${entry.eligible_runs}, successful_eligible=${entry.successful_eligible_runs}, blocked_low_confidence=${entry.blocked_low_confidence_runs}, would_clear=${entry.blocked_runs_that_would_clear}, latest_would_clear=${entry.latest_run_would_clear ? 'yes' : 'no'}`);
-    }
-  }
-
-  lines.push('', 'Dry-run vs apply delta');
-  lines.push(`- dry_run_runs=${artifact.telemetry.dry_run_vs_apply_delta.dry_run_runs}, apply_runs=${artifact.telemetry.dry_run_vs_apply_delta.apply_runs}, dry_run_success_rate=${artifact.telemetry.dry_run_vs_apply_delta.dry_run_success_rate}, apply_success_rate=${artifact.telemetry.dry_run_vs_apply_delta.apply_success_rate}, success_rate_delta=${artifact.telemetry.dry_run_vs_apply_delta.success_rate_delta}, blocked_delta=${artifact.telemetry.dry_run_vs_apply_delta.blocked_delta}`);
-  lines.push(`  ${artifact.telemetry.dry_run_vs_apply_delta.advisory_note}`);
-
-  lines.push('', 'Manual review pressure');
-  lines.push(`- review_required_runs=${artifact.telemetry.manual_review_pressure.review_required_runs}, blocked_runs=${artifact.telemetry.manual_review_pressure.blocked_runs}, total_manual_pressure_runs=${artifact.telemetry.manual_review_pressure.total_manual_pressure_runs}`);
-  lines.push(`  ${artifact.telemetry.manual_review_pressure.advisory_note}`);
-  for (const entry of artifact.telemetry.manual_review_pressure.top_review_required_signatures.slice(0, 3)) {
-    lines.push(`  review-required: ${entry.failure_signature} (${entry.blocked_count})`);
-  }
-  for (const entry of artifact.telemetry.manual_review_pressure.top_blocked_signatures.slice(0, 3)) {
-    lines.push(`  blocked: ${entry.failure_signature} (${entry.blocked_count})`);
-  }
-
-  const repeatedFailures = artifact.stable_failure_signatures.filter((entry: RemediationStatusArtifact['stable_failure_signatures'][number]) => entry.occurrences > 1);
-  if (repeatedFailures.length > 0) {
-    lines.push('', 'Recent repeated failures');
-    for (const entry of repeatedFailures) {
-      lines.push(`- ${entry.failure_signature}`);
-      lines.push(`  Occurrences: ${entry.occurrences}; outlook: ${entry.retry_outlook}; latest run: ${entry.latest_run_id}`);
-    }
-  }
-
-  if (artifact.recent_final_statuses.length > 0) {
-    lines.push('', 'Recent final statuses');
-    for (const entry of artifact.recent_final_statuses) {
-      lines.push(`- ${entry.run_id} ${entry.final_status} ${entry.failure_signatures.join(', ')}`);
-    }
-  }
-
-  return lines.join('\n');
+  return renderBriefOutput({
+    title: 'Remediation status',
+    decision: artifact.latest_run.retry_policy_decision,
+    status: `${artifact.latest_run.final_status} on ${artifact.latest_run.run_id}`,
+    why: repeatedFailure
+      ? `${repeatedFailure.failure_signature} repeated ${repeatedFailure.occurrences} times; retry outlook is ${repeatedFailure.retry_outlook}.`
+      : artifact.telemetry.conservative_confidence_signal.reasoning,
+    affectedSurfaces: [
+      `latest run ${artifact.latest_run.run_id}`,
+      `${artifact.blocked_signatures.length} blocked signature(s)`,
+      `${artifact.review_required_signatures.length} review-required signature(s)`,
+      `${artifact.safe_to_retry_signatures.length} safe-to-retry signature(s)`
+    ],
+    blockers: [
+      latestBlocked ? `blocked: ${latestBlocked}` : '',
+      latestReviewRequired ? `review required: ${latestReviewRequired}` : '',
+      artifact.telemetry.blocked_low_confidence_runs > 0
+        ? `${artifact.telemetry.blocked_low_confidence_runs} blocked_low_confidence run(s)`
+        : ''
+    ].filter(Boolean),
+    nextAction: latestRetryable
+      ? `Retry ${latestRetryable}${preferredRepair ? ` with preferred repair class ${preferredRepair.repair_class}` : ''}.`
+      : latestBlocked
+        ? 'Inspect remediation-status JSON/artifacts before retrying; the current signature is blocked.'
+        : 'Continue monitoring remediation history and retry only when a governed safe-to-retry signature appears.',
+    artifactRefs: ['.playbook/test-autofix.json', '.playbook/test-autofix-history.json'],
+    extraSections: [
+      {
+        label: 'Operator highlights',
+        items: [
+          `Preferred repair class: ${artifact.latest_run.preferred_repair_class ?? '(none)'}`,
+          `Dry-run/apply ratio: ${artifact.telemetry.dry_run_to_apply_ratio}`,
+          `Manual review pressure: ${artifact.telemetry.manual_review_pressure.total_manual_pressure_runs}`
+        ]
+      },
+      {
+        label: 'Recent signatures',
+        items: [
+          ...artifact.blocked_signatures.slice(0, 2).map((signature) => `blocked ${signature}`),
+          ...artifact.safe_to_retry_signatures.slice(0, 2).map((signature) => `retryable ${signature}`)
+        ]
+      }
+    ]
+  });
 };
 
 export const runRemediationStatus = async (cwd: string, options: RemediationStatusOptions): Promise<number> => {

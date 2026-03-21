@@ -5,7 +5,7 @@
 It reads the worker fragment artifacts emitted under `.playbook/orchestrator/workers/*/worker-fragment.json` plus the protected-surface registry from `.playbook/orchestrator/orchestrator.json`, then produces:
 
 - `.playbook/docs-consolidation.json`
-- one compact lead-agent integration brief embedded in the artifact and printed in text mode
+- one compact lead-agent integration brief embedded in the artifact and rendered in text mode as a decision/action-oriented operator summary
 
 ## Usage
 
@@ -32,3 +32,7 @@ pnpm playbook docs consolidate --json
 ## Follow-on reviewed execution
 
 After review, run `pnpm playbook docs consolidate-plan --json` to compile approved bounded managed-write tasks, then choose whether to cross the mutation boundary with `pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json`.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.

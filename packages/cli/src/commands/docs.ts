@@ -1,5 +1,6 @@
 import { runDocsAudit, runDocsConsolidation, runDocsConsolidationPlan } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
+import { renderBriefOutput } from '../lib/briefOutput.js';
 
 type DocsOptions = {
   ci: boolean;
@@ -14,17 +15,50 @@ const printTextUsage = (): void => {
 
 
 const printConsolidationPlanReport = (result: ReturnType<typeof runDocsConsolidationPlan>): void => {
-  console.log(`playbook docs consolidate-plan: ${result.ok ? 'OK' : 'REVIEW'}`);
-  console.log(`Artifact: ${result.artifactPath}`);
-  console.log(`Executable targets: ${result.artifact.summary.executable_targets} (excluded: ${result.artifact.summary.excluded_targets})`);
+  console.log(renderBriefOutput({
+    title: 'Docs consolidation plan',
+    decision: result.ok ? 'ready_to_apply' : 'review_required',
+    status: result.ok ? 'conflict-free managed write plan prepared' : 'plan excludes ambiguous or blocked targets',
+    why: result.ok
+      ? `${result.artifact.summary.executable_targets} executable target(s) are ready for reviewed apply.`
+      : `${result.artifact.summary.excluded_targets} target(s) still need manual review or clearer anchors.`,
+    affectedSurfaces: [
+      `.playbook/docs-consolidation-plan.json`,
+      `${result.artifact.summary.executable_targets} executable target(s)`,
+      `${result.artifact.summary.excluded_targets} excluded target(s)`
+    ],
+    blockers: result.ok ? [] : ['Excluded targets remain in the reviewed-write plan and need manual follow-up.'],
+    nextAction: result.ok
+      ? 'Run pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json'
+      : 'Inspect .playbook/docs-consolidation-plan.json exclusions and resolve missing anchors/conflicts before apply.',
+    artifactRefs: [result.artifactPath]
+  }));
 };
 
 const printConsolidationReport = (result: ReturnType<typeof runDocsConsolidation>): void => {
-  console.log('playbook docs consolidate: OK');
-  console.log(`Artifact: ${result.artifactPath}`);
-  console.log(`Fragments: ${result.artifact.summary.fragmentCount} (issues: ${result.artifact.summary.issueCount})`);
-  console.log('');
-  console.log(result.artifact.brief);
+  type ConsolidatedTarget = ReturnType<typeof runDocsConsolidation>['artifact']['consolidatedTargets'][number];
+  type ConsolidationIssue = ReturnType<typeof runDocsConsolidation>['artifact']['issues'][number];
+  console.log(renderBriefOutput({
+    title: 'Docs consolidation',
+    decision: result.ok ? 'review_ready' : 'review_blocked',
+    status: `${result.artifact.summary.fragmentCount} fragment(s), ${result.artifact.summary.consolidatedTargetCount} target seam(s)`,
+    why: result.ok
+      ? 'Worker fragments were consolidated into protected singleton seams without conflicts.'
+      : `${result.artifact.summary.issueCount} blocking issue(s) prevent clean consolidation planning.`,
+    affectedSurfaces: [
+      ...result.artifact.consolidatedTargets.slice(0, 3).map((target: ConsolidatedTarget) => `${target.targetDoc} (${target.fragmentCount} fragment${target.fragmentCount === 1 ? '' : 's'})`),
+      result.artifact.protectedSurfaceRegistry.path
+    ],
+    blockers: result.artifact.issues.slice(0, 3).map((issue: ConsolidationIssue) => `${issue.type}: ${issue.conflictKey}`),
+    nextAction: result.ok
+      ? 'Review .playbook/docs-consolidation.json, then run pnpm playbook docs consolidate-plan --json.'
+      : 'Resolve duplicate/conflicting fragment targets in .playbook/docs-consolidation.json before planning apply.',
+    artifactRefs: [result.artifactPath],
+    extraSections: [{
+      label: 'Lead-agent integration brief',
+      items: result.artifact.brief.split('\n').filter(Boolean).slice(1, 5)
+    }]
+  }));
 };
 
 const printHumanReport = (result: ReturnType<typeof runDocsAudit>): void => {

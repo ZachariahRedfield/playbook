@@ -39,6 +39,7 @@ import {
   buildUpdatedStateInterpretation,
   type InterpretationLayer
 } from '../lib/interpretation.js';
+import { renderBriefOutput } from '../lib/briefOutput.js';
 
 type StatusOptions = {
   ci: boolean;
@@ -420,63 +421,33 @@ const printHuman = (
     return;
   }
 
-  console.log('State');
-  console.log(result.interpretation.progressive_disclosure.default_view.state);
-  console.log('');
-  console.log('Why');
-  console.log(result.interpretation.progressive_disclosure.default_view.why);
-  console.log('');
-  console.log('Next step');
-  console.log(result.interpretation.progressive_disclosure.default_view.next_step.command ?? result.interpretation.progressive_disclosure.default_view.next_step.label);
-  console.log('');
-  console.log('Environment');
-  console.log(result.environment.ok ? '  ✔ ok' : '  ✖ failed');
-
-  if (repoIndexSummary) {
-    console.log('');
-    console.log('Project summary');
-    console.log('────────────────');
-    console.log('');
-    console.log(`Framework: ${repoIndexSummary.framework}`);
-    console.log(`Modules: ${repoIndexSummary.modules.length > 0 ? repoIndexSummary.modules.join(', ') : '-'}`);
-    console.log(`Docs: ${repoIndexSummary.docs.length > 0 ? repoIndexSummary.docs.join(', ') : '-'}`);
-    console.log(`Playbook rules: ${repoIndexSummary.rules.length}`);
-  }
-
-  console.log('');
-  console.log('Repository Analysis');
-  console.log(`  Warnings: ${result.analysis.warnings}`);
-  console.log(`  Errors: ${result.analysis.errors}`);
-  console.log('');
-  console.log('Policy Verification');
-  console.log(result.verification.ok ? '  ✔ ok' : '  ✖ failed');
-  console.log('');
-  console.log('Summary');
-  console.log(`  Overall: ${result.ok ? 'healthy' : 'issues detected'}`);
-  console.log(`  Warnings: ${result.summary.warnings}`);
-  console.log(`  Errors: ${result.summary.errors}`);
-
-  console.log('');
-  console.log('Adoption readiness');
-  console.log(`  Connection: ${result.adoption.connection_status}`);
-  console.log(`  Playbook detected: ${result.adoption.playbook_detected ? 'yes' : 'no'}`);
-  console.log(`  Lifecycle stage: ${result.adoption.lifecycle_stage}`);
-  console.log(`  Fallback proof ready: ${result.adoption.fallback_proof_ready ? 'yes' : 'no'}`);
-  console.log(`  Cross-repo eligible: ${result.adoption.cross_repo_eligible ? 'yes' : 'no'}`);
-  if (result.adoption.blockers.length > 0) {
-    console.log(`  Blockers: ${result.adoption.blockers.map((blocker: { code: string }) => blocker.code).join(', ')}`);
-    console.log(`  Next command: ${result.adoption.recommended_next_steps[0] ?? 'n/a'}`);
-  }
-
-  if (topIssue) {
-    console.log('');
-    console.log('Top issue');
-    console.log('─────────');
-    console.log(`${topIssue.id} – ${topIssue.description}`);
-    console.log('');
-    console.log('Run:');
-    console.log(`pnpm playbook explain ${topIssue.id}`);
-  }
+  console.log(renderBriefOutput({
+    title: 'Status',
+    decision: result.ok ? 'healthy' : 'attention_required',
+    status: result.interpretation.progressive_disclosure.default_view.state,
+    why: result.interpretation.progressive_disclosure.default_view.why,
+    affectedSurfaces: [
+      `analysis warnings=${result.analysis.warnings}`,
+      `verification=${result.verification.ok ? 'ok' : 'failed'}`,
+      `lifecycle=${result.adoption.lifecycle_stage}`,
+      repoIndexSummary ? `framework=${repoIndexSummary.framework}` : ''
+    ].filter(Boolean),
+    blockers: [
+      ...result.interpretation.progressive_disclosure.secondary_view.blockers.slice(0, 3),
+      topIssue ? `${topIssue.id}: ${topIssue.description}` : ''
+    ].filter(Boolean),
+    nextAction: result.interpretation.progressive_disclosure.default_view.next_step.command
+      ?? result.interpretation.progressive_disclosure.default_view.next_step.label,
+    artifactRefs: ['.playbook/repo-index.json', '.playbook/repo-graph.json', '.playbook/plan.json'],
+    extraSections: [{
+      label: 'Operator highlights',
+      items: [
+        `Environment: ${result.environment.ok ? 'ok' : 'failed'}`,
+        `Playbook detected: ${result.adoption.playbook_detected ? 'yes' : 'no'}`,
+        `Cross-repo eligible: ${result.adoption.cross_repo_eligible ? 'yes' : 'no'}`
+      ]
+    }]
+  }));
 };
 
 export const runStatus = async (cwd: string, options: StatusOptions): Promise<number> => {
@@ -486,19 +457,19 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
       if (options.format === 'json') {
         console.log(JSON.stringify(queueResult, null, 2));
       } else {
-        console.log('State');
-        console.log(queueResult.interpretation.progressive_disclosure.default_view.state);
-        console.log('');
-        console.log('Why');
-        console.log(queueResult.interpretation.progressive_disclosure.default_view.why);
-        console.log('');
-        console.log('Next step');
-        console.log(queueResult.interpretation.progressive_disclosure.default_view.next_step.command ?? queueResult.interpretation.progressive_disclosure.default_view.next_step.label);
-        console.log('');
-        console.log(`Queue repos: ${queueResult.queue.total_repos}`);
-        console.log(`Wave 1 actions: ${queueResult.queue.waves[0]?.action_count ?? 0}`);
-        console.log(`Wave 2 actions: ${queueResult.queue.waves[1]?.action_count ?? 0}`);
-        console.log(`Top lane: ${queueResult.queue.grouped_actions[0]?.parallel_group ?? 'n/a'}`);
+        console.log(renderBriefOutput({
+          title: 'Status queue',
+          decision: queueResult.queue.work_items.length > 0 ? 'queue_ready' : 'queue_empty',
+          status: queueResult.interpretation.progressive_disclosure.default_view.state,
+          why: queueResult.interpretation.progressive_disclosure.default_view.why,
+          affectedSurfaces: [
+            `${queueResult.queue.total_repos} repo(s)`,
+            `wave_1=${queueResult.queue.waves[0]?.action_count ?? 0}`,
+            `top lane=${queueResult.queue.grouped_actions[0]?.parallel_group ?? 'n/a'}`
+          ],
+          blockers: queueResult.interpretation.progressive_disclosure.secondary_view.blockers.slice(0, 3),
+          nextAction: queueResult.interpretation.progressive_disclosure.default_view.next_step.command ?? queueResult.interpretation.progressive_disclosure.default_view.next_step.label
+        }));
       }
       return ExitCode.Success;
     }
@@ -508,18 +479,19 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
       if (options.format === 'json') {
         console.log(JSON.stringify(fleetResult, null, 2));
       } else {
-        console.log('State');
-        console.log(fleetResult.interpretation.progressive_disclosure.default_view.state);
-        console.log('');
-        console.log('Why');
-        console.log(fleetResult.interpretation.progressive_disclosure.default_view.why);
-        console.log('');
-        console.log('Next step');
-        console.log(fleetResult.interpretation.progressive_disclosure.default_view.next_step.command ?? fleetResult.interpretation.progressive_disclosure.default_view.next_step.label);
-        console.log('');
-        console.log(`Fleet repos: ${fleetResult.fleet.total_repos}`);
-        console.log(`By stage: ${JSON.stringify(fleetResult.fleet.by_lifecycle_stage)}`);
-        console.log(`Top action: ${fleetResult.fleet.recommended_actions[0]?.command ?? 'n/a'}`);
+        console.log(renderBriefOutput({
+          title: 'Status fleet',
+          decision: fleetResult.fleet.total_repos > 0 ? 'fleet_observed' : 'fleet_empty',
+          status: fleetResult.interpretation.progressive_disclosure.default_view.state,
+          why: fleetResult.interpretation.progressive_disclosure.default_view.why,
+          affectedSurfaces: [
+            `${fleetResult.fleet.total_repos} repo(s)`,
+            `ready=${fleetResult.fleet.by_lifecycle_stage.ready}`,
+            `cross_repo_eligible=${fleetResult.fleet.cross_repo_eligible_count}`
+          ],
+          blockers: fleetResult.interpretation.progressive_disclosure.secondary_view.blockers.slice(0, 3),
+          nextAction: fleetResult.interpretation.progressive_disclosure.default_view.next_step.command ?? fleetResult.interpretation.progressive_disclosure.default_view.next_step.label
+        }));
       }
       return ExitCode.Success;
     }
@@ -531,20 +503,20 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
       } else {
         const wave1 = executionResult.execution_plan.waves.find((wave: { wave_id: string; repos: string[] }) => wave.wave_id === 'wave_1');
         const wave2 = executionResult.execution_plan.waves.find((wave: { wave_id: string; repos: string[] }) => wave.wave_id === 'wave_2');
-        console.log('State');
-        console.log(executionResult.interpretation.progressive_disclosure.default_view.state);
-        console.log('');
-        console.log('Why');
-        console.log(executionResult.interpretation.progressive_disclosure.default_view.why);
-        console.log('');
-        console.log('Next step');
-        console.log(executionResult.interpretation.progressive_disclosure.default_view.next_step.command ?? executionResult.interpretation.progressive_disclosure.default_view.next_step.label);
-        console.log('');
-        console.log(`Execution plan kind: ${executionResult.execution_plan.kind}`);
-        console.log(`Wave 1 repos: ${wave1?.repos.length ?? 0}`);
-        console.log(`Wave 2 repos: ${wave2?.repos.length ?? 0}`);
-        console.log(`Worker lanes: ${executionResult.execution_plan.worker_lanes.length}`);
-        console.log(`Top prompt: ${executionResult.execution_plan.codex_prompts[0]?.prompt_id ?? 'n/a'}`);
+        console.log(renderBriefOutput({
+          title: 'Status execute',
+          decision: executionResult.execution_plan.codex_prompts.length > 0 ? 'execution_packaged' : 'execution_idle',
+          status: executionResult.interpretation.progressive_disclosure.default_view.state,
+          why: executionResult.interpretation.progressive_disclosure.default_view.why,
+          affectedSurfaces: [
+            `kind=${executionResult.execution_plan.kind}`,
+            `wave_1 repos=${wave1?.repos.length ?? 0}`,
+            `wave_2 repos=${wave2?.repos.length ?? 0}`,
+            `worker lanes=${executionResult.execution_plan.worker_lanes.length}`
+          ],
+          blockers: executionResult.interpretation.progressive_disclosure.secondary_view.blockers.slice(0, 3),
+          nextAction: executionResult.interpretation.progressive_disclosure.default_view.next_step.command ?? executionResult.interpretation.progressive_disclosure.default_view.next_step.label
+        }));
       }
       return ExitCode.Success;
     }
@@ -554,21 +526,22 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
       if (options.format === 'json') {
         console.log(JSON.stringify(receiptResult, null, 2));
       } else {
-        console.log('State');
-        console.log(receiptResult.interpretation.progressive_disclosure.default_view.state);
-        console.log('');
-        console.log('Why');
-        console.log(receiptResult.interpretation.progressive_disclosure.default_view.why);
-        console.log('');
-        console.log('Next step');
-        console.log(receiptResult.interpretation.progressive_disclosure.default_view.next_step.command ?? receiptResult.interpretation.progressive_disclosure.default_view.next_step.label);
-        console.log('');
-        console.log(`Execution receipt kind: ${receiptResult.receipt.kind}`);
-        console.log(`Prompts total: ${receiptResult.receipt.verification_summary.prompts_total}`);
-        console.log(`Succeeded: ${receiptResult.receipt.verification_summary.succeeded_count}`);
-        console.log(`Failed: ${receiptResult.receipt.verification_summary.failed_count}`);
-        console.log(`Partial: ${receiptResult.receipt.verification_summary.partial_count}`);
-        console.log(`Drift: ${receiptResult.receipt.verification_summary.mismatch_count}`);
+        console.log(renderBriefOutput({
+          title: 'Status receipt',
+          decision: receiptResult.receipt.verification_summary.failed_count > 0 || receiptResult.receipt.verification_summary.mismatch_count > 0
+            ? 'follow_up_required'
+            : 'receipt_clean',
+          status: receiptResult.interpretation.progressive_disclosure.default_view.state,
+          why: receiptResult.interpretation.progressive_disclosure.default_view.why,
+          affectedSurfaces: [
+            `prompts=${receiptResult.receipt.verification_summary.prompts_total}`,
+            `succeeded=${receiptResult.receipt.verification_summary.succeeded_count}`,
+            `failed=${receiptResult.receipt.verification_summary.failed_count}`,
+            `drift=${receiptResult.receipt.verification_summary.mismatch_count}`
+          ],
+          blockers: receiptResult.interpretation.progressive_disclosure.secondary_view.blockers.slice(0, 3),
+          nextAction: receiptResult.interpretation.progressive_disclosure.default_view.next_step.command ?? receiptResult.interpretation.progressive_disclosure.default_view.next_step.label
+        }));
       }
       return ExitCode.Success;
     }
@@ -578,17 +551,18 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
       if (options.format === 'json') {
         console.log(JSON.stringify(proofResult, null, 2));
       } else {
-        console.log('Current state');
-        console.log(proofResult.proof.summary.current_state);
-        console.log('');
-        console.log('Why');
-        console.log(proofResult.proof.summary.why);
-        console.log('');
-        console.log('What next');
-        console.log(proofResult.proof.summary.what_next);
-        console.log('');
-        console.log(`Failing stage: ${proofResult.proof.diagnostics.failing_stage ?? 'none'}`);
-        console.log(`Failing category: ${proofResult.proof.diagnostics.failing_category ?? 'none'}`);
+        console.log(renderBriefOutput({
+          title: 'Status proof',
+          decision: proofResult.proof.ok ? 'proof_ready' : 'proof_blocked',
+          status: proofResult.proof.current_state,
+          why: proofResult.proof.summary.why,
+          affectedSurfaces: ['bootstrap proof', `failing stage=${proofResult.proof.diagnostics.failing_stage ?? 'none'}`],
+          blockers: [
+            proofResult.proof.diagnostics.failing_stage ? `failing stage: ${proofResult.proof.diagnostics.failing_stage}` : '',
+            proofResult.proof.diagnostics.failing_category ? `failing category: ${proofResult.proof.diagnostics.failing_category}` : ''
+          ].filter(Boolean),
+          nextAction: proofResult.proof.summary.what_next
+        }));
       }
       return exitCode;
     }
@@ -598,25 +572,23 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
       if (options.format === 'json') {
         console.log(JSON.stringify(updatedResult, null, 2));
       } else {
-        console.log('State');
-        console.log(updatedResult.interpretation.progressive_disclosure.default_view.state);
-        console.log('');
-        console.log('Why');
-        console.log(updatedResult.interpretation.progressive_disclosure.default_view.why);
-        console.log('');
-        console.log('Next step');
-        console.log(updatedResult.interpretation.progressive_disclosure.default_view.next_step.command ?? updatedResult.interpretation.progressive_disclosure.default_view.next_step.label);
-        console.log('');
-        console.log(`Updated state kind: ${updatedResult.updated_state.kind}`);
-        console.log(`Repos total: ${updatedResult.updated_state.summary.repos_total}`);
-        console.log(`Observed outcomes: ${JSON.stringify(updatedResult.updated_state.summary.by_reconciliation_status)}`);
-        console.log(`Action counts: ${JSON.stringify(updatedResult.updated_state.summary.action_counts)}`);
-        console.log(`Needs retry: ${updatedResult.updated_state.summary.repos_needing_retry.length}`);
-        console.log(`Needs replan: ${updatedResult.updated_state.summary.repos_needing_replan.length}`);
-        console.log(`Needs review: ${updatedResult.updated_state.summary.repos_needing_review.length}`);
-        console.log(`Next queue items: ${updatedResult.next_queue.work_items.length}`);
-        console.log(`Promotion: ${updatedResult.promotion.promoted ? 'promoted' : `blocked (${updatedResult.promotion.blocked_reason ?? 'validation failed'})`}`);
-        console.log(`Staged artifact: ${updatedResult.promotion.staged_artifact_path}`);
+        console.log(renderBriefOutput({
+          title: 'Status updated',
+          decision: updatedResult.promotion.promoted ? 'updated_state_promoted' : 'updated_state_blocked',
+          status: updatedResult.interpretation.progressive_disclosure.default_view.state,
+          why: updatedResult.interpretation.progressive_disclosure.default_view.why,
+          affectedSurfaces: [
+            `repos=${updatedResult.updated_state.summary.repos_total}`,
+            `next queue=${updatedResult.next_queue.work_items.length}`,
+            `promotion=${updatedResult.promotion.promoted ? 'promoted' : 'blocked'}`
+          ],
+          blockers: [
+            ...updatedResult.interpretation.progressive_disclosure.secondary_view.blockers.slice(0, 3),
+            updatedResult.promotion.promoted ? '' : (updatedResult.promotion.blocked_reason ?? '')
+          ].filter(Boolean),
+          nextAction: updatedResult.interpretation.progressive_disclosure.default_view.next_step.command ?? updatedResult.interpretation.progressive_disclosure.default_view.next_step.label,
+          artifactRefs: [updatedResult.promotion.staged_artifact_path, updatedResult.promotion.committed_target_path].filter(Boolean)
+        }));
       }
       return exitCode;
     }
