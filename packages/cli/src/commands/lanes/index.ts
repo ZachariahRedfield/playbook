@@ -29,6 +29,18 @@ const printText = (result: LaneStateArtifact): void => {
   console.log(`Completed lanes: ${result.completed_lanes.length}`);
   console.log(`Merge-ready lanes: ${result.merge_readiness.merge_ready_lanes.length}`);
 
+  const consolidationSummaries = result.lanes
+    .filter((lane: (typeof result.lanes)[number]) => lane.protected_doc_consolidation.stage !== 'not_applicable' && lane.protected_doc_consolidation.stage !== 'applied')
+    .map((lane: (typeof result.lanes)[number]) => `- ${lane.lane_id}: ${lane.protected_doc_consolidation.summary}${lane.protected_doc_consolidation.next_command ? `; next command: ${lane.protected_doc_consolidation.next_command}` : ''}`);
+
+  if (consolidationSummaries.length > 0) {
+    console.log('');
+    console.log('Protected-doc consolidation:');
+    for (const summary of consolidationSummaries) {
+      console.log(summary);
+    }
+  }
+
   if (result.blocked_lanes.length > 0) {
     console.log('');
     console.log('Blocked lane details:');

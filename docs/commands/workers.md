@@ -29,6 +29,7 @@ pnpm playbook workers assign --json
 - Output remains proposal-only: no worker launch, no branch creation, no PR automation.
 - Assigned prompts stay compact and skimmable; full machine state remains in `.playbook/workset-plan.json`, `.playbook/lane-state.json`, and `.playbook/worker-assignments.json`.
 - Protected singleton docs must be treated as fragment-only contribution targets rather than direct-edit surfaces.
+- Lanes carrying protected-doc fragments stay non-merge-ready until consolidation is planned and applied through the reviewed boundary.
 
 Rule — Human prompt surfaces should carry only bounded execution instructions, not full machine state.
 Pattern — Artifact-rich, prompt-thin orchestration keeps operators fast.

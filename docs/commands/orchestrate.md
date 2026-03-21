@@ -151,6 +151,7 @@ This writes `.playbook/workset-plan.json` and `.playbook/lane-state.json` with:
 - `input_tasks`, `routed_tasks`, `lanes`, `blocked_tasks`
 - deterministic `dependency_edges` and `merge_risk_notes`
 - deterministic lane-state (`blocked_lanes`, `ready_lanes`, `merge_readiness`, `verification_status`)
+- compact protected-doc consolidation state per lane/workset so merge readiness stays false until protected singleton docs are consolidated
 - one worker-ready `codex_prompt` per lane
 
 Why this exists:
@@ -165,3 +166,7 @@ Why this exists:
 `workset-plan` is deterministic planning intent. `lane-state` is deterministic readiness tracking for that intent.
 
 This progression is required before any future autonomous orchestration slice because it keeps unsupported/ambiguous work explicit, blocks unresolved dependency chains, and exposes conservative merge readiness rather than inferring optimistic execution state.
+
+Rule — Merge readiness must account for unresolved protected singleton doc consolidation.
+Pattern — Shared narrative work is complete only when consolidation is complete.
+Failure Mode — Marking lanes merge-ready before protected-doc integration recreates manual merge hotspots under a deterministic-looking surface.

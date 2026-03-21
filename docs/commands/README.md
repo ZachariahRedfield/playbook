@@ -164,8 +164,11 @@ Source of truth: shared command metadata in `packages/cli/src/lib/commandMetadat
 - Pattern: Prefer one explicit promotion surface over many near-synonyms.
 - Failure Mode: Promotion surface sprawl makes governance legible in code but confusing to operators.
 - Rule: Consolidation is the only write boundary for protected singleton narrative docs.
+- Rule: Merge readiness must account for unresolved protected singleton doc consolidation.
 - Pattern: Workers propose; consolidator integrates.
+- Pattern: Shared narrative work is complete only when consolidation is complete.
 - Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
+- Failure Mode: Marking lanes merge-ready before protected-doc integration recreates manual merge hotspots under a deterministic-looking surface.
 
 ## Artifact workflow governance
 
@@ -244,6 +247,7 @@ For orchestration surfaces (`orchestrate`, `lanes`, `workers`), operator prompts
 - human prompts carry bounded execution instructions only
 - `.playbook` artifacts retain full machine state, dependencies, and protected-doc fragment metadata
 - protected singleton narrative docs are fragment-only surfaces during parallel worker execution
+- compact text surfaces should report only pending/blocking summary plus next command while `.playbook` artifacts retain raw consolidation detail
 
 ## Learn draft (`pnpm playbook learn draft`)
 

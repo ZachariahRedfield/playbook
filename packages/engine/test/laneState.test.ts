@@ -16,7 +16,13 @@ const lane = (lane_id: string, dependency_level: 'low' | 'medium' | 'high') => (
   dependency_level,
   recommended_pr_size: 'small' as const,
   worker_ready: true,
-  codex_prompt: `Prompt for ${lane_id}`
+  codex_prompt: `Prompt for ${lane_id}`,
+  protected_doc_consolidation: {
+    has_protected_doc_work: false,
+    stage: 'not_applicable' as const,
+    summary: 'no protected-doc work',
+    next_command: null
+  }
 });
 
 const baseWorkset = (overrides?: Partial<WorksetPlanArtifact>): WorksetPlanArtifact => ({
@@ -85,6 +91,32 @@ describe('deriveLaneState lifecycle transitions', () => {
     expect(completed.applied).toBe(true);
     expect(completed.laneState.merge_ready_lanes).toContain('lane-1');
     expect(completed.laneState.lanes.find((entry) => entry.lane_id === 'lane-1')?.status).toBe('merge_ready');
+  });
+
+
+
+  it('keeps protected-doc lanes out of merge_ready until consolidation is applied', () => {
+    const worksetPlan = baseWorkset({
+      lanes: [
+        {
+          ...lane('lane-1', 'low'),
+          expected_surfaces: ['docs/CHANGELOG.md'],
+          protected_doc_consolidation: {
+            has_protected_doc_work: true,
+            stage: 'pending',
+            summary: 'pending protected-doc consolidation',
+            next_command: 'pnpm playbook docs consolidate --json'
+          }
+        }
+      ]
+    });
+    const initial = deriveLaneState(worksetPlan, '.playbook/workset-plan.json');
+    const started = applyLaneLifecycleTransition(worksetPlan, '.playbook/workset-plan.json', initial, { action: 'start', lane_id: 'lane-1' });
+    const completed = applyLaneLifecycleTransition(worksetPlan, '.playbook/workset-plan.json', started.laneState, { action: 'complete', lane_id: 'lane-1' });
+
+    expect(completed.applied).toBe(true);
+    expect(completed.laneState.merge_ready_lanes).not.toContain('lane-1');
+    expect(completed.laneState.lanes.find((entry) => entry.lane_id === 'lane-1')?.status).toBe('completed');
   });
 
   it('supports mixed blocked + running + completed lifecycle states', () => {

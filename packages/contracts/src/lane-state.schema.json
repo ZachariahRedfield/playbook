@@ -216,7 +216,8 @@
         "assignment_confidence",
         "verification_summary",
         "merge_ready",
-        "worker_ready"
+        "worker_ready",
+        "protected_doc_consolidation"
       ],
       "properties": {
         "lane_id": {
@@ -243,7 +244,10 @@
         },
         "readiness_status": {
           "type": "string",
-          "enum": ["ready", "blocked"]
+          "enum": [
+            "ready",
+            "blocked"
+          ]
         },
         "dependency_level": {
           "type": "string",
@@ -282,7 +286,11 @@
         },
         "shared_artifact_risk": {
           "type": "string",
-          "enum": ["low", "medium", "high"]
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
         },
         "assignment_confidence": {
           "type": "number",
@@ -337,6 +345,41 @@
         },
         "worker_ready": {
           "type": "boolean"
+        },
+        "protected_doc_consolidation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "has_protected_doc_work",
+            "stage",
+            "summary",
+            "next_command"
+          ],
+          "properties": {
+            "has_protected_doc_work": {
+              "type": "boolean"
+            },
+            "stage": {
+              "type": "string",
+              "enum": [
+                "not_applicable",
+                "pending",
+                "blocked",
+                "plan_ready",
+                "applied"
+              ]
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "next_command": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
         }
       }
     }

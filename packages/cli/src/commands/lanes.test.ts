@@ -56,7 +56,13 @@ describe('runLanes', () => {
           dependency_level: 'low',
           recommended_pr_size: 'small',
           worker_ready: true,
-          codex_prompt: 'prompt'
+          codex_prompt: 'prompt',
+          protected_doc_consolidation: {
+            has_protected_doc_work: false,
+            stage: 'not_applicable',
+            summary: 'no protected-doc work',
+            next_command: null
+          }
         }
       ],
       blocked_tasks: [],

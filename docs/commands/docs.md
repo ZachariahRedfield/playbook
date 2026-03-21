@@ -41,6 +41,7 @@ pnpm playbook docs consolidate-plan --json
 
 - Rule: Consolidation is the only write boundary for protected singleton narrative docs.
 - Pattern: Workers propose; consolidator integrates.
+- Pattern: Shared narrative work is complete only when consolidation is complete.
 - Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
 
 Command reference: [`pnpm playbook docs consolidate`](docs-consolidate.md).

@@ -33,7 +33,7 @@ Lane status is deterministic and proposal-only:
 - `ready`: lane can be started
 - `running`: lane was started via `lanes start <lane_id>`
 - `completed`: lane was completed via `lanes complete <lane_id>` but not yet merge-ready
-- `merge_ready`: conservative safe-completion state after recomputation
+- `merge_ready`: conservative safe-completion state after recomputation and protected-doc consolidation resolution
 
 Dependency gates are strict: if prerequisites become unresolved, the lane remains or returns `blocked` regardless of requested transition.
 
@@ -43,8 +43,13 @@ Writes `.playbook/lane-state.json` with:
 
 - lifecycle groups (`blocked_lanes`, `ready_lanes`, `running_lanes`, `completed_lanes`, `merge_ready_lanes`)
 - deterministic per-lane lifecycle status (`status`, `dependencies_satisfied`, `blocked_reasons`)
+- compact protected-doc consolidation status with only human summaries in text mode
 - conservative merge and verification posture (`merge_readiness`, `verification_status`)
 
 `lanes` remains proposal-only and does not create branches, launch workers, open PRs, or merge code.
 
 Worker-facing prompt thinness depends on `lanes` staying artifact-rich: readiness, dependency gates, and merge posture remain in `.playbook/lane-state.json` instead of being duplicated into human prompts.
+
+Rule — Merge readiness must account for unresolved protected singleton doc consolidation.
+Pattern — Shared narrative work is complete only when consolidation is complete.
+Failure Mode — Marking lanes merge-ready before protected-doc integration recreates manual merge hotspots under a deterministic-looking surface.

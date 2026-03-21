@@ -1,6 +1,7 @@
 import { buildExecutionPlan } from '../routing/executionPlan.js';
 import { routeTask } from '../routing/routeTask.js';
 import { compileCodexPrompt } from '../routing/codexPrompt.js';
+import { computeProtectedDocConsolidationStatus, type ProtectedDocConsolidationStatus } from './protectedDocConsolidation.js';
 
 export type WorksetTaskInput = {
   task_id: string;
@@ -22,6 +23,7 @@ export type WorksetLane = {
   recommended_pr_size: 'small' | 'medium' | 'large';
   worker_ready: boolean;
   codex_prompt: string;
+  protected_doc_consolidation: ProtectedDocConsolidationStatus;
 };
 
 export type WorksetPlanArtifact = {
@@ -245,7 +247,8 @@ export const buildWorksetPlan = (cwd: string, tasks: WorksetTaskInput[], tasksFi
         dependency_level: levelForLane(laneTasks),
         recommended_pr_size: sizeForLane(laneTasks),
         worker_ready: laneTasks.every((task) => task.executionPlan.worker_ready),
-        codex_prompt: lanePrompt(lane_id, laneTasks)
+        codex_prompt: lanePrompt(lane_id, laneTasks),
+        protected_doc_consolidation: computeProtectedDocConsolidationStatus(cwd, lane_id, sortUnique(laneTasks.flatMap((task) => task.executionPlan.expected_surfaces)))
       };
     })
     .sort((left, right) => left.lane_id.localeCompare(right.lane_id));

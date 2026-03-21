@@ -7,7 +7,9 @@
   "lanes": [
     {
       "lane_id": "lane-1",
-      "task_ids": ["task-docs"],
+      "task_ids": [
+        "task-docs"
+      ],
       "status": "ready",
       "readiness_status": "ready",
       "dependency_level": "low",
@@ -19,16 +21,32 @@
       "assignment_confidence": 0.94,
       "verification_summary": {
         "status": "pending",
-        "required_checks": ["pnpm -r build", "pnpm test"],
-        "optional_checks": ["pnpm playbook contracts --json"],
-        "notes": ["lane is ready for deterministic proposal-only start transition"]
+        "required_checks": [
+          "pnpm -r build",
+          "pnpm test"
+        ],
+        "optional_checks": [
+          "pnpm playbook contracts --json",
+          "pnpm playbook docs audit --json"
+        ],
+        "notes": [
+          "lane is ready for deterministic proposal-only start transition"
+        ]
       },
       "merge_ready": false,
-      "worker_ready": true
+      "worker_ready": true,
+      "protected_doc_consolidation": {
+        "has_protected_doc_work": false,
+        "stage": "not_applicable",
+        "summary": "no protected-doc work",
+        "next_command": null
+      }
     }
   ],
   "blocked_lanes": [],
-  "ready_lanes": ["lane-1"],
+  "ready_lanes": [
+    "lane-1"
+  ],
   "running_lanes": [],
   "completed_lanes": [],
   "merge_ready_lanes": [],
@@ -42,14 +60,20 @@
     "not_merge_ready_lanes": [
       {
         "lane_id": "lane-1",
-        "reasons": ["lane has not reached merge_ready lifecycle state"]
+        "reasons": [
+          "lane has not reached merge_ready lifecycle state"
+        ]
       }
     ]
   },
   "verification_status": {
     "status": "pending",
-    "lanes_pending_verification": ["lane-1"],
+    "lanes_pending_verification": [
+      "lane-1"
+    ],
     "lanes_blocked_from_verification": []
   },
-  "warnings": ["merge readiness is conservative and only true for safely completed lanes"]
+  "warnings": [
+    "merge readiness is conservative and only true for safely completed lanes"
+  ]
 }

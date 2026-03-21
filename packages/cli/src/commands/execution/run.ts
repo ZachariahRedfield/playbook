@@ -42,6 +42,12 @@ type LaneStateLike = {
   conflict_surface_paths?: string[];
   shared_artifact_risk?: 'low' | 'medium' | 'high';
   assignment_confidence?: number;
+  protected_doc_consolidation?: {
+    has_protected_doc_work: boolean;
+    stage: 'not_applicable' | 'pending' | 'blocked' | 'plan_ready' | 'applied';
+    summary: string;
+    next_command: string | null;
+  };
 };
 
 type WorkerAdapterEnvelope = {
@@ -73,7 +79,7 @@ const readJsonArtifact = <T>(cwd: string, artifactPath: string): T | undefined =
   return parsed as T;
 };
 
-const renderText = (runId: string, lanes: Array<{ lane_id: string; state: string }>, status: string): void => {
+const renderText = (runId: string, lanes: Array<{ lane_id: string; state: string; protected_doc_consolidation?: { stage: string; summary: string; next_command: string | null } }>, status: string): void => {
   console.log('Playbook Execution Run');
   console.log('');
   console.log(`Run ID: ${runId}`);
@@ -81,7 +87,10 @@ const renderText = (runId: string, lanes: Array<{ lane_id: string; state: string
   console.log('Lanes:');
   for (const lane of lanes) {
     const marker = lane.state === 'completed' ? '✓' : '✗';
-    console.log(`${marker} ${lane.lane_id} ${lane.state}`);
+    const consolidationNote = lane.protected_doc_consolidation && lane.protected_doc_consolidation.stage !== 'not_applicable' && lane.protected_doc_consolidation.stage !== 'applied'
+      ? ` — ${lane.protected_doc_consolidation.summary}${lane.protected_doc_consolidation.next_command ? `; next command: ${lane.protected_doc_consolidation.next_command}` : ''}`
+      : '';
+    console.log(`${marker} ${lane.lane_id} ${lane.state}${consolidationNote}`);
   }
   console.log('');
   console.log(`Execution status: ${status}`);
@@ -284,7 +293,8 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
           assignment_confidence: lane.assignment_confidence ?? 0.5,
           verification_summary: { status: lane.worker_ready ? 'pending' : 'blocked', required_checks: [], optional_checks: [], notes: [] },
           merge_ready: false,
-          worker_ready: lane.worker_ready
+          worker_ready: lane.worker_ready,
+          protected_doc_consolidation: lane.protected_doc_consolidation ?? { has_protected_doc_work: false, stage: 'not_applicable', summary: 'no protected-doc work', next_command: null }
         })),
         blocked_lanes: laneInputs.filter((lane) => !lane.worker_ready).map((lane) => lane.lane_id).sort((a, b) => a.localeCompare(b)),
         ready_lanes: laneInputs.filter((lane) => lane.worker_ready).map((lane) => lane.lane_id).sort((a, b) => a.localeCompare(b)),
