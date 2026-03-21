@@ -50,7 +50,7 @@ List stale candidates plus non-active knowledge (`retired`, `superseded`, and de
 
 Lifecycle guarantees:
 
-- Storage contract: repo-local memory resolves from `.playbook/memory/knowledge/patterns.json`, global reusable pattern memory resolves from `.playbook/patterns.json` under `PLAYBOOK_HOME` with deterministic compat-read fallback to legacy `patterns.json`, and cross-repo proposal bridges resolve from `.playbook/pattern-proposals.json`.
+- Storage contract: `repo_local_memory` resolves from `.playbook/memory/knowledge/patterns.json`, `global_reusable_pattern_memory` resolves from `.playbook/patterns.json` under `PLAYBOOK_HOME` with deterministic compat-read fallback to legacy `patterns.json`, and `cross_repo_proposal_bridge` resolves from `.playbook/pattern-proposals.json`.
 - Query surfaces distinguish `active`, `candidate`, `stale`, `retired`, `superseded`, and `demoted` lifecycle truth explicitly.
 - Read-only inspection reveals lifecycle truth without mutating it.
 - Lifecycle recommendations surface as candidate records sourced from `.playbook/memory/lifecycle-candidates.json`; they remain advisory-only and retain exact evidence references plus target pattern ids.

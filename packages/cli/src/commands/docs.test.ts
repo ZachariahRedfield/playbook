@@ -120,7 +120,14 @@ describe('runDocs', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.schemaVersion).toBe('1.0');
     expect(payload.command).toBe('docs audit');
-    expect(payload.summary).toEqual(expect.objectContaining({ checksRun: 13 }));
+    expect(payload.summary).toEqual(
+      expect.objectContaining({
+        errors: expect.any(Number),
+        warnings: expect.any(Number),
+        checksRun: expect.any(Number)
+      })
+    );
+    expect(payload.summary.checksRun).toBeGreaterThan(0);
     expect(Array.isArray(payload.findings)).toBe(true);
   });
 

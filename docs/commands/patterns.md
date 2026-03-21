@@ -10,7 +10,7 @@ Lifecycle note:
 
 ### `patterns list`
 
-List all pattern nodes from `.playbook/memory/knowledge/patterns.json`.
+List all repo-local promoted pattern nodes from `.playbook/memory/knowledge/patterns.json`. Use the scope-first storage contract below to distinguish repo-local memory from global reusable pattern memory.
 
 ### `patterns show <id>`
 
@@ -267,7 +267,7 @@ The aggregate score is designed to rank **representational persistence and pract
 
 Use these terms consistently when documenting or operating pattern promotion:
 
-- **Global reusable pattern memory**: promoted cross-repo doctrine in `.playbook/memory/knowledge/patterns.json`.
+- **Global reusable pattern memory**: promoted cross-repo doctrine in `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`).
 - **Pattern proposals**: bridge artifacts in `.playbook/pattern-proposals.json` reviewed before promotion.
 - Canonical reusable pattern storage contract: repo-local memory -> `.playbook/memory/knowledge/patterns.json`, global reusable pattern memory -> `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`), cross-repo proposal bridge -> `.playbook/pattern-proposals.json`.
 - **Repo-local story backlog**: canonical repo execution-planning input in `.playbook/stories.json`.
