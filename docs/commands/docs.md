@@ -9,6 +9,7 @@ pnpm playbook docs audit
 pnpm playbook docs audit --json
 pnpm playbook docs audit --ci --json
 pnpm playbook docs consolidate --json
+pnpm playbook docs consolidate-plan --json
 ```
 
 ## Checks

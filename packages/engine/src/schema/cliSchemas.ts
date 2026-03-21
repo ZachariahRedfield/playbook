@@ -948,6 +948,106 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           }
         }
       },
+
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'ok', 'artifactPath', 'artifact'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'docs consolidate-plan' },
+          ok: { type: 'boolean' },
+          artifactPath: { const: '.playbook/docs-consolidation-plan.json' },
+          artifact: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['schemaVersion', 'kind', 'command', 'source', 'tasks', 'excluded', 'summary'],
+            properties: {
+              schemaVersion: { const: '1.0' },
+              kind: { const: 'docs-consolidation-plan' },
+              command: { const: 'docs-consolidate-plan' },
+              source: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['path', 'command'],
+                properties: {
+                  path: { const: '.playbook/docs-consolidation.json' },
+                  command: { const: 'docs consolidate' }
+                }
+              },
+              tasks: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: true,
+                  required: ['id', 'ruleId', 'file', 'action', 'autoFix', 'task_kind', 'write', 'provenance'],
+                  properties: {
+                    id: { type: 'string' },
+                    ruleId: { const: 'docs-consolidation.managed-write' },
+                    file: { type: 'string' },
+                    action: { type: 'string' },
+                    autoFix: { const: true },
+                    task_kind: { const: 'docs-managed-write' },
+                    write: {
+                      type: 'object',
+                      additionalProperties: false,
+                      required: ['operation', 'blockId', 'startMarker', 'endMarker', 'content'],
+                      properties: {
+                        operation: { enum: ['replace-managed-block', 'append-managed-block', 'insert-under-anchor'] },
+                        blockId: { type: 'string' },
+                        startMarker: { type: 'string' },
+                        endMarker: { type: 'string' },
+                        anchor: { type: 'string' },
+                        content: { type: 'string' }
+                      }
+                    },
+                    provenance: {
+                      type: 'object',
+                      additionalProperties: false,
+                      required: ['source_artifact_path', 'fragment_ids', 'lane_ids', 'target_doc', 'section_keys'],
+                      properties: {
+                        source_artifact_path: { const: '.playbook/docs-consolidation.json' },
+                        fragment_ids: { type: 'array', items: { type: 'string' } },
+                        lane_ids: { type: 'array', items: { type: 'string' } },
+                        target_doc: { type: 'string' },
+                        section_keys: { type: 'array', items: { type: 'string' } }
+                      }
+                    }
+                  }
+                }
+              },
+              excluded: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['exclusion_id', 'target_doc', 'section_keys', 'fragment_ids', 'lane_ids', 'reason', 'message'],
+                  properties: {
+                    exclusion_id: { type: 'string' },
+                    target_doc: { type: 'string' },
+                    section_keys: { type: 'array', items: { type: 'string' } },
+                    fragment_ids: { type: 'array', items: { type: 'string' } },
+                    lane_ids: { type: 'array', items: { type: 'string' } },
+                    reason: { enum: ['issue-blocked', 'missing-write-seam', 'missing-target-file', 'missing-anchor', 'invalid-fragment-content', 'mixed-write-strategies', 'mixed-block-markers', 'mixed-anchor-values'] },
+                    message: { type: 'string' }
+                  }
+                }
+              },
+              summary: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['total_targets', 'executable_targets', 'excluded_targets', 'auto_fix_tasks'],
+                properties: {
+                  total_targets: { type: 'integer' },
+                  executable_targets: { type: 'integer' },
+                  excluded_targets: { type: 'integer' },
+                  auto_fix_tasks: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
       {
         type: 'object',
         additionalProperties: false,

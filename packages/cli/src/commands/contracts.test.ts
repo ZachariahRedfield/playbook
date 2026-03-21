@@ -29,6 +29,7 @@ describe('runContracts', () => {
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('lane-state');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('worker-assignments');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('worker-fragment');
+    expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('docs-consolidation-plan');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('repository-events');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('cycle-state');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('cycle-history');
@@ -79,6 +80,7 @@ describe('runContracts', () => {
         { id: 'lane-state', version: '1.0', path: 'packages/contracts/src/lane-state.schema.json' },
         { id: 'worker-assignments', version: '1.0', path: 'packages/contracts/src/worker-assignments.schema.json' },
         { id: 'worker-fragment', version: '1.0', path: 'packages/contracts/src/worker-fragment.schema.json' },
+        { id: 'docs-consolidation-plan', version: '1.0', path: 'packages/contracts/src/docs-consolidation-plan.schema.json' },
         { id: 'repository-events', version: '1.0', path: 'packages/contracts/src/repository-events.schema.json' },
         { id: 'cycle-state', version: '1.0', path: 'packages/contracts/src/cycle-state.schema.json' },
         { id: 'cycle-history', version: '1.0', path: 'packages/contracts/src/cycle-history.schema.json' },

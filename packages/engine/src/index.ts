@@ -280,6 +280,7 @@ export type {
 
 export { runDocsAudit } from './docs/audit.js';
 export { runDocsConsolidation } from './docs/consolidate.js';
+export { buildDocsConsolidationPlanArtifact, runDocsConsolidationPlan } from './docs/consolidationPlan.js';
 export { analyzeImprovementOpportunities, OPPORTUNITY_ANALYSIS_RELATIVE_PATH, OPPORTUNITY_ANALYSIS_SCHEMA_VERSION } from './improvement/opportunityAnalysis.js';
 export type { OpportunityAnalysisArtifact, ImprovementOpportunity, OpportunityEvidencePointer, OpportunityHeuristicClass } from './improvement/opportunityAnalysis.js';
 

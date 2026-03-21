@@ -114,6 +114,77 @@ const fixPb013GitIgnore: FixHandler = async ({ repoRoot, dryRun }) => {
   };
 };
 
+
+const rewriteManagedDocBlock = async (
+  repoRoot: string,
+  task: { file: string | null; write?: { operation: 'replace-managed-block' | 'append-managed-block' | 'insert-under-anchor'; blockId: string; startMarker: string; endMarker: string; anchor?: string; content: string } },
+  dryRun: boolean
+): Promise<{ changed: boolean; summary: string }> => {
+  if (!task.file || !task.write) {
+    throw new Error('Docs consolidation task must include target file and write instructions.');
+  }
+
+  const targetPath = path.join(repoRoot, task.file);
+  let current = '';
+  try {
+    current = await fs.readFile(targetPath, 'utf8');
+  } catch {
+    throw new Error(`Docs consolidation target not found: ${task.file}`);
+  }
+
+  const { operation, startMarker, endMarker, anchor, content, blockId } = task.write;
+  const startIndex = current.indexOf(startMarker);
+  const endIndex = current.indexOf(endMarker);
+  let next = current;
+
+  if (operation === 'replace-managed-block') {
+    if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
+      throw new Error(`Managed block ${blockId} not found in ${task.file}.`);
+    }
+    const before = current.slice(0, startIndex);
+    const after = current.slice(endIndex + endMarker.length);
+    next = `${before}${content}${after}`;
+  } else if (operation === 'append-managed-block') {
+    if (startIndex >= 0 || endIndex >= 0) {
+      throw new Error(`Managed block ${blockId} already exists in ${task.file}; append-managed-block refuses to mutate it.`);
+    }
+    const separator = current.endsWith('\n') || current.length === 0 ? '' : '\n';
+    next = `${current}${separator}${content}\n`;
+  } else {
+    if (!anchor) {
+      throw new Error(`Insert-under-anchor task ${blockId} is missing anchor text.`);
+    }
+    if (startIndex >= 0 || endIndex >= 0) {
+      throw new Error(`Managed block ${blockId} already exists in ${task.file}; insert-under-anchor will not duplicate it.`);
+    }
+    const anchorIndex = current.indexOf(anchor);
+    if (anchorIndex < 0) {
+      throw new Error(`Anchor not found for managed block ${blockId} in ${task.file}.`);
+    }
+    const insertAt = anchorIndex + anchor.length;
+    const needsLeadingNewline = current.slice(insertAt, insertAt + 1) !== '\n';
+    next = `${current.slice(0, insertAt)}${needsLeadingNewline ? '\n' : ''}\n${content}\n${current.slice(insertAt)}`;
+  }
+
+  if (next === current) {
+    return { changed: false, summary: `Managed block ${blockId} in ${task.file} already matched the planned content.` };
+  }
+
+  if (!dryRun) {
+    await fs.writeFile(targetPath, next, 'utf8');
+  }
+
+  return { changed: true, summary: `Updated protected docs managed block ${blockId} in ${task.file} via ${operation}.` };
+};
+
+const fixDocsConsolidationManagedWrite: FixHandler = async ({ repoRoot, dryRun, task }) => {
+  const result = await rewriteManagedDocBlock(repoRoot, task, dryRun);
+  return {
+    status: result.changed ? 'applied' : 'skipped',
+    ...(result.changed ? { filesChanged: [task.file!] , summary: result.summary } : { message: result.summary })
+  };
+};
+
 const fixPb014MoveArtifacts: FixHandler = async ({ repoRoot, dryRun }) => {
   const candidates = ['repo-index.json', 'plan.json', 'verify.json'];
   const changes: string[] = [];
@@ -154,5 +225,6 @@ export const defaultFixHandlers: Record<string, FixHandler> = {
   'notes.empty': fixNotesEmpty,
   PB012: fixPb012PlaybookIgnore,
   PB013: fixPb013GitIgnore,
-  PB014: fixPb014MoveArtifacts
+  PB014: fixPb014MoveArtifacts,
+  'docs-consolidation.managed-write': fixDocsConsolidationManagedWrite
 };

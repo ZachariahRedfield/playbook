@@ -63,6 +63,53 @@ const createTestFixPlanPayload = () => ({
   }
 });
 
+
+const createDocsConsolidationPlanPayload = () => ({
+  schemaVersion: '1.0',
+  kind: 'docs-consolidation-plan',
+  command: 'docs-consolidate-plan',
+  source: { path: '.playbook/docs-consolidation.json', command: 'docs consolidate' },
+  tasks: [{
+    id: 'task-docs-1',
+    ruleId: 'docs-consolidation.managed-write',
+    file: 'docs/CHANGELOG.md',
+    action: 'Apply protected docs consolidation for docs/CHANGELOG.md (release-notes)',
+    autoFix: true,
+    task_kind: 'docs-managed-write',
+    write: {
+      operation: 'replace-managed-block',
+      blockId: 'changelog-release-notes',
+      startMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->',
+      endMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->',
+      content: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+- Added docs consolidation plan.
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->'
+    },
+    provenance: {
+      source_artifact_path: '.playbook/docs-consolidation.json',
+      fragment_ids: ['fragment-1'],
+      lane_ids: ['lane-1'],
+      target_doc: 'docs/CHANGELOG.md',
+      section_keys: ['release-notes']
+    }
+  }],
+  excluded: [{
+    exclusion_id: 'exclude-docs-1',
+    target_doc: 'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
+    section_keys: ['roadmap'],
+    fragment_ids: ['fragment-2'],
+    lane_ids: ['lane-2'],
+    reason: 'missing-anchor',
+    message: 'Explicit anchor not found in docs/PLAYBOOK_PRODUCT_ROADMAP.md; planning left the target review-only.'
+  }],
+  summary: {
+    total_targets: 2,
+    executable_targets: 1,
+    excluded_targets: 1,
+    auto_fix_tasks: 1
+  }
+});
+
 const encodeUtf16Be = (value: string): Buffer => {
   const utf16le = Buffer.from(value, 'utf16le');
   for (let i = 0; i < utf16le.length; i += 2) {
@@ -628,6 +675,54 @@ describe('runApply', () => {
     expect(payload.remediation).toEqual({ status: 'ready', totalSteps: 1, unresolvedFailures: 1 });
 
     logSpy.mockRestore();
+  });
+
+
+  it('accepts docs-consolidation-plan artifacts through --from-plan and derives remediation from exclusions', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-docs-consolidation-plan-'));
+    const planPath = path.join(tmpRoot, 'docs-consolidation-plan.json');
+
+    fs.writeFileSync(planPath, JSON.stringify(createDocsConsolidationPlanPayload()));
+
+    parsePlanArtifact.mockReturnValue({
+      tasks: [createDocsConsolidationPlanPayload().tasks[0]]
+    });
+    loadVerifyRules.mockResolvedValue([]);
+    applyExecutionPlan.mockResolvedValue({
+      results: [{ ...createDocsConsolidationPlanPayload().tasks[0], status: 'applied' }],
+      summary: { applied: 1, skipped: 0, unsupported: 0, failed: 0 }
+    });
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'docs-consolidation-plan.json' });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(parsePlanArtifact).toHaveBeenCalledWith({
+      schemaVersion: '1.0',
+      command: 'plan',
+      tasks: createDocsConsolidationPlanPayload().tasks
+    });
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.remediation).toEqual({ status: 'ready', totalSteps: 1, unresolvedFailures: 1 });
+
+    logSpy.mockRestore();
+  });
+
+  it('fails clearly when docs-consolidation-plan produces only excluded targets', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-docs-consolidation-plan-empty-'));
+    const planPath = path.join(tmpRoot, 'docs-consolidation-plan.json');
+    const payload = createDocsConsolidationPlanPayload();
+    payload.tasks = [];
+    payload.summary = { total_targets: 1, executable_targets: 0, excluded_targets: 1, auto_fix_tasks: 0 };
+    fs.writeFileSync(planPath, JSON.stringify(payload));
+
+    parsePlanArtifact.mockReturnValue({ tasks: [] });
+
+    await expect(runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: 'docs-consolidation-plan.json' })).rejects.toThrow(
+      'Cannot apply remediation: Docs consolidation plan produced no executable managed-write tasks. Review exclusions before attempting apply.'
+    );
   });
 
   it('fails clearly when test-fix-plan produces only review-required exclusions', async () => {

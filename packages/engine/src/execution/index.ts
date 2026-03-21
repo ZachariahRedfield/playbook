@@ -221,6 +221,9 @@ export const parsePlanArtifact = (payload: unknown): { tasks: PlanTask[] } => {
       file: typedTask.file ?? null,
       action: typedTask.action,
       autoFix: typedTask.autoFix,
+      ...(typeof typedTask.task_kind === 'string' ? { task_kind: typedTask.task_kind } : {}),
+      ...(typedTask.write && typeof typedTask.write === 'object' ? { write: typedTask.write as PlanTask['write'] } : {}),
+      ...(typedTask.provenance && typeof typedTask.provenance === 'object' ? { provenance: typedTask.provenance as PlanTask['provenance'] } : {}),
       ...(typedTask.advisory && typeof typedTask.advisory === 'object'
         ? { advisory: typedTask.advisory as PlanTask['advisory'] }
         : {})

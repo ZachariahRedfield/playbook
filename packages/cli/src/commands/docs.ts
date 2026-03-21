@@ -1,4 +1,4 @@
-import { runDocsAudit, runDocsConsolidation } from '@zachariahredfield/playbook-engine';
+import { runDocsAudit, runDocsConsolidation, runDocsConsolidationPlan } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
 type DocsOptions = {
@@ -8,9 +8,16 @@ type DocsOptions = {
 };
 
 const printTextUsage = (): void => {
-  console.log('Usage: playbook docs <audit|consolidate> [--json] [--ci]');
+  console.log('Usage: playbook docs <audit|consolidate|consolidate-plan> [--json] [--ci]');
 };
 
+
+
+const printConsolidationPlanReport = (result: ReturnType<typeof runDocsConsolidationPlan>): void => {
+  console.log(`playbook docs consolidate-plan: ${result.ok ? 'OK' : 'REVIEW'}`);
+  console.log(`Artifact: ${result.artifactPath}`);
+  console.log(`Executable targets: ${result.artifact.summary.executable_targets} (excluded: ${result.artifact.summary.excluded_targets})`);
+};
 
 const printConsolidationReport = (result: ReturnType<typeof runDocsConsolidation>): void => {
   console.log('playbook docs consolidate: OK');
@@ -64,6 +71,25 @@ export const runDocs = async (cwd: string, commandArgs: string[], options: DocsO
       console.log(JSON.stringify(payload, null, 2));
     } else if (!(options.quiet && result.ok)) {
       printConsolidationReport(result);
+    }
+
+    return ExitCode.Success;
+  }
+
+  if (subcommand === 'consolidate-plan') {
+    const result = runDocsConsolidationPlan(cwd);
+    const payload = {
+      schemaVersion: '1.0',
+      command: 'docs consolidate-plan',
+      ok: result.ok,
+      artifactPath: result.artifactPath,
+      artifact: result.artifact
+    };
+
+    if (options.format === 'json') {
+      console.log(JSON.stringify(payload, null, 2));
+    } else if (!(options.quiet && result.ok)) {
+      printConsolidationPlanReport(result);
     }
 
     return ExitCode.Success;

@@ -1,3 +1,7 @@
+- WHAT: Added `pnpm playbook docs consolidate-plan --json`, a first-class `docs-consolidation-plan` contract/schema, engine compilation of `.playbook/docs-consolidation.json` into bounded managed-write tasks, and `apply --from-plan` support for reviewed singleton-doc writes while leaving conflicts and missing seams excluded. WHY: Protected singleton docs now have a reviewed write seam without introducing a second mutation executor.
+- Rule: Consolidation planning may prepare reviewed writes, but `apply` remains the only mutation boundary.
+- Pattern: Workers propose, consolidator compiles, apply executes.
+- Failure Mode: Letting docs consolidation mutate directly creates a shadow executor and breaks the single reviewed write boundary.
 - WHAT: Added deterministic `autofix_confidence` scoring, `confidence_reasoning`, `--dry-run` support, and confidence-threshold mutation gating to `test-autofix`, then wired CI/PR reporting to render those artifact-backed decisions while protected branches stay dry-run-only. WHY: Self-repair earns trust only when mutation is explainable, previewable, and gated by canonical runtime artifacts rather than workflow-local heuristics.
 # Changelog
 

@@ -17,6 +17,16 @@ export type PlanTask = {
   file: string | null;
   action: string;
   autoFix: boolean;
+  task_kind?: string;
+  write?: {
+    operation: 'replace-managed-block' | 'append-managed-block' | 'insert-under-anchor';
+    blockId: string;
+    startMarker: string;
+    endMarker: string;
+    anchor?: string;
+    content: string;
+  };
+  provenance?: Record<string, unknown>;
   advisory?: {
     outcomeLearning?: {
       influencedByKnowledgeIds: string[];

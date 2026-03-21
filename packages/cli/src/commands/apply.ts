@@ -59,6 +59,16 @@ type PlanTask = {
   file: string | null;
   action: string;
   autoFix: boolean;
+  task_kind?: string;
+  write?: {
+    operation: 'replace-managed-block' | 'append-managed-block' | 'insert-under-anchor';
+    blockId: string;
+    startMarker: string;
+    endMarker: string;
+    anchor?: string;
+    content: string;
+  };
+  provenance?: Record<string, unknown>;
 };
 
 type PlanSelection = {
@@ -248,7 +258,36 @@ const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact =>
     };
   }
 
-  throw new Error('Invalid plan payload: command must be "plan" or "test-fix-plan".');
+
+  if (normalizedPayload.command === 'docs-consolidate-plan') {
+    const parsedPlan = engine.parsePlanArtifact({
+      schemaVersion: normalizedPayload.schemaVersion,
+      command: 'plan',
+      tasks: normalizedPayload.tasks
+    });
+
+    const summary = normalizedPayload.summary;
+    if (!summary || typeof summary !== 'object') {
+      throw new Error('Invalid docs-consolidation-plan payload: summary must be an object.');
+    }
+
+    const typedSummary = summary as Record<string, unknown>;
+    const totalTargets = readRequiredNonNegativeInteger(typedSummary.total_targets, 'summary.total_targets');
+    const excludedTargets = readRequiredNonNegativeInteger(typedSummary.excluded_targets, 'summary.excluded_targets');
+
+    return {
+      tasks: parsedPlan.tasks,
+      remediation: buildPlanRemediation({
+        failureCount: totalTargets,
+        stepCount: parsedPlan.tasks.length,
+        unresolvedFailureCount: excludedTargets,
+        unavailableReason:
+          'Docs consolidation plan produced no executable managed-write tasks. Review exclusions before attempting apply.'
+      })
+    };
+  }
+
+  throw new Error('Invalid plan payload: command must be "plan", "test-fix-plan", or "docs-consolidate-plan".');
 };
 
 const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {

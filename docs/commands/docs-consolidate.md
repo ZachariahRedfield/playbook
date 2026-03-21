@@ -23,6 +23,12 @@ pnpm playbook docs consolidate --json
 
 ## Governance
 
-- Rule: Consolidation is the only write boundary for protected singleton narrative docs.
+- Rule: Consolidation planning may prepare reviewed writes, but `apply` remains the only mutation boundary.
+- Pattern: Workers propose, consolidator compiles, apply executes.
+- Failure Mode: Letting docs consolidation mutate directly creates a shadow executor and breaks the single reviewed write boundary.
 - Pattern: Workers propose; consolidator integrates.
 - Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
+
+## Follow-on reviewed execution
+
+After review, run `pnpm playbook docs consolidate-plan --json` to compile approved bounded managed-write tasks, then choose whether to cross the mutation boundary with `pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json`.

@@ -25,6 +25,13 @@ export type WorkerFragmentArtifact = {
   metadata?: {
     source_paths?: string[];
     notes?: string[];
+    integration?: {
+      operation?: 'replace-managed-block' | 'append-managed-block' | 'insert-under-anchor';
+      block_id?: string;
+      start_marker?: string;
+      end_marker?: string;
+      anchor?: string;
+    };
   };
 };
 

@@ -17,8 +17,6 @@ const createFixtureRepo = (): string => {
     'docs/ARCHITECTURE.md': '# Architecture\n',
     'docs/commands/README.md': '# Commands\n\nLifecycle, role, and discoverability are documented here.\n',
     'docs/commands/docs.md': '# docs audit\n',
-    'docs/PLAYBOOK_PRODUCT_ROADMAP.md':
-      '# Strategic Roadmap\n\n## Pillars\n- Pillar A\n\n## Active Stories\n- Story A\n\nRoadmap entries describe implementation intent.\ndocs/commands/README.md is the source of truth for live command availability.\n',
     'docs/PLAYBOOK_BUSINESS_STRATEGY.md': '# Business\n',
     'docs/CONSUMER_INTEGRATION_CONTRACT.md': '# Contract\n',
     'docs/AI_AGENT_CONTEXT.md': '# AI Context\nai-context ai-contract context verify plan apply\n',
@@ -67,6 +65,14 @@ const createFixtureRepo = (): string => {
       content: {
         format: 'markdown',
         payload: '- Added docs consolidation seam.'
+      },
+      metadata: {
+        integration: {
+          operation: 'replace-managed-block',
+          block_id: 'changelog-release-notes',
+          start_marker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->',
+          end_marker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->'
+        }
       }
     }, null, 2)
   };
@@ -261,6 +267,26 @@ describe('runDocs', () => {
     expect(payload.artifact.summary.fragmentCount).toBe(1);
     expect(payload.artifact.brief).toContain('Lead-agent integration brief');
     expect(fs.existsSync(path.join(repo, '.playbook', 'docs-consolidation.json'))).toBe(true);
+  });
+
+
+  it('writes docs consolidation plan artifact from approved seams', async () => {
+    const repo = createFixtureRepo();
+    const { runDocs } = await import('./docs.js');
+    await runDocs(repo, ['consolidate'], { ci: false, format: 'json', quiet: true });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['consolidate-plan'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('docs consolidate-plan');
+    expect(payload.artifact.summary.executable_targets).toBe(1);
+    expect(payload.artifact.tasks[0]).toEqual(expect.objectContaining({
+      ruleId: 'docs-consolidation.managed-write',
+      task_kind: 'docs-managed-write'
+    }));
+    expect(fs.existsSync(path.join(repo, '.playbook', 'docs-consolidation-plan.json'))).toBe(true);
   });
 
   it('returns policy failure in ci mode when errors are present', async () => {
