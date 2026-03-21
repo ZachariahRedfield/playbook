@@ -1,12 +1,10 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { readPatternKnowledgeStoreArtifact, resolvePatternKnowledgeStore } from '../patternStore.js';
+import { readPatternKnowledgeStoreArtifact, resolvePatternKnowledgeStore, resolvePlaybookHomePath } from '../patternStore.js';
+export { DEFAULT_PLAYBOOK_HOME_DIRNAME, PLAYBOOK_HOME_ENV } from '../patternStore.js';
 
 export const GLOBAL_PATTERN_CANDIDATES_SCHEMA_VERSION = '1.0' as const;
 export const GLOBAL_PATTERNS_SCHEMA_VERSION = '1.0' as const;
-export const PLAYBOOK_HOME_ENV = 'PLAYBOOK_HOME' as const;
-export const DEFAULT_PLAYBOOK_HOME_DIRNAME = '.playbook' as const;
 export const PATTERN_CANDIDATES_FILENAME = 'pattern-candidates.json' as const;
 export const PATTERNS_FILENAME = 'patterns.json' as const;
 
@@ -133,12 +131,7 @@ const normalizePattern = (value: PatternRecord): PatternRecord => ({
   )
 });
 
-export const resolvePlaybookHome = (): string => {
-  const configured = process.env[PLAYBOOK_HOME_ENV]?.trim();
-  return configured && configured.length > 0
-    ? path.resolve(configured)
-    : path.join(os.homedir(), DEFAULT_PLAYBOOK_HOME_DIRNAME);
-};
+export const resolvePlaybookHome = (): string => resolvePlaybookHomePath();
 
 export const createDefaultGlobalPatternCandidatesArtifact = (): PatternCandidateArtifact => ({
   schemaVersion: GLOBAL_PATTERN_CANDIDATES_SCHEMA_VERSION,

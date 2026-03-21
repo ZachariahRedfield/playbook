@@ -99,7 +99,7 @@ Build governance-safe enrichment proposals from `.playbook/cross-repo-candidates
 
 Explicitly promote one cross-repo proposal into a governed target:
 
-- `--target memory` promotes a portable pattern candidate into **global reusable pattern memory** at `.playbook/memory/knowledge/patterns.json`.
+- `--target memory` promotes a portable pattern candidate into **global reusable pattern memory** at `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`).
 - `--target story --repo <repo-id>` promotes a repo-scoped adoption candidate into the **repo-local story backlog** at `.playbook/stories.json`.
 
 Status: **preferred** cross-repo promotion surface.

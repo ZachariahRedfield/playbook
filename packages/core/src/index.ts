@@ -437,3 +437,5 @@ export const formatAnalyzeCi = (report: AnalyzeResult): string => {
 
 export const formatAnalyzeJson = (report: AnalyzeResult): string =>
   JSON.stringify({ ok: report.recommendations.every((i) => i.severity !== 'WARN'), signals: report.signals, recommendations: sortRecommendations(report.recommendations) }, null, 2);
+export { DEFAULT_PLAYBOOK_HOME_DIRNAME, PLAYBOOK_HOME_ENV, patternKnowledgeScopes, readPatternKnowledgeStoreArtifact, resolvePatternKnowledgeStore, resolvePlaybookHomePath } from './patternStore.js';
+export type { PatternKnowledgeScope, ResolvedPatternKnowledgeStore } from './patternStore.js';
