@@ -162,4 +162,74 @@ describe('lifecycle candidate generation', () => {
     expect(artifactPath).toBe('.playbook/memory/lifecycle-candidates.json');
     expect(fs.existsSync(path.join(repoRoot, artifactPath))).toBe(true);
   });
+
+  it('never mutates promoted doctrine while producing lifecycle recommendations', () => {
+    const repoRoot = makeRepo();
+    seedPatterns(repoRoot);
+    const before = fs.readFileSync(path.join(repoRoot, '.playbook', 'patterns.json'), 'utf8');
+
+    generateLifecycleCandidatesArtifact({
+      projectRoot: repoRoot,
+      outcomeInput: {
+        schemaVersion: '1.0' as const,
+        kind: 'fleet-adoption-execution-outcome-input' as const,
+        generated_at: '2026-03-19T01:00:00.000Z',
+        session_id: 'session-1',
+        prompt_outcomes: []
+      },
+      receipt: {
+        schemaVersion: '1.0' as const,
+        kind: 'fleet-adoption-execution-receipt' as const,
+        generated_at: '2026-03-19T01:00:00.000Z',
+        execution_plan_digest: 'digest',
+        session_id: 'session-1',
+        wave_results: [],
+        prompt_results: [],
+        repo_results: [],
+        artifact_deltas: [],
+        blockers: [],
+        verification_summary: {
+          prompts_total: 0,
+          verification_passed_count: 0,
+          succeeded_count: 0,
+          failed_count: 0,
+          partial_count: 0,
+          mismatch_count: 0,
+          not_run_count: 0,
+          repos_needing_retry: [],
+          planned_vs_actual_drift: []
+        }
+      },
+      updatedState: {
+        schemaVersion: '1.0' as const,
+        kind: 'fleet-adoption-updated-state' as const,
+        generated_at: '2026-03-19T01:00:00.000Z',
+        execution_plan_digest: 'digest',
+        session_id: 'session-1',
+        summary: {
+          repos_total: 0,
+          by_reconciliation_status: {
+            completed_as_planned: 0,
+            completed_with_drift: 0,
+            partial: 0,
+            failed: 0,
+            blocked: 0,
+            not_run: 0,
+            stale_plan_or_superseded: 0,
+          },
+          action_counts: { needs_retry: 0, needs_replan: 0, needs_review: 0 },
+          repos_needing_retry: [],
+          repos_needing_replan: [],
+          repos_needing_review: [],
+          stale_or_superseded_repo_ids: [],
+          blocked_repo_ids: [],
+          completed_repo_ids: []
+        },
+        repos: []
+      }
+    });
+
+    const after = fs.readFileSync(path.join(repoRoot, '.playbook', 'patterns.json'), 'utf8');
+    expect(after).toBe(before);
+  });
 });

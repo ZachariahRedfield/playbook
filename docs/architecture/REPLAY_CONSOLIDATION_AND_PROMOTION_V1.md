@@ -245,3 +245,21 @@ The following candidates are explicitly in-scope for downstream Playbook Notes p
 - keep scoring/clustering logic explicit and inspectable,
 - treat replay/consolidation as governance infrastructure, not autonomous learning,
 - evolve through versioned contracts and explicit supersession rather than in-place mutation.
+
+## Unified Doctrine Loop downstream contract
+
+Promotion is a reusable contract boundary, not an endpoint.
+
+After approval, promotion outputs must remain machine-readable and downstream-consumable for:
+
+- doctrine retrieval (`active` promoted patterns only),
+- governed doctrine transforms,
+- story-seeding proposals,
+- planning-context enrichment,
+- rule/docs suggestion surfaces.
+
+Promotion receipts and promoted artifacts must never directly trigger execution. Their role is to change proposal and planning behavior through explicit governed outputs.
+
+Rule: Only promoted, active, provenance-linked knowledge may influence planning or proposal surfaces.
+Pattern: Promotion is only valuable if it changes downstream behavior.
+Failure Mode: Promotion receipts that cannot be consumed downstream turn doctrine into inert archive state.

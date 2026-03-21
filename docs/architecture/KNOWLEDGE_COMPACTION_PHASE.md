@@ -190,3 +190,17 @@ Rule: Nothing may re-enter planning/context unless it has passed `extract -> can
 Pattern: Every Playbook run is a deterministic closed-loop cycle, not a terminal command.
 Failure Mode: Open-loop apply causes knowledge loss, drift, duplicate patterns, and memory-heap behavior.
 Failure Mode: Forced promotion on every cycle produces noisy memory mutation instead of governed intelligence.
+
+## Unified Doctrine Loop alignment
+
+Compaction is the normalization + memory bridge inside the Unified Doctrine Loop:
+
+`evidence -> extraction -> normalization + compaction -> candidate knowledge -> promotion -> active doctrine -> governed transforms -> execution outcomes -> lifecycle feedback -> extraction`
+
+Stage contract for compaction:
+
+- **Input:** evidence-oriented extraction artifacts only.
+- **Output:** candidate-only compacted knowledge and review drafts.
+- **No side effects:** compaction does not promote, seed stories, or mutate doctrine directly.
+
+Compaction must produce machine-readable candidates that later promotion and doctrine-transform stages can consume without reinterpreting hidden repository state.

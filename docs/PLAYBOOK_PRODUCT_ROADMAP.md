@@ -22,6 +22,47 @@ Pattern: Product Story Follows Architecture.
 Rule: Roadmap sequencing must preserve CLI-first, offline-capable, private-first operation.
 Failure Mode: Business docs drifting away from runtime truth.
 
+
+## Phase 9 — Unified Doctrine Loop (Self-Improving Playbook Core)
+
+Phase 9 unifies Phase 7/8 knowledge, promotion, story, and lifecycle systems into one closed deterministic product loop.
+
+Canonical loop:
+
+`evidence (analyze / execution) -> extraction (learn) -> normalization + compaction (memory) -> candidate knowledge -> promotion (patterns + receipts) -> doctrine (active promoted patterns) -> governed doctrine transforms -> story seeding / planning influence / rule or docs suggestions -> execution (apply / manual dev) -> outcomes (receipts / drift / signals) -> lifecycle feedback (freshness / demotion / supersession recommendations) -> extraction`
+
+Phase dependencies:
+
+- depends on Phase 7 knowledge extraction, memory, and compaction surfaces
+- depends on Phase 8 governed promotion receipts, lifecycle state, and promoted-pattern doctrine
+- uses existing story/planning surfaces as proposal-only downstream influence
+
+Implementation contract for this phase:
+
+- every stage must expose explicit machine-readable inputs and outputs
+- no hidden side effects across stage boundaries
+- promotion outputs must be reusable downstream artifacts, not terminal receipts only
+- story and planning surfaces may consume only promoted, active, provenance-linked doctrine
+- lifecycle feedback may emit recommendations only; it may not mutate doctrine automatically
+
+Rule: Playbook improves itself through governed transforms, not direct self-mutation.
+
+Rule: Only promoted, active, provenance-linked knowledge may influence planning or proposal surfaces.
+
+Pattern: A system becomes self-improving when every stage feeds the next through explicit contracts.
+
+Pattern: Promotion is only valuable if it changes downstream behavior.
+
+Failure Mode: Disconnected subsystems (learn, promote, plan, apply) create doctrine drift and reduce trust.
+
+Failure Mode: Allowing candidate or stale knowledge to influence execution breaks determinism.
+
+Outcome target:
+
+- Playbook operates as a closed-loop system
+- insight -> doctrine -> proposal -> execution -> feedback -> refinement
+- promoted doctrine becomes operationally meaningful through proposal and planning influence, not hidden execution
+
 ## Strategic direction
 
 ### Repo-scoped roadmap + story system
