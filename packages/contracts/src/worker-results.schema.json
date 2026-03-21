@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/worker-results.schema.json",
+  "title": "Worker Results Artifact",
+  "description": "Deterministic proposal-only worker-result receipt log consumed by lane-state recomputation and protected-doc consolidation boundaries.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "proposalOnly", "generatedAt", "results"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "worker-results" },
+    "proposalOnly": { "type": "boolean", "const": true },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "results": { "type": "array", "items": { "$ref": "#/$defs/workerResult" } }
+  },
+  "$defs": {
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["proof", "artifact"] },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
+    "fragmentRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_path", "fragment_path"],
+      "properties": {
+        "target_path": { "type": "string", "minLength": 1 },
+        "fragment_path": { "type": "string", "pattern": "^\\.playbook/.+\\.json$" },
+        "fragment_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "workerResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "result_id",
+        "lane_id",
+        "task_ids",
+        "worker_type",
+        "completion_status",
+        "summary",
+        "blockers",
+        "unresolved_items",
+        "fragment_refs",
+        "proof_refs",
+        "artifact_refs",
+        "submitted_at",
+        "proposalOnly"
+      ],
+      "properties": {
+        "schemaVersion": { "type": "string", "const": "1.0" },
+        "kind": { "type": "string", "const": "worker-result" },
+        "result_id": { "type": "string", "minLength": 1 },
+        "lane_id": { "type": "string", "minLength": 1 },
+        "task_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "worker_type": { "type": "string", "minLength": 1 },
+        "completion_status": { "type": "string", "enum": ["in_progress", "completed", "blocked"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "blockers": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "unresolved_items": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "fragment_refs": { "type": "array", "items": { "$ref": "#/$defs/fragmentRef" } },
+        "proof_refs": { "type": "array", "items": { "$ref": "#/$defs/artifactRef" } },
+        "artifact_refs": { "type": "array", "items": { "$ref": "#/$defs/artifactRef" } },
+        "submitted_at": { "type": "string", "format": "date-time" },
+        "proposalOnly": { "type": "boolean", "const": true }
+      }
+    }
+  }
+}

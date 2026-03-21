@@ -176,7 +176,7 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook plan --json`
 - `lanes`: Derive deterministic lane-state from .playbook/workset-plan.json
   - Example: `pnpm playbook lanes --json`
-- `workers`: Assign deterministic proposal-only workers to ready lanes from .playbook/lane-state.json
+- `workers`: Assign deterministic proposal-only workers and submit worker results from lane-state/workset artifacts
   - Example: `pnpm playbook workers assign --json`
 - `orchestrate`: Generate deterministic orchestration lane artifacts for a goal or tasks-file workset
   - Example: `pnpm playbook orchestrate --goal "ship capability" --lanes 3 --format both`

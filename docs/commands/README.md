@@ -19,6 +19,7 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - `node scripts/validate-roadmap-contract.mjs --ci` blocks roadmap/live-command boundary drift by validating roadmap `commands` against `docs/contracts/command-truth.json`.
 - `pnpm playbook docs audit --ci --json` blocks command-truth drift findings marked as errors (for example duplicate command metadata or managed status-table mismatch).
 - `pnpm playbook docs consolidate --json` is the proposal-only integration seam for protected singleton narrative docs: workers emit fragments, the consolidator emits one compact brief plus `.playbook/docs-consolidation.json`, and no doc mutation happens automatically in v1.
+- `pnpm playbook workers submit --from <path> --json` is the canonical worker-receipt seam: worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
 
 ## Product-facing command surface (current)
 
@@ -34,7 +35,7 @@ Do not hand-edit entries inside the managed markers.
 | `verify` | Verify governance rules | canonical | governance | primary | P8 | Current (implemented) | `pnpm playbook verify --ci --json` |
 | `plan` | Generate a structured fix plan from rule findings | canonical | remediation | primary | P9 | Current (implemented) | `pnpm playbook plan --json` |
 | `lanes` | Derive deterministic lane-state from .playbook/workset-plan.json | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook lanes --json` |
-| `workers` | Assign deterministic proposal-only workers to ready lanes from .playbook/lane-state.json | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook workers assign --json` |
+| `workers` | Assign deterministic proposal-only workers and submit worker results from lane-state/workset artifacts | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook workers assign --json` |
 | `orchestrate` | Generate deterministic orchestration lane artifacts for a goal or tasks-file workset | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook orchestrate --goal "ship capability" --lanes 3 --format both` |
 | `execute` | Execute orchestration lanes through the execution supervisor runtime | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook execute --json` |
 | `cycle` | Run the hardened execution primitives as one deterministic cycle orchestration pass | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook cycle --json` |
@@ -669,3 +670,7 @@ Docs command references:
 
 - [`pnpm playbook docs audit`](docs.md)
 - [`pnpm playbook docs consolidate`](docs-consolidate.md)
+
+- Rule: Worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
+- Pattern: Assign -> submit -> consolidate -> plan -> apply is the safe parallel-doc/runtime loop.
+- Failure Mode: Parallel workers without a receipt/submit seam force humans to reconstruct state manually and break deterministic orchestration.

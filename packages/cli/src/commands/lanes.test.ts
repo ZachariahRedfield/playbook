@@ -108,6 +108,86 @@ describe('runLanes', () => {
     completeLog.mockRestore();
   });
 
+
+  it('consumes submitted worker results during lane recomputation', async () => {
+    const repo = createRepo('playbook-cli-lanes-worker-results');
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    const singleLaneWorkset = {
+      schemaVersion: '1.0',
+      kind: 'workset-plan',
+      generatedAt: '1970-01-01T00:00:00.000Z',
+      proposalOnly: true,
+      input_tasks: [{ task_id: 'task-docs', task: 'update docs' }],
+      routed_tasks: [],
+      lanes: [{
+        lane_id: 'lane-1',
+        task_ids: ['task-docs'],
+        task_families: ['docs_only'],
+        expected_surfaces: ['docs/commands/workers.md'],
+        likely_conflict_surfaces: [],
+        readiness_status: 'ready',
+        blocking_reasons: [],
+        conflict_surface_paths: [],
+        shared_artifact_risk: 'low',
+        assignment_confidence: 0.94,
+        dependency_level: 'low',
+        recommended_pr_size: 'small',
+        worker_ready: true,
+        codex_prompt: 'prompt',
+        protected_doc_consolidation: {
+          has_protected_doc_work: true,
+          stage: 'pending',
+          summary: 'pending protected-doc consolidation',
+          next_command: 'pnpm playbook docs consolidate --json'
+        }
+      }],
+      blocked_tasks: [],
+      dependency_edges: [],
+      validation: { overlapping_file_domains: [], conflicting_artifact_ownership: [], blocked_lane_dependencies: [] },
+      merge_risk_notes: [],
+      sourceArtifacts: {
+        tasksFile: { available: true, artifactPath: './fixtures/tasks.json' },
+        taskExecutionProfile: { available: false, artifactPath: '.playbook/task-execution-profile.json' },
+        learningState: { available: false, artifactPath: '.playbook/learning-state.json' }
+      },
+      warnings: []
+    };
+    fs.writeFileSync(path.join(repo, '.playbook', 'workset-plan.json'), `${JSON.stringify(singleLaneWorkset, null, 2)}
+`, 'utf8');
+    fs.writeFileSync(path.join(repo, '.playbook', 'worker-results.json'), `${JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'worker-results',
+      proposalOnly: true,
+      generatedAt: '1970-01-01T00:00:00.000Z',
+      results: [{
+        schemaVersion: '1.0',
+        kind: 'worker-result',
+        result_id: 'worker-result:lane-1',
+        lane_id: 'lane-1',
+        task_ids: ['task-docs'],
+        worker_type: 'codex-docs',
+        completion_status: 'completed',
+        summary: 'done',
+        blockers: [],
+        unresolved_items: ['await consolidation'],
+        fragment_refs: [{ target_path: 'docs/commands/workers.md', fragment_path: '.playbook/orchestrator/workers/lane-1/worker-fragment.json' }],
+        proof_refs: [],
+        artifact_refs: [],
+        submitted_at: '1970-01-01T00:00:00.000Z',
+        proposalOnly: true
+      }]
+    }, null, 2)}
+`, 'utf8');
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runLanes(repo, { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as { lane_state: { lanes: Array<{ lane_id: string; status: string; merge_ready: boolean }> } };
+    expect(payload.lane_state.lanes.find((lane) => lane.lane_id === 'lane-1')?.status).toBe('completed');
+    expect(payload.lane_state.lanes.find((lane) => lane.lane_id === 'lane-1')?.merge_ready).toBe(false);
+    logSpy.mockRestore();
+  });
+
   it('returns deterministic missing-workset error in json mode', async () => {
     const repo = createRepo('playbook-cli-lanes-missing');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

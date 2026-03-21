@@ -264,6 +264,9 @@ const commandRunners: Record<
     if (action === "assign") {
       return runWorkers(cwd, { format, quiet, action: "assign" });
     }
+    if (action === "submit") {
+      return runWorkers(cwd, { format, quiet, action: "submit", from: parseOptionValue(commandArgs, "--from") });
+    }
 
     return runWorkers(cwd, { format, quiet });
   },

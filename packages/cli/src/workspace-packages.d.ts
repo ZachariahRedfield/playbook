@@ -339,8 +339,17 @@ declare module "@zachariahredfield/playbook-engine" {
 
   export type WorksetPlanArtifact = any;
   export type LaneStateArtifact = any;
+  export type WorkerResultsArtifact = any;
+  export type WorkerResultFragmentRef = any;
+  export type WorkerResultArtifactRef = any;
+  export const WORKER_RESULTS_RELATIVE_PATH: '.playbook/worker-results.json';
   export const buildWorksetPlan: (...args: any[]) => WorksetPlanArtifact;
   export const deriveLaneState: (...args: any[]) => LaneStateArtifact;
+  export const createWorkerResultsArtifact: (...args: any[]) => WorkerResultsArtifact;
+  export const readWorkerResultsArtifact: (...args: any[]) => WorkerResultsArtifact;
+  export const validateWorkerResultInput: (...args: any[]) => string[];
+  export const mergeWorkerResult: (...args: any[]) => { artifact: WorkerResultsArtifact; result: any };
+  export const writeWorkerResultsArtifact: (...args: any[]) => void;
   export type WorkerAssignmentsArtifact = any;
   export const assignWorkersToLanes: (
     ...args: any[]

@@ -4,11 +4,18 @@ import {
   assignWorkersToLanes,
   buildAssignedPrompt,
   deriveLaneState,
+  mergeWorkerResult,
+  readWorkerResultsArtifact,
   recordLaneOutcome,
   recordWorkerAssignment,
   safeRecordRepositoryEvent,
+  validateWorkerResultInput,
+  writeWorkerResultsArtifact,
+  WORKER_RESULTS_RELATIVE_PATH,
   type LaneStateArtifact,
-  type WorksetPlanArtifact
+  type WorksetPlanArtifact,
+  type WorkerResultArtifactRef,
+  type WorkerResultFragmentRef
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../../lib/cliContract.js';
 
@@ -16,7 +23,6 @@ const WORKSET_PLAN_PATH = '.playbook/workset-plan.json';
 const LANE_STATE_PATH = '.playbook/lane-state.json';
 const WORKER_ASSIGNMENTS_PATH = '.playbook/worker-assignments.json';
 const PROMPTS_DIR = '.playbook/prompts';
-
 
 type WorkerAssignmentEntry = {
   lane_id: string;
@@ -41,15 +47,26 @@ type WorkerAssignmentsArtifactView = {
 type WorkersOptions = {
   format: 'text' | 'json';
   quiet: boolean;
-  action?: 'assign';
+  action?: 'assign' | 'submit';
+  from?: string;
+};
+
+type WorkerResultSubmitInput = {
+  lane_id: string;
+  task_ids: string[];
+  worker_type: string;
+  completion_status: 'in_progress' | 'completed' | 'blocked';
+  summary: string;
+  blockers?: string[];
+  unresolved_items?: string[];
+  fragment_refs?: WorkerResultFragmentRef[];
+  proof_refs?: WorkerResultArtifactRef[];
+  artifact_refs?: WorkerResultArtifactRef[];
 };
 
 const readJsonArtifact = <T>(cwd: string, artifactPath: string): T | undefined => {
   const absolutePath = path.join(cwd, artifactPath);
-  if (!fs.existsSync(absolutePath)) {
-    return undefined;
-  }
-
+  if (!fs.existsSync(absolutePath)) return undefined;
   return JSON.parse(fs.readFileSync(absolutePath, 'utf8')) as T;
 };
 
@@ -60,7 +77,7 @@ const writeJsonArtifact = (cwd: string, artifactPath: string, payload: unknown):
 };
 
 const resolveLaneState = (cwd: string, worksetPlan: WorksetPlanArtifact): LaneStateArtifact =>
-  readJsonArtifact<LaneStateArtifact>(cwd, LANE_STATE_PATH) ?? deriveLaneState(worksetPlan, WORKSET_PLAN_PATH);
+  deriveLaneState(worksetPlan, WORKSET_PLAN_PATH, { workerResults: readWorkerResultsArtifact(cwd) });
 
 const writeAssignedPrompts = (cwd: string, assignments: WorkerAssignmentsArtifactView, worksetPlan?: WorksetPlanArtifact): string[] => {
   const lanePromptsById = new Map((worksetPlan?.lanes ?? []).map((lane: { lane_id: string; codex_prompt: string }) => [lane.lane_id, lane.codex_prompt]));
@@ -78,45 +95,48 @@ const writeAssignedPrompts = (cwd: string, assignments: WorkerAssignmentsArtifac
   return written.sort((left, right) => left.localeCompare(right));
 };
 
-const printText = (assignments: WorkerAssignmentsArtifactView): void => {
+const printAssignText = (assignments: WorkerAssignmentsArtifactView): void => {
   console.log('Worker Assignments');
   console.log('──────────────────');
   console.log(`Assigned lanes: ${assignments.lanes.filter((lane) => lane.status === 'assigned').length}`);
   console.log(`Blocked lanes: ${assignments.lanes.filter((lane) => lane.status === 'blocked').length}`);
   console.log(`Skipped lanes: ${assignments.lanes.filter((lane) => lane.status === 'skipped').length}`);
   console.log(`Workers: ${assignments.workers.length}`);
-
-  if (assignments.readiness_summary.ready_lanes.length > 0) {
-    console.log(`Ready lane IDs: ${assignments.readiness_summary.ready_lanes.join(', ')}`);
-  }
-
+  if (assignments.readiness_summary.ready_lanes.length > 0) console.log(`Ready lane IDs: ${assignments.readiness_summary.ready_lanes.join(', ')}`);
   if (assignments.readiness_summary.blocked_lanes.length > 0) {
     console.log('Blocked lane reasons:');
     for (const blocked of assignments.readiness_summary.blocked_lanes) {
       console.log(`- ${blocked.lane_id}: ${blocked.reasons.join('; ') || 'blocked'}`);
     }
   }
-
   if (assignments.readiness_summary.conflict_surface_paths.length > 0) {
     console.log(`Conflict surfaces: ${assignments.readiness_summary.conflict_surface_paths.join(', ')}`);
   }
 };
 
+const printSubmitText = (payload: { decision: string; affected_surfaces: string[]; blockers: string[]; next_action: string | null }): void => {
+  console.log('Worker Submit');
+  console.log('─────────────');
+  console.log(`Decision: ${payload.decision}`);
+  console.log(`Affected surfaces: ${payload.affected_surfaces.length > 0 ? payload.affected_surfaces.join(', ') : 'none'}`);
+  console.log(`Blockers: ${payload.blockers.length > 0 ? payload.blockers.join('; ') : 'none'}`);
+  console.log(`Next action: ${payload.next_action ?? 'none'}`);
+};
+
 const printError = (options: WorkersOptions, message: string): void => {
   if (options.format === 'json') {
-    console.log(JSON.stringify({ schemaVersion: '1.0', command: 'workers', error: message }, null, 2));
+    console.log(JSON.stringify({ schemaVersion: '1.0', command: 'workers', action: options.action ?? 'status', error: message }, null, 2));
     return;
   }
   console.error(message);
 };
 
-export const runWorkers = async (cwd: string, options: WorkersOptions): Promise<number> => {
-  const worksetPlan = readJsonArtifact<WorksetPlanArtifact>(cwd, WORKSET_PLAN_PATH);
-  if (!worksetPlan) {
-    printError(options, `playbook workers: missing workset plan at ${WORKSET_PLAN_PATH}. Run "playbook orchestrate --tasks-file <path>" first.`);
-    return ExitCode.Failure;
-  }
+const parseWorkerResultInput = (cwd: string, from: string): WorkerResultSubmitInput => {
+  const absolutePath = path.isAbsolute(from) ? from : path.join(cwd, from);
+  return JSON.parse(fs.readFileSync(absolutePath, 'utf8')) as WorkerResultSubmitInput;
+};
 
+const runAssign = async (cwd: string, options: WorkersOptions, worksetPlan: WorksetPlanArtifact): Promise<number> => {
   const laneState = resolveLaneState(cwd, worksetPlan);
   writeJsonArtifact(cwd, LANE_STATE_PATH, laneState);
 
@@ -144,29 +164,83 @@ export const runWorkers = async (cwd: string, options: WorkersOptions): Promise<
   });
 
   if (options.format === 'json') {
-    console.log(
-      JSON.stringify(
-        {
-          schemaVersion: '1.0',
-          command: 'workers',
-          action: options.action ?? 'status',
-          worker_assignments_path: WORKER_ASSIGNMENTS_PATH,
-          prompts_dir: PROMPTS_DIR,
-          written_prompts: promptPaths,
-          worker_assignments: assignments
-        },
-        null,
-        2
-      )
-    );
+    console.log(JSON.stringify({ schemaVersion: '1.0', command: 'workers', action: options.action ?? 'status', worker_assignments_path: WORKER_ASSIGNMENTS_PATH, prompts_dir: PROMPTS_DIR, written_prompts: promptPaths, worker_assignments: assignments }, null, 2));
     return ExitCode.Success;
   }
 
   if (!options.quiet) {
-    printText(assignments);
+    printAssignText(assignments);
     console.log(`Artifact: ${WORKER_ASSIGNMENTS_PATH}`);
     console.log(`Prompts: ${promptPaths.length > 0 ? promptPaths.join(', ') : `${PROMPTS_DIR} (none written)`}`);
   }
+  return ExitCode.Success;
+};
+
+const runSubmit = async (cwd: string, options: WorkersOptions, worksetPlan: WorksetPlanArtifact): Promise<number> => {
+  if (!options.from) {
+    printError(options, 'playbook workers submit: --from <path> is required.');
+    return ExitCode.Failure;
+  }
+
+  const input = parseWorkerResultInput(cwd, options.from);
+  const validationErrors = validateWorkerResultInput(worksetPlan, input);
+  if (validationErrors.length > 0) {
+    printError(options, `playbook workers submit: ${validationErrors.join('; ')}`);
+    return ExitCode.Failure;
+  }
+
+  const existing = readWorkerResultsArtifact(cwd);
+  const merged = mergeWorkerResult(existing, input);
+  writeWorkerResultsArtifact(cwd, merged.artifact);
+
+  const laneState = deriveLaneState(worksetPlan, WORKSET_PLAN_PATH, { workerResults: merged.artifact });
+  writeJsonArtifact(cwd, LANE_STATE_PATH, laneState);
+
+  const laneEntry = laneState.lanes.find((lane: LaneStateArtifact['lanes'][number]) => lane.lane_id === merged.result.lane_id);
+  const affectedSurfaces = [
+    ...merged.result.fragment_refs.map((ref: NonNullable<typeof merged.result.fragment_refs>[number]) => ref.target_path),
+    ...merged.result.proof_refs.map((ref: NonNullable<typeof merged.result.proof_refs>[number]) => ref.path),
+    ...merged.result.artifact_refs.map((ref: NonNullable<typeof merged.result.artifact_refs>[number]) => ref.path)
+  ].sort((left, right) => left.localeCompare(right));
+  const nextAction = laneEntry?.protected_doc_consolidation.next_command ?? (merged.result.completion_status === 'completed' ? 'pnpm playbook lanes --json' : null);
+  const decision = merged.result.completion_status === 'completed' ? 'accepted worker result' : merged.result.completion_status === 'blocked' ? 'accepted blocked worker result' : 'accepted in-progress worker result';
+
+  if (options.format === 'json') {
+    console.log(JSON.stringify({
+      schemaVersion: '1.0',
+      command: 'workers',
+      action: 'submit',
+      decision,
+      worker_results_path: WORKER_RESULTS_RELATIVE_PATH,
+      lane_state_path: LANE_STATE_PATH,
+      result: merged.result,
+      lane_state: laneState,
+      affected_surfaces: affectedSurfaces,
+      blockers: [...merged.result.blockers, ...merged.result.unresolved_items].sort((a, b) => a.localeCompare(b)),
+      next_action: nextAction
+    }, null, 2));
+    return ExitCode.Success;
+  }
+
+  if (!options.quiet) {
+    printSubmitText({
+      decision,
+      affected_surfaces: affectedSurfaces,
+      blockers: [...merged.result.blockers, ...merged.result.unresolved_items].sort((a, b) => a.localeCompare(b)),
+      next_action: nextAction
+    });
+  }
 
   return ExitCode.Success;
+};
+
+export const runWorkers = async (cwd: string, options: WorkersOptions): Promise<number> => {
+  const worksetPlan = readJsonArtifact<WorksetPlanArtifact>(cwd, WORKSET_PLAN_PATH);
+  if (!worksetPlan) {
+    printError(options, `playbook workers: missing workset plan at ${WORKSET_PLAN_PATH}. Run "playbook orchestrate --tasks-file <path>" first.`);
+    return ExitCode.Failure;
+  }
+
+  if (options.action === 'submit') return runSubmit(cwd, options, worksetPlan);
+  return runAssign(cwd, options, worksetPlan);
 };

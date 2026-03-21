@@ -21,7 +21,7 @@ const writeWorksetPlan = (repo: string): void => {
         lane_id: 'lane-1',
         task_ids: ['task-1'],
         task_families: ['docs_only'],
-        expected_surfaces: ['docs/README.md'],
+        expected_surfaces: ['docs/commands/workers.md'],
         likely_conflict_surfaces: [],
         readiness_status: 'ready',
         blocking_reasons: [],
@@ -31,7 +31,13 @@ const writeWorksetPlan = (repo: string): void => {
         dependency_level: 'low',
         recommended_pr_size: 'small',
         worker_ready: true,
-        codex_prompt: 'Prompt for lane 1'
+        codex_prompt: 'Prompt for lane 1',
+        protected_doc_consolidation: {
+          has_protected_doc_work: true,
+          stage: 'pending',
+          summary: 'pending protected-doc consolidation',
+          next_command: 'pnpm playbook docs consolidate --json'
+        }
       },
       {
         lane_id: 'lane-2',
@@ -47,7 +53,13 @@ const writeWorksetPlan = (repo: string): void => {
         dependency_level: 'medium',
         recommended_pr_size: 'small',
         worker_ready: true,
-        codex_prompt: 'Prompt for lane 2'
+        codex_prompt: 'Prompt for lane 2',
+        protected_doc_consolidation: {
+          has_protected_doc_work: false,
+          stage: 'not_applicable',
+          summary: 'no protected-doc work',
+          next_command: null
+        }
       }
     ],
     blocked_tasks: [],
@@ -74,58 +86,6 @@ describe('runWorkers', () => {
   it('assigns ready lanes and writes worker assignment + prompt artifacts', async () => {
     const repo = createRepo('playbook-cli-workers-ready');
     writeWorksetPlan(repo);
-    const laneState = {
-      schemaVersion: '1.0',
-      kind: 'lane-state',
-      generatedAt: '1970-01-01T00:00:00.000Z',
-      proposalOnly: true,
-      workset_plan_path: '.playbook/workset-plan.json',
-      lanes: [
-        {
-          lane_id: 'lane-1',
-          task_ids: ['task-1'],
-          status: 'ready',
-          readiness_status: 'ready',
-          dependency_level: 'low',
-          dependencies_satisfied: true,
-          blocked_reasons: [],
-          blocking_reasons: [],
-          conflict_surface_paths: [],
-          shared_artifact_risk: 'low',
-          assignment_confidence: 0.94,
-          verification_summary: { status: 'pending', required_checks: [], optional_checks: [], notes: [] },
-          merge_ready: false,
-          worker_ready: true
-        },
-        {
-          lane_id: 'lane-2',
-          task_ids: ['task-2'],
-          status: 'blocked',
-          readiness_status: 'blocked',
-          dependency_level: 'medium',
-          dependencies_satisfied: false,
-          blocked_reasons: ['waiting on dependency lane lane-1'],
-          blocking_reasons: ['waiting on dependency lane lane-1'],
-          conflict_surface_paths: [],
-          shared_artifact_risk: 'medium',
-          assignment_confidence: 0.5,
-          verification_summary: { status: 'blocked', required_checks: [], optional_checks: [], notes: [] },
-          merge_ready: false,
-          worker_ready: true
-        }
-      ],
-      blocked_lanes: ['lane-2'],
-      ready_lanes: ['lane-1'],
-      running_lanes: [],
-      completed_lanes: [],
-      merge_ready_lanes: [],
-      dependency_status: { total_edges: 1, satisfied_edges: 0, unsatisfied_edges: 1 },
-      merge_readiness: { merge_ready_lanes: [], not_merge_ready_lanes: [] },
-      verification_status: { status: 'blocked', lanes_pending_verification: ['lane-1'], lanes_blocked_from_verification: ['lane-2'] },
-      warnings: []
-    };
-
-    fs.writeFileSync(path.join(repo, '.playbook', 'lane-state.json'), `${JSON.stringify(laneState, null, 2)}\n`, 'utf8');
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const exitCode = await runWorkers(repo, { format: 'json', quiet: false, action: 'assign' });
@@ -144,6 +104,76 @@ describe('runWorkers', () => {
     expect(payload.worker_assignments.lanes.find((lane) => lane.lane_id === 'lane-1')?.status).toBe('assigned');
     expect(payload.worker_assignments.lanes.find((lane) => lane.lane_id === 'lane-2')?.status).toBe('blocked');
 
+    logSpy.mockRestore();
+  });
+
+  it('submits worker results, writes deterministic receipt artifacts, and advances lane state', async () => {
+    const repo = createRepo('playbook-cli-workers-submit');
+    writeWorksetPlan(repo);
+    fs.mkdirSync(path.join(repo, '.playbook', 'orchestrator', 'workers', 'lane-1'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbook', 'orchestrator', 'workers', 'lane-1', 'worker-fragment.json'), JSON.stringify({ ok: true }), 'utf8');
+    fs.writeFileSync(path.join(repo, '.playbook', 'proof.json'), JSON.stringify({ ok: true }), 'utf8');
+
+    const inputPath = path.join(repo, 'worker-result.json');
+    fs.writeFileSync(inputPath, JSON.stringify({
+      lane_id: 'lane-1',
+      task_ids: ['task-1'],
+      worker_type: 'codex-docs',
+      completion_status: 'completed',
+      summary: 'bounded lane work completed',
+      blockers: [],
+      unresolved_items: ['await reviewed consolidation'],
+      fragment_refs: [{ target_path: 'docs/commands/workers.md', fragment_path: '.playbook/orchestrator/workers/lane-1/worker-fragment.json' }],
+      proof_refs: [{ path: '.playbook/proof.json', kind: 'proof' }],
+      artifact_refs: [{ path: '.playbook/worker-assignments.json', kind: 'artifact' }]
+    }, null, 2));
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runWorkers(repo, { format: 'json', quiet: false, action: 'submit', from: inputPath });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as {
+      action: string;
+      worker_results_path: string;
+      result: { lane_id: string; completion_status: string };
+      lane_state: { lanes: Array<{ lane_id: string; status: string; merge_ready: boolean }> };
+      next_action: string | null;
+    };
+    expect(payload.action).toBe('submit');
+    expect(payload.worker_results_path).toBe('.playbook/worker-results.json');
+    expect(payload.result.lane_id).toBe('lane-1');
+    expect(payload.result.completion_status).toBe('completed');
+    expect(payload.lane_state.lanes.find((lane) => lane.lane_id === 'lane-1')?.status).toBe('completed');
+    expect(payload.lane_state.lanes.find((lane) => lane.lane_id === 'lane-1')?.merge_ready).toBe(false);
+    expect(payload.next_action).toBe('pnpm playbook docs consolidate --json');
+
+    const artifact = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'worker-results.json'), 'utf8')) as { results: Array<{ lane_id: string }> };
+    expect(artifact.results.map((entry) => entry.lane_id)).toEqual(['lane-1']);
+    logSpy.mockRestore();
+  });
+
+  it('fails clearly for invalid protected-doc fragment refs in submit mode', async () => {
+    const repo = createRepo('playbook-cli-workers-submit-invalid');
+    writeWorksetPlan(repo);
+    const inputPath = path.join(repo, 'worker-result-invalid.json');
+    fs.writeFileSync(inputPath, JSON.stringify({
+      lane_id: 'lane-1',
+      task_ids: ['task-1'],
+      worker_type: 'codex-docs',
+      completion_status: 'completed',
+      summary: 'bounded lane work completed',
+      blockers: [],
+      unresolved_items: [],
+      fragment_refs: [{ target_path: 'docs/README.md', fragment_path: 'docs/README.md' }],
+      proof_refs: [],
+      artifact_refs: []
+    }, null, 2));
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runWorkers(repo, { format: 'json', quiet: false, action: 'submit', from: inputPath });
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as { error: string };
+    expect(payload.error).toContain('fragment ref target docs/README.md is not a protected singleton doc');
     logSpy.mockRestore();
   });
 
@@ -166,6 +196,6 @@ describe('command registry', () => {
   it('registers the workers command', () => {
     const command = listRegisteredCommands().find((entry) => entry.name === 'workers');
     expect(command).toBeDefined();
-    expect(command?.description).toBe('Assign deterministic proposal-only workers to ready lanes from .playbook/lane-state.json');
+    expect(command?.description).toBe('Assign deterministic proposal-only workers and submit worker results from lane-state/workset artifacts');
   });
 });

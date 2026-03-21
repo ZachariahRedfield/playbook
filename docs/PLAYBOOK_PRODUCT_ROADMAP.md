@@ -2448,3 +2448,8 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Rule: Story lifecycle transitions must be driven by linked execution artifacts, not UI-only state.
 - Failure Mode: Story status edited independently of receipt/updated-state creates split-brain backlog truth.
 - Failure Mode: Collapsing planning and execution artifacts into story state destroys clear control-plane boundaries.
+
+- Recent implementation note: worker-result receipts now have a first-class proposal-only ingestion seam via `pnpm playbook workers submit --from <path> --json`, persisting deterministic `.playbook/worker-results.json` artifacts, validating fragment-only protected singleton doc references, and allowing lane-state recomputation to advance from explicit worker receipts instead of ad hoc human collection.
+- Rule — Worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
+- Pattern — Assign -> submit -> consolidate -> plan -> apply is the safe parallel-doc/runtime loop.
+- Failure Mode — Parallel workers without a receipt/submit seam force humans to reconstruct state manually and break deterministic orchestration.
