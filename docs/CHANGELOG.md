@@ -3,6 +3,16 @@
 
 ## Unreleased
 
+- WHAT: Updated docs consolidation fixture assertions to pin the current canonical worker-fragment lane ids (`lane-1`, etc.) and verify byte-stable artifact text plus stable fragment ordering across repeated runs. WHY: Once `lane_id` is part of the persisted worker-fragment contract, determinism tests must assert canonical contract fields instead of stale legacy fixture nicknames. 
+- Rule: Determinism tests should pin canonical contract fields, not outdated fixture nicknames.
+- Pattern: Workers emit fragments; consolidator owns final singleton narrative artifact.
+- Failure Mode: Legacy fixture lane names can make deterministic consolidation look broken when only canonical lane-id normalization changed.
+
+- WHAT: Added proposal-only `pnpm playbook docs consolidate --json`, backed by a deterministic engine consolidation helper that reads worker fragments plus the protected-surface registry, writes `.playbook/docs-consolidation.json`, emits one compact lead-agent integration brief, and reports duplicate/conflicting fragment targets explicitly. WHY: Protected singleton narrative docs need one governed consolidation seam before any future automation can safely integrate parallel worker proposals without creating a new mutation executor.
+- Rule: Consolidation is the only write boundary for protected singleton narrative docs.
+- Pattern: Workers propose; consolidator integrates.
+- Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
+
 - WHAT: Added the public `worker-fragment` schema entry to the stable contracts catalog and updated the committed CLI contract snapshot to include `id = worker-fragment`, `version = 1.0`, and `path = packages/contracts/src/worker-fragment.schema.json`. WHY: Public schema catalog changes must ship with snapshot updates so intentional surface growth is reviewed instead of looking like incidental snapshot noise.
 - Rule: when adding a new exported schema, update stable contract snapshots in the same PR.
 - Failure Mode: schema catalog expansion looks like snapshot noise unless registry intent is checked first.
@@ -400,9 +410,6 @@
 - Added focused tests for `--help`, missing prerequisites, and stable JSON error/result structure across the normalized command set.
 - Extended command-quality telemetry coverage so `verify`, `route`, `orchestrate`, `execute`, `telemetry`, and `improve` all emit deterministic command-quality records and repository memory `command_execution` events with stable append-safe artifacts.
 - Implemented evidence-backed command improvement proposals in `improvement_engine` from `.playbook/telemetry/command-quality.json`, optional command-quality summaries, and normalized memory events; persisted recommendation-first output to `.playbook/command-improvements.json`; and exposed deterministic inspection via `playbook improve commands` with governance/evidence gating and deterministic ordering tests.
-
-# Changelog
-
 ## 2026-03-19 — Advisory pattern context for story-backed planning
 
 - WHAT: Added deterministic read-only `pattern_context` matching for `playbook story plan <id>` / `playbook route --story <id>` using promoted-pattern provenance, normalization keys, and explicit pattern references; the generated execution plan now carries stable advisory pattern ids, match reasons, provenance refs, and freshness/status metadata. WHY: Promoted knowledge should inform story-backed planning without becoming execution authority or mutating backlog/queue state.

@@ -8,6 +8,7 @@ const createFixtureRepo = (): string => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-docs-audit-'));
   fs.mkdirSync(path.join(root, 'docs', 'archive'), { recursive: true });
   fs.mkdirSync(path.join(root, 'docs', 'stories'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.playbook', 'orchestrator', 'workers', 'lane-1'), { recursive: true });
 
   const files: Record<string, string> = {
     'README.md': '# README\nai-context ai-contract context verify plan apply\n',
@@ -39,7 +40,35 @@ const createFixtureRepo = (): string => {
       compatibilityCommands: ['analyze'],
       utilityCommands: ['demo']
     }, null, 2),
-    'packages/cli/README.md': '# Package\nai-context ai-contract context verify plan apply\n'
+    'packages/cli/README.md': '# Package\nai-context ai-contract context verify plan apply\n',
+    '.playbook/orchestrator/orchestrator.json': JSON.stringify({
+      protectedSingletonDocs: [
+        {
+          targetDoc: 'docs/CHANGELOG.md',
+          consolidationStrategy: 'deterministic-final-pass',
+          rationale: 'Canonical release/change narrative remains singleton.'
+        }
+      ]
+    }, null, 2),
+    '.playbook/orchestrator/workers/lane-1/worker-fragment.json': JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'worker-fragment',
+      lane_id: 'lane-1',
+      worker_id: 'worker-1',
+      fragment_id: 'fragment-1',
+      created_at: '2026-03-21T00:00:00.000Z',
+      target_doc: 'docs/CHANGELOG.md',
+      section_key: 'release-notes',
+      conflict_key: 'docs/CHANGELOG.md::release-notes',
+      ordering_key: '0001:docs/CHANGELOG.md::release-notes::lane-1',
+      status: 'proposed',
+      summary: 'Add release note bullet for docs consolidation.',
+      artifact_path: '.playbook/orchestrator/workers/lane-1/worker-fragment.json',
+      content: {
+        format: 'markdown',
+        payload: '- Added docs consolidation seam.'
+      }
+    }, null, 2)
   };
 
   for (const [relativePath, content] of Object.entries(files)) {
@@ -215,6 +244,23 @@ describe('runDocs', () => {
         expect.objectContaining({ ruleId: 'docs.story-contract.missing-sections', path: 'docs/stories/UI-001-screen-normalization.md', level: 'error' })
       ])
     );
+  });
+
+
+
+  it('writes docs consolidation artifact and returns compact brief output', async () => {
+    const repo = createFixtureRepo();
+    const { runDocs } = await import('./docs.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['consolidate'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('docs consolidate');
+    expect(payload.artifact.summary.fragmentCount).toBe(1);
+    expect(payload.artifact.brief).toContain('Lead-agent integration brief');
+    expect(fs.existsSync(path.join(repo, '.playbook', 'docs-consolidation.json'))).toBe(true);
   });
 
   it('returns policy failure in ci mode when errors are present', async () => {

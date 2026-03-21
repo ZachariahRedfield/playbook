@@ -127,6 +127,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const queryModuleOwners: (...args: any[]) => any;
   export const queryTestHotspots: (...args: any[]) => any;
   export const runDocsAudit: (...args: any[]) => any;
+  export const runDocsConsolidation: (...args: any[]) => any;
   export type DependenciesQueryResult = any;
   export type ImpactQueryResult = any;
   export type RiskQueryResult = any;

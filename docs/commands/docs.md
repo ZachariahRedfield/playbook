@@ -8,6 +8,7 @@
 pnpm playbook docs audit
 pnpm playbook docs audit --json
 pnpm playbook docs audit --ci --json
+pnpm playbook docs consolidate --json
 ```
 
 ## Checks
@@ -31,3 +32,14 @@ pnpm playbook docs audit --ci --json
 - Rule: Active docs must describe the deterministic runtime/trust-layer model and the scoped public package surface.
 - Rule: Compatibility stubs and archive/history docs are intentionally preserved but excluded from active-surface drift checks.
 - Failure Mode: Active-surface drift occurs when front-door docs regress to legacy package examples, superseded doc links, or analyze-first serious-user workflows.
+
+
+## Consolidation seam
+
+`pnpm playbook docs consolidate` is the proposal-only consolidation seam for protected singleton docs. It reads worker fragments plus the protected-surface registry, writes `.playbook/docs-consolidation.json`, and emits one compact lead-agent integration brief.
+
+- Rule: Consolidation is the only write boundary for protected singleton narrative docs.
+- Pattern: Workers propose; consolidator integrates.
+- Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
+
+Command reference: [`pnpm playbook docs consolidate`](docs-consolidate.md).

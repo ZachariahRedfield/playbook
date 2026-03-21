@@ -1,4 +1,4 @@
-import { runDocsAudit } from '@zachariahredfield/playbook-engine';
+import { runDocsAudit, runDocsConsolidation } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 
 type DocsOptions = {
@@ -8,7 +8,16 @@ type DocsOptions = {
 };
 
 const printTextUsage = (): void => {
-  console.log('Usage: playbook docs audit [--json] [--ci]');
+  console.log('Usage: playbook docs <audit|consolidate> [--json] [--ci]');
+};
+
+
+const printConsolidationReport = (result: ReturnType<typeof runDocsConsolidation>): void => {
+  console.log('playbook docs consolidate: OK');
+  console.log(`Artifact: ${result.artifactPath}`);
+  console.log(`Fragments: ${result.artifact.summary.fragmentCount} (issues: ${result.artifact.summary.issueCount})`);
+  console.log('');
+  console.log(result.artifact.brief);
 };
 
 const printHumanReport = (result: ReturnType<typeof runDocsAudit>): void => {
@@ -40,6 +49,25 @@ const printHumanReport = (result: ReturnType<typeof runDocsAudit>): void => {
 
 export const runDocs = async (cwd: string, commandArgs: string[], options: DocsOptions): Promise<number> => {
   const subcommand = commandArgs.find((arg) => !arg.startsWith('-'));
+
+  if (subcommand === 'consolidate') {
+    const result = runDocsConsolidation(cwd);
+    const payload = {
+      schemaVersion: '1.0',
+      command: 'docs consolidate',
+      ok: result.ok,
+      artifactPath: result.artifactPath,
+      artifact: result.artifact
+    };
+
+    if (options.format === 'json') {
+      console.log(JSON.stringify(payload, null, 2));
+    } else if (!(options.quiet && result.ok)) {
+      printConsolidationReport(result);
+    }
+
+    return ExitCode.Success;
+  }
 
   if (subcommand !== 'audit') {
     if (!options.quiet) {

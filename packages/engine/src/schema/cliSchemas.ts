@@ -909,42 +909,145 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
 
   docs: {
     $schema: JSON_SCHEMA_DRAFT,
-    title: 'PlaybookDocsAuditOutput',
-    type: 'object',
-    additionalProperties: false,
-    required: ['schemaVersion', 'command', 'ok', 'status', 'summary', 'findings'],
-    properties: {
-      schemaVersion: { const: '1.0' },
-      command: { const: 'docs audit' },
-      ok: { type: 'boolean' },
-      status: { enum: ['pass', 'warn', 'fail'] },
-      summary: {
+    title: 'PlaybookDocsOutput',
+    oneOf: [
+      {
         type: 'object',
         additionalProperties: false,
-        required: ['errors', 'warnings', 'checksRun'],
+        required: ['schemaVersion', 'command', 'ok', 'status', 'summary', 'findings'],
         properties: {
-          errors: { type: 'integer' },
-          warnings: { type: 'integer' },
-          checksRun: { type: 'integer' }
+          schemaVersion: { const: '1.0' },
+          command: { const: 'docs audit' },
+          ok: { type: 'boolean' },
+          status: { enum: ['pass', 'warn', 'fail'] },
+          summary: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['errors', 'warnings', 'checksRun'],
+            properties: {
+              errors: { type: 'integer' },
+              warnings: { type: 'integer' },
+              checksRun: { type: 'integer' }
+            }
+          },
+          findings: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['ruleId', 'level', 'message', 'path'],
+              properties: {
+                ruleId: { type: 'string' },
+                level: { enum: ['error', 'warning'] },
+                message: { type: 'string' },
+                path: { type: 'string' },
+                suggestedDestination: { type: 'string' },
+                recommendation: { enum: ['historical keep', 'merge into workflow', 'archive', 'delete after migration'] }
+              }
+            }
+          }
         }
       },
-      findings: {
-        type: 'array',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['ruleId', 'level', 'message', 'path'],
-          properties: {
-            ruleId: { type: 'string' },
-            level: { enum: ['error', 'warning'] },
-            message: { type: 'string' },
-            path: { type: 'string' },
-            suggestedDestination: { type: 'string' },
-            recommendation: { enum: ['historical keep', 'merge into workflow', 'archive', 'delete after migration'] }
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['schemaVersion', 'command', 'ok', 'artifactPath', 'artifact'],
+        properties: {
+          schemaVersion: { const: '1.0' },
+          command: { const: 'docs consolidate' },
+          ok: { type: 'boolean' },
+          artifactPath: { const: '.playbook/docs-consolidation.json' },
+          artifact: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['schemaVersion', 'command', 'mode', 'artifactPath', 'protectedSurfaceRegistry', 'summary', 'fragments', 'consolidatedTargets', 'issues', 'brief'],
+            properties: {
+              schemaVersion: { const: '1.0' },
+              command: { const: 'docs consolidate' },
+              mode: { const: 'proposal-only' },
+              artifactPath: { const: '.playbook/docs-consolidation.json' },
+              protectedSurfaceRegistry: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['source', 'targets'],
+                properties: {
+                  source: { type: 'string' },
+                  targets: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      required: ['targetDoc', 'consolidationStrategy', 'rationale'],
+                      properties: {
+                        targetDoc: { type: 'string' },
+                        consolidationStrategy: { type: 'string' },
+                        rationale: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              },
+              summary: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['protectedTargetCount', 'fragmentCount', 'consolidatedTargetCount', 'issueCount', 'duplicateCount', 'conflictCount'],
+                properties: {
+                  protectedTargetCount: { type: 'integer' },
+                  fragmentCount: { type: 'integer' },
+                  consolidatedTargetCount: { type: 'integer' },
+                  issueCount: { type: 'integer' },
+                  duplicateCount: { type: 'integer' },
+                  conflictCount: { type: 'integer' }
+                }
+              },
+              fragments: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: true,
+                  required: ['fragment_id', 'lane_id', 'target_doc', 'section_key', 'conflict_key', 'ordering_key', 'summary', 'content']
+                }
+              },
+              consolidatedTargets: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['targetDoc', 'fragmentCount', 'fragmentIds', 'laneIds', 'sectionKeys', 'summaries'],
+                  properties: {
+                    targetDoc: { type: 'string' },
+                    fragmentCount: { type: 'integer' },
+                    fragmentIds: { type: 'array', items: { type: 'string' } },
+                    laneIds: { type: 'array', items: { type: 'string' } },
+                    sectionKeys: { type: 'array', items: { type: 'string' } },
+                    summaries: { type: 'array', items: { type: 'string' } }
+                  }
+                }
+              },
+              issues: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['issueKey', 'type', 'targetDoc', 'sectionKey', 'conflictKey', 'fragmentIds', 'laneIds', 'message'],
+                  properties: {
+                    issueKey: { type: 'string' },
+                    type: { enum: ['duplicate', 'conflict'] },
+                    targetDoc: { type: 'string' },
+                    sectionKey: { type: 'string' },
+                    conflictKey: { type: 'string' },
+                    fragmentIds: { type: 'array', items: { type: 'string' } },
+                    laneIds: { type: 'array', items: { type: 'string' } },
+                    message: { type: 'string' }
+                  }
+                }
+              },
+              brief: { type: 'string' }
+            }
           }
         }
       }
-    }
+    ]
   },
 
   contracts: {

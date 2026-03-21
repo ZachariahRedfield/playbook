@@ -279,6 +279,7 @@ export type {
 } from './query/testHotspots.js';
 
 export { runDocsAudit } from './docs/audit.js';
+export { runDocsConsolidation } from './docs/consolidate.js';
 export { analyzeImprovementOpportunities, OPPORTUNITY_ANALYSIS_RELATIVE_PATH, OPPORTUNITY_ANALYSIS_SCHEMA_VERSION } from './improvement/opportunityAnalysis.js';
 export type { OpportunityAnalysisArtifact, ImprovementOpportunity, OpportunityEvidencePointer, OpportunityHeuristicClass } from './improvement/opportunityAnalysis.js';
 
@@ -389,6 +390,7 @@ export type { LifecycleCandidatesArtifact, LifecycleCandidateRecord, LifecycleEv
 export { lookupMemoryEventTimeline, lookupMemoryCandidateKnowledge, lookupPromotedMemoryKnowledge, expandMemoryProvenance } from './memory/inspection.js';
 export type { MemoryTimelineLookupOptions, MemoryCandidateLookupOptions, MemoryKnowledgeLookupOptions, ExpandedMemoryProvenance } from './memory/inspection.js';
 export type { DocsAuditResult, DocsAuditFinding, DocsAuditStatus, DocsAuditLevel } from './docs/audit.js';
+export type { DocsConsolidationArtifact, DocsConsolidationIssue, DocsConsolidationResult, WorkerFragmentArtifact } from './docs/consolidate.js';
 
 export { buildContractRegistry } from './contracts/contractRegistry.js';
 export type { ContractRegistryPayload } from './contracts/contractRegistry.js';

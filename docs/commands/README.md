@@ -18,6 +18,7 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - `pnpm docs:check` blocks managed command-state drift (`AGENTS.md`, this command index, and `docs/contracts/command-truth.json`) by regenerating candidate outputs first, validating roadmap/docs governance against the regenerated set, and only then reporting whether promotion would be required.
 - `node scripts/validate-roadmap-contract.mjs --ci` blocks roadmap/live-command boundary drift by validating roadmap `commands` against `docs/contracts/command-truth.json`.
 - `pnpm playbook docs audit --ci --json` blocks command-truth drift findings marked as errors (for example duplicate command metadata or managed status-table mismatch).
+- `pnpm playbook docs consolidate --json` is the proposal-only integration seam for protected singleton narrative docs: workers emit fragments, the consolidator emits one compact brief plus `.playbook/docs-consolidation.json`, and no doc mutation happens automatically in v1.
 
 ## Product-facing command surface (current)
 
@@ -162,6 +163,9 @@ Source of truth: shared command metadata in `packages/cli/src/lib/commandMetadat
 - Rule: One canonical command matrix per lifecycle seam.
 - Pattern: Prefer one explicit promotion surface over many near-synonyms.
 - Failure Mode: Promotion surface sprawl makes governance legible in code but confusing to operators.
+- Rule: Consolidation is the only write boundary for protected singleton narrative docs.
+- Pattern: Workers propose; consolidator integrates.
+- Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
 
 ## Artifact workflow governance
 
@@ -653,3 +657,9 @@ Architecture note:
 - Pattern: add new remediation commands as artifact-producing seams before orchestration wrappers.
 - Failure Mode: operators assume diagnosis commands mutate state if docs blur planning and execution boundaries.
 - Failure Mode: hidden CLI-only behavior without contract/docs coverage drifts faster than engine truth.
+
+
+Docs command references:
+
+- [`pnpm playbook docs audit`](docs.md)
+- [`pnpm playbook docs consolidate`](docs-consolidate.md)
