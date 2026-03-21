@@ -35,6 +35,18 @@ inputs:
     description: Comma-separated refs that should run test-autofix in dry-run mode even when remediation is allowed.
     required: false
     default: "refs/heads/main"
+  max-autofix-attempts-per-sha:
+    description: Maximum CI transport-level autofix attempts allowed for the same commit SHA within one workflow lifecycle.
+    required: false
+    default: "1"
+  allow-autofix-retry-override:
+    description: Explicit operator override that may bypass CI transport-level retry suppression without widening runtime trust boundaries.
+    required: false
+    default: "false"
+  retry-override-labels:
+    description: Comma-separated pull request labels that act as explicit retry override signals for CI transport-level retry suppression.
+    required: false
+    default: "playbook:retry-autofix"
   autofix-confidence-threshold:
     description: Deterministic minimum confidence required before test-autofix may mutate.
     required: false
@@ -165,101 +177,17 @@ runs:
         GITHUB_REF: ${{ github.ref }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         PLAYBOOK_PROTECTED_BRANCHES: ${{ inputs.protected-branches }}
+        PLAYBOOK_MAX_AUTOFIX_ATTEMPTS_PER_SHA: ${{ inputs.max-autofix-attempts-per-sha }}
+        PLAYBOOK_ALLOW_AUTOFIX_RETRY_OVERRIDE: ${{ inputs.allow-autofix-retry-override }}
+        PLAYBOOK_RETRY_OVERRIDE_LABELS: ${{ inputs.retry-override-labels }}
         PLAYBOOK_AUTOFIX_CONFIDENCE_THRESHOLD: ${{ inputs.autofix-confidence-threshold }}
         GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+        GITHUB_BASE_REF: ${{ github.base_ref }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
       run: |
         mkdir -p .playbook
-        node <<'NODE'
-        const fs = require('node:fs');
-        const path = require('node:path');
-        const cp = require('node:child_process');
-
-        const cwd = process.cwd();
-        const testExitCode = Number(process.env.PLAYBOOK_TEST_EXIT_CODE || '0');
-        const enabled = String(process.env.PLAYBOOK_AUTOFIX_ENABLED || 'false') === 'true';
-        const requireCleanWorktree = String(process.env.PLAYBOOK_REQUIRE_CLEAN_WORKTREE || 'true') === 'true';
-        const trustedEvents = String(process.env.PLAYBOOK_TRUSTED_AUTOFIX_EVENTS || '')
-          .split(',').map((entry) => entry.trim()).filter(Boolean);
-        const trustedBranches = String(process.env.PLAYBOOK_TRUSTED_AUTOFIX_BRANCHES || '')
-          .split(',').map((entry) => entry.trim()).filter(Boolean);
-        const eventName = String(process.env.GITHUB_EVENT_NAME || '');
-        const ref = String(process.env.GITHUB_REF || '');
-        const protectedBranches = String(process.env.PLAYBOOK_PROTECTED_BRANCHES || '')
-          .split(',').map((entry) => entry.trim()).filter(Boolean);
-        const confidenceThreshold = String(process.env.PLAYBOOK_AUTOFIX_CONFIDENCE_THRESHOLD || '0.7');
-        const repository = String(process.env.GITHUB_REPOSITORY || '');
-        const prHeadRepo = String(process.env.GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME || '');
-
-        const reasons = [];
-        let cleanWorktree = true;
-        try {
-          cp.execFileSync('git', ['update-index', '-q', '--refresh'], { cwd, stdio: 'ignore' });
-          cp.execFileSync('git', ['diff', '--quiet'], { cwd, stdio: 'ignore' });
-          cp.execFileSync('git', ['diff', '--cached', '--quiet'], { cwd, stdio: 'ignore' });
-        } catch {
-          cleanWorktree = false;
-        }
-
-        const trustedEvent = trustedEvents.includes(eventName);
-        const trustedBranch = eventName !== 'push' || trustedBranches.includes(ref);
-        const trustedPrSource = eventName !== 'pull_request' || (prHeadRepo && prHeadRepo === repository);
-
-        let status = 'not_needed';
-        let mutationAllowed = false;
-        let mode = 'apply';
-        if (testExitCode !== 0) {
-          if (!enabled) reasons.push('autofix disabled by workflow input');
-          if (!trustedEvent) reasons.push(`event ${eventName || '(unknown)'} is not in trusted-autofix-events`);
-          if (!trustedBranch) reasons.push(`ref ${ref || '(unknown)'} is not in trusted-autofix-branches`);
-          if (!trustedPrSource) reasons.push('pull_request head repository is untrusted for CI mutation');
-          if (requireCleanWorktree && !cleanWorktree) reasons.push('worktree is not clean before CI autofix mutation');
-          mutationAllowed = enabled && trustedEvent && trustedBranch && trustedPrSource && (!requireCleanWorktree || cleanWorktree);
-          status = mutationAllowed ? 'allowed' : 'blocked_by_policy';
-          if (mutationAllowed && protectedBranches.includes(ref)) {
-            mode = 'dry_run';
-          }
-        }
-
-        const artifact = {
-          schemaVersion: '1.0',
-          kind: 'ci-remediation-policy',
-          generatedAt: new Date().toISOString(),
-          status,
-          mutation_allowed: mutationAllowed,
-          test_exit_code: testExitCode,
-          enabled,
-          mode,
-          confidence_threshold: confidenceThreshold,
-          gating: {
-            event_name: eventName,
-            ref,
-            trusted_events: trustedEvents,
-            trusted_branches: trustedBranches,
-            trusted_event: trustedEvent,
-            trusted_branch: trustedBranch,
-            trusted_pull_request_source: trustedPrSource,
-            require_clean_worktree: requireCleanWorktree,
-            clean_worktree: cleanWorktree,
-          },
-          reasons,
-          artifact_paths: {
-            failure_log_path: '.playbook/ci-failure.log',
-            policy_path: '.playbook/ci-remediation-policy.json',
-            autofix_result_path: '.playbook/test-autofix.json',
-            remediation_status_path: '.playbook/remediation-status.json',
-          },
-        };
-
-        const outPath = path.join(cwd, '.playbook', 'ci-remediation-policy.json');
-        fs.mkdirSync(path.dirname(outPath), { recursive: true });
-        fs.writeFileSync(outPath, JSON.stringify(artifact, null, 2) + '\n', 'utf8');
-        console.log(`status=${status}`);
-        console.log(`mutation_allowed=${mutationAllowed}`);
-        console.log(`mode=${mode}`);
-        if (status === 'blocked_by_policy') {
-          console.log(`blocked_reasons=${reasons.join('; ') || '(none recorded)'}`);
-        }
-        NODE
+        node "$GITHUB_WORKSPACE/.github/scripts/evaluate-ci-remediation-policy.cjs"
         status=$(node -e "const fs=require('node:fs'); const artifact=JSON.parse(fs.readFileSync('.playbook/ci-remediation-policy.json','utf8')); console.log(artifact.status)")
         mutation_allowed=$(node -e "const fs=require('node:fs'); const artifact=JSON.parse(fs.readFileSync('.playbook/ci-remediation-policy.json','utf8')); console.log(String(artifact.mutation_allowed))")
         mode=$(node -e "const fs=require('node:fs'); const artifact=JSON.parse(fs.readFileSync('.playbook/ci-remediation-policy.json','utf8')); console.log(String(artifact.mode || 'apply'))")

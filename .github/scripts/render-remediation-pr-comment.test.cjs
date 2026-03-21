@@ -14,6 +14,12 @@ test('renderRemediationComment renders canonical artifact fields from autofix an
         autofix_result_path: '.playbook/test-autofix.json',
         remediation_status_path: '.playbook/remediation-status.json',
       },
+      gating: {
+        run_attempt: 1,
+        max_autofix_attempts_per_sha: 1,
+        retry_override_used: false,
+        retry_override_source: 'none',
+      },
     },
     autofix: {
       final_status: 'blocked_low_confidence',
@@ -42,6 +48,8 @@ test('renderRemediationComment renders canonical artifact fields from autofix an
 
   assert.match(body, /Final status \| blocked_low_confidence/);
   assert.match(body, /Mode \| dry_run/);
+  assert.match(body, /Retry override \| not_used/);
+  assert.match(body, /Attempt budget \| 1\/1/);
   assert.match(body, /Autofix confidence \| 0\.62/);
   assert.match(body, /Low-confidence skip \| yes/);
   assert.match(body, /reason-1; reason-2/);
@@ -60,6 +68,12 @@ test('renderRemediationComment surfaces blocked-by-policy state when mutation ga
         failure_log_path: '.playbook/ci-failure.log',
         policy_path: '.playbook/ci-remediation-policy.json',
       },
+      gating: {
+        run_attempt: 2,
+        max_autofix_attempts_per_sha: 1,
+        retry_override_used: false,
+        retry_override_source: 'none',
+      },
     },
     autofix: null,
     remediationStatus: null,
@@ -69,4 +83,31 @@ test('renderRemediationComment surfaces blocked-by-policy state when mutation ga
   assert.match(body, /Mutation gate \| blocked/);
   assert.match(body, /autofix disabled by workflow input/);
   assert.match(body, /failure_log/);
+});
+
+
+test('renderRemediationComment shows retry override provenance when CI transport suppression was bypassed', () => {
+  const body = renderRemediationComment({
+    policy: {
+      status: 'allowed',
+      mutation_allowed: true,
+      reasons: ['explicit retry override accepted'],
+      gating: {
+        run_attempt: 2,
+        max_autofix_attempts_per_sha: 1,
+        retry_override_used: true,
+        retry_override_source: 'pull_request_label',
+      },
+      artifact_paths: {
+        failure_log_path: '.playbook/ci-failure.log',
+        policy_path: '.playbook/ci-remediation-policy.json',
+      },
+    },
+    autofix: null,
+    remediationStatus: null,
+  });
+
+  assert.match(body, /Retry override \| pull_request_label/);
+  assert.match(body, /Attempt budget \| 2\/1/);
+  assert.match(body, /explicit retry override accepted/);
 });

@@ -15,6 +15,11 @@ on:
         required: false
         default: true
         type: boolean
+      allow_autofix_retry_override:
+        description: "Explicitly bypass CI transport-level retry suppression for the current workflow dispatch only"
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -42,6 +47,9 @@ jobs:
           trusted-autofix-events: "workflow_dispatch"
           trusted-autofix-branches: "refs/heads/main"
           protected-branches: "refs/heads/main"
+          max-autofix-attempts-per-sha: "1"
+          allow-autofix-retry-override: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_autofix_retry_override && 'true' || 'false' }}
+          retry-override-labels: "playbook:retry-autofix"
           autofix-confidence-threshold: ${{ vars.PLAYBOOK_AUTOFIX_CONFIDENCE_THRESHOLD || '0.7' }}
 
       - name: Upload Playbook remediation artifacts
@@ -50,6 +58,7 @@ jobs:
         with:
           name: playbook-remediation-artifacts-ci
           if-no-files-found: ignore
+          retention-days: 14
           path: |
             .playbook/ci-failure.log
             .playbook/ci-remediation-policy.json
@@ -113,6 +122,7 @@ jobs:
         with:
           name: playbook-remediation-artifacts-demo-validate
           if-no-files-found: ignore
+          retention-days: 14
           path: |
             .playbook/ci-failure.log
             .playbook/ci-remediation-policy.json
@@ -122,6 +132,7 @@ jobs:
             .playbook/test-autofix.json
             .playbook/test-autofix-history.json
             .playbook/remediation-status.json
+            .playbook/remediation-comment.md
 
       - name: Validate playbook-demo compatibility
         run: node scripts/demo-validate.mjs

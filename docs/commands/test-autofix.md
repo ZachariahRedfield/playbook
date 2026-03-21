@@ -123,6 +123,13 @@ Fail-closed gates keep the trust boundary explicit:
 
 If policy gates block mutation, CI writes `.playbook/ci-remediation-policy.json` and reports blocked-by-policy state instead of widening the mutation path.
 
+Operational soak guardrails stay in the CI transport layer rather than inside a second policy engine:
+
+- repeated workflow reruns for the same commit SHA are blocked after the first CI autofix attempt by default
+- the blocked reason is written into `.playbook/ci-remediation-policy.json` so operators can distinguish retry suppression from core remediation-policy blocks
+- explicit retry override signals (workflow-dispatch input or the `playbook:retry-autofix` PR label) may bypass only that transport-level retry suppression
+- overrides do **not** bypass event trust, branch trust, clean-worktree checks, protected-branch dry-run behavior, confidence thresholds, or the canonical `test-autofix` / `apply` trust boundary
+
 ## Rule / Pattern / Failure Mode
 
 - Rule: Mutation must always pass through a single governed execution boundary.
@@ -155,7 +162,7 @@ The default threshold is `0.7`. Override it with `--confidence-threshold <0-1>` 
 
 ## GitHub Actions CI transport
 
-The repository CI workflow still acts only as a thin transport and gate over canonical artifacts. Protected branches such as `refs/heads/main` now run `test-autofix` in `--dry-run` mode, while allowed non-protected branches may run in apply mode. Both modes upload the same deterministic artifacts, and CI may pass `PLAYBOOK_AUTOFIX_CONFIDENCE_THRESHOLD` to keep mutation thresholds configurable without moving heuristics into workflow scripts.
+The repository CI workflow still acts only as a thin transport and gate over canonical artifacts. Protected branches such as `refs/heads/main`, plus pull requests targeting those protected branches, now run `test-autofix` in `--dry-run` mode by default, while allowed non-protected branches may run in apply mode. Both modes upload the same deterministic artifacts (`ci-failure.log`, `ci-remediation-policy.json`, `test-triage.json`, `test-fix-plan.json`, `test-autofix-apply.json`, `test-autofix.json`, `test-autofix-history.json`, `remediation-status.json`, and PR-comment markdown when rendered), and CI may pass `PLAYBOOK_AUTOFIX_CONFIDENCE_THRESHOLD` to keep mutation thresholds configurable without moving heuristics into workflow scripts.
 
 - Rule: mutation should only occur when confidence exceeds a deterministic threshold and policy gates allow it.
 - Pattern: all CI/PR decisions come from remediation artifacts; workflow scripts only transport and gate the runtime.

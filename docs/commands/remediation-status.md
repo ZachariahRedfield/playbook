@@ -65,7 +65,7 @@ That transport layer reads:
 - `.playbook/test-autofix-history.json`
 - `.playbook/remediation-status.json`
 
-The sticky PR summary is therefore an artifact-backed status view, not an independent GitHub-specific analysis layer.
+The sticky PR summary is therefore an artifact-backed status view, not an independent GitHub-specific analysis layer. The CI policy artifact now also records transport-level retry suppression, explicit override provenance, protected-target dry-run enforcement, and the canonical artifact path set so `remediation-status` outputs, uploaded artifacts, and PR comments stay aligned during soak.
 
 ## Missing artifacts
 
