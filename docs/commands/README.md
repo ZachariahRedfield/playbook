@@ -670,6 +670,7 @@ Docs command references:
 
 - [`pnpm playbook docs audit`](docs.md)
 - [`pnpm playbook docs consolidate`](docs-consolidate.md)
+- [`pnpm playbook docs consolidate-plan`](docs-consolidate-plan.md)
 
 - Rule: Worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
 - Pattern: Assign -> submit -> consolidate -> plan -> apply is the safe parallel-doc/runtime loop.
