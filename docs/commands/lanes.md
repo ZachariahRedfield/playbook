@@ -46,3 +46,5 @@ Writes `.playbook/lane-state.json` with:
 - conservative merge and verification posture (`merge_readiness`, `verification_status`)
 
 `lanes` remains proposal-only and does not create branches, launch workers, open PRs, or merge code.
+
+Worker-facing prompt thinness depends on `lanes` staying artifact-rich: readiness, dependency gates, and merge posture remain in `.playbook/lane-state.json` instead of being duplicated into human prompts.

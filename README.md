@@ -498,8 +498,8 @@ Playbook's canonical remediation loop is:
 
 ## Deterministic orchestration workflow
 
-Use `pnpm playbook orchestrate --goal "<implementation goal>" --lanes 3 --format both` to compile a governance-safe lane contract set for parallel Codex plan-mode workers. The implemented v0 command writes `.playbook/orchestrator/orchestrator.json` plus lane prompt markdown artifacts (format-dependent), defines lane boundaries/dependencies, and remains control-plane only (no worker launch, branch, PR, or merge automation).
-Use `pnpm playbook workers --json` or `pnpm playbook workers assign` to derive proposal-only worker assignment contracts from lane-state readiness and dependency gates. This writes `.playbook/worker-assignments.json` plus per-lane prompt handoff files in `.playbook/prompts/` without launching workers, creating branches, or automating PRs.
+Use `pnpm playbook orchestrate --goal "<implementation goal>" --lanes 3 --format both` to compile a governance-safe lane contract set for parallel Codex plan-mode workers. The implemented v0 command writes `.playbook/orchestrator/orchestrator.json` plus lane prompt markdown artifacts (format-dependent), defines lane boundaries/dependencies, keeps prompts compact for humans, and reserves protected singleton docs for fragment-only contribution instead of direct concurrent edits. It remains control-plane only (no worker launch, branch, PR, or merge automation).
+Use `pnpm playbook workers --json` or `pnpm playbook workers assign` to derive proposal-only worker assignment contracts from lane-state readiness and dependency gates. This writes `.playbook/worker-assignments.json` plus per-lane prompt handoff files in `.playbook/prompts/` without launching workers, creating branches, or automating PRs, while keeping full machine state in `.playbook` artifacts instead of duplicating it into worker prompts.
 
 ## Getting Started
 

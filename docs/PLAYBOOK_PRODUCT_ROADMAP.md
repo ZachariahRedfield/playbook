@@ -1380,6 +1380,7 @@ Use a layered phase model so each phase compounds directly on the previous one:
 10. **Phase 10 â€” Repository Memory System**  
    Establish the temporal memory substrate (session/episodic evidence) while keeping repository structural intelligence (`index`/`graph`) as a distinct deterministic layer.
    - Worker assignment slice (implemented): deterministic proposal-only `worker-assignments` contract generation from lane-state readiness/dependency gates via `pnpm playbook workers` / `pnpm playbook workers assign`, including `.playbook/worker-assignments.json` and `.playbook/prompts/<lane_id>.md` outputs without worker launch or branch/PR automation.
+   - Prompt-thin artifact-rich refinement (implemented): worker prompts now separate direct-edit ownership from fragment-only protected singleton docs so humans get bounded execution instructions while `.playbook` artifacts keep the full machine contract.
 11. **Phase 11 â€” Replay / Consolidation / Promotion**  
     Add deterministic replay and consolidation pipelines with salience-gated, provenance-preserving promotion queues so fast episodic memory cannot become durable doctrine without review.
 12. **Phase 12 â€” Session + Evidence Layer**  
@@ -2346,6 +2347,9 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Added proposal-only lane lifecycle transition commands (`pnpm playbook lanes start <lane_id>`, `pnpm playbook lanes complete <lane_id>`) with strict dependency gating and conservative merge-ready recomputation.
 - Next planned safety slice: **Worker Fragment Consolidation for Shared Singleton Docs**, requiring first-class `worker-fragment` contracts / receipts, explicit protected singleton doc registries, and a final deterministic consolidation pass for canonical narrative docs before future managed subagents/hooks execution.
 - Rule — Shared singleton docs should be updated through worker-local fragments plus a deterministic consolidation pass, not direct concurrent edits from multiple workers.
+- Rule — Human prompt surfaces should carry only bounded execution instructions, not full machine state.
+- Pattern — Artifact-rich, prompt-thin orchestration keeps operators fast.
+- Failure Mode — Dumping full machine context into worker prompts lowers signal and increases drift.
 - Pattern — Workers own isolated implementation changes; a final consolidator owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.
 - Failure Mode — Parallelizable work is not automatically parallel-safe; allowing every worker to edit the same root-level docs creates merge hotspots, inconsistent summaries, and doc drift.
 

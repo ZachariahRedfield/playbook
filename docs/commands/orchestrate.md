@@ -102,7 +102,9 @@ Each generated lane prompt includes:
 
 - Objective
 - Why the lane exists
-- Allowed and forbidden files
+- Allowed direct-edit files
+- Fragment-only protected singleton docs
+- Forbidden files
 - Shared-file policy
 - Dependency / wave info
 - Implementation plan
@@ -110,7 +112,11 @@ Each generated lane prompt includes:
 - Documentation updates
 - Merge notes
 
-This keeps worker execution bounded and lane ownership explicit.
+Rule — Human prompt surfaces should carry only bounded execution instructions, not full machine state.
+Pattern — Artifact-rich, prompt-thin orchestration keeps operators fast.
+Failure Mode — Dumping full machine context into worker prompts lowers signal and increases drift.
+
+This keeps worker execution bounded and lane ownership explicit while preserving the full lane contract in `.playbook/orchestrator/**`.
 
 ## Worker fragment contract
 

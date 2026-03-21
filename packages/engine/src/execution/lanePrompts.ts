@@ -5,6 +5,7 @@ export type LanePromptSpec = {
   objective: string;
   whyThisLaneExists: string;
   allowedFilesToModify: string[];
+  fragmentOnlySingletonDocs: string[];
   forbiddenFilesToModify: string[];
   sharedFilesPolicy: string;
   dependenciesWaveInfo: string;
@@ -32,13 +33,18 @@ const toBulletList = (items: string[]): string =>
 export const renderLanePrompt = ({ laneNumber, lane }: RenderLanePromptInput): string => {
   const normalizedLaneNumber = Number.isInteger(laneNumber) && laneNumber > 0 ? laneNumber : 1;
 
+  const ownershipBullets = [
+    '> **Lane ownership constraints (read first):**',
+    '> - Direct edits are limited to the paths listed in **Allowed direct-edit files**.',
+    '> - Protected singleton docs are **fragment-only** and must not be edited directly from this prompt.',
+    '> - **Do not modify outside allowed direct-edit paths.** If work appears to require it, stop and escalate in merge notes.',
+    '> - Respect lane-local ownership constraints before making any edits.'
+  ];
+
   return [
     `# Lane ${normalizedLaneNumber} Prompt`,
     '',
-    '> **Lane ownership constraints (read first):**',
-    '> - This lane owns only the paths listed in **Allowed files to modify**.',
-    '> - **Do not modify outside allowed paths.** If work appears to require it, stop and escalate in merge notes.',
-    '> - Respect lane-local ownership constraints before making any edits.',
+    ...ownershipBullets,
     '',
     '## Objective',
     lane.objective,
@@ -46,8 +52,11 @@ export const renderLanePrompt = ({ laneNumber, lane }: RenderLanePromptInput): s
     '## Why this lane exists',
     lane.whyThisLaneExists,
     '',
-    '## Allowed files to modify',
+    '## Allowed direct-edit files',
     toBulletList(lane.allowedFilesToModify),
+    '',
+    '## Fragment-only protected docs',
+    toBulletList(lane.fragmentOnlySingletonDocs),
     '',
     '## Forbidden files to modify',
     toBulletList(lane.forbiddenFilesToModify),

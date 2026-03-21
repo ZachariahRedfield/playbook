@@ -711,3 +711,7 @@
 - Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
 - Pattern: Backlog state is a canonical repo-local artifact, not a UI-owned construct.
 - Failure Mode: If story state is introduced without a canonical artifact and governed writes, backlog semantics fragment immediately.
+- WHAT: Taught `orchestrate` / `workers` prompt generation to separate lane-owned direct-edit files from fragment-only protected singleton docs, keeping worker prompts compact while preserving full machine metadata in `.playbook` artifacts. WHY: Prevents multiple workers from receiving shared singleton narrative docs as direct-edit targets and keeps human handoff surfaces skimmable during parallel execution.
+- Rule: Human prompt surfaces should carry only bounded execution instructions, not full machine state.
+- Pattern: Artifact-rich, prompt-thin orchestration keeps operators fast.
+- Failure Mode: Dumping full machine context into worker prompts lowers signal and increases drift.

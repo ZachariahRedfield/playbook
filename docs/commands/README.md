@@ -235,6 +235,12 @@ These command surfaces now align on deterministic behavior for:
 - explicit owned artifact declarations in command help/docs
 - consistent text/JSON semantic alignment for success and failure states
 
+For orchestration surfaces (`orchestrate`, `lanes`, `workers`), operator prompts are intentionally prompt-thin and artifact-rich:
+
+- human prompts carry bounded execution instructions only
+- `.playbook` artifacts retain full machine state, dependencies, and protected-doc fragment metadata
+- protected singleton narrative docs are fragment-only surfaces during parallel worker execution
+
 ## Learn draft (`pnpm playbook learn draft`)
 
 `pnpm playbook learn draft` generates deterministic knowledge-candidate drafts from local git diff context plus indexed repository intelligence.

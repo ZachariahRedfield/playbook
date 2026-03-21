@@ -131,5 +131,7 @@ describe('buildOrchestratorContract', () => {
     const laneOnePrompt = fs.readFileSync(path.join(workersDir, 'lane-1', 'prompt.md'), 'utf8');
     expect(laneOnePrompt).toContain('## Shard ownership');
     expect(laneOnePrompt).toContain('Shard key:');
+    expect(laneOnePrompt).toContain('## Fragment-only protected docs');
+    expect(laneOnePrompt).toContain('Full machine-facing lane metadata remains in .playbook/orchestrator/workers/lane-1/contract.json.');
   });
 });

@@ -16,6 +16,7 @@ describe('buildWorksetPlan', () => {
     expect(artifact.blocked_tasks).toHaveLength(0);
     expect(artifact.lanes.every((lane) => lane.readiness_status === 'ready')).toBe(true);
     expect(artifact.lanes.every((lane) => lane.codex_prompt.includes('Rule / Pattern / Failure Mode'))).toBe(true);
+    expect(artifact.lanes.every((lane) => lane.codex_prompt.includes('Allowed direct-edit files / surfaces'))).toBe(true);
   });
 
   it('isolates engine scoring from pattern learning conflicts', () => {

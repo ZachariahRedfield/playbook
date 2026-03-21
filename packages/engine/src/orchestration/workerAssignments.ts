@@ -57,7 +57,13 @@ const promptPathForLane = (laneId: string): string => `.playbook/prompts/${laneI
 
 export const buildAssignedPrompt = (laneId: string, codexPrompt: string): string => {
   const normalizedPrompt = codexPrompt.trim();
-  return [`# Worker Assignment Prompt: ${laneId}`, '', normalizedPrompt.length > 0 ? normalizedPrompt : 'No prompt content available for this lane.'].join('\n');
+  return [
+    `# Worker Assignment Prompt: ${laneId}`,
+    '',
+    '> Prompt-thin, artifact-rich policy: use this prompt for bounded execution instructions and keep full machine state in `.playbook` artifacts.',
+    '',
+    normalizedPrompt.length > 0 ? normalizedPrompt : 'No prompt content available for this lane.'
+  ].join('\n');
 };
 
 const sortLanes = <T extends { lane_id: string }>(lanes: readonly T[]): T[] => [...lanes].sort((left, right) => left.lane_id.localeCompare(right.lane_id));

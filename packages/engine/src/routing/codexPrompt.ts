@@ -2,6 +2,7 @@ import type { ExecutionPlanArtifact } from './executionPlan.js';
 import type { RouteDecision } from './types.js';
 
 const sortUnique = (values: readonly string[]): string[] => [...new Set(values)].sort((a, b) => a.localeCompare(b));
+const PROTECTED_SINGLETON_DOCS = new Set(['docs/CHANGELOG.md', 'docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/commands/orchestrate.md', 'docs/commands/workers.md']);
 
 const DOC_UPDATES_BY_FAMILY: Record<string, string[]> = {
   docs_only: ['docs/commands/README.md', 'docs/CHANGELOG.md'],
@@ -51,6 +52,8 @@ const GOVERNANCE_BLOCK = [
 
 export const compileCodexPrompt = (task: string, decision: RouteDecision, executionPlan: ExecutionPlanArtifact): string => {
   const filesAndSurfaces = sortUnique([...executionPlan.expected_surfaces, ...executionPlan.likely_conflict_surfaces]);
+  const directEditSurfaces = filesAndSurfaces.filter((surface) => !PROTECTED_SINGLETON_DOCS.has(surface));
+  const fragmentOnlyDocs = sortUnique(filesAndSurfaces.filter((surface) => PROTECTED_SINGLETON_DOCS.has(surface)));
   const docsUpdates = sortUnique(DOC_UPDATES_BY_FAMILY[executionPlan.task_family] ?? ['docs/CHANGELOG.md']);
   const implementationPlan = IMPLEMENTATION_STEPS_BY_FAMILY[executionPlan.task_family] ?? IMPLEMENTATION_STEPS_BY_FAMILY.unknown;
   const verificationSteps = [...executionPlan.required_validations, ...executionPlan.optional_validations];
@@ -63,18 +66,30 @@ export const compileCodexPrompt = (task: string, decision: RouteDecision, execut
 
   lines.push('Implementation plan');
   lines.push('');
-  for (const step of implementationPlan) {
+  for (const step of implementationPlan.slice(0, 3)) {
     lines.push(`- ${step}`);
+  }
+  lines.push('- Keep the human prompt compact; rely on .playbook artifacts for full machine state.');
+  lines.push('');
+
+  lines.push('Allowed direct-edit files / surfaces');
+  lines.push('');
+  if (directEditSurfaces.length === 0) {
+    lines.push('- Resolve prerequisites; no implementation surfaces are unlocked yet.');
+  } else {
+    for (const surface of directEditSurfaces) {
+      lines.push(`- ${surface}`);
+    }
   }
   lines.push('');
 
-  lines.push('Files / surfaces to modify');
+  lines.push('Fragment-only protected docs');
   lines.push('');
-  if (filesAndSurfaces.length === 0) {
-    lines.push('- Resolve prerequisites; no implementation surfaces are unlocked yet.');
+  if (fragmentOnlyDocs.length === 0) {
+    lines.push('- None.');
   } else {
-    for (const surface of filesAndSurfaces) {
-      lines.push(`- ${surface}`);
+    for (const surface of fragmentOnlyDocs) {
+      lines.push(`- ${surface} (do not edit directly; contribute fragment-ready content only)`);
     }
   }
   lines.push('');
@@ -93,7 +108,11 @@ export const compileCodexPrompt = (task: string, decision: RouteDecision, execut
   lines.push('Documentation updates');
   lines.push('');
   for (const item of docsUpdates) {
-    lines.push(`- ${item}`);
+    if (PROTECTED_SINGLETON_DOCS.has(item)) {
+      lines.push(`- ${item} (fragment-only singleton doc)`);
+    } else {
+      lines.push(`- ${item}`);
+    }
   }
   lines.push('');
 

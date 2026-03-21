@@ -8,6 +8,7 @@ const sampleLane: LanePromptSpec = {
   objective: 'Implement lane-scoped prompt rendering.',
   whyThisLaneExists: 'To isolate deterministic prompt generation for the lane.',
   allowedFilesToModify: ['packages/engine/src/execution/**'],
+  fragmentOnlySingletonDocs: ['docs/CHANGELOG.md'],
   forbiddenFilesToModify: ['packages/cli/**', 'README.md'],
   sharedFilesPolicy: 'Coordinate shared files through merge notes before editing.',
   dependenciesWaveInfo: 'Depends on wave 1 schema stabilization.',
@@ -25,7 +26,8 @@ describe('lane prompt rendering', () => {
 
     expect(prompt).toContain('## Objective');
     expect(prompt).toContain('## Why this lane exists');
-    expect(prompt).toContain('## Allowed files to modify');
+    expect(prompt).toContain('## Allowed direct-edit files');
+    expect(prompt).toContain('## Fragment-only protected docs');
     expect(prompt).toContain('## Forbidden files to modify');
     expect(prompt).toContain('## Shared files policy');
     expect(prompt).toContain('## Dependencies / wave info');
@@ -35,7 +37,8 @@ describe('lane prompt rendering', () => {
     expect(prompt).toContain('## Verification steps');
     expect(prompt).toContain('## Documentation updates');
     expect(prompt).toContain('## Merge notes');
-    expect(prompt).toContain('**Do not modify outside allowed paths.**');
+    expect(prompt).toContain('Protected singleton docs are **fragment-only**');
+    expect(prompt).toContain('**Do not modify outside allowed direct-edit paths.**');
     expect(prompt).toContain('[Ownership constraint] Only mutate files under packages/engine/src/execution.');
   });
 

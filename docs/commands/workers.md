@@ -27,6 +27,12 @@ pnpm playbook workers assign --json
 - Blocked/dependency-gated lanes remain unassigned and are preserved in output.
 - Ordering is deterministic by `lane_id`.
 - Output remains proposal-only: no worker launch, no branch creation, no PR automation.
+- Assigned prompts stay compact and skimmable; full machine state remains in `.playbook/workset-plan.json`, `.playbook/lane-state.json`, and `.playbook/worker-assignments.json`.
+- Protected singleton docs must be treated as fragment-only contribution targets rather than direct-edit surfaces.
+
+Rule — Human prompt surfaces should carry only bounded execution instructions, not full machine state.
+Pattern — Artifact-rich, prompt-thin orchestration keeps operators fast.
+Failure Mode — Dumping full machine context into worker prompts lowers signal and increases drift.
 
 ## Artifacts
 
