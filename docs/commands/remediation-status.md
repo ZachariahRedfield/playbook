@@ -65,7 +65,7 @@ That transport layer reads:
 - `.playbook/test-autofix-history.json`
 - `.playbook/remediation-status.json`
 
-The sticky PR summary is therefore an artifact-backed status view, not an independent GitHub-specific analysis layer. The CI policy artifact now also records transport-level retry suppression, explicit override provenance, protected-target dry-run enforcement, and the canonical artifact path set so `remediation-status` outputs, uploaded artifacts, and PR comments stay aligned during soak.
+The sticky PR summary is therefore an artifact-backed status view, not an independent GitHub-specific analysis layer. The CI policy artifact now also records transport-level retry suppression, explicit override provenance, protected-target dry-run enforcement, and the canonical artifact path set so `remediation-status` outputs, uploaded artifacts, and PR comments stay aligned during soak. Because CI now hydrates and merges prior canonical remediation-history artifacts before running `test-autofix`, the read model can surface cross-run repeat decisions and confidence calibration from durable evidence instead of workflow-local scratch state.
 
 ## Missing artifacts
 
@@ -84,3 +84,7 @@ If either artifact is missing or invalid, the command fails clearly instead of i
 
 
 `remediation-status` remains read-only, but its latest-run summary now mirrors confidence-aware gating state from the canonical `test-autofix` artifact. That means CI and PR renderers can report whether a run was dry-run vs apply, whether mutation would have occurred, the deterministic confidence score, and whether low confidence blocked mutation without inventing any workflow-local logic.
+
+- Rule: Retry policy is only as trustworthy as the durability of the history it reads.
+- Pattern: Transport should hydrate canonical artifacts, not invent workflow-local state.
+- Failure Mode: Per-run ephemeral history makes repeat-aware policy look real while silently acting stateless.

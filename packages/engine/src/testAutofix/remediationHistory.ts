@@ -26,6 +26,17 @@ export const createEmptyRemediationHistoryArtifact = (): TestAutofixRemediationH
   runs: []
 });
 
+const normalizeHistoryEntry = (entry: TestAutofixRemediationHistoryEntry): TestAutofixRemediationHistoryEntry => ({
+  ...entry,
+  source_provenance: entry.source_provenance
+    ? {
+      source_id: entry.source_provenance.source_id,
+      artifact_path: entry.source_provenance.artifact_path,
+      original_run_id: entry.source_provenance.original_run_id
+    }
+    : undefined
+});
+
 export const normalizeRemediationHistoryArtifact = (value: unknown): TestAutofixRemediationHistoryArtifact => {
   if (!value || typeof value !== 'object') {
     return createEmptyRemediationHistoryArtifact();
@@ -35,7 +46,7 @@ export const normalizeRemediationHistoryArtifact = (value: unknown): TestAutofix
     schemaVersion: TEST_AUTOFIX_REMEDIATION_HISTORY_SCHEMA_VERSION,
     kind: TEST_AUTOFIX_REMEDIATION_HISTORY_ARTIFACT_KIND,
     generatedAt: new Date(0).toISOString(),
-    runs: Array.isArray(record.runs) ? [...record.runs] : []
+    runs: Array.isArray(record.runs) ? record.runs.map((entry) => normalizeHistoryEntry(entry as TestAutofixRemediationHistoryEntry)) : []
   };
 };
 
@@ -45,8 +56,60 @@ export const appendRemediationHistoryEntry = (artifact: TestAutofixRemediationHi
   schemaVersion: TEST_AUTOFIX_REMEDIATION_HISTORY_SCHEMA_VERSION,
   kind: TEST_AUTOFIX_REMEDIATION_HISTORY_ARTIFACT_KIND,
   generatedAt: new Date(0).toISOString(),
-  runs: [...artifact.runs, entry]
+  runs: [...artifact.runs, normalizeHistoryEntry(entry)]
 });
+
+const compareHistoryEntriesForMerge = (left: TestAutofixRemediationHistoryEntry, right: TestAutofixRemediationHistoryEntry): number => {
+  const generatedAtOrder = compareStrings(left.generatedAt, right.generatedAt);
+  if (generatedAtOrder !== 0) return generatedAtOrder;
+  const sourceIdOrder = compareStrings(left.source_provenance?.source_id ?? '', right.source_provenance?.source_id ?? '');
+  if (sourceIdOrder !== 0) return sourceIdOrder;
+  const artifactPathOrder = compareStrings(left.source_provenance?.artifact_path ?? '', right.source_provenance?.artifact_path ?? '');
+  if (artifactPathOrder !== 0) return artifactPathOrder;
+  const originalRunIdOrder = compareStrings(left.source_provenance?.original_run_id ?? left.run_id, right.source_provenance?.original_run_id ?? right.run_id);
+  if (originalRunIdOrder !== 0) return originalRunIdOrder;
+  return compareStrings(left.run_id, right.run_id);
+};
+
+export const mergeRemediationHistoryArtifacts = (sources: Array<{ artifact: TestAutofixRemediationHistoryArtifact; artifactPath: string; sourceId: string }>): TestAutofixRemediationHistoryArtifact => {
+  const canonicalized = sources.flatMap(({ artifact, artifactPath, sourceId }) => normalizeRemediationHistoryArtifact(artifact).runs.map((entry) => {
+    const originalRunId = entry.source_provenance?.original_run_id ?? entry.run_id;
+    return normalizeHistoryEntry({
+      ...entry,
+      source_provenance: {
+        source_id: entry.source_provenance?.source_id ?? sourceId,
+        artifact_path: entry.source_provenance?.artifact_path ?? artifactPath,
+        original_run_id: originalRunId
+      }
+    });
+  }));
+
+  canonicalized.sort(compareHistoryEntriesForMerge);
+
+  const deduped: TestAutofixRemediationHistoryEntry[] = [];
+  for (const entry of canonicalized) {
+    const prior = deduped.at(-1);
+    if (
+      prior
+      && prior.source_provenance?.source_id === entry.source_provenance?.source_id
+      && prior.source_provenance?.artifact_path === entry.source_provenance?.artifact_path
+      && prior.source_provenance?.original_run_id === entry.source_provenance?.original_run_id
+    ) {
+      continue;
+    }
+    deduped.push(entry);
+  }
+
+  return {
+    schemaVersion: TEST_AUTOFIX_REMEDIATION_HISTORY_SCHEMA_VERSION,
+    kind: TEST_AUTOFIX_REMEDIATION_HISTORY_ARTIFACT_KIND,
+    generatedAt: new Date(0).toISOString(),
+    runs: deduped.map((entry, index) => ({
+      ...entry,
+      run_id: `test-autofix-run-${String(index + 1).padStart(4, '0')}`
+    }))
+  };
+};
 
 export const buildTriageClassifications = (entries: TestAutofixRemediationClassification[]): TestAutofixRemediationClassification[] => [...entries].sort((left, right) => {
   const signatureOrder = left.failure_signature.localeCompare(right.failure_signature);

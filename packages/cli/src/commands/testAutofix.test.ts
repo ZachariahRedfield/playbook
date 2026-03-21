@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildTestTriageArtifact } from '@zachariahredfield/playbook-engine';
+import { buildTestTriageArtifact, mergeRemediationHistoryArtifacts } from '@zachariahredfield/playbook-engine';
 import type { TestAutofixArtifact, TestAutofixRemediationHistoryArtifact } from '@zachariahredfield/playbook-core';
 import * as applyCommand from './apply.js';
 import { ExitCode } from '../lib/cliContract.js';
@@ -128,6 +128,77 @@ describe('runTestAutofix', () => {
     expect(payload.retry_policy_decision).toBe('allow_with_preferred_repair_class');
     expect(payload.preferred_repair_class).toBe('snapshot_refresh');
     expect(payload.autofix_confidence).toBe(0.95);
+  });
+
+
+  it('hydrates merged prior CI history so run 2 sees repeat evidence from run 1', async () => {
+    const repo = createRepo();
+    const failureLog = [
+      '@fawxzzy/playbook test: FAIL  packages/cli/src/commands/schema.test.ts',
+      '  × renders schema snapshot',
+      '    Snapshot `renders schema snapshot 1` mismatch'
+    ];
+    writeFailureLog(repo, failureLog);
+
+    const signature = buildTestTriageArtifact(failureLog.join('\n'), { input: 'file', path: 'failure.log' }).findings[0]!.failure_signature;
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    const hydratedHistory = mergeRemediationHistoryArtifacts([
+      {
+        sourceId: 'ci-run-1',
+        artifactPath: '.playbook/prior/run-1.json',
+        artifact: {
+          schemaVersion: '1.0',
+          kind: 'test-autofix-remediation-history',
+          generatedAt: new Date(0).toISOString(),
+          runs: [{
+            run_id: 'test-autofix-run-0001',
+            generatedAt: '2026-03-20T00:00:00.000Z',
+            input: { path: 'failure.log' },
+            failure_signatures: [signature],
+            triage_classifications: [],
+            admitted_findings: [],
+            excluded_findings: [],
+            applied_task_ids: ['task-1'],
+            applied_repair_classes: ['snapshot_refresh'],
+            files_touched: [],
+            verification_commands: ['pnpm -r test'],
+            verification_outcomes: [{ command: 'pnpm -r test', exitCode: 0, ok: true }],
+            final_status: 'fixed',
+            stop_reasons: ['Verification passed after apply.'],
+            provenance: { failure_log_path: 'failure.log', triage_artifact_path: '.playbook/test-triage.json', fix_plan_artifact_path: '.playbook/test-fix-plan.json', apply_result_path: '.playbook/test-autofix-apply.json', autofix_result_path: '.playbook/test-autofix.json' }
+          }]
+        }
+      }
+    ]);
+    fs.writeFileSync(path.join(repo, '.playbook', 'test-autofix-history.json'), JSON.stringify({ data: hydratedHistory }));
+
+    vi.spyOn(applyCommand, 'runApply').mockImplementation(async () => {
+      console.log(JSON.stringify({
+        schemaVersion: '1.0',
+        command: 'apply',
+        ok: true,
+        exitCode: 0,
+        results: [{ id: 'task-123', file: 'packages/cli/src/commands/schema.test.ts', ruleId: 'test-triage.snapshot-refresh', status: 'applied' }],
+        summary: { applied: 1, skipped: 0, unsupported: 0, failed: 0 }
+      }));
+      return ExitCode.Success;
+    });
+    mockedRunSpawnSync.mockReturnValue({ status: 0, stdout: '', stderr: '', pid: 1, output: ['', '', ''], signal: null } as never);
+
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runTestAutofix(repo, { format: 'json', quiet: false, input: 'failure.log' });
+    const payload = readLoggedArtifact(spy);
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(payload.run_id).toBe('test-autofix-run-0002');
+    expect(payload.retry_policy_decision).toBe('allow_with_preferred_repair_class');
+    expect(payload.history_summary.matching_run_ids).toEqual(['test-autofix-run-0001']);
+    expect(payload.history_summary.provenance_run_ids).toEqual(['test-autofix-run-0001']);
+
+    const history = readHistoryArtifact(repo);
+    expect(history.runs.map((entry) => entry.run_id)).toEqual(['test-autofix-run-0001', 'test-autofix-run-0002']);
+    expect(history.runs[0]?.source_provenance).toEqual({ source_id: 'ci-run-1', artifact_path: '.playbook/prior/run-1.json', original_run_id: 'test-autofix-run-0001' });
+    expect(history.runs[1]?.source_provenance?.original_run_id).toBe('test-autofix-run-0002');
   });
 
   it('blocks repeat mutation when the same repair class already failed twice', async () => {

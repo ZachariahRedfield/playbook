@@ -91,10 +91,9 @@ It records:
 - excluded finding summary
 - deterministic final status, stop reasons, and remediation history path
 
-The remediation history artifact is the trustable evidence layer for bounded self-repair. Each run stores stable failure signatures, triage classifications, admitted vs excluded findings, applied repair classes, verification outcomes, and provenance back to the failure log plus generated artifacts. Repeat detection and any future bounded retry policy must key off those stable signatures and recorded outcomes rather than raw console noise.
+The remediation history artifact is the trustable evidence layer for bounded self-repair. Each run stores stable failure signatures, triage classifications, admitted vs excluded findings, applied repair classes, verification outcomes, provenance back to the failure log plus generated artifacts, and merge-safe `source_provenance` when history is hydrated from prior CI artifacts. Repeat detection and any future bounded retry policy must key off those stable signatures and recorded outcomes rather than raw console noise.
 
-
-Repeat-aware remediation is now the explicit policy layer between history and mutation. Before `apply` runs, `test-autofix` evaluates stable failure signatures against `.playbook/test-autofix-history.json` and emits a deterministic retry decision: `no_history`, `allow_repair`, `allow_with_preferred_repair_class`, `blocked_repeat_failure`, or `review_required_repeat_failure`. That policy prevents replaying known-bad repairs, can surface a previously successful repair class as preferred guidance, and still allows only one bounded repair attempt per run without recursive loops.
+Repeat-aware remediation is now the explicit policy layer between history and mutation. Before `apply` runs, `test-autofix` evaluates stable failure signatures against `.playbook/test-autofix-history.json` and emits a deterministic retry decision: `no_history`, `allow_repair`, `allow_with_preferred_repair_class`, `blocked_repeat_failure`, or `review_required_repeat_failure`. That policy prevents replaying known-bad repairs, can surface a previously successful repair class as preferred guidance, and still allows only one bounded repair attempt per run without recursive loops. Retry policy is only as trustworthy as the durability of the history it reads, so CI must hydrate prior canonical history rather than pretending a per-run scratch file is stateful memory.
 Use `pnpm playbook schema test-autofix --json` to inspect the machine-readable schema.
 
 
@@ -111,7 +110,7 @@ pnpm playbook remediation-status --json
 ```
 
 The workflow does not implement repair logic itself.
-It only captures the failure log, invokes the canonical remediation commands, and uploads the resulting `.playbook/` artifacts.
+It only fetches prior remediation artifacts, deterministically merges canonical `.playbook/test-autofix-history.json` payloads, captures the failure log, invokes the canonical remediation commands, and uploads the resulting `.playbook/` artifacts.
 
 Fail-closed gates keep the trust boundary explicit:
 
@@ -167,3 +166,7 @@ The repository CI workflow still acts only as a thin transport and gate over can
 - Rule: mutation should only occur when confidence exceeds a deterministic threshold and policy gates allow it.
 - Pattern: all CI/PR decisions come from remediation artifacts; workflow scripts only transport and gate the runtime.
 - Failure Mode: adding confidence heuristics directly to workflow logic creates drift between CI behavior and CLI truth.
+
+- Rule: Retry policy is only as trustworthy as the durability of the history it reads.
+- Pattern: Transport should hydrate canonical artifacts, not invent workflow-local state.
+- Failure Mode: Per-run ephemeral history makes repeat-aware policy look real while silently acting stateless.

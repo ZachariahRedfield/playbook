@@ -4,11 +4,24 @@
   "title": "PlaybookTestAutofixRemediationHistoryArtifact",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "generatedAt", "runs"],
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "runs"
+  ],
   "properties": {
-    "schemaVersion": { "type": "string", "const": "1.0" },
-    "kind": { "type": "string", "const": "test-autofix-remediation-history" },
-    "generatedAt": { "type": "string" },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "const": "test-autofix-remediation-history"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
     "runs": {
       "type": "array",
       "items": {
@@ -32,62 +45,191 @@
           "provenance"
         ],
         "properties": {
-          "run_id": { "type": "string" },
-          "generatedAt": { "type": "string" },
+          "run_id": {
+            "type": "string"
+          },
+          "generatedAt": {
+            "type": "string"
+          },
           "input": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["path"],
-            "properties": { "path": { "type": "string" } }
+            "required": [
+              "path"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            }
           },
-          "failure_signatures": { "type": "array", "items": { "type": "string" } },
+          "failure_signatures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "triage_classifications": {
             "type": "array",
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["failure_signature", "failure_kind", "repair_class", "package", "test_file", "test_name"],
+              "required": [
+                "failure_signature",
+                "failure_kind",
+                "repair_class",
+                "package",
+                "test_file",
+                "test_name"
+              ],
               "properties": {
-                "failure_signature": { "type": "string" },
-                "failure_kind": { "type": "string" },
-                "repair_class": { "type": "string" },
-                "package": { "type": ["string", "null"] },
-                "test_file": { "type": ["string", "null"] },
-                "test_name": { "type": ["string", "null"] }
+                "failure_signature": {
+                  "type": "string"
+                },
+                "failure_kind": {
+                  "type": "string"
+                },
+                "repair_class": {
+                  "type": "string"
+                },
+                "package": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "test_file": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "test_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
               }
             }
           },
-          "admitted_findings": { "type": "array", "items": { "type": "string" } },
-          "excluded_findings": { "type": "array", "items": { "type": "string" } },
-          "applied_task_ids": { "type": "array", "items": { "type": "string" } },
-          "applied_repair_classes": { "type": "array", "items": { "type": "string" } },
-          "files_touched": { "type": "array", "items": { "type": "string" } },
-          "verification_commands": { "type": "array", "items": { "type": "string" } },
+          "admitted_findings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excluded_findings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "applied_task_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "applied_repair_classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "files_touched": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verification_commands": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "verification_outcomes": {
             "type": "array",
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["command", "exitCode", "ok"],
+              "required": [
+                "command",
+                "exitCode",
+                "ok"
+              ],
               "properties": {
-                "command": { "type": "string" },
-                "exitCode": { "type": "integer" },
-                "ok": { "type": "boolean" }
+                "command": {
+                  "type": "string"
+                },
+                "exitCode": {
+                  "type": "integer"
+                },
+                "ok": {
+                  "type": "boolean"
+                }
               }
             }
           },
-          "final_status": { "type": "string" },
-          "stop_reasons": { "type": "array", "items": { "type": "string" } },
+          "final_status": {
+            "type": "string"
+          },
+          "stop_reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "provenance": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["failure_log_path", "triage_artifact_path", "fix_plan_artifact_path", "apply_result_path", "autofix_result_path"],
+            "required": [
+              "failure_log_path",
+              "triage_artifact_path",
+              "fix_plan_artifact_path",
+              "apply_result_path",
+              "autofix_result_path"
+            ],
             "properties": {
-              "failure_log_path": { "type": "string" },
-              "triage_artifact_path": { "type": "string" },
-              "fix_plan_artifact_path": { "type": "string" },
-              "apply_result_path": { "type": ["string", "null"] },
-              "autofix_result_path": { "type": "string" }
+              "failure_log_path": {
+                "type": "string"
+              },
+              "triage_artifact_path": {
+                "type": "string"
+              },
+              "fix_plan_artifact_path": {
+                "type": "string"
+              },
+              "apply_result_path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "autofix_result_path": {
+                "type": "string"
+              }
+            }
+          },
+          "source_provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_id",
+              "artifact_path",
+              "original_run_id"
+            ],
+            "properties": {
+              "source_id": {
+                "type": "string"
+              },
+              "artifact_path": {
+                "type": "string"
+              },
+              "original_run_id": {
+                "type": "string"
+              }
             }
           }
         }

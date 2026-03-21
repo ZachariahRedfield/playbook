@@ -26,6 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  actions: read
   contents: read
   pull-requests: write
 
@@ -51,6 +52,8 @@ jobs:
           allow-autofix-retry-override: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_autofix_retry_override && 'true' || 'false' }}
           retry-override-labels: "playbook:retry-autofix"
           autofix-confidence-threshold: ${{ vars.PLAYBOOK_AUTOFIX_CONFIDENCE_THRESHOLD || '0.7' }}
+          remediation-history-artifact-name: "playbook-remediation-artifacts-ci"
+          remediation-history-lookback: "5"
 
       - name: Upload Playbook remediation artifacts
         if: always()
@@ -115,6 +118,8 @@ jobs:
         with:
           node-version: "22"
           working-directory: "."
+          remediation-history-artifact-name: "playbook-remediation-artifacts-demo-validate"
+          remediation-history-lookback: "5"
 
       - name: Upload Playbook remediation artifacts
         if: always()

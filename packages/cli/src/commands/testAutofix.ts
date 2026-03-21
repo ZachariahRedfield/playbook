@@ -70,6 +70,11 @@ type RemediationHistoryEntry = {
     apply_result_path: string | null;
     autofix_result_path: string;
   };
+  source_provenance?: {
+    source_id: string;
+    artifact_path: string;
+    original_run_id: string;
+  };
 };
 
 type RemediationHistoryArtifact = {
@@ -116,6 +121,7 @@ const engine = engineRuntime as unknown as {
   buildTestFixPlanArtifact: (triage: TestTriageArtifact) => TestFixPlanArtifact;
   buildTestTriageArtifact: (rawLog: string, source: { input: 'file' | 'stdin'; path: string | null }) => TestTriageArtifact;
   buildTriageClassifications: (entries: RemediationHistoryEntry['triage_classifications']) => RemediationHistoryEntry['triage_classifications'];
+  mergeRemediationHistoryArtifacts: (sources: Array<{ artifact: RemediationHistoryArtifact; artifactPath: string; sourceId: string }>) => RemediationHistoryArtifact;
   createEmptyRemediationHistoryArtifact: () => RemediationHistoryArtifact;
   nextRemediationHistoryRunId: (artifact: RemediationHistoryArtifact) => string;
   normalizeRemediationHistoryArtifact: (value: unknown) => RemediationHistoryArtifact;
@@ -388,6 +394,11 @@ const buildHistoryEntry = (params: {
       fix_plan_artifact_path: DEFAULT_FIX_PLAN_FILE,
       apply_result_path: applyArtifactPath,
       autofix_result_path: outFile
+    },
+    source_provenance: {
+      source_id: 'runtime:.playbook/test-autofix-history.json',
+      artifact_path: DEFAULT_HISTORY_FILE,
+      original_run_id: runId
     }
   };
 };

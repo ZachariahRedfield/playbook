@@ -24,6 +24,12 @@ export type TestAutofixRemediationVerificationOutcome = {
   ok: boolean;
 };
 
+export type TestAutofixRemediationHistoryMergeProvenance = {
+  source_id: string;
+  artifact_path: string;
+  original_run_id: string;
+};
+
 export type TestAutofixRemediationHistoryEntry = {
   run_id: string;
   generatedAt: string;
@@ -46,6 +52,7 @@ export type TestAutofixRemediationHistoryEntry = {
   final_status: string;
   stop_reasons: string[];
   provenance: TestAutofixRemediationHistorySourceProvenance;
+  source_provenance?: TestAutofixRemediationHistoryMergeProvenance;
 };
 
 export type TestAutofixRemediationHistoryArtifact = {

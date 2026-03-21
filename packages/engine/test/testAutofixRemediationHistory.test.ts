@@ -9,6 +9,7 @@ import {
   listPriorSuccessfulRepairClasses,
   listRepeatedFailedRepairAttempts,
   listRunsByFailureSignature,
+  mergeRemediationHistoryArtifacts,
   nextRemediationHistoryRunId
 } from '../src/testAutofix/remediationHistory.js';
 
@@ -62,6 +63,24 @@ describe('test-autofix remediation history helpers', () => {
     ].join('\n'), { input: 'file', path: 'failure.log' });
 
     expect(first.findings[0]?.failure_signature).toBe(second.findings[0]?.failure_signature);
+  });
+
+
+  it('merges multiple history artifacts deterministically and preserves source provenance', () => {
+    const signature = buildSnapshotTriage(1).findings[0]!.failure_signature;
+    const firstArtifact = appendHistoryRun(createEmptyRemediationHistoryArtifact(), { signature, runId: 'test-autofix-run-0001', finalStatus: 'fixed', repairClasses: ['snapshot_refresh'], verificationOk: true });
+    const secondArtifact = appendHistoryRun(createEmptyRemediationHistoryArtifact(), { signature, runId: 'test-autofix-run-0001', finalStatus: 'not_fixed', repairClasses: ['snapshot_refresh'], verificationOk: false });
+
+    const merged = mergeRemediationHistoryArtifacts([
+      { artifact: secondArtifact, artifactPath: '.playbook/history/run-2.json', sourceId: 'ci-run-2' },
+      { artifact: firstArtifact, artifactPath: '.playbook/history/run-1.json', sourceId: 'ci-run-1' }
+    ]);
+
+    expect(merged.runs.map((entry) => entry.run_id)).toEqual(['test-autofix-run-0001', 'test-autofix-run-0002']);
+    expect(merged.runs.map((entry) => entry.source_provenance)).toEqual([
+      { source_id: 'ci-run-1', artifact_path: '.playbook/history/run-1.json', original_run_id: 'test-autofix-run-0001' },
+      { source_id: 'ci-run-2', artifact_path: '.playbook/history/run-2.json', original_run_id: 'test-autofix-run-0001' }
+    ]);
   });
 
   it('records history and supports repeated-failure lookup', () => {
