@@ -108,3 +108,18 @@ These sections reuse the existing remediation-history artifact only. They do not
 - Rule: Telemetry may tune policy, but it must not become a second policy engine.
 - Pattern: One read-only summary surface should answer most soak questions.
 - Failure Mode: Operators start tuning thresholds from anecdotes instead of artifact truth.
+
+## Human-facing text mode
+
+Text output now defaults to a compact operator brief:
+
+- decision/status
+- affected surfaces/artifacts
+- blockers
+- next action
+
+Full remediation telemetry, confidence buckets, threshold counterfactuals, and repeat-history detail remain in JSON output and `.playbook/remediation-status.json`.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.

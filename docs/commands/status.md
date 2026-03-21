@@ -329,3 +329,18 @@ Pattern:
 Failure Mode:
 
 - A repo can appear integrated because commands exist locally while still failing as a real governed consumer due to missing runtime/artifact/bootstrap guarantees.
+
+## Human-facing text mode
+
+`playbook status` and high-signal scoped summaries such as fleet/queue/execute/receipt/updated/proof now default to a compact operator brief that centers:
+
+- decision/status
+- affected surfaces
+- blockers
+- next action
+
+Machine-readable detail stays in JSON mode and the canonical `.playbook/*` artifacts used to derive these summaries.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.

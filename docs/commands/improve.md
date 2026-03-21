@@ -129,3 +129,18 @@ Doctrine alignment:
 - Rule: Playbook should rank improvement candidates based on architectural leverage, not just surface-level code issues.
 - Pattern: High-value improvement candidates often appear as duplicated derivation, missing invalidation boundaries, or repeated non-canonical data flows.
 - Failure Mode: A governed tool that cannot surface the next best improvement remains dependent on manual senior-engineer initiative selection.
+
+## Human-facing text mode
+
+`playbook improve`, `playbook improve opportunities`, and `playbook improve commands` now default to a compact operator brief that centers:
+
+- decision/status
+- affected surfaces/artifacts
+- blockers
+- next action
+
+Detailed candidate evidence, command proposals, and opportunity analysis remain artifact-backed in `.playbook/improvement-candidates.json`, `.playbook/command-improvements.json`, and JSON mode.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.

@@ -1,5 +1,6 @@
 import { runDocsAudit, runDocsConsolidation, runDocsConsolidationPlan } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
+import { renderBriefReport } from '../lib/briefText.js';
 
 type DocsOptions = {
   ci: boolean;
@@ -14,17 +15,39 @@ const printTextUsage = (): void => {
 
 
 const printConsolidationPlanReport = (result: ReturnType<typeof runDocsConsolidationPlan>): void => {
-  console.log(`playbook docs consolidate-plan: ${result.ok ? 'OK' : 'REVIEW'}`);
-  console.log(`Artifact: ${result.artifactPath}`);
-  console.log(`Executable targets: ${result.artifact.summary.executable_targets} (excluded: ${result.artifact.summary.excluded_targets})`);
+  console.log(
+    renderBriefReport({
+      title: 'Docs consolidation plan',
+      decision: result.ok ? 'ready to apply reviewed-write tasks' : 'review required before apply',
+      affectedSurfaces: [result.artifactPath, `${result.artifact.summary.executable_targets} executable target(s)`],
+      blockers: result.artifact.summary.excluded_targets > 0 ? [`${result.artifact.summary.excluded_targets} target(s) excluded from apply plan`] : [],
+      nextAction: result.ok
+        ? `Run pnpm playbook apply --from-plan ${result.artifactPath}`
+        : `Inspect ${result.artifactPath} exclusions before applying managed writes`,
+      sections: [
+        {
+          heading: 'Why',
+          items: [
+            `Executable targets: ${result.artifact.summary.executable_targets}`,
+            `Excluded targets: ${result.artifact.summary.excluded_targets}`
+          ]
+        }
+      ]
+    })
+  );
 };
 
 const printConsolidationReport = (result: ReturnType<typeof runDocsConsolidation>): void => {
-  console.log('playbook docs consolidate: OK');
-  console.log(`Artifact: ${result.artifactPath}`);
-  console.log(`Fragments: ${result.artifact.summary.fragmentCount} (issues: ${result.artifact.summary.issueCount})`);
-  console.log('');
-  console.log(result.artifact.brief);
+  console.log(
+    renderBriefReport({
+      title: 'Docs consolidation',
+      decision: result.artifact.summary.issueCount > 0 ? 'proposal prepared with blockers' : 'proposal prepared for reviewed integration',
+      affectedSurfaces: [result.artifactPath, `${result.artifact.summary.fragmentCount} fragment(s)`, `${result.artifact.summary.consolidatedTargetCount} target seam(s)`],
+      blockers: result.artifact.summary.issueCount > 0 ? [`${result.artifact.summary.issueCount} issue(s) need review before plan/apply`] : [],
+      nextAction: result.artifact.summary.issueCount > 0 ? `Inspect ${result.artifactPath} issues and resolve seams before consolidate-plan` : 'Run pnpm playbook docs consolidate-plan --json to compile reviewed-write tasks',
+      sections: [{ heading: 'Why', items: [result.artifact.brief] }]
+    })
+  );
 };
 
 const printHumanReport = (result: ReturnType<typeof runDocsAudit>): void => {

@@ -44,3 +44,18 @@ pnpm playbook docs consolidate-plan --json
 - Failure Mode: Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
 
 Command reference: [`pnpm playbook docs consolidate`](docs-consolidate.md).
+
+## Human-facing text mode
+
+`playbook docs consolidate` and `playbook docs consolidate-plan` now default to a compact operator brief that centers:
+
+- decision/status
+- affected surfaces/artifacts
+- blockers
+- next action
+
+The full consolidation seam analysis and reviewed-write task plan remain in `.playbook/docs-consolidation.json`, `.playbook/docs-consolidation-plan.json`, and JSON mode.
+
+- Rule: Human surfaces should show decision, action, and why — not raw machine state.
+- Pattern: Artifact-rich, brief-thin operator surfaces keep review fast.
+- Failure Mode: Making humans parse machine-oriented artifacts slows review and pushes important decisions off the visible surface.

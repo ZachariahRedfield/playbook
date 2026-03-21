@@ -9,6 +9,7 @@ import { emitJsonOutput } from '../../lib/jsonArtifact.js';
 import { ExitCode } from '../../lib/cliContract.js';
 import { emitCommandFailure, printCommandHelp } from '../../lib/commandSurface.js';
 import { createCommandQualityTracker } from '../../lib/commandQuality.js';
+import { renderBriefReport } from '../../lib/briefText.js';
 
 type ImproveOptions = {
   format: 'text' | 'json';
@@ -26,75 +27,46 @@ const printImproveHelp = (): void => {
 };
 
 const renderText = (artifact: ImprovementCandidatesArtifact): void => {
-  console.log('Improvement candidates');
-  console.log('──────────────────────');
-  console.log(`Generated at: ${artifact.generatedAt}`);
-  console.log(`Thresholds: recurrence >= ${artifact.thresholds.minimum_recurrence}, confidence >= ${artifact.thresholds.minimum_confidence}`);
-  console.log('');
-  console.log('AUTO-SAFE');
-  console.log(`- ${artifact.summary.AUTO_SAFE}`);
-  console.log('CONVERSATIONAL');
-  console.log(`- ${artifact.summary.CONVERSATIONAL}`);
-  console.log('GOVERNANCE');
-  console.log(`- ${artifact.summary.GOVERNANCE}`);
-  console.log('');
+  const topCandidate = artifact.candidates[0];
+  const topRejected = artifact.rejected_candidates[0];
+  const nextAction = topCandidate
+    ? topCandidate.required_review
+      ? `Review ${topCandidate.candidate_id} in .playbook/improvement-candidates.json before approving changes`
+      : topCandidate.suggested_action
+    : 'Inspect .playbook/improvement-candidates.json for candidate-only detail';
 
-  console.log('Doctrine lifecycle proposals (recommendation-first)');
-  console.log(`- candidates: ${artifact.doctrine_candidates.candidates.length}`);
-  console.log(`- transitions: ${artifact.doctrine_promotions.transitions.length}`);
-  console.log('');
-
-  console.log('Router recommendations (non-autonomous)');
-  console.log(`- accepted: ${artifact.router_recommendations.recommendations.length}`);
-  console.log(`- rejected: ${artifact.router_recommendations.rejected_recommendations.length}`);
-  console.log('');
-
-  if (artifact.candidates.length === 0) {
-    console.log('No candidates met recurrence/confidence thresholds.');
-    if (artifact.rejected_candidates.length > 0) {
-      console.log(`Rejected candidates: ${artifact.rejected_candidates.length}`);
-    }
-  } else {
-    for (const candidate of artifact.candidates) {
-      console.log(`- [${candidate.gating_tier}] ${candidate.candidate_id} (${candidate.category})`);
-      console.log(`  observation: ${candidate.observation}`);
-      console.log(`  evidence: ${candidate.evidence_count} events across ${candidate.supporting_runs} runs, confidence: ${candidate.confidence_score}`);
-      console.log(`  required review: ${candidate.required_review ? 'yes' : 'no'}`);
-      console.log(`  why gated: ${candidate.blocking_reasons.length === 0 ? 'meets deterministic thresholds' : candidate.blocking_reasons.join(', ')}`);
-      console.log(`  action: ${candidate.suggested_action}`);
-    }
-  }
-
-  if (artifact.router_recommendations.recommendations.length > 0) {
-    console.log('');
-    console.log('Router recommendation details (proposal-only)');
-    for (const recommendation of artifact.router_recommendations.recommendations) {
-      console.log(`- [${recommendation.gating_tier}] ${recommendation.recommendation_id} (${recommendation.task_family})`);
-      console.log(`  strategy: ${recommendation.current_strategy} -> ${recommendation.recommended_strategy}`);
-      console.log(`  evidence: ${recommendation.evidence_count} events across ${recommendation.supporting_runs} runs, confidence: ${recommendation.confidence_score}`);
-      console.log(`  rationale: ${recommendation.rationale}`);
-    }
-  }
-
-  if (artifact.doctrine_promotions.transitions.length > 0) {
-    console.log('');
-    console.log('Doctrine transitions');
-    for (const transition of artifact.doctrine_promotions.transitions) {
-      console.log(`- ${transition.candidate_id}: ${transition.from_stage} -> ${transition.to_stage}`);
-      console.log(`  governance gated: ${transition.governance_gated ? 'yes' : 'no'}, approved: ${transition.approved ? 'yes' : 'no'}`);
-      console.log(`  rationale: ${transition.rationale}`);
-    }
-  }
-
-  if (artifact.rejected_candidates.length > 0) {
-    console.log('');
-    console.log('Rejected (insufficient evidence / confidence)');
-    for (const rejected of artifact.rejected_candidates) {
-      console.log(`- ${rejected.candidate_id} (${rejected.category})`);
-      console.log(`  evidence: ${rejected.evidence_count} events across ${rejected.supporting_runs} runs, confidence: ${rejected.confidence_score}`);
-      console.log(`  why gated: ${rejected.blocking_reasons.join(', ')}`);
-    }
-  }
+  console.log(
+    renderBriefReport({
+      title: 'Improve',
+      decision: artifact.candidates.length > 0 ? `${artifact.candidates.length} candidate(s) surfaced` : 'no candidate cleared deterministic thresholds',
+      affectedSurfaces: [
+        '.playbook/improvement-candidates.json',
+        '.playbook/command-improvements.json',
+        `${artifact.summary.total} total candidate(s)`
+      ],
+      blockers: [
+        artifact.rejected_candidates.length > 0 ? `${artifact.rejected_candidates.length} candidate(s) stayed below evidence/confidence gates` : null,
+        topRejected ? `${topRejected.candidate_id}: ${topRejected.blocking_reasons.join(', ')}` : null
+      ],
+      nextAction,
+      sections: [
+        {
+          heading: 'Why',
+          items: [
+            `AUTO-SAFE: ${artifact.summary.AUTO_SAFE}`,
+            `CONVERSATIONAL: ${artifact.summary.CONVERSATIONAL}`,
+            `GOVERNANCE: ${artifact.summary.GOVERNANCE}`,
+            `Router recommendations accepted: ${artifact.router_recommendations.recommendations.length}`
+          ]
+        },
+        {
+          heading: 'Priority candidates',
+          items: artifact.candidates.slice(0, 3).map((candidate: ImprovementCandidatesArtifact['candidates'][number]) => `${candidate.candidate_id} [${candidate.gating_tier}] — ${candidate.suggested_action}`),
+          emptyText: 'No candidates met recurrence/confidence thresholds.'
+        }
+      ]
+    })
+  );
 };
 
 const printConversationPrompts = (artifact: ImprovementCandidatesArtifact): void => {
@@ -110,33 +82,23 @@ const printConversationPrompts = (artifact: ImprovementCandidatesArtifact): void
 
 
 const renderOpportunityText = (artifact: ImprovementCandidatesArtifact['opportunity_analysis']): void => {
-  console.log('Next best improvement analysis');
-  console.log('─────────────────────────────');
-  console.log(`Generated at: ${artifact.generatedAt}`);
-  console.log(`Report only: ${artifact.reportOnly ? 'yes' : 'no'}`);
-  console.log(`Files scanned: ${artifact.sourceArtifacts.filesScanned}`);
-  console.log('');
-
   const items = artifact.top_recommendation ? [artifact.top_recommendation, ...artifact.secondary_queue] : artifact.secondary_queue;
-  if (items.length === 0) {
-    console.log('No high-confidence opportunities detected.');
-    return;
-  }
-
-  items.forEach((entry: ImprovementCandidatesArtifact['opportunity_analysis']['secondary_queue'][number], index: number) => {
-    const label = index === 0 ? 'BEST NEXT TARGET' : `QUEUE #${index}`;
-    console.log(`${label}: ${entry.title}`);
-    console.log(`- heuristic: ${entry.heuristic_class}`);
-    console.log(`- priority: ${entry.priority_score}, confidence: ${entry.confidence}`);
-    console.log(`- why it matters: ${entry.why_it_matters}`);
-    console.log(`- likely change shape: ${entry.likely_change_shape}`);
-    console.log(`- rationale: ${entry.rationale.join(' ')}`);
-    console.log('- evidence:');
-    entry.evidence.forEach((pointer: ImprovementCandidatesArtifact['opportunity_analysis']['secondary_queue'][number]['evidence'][number]) => {
-      console.log(`  - ${pointer.file}:${pointer.lines.join(',')} — ${pointer.detail}`);
-    });
-    console.log('');
-  });
+  console.log(
+    renderBriefReport({
+      title: 'Next best improvement',
+      decision: items.length > 0 ? `${items.length} opportunity candidate(s) ranked` : 'no high-confidence opportunity detected',
+      affectedSurfaces: [`${artifact.sourceArtifacts.filesScanned} file(s) scanned`, '.playbook/next-best-improvement.json'],
+      blockers: [],
+      nextAction: items[0] ? `Inspect evidence for ${items[0].title} in .playbook/next-best-improvement.json` : 'Gather more evidence before re-running improve opportunities',
+      sections: [
+        {
+          heading: 'Why',
+          items: items.slice(0, 3).map((entry: ImprovementCandidatesArtifact['opportunity_analysis']['secondary_queue'][number], index: number) => `${index === 0 ? 'best target' : `queue #${index}`}: ${entry.title} (${entry.heuristic_class}, confidence ${entry.confidence})`),
+          emptyText: 'No high-confidence opportunities detected.'
+        }
+      ]
+    })
+  );
 };
 
 const renderCommandImprovementsText = (artifact: {
@@ -169,51 +131,23 @@ const renderCommandImprovementsText = (artifact: {
   };
   rejected_proposals: Array<{ proposal_id: string; blocking_reasons: string[] }>;
 }): void => {
-  console.log('Command improvement proposals (recommendation-first)');
-  console.log('──────────────────────────────────────────────────────');
-  console.log(`Generated at: ${artifact.generatedAt}`);
-  console.log(`Accepted proposals: ${artifact.proposals.length}`);
-  console.log(`Rejected proposals: ${artifact.rejected_proposals.length}`);
-
-  for (const proposal of artifact.proposals) {
-    console.log(`- [${proposal.gating_tier}] ${proposal.proposal_id} (${proposal.command_name})`);
-    console.log(`  issue: ${proposal.issue_type}`);
-    console.log(`  evidence: ${proposal.evidence_count} records across ${proposal.supporting_runs} runs`);
-    console.log(`  rates: failure=${proposal.average_failure_rate}, confidence=${proposal.average_confidence_score}, duration_ms=${proposal.average_duration_ms}`);
-    console.log(`  rationale: ${proposal.rationale}`);
-    console.log(`  proposed improvement: ${proposal.proposed_improvement}`);
-  }
-
-  if (artifact.runtime_hardening.proposals.length > 0 || artifact.runtime_hardening.open_questions.length > 0) {
-    console.log('');
-    console.log('Runtime hardening proposals (governed cycle evidence)');
-    console.log(`Accepted runtime proposals: ${artifact.runtime_hardening.proposals.length}`);
-    console.log(`Rejected runtime proposals: ${artifact.runtime_hardening.rejected_proposals.length}`);
-    for (const proposal of artifact.runtime_hardening.proposals) {
-      console.log(`- [${proposal.gating_tier}] ${proposal.proposal_id}`);
-      console.log(`  issue: ${proposal.issue_type}`);
-      console.log(`  evidence: ${proposal.evidence_count} records across ${proposal.supporting_runs} runs`);
-      console.log(`  rationale: ${proposal.rationale}`);
-      console.log(`  proposed improvement: ${proposal.proposed_improvement}`);
-    }
-
-    if (artifact.runtime_hardening.open_questions.length > 0) {
-      console.log('Open questions (conservative evidence posture)');
-      for (const entry of artifact.runtime_hardening.open_questions) {
-        console.log(`- ${entry.question_id}: ${entry.question}`);
-        console.log(`  rationale: ${entry.rationale}`);
-      }
-    }
-  }
-
-
-  if (artifact.rejected_proposals.length > 0) {
-    console.log('');
-    console.log('Rejected command proposals');
-    for (const proposal of artifact.rejected_proposals) {
-      console.log(`- ${proposal.proposal_id}: ${proposal.blocking_reasons.join(', ')}`);
-    }
-  }
+  const topProposal = artifact.proposals[0];
+  console.log(
+    renderBriefReport({
+      title: 'Command improvements',
+      decision: artifact.proposals.length > 0 ? `${artifact.proposals.length} proposal(s) accepted` : 'no command proposal cleared deterministic thresholds',
+      affectedSurfaces: ['.playbook/command-improvements.json', `${artifact.runtime_hardening.proposals.length} runtime hardening proposal(s)`],
+      blockers: [artifact.rejected_proposals[0] ? `${artifact.rejected_proposals[0].proposal_id}: ${artifact.rejected_proposals[0].blocking_reasons.join(', ')}` : null],
+      nextAction: topProposal ? `Inspect ${topProposal.proposal_id} for ${topProposal.command_name} in .playbook/command-improvements.json` : 'Gather more governed runtime evidence before re-running improve commands',
+      sections: [
+        {
+          heading: 'Why',
+          items: artifact.proposals.slice(0, 3).map((proposal) => `${proposal.proposal_id} [${proposal.gating_tier}] — ${proposal.command_name}: ${proposal.proposed_improvement}`),
+          emptyText: 'No command proposals accepted.'
+        }
+      ]
+    })
+  );
 };
 
 export const runImproveOpportunities = async (cwd: string, options: ImproveOptions): Promise<number> => {
@@ -308,9 +242,6 @@ export const runImprove = async (cwd: string, options: ImproveOptions): Promise<
 
   if (!options.quiet) {
     renderText(artifact);
-    console.log('');
-    renderOpportunityText(artifact.opportunity_analysis);
-    printConversationPrompts(artifact);
   }
 
   tracker.finish({

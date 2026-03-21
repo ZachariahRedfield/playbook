@@ -8,6 +8,7 @@ import {
   type WorksetPlanArtifact
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../../lib/cliContract.js';
+import { renderBriefReport } from '../../lib/briefText.js';
 
 const WORKSET_PLAN_PATH = '.playbook/workset-plan.json';
 const LANE_STATE_PATH = '.playbook/lane-state.json';
@@ -20,25 +21,17 @@ type LanesOptions = {
 };
 
 const printText = (result: LaneStateArtifact): void => {
-  console.log('Lane State');
-  console.log('──────────');
-  console.log(`Workset plan: ${result.workset_plan_path}`);
-  console.log(`Blocked lanes: ${result.blocked_lanes.length}`);
-  console.log(`Ready lanes: ${result.ready_lanes.length}`);
-  console.log(`Running lanes: ${result.running_lanes.length}`);
-  console.log(`Completed lanes: ${result.completed_lanes.length}`);
-  console.log(`Merge-ready lanes: ${result.merge_readiness.merge_ready_lanes.length}`);
-
-  if (result.blocked_lanes.length > 0) {
-    console.log('');
-    console.log('Blocked lane details:');
-    for (const lane of result.lanes.filter((entry: (typeof result.lanes)[number]) => entry.status === 'blocked')) {
-      console.log(`- ${lane.lane_id}: ${lane.blocked_reasons.join('; ') || 'blocked'}`);
-      if (lane.conflict_surface_paths.length > 0) {
-        console.log(`  conflict surfaces: ${lane.conflict_surface_paths.join(', ')}`);
-      }
-    }
-  }
+  const firstBlocked = result.lanes.find((entry: (typeof result.lanes)[number]) => entry.status === 'blocked');
+  console.log(
+    renderBriefReport({
+      title: 'Lane state',
+      decision: result.blocked_lanes.length > 0 ? `${result.blocked_lanes.length} lane(s) blocked` : `${result.ready_lanes.length} lane(s) ready`,
+      affectedSurfaces: [result.workset_plan_path, `${result.ready_lanes.length} ready`, `${result.merge_readiness.merge_ready_lanes.length} merge-ready`],
+      blockers: [firstBlocked ? `${firstBlocked.lane_id}: ${firstBlocked.blocked_reasons.join('; ') || 'blocked'}` : null],
+      nextAction: result.ready_lanes[0] ? `Assign worker for ${result.ready_lanes[0].lane_id}` : 'Resolve blocked lanes before worker assignment',
+      sections: [{ heading: 'Why', items: [`Running: ${result.running_lanes.length}`, `Completed: ${result.completed_lanes.length}`] }]
+    })
+  );
 };
 
 const readWorksetPlan = (cwd: string): WorksetPlanArtifact | undefined => {
