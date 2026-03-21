@@ -1412,12 +1412,13 @@ Use a layered phase model so each phase compounds directly on the previous one:
    - Router Lane 3 (implemented): learning-state metrics now conservatively refine route proposals (retry pressure, route efficiency, parallel safety, router fit, validation-cost pressure) with additive `learning_state_available`, `route_confidence`, `open_questions`, and warnings while preserving required validations and deterministic output ordering.
    - Router Lane 4 (implemented): execution-plan outputs are now Codex-worker-ready with additive route fields (`expected_surfaces`, `likely_conflict_surfaces`, `dependency_level`, `recommended_pr_size`, `worker_ready`) and deterministic `playbook route --codex-prompt` compilation into PR-sized proposal-only worker prompts (objective, implementation plan, surfaces, verification, docs updates, and governance block).
 9. **Phase 9 â€” Worker Fragment Consolidation for Shared Singleton Docs**  
-   Add a first-class planning slice for deferred consolidation of canonical narrative artifacts so parallel worker execution remains merge-safe before managed subagents/hooks are introduced.
-   - Problem: parallel workers can be isolated across implementation surfaces and still collide on singleton narrative docs such as `docs/CHANGELOG.md`, roadmap rollups, and shared architecture summaries.
-   - Planned approach: workers write structured lane-local fragments / receipts, workers do not directly edit protected singleton narrative docs during parallel execution, and one deterministic final consolidation step updates canonical shared docs.
+   Implemented proposal-only consolidation seam for protected singleton narrative artifacts so parallel worker execution remains merge-safe before managed subagents/hooks are introduced.
+   - Implemented seam: worker fragments, protected singleton registry, prompt-thin worker prompts, and proposal-only docs consolidate now ship together as the current safety slice.
+   - Problem addressed: parallel workers can be isolated across implementation surfaces and still collide on singleton narrative docs such as `docs/CHANGELOG.md`, roadmap rollups, and shared architecture summaries.
+   - Current behavior: workers write structured lane-local fragments / receipts, workers do not directly edit protected singleton narrative docs during parallel execution, and `pnpm playbook docs consolidate --json` emits a deterministic review artifact rather than mutating canonical docs.
    - Worker-owned implementation surfaces remain safe for direct edits; narrative singleton surfaces are updated through consolidation only.
-   - Acceptance criteria: define a first-class `worker-fragment` contract / schema, explicit protected singleton doc surfaces, consolidation-step responsibilities, deterministic ordering, stable conflict keys (`target_doc + section_key`), and guardrails that prevent direct concurrent edits to protected singleton docs.
-   - Dependency positioning: place this slice after worker partitioning / lane safety and before full managed subagents / hooks execution because parallelizable work is not automatically parallel-safe.
+   - Next hardening step: add reviewed consolidation execution / merge-guard controls so canonical narrative docs can move from proposal-only review artifacts to a governed merge boundary with deterministic conflict enforcement.
+   - Dependency positioning: this slice now sits after worker partitioning / lane safety and before reviewed consolidation execution / merge-guard hardening for future managed subagents / hooks execution.
 10. **Phase 10 â€” Repository Memory System**  
    Establish the temporal memory substrate (session/episodic evidence) while keeping repository structural intelligence (`index`/`graph`) as a distinct deterministic layer.
    - Worker assignment slice (implemented): deterministic proposal-only `worker-assignments` contract generation from lane-state readiness/dependency gates via `pnpm playbook workers` / `pnpm playbook workers assign`, including `.playbook/worker-assignments.json` and `.playbook/prompts/<lane_id>.md` outputs without worker launch or branch/PR automation.
@@ -1480,12 +1481,12 @@ TODO (roadmap contract alignment): add explicit feature IDs, dependencies, and v
    - Requires provenance-preserving retrieval and review queues before any doctrine promotion/demotion/supersession.
    - Keeps candidate generation high-recall while preventing low-signal promotion through explicit salience and approval gates.
 
-3. **Worker Fragment Consolidation for Shared Singleton Docs**
-   - Adds the missing planning seam between worker partitioning and future subagent/runtime execution.
-   - Distinguishes worker-owned implementation surfaces from protected singleton narrative surfaces (`docs/CHANGELOG.md`, roadmap rollups, shared summaries).
-   - Requires workers to emit isolated lane-local fragments / receipts and reserves canonical narrative updates for one final deterministic consolidation pass.
-   - Provides the dependency-ordered path `worker partitioning / overlap detection -> worker-local fragments / receipts -> final consolidation pass -> managed subagents / hooks`.
-   - Makes parallel execution safer without claiming full autonomous agents first.
+3. **Reviewed consolidation execution / merge-guard layer**
+   - Adds the next missing hardening seam after the implemented worker-fragment consolidation safety slice.
+   - Distinguishes proposal-only consolidation artifacts from governed canonical doc mutation on protected singleton narrative surfaces (`docs/CHANGELOG.md`, roadmap rollups, shared summaries).
+   - Requires reviewed consolidation application, deterministic merge/conflict guards, and explicit enforcement before canonical narrative updates land.
+   - Provides the dependency-ordered path `worker partitioning / overlap detection -> worker-local fragments / receipts -> proposal-only docs consolidate -> reviewed consolidation execution / merge-guard -> managed subagents / hooks`.
+   - Makes parallel execution safer without re-describing the already implemented slice as future work.
 
 4. **Control Plane / Agent Runtime v1**
    - Builds on memory + replay/consolidation + evidence + policy boundaries, not in parallel with them.
@@ -2390,11 +2391,14 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Rule — Consolidation is the only write boundary for protected singleton narrative docs.
 - Pattern — Workers propose; consolidator integrates.
 - Failure Mode — Parallel docs work without consolidation becomes a merge-management problem, not a productivity gain.
-- Next planned safety slice: **Worker Fragment Consolidation for Shared Singleton Docs**, requiring first-class `worker-fragment` contracts / receipts, explicit protected singleton doc registries, and a final deterministic consolidation pass for canonical narrative docs before future managed subagents/hooks execution.
-- Rule — Shared singleton docs should be updated through worker-local fragments plus a deterministic consolidation pass, not direct concurrent edits from multiple workers.
+- Next planned safety slice: **Reviewed consolidation execution / merge-guard layer**, requiring reviewed consolidation application for canonical narrative docs, deterministic merge/conflict enforcement on protected singleton surfaces, and guarded promotion from proposal-only consolidation artifacts into canonical doc updates before future managed subagents/hooks execution.
+- Rule — Shared singleton docs should be updated through worker-local fragments plus a reviewed deterministic consolidation boundary, not direct concurrent edits from multiple workers.
+- Rule — Implemented state and next-state must never overlap in roadmap language.
 - Rule — Human prompt surfaces should carry only bounded execution instructions, not full machine state.
 - Pattern — Artifact-rich, prompt-thin orchestration keeps operators fast.
+- Pattern — Roadmap truth should lag implementation by zero slices on active operator surfaces.
 - Failure Mode — Dumping full machine context into worker prompts lowers signal and increases drift.
+- Failure Mode — Shipping a slice while still describing it as next causes planning drift and weakens trust in product docs.
 - Pattern — Workers own isolated implementation changes; a final consolidator owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.
 - Failure Mode — Parallelizable work is not automatically parallel-safe; allowing every worker to edit the same root-level docs creates merge hotspots, inconsistent summaries, and doc drift.
 

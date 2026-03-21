@@ -90,30 +90,33 @@ interface ScmContext {
   - touched command/docs/contracts map to roadmap entry.
 - Merge automation updates roadmap item status (`planned -> in-progress -> implemented-hardening`) and appends release note fragment.
 
-### Parallel-safe narrative consolidation slice (planned)
+### Parallel-safe narrative consolidation slice (implemented) and next hardening layer
 
-Before Playbook expands into managed subagents, hook execution, or broader worker automation, the roadmap should include a first-class planning slice for **Worker Fragment Consolidation for Shared Singleton Docs**.
+Playbook now ships the first-class proposal-only **Worker Fragment Consolidation for Shared Singleton Docs** safety slice.
 
-Problem:
+Implemented seam:
+- workers write structured lane-local fragments / receipts
+- protected singleton narrative docs are registry-backed and excluded from direct concurrent worker edits
+- worker prompts stay prompt-thin by routing singleton narrative work through artifacts instead of full shared-doc mutation instructions
+- `pnpm playbook docs consolidate --json` emits one deterministic consolidation artifact and lead-agent brief without mutating canonical docs
+
+Why it exists:
 - worker partitioning can isolate code ownership and still leave merge hotspots on singleton narrative docs such as `docs/CHANGELOG.md`, roadmap rollups, and shared architecture summaries
 - parallelizable work is not automatically parallel-safe when canonical narrative surfaces remain shared write targets
 
-Planned approach:
-- workers write structured lane-local fragments / receipts
-- workers avoid direct edits to protected singleton narrative docs during parallel execution
-- one deterministic final consolidation step updates canonical shared docs
-- the slice becomes prerequisite infrastructure for future managed subagents / hooks orchestration
-
-Acceptance criteria:
-- define worker-local fragment / receipt shape
-- define protected singleton doc surfaces
-- define consolidation-step responsibilities
+Next hardening step:
+- add reviewed consolidation execution for canonical narrative docs
+- add deterministic merge/conflict guards on protected singleton surfaces
+- make that reviewed merge boundary prerequisite infrastructure before future managed subagents / hooks orchestration expands beyond proposal-only consolidation
 - define guardrails preventing direct concurrent edits to protected singleton docs
-- connect the slice to the future path `worker partitioning / overlap detection -> worker-local fragments / receipts -> final consolidation pass -> managed subagents / hooks`
+- connect the slice to the future path `worker partitioning / overlap detection -> worker-local fragments / receipts -> proposal-only docs consolidate -> reviewed consolidation execution / merge-guard -> managed subagents / hooks`
 
-Rule: Shared singleton docs should be updated through worker-local fragments plus a deterministic consolidation pass, not direct concurrent edits from multiple workers.
+Rule: Shared singleton docs should be updated through worker-local fragments plus a reviewed deterministic consolidation boundary, not direct concurrent edits from multiple workers.
+Rule: Implemented state and next-state must never overlap in roadmap language.
 Pattern: Workers own isolated implementation changes; a final consolidator worker owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.
+Pattern: Roadmap truth should lag implementation by zero slices on active operator surfaces.
 Failure Mode: Allowing every worker to edit the same root-level docs creates merge hotspots, inconsistent summaries, and doc drift even when code ownership is otherwise well partitioned.
+Failure Mode: Shipping a slice while still describing it as next causes planning drift and weakens trust in product docs.
 
 ## 6. Contract / docs / tests enforcement model
 
