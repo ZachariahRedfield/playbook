@@ -1,3 +1,20 @@
+export interface ProtectedSingletonDoc {
+  targetDoc: string;
+  consolidationStrategy: 'deterministic-final-pass';
+  rationale: string;
+}
+
+export interface WorkerFragmentContract {
+  schemaVersion: '1.0';
+  kind: 'worker-fragment';
+  artifactPath: string;
+  targetDoc: string;
+  sectionKey: string;
+  conflictKey: string;
+  orderingKey: string;
+  machineFacing: true;
+}
+
 export interface OrchestratorLaneContract {
   id: string;
   title: string;
@@ -6,6 +23,8 @@ export interface OrchestratorLaneContract {
   allowedPaths: string[];
   forbiddenPaths: string[];
   sharedPaths: string[];
+  protectedSingletonDocs: ProtectedSingletonDoc[];
+  workerFragment: WorkerFragmentContract | null;
   wave: number;
   dependsOn: string[];
   promptFile: string;
@@ -20,6 +39,7 @@ export interface OrchestratorContract {
   laneCountRequested: number;
   laneCountProduced: number;
   sharedPaths: string[];
+  protectedSingletonDocs: ProtectedSingletonDoc[];
   warnings: string[];
   lanes: OrchestratorLaneContract[];
 }

@@ -17,6 +17,12 @@ describe('buildOrchestratorContract', () => {
     expect(contract.laneCountRequested).toBe(3);
     expect(contract.laneCountProduced).toBe(3);
     expect(contract.sharedPaths).toEqual(['README.md', 'docs/CHANGELOG.md', 'docs/PLAYBOOK_PRODUCT_ROADMAP.md']);
+    expect(contract.protectedSingletonDocs.map((entry) => entry.targetDoc)).toEqual([
+      'docs/CHANGELOG.md',
+      'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
+      'docs/commands/orchestrate.md',
+      'docs/commands/workers.md'
+    ]);
 
     const owned = new Set<string>();
     contract.lanes.forEach((lane) => {
@@ -32,7 +38,9 @@ describe('buildOrchestratorContract', () => {
         dependsOn: expect.any(Array),
         promptFile: expect.any(String),
         verification: expect.any(Array),
-        documentationUpdates: expect.any(Array)
+        documentationUpdates: expect.any(Array),
+        protectedSingletonDocs: expect.any(Array),
+        workerFragment: expect.anything()
       });
 
       lane.allowedPaths.forEach((ownedPath) => {
@@ -46,6 +54,11 @@ describe('buildOrchestratorContract', () => {
     expect(waveTwo[0]?.dependsOn).toEqual(['lane-1', 'lane-2']);
 
     expect(contract.lanes.map((lane) => lane.shardKey)).toEqual(['packages-cli', 'packages-engine', 'tests']);
+    expect(contract.lanes.map((lane) => lane.workerFragment?.orderingKey ?? null)).toEqual([
+      '0001:docs/commands/orchestrate.md::lane-1-summary::lane-1',
+      '0001:docs/commands/orchestrate.md::lane-2-summary::lane-2',
+      '0002:docs/CHANGELOG.md::lane-3-summary::lane-3'
+    ]);
   });
 
 
@@ -108,9 +121,11 @@ describe('buildOrchestratorContract', () => {
     workerLaneDirs.forEach((laneId) => {
       expect(fs.existsSync(path.join(workersDir, laneId, 'prompt.md'))).toBe(true);
       expect(fs.existsSync(path.join(workersDir, laneId, 'contract.json'))).toBe(true);
+      expect(fs.existsSync(path.join(workersDir, laneId, 'worker-fragment.template.json'))).toBe(true);
 
-      const workerContract = JSON.parse(fs.readFileSync(path.join(workersDir, laneId, 'contract.json'), 'utf8')) as { shardKey: string };
+      const workerContract = JSON.parse(fs.readFileSync(path.join(workersDir, laneId, 'contract.json'), 'utf8')) as { shardKey: string; workerFragment: { conflictKey: string } | null };
       expect(workerContract.shardKey).toBeTruthy();
+      expect(workerContract.workerFragment?.conflictKey).toContain('::');
     });
 
     const laneOnePrompt = fs.readFileSync(path.join(workersDir, 'lane-1', 'prompt.md'), 'utf8');

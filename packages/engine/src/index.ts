@@ -698,7 +698,9 @@ export type {
   CompileOrchestratorArtifactsResult,
   OrchestratorArtifactWriteResult,
   OrchestratorContract as OrchestratorLaneContractArtifact,
-  OrchestratorLaneContract
+  OrchestratorLaneContract,
+  ProtectedSingletonDoc,
+  WorkerFragmentContract
 } from './orchestrator/index.js';
 
 export * from './telemetry/index.js';

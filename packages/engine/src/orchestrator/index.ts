@@ -7,5 +7,7 @@ export type {
   CompileOrchestratorArtifactsResult,
   OrchestratorArtifactWriteResult,
   OrchestratorContract,
-  OrchestratorLaneContract
+  OrchestratorLaneContract,
+  ProtectedSingletonDoc,
+  WorkerFragmentContract
 } from './types.js';

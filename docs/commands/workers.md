@@ -2,13 +2,16 @@
 
 `workers` assigns deterministic, proposal-only workers to lane-state entries and writes `.playbook/worker-assignments.json`.
 
-It consumes `.playbook/workset-plan.json` and `.playbook/lane-state.json`, then emits lane-level prompt files under `.playbook/prompts/<lane_id>.md` for assigned lanes.
+It consumes `.playbook/workset-plan.json` and `.playbook/lane-state.json`, then emits lane-level prompt files under `.playbook/prompts/<lane_id>.md` for assigned lanes. Protected singleton narrative work stays artifact-first via worker fragments under `.playbook/` rather than direct shared doc edits.
 
 Rule — Worker assignment must respect lane readiness and dependency edges.
+Rule — Workers write fragments for protected singleton docs; they do not edit them directly.
 
 Pattern — Parallel development becomes safe when work is isolated by surface and assigned per lane.
+Pattern — Narrative singleton surfaces are consolidated once, not edited in parallel.
 
 Failure Mode — Assigning workers without surface isolation leads to merge conflicts and broken CI.
+Failure Mode — Surface-safe worker lanes still collide if singleton docs remain shared write targets.
 
 ## Usage
 
@@ -50,3 +53,5 @@ Each lane assignment entry includes:
 - `task_ids`
 - `assigned_prompt`
 - `dependencies_satisfied`
+
+When a lane later participates in protected singleton doc consolidation, its worker-local fragment contract must use a stable conflict key of `target_doc + section_key` and deterministic ordering based on wave, target doc, section key, and lane id.

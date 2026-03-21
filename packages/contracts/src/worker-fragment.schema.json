@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/worker-fragment.schema.json",
+  "title": "Worker Fragment Artifact",
+  "description": "Deterministic worker-local fragment/receipt for protected singleton narrative docs. Workers emit machine-facing artifacts under .playbook instead of editing protected singleton docs directly.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "lane_id",
+    "worker_id",
+    "fragment_id",
+    "created_at",
+    "target_doc",
+    "section_key",
+    "conflict_key",
+    "ordering_key",
+    "status",
+    "summary",
+    "artifact_path",
+    "content"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "worker-fragment" },
+    "lane_id": { "type": "string", "minLength": 1 },
+    "worker_id": { "type": "string", "minLength": 1 },
+    "fragment_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "target_doc": { "type": "string", "minLength": 1 },
+    "section_key": { "type": "string", "minLength": 1 },
+    "conflict_key": { "type": "string", "pattern": "^[^\s]+::[^\s]+$" },
+    "ordering_key": { "type": "string", "pattern": "^[0-9]{4}:[^\s]+::[^\s]+::[^\s]+$" },
+    "status": { "type": "string", "enum": ["proposed", "consolidated", "superseded"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "artifact_path": { "type": "string", "pattern": "^\.playbook/.+\.json$" },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "payload"],
+      "properties": {
+        "format": { "type": "string", "enum": ["json", "markdown"] },
+        "payload": { "type": "string", "minLength": 1 }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

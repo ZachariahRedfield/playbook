@@ -108,12 +108,19 @@ describe('runOrchestrate', () => {
     const artifactPayload = JSON.parse(fs.readFileSync(jsonArtifact, 'utf8')) as {
       goal: string;
       laneCountProduced: number;
-      lanes: Array<{ id: string; shardKey: string; wave: number; dependsOn: string[]; allowedPaths: string[] }>;
+      lanes: Array<{ id: string; shardKey: string; wave: number; dependsOn: string[]; allowedPaths: string[]; workerFragment: { conflictKey: string; orderingKey: string } | null }>;
       sharedPaths: string[];
+      protectedSingletonDocs: Array<{ targetDoc: string }>;
     };
     expect(artifactPayload.goal).toBe('ship orchestration command');
     expect(artifactPayload.laneCountProduced).toBe(3);
     expect(artifactPayload.sharedPaths).toEqual(['README.md', 'docs/CHANGELOG.md', 'docs/PLAYBOOK_PRODUCT_ROADMAP.md']);
+    expect(artifactPayload.protectedSingletonDocs.map((entry) => entry.targetDoc)).toEqual([
+      'docs/CHANGELOG.md',
+      'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
+      'docs/commands/orchestrate.md',
+      'docs/commands/workers.md'
+    ]);
 
     const workerDirs = fs.readdirSync(workersDir);
     expect(workerDirs).toHaveLength(artifactPayload.laneCountProduced);
@@ -121,6 +128,7 @@ describe('runOrchestrate', () => {
     workerDirs.forEach((laneId) => {
       expect(fs.existsSync(path.join(workersDir, laneId, 'prompt.md'))).toBe(true);
       expect(fs.existsSync(path.join(workersDir, laneId, 'contract.json'))).toBe(true);
+      expect(fs.existsSync(path.join(workersDir, laneId, 'worker-fragment.template.json'))).toBe(true);
     });
 
     const lane1WorkerContract = JSON.parse(fs.readFileSync(path.join(workersDir, 'lane-1', 'contract.json'), 'utf8')) as {
@@ -133,6 +141,8 @@ describe('runOrchestrate', () => {
       dependsOn: string[];
       shardKey: string;
       verification: string[];
+      protectedSingletonDocs: Array<{ targetDoc: string }>;
+      workerFragment: { conflictKey: string; orderingKey: string; artifactPath: string } | null;
     };
 
     expect(lane1WorkerContract).toMatchObject({
@@ -144,8 +154,12 @@ describe('runOrchestrate', () => {
       shardKey: expect.any(String),
       wave: expect.any(Number),
       dependsOn: expect.any(Array),
-      verification: expect.any(Array)
+      verification: expect.any(Array),
+      protectedSingletonDocs: expect.any(Array),
+      workerFragment: expect.anything()
     });
+    expect(lane1WorkerContract.workerFragment?.conflictKey).toBe('docs/commands/orchestrate.md::lane-1-summary');
+    expect(lane1WorkerContract.workerFragment?.artifactPath).toBe('.playbook/orchestrator/workers/lane-1/worker-fragment.json');
 
     const owned = new Set<string>();
     artifactPayload.lanes.forEach((lane) => {
@@ -157,6 +171,7 @@ describe('runOrchestrate', () => {
 
     artifactPayload.lanes.forEach((lane) => {
       expect(lane.shardKey).toBeTruthy();
+      expect(lane.workerFragment?.conflictKey).toContain('::');
     });
 
     const lane1WorkerPrompt = fs.readFileSync(path.join(workersDir, 'lane-1', 'prompt.md'), 'utf8');

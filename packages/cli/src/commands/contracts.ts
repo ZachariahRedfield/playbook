@@ -48,6 +48,7 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'policy-apply-result', version: '1.0', path: 'packages/contracts/src/policy-apply-result.schema.json' },
   { id: 'lane-state', version: '1.0', path: 'packages/contracts/src/lane-state.schema.json' },
   { id: 'worker-assignments', version: '1.0', path: 'packages/contracts/src/worker-assignments.schema.json' },
+  { id: 'worker-fragment', version: '1.0', path: 'packages/contracts/src/worker-fragment.schema.json' },
   { id: 'repository-events', version: '1.0', path: 'packages/contracts/src/repository-events.schema.json' },
   { id: 'cycle-state', version: '1.0', path: 'packages/contracts/src/cycle-state.schema.json' },
   { id: 'cycle-history', version: '1.0', path: 'packages/contracts/src/cycle-history.schema.json' },

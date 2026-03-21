@@ -22,7 +22,9 @@ const toPromptSpec = (contract: OrchestratorContract): LanePromptSpec[] =>
     documentationUpdates: lane.documentationUpdates,
     mergeNotes: [
       `Coordinate shared-path updates only when changes touch: ${lane.sharedPaths.join(', ') || '(none)'}.`,
-      `Prompt artifact: ${lane.promptFile}.`
+      `Prompt artifact: ${lane.promptFile}.`,
+      `Protected singleton docs must be updated via worker fragments only: ${lane.protectedSingletonDocs.map((entry) => entry.targetDoc).join(', ') || '(none)'}.`,
+      ...lane.protectedSingletonDocs.map((entry) => `${entry.targetDoc}: ${entry.rationale}`)
     ],
     laneOwnershipConstraints: [
       `Primary ownership is exclusive to: ${lane.allowedPaths.join(', ') || '(none)'}.`,
@@ -40,7 +42,9 @@ const buildWorkerContract = (lane: OrchestratorLaneContract, goal: string) => ({
   sharedPaths: lane.sharedPaths,
   wave: lane.wave,
   dependsOn: lane.dependsOn,
-  verification: lane.verification
+  verification: lane.verification,
+  protectedSingletonDocs: lane.protectedSingletonDocs,
+  workerFragment: lane.workerFragment
 });
 
 export const writeOrchestratorArtifact = (
@@ -69,6 +73,11 @@ export const writeOrchestratorArtifact = (
 
     const workerContractPath = path.join(workerDir, 'contract.json');
     fs.writeFileSync(workerContractPath, `${JSON.stringify(buildWorkerContract(lane, contract.goal), null, 2)}\n`, 'utf8');
+
+    if (lane.workerFragment) {
+      const fragmentTemplatePath = path.join(workerDir, 'worker-fragment.template.json');
+      fs.writeFileSync(fragmentTemplatePath, `${JSON.stringify(lane.workerFragment, null, 2)}\n`, 'utf8');
+    }
 
     workerBundleDirs.push(workerDir);
   });

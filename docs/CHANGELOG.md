@@ -3,6 +3,10 @@
 
 ## Unreleased
 
+- WHAT: Added the public `worker-fragment` schema entry to the stable contracts catalog and updated the committed CLI contract snapshot to include `id = worker-fragment`, `version = 1.0`, and `path = packages/contracts/src/worker-fragment.schema.json`. WHY: Public schema catalog changes must ship with snapshot updates so intentional surface growth is reviewed instead of looking like incidental snapshot noise.
+- Rule: when adding a new exported schema, update stable contract snapshots in the same PR.
+- Failure Mode: schema catalog expansion looks like snapshot noise unless registry intent is checked first.
+
 - WHAT: Reclassified remediation-learning improvement candidates as explicit review-gated proposal families, mapping blocked-signature investigations and fixture/contract hardening to conversational review while keeping threshold-tuning, verify/rule improvement, and docs/doctrine update signals governance-gated; added regression coverage so remediation-derived doctrine candidates continue to emit from those review-only suggestions. WHY: New candidate families that can influence doctrine, policy, or operator guidance must declare governance tier explicitly so they cannot silently fall through generic AUTO-SAFE logic and suppress downstream review-only learning.
 - Rule: New candidate families must declare their governance tier explicitly when they can influence doctrine, policy, or operator guidance.
 - Pattern: Candidate-only remediation learning should stay review-gated and provenance-linked, not silently collapse into AUTO-SAFE execution semantics.

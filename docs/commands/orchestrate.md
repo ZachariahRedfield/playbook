@@ -7,7 +7,7 @@
 Playbook orchestration is governance-first:
 
 - Defines lane ownership, dependencies, and shared-file risk.
-- Generates deterministic artifacts for workers.
+- Generates deterministic artifacts for workers, including machine-facing worker-fragment contracts for protected singleton docs.
 - **Does not** launch workers, create branches, open PRs, merge code, or run autonomous execution loops.
 
 Codex workers are expected to execute lane prompts within the contracts produced by this command.
@@ -59,13 +59,14 @@ Default output directory: `.playbook/orchestrator`
 
 - `orchestrator.json` (written when `--format json` or `--format both`)
 - `lane-1.prompt.md`, `lane-2.prompt.md`, ... (written when `--format md` or `--format both`)
+- `.playbook/orchestrator/workers/<lane_id>/worker-fragment.template.json` (written for lanes that may contribute to protected singleton docs)
 
 `orchestrator.json` includes:
 
 - Goal and requested/produced lane counts
 - Explicit shared-file conflict hubs
 - Warnings for deterministic degradations
-- Lane contracts with allowed/forbidden paths, wave/dependency ordering, and prompt file mapping
+- Lane contracts with allowed/forbidden paths, wave/dependency ordering, prompt file mapping, protected singleton doc registry, and worker-fragment metadata
 
 ## Current limitations (v0)
 
@@ -84,6 +85,17 @@ The following conflict hubs are always surfaced explicitly:
 
 These files are treated as shared-risk surfaces and should be integrated with explicit coordination.
 
+Protected singleton docs are a stricter subset of narrative surfaces that workers must not edit directly:
+
+- `docs/CHANGELOG.md`
+- `docs/PLAYBOOK_PRODUCT_ROADMAP.md`
+- `docs/commands/orchestrate.md`
+- `docs/commands/workers.md`
+
+Rule — Workers write fragments for protected singleton docs; they do not edit them directly.
+Pattern — Narrative singleton surfaces are consolidated once, not edited in parallel.
+Failure Mode — Surface-safe worker lanes still collide if singleton docs remain shared write targets.
+
 ## Worker prompt contract
 
 Each generated lane prompt includes:
@@ -99,6 +111,19 @@ Each generated lane prompt includes:
 - Merge notes
 
 This keeps worker execution bounded and lane ownership explicit.
+
+## Worker fragment contract
+
+When a lane touches protected singleton docs, the worker bundle includes a machine-facing `worker-fragment.template.json` contract under `.playbook/orchestrator/workers/<lane_id>/`.
+
+The fragment contract is intentionally artifact-first:
+
+- `kind = worker-fragment`
+- `artifactPath` stays under `.playbook/`
+- `conflictKey = target_doc + "::" + section_key`
+- `orderingKey = <zero-padded-wave>:<target_doc>::<section_key>::<lane_id>`
+
+Identical inputs therefore produce identical fragment ordering and stable conflict keys without granting workers any new mutation authority over singleton docs.
 
 ## Future scope (not implemented in this command)
 

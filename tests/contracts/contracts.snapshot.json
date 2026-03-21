@@ -230,6 +230,11 @@
         "path": "packages/contracts/src/worker-assignments.schema.json"
       },
       {
+        "id": "worker-fragment",
+        "version": "1.0",
+        "path": "packages/contracts/src/worker-fragment.schema.json"
+      },
+      {
         "id": "repository-events",
         "version": "1.0",
         "path": "packages/contracts/src/repository-events.schema.json"

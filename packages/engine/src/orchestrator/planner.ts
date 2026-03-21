@@ -1,9 +1,61 @@
 import { buildLanePromptFilename } from '../execution/lanePrompts.js';
-import type { BuildOrchestratorContractInput, OrchestratorContract, OrchestratorLaneContract } from './types.js';
+import type { BuildOrchestratorContractInput, OrchestratorContract, OrchestratorLaneContract, ProtectedSingletonDoc, WorkerFragmentContract } from './types.js';
 
 const SHARED_PATHS = ['README.md', 'docs/CHANGELOG.md', 'docs/PLAYBOOK_PRODUCT_ROADMAP.md'] as const;
 
 const normalizeGoal = (goal: string): string => goal.replace(/\s+/g, ' ').trim();
+
+
+const PROTECTED_SINGLETON_DOCS: ProtectedSingletonDoc[] = [
+  {
+    targetDoc: 'docs/CHANGELOG.md',
+    consolidationStrategy: 'deterministic-final-pass',
+    rationale: 'Canonical release/change narrative remains a singleton rollup and must be consolidated once.'
+  },
+  {
+    targetDoc: 'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
+    consolidationStrategy: 'deterministic-final-pass',
+    rationale: 'Roadmap rollups are protected singleton narrative surfaces and should not be edited in parallel.'
+  },
+  {
+    targetDoc: 'docs/commands/orchestrate.md',
+    consolidationStrategy: 'deterministic-final-pass',
+    rationale: 'Command-truth narrative docs should be consolidated from worker-local fragments when shared across lanes.'
+  },
+  {
+    targetDoc: 'docs/commands/workers.md',
+    consolidationStrategy: 'deterministic-final-pass',
+    rationale: 'Worker workflow guidance stays singleton so command semantics remain deterministic.'
+  }
+];
+
+const PROTECTED_SINGLETON_DOC_SET = new Set(PROTECTED_SINGLETON_DOCS.map((entry) => entry.targetDoc));
+
+const fragmentSectionKeyForLane = (laneId: string): string => `${laneId}-summary`;
+
+const buildWorkerFragmentContract = (laneId: string, wave: number, protectedSingletonDocs: ProtectedSingletonDoc[]): WorkerFragmentContract | null => {
+  if (protectedSingletonDocs.length === 0) {
+    return null;
+  }
+
+  const targetDoc = [...protectedSingletonDocs]
+    .map((entry) => entry.targetDoc)
+    .sort((left, right) => left.localeCompare(right))[0];
+  const sectionKey = fragmentSectionKeyForLane(laneId);
+  const conflictKey = `${targetDoc}::${sectionKey}`;
+
+  return {
+    schemaVersion: '1.0',
+    kind: 'worker-fragment',
+    artifactPath: `.playbook/orchestrator/workers/${laneId}/worker-fragment.json`,
+    targetDoc,
+    sectionKey,
+    conflictKey,
+    orderingKey: `${String(wave).padStart(4, '0')}:${targetDoc}::${sectionKey}::${laneId}`,
+    machineFacing: true
+  };
+};
+
 
 const uniqueSorted = (values: string[]): string[] => Array.from(new Set(values)).sort((left, right) => left.localeCompare(right));
 
@@ -32,7 +84,7 @@ const orderSharedPaths = (values: string[]): string[] => {
   });
 };
 
-type LaneBlueprint = Omit<OrchestratorLaneContract, 'id' | 'promptFile' | 'dependsOn' | 'shardKey'> & { dependsOnLaneIndexes: number[] };
+type LaneBlueprint = Omit<OrchestratorLaneContract, 'id' | 'promptFile' | 'dependsOn' | 'shardKey' | 'protectedSingletonDocs' | 'workerFragment'> & { dependsOnLaneIndexes: number[] };
 
 const SHARD_KEY_PREFIX_RULES: Array<{ prefix: string; shardKey: string }> = [
   { prefix: 'packages/engine/', shardKey: 'packages-engine' },
@@ -44,7 +96,7 @@ const SHARD_KEY_PREFIX_RULES: Array<{ prefix: string; shardKey: string }> = [
 
 const SHARED_GOVERNANCE_PATHS = new Set<string>([
   ...SHARED_PATHS,
-  'docs/commands/orchestrate.md',
+  ...PROTECTED_SINGLETON_DOCS.map((entry) => entry.targetDoc),
   'docs/commands/README.md',
   'README.md'
 ]);
@@ -273,20 +325,31 @@ export const buildOrchestratorContract = (input: BuildOrchestratorContractInput)
   const blueprints = mergeBlueprints(goal, effectiveLaneCount);
   assertNoOverlap(blueprints);
 
-  const lanes: OrchestratorLaneContract[] = blueprints.map((lane, index) => ({
+  const lanes: OrchestratorLaneContract[] = blueprints.map((lane, index) => {
+    const id = `lane-${index + 1}`;
+    const protectedSingletonDocs = lane.documentationUpdates
+      .filter((targetDoc) => PROTECTED_SINGLETON_DOC_SET.has(targetDoc))
+      .map((targetDoc) => PROTECTED_SINGLETON_DOCS.find((entry) => entry.targetDoc === targetDoc))
+      .filter((entry): entry is ProtectedSingletonDoc => entry !== undefined)
+      .sort((left, right) => left.targetDoc.localeCompare(right.targetDoc));
+
+    return {
     shardKey: deriveShardKey(lane.allowedPaths),
-    id: `lane-${index + 1}`,
+    id,
     title: lane.title,
     objective: lane.objective,
     allowedPaths: uniqueSorted(lane.allowedPaths),
     forbiddenPaths: uniqueSorted(lane.forbiddenPaths),
     sharedPaths: orderSharedPaths(lane.sharedPaths),
+    protectedSingletonDocs,
+    workerFragment: buildWorkerFragmentContract(id, lane.wave, protectedSingletonDocs),
     wave: lane.wave,
     dependsOn: uniqueSorted(lane.dependsOnLaneIndexes.map((value) => `lane-${value + 1}`)),
     promptFile: buildLanePromptFilename(index + 1),
     verification: uniqueSorted(lane.verification),
     documentationUpdates: uniqueSorted(lane.documentationUpdates)
-  }));
+  };
+  });
 
   assertShardOwnershipByWave(lanes);
 
@@ -297,6 +360,7 @@ export const buildOrchestratorContract = (input: BuildOrchestratorContractInput)
     laneCountRequested: requested,
     laneCountProduced: lanes.length,
     sharedPaths: orderSharedPaths([...SHARED_PATHS]),
+    protectedSingletonDocs: [...PROTECTED_SINGLETON_DOCS],
     warnings,
     lanes
   };
