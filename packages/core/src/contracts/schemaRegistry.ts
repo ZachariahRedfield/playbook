@@ -100,6 +100,7 @@ export const additiveCommandFieldSchemaRegistry: RegisteredSchemaContract[] = [
   { id: 'workflow-promotion', version: '1.0', path: 'packages/contracts/src/workflow-promotion.schema.json', kind: 'command-output' },
   { id: 'workset-plan', version: '1.0', path: 'packages/contracts/src/workset-plan.schema.json', kind: 'command-output' },
   { id: 'lane-state', version: '1.0', path: 'packages/contracts/src/lane-state.schema.json', kind: 'command-output' },
+  { id: 'worker-results', version: '1.0', path: 'packages/contracts/src/worker-results.schema.json', kind: 'command-output' },
   { id: 'learning-state', version: '1.0', path: 'packages/contracts/src/learning-state.schema.json', kind: 'command-output' },
   { id: 'policy-evaluation', version: '1.0', path: 'packages/contracts/src/policy-evaluation.schema.json', kind: 'command-output' },
   { id: 'story', version: '1.0', path: 'packages/contracts/src/story.schema.json', kind: 'command-output' },

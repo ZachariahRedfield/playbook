@@ -1,5 +1,6 @@
 import type { WorksetPlanArtifact, WorksetLane } from './worksetPlan.js';
 import type { ProtectedDocConsolidationStatus } from './protectedDocConsolidation.js';
+import { laneStatusOverridesFromWorkerResults, type WorkerResultsArtifact } from './workerResults.js';
 
 export type LaneExecutionStatus = 'blocked' | 'ready' | 'running' | 'completed' | 'merge_ready';
 
@@ -367,13 +368,14 @@ const deriveFromOverrides = (
 export const deriveLaneState = (
   worksetPlan: WorksetPlanArtifact,
   worksetPlanPath: string,
-  options?: { laneStatusOverrides?: Readonly<Record<string, LaneExecutionStatus>> }
+  options?: { laneStatusOverrides?: Readonly<Record<string, LaneExecutionStatus>>; workerResults?: WorkerResultsArtifact }
 ): LaneStateArtifact => {
   const fallbackOverrides: Record<string, LaneExecutionStatus> = Object.fromEntries(
     worksetPlan.lanes.map((lane) => [lane.lane_id, lane.worker_ready ? 'ready' : 'blocked'])
   );
 
-  const laneStatusOverrides = { ...fallbackOverrides, ...(options?.laneStatusOverrides ?? {}) };
+  const workerResultOverrides = options?.workerResults ? laneStatusOverridesFromWorkerResults(options.workerResults) : {};
+  const laneStatusOverrides = { ...fallbackOverrides, ...(options?.laneStatusOverrides ?? {}), ...workerResultOverrides };
   return deriveFromOverrides(worksetPlan, worksetPlanPath, laneStatusOverrides);
 };
 

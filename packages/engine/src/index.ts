@@ -644,7 +644,7 @@ export { buildTaskExecutionProfile } from './routing/executionRouter.js';
 export { buildExecutionPlan } from './routing/executionPlan.js';
 export type { BuildExecutionPlanInput, ExecutionPlanArtifact, ExecutionPlanSourceArtifacts } from './routing/executionPlan.js';
 export { compileCodexPrompt } from './routing/codexPrompt.js';
-export { buildWorksetPlan, deriveLaneState, applyLaneLifecycleTransition, assignWorkersToLanes, buildAssignedPrompt } from './orchestration/index.js';
+export { buildWorksetPlan, deriveLaneState, applyLaneLifecycleTransition, assignWorkersToLanes, buildAssignedPrompt, WORKER_RESULTS_RELATIVE_PATH, createWorkerResultsArtifact, readWorkerResultsArtifact, validateWorkerResultInput, mergeWorkerResult, writeWorkerResultsArtifact, laneStatusOverridesFromWorkerResults } from './orchestration/index.js';
 export type {
   WorksetPlanArtifact,
   WorksetTaskInput,
@@ -657,7 +657,12 @@ export type {
   WorkerAssignmentsArtifact,
   WorkerAssignmentEntry,
   WorkerAssignmentWorker,
-  WorkerAssignmentLaneStatus
+  WorkerAssignmentLaneStatus,
+  WorkerResultsArtifact,
+  WorkerResultEntry,
+  WorkerResultCompletionStatus,
+  WorkerResultFragmentRef,
+  WorkerResultArtifactRef
 } from './orchestration/index.js';
 export type {
   ExecutionSurface,

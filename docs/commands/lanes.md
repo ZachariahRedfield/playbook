@@ -23,6 +23,7 @@ pnpm playbook lanes complete <lane_id>
 ## Inputs
 
 - Requires `.playbook/workset-plan.json` from `pnpm playbook orchestrate --tasks-file <path>`.
+- Reads `.playbook/worker-results.json` when present so submitted worker receipts can advance lane completion deterministically without ad hoc human collection.
 - `start` and `complete` consume `.playbook/lane-state.json` when present to preserve deterministic proposal-only lifecycle history.
 
 ## Lifecycle model
@@ -32,7 +33,7 @@ Lane status is deterministic and proposal-only:
 - `blocked`: prerequisites or dependencies unresolved
 - `ready`: lane can be started
 - `running`: lane was started via `lanes start <lane_id>`
-- `completed`: lane was completed via `lanes complete <lane_id>` but not yet merge-ready
+- `completed`: lane was completed via `lanes complete <lane_id>` or by a submitted `worker-result` receipt, but is not yet merge-ready
 - `merge_ready`: conservative safe-completion state after recomputation and protected-doc consolidation resolution
 
 Dependency gates are strict: if prerequisites become unresolved, the lane remains or returns `blocked` regardless of requested transition.
