@@ -179,7 +179,7 @@ export type { AiContract, LoadedAiContract, AiContractSource } from './ai/aiCont
 export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } from './schema/cliSchemas.js';
 
 export { buildFailureSignature, buildFailureSignatureSeed, normalizeAssertionShape } from './testAutofix/failureSignature.js';
-export { appendRemediationHistoryEntry, buildTriageClassifications, computeAutofixConfidence, createEmptyRemediationHistoryArtifact, evaluateRepeatRemediationPolicy, listPriorSuccessfulRepairClasses, listRepeatedFailedRepairAttempts, listRunsByFailureSignature, nextRemediationHistoryRunId, normalizeRemediationHistoryArtifact } from './testAutofix/remediationHistory.js';
+export { appendRemediationHistoryEntry, buildTriageClassifications, computeAutofixConfidence, createEmptyRemediationHistoryArtifact, evaluateRepeatRemediationPolicy, listPriorSuccessfulRepairClasses, listRepeatedFailedRepairAttempts, listRunsByFailureSignature, mergeRemediationHistoryArtifacts, nextRemediationHistoryRunId, normalizeRemediationHistoryArtifact } from './testAutofix/remediationHistory.js';
 export { buildRemediationStatusArtifact } from './testAutofix/remediationStatus.js';
 
 export { STORIES_SCHEMA_VERSION, STORIES_RELATIVE_PATH, STORY_TYPES, STORY_SEVERITIES, STORY_PRIORITIES, STORY_CONFIDENCES, STORY_STATUSES, createDefaultStoriesArtifact, validateStoryRecord, validateStoriesArtifact, readStoriesArtifact, createStoryRecord, upsertStory, updateStoryStatus, sortStoriesForBacklog, summarizeStoriesBacklog, findStoryById, buildStableStoryReference, toStoryPlanningReference, buildStoryRouteTask, deriveStoryLifecycleStatus, deriveStoryTransitionPreview, transitionStoryFromEvent, linkStoryToPlan, reconcileStoryExecution } from './story/stories.js';

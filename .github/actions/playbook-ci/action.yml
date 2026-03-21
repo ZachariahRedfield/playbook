@@ -51,6 +51,14 @@ inputs:
     description: Deterministic minimum confidence required before test-autofix may mutate.
     required: false
     default: "0.7"
+  remediation-history-artifact-name:
+    description: Artifact name to hydrate prior canonical test-autofix remediation history from before CI reruns canonical commands.
+    required: false
+    default: "playbook-remediation-artifacts-ci"
+  remediation-history-lookback:
+    description: Maximum number of prior remediation artifact archives to inspect when hydrating canonical history.
+    required: false
+    default: "5"
 
 outputs:
   test-exit-code:
@@ -194,6 +202,20 @@ runs:
         echo "status=$status" >> "$GITHUB_OUTPUT"
         echo "mutation-allowed=$mutation_allowed" >> "$GITHUB_OUTPUT"
         echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
+    - name: Hydrate prior canonical remediation history
+      if: env.PLAYBOOK_TEST_EXIT_CODE != '0' && steps.remediation-policy.outputs.mutation-allowed == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        PLAYBOOK_REMEDIATION_ARTIFACT_NAME: ${{ inputs.remediation-history-artifact-name }}
+        PLAYBOOK_REMEDIATION_HISTORY_LOOKBACK: ${{ inputs.remediation-history-lookback }}
+      run: |
+        echo "+ node $GITHUB_WORKSPACE/.github/scripts/hydrate-remediation-history.cjs --cwd . --out .playbook/test-autofix-history.json"
+        node "$GITHUB_WORKSPACE/.github/scripts/hydrate-remediation-history.cjs" --cwd . --out .playbook/test-autofix-history.json
 
     - name: Run canonical bounded test-autofix
       if: env.PLAYBOOK_TEST_EXIT_CODE != '0' && steps.remediation-policy.outputs.mutation-allowed == 'true'
