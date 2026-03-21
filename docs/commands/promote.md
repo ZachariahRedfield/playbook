@@ -58,12 +58,18 @@ Use these terms consistently:
 
 - **Repo-local story backlog**: canonical repo-specific planning state in `.playbook/stories.json`.
 - **Story candidates**: non-canonical repo-local derivations in `.playbook/story-candidates.json`.
-- **Global reusable pattern memory**: promoted cross-repo doctrine in `.playbook/memory/knowledge/patterns.json`.
+- **Global reusable pattern memory**: promoted cross-repo doctrine in `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`).
 - **Pattern proposals**: cross-repo promotion bridge artifacts in `.playbook/pattern-proposals.json`.
 - Canonical reusable pattern storage contract: repo-local memory -> `.playbook/memory/knowledge/patterns.json`, global reusable pattern memory -> `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`), cross-repo proposal bridge -> `.playbook/pattern-proposals.json`.
 - **Pattern review state**: review queue / approval artifacts such as `.playbook/pattern-review-queue.json` and `.playbook/patterns-promoted.json` used by `patterns promote`.
 
 Rule: Global knowledge may suggest local work, but only repo-local stories may enter execution planning.
+
+Rule: One canonical storage contract per knowledge scope.
+
+Pattern: Scope-first resolution beats path inference.
+
+Failure Mode: Storage-path drift makes governance legible in code but confusing to operators.
 
 ## Command forms
 

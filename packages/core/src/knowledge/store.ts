@@ -12,6 +12,7 @@ import type {
   KnowledgeSupersessionResult,
   KnowledgeTimelineOptions
 } from './types.js';
+import { readPatternKnowledgeStoreArtifact } from '../patternStore.js';
 
 const MEMORY_ROOT = '.playbook/memory' as const;
 const MEMORY_EVENTS_DIR = `${MEMORY_ROOT}/events` as const;
@@ -559,13 +560,15 @@ const readLifecycleCandidateRecords = (projectRoot: string, repo: string): Knowl
 
 const readGlobalPatternRecords = (projectRoot: string): KnowledgeRecord[] => {
   const playbookHome = resolvePlaybookHome();
-  const candidatePath = path.join(playbookHome, '.playbook', 'patterns.json');
-  const compatibilityPath = path.join(playbookHome, 'patterns.json');
-  const resolvedPath = fs.existsSync(candidatePath) ? candidatePath : compatibilityPath;
-  const parsed = safeReadJson<GlobalPatternArtifact>(resolvedPath);
+  const { artifact: parsed, store } = readPatternKnowledgeStoreArtifact<GlobalPatternArtifact | null>(
+    'global_reusable_pattern_memory',
+    null,
+    { playbookHome }
+  );
   if (!parsed || !Array.isArray(parsed.patterns)) {
     return [];
   }
+  const resolvedPath = store.resolvedPath;
 
   return parsed.patterns.flatMap((value) => {
     const entry = value as GlobalPatternEntry;
