@@ -30,6 +30,9 @@ All improve surfaces support side-effect-free `--help` and deterministic JSON fa
 - `.playbook/learning-compaction.json` (when available)
 - `.playbook/process-telemetry.json` (when available)
 - `.playbook/outcome-telemetry.json` (when available)
+- `.playbook/remediation-status.json` (when available)
+- `.playbook/test-autofix-history.json` (when available)
+- `.playbook/test-autofix.json` (when available)
 - `.playbook/telemetry/command-quality.json`
 - `.playbook/telemetry/command-quality-summary.json` / `.playbook/telemetry/command-quality-summaries.json` (when available)
 
@@ -46,6 +49,30 @@ All improve surfaces support side-effect-free `--help` and deterministic JSON fa
 - `worker_prompts`
 - `validation_efficiency`
 - `ontology`
+- `remediation_learning`
+
+## Remediation learning loop
+
+When remediation artifacts are present, `playbook improve` converts bounded self-repair outcomes into **candidate-only** suggestions rather than new mutation authority.
+
+Current remediation-derived suggestion classes:
+
+- `threshold_tuning`
+- `repair_class_investigation`
+- `verify_rule_improvement`
+- `fixture_contract_hardening`
+- `docs_doctrine_update`
+
+These suggestions preserve provenance back to stable failure signatures, repair classes, recent run IDs, and outcome states so reviewers can trace why a candidate exists before promoting any follow-up work.
+
+Governance constraints:
+
+- Rule: Runtime outcomes may suggest system improvements, but may not mutate doctrine or policy automatically.
+- Rule: New remediation-learning candidate families must declare a review tier explicitly when they can influence doctrine, policy, or operator guidance.
+- Pattern: Self-repair becomes compounding only when outcomes are distilled back into candidate knowledge.
+- Failure Mode: Rich remediation history that never feeds learning becomes a dead-end log.
+- Rule: Repeated blocked signatures should generate investigation/tuning candidates instead of widening execution authority.
+- Rule: `improve` remains candidate-only; no queue or execution path changes are made by these remediation-learning outputs.
 
 ## Thresholds
 

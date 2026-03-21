@@ -3,6 +3,11 @@
 
 ## Unreleased
 
+- WHAT: Reclassified remediation-learning improvement candidates as explicit review-gated proposal families, mapping blocked-signature investigations and fixture/contract hardening to conversational review while keeping threshold-tuning, verify/rule improvement, and docs/doctrine update signals governance-gated; added regression coverage so remediation-derived doctrine candidates continue to emit from those review-only suggestions. WHY: New candidate families that can influence doctrine, policy, or operator guidance must declare governance tier explicitly so they cannot silently fall through generic AUTO-SAFE logic and suppress downstream review-only learning.
+- Rule: New candidate families must declare their governance tier explicitly when they can influence doctrine, policy, or operator guidance.
+- Pattern: Candidate-only remediation learning should stay review-gated and provenance-linked, not silently collapse into AUTO-SAFE execution semantics.
+- Failure Mode: A new improvement category that falls through generic tier logic can silently become AUTO-SAFE, flipping `required_review` and suppressing downstream review-only doctrine generation.
+
 - WHAT: Added an external-consumer roadmap/backlog slice for managed-vs-local upgrade boundary hardening, including repo-local `AGENT.md` as product-truth doctrine, future manifest/protected-path guidance for `playbook upgrade`, and explicit trust-boundary language that upgrades must stay scoped to Playbook-managed surfaces. WHY: External consumers need upgrade safety that preserves repo-owned intent instead of letting framework evolution silently overwrite local product rules, UX, or architecture.
 - Rule: Upgrade must be scoped to managed artifacts only; repo-owned files are immutable unless explicitly migrated.
 - Pattern: A safe framework upgrade system separates Playbook-managed surfaces from repo-local product truth.

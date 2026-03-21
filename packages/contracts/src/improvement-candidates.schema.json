@@ -212,7 +212,18 @@
             "orchestration",
             "worker_prompts",
             "validation_efficiency",
-            "ontology"
+            "ontology",
+            "remediation_learning"
+          ]
+        },
+        "proposal_kind": {
+          "type": "string",
+          "enum": [
+            "threshold_tuning",
+            "repair_class_investigation",
+            "verify_rule_improvement",
+            "fixture_contract_hardening",
+            "docs_doctrine_update"
           ]
         },
         "observation": {
@@ -255,6 +266,73 @@
               },
               "uniqueItems": true,
               "minItems": 1
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "failure_signatures",
+            "repair_classes",
+            "outcomes",
+            "latest_run_ids"
+          ],
+          "properties": {
+            "remediation_source": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "remediationStatusPath",
+                "remediationHistoryPath",
+                "latestResultPath"
+              ],
+              "properties": {
+                "remediationStatusPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "remediationHistoryPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "latestResultPath": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "failure_signatures": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "repair_classes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "outcomes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "latest_run_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
             }
           }
         },

@@ -1,5 +1,11 @@
 import path from 'node:path';
-import type { CompactedLearningSummary } from '@zachariahredfield/playbook-core';
+import type {
+  CompactedLearningSummary,
+  RemediationStatusArtifact,
+  TestAutofixArtifact,
+  TestAutofixRemediationHistoryArtifact,
+  TestAutofixRemediationHistoryEntry
+} from '@zachariahredfield/playbook-core';
 import type { LearningStateSnapshotArtifact } from '../telemetry/learningState.js';
 import type { OutcomeTelemetryArtifact, ProcessTelemetryArtifact } from '../telemetry/outcomeTelemetry.js';
 import {
@@ -40,7 +46,8 @@ export type ImprovementCandidateCategory =
   | 'orchestration'
   | 'worker_prompts'
   | 'validation_efficiency'
-  | 'ontology';
+  | 'ontology'
+  | 'remediation_learning';
 
 export type ImprovementTier = 'auto_safe' | 'conversation' | 'governance';
 
@@ -90,6 +97,7 @@ export type RouterRecommendationsArtifact = {
 export type ImprovementCandidate = {
   candidate_id: string;
   category: ImprovementCandidateCategory;
+  proposal_kind?: 'threshold_tuning' | 'repair_class_investigation' | 'verify_rule_improvement' | 'fixture_contract_hardening' | 'docs_doctrine_update';
   observation: string;
   recurrence_count: number;
   confidence_score: number;
@@ -103,6 +111,17 @@ export type ImprovementCandidate = {
   };
   evidence_count: number;
   supporting_runs: number;
+  provenance?: {
+    remediation_source?: {
+      remediationStatusPath: string;
+      remediationHistoryPath: string;
+      latestResultPath: string;
+    };
+    failure_signatures: string[];
+    repair_classes: string[];
+    outcomes: string[];
+    latest_run_ids: string[];
+  };
 };
 
 export type RejectedImprovementCandidate = {
@@ -172,6 +191,7 @@ const AUTO_SAFE_MINIMUM_RUNS = 1;
 
 const CONVERSATIONAL_MINIMUM_EVIDENCE = 3;
 const GOVERNANCE_MINIMUM_EVIDENCE = 2;
+const REMEDIATION_REVIEW_MINIMUM_EVIDENCE = 2;
 const ROUTER_RECOMMENDATION_MIN_EVIDENCE = 3;
 const ROUTER_RECOMMENDATION_MIN_CONFIDENCE = 0.65;
 
@@ -179,9 +199,18 @@ const round4 = (value: number): number => Number(value.toFixed(4));
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 const getRunKey = (timestamp: string): string => timestamp.slice(0, 10);
+const isSuccessStatus = (status: string): boolean => status === 'fixed' || status === 'partially_fixed';
+const isBlockedStatus = (status: string): boolean =>
+  status === 'blocked' || status === 'blocked_low_confidence' || status === 'review_required_only';
 
 type LearningCompactionArtifact = {
   summary?: CompactedLearningSummary;
+};
+
+type RemediationArtifacts = {
+  remediationStatus?: RemediationStatusArtifact;
+  remediationHistory?: TestAutofixRemediationHistoryArtifact;
+  latestResult?: TestAutofixArtifact;
 };
 
 const buildRouterRecommendation = (input: {
@@ -359,8 +388,24 @@ const generateRouterRecommendations = (input: {
   };
 };
 
-const buildTier = (input: { category: ImprovementCandidateCategory; suggestedAction: string }): ImprovementTier => {
+const buildTier = (input: {
+  category: ImprovementCandidateCategory;
+  suggestedAction: string;
+  proposalKind?: ImprovementCandidate['proposal_kind'];
+}): ImprovementTier => {
   const suggestedAction = input.suggestedAction.toLowerCase();
+
+  if (input.category === 'remediation_learning') {
+    if (
+      input.proposalKind === 'threshold_tuning' ||
+      input.proposalKind === 'verify_rule_improvement' ||
+      input.proposalKind === 'docs_doctrine_update'
+    ) {
+      return 'governance';
+    }
+
+    return 'conversation';
+  }
 
   if (
     input.category === 'ontology' ||
@@ -406,6 +451,7 @@ const buildEvidence = (events: Array<{ event_id: string; timestamp: string }>): 
 const evaluateGating = (input: {
   category: ImprovementCandidateCategory;
   suggestedAction: string;
+  proposalKind?: ImprovementCandidate['proposal_kind'];
   confidenceScore: number;
   evidence: ProposalEvidence;
 }): {
@@ -414,13 +460,18 @@ const evaluateGating = (input: {
   requiredReview: boolean;
   blockingReasons: string[];
 } => {
-  const improvementTier = buildTier({ category: input.category, suggestedAction: input.suggestedAction });
+  const improvementTier = buildTier({
+    category: input.category,
+    suggestedAction: input.suggestedAction,
+    proposalKind: input.proposalKind
+  });
   const gatingTier = toGatingTier(improvementTier);
   const blockingReasons: string[] = [];
   const governanceSensitive = gatingTier === 'GOVERNANCE';
+  const minimumEvidence = input.category === 'remediation_learning' ? REMEDIATION_REVIEW_MINIMUM_EVIDENCE : MINIMUM_RECURRENCE;
 
-  if (input.evidence.evidence_count < MINIMUM_RECURRENCE) {
-    blockingReasons.push(`insufficient_evidence_count:${input.evidence.evidence_count}<${MINIMUM_RECURRENCE}`);
+  if (input.evidence.evidence_count < minimumEvidence) {
+    blockingReasons.push(`insufficient_evidence_count:${input.evidence.evidence_count}<${minimumEvidence}`);
   }
 
   if (input.confidenceScore < MINIMUM_CONFIDENCE) {
@@ -458,18 +509,21 @@ const evaluateGating = (input: {
 const emitCandidate = (input: {
   candidateId: string;
   category: ImprovementCandidateCategory;
+  proposalKind?: ImprovementCandidate['proposal_kind'];
   observation: string;
   recurrenceCount: number;
   signalScore: number;
   learningConfidence: number;
   suggestedAction: string;
   evidenceEvents: Array<{ event_id: string; timestamp: string }>;
+  provenance?: ImprovementCandidate['provenance'];
 }): { candidate: ImprovementCandidate | null; rejected: RejectedImprovementCandidate | null } => {
   const confidenceScore = buildConfidence(input.recurrenceCount, input.signalScore, input.learningConfidence);
   const evidence = buildEvidence(input.evidenceEvents);
   const gating = evaluateGating({
     category: input.category,
     suggestedAction: input.suggestedAction,
+    proposalKind: input.proposalKind,
     confidenceScore,
     evidence
   });
@@ -494,6 +548,7 @@ const emitCandidate = (input: {
     candidate: {
       candidate_id: input.candidateId,
       category: input.category,
+      proposal_kind: input.proposalKind,
       observation: input.observation,
       recurrence_count: input.recurrenceCount,
       confidence_score: confidenceScore,
@@ -506,11 +561,35 @@ const emitCandidate = (input: {
         event_ids: evidence.event_ids
       },
       evidence_count: evidence.evidence_count,
-      supporting_runs: evidence.supporting_runs
+      supporting_runs: evidence.supporting_runs,
+      provenance: input.provenance
     },
     rejected: null
   };
 };
+
+const buildRemediationSource = (): NonNullable<ImprovementCandidate['provenance']>['remediation_source'] => ({
+  remediationStatusPath: '.playbook/remediation-status.json',
+  remediationHistoryPath: '.playbook/test-autofix-history.json',
+  latestResultPath: '.playbook/test-autofix.json'
+});
+
+const readRemediationArtifacts = (repoRoot: string): RemediationArtifacts => ({
+  remediationStatus: readJsonIfExists<RemediationStatusArtifact>(path.join(repoRoot, '.playbook', 'remediation-status.json')),
+  remediationHistory: readJsonIfExists<TestAutofixRemediationHistoryArtifact>(path.join(repoRoot, '.playbook', 'test-autofix-history.json')),
+  latestResult: readJsonIfExists<TestAutofixArtifact>(path.join(repoRoot, '.playbook', 'test-autofix.json'))
+});
+
+const remediationEvidenceEvents = (entries: TestAutofixRemediationHistoryEntry[]): Array<{ event_id: string; timestamp: string }> =>
+  entries.map((entry) => ({ event_id: entry.run_id, timestamp: entry.generatedAt }));
+
+const buildRemediationProvenance = (entries: TestAutofixRemediationHistoryEntry[]): ImprovementCandidate['provenance'] => ({
+  remediation_source: buildRemediationSource(),
+  failure_signatures: [...new Set(entries.flatMap((entry) => entry.failure_signatures))].sort((a, b) => a.localeCompare(b)),
+  repair_classes: [...new Set(entries.flatMap((entry) => entry.applied_repair_classes))].sort((a, b) => a.localeCompare(b)),
+  outcomes: [...new Set(entries.map((entry) => entry.final_status))].sort((a, b) => a.localeCompare(b)),
+  latest_run_ids: [...entries].sort((a, b) => b.generatedAt.localeCompare(a.generatedAt) || b.run_id.localeCompare(a.run_id)).slice(0, 3).map((entry) => entry.run_id)
+});
 
 const generateRoutingCandidates = (
   events: RouteDecisionEvent[],
@@ -701,6 +780,130 @@ const generateOntologyCandidates = (
   };
 };
 
+const generateRemediationLearningCandidates = (
+  remediationArtifacts: RemediationArtifacts,
+  learning: LearningStateSnapshotArtifact | undefined
+): { candidates: ImprovementCandidate[]; rejected: RejectedImprovementCandidate[] } => {
+  const remediationStatus = remediationArtifacts.remediationStatus;
+  const remediationHistory = remediationArtifacts.remediationHistory;
+
+  if (!remediationStatus || !remediationHistory) {
+    return { candidates: [], rejected: [] };
+  }
+
+  const learningConfidence = learning?.confidenceSummary.overall_confidence ?? 0;
+  const candidates: ImprovementCandidate[] = [];
+  const rejected: RejectedImprovementCandidate[] = [];
+
+  for (const blocked of remediationStatus.telemetry.blocked_signature_rollup) {
+    if (blocked.blocked_count < 2) continue;
+    const entries = remediationHistory.runs.filter((entry) => entry.failure_signatures.includes(blocked.failure_signature));
+    const result = emitCandidate({
+      candidateId: `remediation_blocked_signature_${blocked.failure_signature}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase(),
+      category: 'remediation_learning',
+      proposalKind: 'repair_class_investigation',
+      observation: `Stable failure signature ${blocked.failure_signature} remains repeatedly blocked across remediation runs.`,
+      recurrenceCount: entries.length,
+      signalScore: 0.9,
+      learningConfidence,
+      suggestedAction: `propose a candidate-only investigation for an approved repair class covering ${blocked.failure_signature}; do not expand mutation authority automatically`,
+      evidenceEvents: remediationEvidenceEvents(entries),
+      provenance: buildRemediationProvenance(entries)
+    });
+    if (result.candidate) candidates.push(result.candidate);
+    if (result.rejected) rejected.push(result.rejected);
+  }
+
+  for (const counterfactual of remediationStatus.telemetry.threshold_counterfactuals) {
+    if (counterfactual.blocked_runs_that_would_clear === 0) continue;
+    const eligibleEntries = remediationHistory.runs.filter((entry) =>
+      typeof entry.autofix_confidence === 'number' && entry.autofix_confidence >= counterfactual.threshold
+    );
+    const result = emitCandidate({
+      candidateId: `remediation_threshold_tuning_${String(counterfactual.threshold).replace('.', '_')}`,
+      category: 'remediation_learning',
+      proposalKind: 'threshold_tuning',
+      observation: `Repeated blocked_low_confidence runs would have cleared the ${counterfactual.threshold} confidence threshold.`,
+      recurrenceCount: Math.max(counterfactual.eligible_runs, eligibleEntries.length),
+      signalScore: 0.92,
+      learningConfidence,
+      suggestedAction: `emit a candidate-only threshold tuning review for confidence threshold ${counterfactual.threshold} using stable failure signature evidence`,
+      evidenceEvents: remediationEvidenceEvents(eligibleEntries),
+      provenance: buildRemediationProvenance(eligibleEntries)
+    });
+    if (result.candidate) candidates.push(result.candidate);
+    if (result.rejected) rejected.push(result.rejected);
+  }
+
+  const reviewHeavySuccessfulEntries = remediationHistory.runs.filter((entry) =>
+    (entry.final_status === 'review_required_only' || entry.retry_policy_decision === 'review_required_repeat_failure') &&
+    entry.applied_repair_classes.length > 0
+  );
+  if (reviewHeavySuccessfulEntries.length >= 2) {
+    const result = emitCandidate({
+      candidateId: 'remediation_verify_rule_improvement_review_pressure',
+      category: 'remediation_learning',
+      proposalKind: 'verify_rule_improvement',
+      observation: 'Repeated review-heavy remediation cases show candidate repair classes exist but still depend on manual review pressure.',
+      recurrenceCount: reviewHeavySuccessfulEntries.length,
+      signalScore: 0.95,
+      learningConfidence,
+      suggestedAction: 'propose verify/rule improvement candidates that better classify these failure signatures before execution, without changing queue or execution behavior',
+      evidenceEvents: remediationEvidenceEvents(reviewHeavySuccessfulEntries),
+      provenance: buildRemediationProvenance(reviewHeavySuccessfulEntries)
+    });
+    if (result.candidate) candidates.push(result.candidate);
+    if (result.rejected) rejected.push(result.rejected);
+  }
+
+  const successfulLowConfidenceEntries = remediationHistory.runs.filter((entry) =>
+    typeof entry.autofix_confidence === 'number' &&
+    entry.autofix_confidence < 0.85 &&
+    (isSuccessStatus(entry.final_status) || entry.final_status === 'review_required_only')
+  );
+  if (successfulLowConfidenceEntries.length >= 2) {
+    const result = emitCandidate({
+      candidateId: 'remediation_fixture_contract_hardening_low_confidence_success',
+      category: 'remediation_learning',
+      proposalKind: 'fixture_contract_hardening',
+      observation: 'Repeated successful but lower-confidence repairs suggest fixtures or contracts are under-specifying durable success conditions.',
+      recurrenceCount: successfulLowConfidenceEntries.length,
+      signalScore: 0.88,
+      learningConfidence,
+      suggestedAction: 'emit candidate-only fixture and contract hardening suggestions linked to the stable failure signatures and successful repair classes',
+      evidenceEvents: remediationEvidenceEvents(successfulLowConfidenceEntries),
+      provenance: buildRemediationProvenance(successfulLowConfidenceEntries)
+    });
+    if (result.candidate) candidates.push(result.candidate);
+    if (result.rejected) rejected.push(result.rejected);
+  }
+
+  const docsDoctrineEntries = remediationHistory.runs.filter((entry) =>
+    isBlockedStatus(entry.final_status) || (isSuccessStatus(entry.final_status) && entry.applied_repair_classes.length > 0)
+  );
+  if (docsDoctrineEntries.length >= 3) {
+    const result = emitCandidate({
+      candidateId: 'remediation_docs_doctrine_feedback_loop',
+      category: 'remediation_learning',
+      proposalKind: 'docs_doctrine_update',
+      observation: 'Remediation history now contains enough repeated outcome evidence to suggest candidate docs/doctrine updates.',
+      recurrenceCount: docsDoctrineEntries.length,
+      signalScore: 0.88,
+      learningConfidence,
+      suggestedAction: 'propose candidate-only docs and doctrine updates stating that runtime outcomes may suggest improvements but may not mutate doctrine or policy automatically',
+      evidenceEvents: remediationEvidenceEvents(docsDoctrineEntries),
+      provenance: buildRemediationProvenance(docsDoctrineEntries)
+    });
+    if (result.candidate) candidates.push(result.candidate);
+    if (result.rejected) rejected.push(result.rejected);
+  }
+
+  return {
+    candidates: candidates.sort((a, b) => b.confidence_score - a.confidence_score || a.candidate_id.localeCompare(b.candidate_id)),
+    rejected: rejected.sort((a, b) => a.candidate_id.localeCompare(b.candidate_id))
+  };
+};
+
 export const generateImprovementCandidates = (repoRoot: string): ImprovementCandidatesArtifact => {
   const events = readRepositoryEvents(repoRoot);
   const learningStatePath = path.join(repoRoot, '.playbook', 'learning-state.json');
@@ -708,6 +911,7 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
   const compactedLearning = readJsonIfExists<LearningCompactionArtifact>(path.join(repoRoot, '.playbook', 'learning-compaction.json'))?.summary;
   const processTelemetry = readJsonIfExists<ProcessTelemetryArtifact>(path.join(repoRoot, '.playbook', 'process-telemetry.json'));
   const outcomeTelemetry = readJsonIfExists<OutcomeTelemetryArtifact>(path.join(repoRoot, '.playbook', 'outcome-telemetry.json'));
+  const remediationArtifacts = readRemediationArtifacts(repoRoot);
 
   const routeEvents = events.filter((event): event is RouteDecisionEvent => event.event_type === 'route_decision');
   const laneTransitionEvents = events.filter((event): event is LaneTransitionEvent => event.event_type === 'lane_transition');
@@ -719,7 +923,8 @@ export const generateImprovementCandidates = (repoRoot: string): ImprovementCand
     generateOrchestrationCandidates(laneTransitionEvents, learning),
     generateWorkerPromptCandidates(workerAssignmentEvents, learning),
     generateValidationEfficiencyCandidates(events, learning),
-    generateOntologyCandidates(improvementEvents, learning)
+    generateOntologyCandidates(improvementEvents, learning),
+    generateRemediationLearningCandidates(remediationArtifacts, learning)
   ];
 
   const candidates = generated.flatMap((entry) => entry.candidates).sort((left, right) => {
