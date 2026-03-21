@@ -128,6 +128,17 @@ const LEGACY_POSITIONING_PHRASES = [
   'governance tool for software repositories'
 ] as const;
 
+const PATTERN_STORAGE_CONTRACT_DOCS = [
+  'docs/commands/README.md',
+  'docs/commands/patterns.md',
+  'docs/commands/promote.md',
+  'docs/commands/knowledge.md',
+  'docs/PLAYBOOK_PRODUCT_ROADMAP.md'
+] as const;
+
+const GLOBAL_PATTERN_MEMORY_REPO_LOCAL_PHRASE =
+  /global reusable pattern memory[\s\S]{0,200}\.playbook\/memory\/knowledge\/patterns\.json/iu;
+
 const normalizeHeading = (heading: string): string =>
   heading
     .trim()
@@ -561,6 +572,24 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
     }
   }
 
+  for (const relativePath of PATTERN_STORAGE_CONTRACT_DOCS) {
+    const content = readTextIfExists(repoRoot, relativePath);
+    if (!content) {
+      continue;
+    }
+
+    if (GLOBAL_PATTERN_MEMORY_REPO_LOCAL_PHRASE.test(content)) {
+      findings.push({
+        ruleId: 'docs.pattern-storage.scope-path-drift',
+        level: 'error',
+        message:
+          'Global reusable pattern memory must resolve via the scope-first Playbook-home contract (`.playbook/patterns.json` under `PLAYBOOK_HOME`), not the repo-local memory path.',
+        path: relativePath,
+        suggestedDestination: 'docs/commands/patterns.md'
+      });
+    }
+  }
+
   const planningDocs = ['docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/roadmap/README.md', 'docs/roadmap/IMPROVEMENTS_BACKLOG.md'] as const;
   const headingIndex = new Map<string, string>();
   for (const planningDoc of planningDocs) {
@@ -647,7 +676,7 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
     summary: {
       errors,
       warnings,
-      checksRun: 13
+      checksRun: 14
     },
     findings
   };

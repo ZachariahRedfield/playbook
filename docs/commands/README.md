@@ -537,7 +537,7 @@ Suggested remediation IDs:
 
 ### Deterministic pattern compaction query
 
-`pnpm playbook query patterns` reads `.playbook/patterns.json` generated during `playbook verify` and returns compacted canonical engineering patterns.
+`pnpm playbook query patterns` reads repo-local promoted pattern memory from `.playbook/memory/knowledge/patterns.json` and returns compacted canonical engineering patterns.
 
 - Canonical IDs collapse semantically equivalent observations (for example, module test absence variants).
 - Buckets are deterministic: architecture, testing, dependency, documentation, governance.
@@ -596,7 +596,7 @@ Use query surfaces to inspect state:
 - `playbook story list --json` exposes the canonical repo-local story backlog artifact at `.playbook/stories.json`.
 - `playbook story candidates --json` derives and writes the non-canonical inspectable candidate artifact at `.playbook/story-candidates.json` without mutating `.playbook/stories.json`.
 - `playbook story promote <candidate-id> --json` explicitly promotes one candidate into the canonical backlog artifact.
-- `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` explicitly seeds a repo-local story from promoted pattern `storySeed` metadata and records provenance back to `patterns.json`.
+- `playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` explicitly seeds a repo-local story from promoted pattern `storySeed` metadata and records provenance back to `.playbook/patterns.json` under `PLAYBOOK_HOME`.
 
 - Rule: Stories are the durable repo-scoped action unit and must remain structured first, narrative second.
 - Rule: Global knowledge may suggest local work, but only repo-local stories may enter execution planning.

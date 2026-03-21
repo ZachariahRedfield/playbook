@@ -9,7 +9,7 @@ Make promotion doctrine explicit at the lifecycle seam where inspectable candida
 Promotion is intentionally split across two storage scopes:
 
 - **Repo-local story backlog** lives in each target repository's `.playbook/stories.json` and is the only story surface that may feed execution planning.
-- **Global reusable pattern memory** lives in Playbook home under `.playbook/memory/knowledge/patterns.json` and represents cross-repo reusable doctrine.
+- **Global reusable pattern memory** lives in Playbook home at `.playbook/patterns.json` under `PLAYBOOK_HOME` (compat-read legacy `patterns.json`) and represents cross-repo reusable doctrine.
 
 Rule: One canonical command matrix per lifecycle seam.
 
@@ -26,7 +26,7 @@ Failure Mode: Promotion surface sprawl makes governance legible in code but conf
 | `pnpm playbook promote story global/patterns/<pattern-id> --repo <repo-id> --json` | A promoted reusable pattern | `.playbook/stories.json` in the target repo | Global reusable pattern -> repo-local story backlog | **Preferred** for seeding backlog work from reusable doctrine | You want reusable doctrine to suggest bounded local adoption work without putting global memory directly into execution. |
 | `pnpm playbook promote story global/pattern-candidates/<candidate-id> --repo <repo-id> --json` | A global pattern candidate | `.playbook/stories.json` in the target repo | Global candidate -> repo-local story backlog | **Supported legacy bridge** | Use only when an existing workflow still reviews global pattern candidates directly into a repo story. Prefer promoted global patterns or `patterns proposals promote` for new operator guidance. |
 | `pnpm playbook patterns promote --id <pattern-id> --decision approve --json` | Repo/global pattern review queue artifacts | `.playbook/patterns-promoted.json` review state artifacts | Pattern review decision state | **Legacy review surface** | Use when operating the existing review queue. This records approve/reject review outcomes, but it is not the canonical cross-repo promotion seam for reusable doctrine. |
-| `pnpm playbook patterns proposals promote --proposal <proposal-id> --target memory --json` | `.playbook/pattern-proposals.json` proposal bridge | `.playbook/memory/knowledge/patterns.json` | Global reusable pattern memory | **Preferred** for cross-repo reusable pattern promotion | You are promoting reviewed cross-repo portability proposals into reusable doctrine. |
+| `pnpm playbook patterns proposals promote --proposal <proposal-id> --target memory --json` | `.playbook/pattern-proposals.json` proposal bridge | `.playbook/patterns.json` under `PLAYBOOK_HOME` | Global reusable pattern memory | **Preferred** for cross-repo reusable pattern promotion | You are promoting reviewed cross-repo portability proposals into reusable doctrine. |
 | `pnpm playbook patterns proposals promote --proposal <proposal-id> --target story --repo <repo-id> --json` | `.playbook/pattern-proposals.json` proposal bridge | `.playbook/stories.json` in the target repo | Cross-repo proposal -> repo-local story backlog | **Preferred** for cross-repo adoption work | You want a reviewed cross-repo proposal to become bounded backlog work in one repo. |
 
 ## Preferred vs alias vs legacy doctrine

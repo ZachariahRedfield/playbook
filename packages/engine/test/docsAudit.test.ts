@@ -175,4 +175,16 @@ describe('docs audit', () => {
     expect(result.findings.find((finding) => finding.ruleId === 'docs.command-truth.status-table-drift')).toBeDefined();
   });
 
+  it('fails when global reusable pattern memory points at repo-local storage', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/commands/patterns.md',
+      '# patterns\nGlobal reusable pattern memory lives in `.playbook/memory/knowledge/patterns.json`.\n'
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.pattern-storage.scope-path-drift' && finding.path === 'docs/commands/patterns.md')).toBeDefined();
+  });
+
 });
