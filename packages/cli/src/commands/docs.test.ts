@@ -17,6 +17,8 @@ const createFixtureRepo = (): string => {
     'docs/ARCHITECTURE.md': '# Architecture\n',
     'docs/commands/README.md': '# Commands\n\nLifecycle, role, and discoverability are documented here.\n',
     'docs/commands/docs.md': '# docs audit\n',
+    'docs/CHANGELOG.md': '# Changelog\n\n<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->\n- Existing release note.\n<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->\n',
+    'docs/PLAYBOOK_PRODUCT_ROADMAP.md': '# Strategic Roadmap\n\n## Pillars\n- Pillar A\n\n## Active Stories\n- Story A\n\nRoadmap entries describe implementation intent.\ndocs/commands/README.md is the source of truth for live command availability.\n',
     'docs/PLAYBOOK_BUSINESS_STRATEGY.md': '# Business\n',
     'docs/CONSUMER_INTEGRATION_CONTRACT.md': '# Contract\n',
     'docs/AI_AGENT_CONTEXT.md': '# AI Context\nai-context ai-contract context verify plan apply\n',
