@@ -80,3 +80,27 @@ This guarantees that transformed doctrine remains auditable and reversible.
 ## Novelty boundary
 
 Playbook is not claiming invention of new raw mathematics through functors. The product novelty is deterministic operationalization: stable contracts, replayable mappings, and lineage-complete transform outputs integrated into governance workflows.
+
+## Doctrine Transform contract
+
+Within Phase 9, functor transforms are instantiated as **Doctrine Transforms**: promoted knowledge -> proposal artifact.
+
+Initial governed examples:
+
+- pattern -> story seed proposal
+- pattern -> rule suggestion proposal
+- pattern -> docs proposal
+
+Eligibility requirements:
+
+- source knowledge must be promoted
+- source knowledge must be active (not stale, superseded, retired, or demoted)
+- source knowledge must remain provenance-linked
+
+Rejection requirements:
+
+- candidate knowledge is ineligible
+- stale or superseded doctrine is ineligible
+- transforms may emit proposals only; they may not execute changes directly
+
+Transform outputs must be reviewable, explicit, and provenance-linked so downstream systems can consume them without hidden mutation.

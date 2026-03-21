@@ -208,3 +208,17 @@ Separation requirements:
 - Rule: Runtime outcomes may suggest knowledge changes, but may not mutate promoted knowledge automatically.
 - Pattern: Outcome feedback should produce reviewable lifecycle candidates, not hidden doctrine edits.
 - Failure Mode: Freshness logic without provenance becomes numerology.
+
+## Unified Doctrine Loop feedback closure
+
+Outcome feedback is the return path of the Unified Doctrine Loop.
+
+Closed-loop rule set:
+
+- outcomes may emit freshness, demotion, retirement, and supersession recommendations
+- recommendations remain candidate-only artifacts with provenance
+- lifecycle feedback must not mutate promoted doctrine automatically
+- the next learning cycle consumes these recommendation artifacts as evidence, not as already-applied truth
+
+Rule: Playbook improves itself through governed transforms, not direct self-mutation.
+Failure Mode: Treating outcome feedback as permission to rewrite doctrine collapses governance and replayability.

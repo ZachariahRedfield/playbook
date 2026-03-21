@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildRepoAdoptionReadiness } from '../adoption/readiness.js';
+import { generateDoctrineTransformArtifact } from '../doctrineTransforms.js';
 import {
   STORIES_RELATIVE_PATH,
   createStoryRecord,
@@ -19,7 +20,7 @@ import {
 export const STORY_CANDIDATES_SCHEMA_VERSION = '1.0' as const;
 export const STORY_CANDIDATES_RELATIVE_PATH = '.playbook/story-candidates.json' as const;
 
-type StoryCandidateSourceKind = 'readiness' | 'opportunity' | 'updated-state' | 'route';
+type StoryCandidateSourceKind = 'readiness' | 'opportunity' | 'updated-state' | 'route' | 'doctrine-transform';
 
 type StoryCandidateSeed = {
   sourceKind: StoryCandidateSourceKind;
@@ -287,6 +288,37 @@ const deriveUpdatedStateSeeds = (repoRoot: string): StoryCandidateSeed[] => {
   return seeds;
 };
 
+
+const deriveDoctrineTransformSeeds = (repoRoot: string): StoryCandidateSeed[] => {
+  const artifact = generateDoctrineTransformArtifact({
+    playbookHome: repoRoot,
+    targetRepoId: path.basename(repoRoot),
+  });
+  return artifact.proposals.map((proposal) => ({
+    sourceKind: 'doctrine-transform',
+    sourceKey: proposal.proposal_id,
+    groupingKey: `doctrine-transform:${proposal.source.pattern_id}`,
+    title: proposal.target.title,
+    type: 'feature',
+    source: 'doctrine-transform',
+    severity: 'medium',
+    priority: 'high',
+    confidence: 'high',
+    rationaleParts: [proposal.target.summary, 'Promoted active doctrine may influence planning only through reviewable proposal artifacts.'],
+    evidence: proposal.evidence,
+    acceptance: proposal.target.acceptance_criteria,
+    dependencies: [],
+    executionLane: proposal.target.execution_lane,
+    suggestedRoute: proposal.target.suggested_route,
+    explanation: [
+      `transform=${proposal.transform_kind}`,
+      `pattern=${proposal.source.pattern_id}`,
+      `eligible=${String(proposal.eligibility.eligible)}`,
+      `mutation_allowed=${String(proposal.governance.mutation_allowed)}`,
+    ]
+  }));
+};
+
 const deriveRouteSeeds = (repoRoot: string): StoryCandidateSeed[] => {
   const artifact = safeReadJson<RouterRecommendationsLike>(repoRoot, ROUTER_RECOMMENDATIONS_PATH);
   return (artifact?.recommendations ?? []).slice(0, 2).map((entry) => ({
@@ -415,7 +447,8 @@ export const generateStoryCandidates = (repoRoot: string, inputs: StoryCandidate
     ...deriveReadinessSeeds(repoRoot),
     ...deriveOpportunitySeeds(repoRoot),
     ...deriveUpdatedStateSeeds(repoRoot),
-    ...deriveRouteSeeds(repoRoot)
+    ...deriveRouteSeeds(repoRoot),
+    ...deriveDoctrineTransformSeeds(repoRoot)
   ];
   const existingIds = new Set(backlog.stories.map((story) => story.id));
   const candidates = mergeSeeds(backlog.repo, seeds).filter((candidate) => !existingIds.has(candidate.id));

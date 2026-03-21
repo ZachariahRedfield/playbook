@@ -50,6 +50,48 @@ describe('story candidates', () => {
         { repo_id: 'repo-c', reconciliation_status: 'stale_plan_or_superseded', blocker_codes: [], drift_prompt_ids: [], prompt_ids: [] }
       ]
     });
+
+    writeArtifact(repo, '.playbook/patterns.json', {
+      schemaVersion: '1.0',
+      kind: 'promoted-patterns',
+      patterns: [
+        {
+          id: 'pattern.shared-read-model',
+          pattern_family: 'shared-read-model',
+          title: 'Shared read model',
+          description: 'Converge broad artifact fanout through one shared read boundary.',
+          storySeed: {
+            title: 'Adopt the shared read model doctrine',
+            summary: 'Promoted doctrine suggests converging read fanout behind one shared boundary.',
+            acceptance: ['Document the shared boundary.', 'Route implementation through pattern learning.']
+          },
+          source_artifact: '.playbook/pattern-candidates.json',
+          signals: ['fanout'],
+          confidence: 0.91,
+          evidence_refs: ['docs/ARCHITECTURE.md'],
+          status: 'active',
+          provenance: {
+            source_ref: 'global/pattern-candidates/shared-read-model',
+            candidate_id: 'shared-read-model',
+            candidate_fingerprint: 'candidate-fingerprint',
+            promoted_at: '2026-03-20T00:00:00.000Z'
+          },
+          superseded_by: null,
+          supersedes: [],
+          retired_at: null,
+          retirement_reason: null,
+          demoted_at: null,
+          demotion_reason: null,
+          recalled_at: null,
+          recall_reason: null,
+          compatibility: null,
+          risk_class: null,
+          known_failure_modes: [],
+          transferred_from: null,
+          lifecycle_events: []
+        }
+      ]
+    });
     writeArtifact(repo, '.playbook/router-recommendations.json', {
       recommendations: [
         {
@@ -71,6 +113,7 @@ describe('story candidates', () => {
     expect(generated.candidates.some((candidate) => candidate.title.includes('Restore governed readiness prerequisites'))).toBe(true);
     expect(generated.candidates.some((candidate) => candidate.title.includes('Converge broad artifact fanout'))).toBe(true);
     expect(generated.candidates.some((candidate) => candidate.title.includes('Replan stale or superseded'))).toBe(true);
+    expect(generated.candidates.some((candidate) => candidate.title.includes('Adopt the shared read model doctrine'))).toBe(true);
     expect(fs.existsSync(storiesPath)).toBe(false);
     expect(readStoriesArtifact(repo).stories).toEqual([]);
   });
