@@ -14,6 +14,7 @@ const createFixtureRepo = (): string => {
   fs.mkdirSync(path.join(root, ".playbook", "orchestrator", "workers"), {
     recursive: true,
   });
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true });
   fs.writeFileSync(
     path.join(root, ".playbook", "orchestrator", "orchestrator.json"),
     `${JSON.stringify(

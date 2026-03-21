@@ -240,7 +240,7 @@ describe('execution pipeline units', () => {
   it('parsePlanArtifact fails on invalid envelopes', () => {
     expect(() => parsePlanArtifact(null)).toThrow('Invalid plan payload: expected an object envelope.');
     expect(() => parsePlanArtifact({ schemaVersion: '2.0', command: 'plan', tasks: [] })).toThrow('Unsupported plan schemaVersion: 2.0.');
-    expect(() => parsePlanArtifact({ schemaVersion: '1.0', command: 'verify', tasks: [] })).toThrow('Invalid plan payload: command must be "plan".');
+    expect(() => parsePlanArtifact({ schemaVersion: '1.0', command: 'verify', tasks: [] })).toThrow('Invalid plan payload: command must be "plan" or "docs consolidate-plan".');
     expect(() => parsePlanArtifact({ schemaVersion: '1.0', command: 'plan', tasks: 'bad' })).toThrow('Invalid plan payload: tasks must be an array.');
   });
 
