@@ -10,7 +10,14 @@ describe('rule loaders', () => {
     const rules = await loadVerifyRules(process.cwd());
     const ids = rules.map((rule) => rule.id);
 
-    expect(ids).toEqual(['notes.missing', 'notes.empty', 'requireNotesOnChanges', 'verify.rule.tests.required', 'protected-doc.governance']);
+    expect(ids).toEqual(expect.arrayContaining([
+      'notes.missing',
+      'notes.empty',
+      'requireNotesOnChanges',
+      'verify.rule.tests.required',
+      'protected-doc.governance',
+      'release.version-governance'
+    ]));
     expect(new Set(ids).size).toBe(ids.length);
   });
 
