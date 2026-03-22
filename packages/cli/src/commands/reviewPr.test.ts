@@ -208,6 +208,9 @@ describe('runReviewPr', () => {
     expect(secondExitCode).toBe(ExitCode.Success);
     expect(secondPayload).toBe(firstPayload);
 
+    const reviewArtifact = JSON.parse(firstPayload) as { findings: Array<{ ruleId?: string }> };
+    expect(reviewArtifact.findings).not.toContainEqual(expect.objectContaining({ ruleId: 'playbook.pr.contract-surface' }));
+
     const firstArtifact = fs.readFileSync(path.join(repo, '.playbook', 'pr-review.json'), 'utf8');
     await runReviewPr(repo, { format: 'text', quiet: true });
     const secondArtifact = fs.readFileSync(path.join(repo, '.playbook', 'pr-review.json'), 'utf8');

@@ -357,6 +357,40 @@ describe('analyze-pr', () => {
     logSpy.mockRestore();
   });
 
+  it('excludes ephemeral memory event artifacts from contract-surface detection', async () => {
+    const repo = createRepo('playbook-cli-analyze-pr-ephemeral-memory-events');
+    initGitRepo(repo);
+    writeRepoIndex(repo);
+
+    fs.mkdirSync(path.join(repo, 'src', 'workouts'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'src', 'workouts', 'index.ts'), 'export const workouts = 1;\n');
+    runGit(repo, ['add', '.']);
+    runGit(repo, ['commit', '-m', 'initial']);
+
+    fs.writeFileSync(path.join(repo, 'src', 'workouts', 'index.ts'), 'export const workouts = 2;\n');
+    fs.mkdirSync(path.join(repo, '.playbook', 'memory', 'events'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repo, '.playbook', 'memory', 'events', 'event-1.json'),
+      JSON.stringify({ schemaVersion: '1.0', event_id: 'event-1' }, null, 2)
+    );
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runAnalyzePr(repo, ['--json'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.contractSurface).toEqual({
+      hasImpact: false,
+      categories: [],
+      changedFiles: [],
+      requiredUpdates: [],
+      changelogUpdated: false
+    });
+    expect(payload.findings).not.toContainEqual(expect.objectContaining({ ruleId: 'playbook.pr.contract-surface' }));
+
+    logSpy.mockRestore();
+  });
+
 
 
   it('reports multi-boundary PRs with deterministic boundary summary', async () => {

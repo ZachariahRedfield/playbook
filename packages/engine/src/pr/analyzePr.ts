@@ -371,6 +371,43 @@ const deriveArchitectureBoundaries = (changedFiles: string[]): string[] => {
 
 const isDocsPath = (filePath: string): boolean => filePath.startsWith('docs/') || filePath.toLowerCase().includes('readme');
 
+const EPHEMERAL_RUNTIME_ARTIFACT_PREFIXES = [
+  '.playbook/memory/events/',
+  '.playbook/runtime/',
+  '.playbook/telemetry/'
+] as const;
+
+const STABLE_CONTRACT_ARTIFACT_PATHS = new Set([
+  '.playbook/contracts-registry.json',
+  '.playbook/cycle-history.json',
+  '.playbook/cycle-state.json',
+  '.playbook/improvement-candidates.json',
+  '.playbook/learning-state.json',
+  '.playbook/module-owners.json',
+  '.playbook/pattern-knowledge-graph.json',
+  '.playbook/policy-apply-result.json',
+  '.playbook/policy-evaluation.json',
+  '.playbook/pr-review.json',
+  '.playbook/repo-graph.json',
+  '.playbook/repo-index.json',
+  '.playbook/session.json',
+  '.playbook/stories.json',
+  '.playbook/system-map.json',
+  '.playbook/test-autofix-history.json'
+]);
+
+const isStableContractArtifactPath = (filePath: string): boolean => {
+  if (!filePath.startsWith('.playbook/')) {
+    return false;
+  }
+
+  if (EPHEMERAL_RUNTIME_ARTIFACT_PREFIXES.some((prefix) => filePath.startsWith(prefix))) {
+    return false;
+  }
+
+  return STABLE_CONTRACT_ARTIFACT_PATHS.has(filePath);
+};
+
 const CONTRACT_SURFACE_PATTERNS: Array<{
   category: ContractImpactCategory;
   match: (filePath: string) => boolean;
@@ -389,7 +426,11 @@ const CONTRACT_SURFACE_PATTERNS: Array<{
   },
   {
     category: 'persisted-artifact',
-    match: (filePath) => filePath.startsWith('.playbook/') || filePath.startsWith('packages/engine/src/observer/') || filePath.startsWith('packages/engine/src/session') || filePath.startsWith('packages/cli/src/lib/jsonArtifact')
+    match: (filePath) =>
+      isStableContractArtifactPath(filePath) ||
+      filePath.startsWith('packages/engine/src/observer/') ||
+      filePath.startsWith('packages/engine/src/session') ||
+      filePath.startsWith('packages/cli/src/lib/jsonArtifact')
   },
   {
     category: 'snapshot-fixture',
@@ -516,7 +557,23 @@ const deriveReviewGuidance = (analysis: {
   return guidance;
 };
 
-export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: string }): AnalyzePullRequestResult => {
+const shouldExcludeChangedFile = (
+  filePath: string,
+  options?: { excludePaths?: string[]; excludePrefixes?: string[] }
+): boolean => {
+  const excludePaths = options?.excludePaths ?? [];
+  if (excludePaths.includes(filePath)) {
+    return true;
+  }
+
+  const excludePrefixes = options?.excludePrefixes ?? [];
+  return excludePrefixes.some((prefix) => filePath.startsWith(prefix));
+};
+
+export const analyzePullRequest = (
+  projectRoot: string,
+  options?: { baseRef?: string; excludePaths?: string[]; excludePrefixes?: string[] }
+): AnalyzePullRequestResult => {
   let diffContext;
   let repositoryIndex;
 
@@ -548,6 +605,11 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
     throw normalized;
   }
 
+  const changedFiles = diffContext.changedFiles.filter((filePath) => !shouldExcludeChangedFile(filePath, options));
+  if (changedFiles.length === 0) {
+    throw new Error('playbook analyze-pr: no changed files remained after excluding runtime-generated review artifacts.');
+  }
+
   const affectedModules = [...diffContext.affectedModules];
 
   const impact = affectedModules.map((moduleName) => {
@@ -568,7 +630,7 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
     signals: [...risk.signals]
   }));
 
-  const docsChanged = uniqueSorted(diffContext.docs);
+  const docsChanged = uniqueSorted(diffContext.docs.filter((filePath) => changedFiles.includes(filePath)));
 
   const docsCoverage = affectedModules
     .map((moduleName) => queryDocsCoverage(projectRoot, moduleName).modules[0])
@@ -578,10 +640,10 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
 
   const allRuleOwners = queryRuleOwners();
   const ownersList = 'rules' in allRuleOwners ? allRuleOwners.rules : [];
-  const boundariesTouched = deriveArchitectureBoundaries(diffContext.changedFiles);
+  const boundariesTouched = deriveArchitectureBoundaries(changedFiles);
   const relatedRules = deriveRelatedRules({
     candidateRules: repositoryIndex.rules,
-    changedFiles: diffContext.changedFiles,
+    changedFiles,
     affectedModules,
     boundariesTouched,
     ownersList
@@ -597,7 +659,7 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
   const riskLevel = resolveRiskLevel(moduleRisk.map((entry) => entry.level));
   const riskSignals = uniqueSorted(moduleRisk.flatMap((entry) => entry.signals));
 
-  const contractSurface = deriveContractSurface(diffContext.changedFiles);
+  const contractSurface = deriveContractSurface(changedFiles);
 
   const reviewGuidance = deriveReviewGuidance({
     affectedModules,
@@ -607,7 +669,7 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
     boundariesTouched,
     contractSurface
   });
-  const changedLineMap = resolveChangedLineMap(projectRoot, diffContext.baseRef, diffContext.changedFiles);
+  const changedLineMap = resolveChangedLineMap(projectRoot, diffContext.baseRef, changedFiles);
 
   const findings: AnalyzePullRequestResult['findings'] = [];
   for (const moduleRiskEntry of moduleRisk) {
@@ -615,7 +677,7 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
       continue;
     }
 
-    const moduleFile = diffContext.changedFiles.find((file) => file.startsWith(`src/${moduleRiskEntry.module}/`));
+    const moduleFile = changedFiles.find((file) => file.startsWith(`src/${moduleRiskEntry.module}/`));
     const moduleLine = moduleFile ? changedLineMap.get(moduleFile) : undefined;
     findings.push({
       ruleId: 'playbook.pr.risk.module',
@@ -628,7 +690,7 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
   }
 
   for (const ruleId of relatedRules) {
-    const firstChangedFile = diffContext.changedFiles[0];
+    const firstChangedFile = changedFiles[0];
     const changedLine = firstChangedFile ? changedLineMap.get(firstChangedFile) : undefined;
     findings.push({
       ruleId,
@@ -665,9 +727,9 @@ export const analyzePullRequest = (projectRoot: string, options?: { baseRef?: st
     schemaVersion: '1.0',
     command: 'analyze-pr',
     baseRef: diffContext.baseRef,
-    changedFiles: diffContext.changedFiles,
+    changedFiles,
     summary: {
-      changedFileCount: diffContext.changedFiles.length,
+      changedFileCount: changedFiles.length,
       affectedModuleCount: affectedModules.length,
       riskLevel
     },

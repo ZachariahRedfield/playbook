@@ -212,7 +212,11 @@ export const runReviewPr = async (cwd: string, options: ReviewPrOptions): Promis
   }
 
   try {
-    const analysis = analyzePullRequest(cwd, { baseRef: options.baseRef });
+    const analysis = analyzePullRequest(cwd, {
+      baseRef: options.baseRef,
+      excludePaths: ['.playbook/pr-review.json'],
+      excludePrefixes: ['.playbook/memory/events/']
+    });
     const improvements = generateImprovementCandidates(cwd);
     const policy = createPolicyArtifactFromCandidates(improvements, cwd);
 
