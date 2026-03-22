@@ -108,6 +108,11 @@
         "path": ".playbook/memory/index.json"
       },
       {
+        "id": "session-replay-evidence",
+        "version": "1.0",
+        "path": ".playbook/memory/candidates.json#replayEvidence"
+      },
+      {
         "id": "memory-event",
         "version": "1.0.0",
         "path": ".playbook/memory/events/runtime/*.json"
@@ -260,9 +265,24 @@
         "path": "packages/contracts/src/cycle-history.schema.json"
       },
       {
+        "id": "memory-index",
+        "version": "1.0",
+        "path": "packages/contracts/src/memory-index.schema.json"
+      },
+      {
+        "id": "memory-event",
+        "version": "1.0",
+        "path": "packages/contracts/src/memory-event.schema.json"
+      },
+      {
         "id": "session-evidence-envelope",
         "version": "1.0",
         "path": "packages/contracts/src/session-evidence-envelope.schema.json"
+      },
+      {
+        "id": "session-replay-evidence",
+        "version": "1.0",
+        "path": "packages/contracts/src/session-replay-evidence.schema.json"
       },
       {
         "id": "pr-review",
