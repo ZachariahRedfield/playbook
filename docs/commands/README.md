@@ -20,6 +20,7 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - `pnpm playbook docs audit --ci --json` blocks command-truth drift findings marked as errors (for example duplicate command metadata or managed status-table mismatch).
 - `pnpm playbook docs consolidate --json` is the proposal-only integration seam for protected singleton narrative docs: workers emit fragments, the consolidator emits one compact brief plus `.playbook/docs-consolidation.json`, and no doc mutation happens automatically in v1. Reviewed writes remain target-locked and execute only through `pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json`.
 - `pnpm playbook workers submit --from <path> --json` is the canonical worker-receipt seam: worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
+- `pnpm playbook verify --json` now fails closed for protected singleton-doc governance when existing governed artifacts show unresolved consolidation, reviewed-plan gaps, consolidation conflicts, or guarded-apply drift on reviewed singleton-doc targets. `pnpm playbook verify --policy --json` inherits the same gate through the default `protected-doc.governance` policy rule.
 
 ## Product-facing command surface (current)
 

@@ -4,6 +4,7 @@ Deterministic adoption/readiness summary for governed Playbook usage.
 
 ## Modes
 
+- `pnpm playbook status proof --json`: deterministic external-consumer bootstrap proof that validates bootstrap/runtime readiness and emits one compact parallel-work brief sourced from `lane-state`, `worker-results`, `docs-consolidation-plan`, and `policy-apply-result`. Protected-doc governance authority still comes from `verify`/`verify --policy`, not from status text alone.
 - `pnpm playbook status --json`: repo-level status/adoption summary.
 - `pnpm playbook status fleet --json`: fleet-level aggregate readiness summary using connected Observer repos.
 - `pnpm playbook status queue --json`: deterministic read-only adoption work-queue from fleet readiness.

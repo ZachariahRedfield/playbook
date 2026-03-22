@@ -17,6 +17,10 @@
     {
       "id": "verify.rule.tests.required",
       "description": "Require tests when adding CLI commands or verify rules."
+    },
+    {
+      "id": "protected-doc.governance",
+      "description": "Fail closed when protected-doc consolidation is unresolved or drift-conflicted."
     }
   ],
   "analyze": [

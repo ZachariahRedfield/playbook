@@ -26,6 +26,10 @@
         },
         {
           "kind": "contains",
+          "target": "rule:protected-doc.governance"
+        },
+        {
+          "kind": "contains",
           "target": "rule:requireNotesFileWhenGovernanceExists"
         },
         {

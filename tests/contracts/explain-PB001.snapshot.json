@@ -15,6 +15,6 @@
     "fix": [
       "Update docs/ARCHITECTURE.md with the current system shape and module boundaries."
     ],
-    "reason": "Rule registry metadata for PB001. Indexed rules: requireNotesFileWhenGovernanceExists, requireNotesOnChanges, verify.rule.tests.required."
+    "reason": "Rule registry metadata for PB001. Indexed rules: protected-doc.governance, requireNotesFileWhenGovernanceExists, requireNotesOnChanges, verify.rule.tests.required."
   }
 }

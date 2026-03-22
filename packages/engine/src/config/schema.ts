@@ -37,7 +37,7 @@ export const defaultConfig: PlaybookConfig = {
   plugins: [],
   verify: {
     policy: {
-      rules: []
+      rules: ['protected-doc.governance']
     },
     rules: {
       requireNotesOnChanges: [

@@ -2394,6 +2394,7 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Pattern — Review plans on fingerprints, execute only on matching fingerprints.
 - Failure Mode — Applying reviewed singleton-doc writes against drifted targets reopens merge-hotspot risk under a deterministic-looking surface.
 - Extended orchestration state so `workset-plan`, `lane-state`, and `execution-state` carry compact protected-doc consolidation status; lanes with protected singleton doc work now remain non-`merge_ready` until consolidation is either not applicable or fully applied, while text surfaces emit only compact summary strings plus the next command.
+- Governance gate upgrade: `verify` / `verify --policy` should now fail closed from existing governed artifacts alone when protected-doc fragments have no reviewed consolidation plan, when consolidation is still pending or conflict-blocked, or when guarded apply reports singleton-doc drift against reviewed targets. This keeps merge authority in verify/policy instead of status text.
 - Rule — Consolidation is the only write boundary for protected singleton narrative docs.
 - Rule — Merge readiness must account for unresolved protected singleton doc consolidation.
 - Pattern — Workers propose; consolidator integrates.
