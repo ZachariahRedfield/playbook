@@ -1,6 +1,12 @@
 # `pnpm playbook test-triage`
 
-Parse captured Vitest and pnpm recursive failure output into a deterministic test-triage artifact.
+Parse captured Vitest, pnpm recursive failure output, and GitHub Actions annotation lines into a deterministic failure-summary artifact.
+
+Rule: Any Playbook-managed CI/test failure must emit both raw output and a deterministic normalized summary.
+
+Pattern: Failure summarization is a contract surface, not a convenience logger.
+
+Failure Mode: Raw stderr alone creates re-interpretation work and slows remediation across repeated CI loops.
 
 ## Usage
 
@@ -44,6 +50,13 @@ Stabilizing contract snapshot tests exposed a reusable architecture lesson: isol
 - `missing_artifact`
 - `environment_limitation`
 - `likely_regression`
+- `missing_expected_finding`
+- `contract_drift`
+- `test_expectation_drift`
+- `lint_failure`
+- `typecheck_failure`
+- `runtime_failure`
+- `recursive_workspace_failure`
 
 Low-risk classes are marked `autofix_plan_only`.
 Riskier classes are marked `review_required`.
@@ -52,7 +65,8 @@ Riskier classes are marked `review_required`.
 
 JSON output includes:
 
-- `findings[]` with `failure_kind`, `confidence`, `package`, `test_file`, `test_name`
+- `status`, `summary`, and `primaryFailureClass` for summary-first CI surfaces
+- `failures[]` / `findings[]` with `failure_kind`, `confidence`, `package`, `test_file`, `test_name`, and parsed GitHub annotations
 - `likely_files_to_modify`
 - `suggested_fix_strategy`
 - `verification_commands`

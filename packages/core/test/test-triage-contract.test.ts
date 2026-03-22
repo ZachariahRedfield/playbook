@@ -3,7 +3,7 @@ import { TEST_TRIAGE_ARTIFACT_KIND, TEST_TRIAGE_SCHEMA_VERSION, testTriageFailur
 
 describe('test triage contracts', () => {
   it('defines the first-class test triage artifact contract constants', () => {
-    expect(TEST_TRIAGE_SCHEMA_VERSION).toBe('1.0');
+    expect(TEST_TRIAGE_SCHEMA_VERSION).toBe('1.1');
     expect(TEST_TRIAGE_ARTIFACT_KIND).toBe('test-triage');
     expect(testTriageFailureKinds).toEqual([
       'snapshot_drift',
@@ -12,7 +12,14 @@ describe('test triage contracts', () => {
       'ordering_drift',
       'missing_artifact',
       'environment_limitation',
-      'likely_regression'
+      'likely_regression',
+      'missing_expected_finding',
+      'contract_drift',
+      'test_expectation_drift',
+      'lint_failure',
+      'typecheck_failure',
+      'runtime_failure',
+      'recursive_workspace_failure'
     ]);
     expect(testTriageRepairClasses).toEqual(['autofix_plan_only', 'review_required']);
   });

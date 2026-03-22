@@ -2181,9 +2181,9 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'findings', 'rerun_plan', 'repair_plan'],
+        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'status', 'summary', 'primaryFailureClass', 'failures', 'crossCuttingDiagnosis', 'recommendedNextChecks', 'findings', 'rerun_plan', 'repair_plan'],
         properties: {
-          schemaVersion: { const: '1.0' },
+          schemaVersion: { const: '1.1' },
           kind: { const: 'test-triage' },
           command: { const: 'test-triage' },
           generatedAt: { type: 'string' },
@@ -2191,19 +2191,38 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
             type: 'object',
             additionalProperties: false,
             required: ['input', 'path'],
-            properties: {
-              input: { enum: ['file', 'stdin'] },
-              path: { type: ['string', 'null'] }
-            }
+            properties: { input: { enum: ['file', 'stdin'] }, path: { type: ['string', 'null'] } }
           },
+          status: { enum: ['failed', 'no_failures_detected'] },
+          summary: { type: 'string' },
+          primaryFailureClass: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression', 'missing_expected_finding', 'contract_drift', 'test_expectation_drift', 'lint_failure', 'typecheck_failure', 'runtime_failure', 'recursive_workspace_failure', 'none'] },
+          failures: { $ref: '#/$defs/findings' },
+          crossCuttingDiagnosis: { type: 'array', items: { type: 'string' } },
+          recommendedNextChecks: { type: 'array', items: { type: 'string' } },
+          findings: { $ref: '#/$defs/findings' },
+          rerun_plan: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['strategy', 'commands'],
+            properties: { strategy: { const: 'file_first_then_package_then_workspace' }, commands: { type: 'array', items: { type: 'string' } } }
+          },
+          repair_plan: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['summary', 'codex_prompt', 'suggested_actions'],
+            properties: { summary: { type: 'string' }, codex_prompt: { type: 'string' }, suggested_actions: { type: 'array', items: { type: 'string' } } }
+          }
+        },
+        $defs: {
           findings: {
             type: 'array',
             items: {
               type: 'object',
               additionalProperties: false,
-              required: ['failure_kind', 'confidence', 'package', 'test_file', 'test_name', 'likely_files_to_modify', 'suggested_fix_strategy', 'verification_commands', 'docs_update_recommendation', 'rule_pattern_failure_mode', 'repair_class', 'summary', 'evidence'],
+              required: ['failure_signature', 'failure_kind', 'confidence', 'package', 'test_file', 'test_name', 'likely_files_to_modify', 'suggested_fix_strategy', 'verification_commands', 'docs_update_recommendation', 'rule_pattern_failure_mode', 'repair_class', 'summary', 'evidence', 'annotations'],
               properties: {
-                failure_kind: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression'] },
+                failure_signature: { type: 'string' },
+                failure_kind: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression', 'missing_expected_finding', 'contract_drift', 'test_expectation_drift', 'lint_failure', 'typecheck_failure', 'runtime_failure', 'recursive_workspace_failure'] },
                 confidence: { type: 'number' },
                 package: { type: ['string', 'null'] },
                 test_file: { type: ['string', 'null'] },
@@ -2213,44 +2232,34 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
                 verification_commands: { type: 'array', items: { type: 'string' } },
                 docs_update_recommendation: { type: 'string' },
                 rule_pattern_failure_mode: {
-                  type: 'object',
-                  additionalProperties: false,
-                  required: ['rule', 'pattern', 'failure_mode'],
-                  properties: {
-                    rule: { type: 'string' },
-                    pattern: { type: 'string' },
-                    failure_mode: { type: 'string' }
-                  }
+                  type: 'object', additionalProperties: false, required: ['rule', 'pattern', 'failure_mode'],
+                  properties: { rule: { type: 'string' }, pattern: { type: 'string' }, failure_mode: { type: 'string' } }
                 },
                 repair_class: { enum: ['autofix_plan_only', 'review_required'] },
                 summary: { type: 'string' },
-                evidence: { type: 'array', items: { type: 'string' } }
+                evidence: { type: 'array', items: { type: 'string' } },
+                annotations: {
+                  type: 'array',
+                  items: {
+                    type: 'object', additionalProperties: false, required: ['level', 'message', 'file', 'line', 'column', 'title'],
+                    properties: {
+                      level: { enum: ['error', 'warning', 'notice'] },
+                      message: { type: 'string' },
+                      file: { type: ['string', 'null'] },
+                      line: { type: ['integer', 'null'] },
+                      column: { type: ['integer', 'null'] },
+                      title: { type: ['string', 'null'] }
+                    }
+                  }
+                }
               }
-            }
-          },
-          rerun_plan: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['strategy', 'commands'],
-            properties: {
-              strategy: { const: 'file_first_then_package_then_workspace' },
-              commands: { type: 'array', items: { type: 'string' } }
-            }
-          },
-          repair_plan: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['summary', 'codex_prompt', 'suggested_actions'],
-            properties: {
-              summary: { type: 'string' },
-              codex_prompt: { type: 'string' },
-              suggested_actions: { type: 'array', items: { type: 'string' } }
             }
           }
         }
       }
     ]
   },
+
 
 };
 

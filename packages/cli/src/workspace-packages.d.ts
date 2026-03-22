@@ -80,6 +80,9 @@ declare module "@zachariahredfield/playbook-engine" {
   export const generateRepositoryIndex: (...args: any[]) => any;
   export const generateRepositoryGraph: (...args: any[]) => any;
   export const buildModuleContextDigests: (...args: any[]) => any;
+  export const buildTestTriageArtifact: (...args: any[]) => any;
+  export const renderTestTriageText: (...args: any[]) => string;
+  export const renderTestTriageMarkdown: (...args: any[]) => string;
   export const writeModuleContextDigests: (...args: any[]) => any;
   export const generateCompactionCandidateArtifact: (...args: any[]) => any;
   export const extractCompactionCandidates: (...args: any[]) => any[];

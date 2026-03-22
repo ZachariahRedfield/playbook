@@ -27,19 +27,41 @@ describe('runTestTriage', () => {
     expect(firstExit).toBe(ExitCode.Success);
     expect(secondExit).toBe(ExitCode.Success);
     expect(second).toBe(first);
+    expect(JSON.parse(first).summary).toContain('Detected 1 normalized failure');
     spy.mockRestore();
+  });
+
+  it('supports stdin plus markdown artifact emission', async () => {
+    const repo = createRepo();
+    const realReadFileSync = fs.readFileSync.bind(fs);
+    const stdinSpy = vi.spyOn(fs, 'readFileSync').mockImplementation(((target: fs.PathOrFileDescriptor, options?: Parameters<typeof fs.readFileSync>[1]) => {
+      if (target === 0) {
+        return ['::error file=packages/cli/src/commands/testTriage.ts,line=1,title=Runtime::boom'].join('\n') as never;
+      }
+      return realReadFileSync(target as never, options as never) as never;
+    }) as typeof fs.readFileSync);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runTestTriage(repo, { format: 'text', quiet: false, input: '-', markdown: true });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(logSpy.mock.calls.at(-1)?.[0]).toContain('# Playbook Failure Summary');
+    expect(fs.existsSync(path.join(repo, '.playbook/failure-summary.md'))).toBe(true);
+    expect(fs.existsSync(path.join(repo, '.playbook/failure-summary.json'))).toBe(true);
+    stdinSpy.mockRestore();
+    logSpy.mockRestore();
   });
 
   it('returns a stable json error when the input path is missing', async () => {
     const repo = createRepo();
     const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const exitCode = await runTestTriage(repo, { format: 'json', quiet: false });
+    const exitCode = await runTestTriage(repo, { format: 'json', quiet: false, input: 'missing.log' });
     const payload = JSON.parse(String(spy.mock.calls.at(-1)?.[0])) as Record<string, unknown>;
 
     expect(exitCode).toBe(ExitCode.Failure);
     expect(payload.command).toBe('test-triage');
-    expect(String(payload.error)).toContain('--input');
+    expect(String(payload.error)).toContain('missing.log');
     spy.mockRestore();
   });
 });

@@ -178,6 +178,19 @@ runs:
           echo "pnpm test failed; deterministic failure log captured at $log_path"
         fi
 
+    - name: Emit normalized Playbook failure summary
+      if: env.PLAYBOOK_TEST_EXIT_CODE != '0'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "+ pnpm playbook test-triage --input .playbook/ci-failure.log --json > .playbook/failure-summary.json"
+        pnpm playbook test-triage --input .playbook/ci-failure.log --json > .playbook/failure-summary.json
+        echo "+ pnpm playbook test-triage --input .playbook/ci-failure.log --markdown > .playbook/failure-summary.md"
+        pnpm playbook test-triage --input .playbook/ci-failure.log --markdown > .playbook/failure-summary.md
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+          cat .playbook/failure-summary.md >> "$GITHUB_STEP_SUMMARY"
+        fi
+
     - name: Evaluate CI remediation policy gates
       id: remediation-policy
       if: always()

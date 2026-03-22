@@ -236,7 +236,11 @@ Command reference: [`pnpm playbook docs audit`](docs.md).
 
 ## Test failure triage (`pnpm playbook test-triage`)
 
-`pnpm playbook test-triage --input <path> --json` converts captured Vitest / pnpm recursive failure logs into a deterministic diagnosis artifact with repeatable failure classes, low-risk repair planning guidance, and prioritized rerun commands.
+`pnpm playbook test-triage --input <path|-> [--json|--markdown]` converts captured Vitest / pnpm recursive failure logs plus GitHub annotation lines into a deterministic failure-summary artifact with stable failure classes, cross-cutting diagnosis, recommended next checks, and copy-paste-ready markdown for CI step summaries.
+
+- Rule: Any Playbook-managed CI/test failure must emit both raw output and a deterministic normalized summary.
+- Pattern: Failure summarization is a contract surface, not a convenience logger.
+- Failure Mode: Raw stderr alone creates re-interpretation work and slows remediation across repeated CI loops.
 
 - Rule: Automate diagnosis first, repair second, merge never.
 - Pattern: Repeated CI failures can be bucketed into deterministic repair classes.

@@ -155,6 +155,9 @@ const commandRunners: Record<
       format,
       quiet,
       input: parseOptionValue(commandArgs, '--input'),
+      outFile: parseOptionValue(commandArgs, '--out'),
+      markdownOutFile: parseOptionValue(commandArgs, '--markdown-out'),
+      markdown: parseFlag(commandArgs, '--markdown'),
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
