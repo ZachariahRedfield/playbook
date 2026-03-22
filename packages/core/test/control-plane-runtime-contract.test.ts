@@ -164,6 +164,9 @@ describe('control plane runtime contracts', () => {
     expect(ids).toContain('dry-run-summary-envelope');
     expect(ids).toContain('approval-requirement-summary');
     expect(ids).toContain('scheduling-preview-record');
+    expect(ids).toContain('session-replay-evidence');
+    expect(ids).toContain('replay-candidates');
+    expect(ids).toContain('consolidation-candidates');
 
     const compiledEntry = memoryArtifactSchemaRegistry.find((entry) => entry.id === 'compiled-runtime-task-input');
     expect(compiledEntry?.version).toBe(CONTROL_PLANE_RUNTIME_SCHEMA_VERSION);

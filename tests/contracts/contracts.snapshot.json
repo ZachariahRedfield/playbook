@@ -110,7 +110,17 @@
       {
         "id": "session-replay-evidence",
         "version": "1.0",
-        "path": ".playbook/memory/candidates.json#replayEvidence"
+        "path": ".playbook/memory/replay-candidates.json#replayEvidence"
+      },
+      {
+        "id": "replay-candidates",
+        "version": "1.0",
+        "path": ".playbook/memory/replay-candidates.json"
+      },
+      {
+        "id": "consolidation-candidates",
+        "version": "1.0",
+        "path": ".playbook/memory/consolidation-candidates.json"
       },
       {
         "id": "memory-event",
@@ -131,11 +141,6 @@
         "id": "retired-knowledge-record",
         "version": "1.0.0",
         "path": ".playbook/memory/knowledge/promoted/*.json"
-      },
-      {
-        "id": "memory-replay-result",
-        "version": "1.0",
-        "path": ".playbook/memory/replay/*.json"
       },
       {
         "id": "knowledge-candidate-output",
@@ -283,6 +288,16 @@
         "id": "session-replay-evidence",
         "version": "1.0",
         "path": "packages/contracts/src/session-replay-evidence.schema.json"
+      },
+      {
+        "id": "replay-candidates",
+        "version": "1.0",
+        "path": "packages/contracts/src/replay-candidates.schema.json"
+      },
+      {
+        "id": "consolidation-candidates",
+        "version": "1.0",
+        "path": "packages/contracts/src/consolidation-candidates.schema.json"
       },
       {
         "id": "pr-review",

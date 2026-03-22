@@ -15,6 +15,7 @@
     "smoke:ci": "pnpm -r build && node scripts/smoke-test.mjs",
     "pack:smoke": "node scripts/pack-smoke.mjs",
     "test": "node scripts/run-tests.mjs",
+    "contracts:check": "node scripts/check-contract-surfaces.mjs",
     "sync:templates": "node scripts/sync-templates.mjs",
     "verify:repo": "pnpm -r build && pnpm -r test",
     "verify": "pnpm lint && pnpm check:tests && pnpm test && pnpm smoke:ci",

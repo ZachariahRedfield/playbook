@@ -32,3 +32,13 @@ Registry output includes:
 - `schemas.commandOutputs` registrations for additive command-output contracts
 
 Use `pnpm playbook schema contracts --json` to validate output shape.
+
+## Replay / consolidation contracts
+
+The registry now includes explicit temporal-memory substrate contracts for:
+
+- `.playbook/memory/replay-candidates.json`
+- `.playbook/memory/consolidation-candidates.json`
+- `.playbook/memory/replay-candidates.json#replayEvidence`
+
+These artifacts stay candidate-only, preserve provenance end-to-end, and do not imply promotion.

@@ -155,7 +155,10 @@ export type {
   ObserverRepoSnapshot,
   ObserverSnapshot
 } from './observer/snapshot.js';
-export { replayMemoryToCandidates, MEMORY_CANDIDATES_RELATIVE_PATH } from './memory/replay.js';
+export { replayMemoryToCandidates, buildReplayCandidatesArtifact, MEMORY_CANDIDATES_RELATIVE_PATH, REPLAY_CANDIDATES_RELATIVE_PATH } from './memory/replay.js';
+export type { ReplayCandidatesArtifact } from './memory/replay.js';
+export { consolidateReplayCandidates, buildConsolidationCandidatesArtifact, writeConsolidationCandidatesArtifact, CONSOLIDATION_CANDIDATES_RELATIVE_PATH } from './consolidation/candidates.js';
+export type { ConsolidationCandidatesArtifact, ConsolidationCandidate } from './consolidation/candidates.js';
 export { listCandidateKnowledge, loadCandidateKnowledgeById, promoteMemoryCandidate, retirePromotedKnowledge, supersedePromotedKnowledge, pruneMemoryKnowledge } from './memory/knowledge.js';
 export type { MemoryKnowledgeKind, MemoryKnowledgeEntry, MemoryKnowledgeArtifact, MemoryPromotionResult, MemoryRetireResult, MemorySupersedeResult, MemoryPruneResult } from './memory/knowledge.js';
 export type { MemoryCandidateKind, MemoryReplayResult, MemoryReplayCandidate, MemoryReplayCandidateProvenance, MemoryReplaySalienceFactors, MemoryReplayIndex, MemoryReplayEventReference } from './schema/memoryReplay.js';

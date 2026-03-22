@@ -300,7 +300,8 @@ Doctrine summary anchors:
 `pnpm playbook memory` exposes thin operator review surfaces for repo-local memory artifacts.
 
 - `memory events` lists episodic events with deterministic filters.
-- `memory candidates` lists replay candidates for review.
+- `memory candidates` lists replay candidates for review from `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`).
+- replay/consolidation remain candidate-only: replay is derived from memory evidence, and consolidation writes `.playbook/memory/consolidation-candidates.json` for explicit review without auto-promotion.
 - `memory knowledge` lists promoted knowledge records.
 - `memory show <id>` resolves either a candidate id or knowledge id, including provenance expansion for candidates.
 - `memory promote <candidate-id>` and `memory retire <knowledge-id>` provide explicit, human-driven lifecycle actions.
@@ -319,7 +320,7 @@ pnpm playbook memory show <id> --json
 Command boundary note:
 
 - `memory` = lifecycle/review/mutation surfaces over raw memory artifacts (events, candidates, promoted records).
-- Temporal memory artifacts are scope-first under `.playbook/memory/*` (`index.json`, `events/*.json`, and replay evidence embedded in `.playbook/memory/candidates.json#replayEvidence`); structural repository intelligence remains separate in `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
+- Temporal memory artifacts are scope-first under `.playbook/memory/*` (`index.json`, `events/*.json`, `.playbook/memory/replay-candidates.json`, and `.playbook/memory/consolidation-candidates.json` with replay evidence embedded at `.playbook/memory/replay-candidates.json#replayEvidence`); structural repository intelligence remains separate in `.playbook/repo-index.json` and `.playbook/repo-graph.json`.
 - `knowledge` = normalized, read-only inspection/query surface for governed knowledge retrieval and provenance.
 
 `pnpm playbook knowledge` is the read-only inspection surface for normalized knowledge records.

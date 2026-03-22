@@ -12,6 +12,7 @@
 ## Validation
 
 - [ ] `pnpm -r build`
+- [ ] `pnpm contracts:check`
 - [ ] `pnpm test`
 - [ ] `node scripts/validate-roadmap-contract.mjs`
 - [ ] `node scripts/validate-roadmap-contract.mjs --ci --enforce-pr-feature-id` (feature-id gate: PR title -> PR body -> `.playbook/pr-metadata.json`)

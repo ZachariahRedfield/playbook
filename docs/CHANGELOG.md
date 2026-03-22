@@ -23,6 +23,9 @@
 - Rule: When a PR changes machine-readable contract surfaces, update snapshots and changelog guidance in the same implementation pass.
 - Pattern: Detect contract-surface impact early, run focused contract checks first, then widen verification.
 - Failure Mode: Treating snapshots as cleanup turns predictable contract changes into repeated end-of-run failures.
+- WHAT: Finalized replay artifact contract semantics by making `replay-candidates` the canonical stable replay artifact id, pointing `session-replay-evidence` at `.playbook/memory/replay-candidates.json#replayEvidence`, removing the obsolete `memory-replay-result` registry entry, and adding an early `pnpm contracts:check` guard plus CI/PR workflow notes so contract drift fails before the broader test suite. WHY: Contract-surface changes need one canonical replay id and an explicit fail-fast review loop so snapshot churn is intentional instead of accidental.
+- Rule: Confirm contract ids, versions, and paths before refreshing committed snapshots.
+- Failure Mode: Treating replay artifact renames as snapshot noise hides broken automation assumptions until much later in CI.
 
 - WHAT: Restored one shared backward-compatible temporal memory event normalizer across write/read/replay surfaces by guaranteeing top-level `eventInstanceId`, defaulting missing legacy/new scope inputs to `{ modules: [], ruleIds: [] }`, and rehydrating legacy provenance fields (`eventInstanceId`, `subjectModules`, `ruleIds`) before inspection, provenance expansion, replay, and explain/ask enrichment. WHY: Persisted artifact shapes that feed multiple downstream readers need one canonical normalization layer so schema evolution does not create half-working enrichment paths or delayed replay crashes.
 
