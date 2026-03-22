@@ -64,6 +64,30 @@ const createTestFixPlanPayload = () => ({
 });
 
 
+
+
+const createReleasePlanPayload = () => ({
+  schemaVersion: '1.0',
+  kind: 'playbook-release-plan',
+  generatedAt: '2026-03-22T00:00:00.000Z',
+  summary: { recommendedBump: 'patch', reasons: ['shipped internal code changed'] },
+  packages: [
+    { name: '@scope/alpha', path: 'packages/alpha', currentVersion: '1.2.3', recommendedBump: 'patch', versionGroup: 'lockstep', reasons: ['shipped internal code changed'], evidence: [] },
+    { name: '@scope/beta', path: 'packages/beta', currentVersion: '1.2.3', recommendedBump: 'patch', versionGroup: 'lockstep', reasons: ['shipped internal code changed'], evidence: [] }
+  ],
+  versionGroups: [
+    { name: 'lockstep', packages: ['@scope/alpha', '@scope/beta'], recommendedBump: 'patch', reasons: ['shipped internal code changed'] }
+  ],
+  tasks: [
+    { id: 'task-release-alpha', ruleId: 'release.package-json.version', file: 'packages/alpha/package.json', action: 'Update @scope/alpha package.json to 1.2.4', autoFix: true, task_kind: 'release-package-version', provenance: { package_name: '@scope/alpha', package_path: 'packages/alpha', current_version: '1.2.3', next_version: '1.2.4', version_group: 'lockstep', linked_workspace_versions: [{ name: '@scope/alpha', currentVersion: '1.2.3', nextVersion: '1.2.4' }, { name: '@scope/beta', currentVersion: '1.2.3', nextVersion: '1.2.4' }] } },
+    { id: 'task-release-beta', ruleId: 'release.package-json.version', file: 'packages/beta/package.json', action: 'Update @scope/beta package.json to 1.2.4', autoFix: true, task_kind: 'release-package-version', provenance: { package_name: '@scope/beta', package_path: 'packages/beta', current_version: '1.2.3', next_version: '1.2.4', version_group: 'lockstep', linked_workspace_versions: [{ name: '@scope/alpha', currentVersion: '1.2.3', nextVersion: '1.2.4' }, { name: '@scope/beta', currentVersion: '1.2.3', nextVersion: '1.2.4' }] } },
+    { id: 'task-release-changelog', ruleId: 'docs-consolidation.managed-write', file: 'docs/CHANGELOG.md', action: 'Update managed changelog block for release 1.2.4', autoFix: true, task_kind: 'docs-managed-write', write: { operation: 'replace-managed-block', blockId: 'changelog-release-notes', startMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->', endMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->', content: `<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+## 1.2.4 - 2026-03-22
+- Recommended bump: patch
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->` }, preconditions: { target_path: 'docs/CHANGELOG.md', target_file_fingerprint: 'target-fingerprint-1', managed_block_fingerprint: 'managed-block-fingerprint-1', approved_fragment_ids: ['release:@scope/alpha:1.2.4', 'release:@scope/beta:1.2.4'], planned_operation: 'replace-managed-block' }, provenance: { release_plan_kind: 'playbook-release-plan' } }
+  ]
+});
+
 const createDocsConsolidationPlanPayload = () => ({
   schemaVersion: '1.0',
   kind: 'docs-consolidation-plan',
@@ -209,6 +233,44 @@ describe('runApply', () => {
     logSpy.mockRestore();
   });
 
+
+
+
+  it('accepts reviewed release-plan artifacts via apply --from-plan', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-release-plan-'));
+    const planPath = path.join(tmpRoot, '.playbook', 'release-plan.json');
+    fs.mkdirSync(path.dirname(planPath), { recursive: true });
+    fs.writeFileSync(planPath, JSON.stringify(createReleasePlanPayload(), null, 2));
+
+    parsePlanArtifact.mockReturnValue({ tasks: createReleasePlanPayload().tasks });
+    loadVerifyRules.mockResolvedValue([]);
+    applyExecutionPlan.mockResolvedValue({
+      results: createReleasePlanPayload().tasks.map((task) => ({ ...task, status: 'applied' })),
+      summary: { applied: 3, skipped: 0, unsupported: 0, failed: 0 }
+    });
+
+    const exitCode = await runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: '.playbook/release-plan.json' });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(applyExecutionPlan).toHaveBeenCalledWith(tmpRoot, createReleasePlanPayload().tasks, expect.any(Object));
+  });
+
+  it('fails clearly when release-plan task selection splits a lockstep group', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-release-plan-partial-'));
+    const planPath = path.join(tmpRoot, '.playbook', 'release-plan.json');
+    fs.mkdirSync(path.dirname(planPath), { recursive: true });
+    fs.writeFileSync(planPath, JSON.stringify(createReleasePlanPayload(), null, 2));
+
+    parsePlanArtifact.mockReturnValue({ tasks: createReleasePlanPayload().tasks });
+    loadVerifyRules.mockResolvedValue([]);
+
+    await expect(runApply(tmpRoot, { format: 'json', ci: false, quiet: false, fromPlan: '.playbook/release-plan.json', tasks: ['task-release-alpha'] })).rejects.toThrow(
+      'Release plan task selection is partial for lockstep group lockstep.'
+    );
+    expect(applyExecutionPlan).not.toHaveBeenCalled();
+  });
 
   it('emits policy-check json output without execution', async () => {
     const { runApply } = await import('./apply.js');

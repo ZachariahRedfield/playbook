@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { resolveScmDiffBase } from '../git/context.js';
 
@@ -27,6 +28,30 @@ type WorkspacePackage = {
   path: string;
   currentVersion: string;
   versionGroup: string | null;
+};
+
+type ReleasePlanTask = {
+  id: string;
+  ruleId: string;
+  file: string | null;
+  action: string;
+  autoFix: true;
+  task_kind: 'release-package-version' | 'docs-managed-write';
+  provenance: Record<string, unknown>;
+  write?: {
+    operation: 'replace-managed-block';
+    blockId: string;
+    startMarker: string;
+    endMarker: string;
+    content: string;
+  };
+  preconditions?: {
+    target_path: string;
+    target_file_fingerprint: string;
+    managed_block_fingerprint?: string;
+    approved_fragment_ids: string[];
+    planned_operation: 'replace-managed-block';
+  };
 };
 
 export type ReleasePlan = {
@@ -63,9 +88,14 @@ export type ReleasePlan = {
     recommendedBump: ReleaseBump;
     reasons: string[];
   }>;
+  tasks: ReleasePlanTask[];
 };
 
 const VERSION_POLICY_PATH = '.playbook/version-policy.json';
+const CHANGELOG_PATH = 'docs/CHANGELOG.md';
+const CHANGELOG_BLOCK_ID = 'changelog-release-notes';
+const CHANGELOG_START_MARKER = '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->';
+const CHANGELOG_END_MARKER = '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->';
 const DEFAULT_BREAKING_MARKERS = ['BREAKING CHANGE', 'PLAYBOOK_BREAKING_CHANGE'];
 const bumpRank: Record<ReleaseBump, number> = { none: 0, patch: 1, minor: 2, major: 3 };
 
@@ -75,6 +105,112 @@ const compareBumps = (left: ReleaseBump, right: ReleaseBump): ReleaseBump =>
 const uniqueSorted = (values: string[]): string[] => Array.from(new Set(values)).sort((left, right) => left.localeCompare(right));
 
 const readJson = <T>(filePath: string): T => JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
+
+const fingerprint = (value: string): string => createHash('sha256').update(value, 'utf8').digest('hex');
+
+const bumpVersion = (version: string, bump: ReleaseBump): string => {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version.trim());
+  if (!match) {
+    throw new Error(`Unsupported version format for release plan mutation: ${version}. Expected x.y.z.`);
+  }
+
+  const major = Number.parseInt(match[1] ?? '0', 10);
+  const minor = Number.parseInt(match[2] ?? '0', 10);
+  const patch = Number.parseInt(match[3] ?? '0', 10);
+
+  if (bump === 'major') return `${major + 1}.0.0`;
+  if (bump === 'minor') return `${major}.${minor + 1}.0`;
+  if (bump === 'patch') return `${major}.${minor}.${patch + 1}`;
+  return version;
+};
+
+const validateVersionGroupCompleteness = (workspacePackages: WorkspacePackage[], policy: VersionPolicy): void => {
+  const workspaceByName = new Map(workspacePackages.map((pkg) => [pkg.name, pkg] as const));
+
+  for (const group of policy.versionGroups) {
+    const members = group.packages.map((packageName) => workspaceByName.get(packageName)).filter((value): value is WorkspacePackage => value !== undefined);
+    const missingPackages = group.packages.filter((packageName) => !workspaceByName.has(packageName));
+    if (missingPackages.length > 0) {
+      throw new Error(`Release plan cannot be created: lockstep version group ${group.name} is partial. Missing workspace packages: ${missingPackages.join(', ')}.`);
+    }
+
+    const distinctVersions = uniqueSorted(members.map((member) => member.currentVersion));
+    if (distinctVersions.length > 1) {
+      throw new Error(`Release plan cannot be created: lockstep version group ${group.name} is partial. Current versions diverge: ${distinctVersions.join(', ')}.`);
+    }
+  }
+};
+
+const buildReleaseTaskId = (parts: string[]): string => parts.join('::').replace(/[^a-zA-Z0-9:._-]+/gu, '-');
+
+const buildChangelogTask = (
+  repoRoot: string,
+  generatedAt: string,
+  recommendedBump: ReleaseBump,
+  packagesToUpdate: Array<{ name: string; path: string; currentVersion: string; nextVersion: string; versionGroup: string | null }>,
+  nextVersionByPackage: Map<string, string>
+): ReleasePlanTask => {
+  const changelogPath = path.join(repoRoot, CHANGELOG_PATH);
+  if (!fs.existsSync(changelogPath)) {
+    throw new Error(`Release plan cannot be created: managed changelog target ${CHANGELOG_PATH} does not exist.`);
+  }
+
+  const current = fs.readFileSync(changelogPath, 'utf8');
+  const startIndex = current.indexOf(CHANGELOG_START_MARKER);
+  const endIndex = startIndex >= 0 ? current.indexOf(CHANGELOG_END_MARKER, startIndex + CHANGELOG_START_MARKER.length) : -1;
+  if (startIndex < 0 || endIndex < startIndex) {
+    throw new Error(`Release plan cannot be created: changelog target ${CHANGELOG_PATH} is unmanaged. Expected ${CHANGELOG_START_MARKER} and ${CHANGELOG_END_MARKER}.`);
+  }
+
+  const currentBlock = current.slice(startIndex, endIndex + CHANGELOG_END_MARKER.length);
+  const existingBody = current.slice(startIndex + CHANGELOG_START_MARKER.length, endIndex).trim();
+  const releaseLabel = uniqueSorted(Array.from(new Set(packagesToUpdate.map((pkg) => pkg.nextVersion)))).join(', ');
+  const packageLines = packagesToUpdate
+    .slice()
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map((pkg) => `- ${pkg.name}: ${pkg.currentVersion} -> ${pkg.nextVersion}${pkg.versionGroup ? ` (${pkg.versionGroup})` : ''}`);
+  const entryLines = [
+    `## ${releaseLabel} - ${generatedAt.slice(0, 10)}`,
+    `- Recommended bump: ${recommendedBump}`,
+    ...packageLines
+  ];
+  const contentParts = [CHANGELOG_START_MARKER, ...entryLines, ...(existingBody ? ['', existingBody] : []), CHANGELOG_END_MARKER];
+  const content = contentParts.join('\n');
+
+  return {
+    id: buildReleaseTaskId(['release-changelog', generatedAt.slice(0, 10), releaseLabel || recommendedBump]),
+    ruleId: 'docs-consolidation.managed-write',
+    file: CHANGELOG_PATH,
+    action: `Update managed changelog block for release ${releaseLabel || recommendedBump}`,
+    autoFix: true,
+    task_kind: 'docs-managed-write',
+    write: {
+      operation: 'replace-managed-block',
+      blockId: CHANGELOG_BLOCK_ID,
+      startMarker: CHANGELOG_START_MARKER,
+      endMarker: CHANGELOG_END_MARKER,
+      content
+    },
+    preconditions: {
+      target_path: CHANGELOG_PATH,
+      target_file_fingerprint: fingerprint(current),
+      managed_block_fingerprint: fingerprint(currentBlock),
+      approved_fragment_ids: packagesToUpdate.map((pkg) => `release:${pkg.name}:${nextVersionByPackage.get(pkg.name) ?? pkg.currentVersion}`),
+      planned_operation: 'replace-managed-block'
+    },
+    provenance: {
+      release_plan_kind: 'playbook-release-plan',
+      recommended_bump: recommendedBump,
+      packages: packagesToUpdate.map((pkg) => ({
+        name: pkg.name,
+        path: pkg.path,
+        currentVersion: pkg.currentVersion,
+        nextVersion: pkg.nextVersion,
+        versionGroup: pkg.versionGroup
+      }))
+    }
+  };
+};
 
 const listWorkspacePackageJsonPaths = (repoRoot: string): string[] => {
   const packagesDir = path.join(repoRoot, 'packages');
@@ -237,6 +373,7 @@ export const buildReleasePlanFromInputs = (
 ): ReleasePlan => {
   const policy = inputs.policy ?? readVersionPolicy(repoRoot);
   const workspacePackages = readWorkspacePackages(repoRoot, policy);
+  validateVersionGroupCompleteness(workspacePackages, policy);
   const changedFiles = inputs.changedFiles.map((file) => classifyFileChange(file, repoRoot, policy));
 
   const packagePlans = workspacePackages.map((workspacePackage) => {
@@ -292,6 +429,37 @@ export const buildReleasePlanFromInputs = (
     ...versionGroups.filter((group) => group.recommendedBump === recommendedBump).flatMap((group) => group.reasons)
   ]);
 
+  const nextVersionByPackage = new Map<string, string>();
+  const packagesToUpdate = normalizedPackages
+    .filter((pkg) => pkg.recommendedBump !== 'none')
+    .map((pkg) => {
+      const nextVersion = bumpVersion(pkg.currentVersion, pkg.recommendedBump);
+      nextVersionByPackage.set(pkg.name, nextVersion);
+      return { ...pkg, nextVersion };
+    });
+
+  const tasks: ReleasePlanTask[] = packagesToUpdate.map((pkg) => ({
+    id: buildReleaseTaskId(['release-package', pkg.name, pkg.nextVersion]),
+    ruleId: 'release.package-json.version',
+    file: `${pkg.path}/package.json`,
+    action: `Update ${pkg.name} package.json to ${pkg.nextVersion}`,
+    autoFix: true,
+    task_kind: 'release-package-version',
+    provenance: {
+      release_plan_kind: 'playbook-release-plan',
+      package_name: pkg.name,
+      package_path: pkg.path,
+      current_version: pkg.currentVersion,
+      next_version: pkg.nextVersion,
+      version_group: pkg.versionGroup,
+      linked_workspace_versions: packagesToUpdate.map((linkedPkg) => ({ name: linkedPkg.name, currentVersion: linkedPkg.currentVersion, nextVersion: linkedPkg.nextVersion }))
+    }
+  }));
+
+  if (packagesToUpdate.length > 0) {
+    tasks.push(buildChangelogTask(repoRoot, inputs.generatedAt, recommendedBump, packagesToUpdate, nextVersionByPackage));
+  }
+
   return {
     schemaVersion: '1.0',
     kind: 'playbook-release-plan',
@@ -312,7 +480,8 @@ export const buildReleasePlanFromInputs = (
       reasons: summaryReasons
     },
     packages: normalizedPackages,
-    versionGroups
+    versionGroups,
+    tasks
   };
 };
 

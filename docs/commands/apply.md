@@ -8,6 +8,7 @@ Examples:
 - `pnpm playbook apply --help`
 - `pnpm playbook apply --json`
 - `pnpm playbook apply --from-plan .playbook/plan.json`
+- `pnpm playbook apply --from-plan .playbook/release-plan.json`
 - `pnpm playbook apply --from-plan .playbook/plan.json --task <task-id>`
 - `pnpm playbook apply --from-plan .playbook/plan.json --task <task-a> --task <task-b>`
 - `pnpm playbook apply --policy-check`
@@ -29,6 +30,8 @@ Contract rules:
 - Marks missing handlers as `unsupported`.
 - Reports handler failures as `failed`.
 - Does not invent or guess fixes.
+- `--from-plan` accepts reviewed artifacts from `plan`, `test-fix-plan`, `docs-consolidate-plan`, and `release plan` (`.playbook/release-plan.json`).
+- Release-plan execution stays bounded to reviewed package-version writes plus the managed changelog block; `apply` does not introduce a second mutation path for release automation.
 
 Serializable execution contract:
 
@@ -52,11 +55,16 @@ Controlled policy-gated execution:
 - `--policy` cannot be combined with `--policy-check`, `--from-plan`, or `--task`.
 
 
-- `--from-plan` executes a previously exported `pnpm playbook plan --json` payload without recomputing intent.
-- Plan payload must declare `schemaVersion: "1.0"` and `command: "plan"`.
+- `--from-plan` executes a previously exported reviewed artifact without recomputing intent.
+- Supported artifact contracts:
+  - `command: "plan"`
+  - `command: "test-fix-plan"`
+  - `command: "docs-consolidate-plan"`
+  - `kind: "playbook-release-plan"`
 - `--task` selection is exact and deterministic by stable `task.id` (no fuzzy matching by text/path/rule).
 - Repeated `--task` ids are deduplicated deterministically, and selected tasks preserve original artifact order.
 - Unknown `--task` ids fail clearly; invalid selection does not fall back to applying all tasks.
+- Release-plan task selection fails clearly when it would split a reviewed lockstep version group.
 - Every task must include `id`, `ruleId`, `file`, `action`, `autoFix`.
 - Handler contract is explicit: handlers must return `applied`, `skipped`, or `unsupported`; thrown errors are reported as `failed` and contract violations are treated as failures.
 - `applied` handler results must include changed files and a non-empty summary; `skipped`/`unsupported` handler results must include a non-empty message.
@@ -73,6 +81,13 @@ Exact Task Selection pattern:
 2. Review stable task ids in `.playbook/plan.json`
 3. Apply only reviewed ids with `pnpm playbook apply --from-plan .playbook/plan.json --task <stable-task-id>`
 4. Run `pnpm playbook verify` after apply to validate repository state
+
+Release mutation pattern:
+
+1. `pnpm playbook release plan --json --out .playbook/release-plan.json`
+2. Review bounded package-version and changelog tasks in `.playbook/release-plan.json`
+3. Execute via `pnpm playbook apply --from-plan .playbook/release-plan.json`
+4. Run `pnpm playbook verify` and any release/build checks after apply
 
 ## JSON example
 ```bash

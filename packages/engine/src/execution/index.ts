@@ -224,6 +224,7 @@ export const parsePlanArtifact = (payload: unknown): { tasks: PlanTask[] } => {
       ...(typeof typedTask.task_kind === 'string' ? { task_kind: typedTask.task_kind } : {}),
       ...(typedTask.write && typeof typedTask.write === 'object' ? { write: typedTask.write as PlanTask['write'] } : {}),
       ...(typedTask.provenance && typeof typedTask.provenance === 'object' ? { provenance: typedTask.provenance as PlanTask['provenance'] } : {}),
+      ...(typedTask.preconditions && typeof typedTask.preconditions === 'object' ? { preconditions: typedTask.preconditions as PlanTask['preconditions'] } : {}),
       ...(typedTask.advisory && typeof typedTask.advisory === 'object'
         ? { advisory: typedTask.advisory as PlanTask['advisory'] }
         : {})

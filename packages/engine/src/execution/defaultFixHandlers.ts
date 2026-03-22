@@ -12,6 +12,124 @@ const PLAYBOOK_NOTES_STARTER = `# Playbook Notes
 - WHY it changed:
 `;
 
+
+type ReleasePackageVersionProvenance = {
+  package_name: string;
+  package_path: string;
+  current_version: string;
+  next_version: string;
+  version_group?: string | null;
+  linked_workspace_versions?: Array<{ name: string; currentVersion: string; nextVersion: string }>;
+};
+
+const readReleasePackageVersionProvenance = (task: { provenance?: Record<string, unknown>; file: string | null }): ReleasePackageVersionProvenance => {
+  if (!task.provenance) {
+    throw new Error('Release package version task must include provenance. Rebuild the reviewed release-plan artifact before apply.');
+  }
+
+  const packageName = task.provenance.package_name;
+  const packagePath = task.provenance.package_path;
+  const currentVersion = task.provenance.current_version;
+  const nextVersion = task.provenance.next_version;
+  const linkedWorkspaceVersions = task.provenance.linked_workspace_versions;
+
+  if (typeof packageName !== 'string' || typeof packagePath !== 'string' || typeof currentVersion !== 'string' || typeof nextVersion !== 'string') {
+    throw new Error('Release package version task provenance must include package_name, package_path, current_version, and next_version strings.');
+  }
+
+  if (!Array.isArray(linkedWorkspaceVersions) || linkedWorkspaceVersions.some((entry) => !entry || typeof entry !== 'object' || typeof (entry as { name?: unknown }).name !== 'string' || typeof (entry as { currentVersion?: unknown }).currentVersion !== 'string' || typeof (entry as { nextVersion?: unknown }).nextVersion !== 'string')) {
+    throw new Error('Release package version task provenance must include linked_workspace_versions objects with name/currentVersion/nextVersion strings.');
+  }
+
+  return {
+    package_name: packageName,
+    package_path: packagePath,
+    current_version: currentVersion,
+    next_version: nextVersion,
+    version_group: typeof task.provenance.version_group === 'string' ? task.provenance.version_group : null,
+    linked_workspace_versions: linkedWorkspaceVersions as Array<{ name: string; currentVersion: string; nextVersion: string }>
+  };
+};
+
+const rewriteLinkedWorkspaceVersion = (spec: string, currentVersion: string, nextVersion: string): string | null => {
+  if (spec === currentVersion) {
+    return nextVersion;
+  }
+
+  for (const prefix of ['workspace:', '', '^', '~', 'workspace:^', 'workspace:~'] as const) {
+    if (`${prefix}${currentVersion}` === spec) {
+      return `${prefix}${nextVersion}`;
+    }
+  }
+
+  return null;
+};
+
+const fixReleasePackageJsonVersion: FixHandler = async ({ repoRoot, dryRun, task }) => {
+  if (!task.file) {
+    throw new Error('Release package version task must target a package.json file.');
+  }
+
+  const provenance = readReleasePackageVersionProvenance(task);
+  const targetPath = path.join(repoRoot, task.file);
+  const raw = await fs.readFile(targetPath, 'utf8');
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+
+  if (parsed.name !== provenance.package_name) {
+    throw new Error(`Release package version task target drift: expected package ${provenance.package_name} but found ${String(parsed.name ?? 'unknown')}.`);
+  }
+
+  if (parsed.version !== provenance.current_version) {
+    throw new Error(`Release package version task target drift: expected version ${provenance.current_version} for ${provenance.package_name} but found ${String(parsed.version ?? 'unknown')}.`);
+  }
+
+  parsed.version = provenance.next_version;
+  const linkedVersions = new Map(provenance.linked_workspace_versions?.map((entry) => [entry.name, entry] as const) ?? []);
+
+  const dependencyFields = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as const;
+  for (const field of dependencyFields) {
+    const section = parsed[field];
+    if (!section || typeof section !== 'object' || Array.isArray(section)) {
+      continue;
+    }
+
+    for (const [dependencyName, dependencySpec] of Object.entries(section)) {
+      if (typeof dependencySpec !== 'string') {
+        continue;
+      }
+
+      const linkedVersion = linkedVersions.get(dependencyName);
+      if (!linkedVersion) {
+        continue;
+      }
+
+      const rewritten = rewriteLinkedWorkspaceVersion(dependencySpec, linkedVersion.currentVersion, linkedVersion.nextVersion);
+      if (rewritten) {
+        (section as Record<string, unknown>)[dependencyName] = rewritten;
+      }
+    }
+  }
+
+  const next = `${JSON.stringify(parsed, null, 2)}
+`;
+  if (next === raw) {
+    return {
+      status: 'skipped',
+      message: `${task.file} already matched release version ${provenance.next_version}.`
+    };
+  }
+
+  if (!dryRun) {
+    await fs.writeFile(targetPath, next, 'utf8');
+  }
+
+  return {
+    status: 'applied',
+    filesChanged: [task.file],
+    summary: `Updated ${provenance.package_name} package.json to ${provenance.next_version} with bounded linked workspace version rewrites.`
+  };
+};
+
 const notesPath = (repoRoot: string): string => path.join(repoRoot, 'docs', 'PLAYBOOK_NOTES.md');
 
 const upsertLineEntries = async (filePath: string, entries: string[], dryRun: boolean): Promise<boolean> => {
@@ -298,5 +416,6 @@ export const defaultFixHandlers: Record<string, FixHandler> = {
   PB012: fixPb012PlaybookIgnore,
   PB013: fixPb013GitIgnore,
   PB014: fixPb014MoveArtifacts,
-  'docs-consolidation.managed-write': fixDocsConsolidationManagedWrite
+  'docs-consolidation.managed-write': fixDocsConsolidationManagedWrite,
+  'release.package-json.version': fixReleasePackageJsonVersion
 };

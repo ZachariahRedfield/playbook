@@ -70,11 +70,13 @@ type PlanTask = {
     content: string;
   };
   provenance?: Record<string, unknown>;
+  preconditions?: Record<string, unknown>;
 };
 
 type PlanSelection = {
   tasks: PlanTask[];
   remediation: PlanRemediation;
+  releaseLockstepGroups?: Array<{ name: string; taskIds: string[] }>;
 };
 
 type PolicyCheckJsonResult = {
@@ -134,10 +136,7 @@ type DecodedPlanPayload = {
   likelyShellEncodingIssue: boolean;
 };
 
-type NormalizedPlanArtifact = {
-  tasks: PlanTask[];
-  remediation: PlanRemediation;
-};
+type NormalizedPlanArtifact = PlanSelection;
 
 const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 const UTF16LE_BOM = Buffer.from([0xff, 0xfe]);
@@ -214,6 +213,70 @@ const readRequiredNonNegativeInteger = (value: unknown, fieldName: string): numb
 };
 
 
+const normalizeReleasePlanArtifact = (normalizedPayload: Record<string, unknown>): NormalizedPlanArtifact => {
+  if (normalizedPayload.kind !== 'playbook-release-plan') {
+    throw new Error('Invalid release-plan payload: kind must be "playbook-release-plan".');
+  }
+
+  const tasksPayload = normalizedPayload.tasks;
+  if (!Array.isArray(tasksPayload)) {
+    throw new Error('Invalid release-plan payload: tasks must be an array.');
+  }
+
+  const parsedPlan = engine.parsePlanArtifact({
+    schemaVersion: normalizedPayload.schemaVersion,
+    command: 'plan',
+    tasks: tasksPayload
+  });
+
+  const packageEntries = Array.isArray(normalizedPayload.packages) ? normalizedPayload.packages : [];
+  const versionGroups = Array.isArray(normalizedPayload.versionGroups) ? normalizedPayload.versionGroups : [];
+  const taskByFile = new Map<string | null, PlanTask>(parsedPlan.tasks.map((task: PlanTask) => [task.file, task] as const));
+  const releaseLockstepGroups = versionGroups
+    .map((group) => {
+      if (!group || typeof group !== 'object') {
+        return null;
+      }
+
+      const typedGroup = group as Record<string, unknown>;
+      const packageNames = Array.isArray(typedGroup.packages) ? typedGroup.packages.filter((value): value is string => typeof value === 'string') : [];
+      const taskIds = packageEntries
+        .filter((entry) => entry && typeof entry === 'object' && packageNames.includes(String((entry as Record<string, unknown>).name ?? '')))
+        .map((entry) => {
+          const task = taskByFile.get(`${String((entry as Record<string, unknown>).path)}/package.json`);
+          return task ? task.id : null;
+        })
+        .filter((value): value is string => value !== null);
+
+      return typeof typedGroup.name === 'string' && taskIds.length > 0 ? { name: typedGroup.name, taskIds } : null;
+    })
+    .filter((value): value is { name: string; taskIds: string[] } => value !== null);
+
+  return {
+    tasks: parsedPlan.tasks,
+    remediation: buildPlanRemediation({
+      failureCount: parsedPlan.tasks.length,
+      stepCount: parsedPlan.tasks.length,
+      unavailableReason: 'Release plan produced no bounded mutation tasks. Review the release artifact before attempting apply.'
+    }),
+    releaseLockstepGroups
+  };
+};
+
+const validateReleaseTaskSelection = (selection: PlanSelection, selectedTasks: PlanTask[]): void => {
+  if (!selection.releaseLockstepGroups || selection.releaseLockstepGroups.length === 0) {
+    return;
+  }
+
+  const selectedIds = new Set(selectedTasks.map((task) => task.id));
+  for (const group of selection.releaseLockstepGroups) {
+    const selectedGroupTaskIds = group.taskIds.filter((taskId) => selectedIds.has(taskId));
+    if (selectedGroupTaskIds.length > 0 && selectedGroupTaskIds.length !== group.taskIds.length) {
+      throw new Error(`Release plan task selection is partial for lockstep group ${group.name}. Select all package version tasks in the group or omit them entirely.`);
+    }
+  }
+};
+
 const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact => {
   const normalizedPayload =
     payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
@@ -260,6 +323,10 @@ const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact =>
   }
 
 
+  if (normalizedPayload.kind === 'playbook-release-plan') {
+    return normalizeReleasePlanArtifact(normalizedPayload);
+  }
+
   if (normalizedPayload.command === 'docs-consolidate-plan') {
     const parsedPlan = engine.parsePlanArtifact({
       schemaVersion: normalizedPayload.schemaVersion,
@@ -288,7 +355,7 @@ const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact =>
     };
   }
 
-  throw new Error('Invalid plan payload: command must be "plan", "test-fix-plan", or "docs-consolidate-plan".');
+  throw new Error('Invalid plan payload: command must be "plan", "test-fix-plan", or "docs-consolidate-plan", or kind must be "playbook-release-plan".');
 };
 
 const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
@@ -862,6 +929,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   }
 
   const selectedTasks = selectPlanTasks(plan.tasks, options.tasks);
+  validateReleaseTaskSelection(plan, selectedTasks);
   engine.validateRemediationPlan(cwd, selectedTasks);
   const verifyRules = await loadVerifyRules(cwd);
 

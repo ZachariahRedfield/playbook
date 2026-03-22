@@ -6,7 +6,7 @@ import type { Rule } from '../src/execution/types.js';
 import { FixExecutor, HandlerResolver } from '../src/execution/fixExecutor.js';
 import { PlanGenerator } from '../src/execution/planGenerator.js';
 import { RuleRunner } from '../src/execution/ruleRunner.js';
-import { parsePlanArtifact, selectPlanTasks } from '../src/execution/index.js';
+import { parsePlanArtifact, selectPlanTasks, defaultFixHandlers } from '../src/execution/index.js';
 
 describe('execution pipeline units', () => {
   it('RuleRunner aggregates findings from all rules', () => {
@@ -218,6 +218,84 @@ describe('execution pipeline units', () => {
     ]);
   });
 
+
+
+
+  it('parsePlanArtifact preserves managed-write preconditions for reviewed artifacts', () => {
+    const parsed = parsePlanArtifact({
+      schemaVersion: '1.0',
+      command: 'plan',
+      tasks: [{
+        id: 'task-docs',
+        ruleId: 'docs-consolidation.managed-write',
+        file: 'docs/CHANGELOG.md',
+        action: 'update managed block',
+        autoFix: true,
+        write: {
+          operation: 'replace-managed-block',
+          blockId: 'changelog-release-notes',
+          startMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->',
+          endMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->',
+          content: `<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+- Updated.
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->`
+        },
+        preconditions: {
+          target_path: 'docs/CHANGELOG.md',
+          target_file_fingerprint: 'target-fingerprint',
+          managed_block_fingerprint: 'block-fingerprint',
+          approved_fragment_ids: ['fragment-1'],
+          planned_operation: 'replace-managed-block'
+        }
+      }]
+    });
+
+    expect(parsed.tasks[0]?.preconditions).toEqual({
+      target_path: 'docs/CHANGELOG.md',
+      target_file_fingerprint: 'target-fingerprint',
+      managed_block_fingerprint: 'block-fingerprint',
+      approved_fragment_ids: ['fragment-1'],
+      planned_operation: 'replace-managed-block'
+    });
+  });
+
+  it('release package handler updates only the planned package.json file', async () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-release-handler-'));
+    fs.mkdirSync(path.join(repoRoot, 'packages', 'alpha'), { recursive: true });
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'alpha', 'package.json'), JSON.stringify({
+      name: '@scope/alpha',
+      version: '1.2.3',
+      dependencies: { '@scope/beta': '^1.2.3' }
+    }, null, 2));
+
+    const result = await defaultFixHandlers['release.package-json.version']({
+      repoRoot,
+      dryRun: false,
+      task: {
+        id: 'task-release-alpha',
+        ruleId: 'release.package-json.version',
+        file: 'packages/alpha/package.json',
+        action: 'Update @scope/alpha package.json to 1.2.4',
+        autoFix: true,
+        provenance: {
+          package_name: '@scope/alpha',
+          package_path: 'packages/alpha',
+          current_version: '1.2.3',
+          next_version: '1.2.4',
+          version_group: 'lockstep',
+          linked_workspace_versions: [
+            { name: '@scope/alpha', currentVersion: '1.2.3', nextVersion: '1.2.4' },
+            { name: '@scope/beta', currentVersion: '1.2.3', nextVersion: '1.2.4' }
+          ]
+        }
+      }
+    });
+
+    expect(result).toMatchObject({ status: 'applied', filesChanged: ['packages/alpha/package.json'] });
+    const rewritten = JSON.parse(fs.readFileSync(path.join(repoRoot, 'packages', 'alpha', 'package.json'), 'utf8')) as { version: string; dependencies: Record<string, string> };
+    expect(rewritten.version).toBe('1.2.4');
+    expect(rewritten.dependencies['@scope/beta']).toBe('^1.2.4');
+  });
 
   it('selectPlanTasks supports exact task-id filtering with deduplication and preserved order', () => {
     const tasks = [

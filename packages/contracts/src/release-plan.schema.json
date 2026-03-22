@@ -4,7 +4,7 @@
   "title": "PlaybookReleasePlan",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "generatedAt", "policy", "diff", "summary", "packages", "versionGroups"],
+  "required": ["schemaVersion", "kind", "generatedAt", "policy", "diff", "summary", "packages", "versionGroups", "tasks"],
   "properties": {
     "schemaVersion": { "const": "1.0" },
     "kind": { "const": "playbook-release-plan" },
@@ -104,6 +104,25 @@
           "packages": { "type": "array", "items": { "type": "string" } },
           "recommendedBump": { "enum": ["none", "patch", "minor", "major"] },
           "reasons": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "ruleId", "file", "action", "autoFix", "task_kind", "provenance"],
+        "properties": {
+          "id": { "type": "string" },
+          "ruleId": { "type": "string" },
+          "file": { "type": ["string", "null"] },
+          "action": { "type": "string" },
+          "autoFix": { "const": true },
+          "task_kind": { "enum": ["release-package-version", "docs-managed-write"] },
+          "provenance": { "type": "object" },
+          "write": { "type": "object" },
+          "preconditions": { "type": "object" }
         }
       }
     }

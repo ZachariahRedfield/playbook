@@ -11,6 +11,12 @@ const createFixtureRepo = (): string => {
   fs.mkdirSync(path.join(repoRoot, 'packages', 'beta', 'src'), { recursive: true });
   fs.mkdirSync(path.join(repoRoot, 'docs', 'commands'), { recursive: true });
   fs.mkdirSync(path.join(repoRoot, 'tests'), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, 'docs', 'CHANGELOG.md'), `# Changelog
+
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+- Existing release note.
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->
+`);
   fs.writeFileSync(path.join(repoRoot, 'packages', 'alpha', 'package.json'), JSON.stringify({ name: '@scope/alpha', version: '1.2.3' }, null, 2));
   fs.writeFileSync(path.join(repoRoot, 'packages', 'beta', 'package.json'), JSON.stringify({ name: '@scope/beta', version: '1.2.3' }, null, 2));
   fs.writeFileSync(path.join(repoRoot, '.playbook', 'version-policy.json'), JSON.stringify({
@@ -76,6 +82,56 @@ describe('buildReleasePlanFromInputs', () => {
     const plan = buildPlan(repoRoot, [{ path: 'docs/commands/release.md', status: 'M' }]);
     expect(plan.summary.recommendedBump).toBe('none');
     expect(plan.diff.changedFiles[0]?.reasons).toContain('docs/tests/CI-only surface changed');
+  });
+
+  it('emits apply-compatible package and changelog tasks', () => {
+    const repoRoot = createFixtureRepo();
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'alpha', 'src', 'feature.ts'), 'export const value = 1;\n');
+
+    const plan = buildPlan(repoRoot, [{ path: 'packages/alpha/src/feature.ts', status: 'A' }]);
+    expect(plan.tasks.map((task) => task.ruleId)).toEqual([
+      'release.package-json.version',
+      'release.package-json.version',
+      'docs-consolidation.managed-write'
+    ]);
+    expect(plan.tasks[0]?.file).toBe('packages/alpha/package.json');
+    expect(plan.tasks[1]?.file).toBe('packages/beta/package.json');
+    expect(plan.tasks[2]?.file).toBe('docs/CHANGELOG.md');
+  });
+
+  it('fails clearly when the managed changelog block is missing', () => {
+    const repoRoot = createFixtureRepo();
+    fs.writeFileSync(path.join(repoRoot, 'docs', 'CHANGELOG.md'), '# Changelog\n');
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'alpha', 'src', 'feature.ts'), 'export const value = 1;\n');
+
+    expect(() => buildPlan(repoRoot, [{ path: 'packages/alpha/src/feature.ts', status: 'A' }])).toThrow(
+      'Release plan cannot be created: changelog target docs/CHANGELOG.md is unmanaged.'
+    );
+  });
+
+  it('fails clearly when a lockstep group is only partially present', () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-release-plan-partial-'));
+    fs.mkdirSync(path.join(repoRoot, '.playbook'), { recursive: true });
+    fs.mkdirSync(path.join(repoRoot, 'packages', 'alpha', 'src'), { recursive: true });
+    fs.mkdirSync(path.join(repoRoot, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'alpha', 'package.json'), JSON.stringify({ name: '@scope/alpha', version: '1.2.3' }, null, 2));
+    fs.writeFileSync(path.join(repoRoot, 'docs', 'CHANGELOG.md'), `# Changelog
+
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+- Existing release note.
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->
+`);
+    fs.writeFileSync(path.join(repoRoot, '.playbook', 'version-policy.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'playbook-version-policy',
+      breakingChangeMarkers: ['BREAKING CHANGE'],
+      versionGroups: [{ name: 'lockstep', packages: ['@scope/alpha', '@scope/beta'] }]
+    }, null, 2));
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'alpha', 'src', 'feature.ts'), 'export const value = 1;\n');
+
+    expect(() => buildPlan(repoRoot, [{ path: 'packages/alpha/src/feature.ts', status: 'A' }])).toThrow(
+      'Release plan cannot be created: lockstep version group lockstep is partial.'
+    );
   });
 
   it('requires an explicit breaking marker for a major bump', () => {
