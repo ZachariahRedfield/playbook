@@ -31,11 +31,15 @@ Summary views:
 
 ### `memory candidates`
 
-List replay candidates from `.playbook/memory/candidates.json` for operator review.
+List replay candidates from `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`) for operator review.
+
+Replay output remains candidate-only and is derived from memory evidence in `.playbook/memory/index.json` plus append-only event records under `.playbook/memory/events/*.json`; it does not read opaque raw logs directly.
 
 ### `memory knowledge`
 
 List promoted knowledge artifacts from `.playbook/memory/knowledge/*.json`.
+
+Consolidation lives alongside this surface as `.playbook/memory/consolidation-candidates.json`: it summarizes replay candidates, preserves event/replay provenance, and keeps promotion explicit with `reviewRequired: true` instead of auto-promoting doctrine.
 
 ### `memory show <id>`
 
@@ -52,6 +56,8 @@ Promote a reviewed replay candidate into local semantic memory artifacts:
 - `.playbook/memory/knowledge/patterns.json`
 - `.playbook/memory/knowledge/failure-modes.json`
 - `.playbook/memory/knowledge/invariants.json`
+
+Promotion remains explicit and reviewed: replay/consolidation artifacts never mutate knowledge automatically.
 
 ### `memory retire <knowledge-id>`
 

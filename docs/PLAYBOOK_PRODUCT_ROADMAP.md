@@ -1432,6 +1432,8 @@ Use a layered phase model so each phase compounds directly on the previous one:
    - Prompt-thin artifact-rich refinement (implemented): worker prompts now separate direct-edit ownership from fragment-only protected singleton docs so humans get bounded execution instructions while `.playbook` artifacts keep the full machine contract.
 11. **Phase 11 â€” Replay / Consolidation / Promotion**  
     Add deterministic replay and consolidation pipelines with salience-gated, provenance-preserving promotion queues so fast episodic memory cannot become durable doctrine without review.
+    - Recent implementation note: replay candidates now materialize at `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`) with explicit `candidateOnly`, `authority`, salience, and event provenance fields derived from memory index + append-only event evidence rather than opaque raw logs.
+    - Recent implementation note: consolidation now emits `.playbook/memory/consolidation-candidates.json`, preserving replay and event provenance end-to-end, surfacing salience for review, and marking every promotion path as explicit `reviewRequired` with no auto-promotion behavior.
 12. **Phase 12 â€” Session + Evidence Layer**  
     Session envelope and evidence provenance contracts that bind actor context, command lineage, approvals, and deterministic artifact references.
 13. **Phase 13 â€” Control Plane / Agent Runtime v1**  

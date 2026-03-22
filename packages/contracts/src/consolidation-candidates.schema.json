@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/consolidation-candidates.schema.json",
+  "title": "PlaybookConsolidationCandidates",
+  "description": "Deterministic consolidation candidates that summarize replay evidence and promotion context without mutating doctrine automatically.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "generatedAt",
+    "candidateOnly",
+    "authority",
+    "sourceArtifacts",
+    "summary",
+    "candidates"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-consolidation-candidates" },
+    "command": { "const": "memory-consolidate" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "candidateOnly": { "const": true },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "promotion"],
+      "properties": {
+        "mutation": { "const": "read-only" },
+        "promotion": { "const": "review-required" }
+      }
+    },
+    "sourceArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memoryIndex", "replayCandidates", "promotedKnowledge"],
+      "properties": {
+        "memoryIndex": { "const": ".playbook/memory/index.json" },
+        "replayCandidates": { "enum": [".playbook/memory/replay-candidates.json", ".playbook/memory/candidates.json"] },
+        "promotedKnowledge": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["replayCandidatesRead", "consolidatedCandidates", "promotionReviewRequired", "alreadyPromotedMatches"],
+      "properties": {
+        "replayCandidatesRead": { "type": "integer", "minimum": 0 },
+        "consolidatedCandidates": { "type": "integer", "minimum": 0 },
+        "promotionReviewRequired": { "type": "integer", "minimum": 0 },
+        "alreadyPromotedMatches": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "consolidationCandidateId",
+          "kind",
+          "title",
+          "summary",
+          "reviewStatus",
+          "salience",
+          "provenance",
+          "promotion",
+          "sourceReplayCandidateIds",
+          "module",
+          "ruleId",
+          "fingerprint"
+        ],
+        "properties": {
+          "consolidationCandidateId": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["decision", "pattern", "failure_mode", "invariant", "open_question"] },
+          "title": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1 },
+          "reviewStatus": { "enum": ["review_required", "already_promoted_match"] },
+          "salience": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["score", "factors", "eventCount"],
+            "properties": {
+              "score": { "type": "number" },
+              "factors": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["severity", "recurrenceCount", "blastRadius", "crossModuleSpread", "ownershipDocsGap", "novelSuccessfulRemediationSignal"],
+                "properties": {
+                  "severity": { "type": "number" },
+                  "recurrenceCount": { "type": "number" },
+                  "blastRadius": { "type": "number" },
+                  "crossModuleSpread": { "type": "number" },
+                  "ownershipDocsGap": { "type": "number" },
+                  "novelSuccessfulRemediationSignal": { "type": "number" }
+                }
+              },
+              "eventCount": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["replayCandidates", "events"],
+            "properties": {
+              "replayCandidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["candidateId", "fingerprint", "clusterKey"],
+                  "properties": {
+                    "candidateId": { "type": "string", "minLength": 1 },
+                    "fingerprint": { "type": "string", "minLength": 1 },
+                    "clusterKey": { "type": "string", "minLength": 1 }
+                  }
+                }
+              },
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["eventId", "sourcePath", "fingerprint", "runId"],
+                  "properties": {
+                    "eventId": { "type": "string", "minLength": 1 },
+                    "sourcePath": { "type": "string", "minLength": 1 },
+                    "fingerprint": { "type": "string", "minLength": 1 },
+                    "runId": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          },
+          "promotion": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["eligible", "matchedKnowledgeIds", "reviewRequired"],
+            "properties": {
+              "eligible": { "type": "boolean" },
+              "matchedKnowledgeIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "reviewRequired": { "const": true }
+            }
+          },
+          "sourceReplayCandidateIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "module": { "type": "string", "minLength": 1 },
+          "ruleId": { "type": "string", "minLength": 1 },
+          "fingerprint": { "type": "string", "minLength": 1 },
+          "lastSeenAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

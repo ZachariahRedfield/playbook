@@ -16,6 +16,8 @@ describe('runContracts', () => {
     expect((schemas.memoryArtifacts as Array<{ id: string }>).map((entry) => entry.id)).toContain('stories-backlog');
     expect((schemas.memoryArtifacts as Array<{ id: string }>).map((entry) => entry.id)).toContain('test-autofix-remediation-history');
     expect((schemas.memoryArtifacts as Array<{ id: string }>).map((entry) => entry.id)).toContain('session-replay-evidence');
+    expect((schemas.memoryArtifacts as Array<{ id: string }>).map((entry) => entry.id)).toContain('replay-candidates');
+    expect((schemas.memoryArtifacts as Array<{ id: string }>).map((entry) => entry.id)).toContain('consolidation-candidates');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('query.memoryKnowledge');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('knowledge');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('pattern-graph');
@@ -40,6 +42,8 @@ describe('runContracts', () => {
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('policy-apply-result');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('session-evidence-envelope');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('session-replay-evidence');
+    expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('replay-candidates');
+    expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('consolidation-candidates');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('pr-review');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('story');
     expect((schemas.commandOutputs as Array<{ id: string }>).map((entry) => entry.id)).toContain('stories');
@@ -57,12 +61,14 @@ describe('runContracts', () => {
       memoryArtifacts: [
         { id: 'repository-memory-event', version: '1.0', path: '.playbook/memory/events/*.json' },
         { id: 'repository-memory-index', version: '1.0', path: '.playbook/memory/index.json' },
-        { id: 'session-replay-evidence', version: '1.0', path: '.playbook/memory/candidates.json#replayEvidence' },
+        { id: 'session-replay-evidence', version: '1.0', path: '.playbook/memory/replay-candidates.json#replayEvidence' },
+        { id: 'replay-candidates', version: '1.0', path: '.playbook/memory/replay-candidates.json' },
+        { id: 'consolidation-candidates', version: '1.0', path: '.playbook/memory/consolidation-candidates.json' },
         { id: 'memory-event', version: '1.0.0', path: '.playbook/memory/events/runtime/*.json' },
         { id: 'candidate-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/candidates/*.json' },
         { id: 'promoted-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
         { id: 'retired-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
-        { id: 'memory-replay-result', version: '1.0', path: '.playbook/memory/replay/*.json' },
+        { id: 'memory-replay-result', version: '1.0', path: '.playbook/memory/replay-candidates.json' },
         { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json' },
         { id: 'stories-backlog', version: '1.0', path: '.playbook/stories.json' },
         { id: 'test-autofix-remediation-history', version: '1.0', path: '.playbook/test-autofix-history.json' }
@@ -95,6 +101,8 @@ describe('runContracts', () => {
         { id: 'memory-event', version: '1.0', path: 'packages/contracts/src/memory-event.schema.json' },
         { id: 'session-evidence-envelope', version: '1.0', path: 'packages/contracts/src/session-evidence-envelope.schema.json' },
         { id: 'session-replay-evidence', version: '1.0', path: 'packages/contracts/src/session-replay-evidence.schema.json' },
+        { id: 'replay-candidates', version: '1.0', path: 'packages/contracts/src/replay-candidates.schema.json' },
+        { id: 'consolidation-candidates', version: '1.0', path: 'packages/contracts/src/consolidation-candidates.schema.json' },
         { id: 'pr-review', version: '1.0', path: 'packages/contracts/src/pr-review.schema.json' },
         { id: 'story', version: '1.0', path: 'packages/contracts/src/story.schema.json' },
         { id: 'stories', version: '1.0', path: 'packages/contracts/src/stories.schema.json' },

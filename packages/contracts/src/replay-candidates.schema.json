@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/replay-candidates.schema.json",
+  "title": "PlaybookReplayCandidates",
+  "description": "Deterministic replay candidate artifact derived from temporal memory evidence. Outputs remain candidate-only and preserve evidence provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "sourceIndex",
+    "generatedAt",
+    "candidateOnly",
+    "authority",
+    "totalEvents",
+    "clustersEvaluated",
+    "candidates"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-replay-candidates" },
+    "command": { "const": "memory-replay" },
+    "sourceIndex": { "const": ".playbook/memory/index.json" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "candidateOnly": { "const": true },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "promotion"],
+      "properties": {
+        "mutation": { "const": "read-only" },
+        "promotion": { "const": "review-required" }
+      }
+    },
+    "totalEvents": { "type": "integer", "minimum": 0 },
+    "clustersEvaluated": { "type": "integer", "minimum": 0 },
+    "replayEvidence": { "$ref": "./session-replay-evidence.schema.json" },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidateId",
+          "kind",
+          "title",
+          "summary",
+          "clusterKey",
+          "salienceScore",
+          "salienceFactors",
+          "fingerprint",
+          "module",
+          "ruleId",
+          "failureShape",
+          "eventCount",
+          "provenance",
+          "supersession"
+        ],
+        "properties": {
+          "candidateId": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["decision", "pattern", "failure_mode", "invariant", "open_question"] },
+          "title": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1 },
+          "clusterKey": { "type": "string", "minLength": 1 },
+          "salienceScore": { "type": "number" },
+          "salienceFactors": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["severity", "recurrenceCount", "blastRadius", "crossModuleSpread", "ownershipDocsGap", "novelSuccessfulRemediationSignal"],
+            "properties": {
+              "severity": { "type": "number" },
+              "recurrenceCount": { "type": "number" },
+              "blastRadius": { "type": "number" },
+              "crossModuleSpread": { "type": "number" },
+              "ownershipDocsGap": { "type": "number" },
+              "novelSuccessfulRemediationSignal": { "type": "number" }
+            }
+          },
+          "fingerprint": { "type": "string", "minLength": 1 },
+          "module": { "type": "string", "minLength": 1 },
+          "ruleId": { "type": "string", "minLength": 1 },
+          "failureShape": { "type": "string", "minLength": 1 },
+          "eventCount": { "type": "integer", "minimum": 0 },
+          "provenance": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["eventId", "sourcePath", "fingerprint", "runId"],
+              "properties": {
+                "eventId": { "type": "string", "minLength": 1 },
+                "sourcePath": { "type": "string", "minLength": 1 },
+                "fingerprint": { "type": "string", "minLength": 1 },
+                "runId": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "lastSeenAt": { "type": "string", "format": "date-time" },
+          "supersession": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evolutionOrdinal", "priorCandidateIds", "supersedesCandidateIds"],
+            "properties": {
+              "evolutionOrdinal": { "type": "integer", "minimum": 1 },
+              "priorCandidateIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "supersedesCandidateIds": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
