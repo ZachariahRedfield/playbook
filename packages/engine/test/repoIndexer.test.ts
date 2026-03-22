@@ -38,7 +38,7 @@ describe('generateRepositoryIndex', () => {
         expect.objectContaining({ name: 'command-inventory', path: 'package.json#scripts' })
       ]),
       database: 'supabase',
-      rules: ['requireNotesFileWhenGovernanceExists', 'requireNotesOnChanges', 'verify.rule.tests.required']
+      rules: ['protected-doc.governance', 'requireNotesFileWhenGovernanceExists', 'requireNotesOnChanges', 'verify.rule.tests.required']
     });
   });
 
