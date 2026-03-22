@@ -20,6 +20,15 @@
 # Changelog
 
 ## Unreleased
+- WHAT: Relaxed the repo-index rules assertion to require baseline presence, sort order, and uniqueness instead of freezing the full derived rule list. WHY: `repo-index` intentionally reflects the live core rule registry, so adding a new core governance rule should expand the derived surface without creating a false regression.
+- Rule: If repo index mirrors live core rules, assert baseline presence rather than freezing the full list.
+- Failure Mode: Snapshot-style tests on derived governance surfaces create false regressions whenever the core rule registry grows.
+
+- WHAT: Restored the canonical `release.requiredVersionBump.missing` finding for public contract expansion when no package version-governance update accompanies the change, while keeping the more specific contract-expansion release-plan failure alongside it when applicable. WHY: Stable governance finding ids are machine contracts and must not disappear just because the human-readable branch logic became more specific.
+- Rule: Stable governance finding IDs are machine contracts; do not rename or drop them casually.
+- Pattern: Separate canonical finding IDs from human-readable messages so wording and branching can evolve without contract drift.
+- Failure Mode: Replacing a specific governance finding with a broader or adjacent one makes tests pass “some failure” while silently breaking automation keyed to the canonical id.
+
 - WHAT: Refined PR contract-surface review so ephemeral runtime telemetry under `.playbook/memory/events/**` no longer counts as persisted contract evidence for `analyze-pr` / `review-pr`, while stable automation-facing `.playbook` artifacts remain reviewable. WHY: Deterministic review commands must not consume their own runtime emissions and invent second-run-only findings.
 - Rule: Review surfaces must exclude self-generated runtime telemetry from contract-surface evidence.
 - Pattern: Classify stable automation artifacts separately from ephemeral execution artifacts before emitting review findings.

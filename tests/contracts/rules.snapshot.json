@@ -21,6 +21,10 @@
     {
       "id": "protected-doc.governance",
       "description": "Fail closed when protected-doc consolidation is unresolved or drift-conflicted."
+    },
+    {
+      "id": "release.version-governance",
+      "description": "Fail closed when release-relevant changes ship without coordinated version governance updates."
     }
   ],
   "analyze": [

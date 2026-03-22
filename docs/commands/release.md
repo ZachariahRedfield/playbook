@@ -40,3 +40,16 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 - Rule: Reviewed release artifacts may prepare bounded mutations, but `apply` remains the only mutation boundary.
 - Pattern: Detect -> plan -> apply -> verify is the safe release-governance loop.
 - Failure Mode: Catching version drift only at tag/package time turns release into late-stage cleanup.
+
+
+## Verify integration
+
+`pnpm playbook verify --json` is the canonical merge gate for release/version governance.
+
+When release-relevant changes land without the matching version-governance updates, verify emits evidence-backed failures instead of requiring workflow-local release heuristics. The standard remediation loop is:
+
+```bash
+pnpm playbook release plan --json --out .playbook/release-plan.json
+pnpm playbook apply --from-plan .playbook/release-plan.json
+pnpm playbook verify --json
+```

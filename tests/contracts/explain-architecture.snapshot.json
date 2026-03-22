@@ -30,6 +30,10 @@
         },
         {
           "kind": "contains",
+          "target": "rule:release.version-governance"
+        },
+        {
+          "kind": "contains",
           "target": "rule:requireNotesFileWhenGovernanceExists"
         },
         {

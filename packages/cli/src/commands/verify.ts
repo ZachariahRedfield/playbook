@@ -37,6 +37,27 @@ const resolveFailureGuidance = (
   };
 };
 
+
+const collectNextActions = (report: VerifyReport, verifyRules: Awaited<ReturnType<typeof loadVerifyRules>>): string[] => {
+  const actions = report.failures
+    .flatMap((failure: VerifyFailure) => resolveFailureGuidance(verifyRules, failure).remediation ?? (failure.fix ? [failure.fix] : []))
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  return [...new Set(actions)].slice(0, 4);
+};
+
+const printCompactNextActions = (actions: string[]): void => {
+  if (actions.length === 0) {
+    return;
+  }
+
+  console.log('Next actions:');
+  for (const action of actions) {
+    console.log(`- ${action}`);
+  }
+};
+
 export const collectVerifyReport = async (cwd: string): Promise<VerifyReport> => engine.verifyRepo(cwd) as VerifyReport;
 
 const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
@@ -71,6 +92,7 @@ export const runVerify = async (
 
   const verifyRules = await loadVerifyRules(cwd);
   const report = await collectVerifyReport(cwd);
+  const nextActions = collectNextActions(report, verifyRules);
 
   const { config } = await Promise.resolve(engine.loadConfig(cwd));
   const configuredPolicyRules = new Set(config.verify.policy.rules);
@@ -154,6 +176,9 @@ export const runVerify = async (
 
   if (options.format === 'text' && !options.ci && !options.explain && !inPolicyMode) {
     console.log(engine.formatHuman(report));
+    if (!report.ok) {
+      printCompactNextActions(nextActions);
+    }
     tracker.finish({
       inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
       artifactsWritten: options.outFile ? [options.outFile] : [],
@@ -168,6 +193,9 @@ export const runVerify = async (
   if (options.format === 'text' && options.ci && !options.explain && !inPolicyMode) {
     if (!options.quiet || !ok) {
       console.log(ok ? 'playbook verify: PASS' : 'playbook verify: FAIL');
+      if (!ok) {
+        printCompactNextActions(nextActions);
+      }
     }
     tracker.finish({
       inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
@@ -198,9 +226,7 @@ export const runVerify = async (
         message: warning.message
       }))
     ],
-    nextActions: report.failures
-      .map((failure: VerifyFailure) => failure.fix)
-      .filter((fix: string | undefined): fix is string => Boolean(fix)),
+    nextActions,
     policyViolations: inPolicyMode ? policyViolations : undefined
   };
 

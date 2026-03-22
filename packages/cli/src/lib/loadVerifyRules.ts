@@ -8,6 +8,7 @@ import { notesMissingRule } from '../rules/verify/notesMissingRule.js';
 import { requireNotesOnChangesRule } from '../rules/verify/requireNotesOnChangesRule.js';
 import { testsRequiredRule } from '../rules/verify/testsRequiredRule.js';
 import { protectedDocGovernanceRule } from '../rules/verify/protectedDocGovernanceRule.js';
+import { releaseVersionGovernanceRule } from '../rules/verify/releaseVersionGovernanceRule.js';
 
 export type VerifyFailure = VerifyReport['failures'][number];
 
@@ -41,7 +42,7 @@ type PluginModule = {
   rules?: PluginVerifyRule[];
 };
 
-export const coreVerifyRules: VerifyRule[] = [notesMissingRule, notesEmptyRule, requireNotesOnChangesRule, testsRequiredRule, protectedDocGovernanceRule];
+export const coreVerifyRules: VerifyRule[] = [notesMissingRule, notesEmptyRule, requireNotesOnChangesRule, testsRequiredRule, protectedDocGovernanceRule, releaseVersionGovernanceRule];
 
 const readDependencyNames = (cwd: string): string[] => {
   const packageJsonPath = path.join(cwd, 'package.json');

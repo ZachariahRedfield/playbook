@@ -38,8 +38,17 @@ describe('generateRepositoryIndex', () => {
         expect.objectContaining({ name: 'command-inventory', path: 'package.json#scripts' })
       ]),
       database: 'supabase',
-      rules: ['protected-doc.governance', 'requireNotesFileWhenGovernanceExists', 'requireNotesOnChanges', 'verify.rule.tests.required']
+      rules: expect.arrayContaining([
+        'protected-doc.governance',
+        'release.version-governance',
+        'requireNotesFileWhenGovernanceExists',
+        'requireNotesOnChanges',
+        'verify.rule.tests.required'
+      ])
     });
+
+    expect(index.rules).toEqual([...index.rules].sort((left, right) => left.localeCompare(right)));
+    expect(new Set(index.rules).size).toBe(index.rules.length);
   });
 
   it('indexes src/features/* directories as first-class modules for modular-monolith repos', () => {

@@ -73,6 +73,7 @@ jobs:
             .playbook/remediation-status.json
             .playbook/remediation-comment.md
             .playbook/verify.json
+            .playbook/release-plan.json
             .playbook/merge-guard-comment.md
 
       - name: Render Playbook remediation PR comment
@@ -168,6 +169,7 @@ jobs:
             .playbook/remediation-status.json
             .playbook/remediation-comment.md
             .playbook/verify.json
+            .playbook/release-plan.json
             .playbook/merge-guard-comment.md
 
       - name: Validate playbook-demo compatibility

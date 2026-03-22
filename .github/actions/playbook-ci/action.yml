@@ -268,15 +268,40 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         mkdir -p .playbook
-        echo "+ node packages/cli/dist/main.js verify --json | tee .playbook/verify.json"
+        echo "+ node packages/cli/dist/main.js verify --json --out .playbook/verify.json"
         set +e
-        node packages/cli/dist/main.js verify --json | tee .playbook/verify.json
+        node packages/cli/dist/main.js verify --json --out .playbook/verify.json
         verify_exit_code=${PIPESTATUS[0]}
         set -e
         echo "verify-exit-code=$verify_exit_code" >> "$GITHUB_OUTPUT"
         if [[ "$verify_exit_code" -ne 0 ]]; then
           exit "$verify_exit_code"
         fi
+
+    - name: Surface compact verify summary from canonical artifact
+      if: always()
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        node - <<'NODE'
+        const fs = require('node:fs');
+        const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+        const verifyPath = '.playbook/verify.json';
+        if (!summaryPath || !fs.existsSync(verifyPath)) process.exit(0);
+        const payload = JSON.parse(fs.readFileSync(verifyPath, 'utf8'));
+        const findings = Array.isArray(payload.findings) ? payload.findings.filter((finding) => finding.level === 'error').slice(0, 5) : [];
+        const nextActions = Array.isArray(payload.nextActions) ? payload.nextActions.slice(0, 3) : [];
+        const lines = ['## Playbook Verify', '', `- Status: ${payload.ok ? 'PASS' : 'FAIL'}`, `- Artifact: \`.playbook/verify.json\``];
+        if (findings.length > 0) {
+          lines.push('- Findings:');
+          for (const finding of findings) lines.push(`  - ${finding.id}: ${finding.message}`);
+        }
+        if (nextActions.length > 0) {
+          lines.push('- Next actions:');
+          for (const action of nextActions) lines.push(`  - ${action}`);
+        }
+        fs.appendFileSync(summaryPath, `${lines.join('\n')}\n\n`, 'utf8');
+        NODE
 
     - name: Surface canonical merge-guard summary
       if: always()
