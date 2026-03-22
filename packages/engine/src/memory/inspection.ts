@@ -51,21 +51,34 @@ const listAllEventPaths = (projectRoot: string): string[] => {
     .map((entry) => path.posix.join('events', entry));
 };
 
-const readEventByRelativePath = (projectRoot: string, relativePath: string): MemoryEvent | null => {
-  const payload = readJsonIfExists<unknown>(resolveEventPath(projectRoot, relativePath));
-  return isTemporalMemoryEvent(payload) ? payload : null;
+const toStringArray = (value: unknown): string[] => Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string').sort((left, right) => left.localeCompare(right)) : [];
+
+const normalizeMemoryEvent = (value: unknown): MemoryEvent | null => {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Record<string, unknown>;
+  const eventId = typeof candidate.eventId === 'string' ? candidate.eventId : typeof candidate.eventInstanceId === 'string' ? candidate.eventInstanceId : null;
+  if (!eventId || typeof candidate.createdAt !== 'string' || typeof candidate.eventFingerprint !== 'string') return null;
+  const rawScope = candidate.scope && typeof candidate.scope === 'object' ? (candidate.scope as Record<string, unknown>) : null;
+  const modules = toStringArray(rawScope?.modules ?? candidate.subjectModules);
+  const ruleIds = toStringArray(rawScope?.ruleIds ?? candidate.ruleIds);
+  return {
+    schemaVersion: '1.0',
+    kind: (typeof candidate.kind === 'string' ? candidate.kind : 'failure_ingest') as MemoryEvent['kind'],
+    eventId,
+    eventFingerprint: candidate.eventFingerprint,
+    createdAt: candidate.createdAt,
+    repoRevision: typeof candidate.repoRevision === 'string' ? candidate.repoRevision : 'unknown',
+    scope: { modules, ruleIds },
+    sources: Array.isArray(candidate.sources) ? candidate.sources as MemoryEvent['sources'] : [],
+    riskSummary: candidate.riskSummary && typeof candidate.riskSummary === 'object' ? candidate.riskSummary as MemoryEvent['riskSummary'] : { level: 'unknown', signals: [] },
+    outcome: candidate.outcome && typeof candidate.outcome === 'object' ? candidate.outcome as MemoryEvent['outcome'] : { status: 'skipped', summary: typeof candidate.summary === 'string' ? candidate.summary : 'legacy memory event' },
+    salienceInputs: candidate.salienceInputs && typeof candidate.salienceInputs === 'object' ? candidate.salienceInputs as MemoryEvent['salienceInputs'] : {}
+  };
 };
 
-const isTemporalMemoryEvent = (value: unknown): value is MemoryEvent => {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.eventId === 'string' &&
-    typeof candidate.createdAt === 'string' &&
-    typeof candidate.eventFingerprint === 'string' &&
-    !!candidate.scope &&
-    typeof candidate.scope === 'object'
-  );
+const readEventByRelativePath = (projectRoot: string, relativePath: string): MemoryEvent | null => {
+  const payload = readJsonIfExists<unknown>(resolveEventPath(projectRoot, relativePath));
+  return normalizeMemoryEvent(payload);
 };
 
 const sortTimeline = (events: MemoryEvent[], order: 'asc' | 'desc'): MemoryEvent[] => {

@@ -108,10 +108,13 @@ type RuntimeExecutionRun = {
 };
 
 type RuntimeMemoryEventRecord = {
-  eventInstanceId: string;
+  eventInstanceId?: string;
+  eventId?: string;
   eventFingerprint: string;
   eventType?: string;
+  kind?: string;
   summary?: string;
+  outcome?: { summary?: string };
   evidence?: Array<{ artifactPath?: string }>;
 };
 
@@ -178,7 +181,7 @@ const readRuntimeMemoryEvents = (projectRoot: string): RuntimeMemoryEventRecord[
       const raw = fs.readFileSync(path.join(eventsPath, entry), 'utf8');
       return JSON.parse(raw) as RuntimeMemoryEventRecord;
     })
-    .filter((event) => typeof event.eventInstanceId === 'string' && typeof event.eventFingerprint === 'string');
+.filter((event) => (typeof event.eventInstanceId === 'string' || typeof event.eventId === 'string') && typeof event.eventFingerprint === 'string');
 };
 
 const asRecord = (value: unknown): Record<string, unknown> => (value && typeof value === 'object' ? (value as Record<string, unknown>) : {});
@@ -395,9 +398,9 @@ const buildRuntimeTaskMemoryProvenance = (projectRoot: string): RuntimeTaskMemor
         taskId: step.taskId,
         stepId: step.stepId,
         status: step.status,
-        memoryEventId: event.eventInstanceId,
+        memoryEventId: event.eventId ?? event.eventInstanceId ?? 'unknown-event',
         memoryFingerprint: event.eventFingerprint,
-        memorySourcePath: `.playbook/memory/events/${event.eventInstanceId}.json`,
+        memorySourcePath: `.playbook/memory/events/${event.eventId ?? event.eventInstanceId ?? 'unknown-event'}.json`,
         knowledgeIds: knowledgeReferencesByFingerprint.get(event.eventFingerprint) ?? []
       };
       const key = `${provenance.runId}|${provenance.taskId}|${provenance.memoryEventId}`;

@@ -46,9 +46,9 @@ const writeDeterministicJson = (filePath: string, payload: unknown): void => {
   fs.writeFileSync(filePath, deterministicStringify(payload), 'utf8');
 };
 
-const normalizeScope = (scope: MemoryScope): MemoryScope => ({
-  modules: uniqueSorted(scope.modules),
-  ruleIds: uniqueSorted(scope.ruleIds)
+const normalizeScope = (scope: MemoryEventInput['scope'] | MemoryScope | null | undefined, fallback?: Pick<MemoryEventInput, 'subjectModules' | 'ruleIds'>): MemoryScope => ({
+  modules: uniqueSorted(Array.isArray(scope?.modules) ? scope.modules : (fallback?.subjectModules ?? [])),
+  ruleIds: uniqueSorted(Array.isArray(scope?.ruleIds) ? scope.ruleIds : (fallback?.ruleIds ?? []))
 });
 
 const emptyIndex = (): MemoryIndex => ({
@@ -83,7 +83,7 @@ const toEventFingerprint = (input: MemoryEventInput): string =>
   stableHash({
     kind: input.kind,
     sources: [...input.sources].sort((left, right) => `${left.type}:${left.reference}`.localeCompare(`${right.type}:${right.reference}`)),
-    scope: normalizeScope(input.scope),
+    scope: normalizeScope(input.scope, input),
     riskSummary: {
       level: input.riskSummary.level,
       score: input.riskSummary.score ?? null,
@@ -100,7 +100,7 @@ const toEventFingerprint = (input: MemoryEventInput): string =>
 const buildEvent = (repoRoot: string, input: MemoryEventInput): MemoryEvent => {
   const createdAt = new Date().toISOString();
   const eventFingerprint = toEventFingerprint(input);
-  const scope = normalizeScope(input.scope);
+  const scope = normalizeScope(input.scope, input);
 
   return {
     schemaVersion: MEMORY_SCHEMA_VERSION,

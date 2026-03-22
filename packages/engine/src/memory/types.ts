@@ -40,9 +40,16 @@ export type MemoryEvent = {
   salienceInputs: Record<string, string | number | boolean | string[] | number[] | boolean[] | null>;
 };
 
-export type MemoryEventInput = Omit<MemoryEvent, 'schemaVersion' | 'eventId' | 'eventFingerprint' | 'createdAt' | 'repoRevision'> & {
-  repoRevision?: string;
+export type LegacyMemoryEventInput = {
+  subjectModules?: string[] | null;
+  ruleIds?: string[] | null;
+  scope?: MemoryScope | Partial<MemoryScope> | null;
 };
+
+export type MemoryEventInput = Omit<MemoryEvent, 'schemaVersion' | 'eventId' | 'eventFingerprint' | 'createdAt' | 'repoRevision' | 'scope'> &
+  LegacyMemoryEventInput & {
+    repoRevision?: string;
+  };
 
 export type MemoryIndexEntry = {
   eventId: string;
