@@ -43,7 +43,9 @@ const createRepo = (): { repoRoot: string; baseSha: string } => {
 describe('verifyReleaseGovernance', () => {
   it('fails when public contract expansion lands without version governance updates', () => {
     const { repoRoot, baseSha } = createRepo();
-    write(path.join(repoRoot, 'packages', 'contracts', 'src', 'new-contract.schema.json'), '{"type":"object"}\n');
+    const contractPath = path.join(repoRoot, 'packages', 'contracts', 'src', 'new-contract.schema.json');
+    write(contractPath, '{"type":"object"}\n');
+    run(repoRoot, 'add', 'packages/contracts/src/new-contract.schema.json');
 
     const failures = verifyReleaseGovernance(repoRoot, { baseRef: 'HEAD~0', baseSha });
 
@@ -53,7 +55,9 @@ describe('verifyReleaseGovernance', () => {
 
   it('does not fail for docs-only changes', () => {
     const { repoRoot, baseSha } = createRepo();
-    write(path.join(repoRoot, 'docs', 'commands', 'release.md'), '# release\nupdated\n');
+    const releaseDocPath = path.join(repoRoot, 'docs', 'commands', 'release.md');
+    write(releaseDocPath, '# release\nupdated\n');
+    run(repoRoot, 'add', 'docs/commands/release.md');
 
     const failures = verifyReleaseGovernance(repoRoot, { baseRef: 'HEAD~0', baseSha });
 
