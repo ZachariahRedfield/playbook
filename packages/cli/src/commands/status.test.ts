@@ -736,7 +736,10 @@ describe('runStatus', () => {
     expect(output).toContain('- pending=1');
     expect(output).toContain('- blocked=1');
     expect(output).not.toContain('Artifacts:');
-    expect(output.length).toBeLessThan(rawLaneState.length);
+    expect(output).not.toContain(rawLaneState);
+    expect(output).not.toContain('"lane_id":"lane-a"');
+    expect(output).not.toContain('merge_ready_lanes');
+    expect(output).not.toContain('blocked_reasons');
 
     logSpy.mockRestore();
   });
