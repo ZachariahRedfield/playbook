@@ -30,6 +30,7 @@ declare module "@zachariahredfield/playbook-engine" {
   export const generateRepositoryHealth: (...args: any[]) => any;
   export const buildRepoAdoptionReadiness: (...args: any[]) => any;
   export const runBootstrapProof: (...args: any[]) => any;
+  export const readProofParallelWorkSummary: (...args: any[]) => any;
   export const resolveBootstrapCliAvailability: (...args: any[]) => any;
   export const defaultBootstrapCliResolutionCommands: (...args: any[]) => any;
   export type BootstrapCliResolutionCommand = any;

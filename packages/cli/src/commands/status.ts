@@ -13,6 +13,7 @@ import {
   deriveNextAdoptionQueueFromUpdatedState,
   buildRepoAdoptionReadiness,
   runBootstrapProof,
+  readProofParallelWorkSummary,
   defaultBootstrapCliResolutionCommands,
   type BootstrapCliResolutionCommand,
   type FleetAdoptionWorkQueue,
@@ -114,6 +115,7 @@ type StatusProofResult = {
   command: 'status';
   mode: 'proof';
   proof: ReturnType<typeof runBootstrapProof>;
+  parallel_work: ReturnType<typeof readProofParallelWorkSummary>;
   interpretation: InterpretationLayer;
 };
 
@@ -379,12 +381,14 @@ const bootstrapCliResolutionCommands = (): BootstrapCliResolutionCommand[] => {
 
 const toProofStatusResult = (cwd: string): { result: StatusProofResult; exitCode: ExitCode } => {
   const proof = runBootstrapProof(cwd, { cliResolutionCommands: bootstrapCliResolutionCommands() });
+  const parallelWork = readProofParallelWorkSummary(cwd);
   return {
     result: {
       schemaVersion: '1.0',
       command: 'status',
       mode: 'proof',
       proof,
+      parallel_work: parallelWork,
       interpretation: buildProofInterpretation(proof)
     },
     exitCode: proof.ok ? ExitCode.Success : ExitCode.Failure
@@ -553,15 +557,21 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
       } else {
         console.log(renderBriefOutput({
           title: 'Status proof',
-          decision: proofResult.proof.ok ? 'proof_ready' : 'proof_blocked',
-          status: proofResult.proof.current_state,
-          why: proofResult.proof.summary.why,
-          affectedSurfaces: ['bootstrap proof', `failing stage=${proofResult.proof.diagnostics.failing_stage ?? 'none'}`],
-          blockers: [
-            proofResult.proof.diagnostics.failing_stage ? `failing stage: ${proofResult.proof.diagnostics.failing_stage}` : '',
-            proofResult.proof.diagnostics.failing_category ? `failing category: ${proofResult.proof.diagnostics.failing_category}` : ''
-          ].filter(Boolean),
-          nextAction: proofResult.proof.summary.what_next
+          decision: proofResult.parallel_work.decision,
+          status: proofResult.parallel_work.status,
+          affectedSurfaces: proofResult.parallel_work.affected_surfaces,
+          blockers: proofResult.parallel_work.blockers,
+          nextAction: proofResult.parallel_work.next_action,
+          extraSections: [{
+            label: 'Counts',
+            items: [
+              `pending=${proofResult.parallel_work.counts.pending}`,
+              `blocked=${proofResult.parallel_work.counts.blocked}`,
+              `plan_ready=${proofResult.parallel_work.counts.plan_ready}`,
+              `guard_conflicted=${proofResult.parallel_work.counts.guard_conflicted}`,
+              `merge_ready=${proofResult.parallel_work.counts.merge_ready}`
+            ]
+          }]
         }));
       }
       return exitCode;
