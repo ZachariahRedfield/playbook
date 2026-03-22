@@ -24,6 +24,8 @@
 | `explain` | Deterministic explanations for architecture/rules/modules | engine | stable | Uses graph + rule metadata; avoids `ask` overlap by template-backed explainers |
 | `analyze-pr` | Deterministic change-risk/impact analysis | engine/node | stable | Must consume shared SCM context + architecture graph only |
 
+Execution-layer expansion note: future visual-contract intelligence should plug into this same command model as first-class screenshot artifacts consumed by `analyze`, `analyze-pr`, and diff-aware `verify` checks, rather than introducing a separate UI-only validation lane.
+
 ## 3. Package boundary and plugin convergence plan
 
 ### Target ownership map

@@ -2126,6 +2126,103 @@ Implemented baseline: `pnpm playbook index` (paired with `query`, `deps`, `ask`,
 - Product purpose: enable AI agents to safely understand repository structure and constraints before making code changes.
 - Next enhancements: richer intelligence coverage, schema hardening, and stronger CI artifact workflows.
 
+## Visual Contracts / UI Truth Layer
+
+Goal:
+Extend Playbook beyond code + docs into visual truth by enabling screenshot-based UI understanding, regression detection, and pattern extraction.
+
+Why:
+UI correctness and system integrity cannot be fully verified through code alone. Visual regressions, layout drift, and pattern inconsistencies require a first-class visual analysis layer.
+
+Outcome:
+Playbook becomes capable of:
+- detecting visual regressions across PRs
+- identifying UI pattern drift and inconsistencies
+- extracting structural UI metadata from screenshots
+- aligning screens to shared UI families and contracts
+
+This initiative sits between repository intelligence and execution enforcement: screenshots become first-class evidence artifacts that `analyze`, `analyze-pr`, `verify`, `docs`, and the pattern system can consume without changing the current command-truth boundary for already-shipped surfaces.
+
+Rule: UI systems require visual truth in addition to code truth.
+Pattern: Screenshot -> structure -> contract -> enforcement loop.
+Failure Mode: Pixel diff without semantic understanding leads to noisy, low-signal validation.
+
+### Capabilities
+
+- Screenshot Capture
+  - Route/state/device matrix capture
+  - Baseline snapshots stored as artifacts
+
+- Visual Diffing
+  - Before/after PR comparison
+  - Structural + semantic diff (not just pixel diff)
+
+- UI Structure Extraction
+  - Header pattern detection
+  - CTA placement + ownership
+  - Layout hierarchy (cards, lists, panels)
+  - Bottom action stack presence + consistency
+
+- Visual Contract Enforcement
+  - Detect deviations from canonical screen families
+  - Flag layout drift (spacing, hierarchy, ownership)
+  - Surface violations in verify / CI
+
+- Pattern Detection + Promotion
+  - Identify recurring UI structures across screens/repos
+  - Promote to reusable UI patterns/contracts
+
+### Planned Commands
+
+```
+playbook ui:capture
+playbook ui:diff
+playbook ui:audit
+playbook ui:normalize
+```
+
+Planned-command note: these names describe roadmap intent only. Current live command truth remains `docs/commands/README.md` until implementation lands.
+
+### Phases
+
+Phase 1 — Artifact Capture
+- Store screenshots per route/state/device
+- Attach to PRs / analysis outputs
+
+Phase 2 — Visual Diff
+- Basic before/after comparison
+- Highlight layout shifts and major changes
+
+Phase 3 — Structural Understanding
+- Extract UI structure (header, sections, actions)
+- Classify screen families
+
+Phase 4 — Contract Enforcement
+- Define visual contracts
+- Enforce in verify / CI
+
+Phase 5 — Pattern Promotion
+- Auto-detect reusable UI patterns
+- Feed into Playbook pattern/rule system
+
+### Integrations
+
+- analyze / analyze-pr
+  → include visual diff + summary
+
+- verify
+  → fail or warn on visual contract violations
+
+- docs
+  → generate UI audit + normalization reports
+
+- pattern system
+  → promote visual patterns into reusable contracts
+
+Execution-system alignment:
+- extends the existing evidence -> analysis -> verify -> promotion path with screenshot artifacts rather than introducing a parallel validation stack
+- positions visual contracts as a future intelligence input first, then a governed execution/CI enforcement surface after semantic signal quality is trustworthy
+
 ## Phase: AI-Operable Repository Platform (Loop 1 Complete)
 
 Status: the first remediation interface loop is now implemented via `verify`, `plan`, and `apply`.
