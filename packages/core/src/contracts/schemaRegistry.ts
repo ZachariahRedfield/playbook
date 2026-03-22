@@ -28,7 +28,9 @@ export const memoryArtifactSchemaRegistry: RegisteredSchemaContract[] = [
     path: `${memoryArtifactPaths.promotedKnowledge}/*.json`,
     kind: 'memory-artifact'
   },
-  { id: 'memory-replay-result', version: '1.0', path: `${memoryArtifactPaths.replayOutputs}/*.json`, kind: 'memory-artifact' },
+  { id: 'session-replay-evidence', version: '1.0', path: '.playbook/memory/replay-candidates.json#replayEvidence', kind: 'memory-artifact' },
+  { id: 'replay-candidates', version: '1.0', path: '.playbook/memory/replay-candidates.json', kind: 'memory-artifact' },
+  { id: 'consolidation-candidates', version: '1.0', path: '.playbook/memory/consolidation-candidates.json', kind: 'memory-artifact' },
   { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json', kind: 'memory-artifact' },
   { id: 'stories-backlog', version: '1.0', path: '.playbook/stories.json', kind: 'memory-artifact' },
   { id: 'test-autofix-remediation-history', version: '1.0', path: '.playbook/test-autofix-history.json', kind: 'memory-artifact' },

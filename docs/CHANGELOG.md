@@ -14,6 +14,10 @@
 # Changelog
 
 ## Unreleased
+- WHAT: Finalized replay artifact contract semantics by making `replay-candidates` the canonical stable replay artifact id, pointing `session-replay-evidence` at `.playbook/memory/replay-candidates.json#replayEvidence`, removing the obsolete `memory-replay-result` registry entry, and adding an early `pnpm contracts:check` guard plus CI/PR workflow notes so contract drift fails before the broader test suite. WHY: Contract-surface changes need one canonical replay id and an explicit fail-fast review loop so snapshot churn is intentional instead of accidental.
+- Rule: Confirm contract ids, versions, and paths before refreshing committed snapshots.
+- Failure Mode: Treating replay artifact renames as snapshot noise hides broken automation assumptions until much later in CI.
+
 - WHAT: Restored one shared backward-compatible temporal memory event normalizer across write/read/replay surfaces by guaranteeing top-level `eventInstanceId`, defaulting missing legacy/new scope inputs to `{ modules: [], ruleIds: [] }`, and rehydrating legacy provenance fields (`eventInstanceId`, `subjectModules`, `ruleIds`) before inspection, provenance expansion, replay, and explain/ask enrichment. WHY: Persisted artifact shapes that feed multiple downstream readers need one canonical normalization layer so schema evolution does not create half-working enrichment paths or delayed replay crashes.
 
 - WHAT: Extended workset/lane/execution orchestration state with compact protected-doc consolidation status so merge readiness now stays false until protected singleton doc consolidation is either not applicable or fully applied, while text surfaces only emit short human summaries plus the next command and `.playbook` artifacts retain raw details. WHY: Prevents lanes with unresolved singleton-doc work from appearing merge-ready before the reviewed consolidation boundary is actually resolved.

@@ -150,6 +150,13 @@ runs:
         echo "+ pnpm -r build"
         pnpm -r build
 
+    - name: Check contract surface snapshots early
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "+ pnpm contracts:check"
+        pnpm contracts:check
+
     - name: Run tests and capture deterministic failure log
       id: run-tests
       shell: bash

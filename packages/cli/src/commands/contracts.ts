@@ -28,7 +28,6 @@ const memoryArtifactSchemas: RegisteredSchema[] = [
   { id: 'candidate-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/candidates/*.json' },
   { id: 'promoted-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
   { id: 'retired-knowledge-record', version: '1.0.0', path: '.playbook/memory/knowledge/promoted/*.json' },
-  { id: 'memory-replay-result', version: '1.0', path: '.playbook/memory/replay-candidates.json' },
   { id: 'knowledge-candidate-output', version: '1.0', path: '.playbook/knowledge/candidates.json' },
   { id: 'stories-backlog', version: '1.0', path: '.playbook/stories.json' },
   { id: 'test-autofix-remediation-history', version: '1.0', path: '.playbook/test-autofix-history.json' }
