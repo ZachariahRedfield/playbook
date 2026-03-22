@@ -30,3 +30,15 @@ Runs deterministic governance rule checks and reports policy findings.
 - `--help` is side-effect free and does not run verification or write artifacts.
 - Missing-input and command-surface failures emit the standard deterministic CLI result envelope in `--json` mode.
 - Owned artifacts are explicit: optional `--out` findings artifact plus execution run-state attachments when run metadata is present.
+
+
+## Release/version governance gate
+
+`verify` now fails closed for release-relevant diffs when canonical version governance is missing or inconsistent.
+
+It checks three deterministic cases from repository evidence:
+- missing required version bump for release-relevant package changes
+- inconsistent lockstep `versionGroups`
+- stable contract expansion without the corresponding applied package/changelog release updates
+
+In text mode, failed runs also print compact `Next actions` so CI and local shells can reuse the canonical verify output instead of custom workflow logic.

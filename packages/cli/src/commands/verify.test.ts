@@ -164,3 +164,55 @@ describe('runVerify policy mode', () => {
     logSpy.mockRestore();
   });
 });
+
+describe('runVerify text next actions', () => {
+  beforeEach(() => {
+    verifyRepo.mockReset();
+    loadConfig.mockReset();
+    formatHuman.mockReset();
+    loadVerifyRules.mockReset();
+    getLatestMutableRun.mockReset();
+    createExecutionIntent.mockReset();
+    createExecutionRun.mockReset();
+    appendExecutionStep.mockReset();
+    executionRunPath.mockReset();
+    attachSessionRunState.mockReset();
+    completeExecutionRun.mockReset();
+    formatHuman.mockReturnValue('human report');
+    loadConfig.mockReturnValue({ config: { verify: { policy: { rules: [] } } } });
+    getLatestMutableRun.mockReturnValue({ id: 'run-test', steps: [] });
+    appendExecutionStep.mockReturnValue({ id: 'run-test', steps: [] });
+    loadVerifyRules.mockResolvedValue([
+      {
+        id: 'release.version-governance',
+        description: 'release governance',
+        check: ({ failure }) => failure.id.startsWith('release.'),
+        remediation: ['run release plan', 'apply release tasks']
+      }
+    ]);
+  });
+
+  it('prints compact next actions in ci text mode on failure', async () => {
+    const { runVerify } = await import('./verify.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    verifyRepo.mockReturnValue({
+      ok: false,
+      summary: { failures: 1, warnings: 0 },
+      failures: [{ id: 'release.requiredVersionBump.missing', message: 'missing version bump' }],
+      warnings: []
+    });
+
+    const exitCode = await runVerify('/repo', { format: 'text', ci: true, quiet: false, explain: false, policy: false });
+
+    expect(exitCode).toBe(ExitCode.PolicyFailure);
+    expect(logSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+      'playbook verify: FAIL',
+      'Next actions:',
+      '- run release plan',
+      '- apply release tasks'
+    ]);
+
+    logSpy.mockRestore();
+  });
+});

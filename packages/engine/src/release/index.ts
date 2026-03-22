@@ -16,7 +16,7 @@ type VersionPolicy = {
   }>;
 };
 
-type ChangedFileEvidence = {
+export type ChangedFileEvidence = {
   path: string;
   status: string;
   bump: ReleaseBump;
@@ -52,6 +52,14 @@ type ReleasePlanTask = {
     approved_fragment_ids: string[];
     planned_operation: 'replace-managed-block';
   };
+};
+
+
+export type ReleaseGovernanceFailure = {
+  id: string;
+  message: string;
+  evidence?: string;
+  fix?: string;
 };
 
 export type ReleasePlan = {
@@ -224,7 +232,7 @@ const listWorkspacePackageJsonPaths = (repoRoot: string): string[] => {
     .sort((left, right) => left.localeCompare(right));
 };
 
-const readVersionPolicy = (repoRoot: string): VersionPolicy => {
+export const readVersionPolicy = (repoRoot: string): VersionPolicy => {
   const absolutePath = path.join(repoRoot, VERSION_POLICY_PATH);
   if (!fs.existsSync(absolutePath)) {
     return {
@@ -246,7 +254,7 @@ const readVersionPolicy = (repoRoot: string): VersionPolicy => {
   };
 };
 
-const readWorkspacePackages = (repoRoot: string, policy: VersionPolicy): WorkspacePackage[] => {
+export const readWorkspacePackages = (repoRoot: string, policy: VersionPolicy): WorkspacePackage[] => {
   const groupByPackage = new Map<string, string>();
   for (const group of policy.versionGroups) {
     for (const packageName of group.packages) {
@@ -271,7 +279,7 @@ const readWorkspacePackages = (repoRoot: string, policy: VersionPolicy): Workspa
 const resolveHeadSha = (repoRoot: string): string =>
   execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
 
-const readChangedFiles = (repoRoot: string, baseSha: string): Array<{ path: string; status: string }> => {
+export const readChangedFiles = (repoRoot: string, baseSha: string): Array<{ path: string; status: string }> => {
   const output = execFileSync('git', ['diff', '--name-status', '--find-renames', baseSha, '--'], {
     cwd: repoRoot,
     encoding: 'utf8'
@@ -302,7 +310,7 @@ const isStableContractExpansionPath = (normalizedPath: string): boolean =>
   normalizedPath === '.playbook/version-policy.json'
   || (normalizedPath.startsWith('packages/contracts/src/') && normalizedPath.endsWith('.schema.json'));
 
-const classifyFileChange = (file: { path: string; status: string }, repoRoot: string, policy: VersionPolicy): ChangedFileEvidence => {
+export const classifyFileChange = (file: { path: string; status: string }, repoRoot: string, policy: VersionPolicy): ChangedFileEvidence => {
   const filePath = file.path;
   const reasons: string[] = [];
   const normalized = filePath.replace(/\\/gu, '/');
@@ -496,4 +504,141 @@ export const buildReleasePlan = (repoRoot: string, options: { baseRef?: string; 
     headSha,
     changedFiles
   });
+};
+
+
+const readJsonAtGitRef = <T>(repoRoot: string, gitRef: string, relativePath: string): T | null => {
+  try {
+    const raw = execFileSync('git', ['show', `${gitRef}:${relativePath}`], { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+};
+
+const detectVersionBump = (previousVersion: string | null, currentVersion: string): ReleaseBump => {
+  if (!previousVersion || previousVersion === currentVersion) {
+    return 'none';
+  }
+
+  const previous = /^(\d+)\.(\d+)\.(\d+)$/.exec(previousVersion.trim());
+  const current = /^(\d+)\.(\d+)\.(\d+)$/.exec(currentVersion.trim());
+  if (!previous || !current) {
+    return 'none';
+  }
+
+  const [prevMajor, prevMinor, prevPatch] = previous.slice(1).map((value) => Number.parseInt(value ?? '0', 10));
+  const [currMajor, currMinor, currPatch] = current.slice(1).map((value) => Number.parseInt(value ?? '0', 10));
+  if (currMajor > prevMajor) return 'major';
+  if (currMinor > prevMinor) return 'minor';
+  if (currPatch > prevPatch) return 'patch';
+  return 'none';
+};
+
+const hasManagedChangelogUpdate = (repoRoot: string, baseSha: string): boolean => {
+  const current = readFileText(repoRoot, CHANGELOG_PATH);
+  if (!current) {
+    return false;
+  }
+  try {
+    const previous = execFileSync('git', ['show', `${baseSha}:${CHANGELOG_PATH}`], { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return previous !== current;
+  } catch {
+    return true;
+  }
+};
+
+export const verifyReleaseGovernance = (repoRoot: string, options: { baseRef: string; baseSha: string }): ReleaseGovernanceFailure[] => {
+  const policy = readVersionPolicy(repoRoot);
+  const changedFiles = readChangedFiles(repoRoot, options.baseSha);
+  const changedPaths = new Set(changedFiles.map((file) => file.path));
+
+  let plan: ReleasePlan;
+  try {
+    plan = buildReleasePlanFromInputs(repoRoot, {
+      generatedAt: new Date().toISOString(),
+      baseRef: options.baseRef,
+      baseSha: options.baseSha,
+      headSha: resolveHeadSha(repoRoot),
+      policy,
+      changedFiles
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('lockstep version group')) {
+      return [{
+        id: 'release.versionGroup.inconsistent',
+        message: 'Release governance requires every configured lockstep version group to stay complete and version-aligned.',
+        evidence: `base_ref=${options.baseRef}; base_sha=${options.baseSha}; error=${message}`,
+        fix: 'Align the version group members and rerun `pnpm playbook verify --json`.'
+      }];
+    }
+    return [];
+  }
+
+  const workspacePackages = readWorkspacePackages(repoRoot, policy);
+  const actualBumpByPackage = new Map(workspacePackages.map((pkg) => {
+    const previous = readJsonAtGitRef<{ version?: string }>(repoRoot, options.baseSha, `${pkg.path}/package.json`);
+    return [pkg.name, detectVersionBump(previous?.version ? String(previous.version) : null, pkg.currentVersion)] as const;
+  }));
+
+  const failures: ReleaseGovernanceFailure[] = [];
+
+  for (const group of plan.versionGroups) {
+    if (group.recommendedBump === 'none') {
+      continue;
+    }
+    const memberVersions = group.packages
+      .map((packageName) => workspacePackages.find((pkg) => pkg.name === packageName))
+      .filter((value): value is WorkspacePackage => value !== undefined)
+      .map((pkg) => pkg.currentVersion);
+    const distinctVersions = uniqueSorted(memberVersions);
+    if (distinctVersions.length > 1) {
+      failures.push({
+        id: 'release.versionGroup.inconsistent',
+        message: `Release governance detected divergent versions inside lockstep group ${group.name}.`,
+        evidence: `version_group=${group.name}; expected_bump=${group.recommendedBump}; current_versions=${distinctVersions.join(',')}`,
+        fix: 'Apply one coordinated version update across the full lockstep group before merging.'
+      });
+      continue;
+    }
+
+    const memberBumps = uniqueSorted(group.packages.map((packageName) => actualBumpByPackage.get(packageName) ?? 'none'));
+    if (memberBumps.length > 1) {
+      failures.push({
+        id: 'release.versionGroup.inconsistent',
+        message: `Release governance requires lockstep group ${group.name} to receive one coordinated version bump.`,
+        evidence: `version_group=${group.name}; expected_bump=${group.recommendedBump}; observed_bumps=${memberBumps.join(',')}`,
+        fix: 'Update every package in the lockstep group to the same next version, or revert the partial version edits.'
+      });
+    }
+  }
+
+  const missingVersionPackages = plan.packages.filter((pkg) => pkg.recommendedBump !== 'none' && bumpRank[pkg.recommendedBump] > bumpRank[actualBumpByPackage.get(pkg.name) ?? 'none']);
+  if (missingVersionPackages.length > 0) {
+    failures.push({
+      id: 'release.requiredVersionBump.missing',
+      message: 'Release-relevant changes require a corresponding package version update before merge.',
+      evidence: `base_ref=${options.baseRef}; packages=${missingVersionPackages.map((pkg) => `${pkg.name}:${pkg.currentVersion}:${pkg.recommendedBump}`).join(',')}; reasons=${uniqueSorted(missingVersionPackages.flatMap((pkg) => pkg.reasons)).join(',')}`,
+      fix: 'Run `pnpm playbook release plan --json --out .playbook/release-plan.json`, review the artifact, then apply the approved release tasks.'
+    });
+  }
+
+  const contractExpansionFiles = plan.diff.changedFiles.filter((file) => file.reasons.includes('stable contract expansion changed'));
+  if (contractExpansionFiles.length > 0) {
+    const packageVersionFilesChanged = plan.tasks
+      .filter((task) => task.task_kind === 'release-package-version' && typeof task.file === 'string')
+      .every((task) => changedPaths.has(task.file ?? ''));
+    const changelogChanged = hasManagedChangelogUpdate(repoRoot, options.baseSha);
+    if (!packageVersionFilesChanged || !changelogChanged) {
+      failures.push({
+        id: 'release.contractExpansion.releasePlan.required',
+        message: 'Stable contract expansion must carry an applied release-governance update before merge.',
+        evidence: `contract_files=${contractExpansionFiles.map((file) => file.path).join(',')}; recommended_bump=${plan.summary.recommendedBump}; package_updates_present=${String(packageVersionFilesChanged)}; changelog_updated=${String(changelogChanged)}`,
+        fix: 'Generate `.playbook/release-plan.json`, apply the approved package/changelog tasks, and rerun verify.'
+      });
+    }
+  }
+
+  return failures;
 };

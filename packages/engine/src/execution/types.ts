@@ -8,7 +8,7 @@ export type RuleFailure = {
 export type Rule = {
   id: string;
   description: string;
-  check(context: { repoRoot: string; changedFiles: string[] }): { failures: RuleFailure[] };
+  check(context: { repoRoot: string; changedFiles: string[]; baseRef?: string; baseSha?: string }): { failures: RuleFailure[] };
 };
 
 export type DocsWritePreconditions = {

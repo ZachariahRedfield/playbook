@@ -24,7 +24,7 @@ export const verifyRepo = (repoRoot: string): VerifyReport => {
   loadPlugins(repoRoot);
 
   const runner = new RuleRunner(getRegisteredRules());
-  const { failures } = runner.run({ repoRoot, changedFiles });
+  const { failures } = runner.run({ repoRoot, changedFiles, baseRef: base.baseRef, baseSha: base.baseSha });
 
   const report: VerifyReport = {
     ok: failures.length === 0,

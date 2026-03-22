@@ -4,6 +4,7 @@ import { requireNotesFileWhenGovernanceExists } from '../verify/rules/requireNot
 import { requireNotesOnChanges } from '../verify/rules/requireNotesOnChanges.js';
 import { requireTestsForNewCommands } from '../verify/rules/requireTestsForNewCommands.js';
 import { verifyProtectedDocGovernance } from '../verify/rules/protectedDocGovernance.js';
+import { verifyReleaseVersionGovernance } from '../verify/rules/releaseVersionGovernance.js';
 
 export const getCoreRules = (config: PlaybookConfig): Rule[] => [
   {
@@ -27,5 +28,10 @@ export const getCoreRules = (config: PlaybookConfig): Rule[] => [
     id: 'protected-doc.governance',
     description: 'Fail closed when protected-doc consolidation is unresolved or drift-conflicted.',
     check: ({ repoRoot }) => ({ failures: verifyProtectedDocGovernance(repoRoot) })
+  },
+  {
+    id: 'release.version-governance',
+    description: 'Fail closed when release-relevant changes ship without coordinated version governance updates.',
+    check: ({ repoRoot, baseRef, baseSha }) => ({ failures: verifyReleaseVersionGovernance(repoRoot, { baseRef, baseSha }) })
   }
 ];
