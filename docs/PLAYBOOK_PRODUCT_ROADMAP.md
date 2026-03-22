@@ -185,6 +185,9 @@ CI contract stance:
 - Pattern: Shared staged-artifact orchestration should provide generation isolation, candidate validation, and gated promotion.
 - Failure Mode: Environment-sensitive generation paths and direct committed-output writes undermine deterministic artifact governance.
 - Pattern: Generate → validate → promote is the default artifact pipeline shape.
+- Rule: Installable workflow policy belongs in templates, not tribal setup steps.
+- Pattern: Seed policy once, then let verify/release use it everywhere.
+- Failure Mode: Repo-by-repo manual version conventions never become reliable workflow.
 - Failure Mode: Validating stale generated artifacts before regeneration creates false-negative pipeline failures and circular recovery paths.
 
 Failure Mode: If CI mixes product validation with maintenance tasks, pipelines become slow and fragile.

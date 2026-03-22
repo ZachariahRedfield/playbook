@@ -111,14 +111,19 @@ Detectors live in `packages/engine/src/analyze/detectors/` and should rely on st
 
 ## Template updates
 
-Templates used by `pnpm playbook init` live in `templates/repo/`.
+Templates used by `pnpm playbook init` live in `templates/repo/` and are promoted into the installable CLI template payload via the template sync/copy shipping flow.
 
 Baseline scaffold outputs include:
 
 - `docs/PLAYBOOK_NOTES.md`
-- `playbook.config.json` (legacy) or `.playbook/config.json` (modern)
+- `playbook.config.json`
+- `.playbook/version-policy.json`
 
-Additional repository docs (for example `docs/PROJECT_GOVERNANCE.md`, `docs/ARCHITECTURE.md`, and `docs/PLAYBOOK_CHECKLIST.md`) are optional and can be managed per repository policy.
+For publishable Node/pnpm repositories, init should detect the root/workspace package layout and seed one explicit opt-out-capable `default` lockstep version group so release governance starts from installable policy rather than repo-by-repo setup drift.
+
+Rule: Installable workflow policy belongs in templates, not tribal setup steps.
+Pattern: Seed policy once, then let verify/release use it everywhere.
+Failure Mode: Repo-by-repo manual version conventions never become reliable workflow.
 
 ## Pull request guidelines
 

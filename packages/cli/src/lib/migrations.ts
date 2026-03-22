@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { shouldSeedDefaultVersionPolicy, versionPolicyRelativePath, writeVersionPolicy } from './versionPolicy.js';
 
 export type MigrationCheckContext = {
   repoRoot: string;
@@ -54,6 +55,52 @@ const semanticsBlock =
   '> `playbook analyze` is informational (recommendations only). `playbook verify` enforces governance policy and can fail CI.';
 
 export const migrationRegistry: Migration[] = [
+
+  {
+    id: 'policy.version.lockstep-default',
+    introducedIn: '0.1.8',
+    description: 'Seed .playbook/version-policy.json for publishable pnpm/node repositories so release governance is installable by default.',
+    safeToAutoApply: true,
+    check: async ({ repoRoot }) => {
+      if (!shouldSeedDefaultVersionPolicy(repoRoot)) {
+        return { needed: false, reason: 'Repository is not an eligible publishable pnpm/node repo for default version policy seeding.' };
+      }
+
+      const policyPath = path.join(repoRoot, versionPolicyRelativePath);
+      const needed = !fs.existsSync(policyPath);
+      return {
+        needed,
+        reason: needed
+          ? '.playbook/version-policy.json is missing for an eligible publishable pnpm/node repository.'
+          : '.playbook/version-policy.json already exists.'
+      };
+    },
+    apply: async ({ repoRoot, dryRun }) => {
+      const policyPath = path.join(repoRoot, versionPolicyRelativePath);
+      if (fs.existsSync(policyPath)) {
+        return {
+          changed: false,
+          filesChanged: [],
+          summary: 'No changes needed; .playbook/version-policy.json already exists.'
+        };
+      }
+
+      if (dryRun) {
+        return {
+          changed: true,
+          filesChanged: [versionPolicyRelativePath.replace(/\\/g, '/')],
+          summary: 'Would seed .playbook/version-policy.json with the default lockstep version group.'
+        };
+      }
+
+      writeVersionPolicy(repoRoot);
+      return {
+        changed: true,
+        filesChanged: [versionPolicyRelativePath.replace(/\\/g, '/')],
+        summary: 'Seeded .playbook/version-policy.json with the default lockstep version group.'
+      };
+    }
+  },
   {
     id: 'docs.cli.explain-option',
     introducedIn: '0.1.2',

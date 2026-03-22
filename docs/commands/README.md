@@ -161,6 +161,12 @@ The CLI registry currently also exposes utility commands not treated as part of 
 - `session`
 <!-- PLAYBOOK:DOCS_UTILITY_COMMANDS_END -->
 
+Installable workflow note: `pnpm playbook init` now ships template-managed `.playbook/version-policy.json` by default, and `pnpm playbook upgrade --apply` retrofits that policy into eligible publishable pnpm/node repositories without overwriting an existing custom policy.
+
+- Rule: Installable workflow policy belongs in templates, not tribal setup steps.
+- Pattern: Seed policy once, then let verify/release use it everywhere.
+- Failure Mode: Repo-by-repo manual version conventions never become reliable workflow.
+
 Source of truth: shared command metadata in `packages/cli/src/lib/commandMetadata.ts` and generated truth contract `docs/contracts/command-truth.json`.
 
 - Rule: One canonical command matrix per lifecycle seam.

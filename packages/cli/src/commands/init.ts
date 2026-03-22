@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { emitResult, ExitCode } from '../lib/cliContract.js';
+import { buildVersionPolicy, versionPolicyRelativePath } from '../lib/versionPolicy.js';
 
 type InitOptions = {
   format: 'text' | 'json';
@@ -10,40 +12,55 @@ type InitOptions = {
   help: boolean;
 };
 
-type ScaffoldFile = {
+type TemplateFile = {
   relativePath: string;
   content: string;
 };
 
-const INIT_FILES: ScaffoldFile[] = [
-  {
-    relativePath: path.join('docs', 'ARCHITECTURE.md'),
-    content: '# Architecture\n\nDescribe your system architecture and major components.\n'
-  },
-  {
-    relativePath: path.join('docs', 'CHANGELOG.md'),
-    content: '# Changelog\n\nDocument notable changes to this repository here.\n'
-  },
-  {
-    relativePath: path.join('docs', 'PLAYBOOK_CHECKLIST.md'),
-    content: '# Playbook Checklist\n\nTrack implementation and governance checklist items.\n'
-  },
-  {
-    relativePath: path.join('docs', 'PLAYBOOK_NOTES.md'),
-    content: '# Playbook Notes\n\nCapture release notes, decisions, and implementation context.\n'
-  },
-  {
-    relativePath: path.join('.playbook', 'config.json'),
-    content: '{\n  "version": 1\n}\n'
+const resolveTemplateRoot = (): string => {
+  const currentFile = fileURLToPath(import.meta.url);
+  const currentDir = path.dirname(currentFile);
+  const candidates = [
+    path.resolve(currentDir, '../../templates/repo'),
+    path.resolve(currentDir, '../templates/repo'),
+    path.resolve(currentDir, '../../../templates/repo')
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+      return candidate;
+    }
   }
-];
+
+  throw new Error(`Playbook init templates are missing. Checked: ${candidates.join(', ')}`);
+};
+
+const readTemplateFiles = (repoRoot: string, templateRoot: string, currentDir = templateRoot, files: TemplateFile[] = []): TemplateFile[] => {
+  for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+    const absolutePath = path.join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      readTemplateFiles(repoRoot, templateRoot, absolutePath, files);
+      continue;
+    }
+
+    const relativePath = path.relative(templateRoot, absolutePath);
+    const content =
+      relativePath === versionPolicyRelativePath
+        ? `${JSON.stringify(buildVersionPolicy(repoRoot), null, 2)}\n`
+        : fs.readFileSync(absolutePath, 'utf8');
+    files.push({ relativePath, content });
+  }
+
+  return files.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
+};
+
 
 const normalizeForOutput = (relativePath: string): string => relativePath.split(path.sep).join('/');
 
 const showInitHelp = (): void => {
   console.log(`Usage: playbook init [options]
 
-Scaffold the minimal Playbook docs and config into the current repository.
+Scaffold the installable Playbook templates and default governance into the current repository.
 
 Options:
   --force                     Overwrite existing files
@@ -59,8 +76,10 @@ export const runInit = (cwd: string, options: InitOptions): number => {
   const created: string[] = [];
   const overwritten: string[] = [];
   const skipped: string[] = [];
+  const templateRoot = resolveTemplateRoot();
+  const templateFiles = readTemplateFiles(cwd, templateRoot);
 
-  for (const file of INIT_FILES) {
+  for (const file of templateFiles) {
     const destination = path.join(cwd, file.relativePath);
     const outputPath = normalizeForOutput(file.relativePath);
     const alreadyExists = fs.existsSync(destination);

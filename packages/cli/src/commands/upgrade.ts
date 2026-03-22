@@ -396,6 +396,25 @@ const runApply = async (
   return applied;
 };
 
+
+const classifyUpgradeExitCode = ({
+  status,
+  migrationsNeeded
+}: {
+  status: UpgradeStatus;
+  migrationsNeeded: NeededMigration[];
+}): number => {
+  if (status === 'upgrade_blocked') {
+    return ExitCode.WarningsOnly;
+  }
+
+  if (status === 'upgrade_applied') {
+    return ExitCode.Success;
+  }
+
+  return migrationsNeeded.length > 0 ? ExitCode.WarningsOnly : ExitCode.Success;
+};
+
 const applyDependencyVersionBump = (
   repoRoot: string,
   integration: ModeDetection,
@@ -468,17 +487,23 @@ export const runUpgrade = async (cwd: string, options: UpgradeOptions): Promise<
     let migrationsNeeded = await runChecks(cwd, currentVersion, targetVersion);
     let applied: MigrationApplyResult[] | undefined;
 
-    if (options.apply && status !== 'upgrade_blocked' && !versionAligned && integration.mode === 'dependency') {
-      const dependencyMutation = applyDependencyVersionBump(cwd, integration, targetVersion, options.dryRun);
-      notes = [...notes, dependencyMutation.note];
-      status = dependencyMutation.changed ? 'upgrade_applied' : 'up_to_date';
+    if (options.apply && status !== 'upgrade_blocked' && integration.mode === 'dependency') {
+      let dependencyChanged = false;
+
+      if (!versionAligned) {
+        const dependencyMutation = applyDependencyVersionBump(cwd, integration, targetVersion, options.dryRun);
+        notes = [...notes, dependencyMutation.note];
+        dependencyChanged = dependencyMutation.changed;
+      }
+
       applied = await runApply(cwd, options, currentVersion, targetVersion, migrationsNeeded);
+      const migrationChanged = (applied ?? []).some((entry) => entry.changed);
       migrationsNeeded = await runChecks(cwd, currentVersion, targetVersion);
+      status = dependencyChanged || migrationChanged ? 'upgrade_applied' : 'up_to_date';
       actions = ['pnpm install', 'pnpm playbook verify', 'pnpm playbook index --json'];
     }
 
-    const hasWarnings = migrationsNeeded.length > 0 || status === 'upgrade_blocked';
-    const exitCode = hasWarnings ? ExitCode.WarningsOnly : ExitCode.Success;
+    const exitCode = classifyUpgradeExitCode({ status, migrationsNeeded });
 
     const summary =
       status === 'upgrade_applied'
