@@ -396,6 +396,25 @@ const runApply = async (
   return applied;
 };
 
+
+const classifyUpgradeExitCode = ({
+  status,
+  migrationsNeeded
+}: {
+  status: UpgradeStatus;
+  migrationsNeeded: NeededMigration[];
+}): number => {
+  if (status === 'upgrade_blocked') {
+    return ExitCode.WarningsOnly;
+  }
+
+  if (status === 'upgrade_applied') {
+    return ExitCode.Success;
+  }
+
+  return migrationsNeeded.length > 0 ? ExitCode.WarningsOnly : ExitCode.Success;
+};
+
 const applyDependencyVersionBump = (
   repoRoot: string,
   integration: ModeDetection,
@@ -484,8 +503,7 @@ export const runUpgrade = async (cwd: string, options: UpgradeOptions): Promise<
       actions = ['pnpm install', 'pnpm playbook verify', 'pnpm playbook index --json'];
     }
 
-    const hasWarnings = migrationsNeeded.length > 0 || status === 'upgrade_blocked';
-    const exitCode = hasWarnings ? ExitCode.WarningsOnly : ExitCode.Success;
+    const exitCode = classifyUpgradeExitCode({ status, migrationsNeeded });
 
     const summary =
       status === 'upgrade_applied'

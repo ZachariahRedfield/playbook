@@ -1,3 +1,6 @@
+- WHAT: Corrected `playbook upgrade` exit semantics so successful migration application now returns success even when the Playbook dependency version was already aligned, while unchanged repos with remaining migrations still return warnings. WHY: Final command classification should reflect the overall upgrade outcome rather than letting an aligned-version subcondition poison successful migration work.
+- Pattern: State classification should be based on final command outcome, not on one intermediate subcondition.
+- Failure Mode: A no-op package-version branch can accidentally poison the final command exit code even when the overall upgrade work succeeded.
 - WHAT: Seeded `.playbook/version-policy.json` into the repo template payload, taught `playbook init` to scaffold from the installable template set while auto-generating a default opt-out-capable lockstep version group for eligible publishable pnpm/node repos, and taught `playbook upgrade --apply` to retrofit the same policy migration without overwriting existing custom policy files. WHY: Release/version governance must be installable and upgradeable as first-class workflow state instead of manual per-repo convention.
 - Pattern: Installable workflow policy should ship in templates and migrate forward through upgrade, not tribal setup docs.
 
