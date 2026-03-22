@@ -1,3 +1,6 @@
+- WHAT: Turned protected-doc consolidation state into a real governance gate by adding deterministic verify failures for missing reviewed consolidation plans, unresolved/blocked protected-doc work, and guarded singleton-doc drift conflicts sourced only from governed `.playbook` artifacts; also wired the gate into default `verify --policy` metadata and refreshed command/roadmap docs. WHY: Merge authority for reviewed singleton narrative docs must come from verify/policy fail-closed checks instead of status text alone.
+- Rule: Protected singleton-doc work must fail closed in verify/policy until reviewed consolidation is present, conflict-free, and drift-free.
+- Failure Mode: Leaving protected-doc merge authority in summaries or lane text allows unresolved singleton narrative work to look mergeable under a deterministic-looking surface.
 - WHAT: Hardened reviewed singleton-doc execution by stamping target-locked preconditions into `docs-consolidation-plan` tasks and making `apply --from-plan` fail closed when target files, managed blocks, or anchor context drift from the reviewed state. WHY: Reviewed consolidation plans must not apply against drifted protected-doc targets.
 - Rule: Reviewed consolidation plans must apply only against the target state they were reviewed against.
 - Pattern: Review plans on fingerprints, execute only on matching fingerprints.
