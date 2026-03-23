@@ -1,4 +1,8 @@
 <!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+- WHAT: Added the deterministic `.playbook/release-plan.json` artifact for the CI history/planner visibility change and kept the workspace at `0.1.8` because the reviewed release plan classified the diff as docs/CI-only plus non-shipping template changes (`recommendedBump: none`). WHY: Release governance for governed surfaces requires the mirrored reviewed artifact and changelog note even when the correct outcome is explicitly no version bump.
+- Rule: When a governed surface changes, the PR must carry the deterministic release artifact even if the reviewed bump result is `none`.
+- Pattern: Commit the reviewed plan, mirror the changelog rationale, and let verify enforce that pairing.
+- Failure Mode: CI-only governance changes can still fail `verify --ci` if the reviewed release artifact is missing from the PR.
 - WHAT: Fixed the Playbook CI checkout/release-planning path by making the reusable and installable Playbook CI workflows request full git history (`fetch-depth: 0`) and by stopping the canonical CI release-plan step from redirecting planner output to `/dev/null`. WHY: Any release/version planning step that computes diffs must provision its own git history or base ref in CI, and hidden planner stderr makes shallow-checkout failures unnecessarily hard to diagnose.
 - Rule: Any release/version planning step that computes diffs must provision its own git history or base ref in CI.
 - Pattern: Fetch comparison history before diff-based governance, and keep planner output visible while debugging CI.

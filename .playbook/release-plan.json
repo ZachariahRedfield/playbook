@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-release-plan",
+  "generatedAt": "2026-03-23T05:33:35.979Z",
+  "policy": {
+    "path": ".playbook/version-policy.json",
+    "breakingChangeMarkers": [
+      "BREAKING CHANGE",
+      "PLAYBOOK_BREAKING_CHANGE"
+    ],
+    "versionGroups": [
+      {
+        "name": "playbook-installable-workspace",
+        "packages": [
+          "@fawxzzy/playbook",
+          "@fawxzzy/playbook-cli",
+          "@zachariahredfield/playbook-core",
+          "@zachariahredfield/playbook-engine",
+          "@zachariahredfield/playbook-node"
+        ]
+      }
+    ]
+  },
+  "diff": {
+    "baseRef": "HEAD~1",
+    "baseSha": "663bee3f3e52076d751bb8aa82926465e6717d83",
+    "headSha": "a33cb5c91f73e988fd784d75399593ce1761bfde",
+    "changedFiles": [
+      {
+        "path": ".github/actions/playbook-ci/action.yml",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "docs/tests/CI-only surface changed"
+        ]
+      },
+      {
+        "path": ".github/workflows/playbook.yml",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "docs/tests/CI-only surface changed"
+        ]
+      },
+      {
+        "path": ".gitignore",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "non-shipping repository change"
+        ]
+      },
+      {
+        "path": "docs/CHANGELOG.md",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "docs/tests/CI-only surface changed"
+        ]
+      },
+      {
+        "path": "packages/cli/templates/repo/.github/workflows/playbook-ci.yml",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "non-shipping repository change"
+        ]
+      },
+      {
+        "path": "templates/repo/.github/workflows/playbook-ci.yml",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "non-shipping repository change"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "recommendedBump": "none",
+    "reasons": [
+      "docs/tests/CI-only surface changed",
+      "non-shipping repository change"
+    ]
+  },
+  "packages": [
+    {
+      "name": "@fawxzzy/playbook",
+      "path": "packages/cli",
+      "currentVersion": "0.1.8",
+      "recommendedBump": "none",
+      "versionGroup": "playbook-installable-workspace",
+      "reasons": [
+        "non-shipping repository change"
+      ],
+      "evidence": [
+        {
+          "path": "packages/cli/templates/repo/.github/workflows/playbook-ci.yml",
+          "status": "M",
+          "bump": "none",
+          "reasons": [
+            "non-shipping repository change"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@fawxzzy/playbook-cli",
+      "path": "packages/cli-wrapper",
+      "currentVersion": "0.1.8",
+      "recommendedBump": "none",
+      "versionGroup": "playbook-installable-workspace",
+      "reasons": [],
+      "evidence": []
+    },
+    {
+      "name": "@zachariahredfield/playbook-core",
+      "path": "packages/core",
+      "currentVersion": "0.1.8",
+      "recommendedBump": "none",
+      "versionGroup": "playbook-installable-workspace",
+      "reasons": [],
+      "evidence": []
+    },
+    {
+      "name": "@zachariahredfield/playbook-engine",
+      "path": "packages/engine",
+      "currentVersion": "0.1.8",
+      "recommendedBump": "none",
+      "versionGroup": "playbook-installable-workspace",
+      "reasons": [],
+      "evidence": []
+    },
+    {
+      "name": "@zachariahredfield/playbook-node",
+      "path": "packages/node",
+      "currentVersion": "0.1.8",
+      "recommendedBump": "none",
+      "versionGroup": "playbook-installable-workspace",
+      "reasons": [],
+      "evidence": []
+    }
+  ],
+  "versionGroups": [
+    {
+      "name": "playbook-installable-workspace",
+      "packages": [
+        "@fawxzzy/playbook",
+        "@fawxzzy/playbook-cli",
+        "@zachariahredfield/playbook-core",
+        "@zachariahredfield/playbook-engine",
+        "@zachariahredfield/playbook-node"
+      ],
+      "recommendedBump": "none",
+      "reasons": [
+        "non-shipping repository change"
+      ]
+    }
+  ],
+  "tasks": []
+}
