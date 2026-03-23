@@ -110,6 +110,33 @@ describe('runDocs', () => {
     );
   });
 
+
+  it('fails when repo roadmap docs miss required sections', async () => {
+    const repo = createFixtureRepo();
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'ROADMAP.md'),
+      ['# Product Roadmap', '', '## Pillars', '- UX', ''].join('\n'),
+      'utf8'
+    );
+    const { runDocs } = await import('./docs.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['audit'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'docs.repo-roadmap.contract-missing-sections', path: 'docs/ROADMAP.md', level: 'error' })
+      ])
+    );
+    expect(payload.findings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'docs.required-anchor.missing', path: 'docs/ROADMAP.md' })
+      ])
+    );
+  });
+
   it('detects duplicate roadmap files', { timeout: 15000 }, async () => {
     const repo = createFixtureRepo();
     fs.writeFileSync(path.join(repo, 'docs', 'PRODUCT_ROADMAP.md'), '# old roadmap\n', 'utf8');
