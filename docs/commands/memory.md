@@ -35,6 +35,8 @@ List replay candidates from `.playbook/memory/replay-candidates.json` (compat-wr
 
 Replay output remains candidate-only and is derived from memory evidence in `.playbook/memory/index.json` plus append-only event records under `.playbook/memory/events/*.json`; it does not read opaque raw logs directly.
 
+Operator note: postmortem reconsolidation should enter here as a reviewed artifact flow — write the structured postmortem first, extract explicit candidates from that artifact, then review them through `memory` / `promote` surfaces without introducing a new command family or automatic promotion.
+
 ### `memory knowledge`
 
 List promoted knowledge artifacts from `.playbook/memory/knowledge/*.json`.

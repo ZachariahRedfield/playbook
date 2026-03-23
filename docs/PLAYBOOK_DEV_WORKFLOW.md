@@ -157,6 +157,27 @@ PRs should remain focused and reviewable.
 
 Record major repository decisions in `docs/PLAYBOOK_NOTES.md` and keep `docs/CHANGELOG.md` aligned with released behavior.
 
+## Operator postmortem reconsolidation loop
+
+Use the new structured postmortem template as the first operational realization of `Recall -> reinterpret -> promote -> restabilize`. Keep this flow artifact-first and review-gated; it does not introduce a new command family or any automatic promotion path.
+
+Compact operator workflow:
+
+1. Incident or meaningful change happens.
+2. Write a postmortem in the structured template so facts, interpretations, changed mental models, and candidate updates stay separated.
+3. Extract promotion candidates explicitly from the reviewed postmortem artifact.
+4. Review those candidates through existing `memory` / `promote` surfaces before any doctrine changes land.
+5. Restabilize the system by updating the right reviewed surfaces only: memory candidates, doctrine candidates, and docs revisions.
+
+Postmortem outputs should feed three reviewed destinations:
+
+- **Memory candidates** for evidence-bearing retrieval artifacts that may deserve future promotion.
+- **Doctrine candidates** for reusable Rule / Pattern / Failure Mode updates that still require explicit review and promotion.
+- **Docs revision** when the reviewed postmortem shows workflow, roadmap, or operator guidance should be clarified.
+
+Rule: Retrieval-based revision must enter the system through explicit evidence-bearing review artifacts.
+Pattern: Structured postmortem -> candidate extraction -> explicit promotion.
+Failure Mode: Doctrine updates sourced from memory of the incident instead of the reviewed postmortem artifact create silent drift.
 
 ## Deterministic delivery protocol (v1)
 
