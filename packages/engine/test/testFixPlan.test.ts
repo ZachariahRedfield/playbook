@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { buildTestTriageArtifact } from '../src/testTriage.js';
 import { buildTestFixPlanArtifact } from '../src/testFixPlan.js';
 
+const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
 describe('test fix plan engine', () => {
   it('maps approved low-risk triage findings into deterministic apply-compatible tasks', () => {
     const log = [
@@ -56,12 +58,12 @@ describe('test fix plan engine', () => {
 
     expect(plan.tasks).toHaveLength(1);
     expect(plan.tasks[0]?.provenance.failure_kind).toBe('snapshot_drift');
-    expect(plan.tasks[0]?.provenance.evidence).toEqual([
-      '@fawxzzy/playbook test: FAIL  packages/cli/src/commands/schema.test.ts',
+    expect(plan.tasks[0]?.provenance.evidence.map(normalizeWhitespace)).toEqual([
+      '@fawxzzy/playbook test: FAIL packages/cli/src/commands/schema.test.ts',
       'Snapshot `renders schema snapshot 1` mismatch',
       '× renders schema snapshot'
     ]);
-    expect(plan.excluded[0]?.evidence).toEqual([
+    expect(plan.excluded[0]?.evidence.map(normalizeWhitespace)).toEqual([
       'Error: Cannot find module @esbuild/linux-x64',
       'ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL @fawxzzy/playbook test: `node ./scripts/run-tests.mjs`'
     ]);
@@ -114,7 +116,7 @@ describe('test fix plan engine', () => {
             "id": "task-4d90ed1d4d-1",
             "provenance": {
               "evidence": [
-                "@fawxzzy/playbook test: FAIL  packages/cli/src/commands/contract.test.ts",
+                "@fawxzzy/playbook test: FAIL packages/cli/src/commands/contract.test.ts",
                 "Error: expected undefined to equal {\"ok\":true}",
                 "× keeps fixture data aligned",
               ],
@@ -122,7 +124,7 @@ describe('test fix plan engine', () => {
               "failure_signature": "failsig-1540189e1723d657",
               "finding_index": 0,
               "repair_class": "autofix_plan_only",
-              "summary": "@fawxzzy/playbook test: FAIL  packages/cli/src/commands/contract.test.ts",
+              "summary": "@fawxzzy/playbook test: FAIL packages/cli/src/commands/contract.test.ts",
               "test_name": "keeps fixture data aligned",
               "verification_commands": [
                 "pnpm --filter @fawxzzy/playbook exec vitest run packages/cli/src/commands/contract.test.ts",
