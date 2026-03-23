@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ExitCode } from '../lib/cliContract.js';
-import { migrationRegistry, type MigrationApplyResult } from '../lib/migrations.js';
+import { migrationRegistry, type ManagedSurfaceCategory, type MigrationApplyResult } from '../lib/migrations.js';
 
 type UpgradeOptions = {
   check: boolean;
@@ -32,6 +32,8 @@ type NeededMigration = {
   description: string;
   reason: string;
   safeToAutoApply: boolean;
+  boundaryCategory?: ManagedSurfaceCategory;
+  targetPaths: string[];
 };
 
 type PackageManagerState = {
@@ -330,6 +332,12 @@ const printText = (result: UpgradeJsonResult, options: UpgradeOptions): void => 
         console.log(`  introducedIn: ${migration.introducedIn}`);
         console.log(`  description: ${migration.description}`);
         console.log(`  safeToAutoApply: ${migration.safeToAutoApply}`);
+        if (migration.boundaryCategory) {
+          console.log(`  boundaryCategory: ${migration.boundaryCategory}`);
+        }
+        if (migration.targetPaths.length > 0) {
+          console.log(`  targetPaths: ${migration.targetPaths.join(', ')}`);
+        }
       }
     }
   }
@@ -360,7 +368,9 @@ const runChecks = async (
         introducedIn: migration.introducedIn,
         description: migration.description,
         reason: checkResult.reason,
-        safeToAutoApply: migration.safeToAutoApply
+        safeToAutoApply: checkResult.safeToAutoApply ?? migration.safeToAutoApply,
+        boundaryCategory: checkResult.boundaryCategory,
+        targetPaths: checkResult.targetPaths ?? []
       } as NeededMigration;
     })
   );
@@ -375,11 +385,12 @@ const runApply = async (
   targetVersion: string,
   migrationsNeeded: NeededMigration[]
 ): Promise<MigrationApplyResult[]> => {
-  const neededSet = new Set(migrationsNeeded.map((migration) => migration.id));
+  const neededMap = new Map(migrationsNeeded.map((migration) => [migration.id, migration]));
   const applied: MigrationApplyResult[] = [];
 
   for (const migration of migrationRegistry) {
-    if (!neededSet.has(migration.id) || !migration.safeToAutoApply || !migration.apply) {
+    const neededMigration = neededMap.get(migration.id);
+    if (!neededMigration || !neededMigration.safeToAutoApply || !migration.apply) {
       continue;
     }
 
@@ -501,6 +512,21 @@ export const runUpgrade = async (cwd: string, options: UpgradeOptions): Promise<
       migrationsNeeded = await runChecks(cwd, currentVersion, targetVersion);
       status = dependencyChanged || migrationChanged ? 'upgrade_applied' : 'up_to_date';
       actions = ['pnpm install', 'pnpm playbook verify', 'pnpm playbook index --json'];
+    }
+
+    const reviewRequired = migrationsNeeded.filter((migration) => !migration.safeToAutoApply);
+    if (reviewRequired.length > 0) {
+      status = options.apply && status !== 'upgrade_blocked' ? 'upgrade_blocked' : status;
+      notes = [
+        ...notes,
+        `Review required for protected or mixed-surface targets: ${reviewRequired.map((migration) => migration.targetPaths.join(', ')).filter(Boolean).join('; ') || reviewRequired.map((migration) => migration.id).join(', ')}`
+      ];
+      actions = [
+        ...new Set([
+          ...actions,
+          'Review .playbook/managed-surfaces.json and perform any explicit migrations manually before re-running upgrade --apply.'
+        ])
+      ];
     }
 
     const exitCode = classifyUpgradeExitCode({ status, migrationsNeeded });

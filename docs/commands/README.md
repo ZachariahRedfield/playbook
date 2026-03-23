@@ -166,7 +166,7 @@ The CLI registry currently also exposes utility commands not treated as part of 
 - `session`
 <!-- PLAYBOOK:DOCS_UTILITY_COMMANDS_END -->
 
-Installable workflow note: `pnpm playbook init` now seeds the full trusted/manual release-governance loop for eligible publishable pnpm/node repositories by installing `.playbook/version-policy.json`, `.github/workflows/release-prep.yml`, and `docs/CHANGELOG.md` with the managed `PLAYBOOK:CHANGELOG_RELEASE_NOTES` seam. `pnpm playbook upgrade --apply` retrofits any missing pieces without overwriting existing custom workflow or policy content.
+Installable workflow note: `pnpm playbook init` now seeds the full trusted/manual release-governance loop for eligible publishable pnpm/node repositories by installing `.playbook/version-policy.json`, `.playbook/managed-surfaces.json`, `.github/workflows/release-prep.yml`, and `docs/CHANGELOG.md` with the managed `PLAYBOOK:CHANGELOG_RELEASE_NOTES` seam. `pnpm playbook upgrade --apply` retrofits only manifest-approved Playbook-managed surfaces, fails closed on mixed/protected targets, and preserves repo-local product truth by default.
 
 - Rule: Installable workflow policy is incomplete until the trusted/manual mutation path is installable too.
 - Pattern: Seed policy, seed reviewed executor, keep normal CI plan-only.

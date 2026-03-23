@@ -137,7 +137,7 @@ For eligible publishable Node/pnpm repositories, init should detect the root/wor
 - `.github/workflows/release-prep.yml`
 - `docs/CHANGELOG.md` with the managed `PLAYBOOK:CHANGELOG_RELEASE_NOTES` block
 
-`pnpm playbook upgrade --apply` should retrofit any missing release-governance scaffolding into the same eligible repos without clobbering existing custom workflow or policy content.
+`pnpm playbook upgrade --apply` should retrofit any missing release-governance scaffolding into the same eligible repos without clobbering existing custom workflow or policy content. That retrofit is now governed by `.playbook/managed-surfaces.json`: only `managed_by_playbook` paths may be auto-mutated, while repo-local product files remain immutable unless an explicit migration path is reviewed first.
 
 Rule: Installable workflow policy is incomplete until the trusted/manual mutation path is installable too.
 Pattern: Seed policy, seed reviewed executor, keep normal CI plan-only.
@@ -179,3 +179,9 @@ Use this checklist in PR descriptions:
 3. **Contracts updated:** schemas/docs/snapshots.
 4. **Boundary impact:** CLI/Core/Engine ownership notes.
 5. **Validation evidence:** exact commands run.
+
+
+## Managed-vs-local upgrade boundary
+- Rule: Upgrade must be scoped to managed artifacts only; repo-owned files are immutable unless explicitly migrated.
+- Pattern: A safe framework upgrade system separates Playbook-managed surfaces from repo-local product truth.
+- Failure Mode: Upgrade flows that cannot distinguish managed from local files overwrite product intent and destroy trust.

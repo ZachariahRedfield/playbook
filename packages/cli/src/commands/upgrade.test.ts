@@ -35,8 +35,8 @@ describe('runUpgrade', () => {
 
   beforeEach(() => {
     repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-upgrade-'));
-    checkOne.mockReset().mockResolvedValue({ needed: false, reason: 'not needed' });
-    checkTwo.mockReset().mockResolvedValue({ needed: false, reason: 'not needed' });
+    checkOne.mockReset().mockResolvedValue({ needed: false, reason: 'not needed', targetPaths: ['.playbook/managed-surfaces.json'] });
+    checkTwo.mockReset().mockResolvedValue({ needed: false, reason: 'not needed', targetPaths: ['docs/CHANGELOG.md'] });
     applyOne.mockReset();
     applyTwo.mockReset();
   });
@@ -198,6 +198,52 @@ describe('runUpgrade', () => {
     expect(payload.status).toBe('up_to_date');
     expect(payload.exitCode).toBe(ExitCode.WarningsOnly);
     expect(payload.ok).toBe(false);
+  });
+
+
+  it('fails closed with review-required output for mixed-surface migrations', async () => {
+    const { runUpgrade } = await import('./upgrade.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    checkOne.mockResolvedValue({ needed: true, reason: 'safe managed migration', safeToAutoApply: true, targetPaths: ['.playbook/managed-surfaces.json'] });
+    applyOne.mockResolvedValue({ changed: true, filesChanged: ['.playbook/managed-surfaces.json'], summary: 'Seeded manifest.' });
+    checkTwo.mockResolvedValue({
+      needed: true,
+      reason: 'docs/CHANGELOG.md is missing managed markers and requires explicit review.',
+      safeToAutoApply: false,
+      boundaryCategory: 'explicit_migration_required',
+      targetPaths: ['docs/CHANGELOG.md']
+    });
+
+    fs.writeFileSync(path.join(repoRoot, 'pnpm-lock.yaml'), 'lockfileVersion: 9.0');
+    fs.writeFileSync(
+      path.join(repoRoot, 'package.json'),
+      JSON.stringify({ devDependencies: { '@fawxzzy/playbook': '^0.1.2' } })
+    );
+    fs.mkdirSync(path.join(repoRoot, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(repoRoot, 'docs', 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n- local notes\n');
+
+    const exitCode = await runUpgrade(repoRoot, {
+      check: false,
+      apply: true,
+      dryRun: false,
+      offline: false,
+      ci: false,
+      explain: false,
+      format: 'json',
+      quiet: false,
+      to: '0.1.2'
+    });
+
+    expect(exitCode).toBe(ExitCode.WarningsOnly);
+    expect(applyOne).toHaveBeenCalledTimes(1);
+    expect(applyTwo).not.toHaveBeenCalled();
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.status).toBe('upgrade_blocked');
+    expect(payload.notes.join(' ')).toContain('Review required');
+    expect(payload.migrationsNeeded[0].targetPaths).toBeDefined();
+    expect(payload.actions).toContain('Review .playbook/managed-surfaces.json and perform any explicit migrations manually before re-running upgrade --apply.');
   });
 
   it('applies bounded dependency mutation in apply mode', async () => {

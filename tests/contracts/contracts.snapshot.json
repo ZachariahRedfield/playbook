@@ -363,6 +363,11 @@
         "id": "release-plan",
         "version": "1.0",
         "path": "packages/contracts/src/release-plan.schema.json"
+      },
+      {
+        "id": "managed-surface-manifest",
+        "version": "1.0",
+        "path": "packages/contracts/src/managed-surface-manifest.schema.json"
       }
     ]
   }

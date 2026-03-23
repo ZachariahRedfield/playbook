@@ -336,7 +336,7 @@ Current slice establishes:
 
 Next planned external-consumer hardening slice: **Managed-vs-Local Upgrade Boundaries**.
 
-This future slice formalizes upgrade safety as a trust-boundary problem for external consumer repositories rather than a generic docs note. The intent is to let Playbook evolve its own managed surfaces without collapsing repo-local product truth into framework-global doctrine. Runtime support for manifest-based protection does **not** exist yet; this roadmap entry defines the doctrine and dependency order for that future work.
+This slice formalizes upgrade safety as a trust-boundary problem for external consumer repositories rather than a generic docs note. The intent is to let Playbook evolve its own managed surfaces without collapsing repo-local product truth into framework-global doctrine. Runtime support now exists through the installable `.playbook/managed-surfaces.json` contract, deterministic boundary categories, and fail-closed `upgrade --apply` review handling for mixed/protected targets.
 
 Planned direction:
 
@@ -344,7 +344,7 @@ Planned direction:
 - Treat repo-local `AGENT.md` as the consumer repo's product-truth and execution-identity surface so product-specific rules remain local.
 - Evolve `playbook upgrade` toward mutating only Playbook-managed artifacts and explicitly Playbook-owned generated surfaces.
 - Keep repo-owned product files protected unless an explicit migration path exists.
-- Add a future manifest or equivalent contract that marks managed vs protected paths so upgrade decisions are deterministic and reviewable.
+- Add and maintain a first-class manifest contract (`.playbook/managed-surfaces.json`) that marks managed vs protected paths so upgrade decisions are deterministic and reviewable.
 
 Managed Layer examples:
 

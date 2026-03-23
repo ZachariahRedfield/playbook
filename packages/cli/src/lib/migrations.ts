@@ -13,9 +13,15 @@ export type MigrationApplyContext = MigrationCheckContext & {
   dryRun: boolean;
 };
 
+export type ManagedSurfaceCategory = 'managed_by_playbook' | 'repo_local_protected' | 'explicit_migration_required';
+export type ManagedSurfaceMutationScope = 'file' | 'managed_block';
+
 export type MigrationCheckResult = {
   needed: boolean;
   reason: string;
+  safeToAutoApply?: boolean;
+  boundaryCategory?: ManagedSurfaceCategory;
+  targetPaths?: string[];
 };
 
 export type MigrationApplyResult = {
@@ -33,9 +39,31 @@ export type Migration = {
   apply?: (context: MigrationApplyContext) => Promise<MigrationApplyResult>;
 };
 
+type ManagedSurfaceEntry = {
+  path: string;
+  category: ManagedSurfaceCategory;
+  mutationScope: ManagedSurfaceMutationScope;
+  owner: 'playbook' | 'repository';
+  managedMarkers?: string[];
+};
+
+type ManagedSurfaceManifest = {
+  schemaVersion: '1.0';
+  kind: 'playbook-managed-surface-manifest';
+  entries: ManagedSurfaceEntry[];
+};
+
+type ManagedSurfaceAssessment = {
+  category: ManagedSurfaceCategory | 'unclassified';
+  mutationScope: ManagedSurfaceMutationScope;
+  autoApplyAllowed: boolean;
+  reason: string;
+};
+
 const cliDocPath = (repoRoot: string): string => path.join(repoRoot, 'docs', 'REFERENCE', 'cli.md');
 const releasePrepWorkflowRelativePath = path.join('.github', 'workflows', 'release-prep.yml');
 const changelogRelativePath = path.join('docs', 'CHANGELOG.md');
+const managedSurfaceManifestRelativePath = path.join('.playbook', 'managed-surfaces.json');
 const changelogStartMarker = '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->';
 const changelogEndMarker = '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->';
 
@@ -76,6 +104,81 @@ const ensureTrailingNewline = (content: string): string => (content.endsWith('\n
 const normalizeRelativePath = (filePath: string): string => filePath.replace(/\\/g, '/');
 const releasePrepWorkflowTemplate = readTemplateFile(normalizeRelativePath(releasePrepWorkflowRelativePath));
 const changelogTemplate = readTemplateFile(normalizeRelativePath(changelogRelativePath));
+const managedSurfaceManifestTemplate = readTemplateFile(normalizeRelativePath(managedSurfaceManifestRelativePath));
+
+const parseManagedSurfaceManifest = (content: string): ManagedSurfaceManifest => {
+  const parsed = JSON.parse(content) as ManagedSurfaceManifest;
+  if (parsed.kind !== 'playbook-managed-surface-manifest' || !Array.isArray(parsed.entries)) {
+    throw new Error('Managed surface manifest is invalid.');
+  }
+  return parsed;
+};
+
+const loadManagedSurfaceManifest = (repoRoot: string): ManagedSurfaceManifest => {
+  const manifestPath = path.join(repoRoot, managedSurfaceManifestRelativePath);
+  if (fs.existsSync(manifestPath)) {
+    return parseManagedSurfaceManifest(fs.readFileSync(manifestPath, 'utf8'));
+  }
+  return parseManagedSurfaceManifest(managedSurfaceManifestTemplate);
+};
+
+const pathMatchesRule = (targetPath: string, rulePath: string): boolean => {
+  const normalizedTarget = normalizeRelativePath(targetPath);
+  const normalizedRule = normalizeRelativePath(rulePath);
+  if (normalizedRule.endsWith('/**')) {
+    const prefix = normalizedRule.slice(0, -3);
+    return normalizedTarget === prefix || normalizedTarget.startsWith(`${prefix}/`);
+  }
+  return normalizedTarget === normalizedRule;
+};
+
+const assessManagedSurface = (repoRoot: string, targetPath: string): ManagedSurfaceAssessment => {
+  const manifest = loadManagedSurfaceManifest(repoRoot);
+  const normalizedTarget = normalizeRelativePath(targetPath);
+  const entry = manifest.entries.find((candidate) => pathMatchesRule(normalizedTarget, candidate.path));
+
+  if (!entry) {
+    return {
+      category: 'unclassified',
+      mutationScope: 'file',
+      autoApplyAllowed: false,
+      reason: `${normalizedTarget} is outside the managed surface manifest and requires explicit review.`
+    };
+  }
+
+  if (entry.category !== 'managed_by_playbook') {
+    return {
+      category: entry.category,
+      mutationScope: entry.mutationScope,
+      autoApplyAllowed: false,
+      reason: `${normalizedTarget} is categorized as ${entry.category} and is immutable during upgrade apply.`
+    };
+  }
+
+  if (entry.mutationScope === 'managed_block') {
+    const absolutePath = path.join(repoRoot, normalizedTarget);
+    if (fs.existsSync(absolutePath)) {
+      const content = fs.readFileSync(absolutePath, 'utf8');
+      const requiredMarkers = entry.managedMarkers ?? [];
+      const hasAllMarkers = requiredMarkers.every((marker) => content.includes(marker));
+      if (!hasAllMarkers) {
+        return {
+          category: 'explicit_migration_required',
+          mutationScope: entry.mutationScope,
+          autoApplyAllowed: false,
+          reason: `${normalizedTarget} is missing the required managed markers and needs explicit migration review before Playbook can edit it.`
+        };
+      }
+    }
+  }
+
+  return {
+    category: entry.category,
+    mutationScope: entry.mutationScope,
+    autoApplyAllowed: true,
+    reason: `${normalizedTarget} is marked as managed_by_playbook in the managed surface manifest.`
+  };
+};
 
 const needsReleaseGovernanceScaffolding = (repoRoot: string): boolean => shouldSeedDefaultVersionPolicy(repoRoot);
 
@@ -134,6 +237,26 @@ const semanticsBlock =
 
 export const migrationRegistry: Migration[] = [
   {
+    id: 'contract.managed-surface-manifest.installable',
+    introducedIn: '0.1.8',
+    description: 'Seed .playbook/managed-surfaces.json so installable repos have an explicit managed-vs-local upgrade contract.',
+    safeToAutoApply: true,
+    check: async ({ repoRoot }) => {
+      const manifestPath = path.join(repoRoot, managedSurfaceManifestRelativePath);
+      const needed = !fs.existsSync(manifestPath);
+      return {
+        needed,
+        reason: needed
+          ? '.playbook/managed-surfaces.json is missing, so upgrade boundaries are not explicitly recorded yet.'
+          : '.playbook/managed-surfaces.json already exists.',
+        safeToAutoApply: true,
+        boundaryCategory: 'managed_by_playbook',
+        targetPaths: [normalizeRelativePath(managedSurfaceManifestRelativePath)]
+      };
+    },
+    apply: async ({ repoRoot, dryRun }) => ensureFileWithTemplate(repoRoot, managedSurfaceManifestRelativePath, managedSurfaceManifestTemplate, dryRun)
+  },
+  {
     id: 'policy.version.lockstep-default',
     introducedIn: '0.1.8',
     description: 'Seed .playbook/version-policy.json for publishable pnpm/node repositories so release governance is installable by default.',
@@ -143,13 +266,17 @@ export const migrationRegistry: Migration[] = [
         return { needed: false, reason: 'Repository is not an eligible publishable pnpm/node repo for default version policy seeding.' };
       }
 
+      const assessment = assessManagedSurface(repoRoot, versionPolicyRelativePath);
       const policyPath = path.join(repoRoot, versionPolicyRelativePath);
       const needed = !fs.existsSync(policyPath);
       return {
         needed,
         reason: needed
           ? '.playbook/version-policy.json is missing for an eligible publishable pnpm/node repository.'
-          : '.playbook/version-policy.json already exists.'
+          : '.playbook/version-policy.json already exists.',
+        safeToAutoApply: assessment.autoApplyAllowed,
+        boundaryCategory: assessment.category === 'unclassified' ? undefined : assessment.category,
+        targetPaths: [normalizeRelativePath(versionPolicyRelativePath)]
       };
     },
     apply: async ({ repoRoot, dryRun }) => {
@@ -188,13 +315,17 @@ export const migrationRegistry: Migration[] = [
         return { needed: false, reason: 'Repository is not an eligible publishable pnpm/node repo for release-prep workflow seeding.' };
       }
 
+      const assessment = assessManagedSurface(repoRoot, releasePrepWorkflowRelativePath);
       const workflowPath = path.join(repoRoot, releasePrepWorkflowRelativePath);
       const needed = !fs.existsSync(workflowPath);
       return {
         needed,
         reason: needed
-          ? '.github/workflows/release-prep.yml is missing for an eligible publishable pnpm/node repository.'
-          : '.github/workflows/release-prep.yml already exists.'
+          ? `${assessment.reason} Missing .github/workflows/release-prep.yml for an eligible publishable pnpm/node repository.`
+          : '.github/workflows/release-prep.yml already exists.',
+        safeToAutoApply: assessment.autoApplyAllowed,
+        boundaryCategory: assessment.category === 'unclassified' ? undefined : assessment.category,
+        targetPaths: [normalizeRelativePath(releasePrepWorkflowRelativePath)]
       };
     },
     apply: async ({ repoRoot, dryRun }) => ensureFileWithTemplate(repoRoot, releasePrepWorkflowRelativePath, releasePrepWorkflowTemplate, dryRun)
@@ -209,14 +340,18 @@ export const migrationRegistry: Migration[] = [
         return { needed: false, reason: 'Repository is not an eligible publishable pnpm/node repo for changelog release seam seeding.' };
       }
 
+      const assessment = assessManagedSurface(repoRoot, changelogRelativePath);
       const changelogPath = path.join(repoRoot, changelogRelativePath);
       const content = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : undefined;
       const needed = !content || !hasManagedChangelogBlock(content);
       return {
         needed,
         reason: needed
-          ? 'docs/CHANGELOG.md is missing the managed PLAYBOOK:CHANGELOG_RELEASE_NOTES block.'
-          : 'docs/CHANGELOG.md already includes the managed PLAYBOOK:CHANGELOG_RELEASE_NOTES block.'
+          ? `${assessment.reason} ${content ? 'docs/CHANGELOG.md is missing the managed PLAYBOOK:CHANGELOG_RELEASE_NOTES block.' : 'docs/CHANGELOG.md is missing.'}`
+          : 'docs/CHANGELOG.md already includes the managed PLAYBOOK:CHANGELOG_RELEASE_NOTES block.',
+        safeToAutoApply: assessment.autoApplyAllowed,
+        boundaryCategory: assessment.category === 'unclassified' ? undefined : assessment.category,
+        targetPaths: [normalizeRelativePath(changelogRelativePath)]
       };
     },
     apply: async ({ repoRoot, dryRun }) => {

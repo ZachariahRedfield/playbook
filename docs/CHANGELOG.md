@@ -1,4 +1,12 @@
 <!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+## 0.4.0 - 2026-03-23
+- Recommended bump: minor
+- @fawxzzy/playbook: 0.3.0 -> 0.4.0 (playbook-installable-workspace)
+- @fawxzzy/playbook-cli: 0.3.0 -> 0.4.0 (playbook-installable-workspace)
+- @zachariahredfield/playbook-core: 0.3.0 -> 0.4.0 (playbook-installable-workspace)
+- @zachariahredfield/playbook-engine: 0.3.0 -> 0.4.0 (playbook-installable-workspace)
+- @zachariahredfield/playbook-node: 0.3.0 -> 0.4.0 (playbook-installable-workspace)
+
 ## 0.3.0 - 2026-03-23
 - Recommended bump: minor
 - @fawxzzy/playbook: 0.2.0 -> 0.3.0 (playbook-installable-workspace)
@@ -64,6 +72,9 @@
 - WHAT: Updated the reusable Playbook CI transport to emit `.playbook/failure-summary.json`, `.playbook/failure-summary.md`, `.playbook/test-triage.json`, and GitHub step summary content alongside `.playbook/ci-failure.log`. WHY: Every Playbook-managed CI/test failure now preserves raw output while publishing a normalized summary contract for humans, automation, and AI remediation loops.
 
 ## Unreleased
+- WHAT: Refreshed the committed CLI contract snapshot after the intentional contracts-registry expansion that now includes the managed-surface manifest schema. WHY: Contract-surface governance must be updated in lockstep so CI fails on real surface drift instead of stale snapshots.
+- Rule: Refresh committed contract snapshots whenever intentional CLI JSON surfaces change.
+- Failure Mode: Fixing governance first will not unblock CI if stale contract snapshots stop the pipeline earlier.
 - WHAT: Added a trusted/manual `.github/workflows/release-prep.yml` flow plus release-PR guard scripts that run `release plan`, apply the reviewed `.playbook/release-plan.json` through the existing `apply --from-plan` boundary, validate that only package-version/workspace-dependency/changelog mutations remain, and then open or update one managed release PR. WHY: Release prep needs an explicit reviewed write path without teaching ordinary PR CI to mutate versioned files or introducing a second mutation executor.
 - Rule: Release-prep automation may commit only reviewed version/changelog mutations, and only from the existing `apply --from-plan` write boundary.
 - Pattern: Normal CI detects/plans/reports; trusted manual release prep applies and proposes.

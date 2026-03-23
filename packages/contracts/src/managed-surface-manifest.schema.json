@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schema/managed-surface-manifest.schema.json",
+  "title": "PlaybookManagedSurfaceManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "entries"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-managed-surface-manifest" },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "category", "mutationScope", "owner"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "category": {
+            "enum": [
+              "managed_by_playbook",
+              "repo_local_protected",
+              "explicit_migration_required"
+            ]
+          },
+          "mutationScope": { "enum": ["file", "managed_block"] },
+          "owner": { "enum": ["playbook", "repository"] },
+          "managedMarkers": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://playbook.dev/schema/managed-surface-manifest.schema.json",
+  "schemaVersion": "1.0",
+  "kind": "playbook-managed-surface-manifest",
+  "entries": [
+    {
+      "path": ".playbook/**",
+      "category": "managed_by_playbook",
+      "mutationScope": "file",
+      "owner": "playbook"
+    },
+    {
+      "path": ".github/workflows/release-prep.yml",
+      "category": "managed_by_playbook",
+      "mutationScope": "file",
+      "owner": "playbook"
+    },
+    {
+      "path": "docs/CHANGELOG.md",
+      "category": "managed_by_playbook",
+      "mutationScope": "managed_block",
+      "owner": "playbook",
+      "managedMarkers": [
+        "<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->",
+        "<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->"
+      ]
+    },
+    {
+      "path": "AGENTS.md",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "app/**",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "src/**",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "docs/PROJECT_GOVERNANCE.md",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "docs/PLAYBOOK_NOTES.md",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "docs/PLAYBOOK_CHECKLIST.md",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "docs/**",
+      "category": "repo_local_protected",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "Playbook/**",
+      "category": "explicit_migration_required",
+      "mutationScope": "file",
+      "owner": "repository"
+    },
+    {
+      "path": "playbook.config.json",
+      "category": "explicit_migration_required",
+      "mutationScope": "file",
+      "owner": "repository"
+    }
+  ]
+}
