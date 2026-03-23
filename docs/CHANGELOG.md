@@ -1,4 +1,8 @@
 <!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+- WHAT: Rewired the legacy `.github/workflows/playbook.yml` entrypoint to invoke the shared Playbook CI composite action instead of running a standalone `node packages/cli/dist/main.js verify --ci` path. WHY: Workflow/runtime skew can preserve stale release-governance behavior even after the composite action is fixed, so every CI entrypoint must share the same release-plan + verify-json implementation.
+- Rule: When CI behavior changes, validate against the exact workflow path GitHub executed and keep all entrypoints on the same composite action implementation.
+- Pattern: One composite action owns release-plan materialization and verify wiring; workflows should delegate to it instead of re-encoding old gates.
+- Failure Mode: A repo can pass local tests and the shared action path while GitHub still fails on a legacy workflow entrypoint that calls stale `verify --ci` directly.
 - WHAT: Added the deterministic `.playbook/release-plan.json` artifact for the CI history/planner visibility change and kept the workspace at `0.1.8` because the reviewed release plan classified the diff as docs/CI-only plus non-shipping template changes (`recommendedBump: none`). WHY: Release governance for governed surfaces requires the mirrored reviewed artifact and changelog note even when the correct outcome is explicitly no version bump.
 - Rule: When a governed surface changes, the PR must carry the deterministic release artifact even if the reviewed bump result is `none`.
 - Pattern: Commit the reviewed plan, mirror the changelog rationale, and let verify enforce that pairing.

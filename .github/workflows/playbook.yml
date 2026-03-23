@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  actions: read
 
 jobs:
   verify:
@@ -18,23 +20,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Run Playbook CI composite action
+        uses: ./.github/actions/playbook-ci
         with:
-          node-version: 22
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build workspace packages
-        run: pnpm -r --workspace-concurrency=1 build
-
-      - name: Run tests
-        run: pnpm -r test
-
-      - name: Run Playbook verify
-        run: node packages/cli/dist/main.js verify --ci
+          execution-path: "ci"
+          node-version: "22"
+          working-directory: "."
+          remediation-history-artifact-name: "playbook-remediation-artifacts-playbook-workflow"
+          remediation-history-lookback: "5"
