@@ -285,7 +285,9 @@ Practical initiatives to stage from this doctrine:
 1. **Constraint-driven architecture rubric**
    - Add a lightweight architecture decision rubric that records governing constraints, competing cost surfaces, expected interface pressure, and why a chosen structure fits that environment.
 2. **Postmortem reconsolidation loop**
-   - Add a postmortem template/flow that explicitly distinguishes observed facts, interpreted causes, changed mental models, and the doctrine candidates that should or should not be promoted.
+   - Make the structured postmortem template the first operational realization of `Recall -> reinterpret -> promote -> restabilize`.
+   - Require postmortems to distinguish observed facts, interpreted causes, changed mental models, and the explicit promotion candidates that should or should not advance.
+   - Keep the loop docs/process only: no new command family, no new promotion automation, and no change to command authority.
 3. **Documentation revision protocol**
    - Add a docs maintenance protocol that separates `fact`, `interpretation`, and `narrative` layers so updates can refine meaning without blurring truth surfaces.
 4. **Retrieval-based review workflow**
@@ -298,6 +300,12 @@ Rule: Retrieval is the only safe moment to revise active knowledge, and revision
 Pattern: Constraint -> optimization -> emergent structure.
 Pattern: Recall -> reinterpret -> promote -> restabilize.
 Operationally: recall brings active knowledge into bounded review with provenance; reinterpret compares it against fresh evidence without mutating doctrine yet; promote is the explicit reviewed write boundary; restabilize returns promoted knowledge to active doctrine.
+
+First operational realization: the postmortem reconsolidation loop. Operators should capture incidents or notable changes in a structured postmortem, extract explicit promotion candidates, review them through existing `memory` / `promote` surfaces, and then restabilize doctrine only through reviewed updates to memory, promoted knowledge, and docs.
+
+Rule: Retrieval-based revision must enter the system through explicit evidence-bearing review artifacts.
+Pattern: Structured postmortem -> candidate extraction -> explicit promotion.
+Failure Mode: Doctrine updates sourced from memory of the incident instead of the reviewed postmortem artifact create silent drift.
 Failure Mode: Teams copy fashionable architectures or metaphors without mapping the constraints that made them work elsewhere.
 Failure Mode: Review loops that blend fact, interpretation, and narrative silently rewrite doctrine and erode trust.
 
