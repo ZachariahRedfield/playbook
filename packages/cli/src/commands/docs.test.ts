@@ -88,6 +88,23 @@ const createFixtureRepo = (): string => {
   return root;
 };
 
+
+const writeRepoRoadmap = (repo: string, activeStories = '- UI-001 – Screen normalization (in-progress)'): void => {
+  fs.writeFileSync(
+    path.join(repo, 'docs', 'ROADMAP.md'),
+    ['# Product Roadmap', '', '## Pillars', '- UX', '', '## Active Stories', activeStories, ''].join('\n'),
+    'utf8'
+  );
+};
+
+const expectNoDuplicateRoadmapFinding = (payload: { findings: Array<{ ruleId: string }> }): void => {
+  expect(payload.findings).not.toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ ruleId: 'docs.single-roadmap.duplicate' })
+    ])
+  );
+};
+
 describe('runDocs', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -113,11 +130,7 @@ describe('runDocs', () => {
 
   it('fails when repo roadmap docs miss required sections', async () => {
     const repo = createFixtureRepo();
-    fs.writeFileSync(
-      path.join(repo, 'docs', 'ROADMAP.md'),
-      ['# Product Roadmap', '', '## Pillars', '- UX', ''].join('\n'),
-      'utf8'
-    );
+    fs.writeFileSync(path.join(repo, 'docs', 'ROADMAP.md'), ['# Product Roadmap', '', '## Pillars', '- UX', ''].join('\n'), 'utf8');
     const { runDocs } = await import('./docs.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -135,6 +148,7 @@ describe('runDocs', () => {
         expect.objectContaining({ ruleId: 'docs.required-anchor.missing', path: 'docs/ROADMAP.md' })
       ])
     );
+    expectNoDuplicateRoadmapFinding(payload);
   });
 
   it('detects duplicate roadmap files', { timeout: 15000 }, async () => {
@@ -198,11 +212,7 @@ describe('runDocs', () => {
 
   it('validates repo-scoped roadmap/story contracts when opted in', async () => {
     const repo = createFixtureRepo();
-    fs.writeFileSync(
-      path.join(repo, 'docs', 'ROADMAP.md'),
-      ['# Product Roadmap', '', '## Pillars', '- UX', '', '## Active Stories', '- UI-001 – Screen normalization (in-progress)', ''].join('\n'),
-      'utf8'
-    );
+    writeRepoRoadmap(repo);
     fs.mkdirSync(path.join(repo, 'docs', 'stories'), { recursive: true });
     fs.writeFileSync(
       path.join(repo, 'docs', 'stories', 'UI-001-screen-normalization.md'),
@@ -252,15 +262,12 @@ describe('runDocs', () => {
         expect.objectContaining({ ruleId: 'docs.story-contract.missing-sections' })
       ])
     );
+    expectNoDuplicateRoadmapFinding(payload);
   });
 
   it('fails when story docs miss required sections', async () => {
     const repo = createFixtureRepo();
-    fs.writeFileSync(
-      path.join(repo, 'docs', 'ROADMAP.md'),
-      ['# Product Roadmap', '', '## Pillars', '- UX', '', '## Active Stories', '- UI-001 – Screen normalization (in-progress)', ''].join('\n'),
-      'utf8'
-    );
+    writeRepoRoadmap(repo);
     fs.mkdirSync(path.join(repo, 'docs', 'stories'), { recursive: true });
     fs.writeFileSync(
       path.join(repo, 'docs', 'stories', 'UI-001-screen-normalization.md'),
@@ -279,6 +286,7 @@ describe('runDocs', () => {
         expect.objectContaining({ ruleId: 'docs.story-contract.missing-sections', path: 'docs/stories/UI-001-screen-normalization.md', level: 'error' })
       ])
     );
+    expectNoDuplicateRoadmapFinding(payload);
   });
 
 
