@@ -59,3 +59,14 @@ pnpm playbook verify --json
 ```
 
 In normal Playbook CI, the reusable action now materializes `.playbook/release-plan.json` before `verify` whenever release governance already exists or the repository is eligible for installable version governance. CI then renders a compact release summary from that canonical artifact, appends it to the GitHub step summary, and uploads both the plan and rendered markdown summary as artifacts. Normal PR CI stays plan-only: it does not auto-mutate versions.
+
+## Trusted/manual release prep
+
+Use `.github/workflows/release-prep.yml` when a trusted maintainer is ready to materialize reviewed release mutations into a single version/changelog PR. The workflow is `workflow_dispatch` only, so ordinary pull request CI remains detect/plan/report only. Its path is intentionally narrow:
+
+```bash
+pnpm playbook release plan --json --out .playbook/release-plan.json
+pnpm playbook apply --from-plan .playbook/release-plan.json
+```
+
+Then the workflow validates that the resulting diff contains only reviewed package manifest version rewrites, linked workspace dependency rewrites, and the managed `docs/CHANGELOG.md` release-notes block before it force-updates one managed `release/prep`-style branch and opens or updates a single release PR. This keeps release mutation on the existing reviewed `apply --from-plan` boundary instead of introducing a second executor.

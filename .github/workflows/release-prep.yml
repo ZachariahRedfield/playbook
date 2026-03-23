@@ -1,0 +1,124 @@
+name: release-prep
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Trusted base branch to prepare the release PR against"
+        required: false
+        default: "main"
+        type: string
+      release_branch:
+        description: "Branch used for the managed release-prep PR"
+        required: false
+        default: "release/prep"
+        type: string
+
+concurrency:
+  group: release-prep-${{ github.event.inputs.base_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-prep:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      PLAYBOOK_RELEASE_BASE_REF: ${{ inputs.base_ref || github.ref_name }}
+      PLAYBOOK_RELEASE_BRANCH: ${{ inputs.release_branch || 'release/prep' }}
+    steps:
+      - name: Checkout trusted base branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.PLAYBOOK_RELEASE_BASE_REF }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm -r --workspace-concurrency=1 build
+
+      - name: Materialize reviewed release plan
+        run: pnpm playbook release plan --json --out .playbook/release-plan.json
+
+      - name: Apply reviewed release mutations
+        run: pnpm playbook apply --from-plan .playbook/release-plan.json
+
+      - name: Verify release-prep diff is version/changelog-only
+        id: inspect
+        shell: bash
+        run: |
+          node .github/scripts/prepare-release-pr.cjs > .playbook/release-prep-summary.json
+          cat .playbook/release-prep-summary.json
+          has_changes=$(node -pe "JSON.parse(require('fs').readFileSync('.playbook/release-prep-summary.json', 'utf8')).hasChanges ? 'true' : 'false'")
+          next_version=$(node -pe "JSON.parse(require('fs').readFileSync('.playbook/release-prep-summary.json', 'utf8')).nextVersion || ''")
+          title_suffix=${next_version:-$(date +%Y-%m-%d)}
+          {
+            echo "has_changes=$has_changes"
+            echo "next_version=$next_version"
+            echo "pr_title=chore: prepare release ${title_suffix}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Stop when no release mutation is required
+        if: steps.inspect.outputs.has_changes != 'true'
+        run: echo "Release plan produced no reviewed package/changelog mutations; skipping branch push and PR update."
+
+      - name: Configure git author
+        if: steps.inspect.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit reviewed release mutations
+        if: steps.inspect.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          rm -f .playbook/release-plan.json
+          git switch -C "$PLAYBOOK_RELEASE_BRANCH"
+          git add -u
+          git diff --cached --name-only
+          git commit -m "${{ steps.inspect.outputs.pr_title }}"
+
+      - name: Push managed release-prep branch
+        if: steps.inspect.outputs.has_changes == 'true'
+        run: git push --force-with-lease origin "$PLAYBOOK_RELEASE_BRANCH"
+
+      - name: Open or update release PR
+        if: steps.inspect.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        env:
+          PLAYBOOK_RELEASE_PR_TITLE: ${{ steps.inspect.outputs.pr_title }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { renderPullRequestBody } = require('./.github/scripts/prepare-release-pr.cjs');
+            const { upsertReleasePullRequest } = require('./.github/scripts/upsert-release-pr.cjs');
+            const summary = JSON.parse(fs.readFileSync('.playbook/release-prep-summary.json', 'utf8'));
+            const body = renderPullRequestBody(summary, { baseRef: process.env.PLAYBOOK_RELEASE_BASE_REF });
+            const { owner, repo } = context.repo;
+            const result = await upsertReleasePullRequest({
+              github,
+              owner,
+              repo,
+              base: process.env.PLAYBOOK_RELEASE_BASE_REF,
+              head: process.env.PLAYBOOK_RELEASE_BRANCH,
+              title: process.env.PLAYBOOK_RELEASE_PR_TITLE,
+              body,
+            });
+            core.info(`${result.action === 'updated' ? 'Updated' : 'Created'} release PR #${result.number}: ${result.html_url}`);

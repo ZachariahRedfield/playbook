@@ -1,3 +1,4 @@
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
 - WHAT: Corrected `playbook upgrade` exit semantics so successful migration application now returns success even when the Playbook dependency version was already aligned, while unchanged repos with remaining migrations still return warnings. WHY: Final command classification should reflect the overall upgrade outcome rather than letting an aligned-version subcondition poison successful migration work.
 - Pattern: State classification should be based on final command outcome, not on one intermediate subcondition.
 - Failure Mode: A no-op package-version branch can accidentally poison the final command exit code even when the overall upgrade work succeeded.
@@ -23,6 +24,10 @@
 - WHAT: Updated the reusable Playbook CI transport to emit `.playbook/failure-summary.json`, `.playbook/failure-summary.md`, `.playbook/test-triage.json`, and GitHub step summary content alongside `.playbook/ci-failure.log`. WHY: Every Playbook-managed CI/test failure now preserves raw output while publishing a normalized summary contract for humans, automation, and AI remediation loops.
 
 ## Unreleased
+- WHAT: Added a trusted/manual `.github/workflows/release-prep.yml` flow plus release-PR guard scripts that run `release plan`, apply the reviewed `.playbook/release-plan.json` through the existing `apply --from-plan` boundary, validate that only package-version/workspace-dependency/changelog mutations remain, and then open or update one managed release PR. WHY: Release prep needs an explicit reviewed write path without teaching ordinary PR CI to mutate versioned files or introducing a second mutation executor.
+- Rule: Release-prep automation may commit only reviewed version/changelog mutations, and only from the existing `apply --from-plan` write boundary.
+- Pattern: Normal CI detects/plans/reports; trusted manual release prep applies and proposes.
+- Failure Mode: If release PR automation mutates outside the reviewed allowlist or ordinary PR CI starts applying release changes, version governance drifts into shadow executors.
 - WHAT: Relaxed the CLI verify-rule loader test to require baseline core-rule membership plus uniqueness instead of freezing the entire derived registry. WHY: `coreVerifyRules` is an intentionally growing registry, so new core governance rules should not create false-red test failures across multiple loader surfaces.
 - Rule: Registry-growth tests should assert baseline required members plus uniqueness.
 - Pattern: Separate “must include these core rules” from “this entire evolving registry may never change.”
@@ -781,3 +786,4 @@
 - Rule: Human prompt surfaces should carry only bounded execution instructions, not full machine state.
 - Pattern: Artifact-rich, prompt-thin orchestration keeps operators fast.
 - Failure Mode: Dumping full machine context into worker prompts lowers signal and increases drift.
+<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->

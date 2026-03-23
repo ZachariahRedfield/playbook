@@ -65,6 +65,15 @@ pnpm playbook plan --json
 pnpm playbook apply --from-plan .playbook/plan.json --dry-run
 ```
 
+For trusted release preparation, use the dedicated manual workflow instead of ordinary PR CI mutation. The release-prep path must stay on the existing reviewed mutation boundary:
+
+```bash
+pnpm playbook release plan --json --out .playbook/release-plan.json
+pnpm playbook apply --from-plan .playbook/release-plan.json
+```
+
+The GitHub Actions workflow `.github/workflows/release-prep.yml` is the only automation that should commit the resulting reviewed package-version, linked-workspace-dependency, and managed changelog updates into the single release-prep PR branch. Normal PR CI remains detect/plan/report only and must never auto-apply release mutations.
+
 ## Smoke testing
 
 Run the repository smoke test:
