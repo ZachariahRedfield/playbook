@@ -129,7 +129,7 @@ function buildRemediationSummary(policy, failureSummary, remediationStatus) {
   };
 }
 
-function buildSummary({ verify, releasePlan, remediationPolicy, failureSummary, remediationStatus }) {
+function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifactPath, remediationPolicy, remediationPolicyArtifactPath, failureSummary, failureSummaryArtifactPath, remediationStatus, remediationStatusArtifactPath }) {
   const verifySummary = buildVerifySummary(verify);
   if (!verifySummary) return null;
   const mergeGuardSummary = buildMergeGuardSummary(verify);
@@ -140,6 +140,9 @@ function buildSummary({ verify, releasePlan, remediationPolicy, failureSummary, 
   if (remediationSummary) overallStatus = remediationSummary.status === 'allowed' ? overallStatus : `${overallStatus} · test failure`; // retains compact context
   const overallDecision = verify?.ok ? 'merge-ready pending policy context' : 'verify blocked';
 
+  const artifacts = [verifyArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null]
+    .filter((value) => typeof value === 'string' && value.trim().length > 0);
+
   return {
     overall: {
       decision: overallDecision,
@@ -149,6 +152,7 @@ function buildSummary({ verify, releasePlan, remediationPolicy, failureSummary, 
     mergeGuard: mergeGuardSummary,
     release: releaseSummary,
     remediation: remediationSummary,
+    artifacts,
   };
 }
 
@@ -180,13 +184,14 @@ function renderMarkdown(summary, { marker, title }) {
     lines.push(`| Remediation next action | ${summary.remediation.nextAction} |`);
   }
 
-  lines.push('', 'Artifacts: `.playbook/verify.json`, `.playbook/release-plan.json`, `.playbook/ci-remediation-policy.json`, `.playbook/failure-summary.json`, `.playbook/remediation-status.json`.');
+  lines.push('', `Artifacts: ${summary.artifacts.map((artifact) => `\`${artifact}\``).join(', ')}.`);
   return `${lines.join('\n').trimEnd()}\n`;
 }
 
 function parseArgs(argv) {
   const options = {
     verify: '.playbook/verify.json',
+    verifyPreflight: '.playbook/verify-preflight.json',
     releasePlan: '.playbook/release-plan.json',
     remediationPolicy: '.playbook/ci-remediation-policy.json',
     failureSummary: '.playbook/failure-summary.json',
@@ -203,6 +208,8 @@ function parseArgs(argv) {
     const next = argv[index + 1];
     if (token === '--verify' && next) {
       options.verify = next; index += 1;
+    } else if (token === '--verify-preflight' && next) {
+      options.verifyPreflight = next; index += 1;
     } else if (token === '--release-plan' && next) {
       options.releasePlan = next; index += 1;
     } else if (token === '--remediation-policy' && next) {
@@ -228,12 +235,20 @@ function parseArgs(argv) {
 
 if (require.main === module) {
   const options = parseArgs(process.argv.slice(2));
+  const verify = readJsonIfExists(path.resolve(process.cwd(), options.verify))
+    ?? readJsonIfExists(path.resolve(process.cwd(), options.verifyPreflight));
+  const verifyArtifactPath = fs.existsSync(path.resolve(process.cwd(), options.verify)) ? options.verify : (fs.existsSync(path.resolve(process.cwd(), options.verifyPreflight)) ? options.verifyPreflight : options.verify);
   const payload = {
-    verify: readJsonIfExists(path.resolve(process.cwd(), options.verify)),
+    verify,
+    verifyArtifactPath,
     releasePlan: readJsonIfExists(path.resolve(process.cwd(), options.releasePlan)),
+    releaseArtifactPath: options.releasePlan,
     remediationPolicy: readJsonIfExists(path.resolve(process.cwd(), options.remediationPolicy)),
+    remediationPolicyArtifactPath: options.remediationPolicy,
     failureSummary: readJsonIfExists(path.resolve(process.cwd(), options.failureSummary)),
+    failureSummaryArtifactPath: options.failureSummary,
     remediationStatus: readJsonIfExists(path.resolve(process.cwd(), options.remediationStatus)),
+    remediationStatusArtifactPath: options.remediationStatus,
   };
   const summary = buildSummary(payload);
   const outPath = path.resolve(process.cwd(), options.out);

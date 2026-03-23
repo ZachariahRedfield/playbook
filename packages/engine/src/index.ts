@@ -1,5 +1,6 @@
 export { analyzeRepo } from './analyze/index.js';
-export { verifyRepo } from './verify/index.js';
+export { VERIFY_PHASE_RULES, verifyRepo } from './verify/index.js';
+export type { VerifyPhase, VerifyRepoOptions } from './verify/index.js';
 export { formatHuman, formatJson } from './report/format.js';
 export { formatAnalyzeHuman, formatAnalyzeCi, formatAnalyzeJson } from './format/analyze.js';
 export { loadConfig } from './config/load.js';

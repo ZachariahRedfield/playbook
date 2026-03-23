@@ -20,9 +20,14 @@ test('buildSummary renders compact success summary with verify, release, and mer
       packages: [{ name: '@scope/alpha', currentVersion: '1.2.3', recommendedBump: 'minor' }],
       versionGroups: []
     },
+    verifyArtifactPath: '.playbook/verify-preflight.json',
+    releaseArtifactPath: '.playbook/release-plan.json',
     remediationPolicy: null,
+    remediationPolicyArtifactPath: '.playbook/ci-remediation-policy.json',
     failureSummary: null,
+    failureSummaryArtifactPath: '.playbook/failure-summary.json',
     remediationStatus: null,
+    remediationStatusArtifactPath: '.playbook/remediation-status.json',
   });
 
   assert.equal(summary.overall.status, 'clear');
@@ -40,14 +45,18 @@ test('buildSummary includes remediation only when a test failure artifact exists
       nextActions: ['Run pnpm test after remediation.']
     },
     releasePlan: null,
+    verifyArtifactPath: '.playbook/verify.json',
+    releaseArtifactPath: '.playbook/release-plan.json',
     remediationPolicy: {
       status: 'blocked_by_policy',
       reasons: ['autofix disabled by workflow input'],
     },
+    remediationPolicyArtifactPath: '.playbook/ci-remediation-policy.json',
     failureSummary: {
       primaryFailureClass: 'vitest_assertion',
       summary: { totalFailures: 3 },
     },
+    failureSummaryArtifactPath: '.playbook/failure-summary.json',
     remediationStatus: {
       latest_run: {
         final_status: 'blocked_low_confidence',
@@ -55,6 +64,7 @@ test('buildSummary includes remediation only when a test failure artifact exists
         preferred_repair_class: 'snapshot_refresh',
       }
     },
+    remediationStatusArtifactPath: '.playbook/remediation-status.json',
   });
 
   assert.equal(summary.overall.status, 'blocked · test failure');
@@ -71,6 +81,7 @@ test('renderMarkdown uses one compact operator brief', () => {
     mergeGuard: { decision: 'fail_closed', status: 'merge guard blocked', blockers: ['lane:docs'], nextAction: 'Resolve docs lane.' },
     release: { recommendedBump: 'patch', status: 'release plan ready', currentVersion: '1.2.3', nextVersion: '1.2.4', affected: '@scope/alpha' },
     remediation: { status: 'blocked_low_confidence', failureClass: 'vitest_assertion', failureCount: 2, retryDecision: 'hold', preferredRepairClass: 'snapshot_refresh', nextAction: 'Manual review required.' },
+    artifacts: ['.playbook/verify.json', '.playbook/release-plan.json', '.playbook/ci-remediation-policy.json', '.playbook/failure-summary.json', '.playbook/remediation-status.json'],
   }, { marker: '<!-- marker -->', title: 'Playbook CI Summary' });
 
   assert.match(markdown, /Overall decision \/ status \| verify blocked \/ blocked · test failure/);

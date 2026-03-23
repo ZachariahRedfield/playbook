@@ -208,6 +208,24 @@ runs:
         echo "+ node packages/cli/dist/main.js release plan --json --out .playbook/release-plan.json"
         node packages/cli/dist/main.js release plan --json --out .playbook/release-plan.json
 
+    - name: Run preflight verify for release governance
+      if: inputs.execution-path == 'ci' && steps.release-governance.outputs.eligible == 'true'
+      id: run-verify-preflight
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        mkdir -p .playbook
+        echo "+ node packages/cli/dist/main.js verify --phase preflight --json --out .playbook/verify-preflight.json"
+        set +e
+        node packages/cli/dist/main.js verify --phase preflight --json --out .playbook/verify-preflight.json
+        verify_preflight_exit_code=${PIPESTATUS[0]}
+        set -e
+        echo "verify-preflight-exit-code=$verify_preflight_exit_code" >> "$GITHUB_OUTPUT"
+        if [[ "$verify_preflight_exit_code" -ne 0 ]]; then
+          echo "Preflight verify failed before pnpm test; see .playbook/verify-preflight.json for canonical machine detail."
+          exit "$verify_preflight_exit_code"
+        fi
+
     - name: Run tests and capture deterministic failure log
       if: inputs.execution-path == 'ci'
       id: run-tests
@@ -353,6 +371,7 @@ runs:
       run: |
         node "$GITHUB_WORKSPACE/.github/scripts/render-playbook-ci-summary.cjs" \
           --verify .playbook/verify.json \
+          --verify-preflight .playbook/verify-preflight.json \
           --release-plan .playbook/release-plan.json \
           --remediation-policy .playbook/ci-remediation-policy.json \
           --failure-summary .playbook/failure-summary.json \

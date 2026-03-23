@@ -17,6 +17,8 @@ export type VerifyReport = {
     warnings: number;
     baseRef?: string;
     baseSha?: string;
+    phase?: string;
+    ruleIds?: string[];
   };
   failures: ReportFailure[];
   warnings: ReportWarning[];

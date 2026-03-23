@@ -20,8 +20,9 @@ const appendCommandExecutionQualityRecord = vi.fn();
 const recordCommandExecution = vi.fn();
 const safeRecordRepositoryEvent = vi.fn((callback: () => void) => callback());
 const recordCommandQuality = vi.fn();
+const VERIFY_PHASE_RULES = { preflight: ['release.version-governance'] } as const;
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ verifyRepo, loadConfig, formatHuman, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, completeExecutionRun, executionRunPath, attachSessionRunState, appendCommandExecutionQualityRecord, safeRecordRepositoryEvent, recordCommandExecution, recordCommandQuality }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ verifyRepo, loadConfig, formatHuman, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, completeExecutionRun, executionRunPath, attachSessionRunState, appendCommandExecutionQualityRecord, safeRecordRepositoryEvent, recordCommandExecution, recordCommandQuality, VERIFY_PHASE_RULES }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 
 describe('runVerify policy mode', () => {
@@ -127,6 +128,51 @@ describe('runVerify policy mode', () => {
     ]);
 
     logSpy.mockRestore();
+  });
+
+  it('passes phase and rule selection through to the verify engine and result payload', async () => {
+    const { runVerify } = await import('./verify.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    verifyRepo.mockReturnValue({
+      ok: true,
+      summary: { failures: 0, warnings: 0, phase: 'preflight', ruleIds: ['release.version-governance'] },
+      failures: [],
+      warnings: []
+    });
+
+    const exitCode = await runVerify('/repo', {
+      format: 'json',
+      ci: true,
+      quiet: true,
+      explain: false,
+      policy: false,
+      phase: 'preflight',
+      ruleIds: ['release.version-governance']
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(verifyRepo).toHaveBeenCalledWith('/repo', { phase: 'preflight', ruleIds: ['release.version-governance'] });
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.phase).toBe('preflight');
+    expect(payload.selectedRules).toEqual(['release.version-governance']);
+
+    logSpy.mockRestore();
+  });
+
+  it('fails clearly for unsupported verify phases', async () => {
+    const { runVerify } = await import('./verify.js');
+
+    await expect(runVerify('/repo', {
+      format: 'json',
+      ci: true,
+      quiet: true,
+      explain: false,
+      policy: false,
+      phase: 'unknown' as never
+    })).rejects.toThrow('playbook verify: unsupported phase "unknown". Supported phases: preflight.');
+
+    expect(verifyRepo).not.toHaveBeenCalled();
   });
 
   it('writes deterministic json artifacts with --out while keeping stdout JSON parseable', async () => {

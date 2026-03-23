@@ -13,7 +13,7 @@
   - `major` only when an explicit configured breaking marker is present
 - Emits evidence-backed reasons for every file, package, and version group.
 - Writes a deterministic reviewed mutation artifact sorted by path/name.
-- Lets CI materialize the same canonical `.playbook/release-plan.json` artifact early, then feed one compact Playbook CI Summary renderer from canonical artifacts instead of re-implementing semver logic in workflow YAML.
+- Lets CI materialize the same canonical `.playbook/release-plan.json` artifact early, then run canonical preflight verify from that artifact instead of re-implementing semver logic in workflow YAML.
 - Precompiles bounded `apply --from-plan` tasks for exactly three mutation classes:
   - package `version` field updates
   - linked workspace dependency spec rewrites when the reviewed plan bumps the referenced package version
@@ -61,7 +61,11 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 pnpm playbook verify --json
 ```
 
-In normal Playbook CI, the reusable action now materializes `.playbook/release-plan.json` before `verify` whenever release governance already exists or the repository is eligible for installable version governance. CI then renders one compact Playbook CI Summary from canonical artifacts, appends that operator brief once to the GitHub step summary, and uploads the canonical plan plus rendered summary artifacts unchanged. Normal PR CI stays plan-only: it does not auto-mutate versions.
+In normal Playbook CI, the reusable action now materializes `.playbook/release-plan.json`, runs `pnpm playbook verify --phase preflight --json --out .playbook/verify-preflight.json`, and fails before `pnpm test` when release/version governance is already canonically blocked. Aligned branches then continue into tests and the later full `pnpm playbook verify --json --out .playbook/verify.json` merge gate. CI still renders one compact Playbook CI Summary from canonical artifacts, appends that operator brief once to the GitHub step summary, and uploads the canonical plan plus rendered summary artifacts unchanged. Normal PR CI stays plan-only: it does not auto-mutate versions.
+
+- Rule: Diff-based release governance should fail before expensive test execution when canonical preflight evidence is already sufficient.
+- Pattern: Release plan -> preflight verify -> tests -> full verify.
+- Failure Mode: Late release-governance failures waste CI time and make correct policy failures look like random downstream breakage.
 
 ## Trusted/manual release prep
 

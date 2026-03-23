@@ -12,6 +12,8 @@ export type VerifyReport = {
     warnings: number;
     baseRef?: string;
     baseSha?: string;
+    phase?: string;
+    ruleIds?: string[];
   };
   failures: Array<{ id: string; message: string; evidence?: string; fix?: string }>;
   warnings: Array<{ id: string; message: string }>;
@@ -26,6 +28,22 @@ type PolicyEvaluation = {
   remediation?: string[];
 };
 
+type VerifyPhase = 'preflight';
+const VERIFY_PHASE_RULES = { preflight: ['release.version-governance'] } as const;
+
+type VerifyRunOptions = {
+  format: 'text' | 'json';
+  ci: boolean;
+  quiet: boolean;
+  explain: boolean;
+  policy: boolean;
+  outFile?: string;
+  runId?: string;
+  help?: boolean;
+  phase?: VerifyPhase;
+  ruleIds?: string[];
+};
+
 const resolveFailureGuidance = (
   verifyRules: Awaited<ReturnType<typeof loadVerifyRules>>,
   failure: VerifyFailure
@@ -36,7 +54,6 @@ const resolveFailureGuidance = (
     remediation: rule?.remediation ?? (failure.fix ? [failure.fix] : undefined)
   };
 };
-
 
 const collectNextActions = (report: VerifyReport, verifyRules: Awaited<ReturnType<typeof loadVerifyRules>>): string[] => {
   const actions = report.failures
@@ -58,7 +75,21 @@ const printCompactNextActions = (actions: string[]): void => {
   }
 };
 
-export const collectVerifyReport = async (cwd: string): Promise<VerifyReport> => engine.verifyRepo(cwd) as VerifyReport;
+const parseRuleIds = (ruleIds: string[] | undefined): string[] | undefined => {
+  const normalized = [...new Set((ruleIds ?? []).flatMap((entry) => entry.split(',')).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  return normalized.length > 0 ? normalized : undefined;
+};
+
+const validateVerifyOptions = (options: VerifyRunOptions): void => {
+  if (options.phase && !(options.phase in VERIFY_PHASE_RULES)) {
+    const supported = Object.keys(VERIFY_PHASE_RULES).sort().join(', ');
+    throw new Error(`playbook verify: unsupported phase "${options.phase}". Supported phases: ${supported}.`);
+  }
+};
+
+export const collectVerifyReport = async (cwd: string, options: { phase?: VerifyPhase; ruleIds?: string[] } = {}): Promise<VerifyReport> => (
+  engine.verifyRepo(cwd, options) as VerifyReport
+);
 
 const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
   if (requestedRunId) {
@@ -74,24 +105,35 @@ const resolveRunId = (cwd: string, requestedRunId: string | undefined): string =
   return engine.createExecutionRun(cwd, intent).id;
 };
 
-export const runVerify = async (
-  cwd: string,
-  options: { format: 'text' | 'json'; ci: boolean; quiet: boolean; explain: boolean; policy: boolean; outFile?: string; runId?: string; help?: boolean }
-): Promise<number> => {
+export const runVerify = async (cwd: string, options: VerifyRunOptions): Promise<number> => {
   if (options.help) {
     printCommandHelp({
       usage: 'playbook verify [options]',
       description: 'Verify repository governance rules and optional policy gating.',
-      options: ['--policy                   Enable policy mode for configured policy rules', '--ci                       CI mode summary in text output', '--explain                  Show why findings matter and remediation in text mode', '--out <path>               Write JSON artifact envelope for verify result', '--run-id <id>              Attach verify step to an existing execution run', '--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--help                     Show help'],
+      options: [
+        '--phase <name>             Run a named low-cost verify subset (currently: preflight)',
+        '--rule <id>                Restrict verify to one or more rule ids (repeatable or comma-separated)',
+        '--policy                   Enable policy mode for configured policy rules',
+        '--ci                       CI mode summary in text output',
+        '--explain                  Show why findings matter and remediation in text mode',
+        '--out <path>               Write JSON artifact envelope for verify result',
+        '--run-id <id>              Attach verify step to an existing execution run',
+        '--json                     Alias for --format=json',
+        '--format <text|json>       Output format',
+        '--quiet                    Suppress success output in text mode',
+        '--help                     Show help'
+      ],
       artifacts: ['.playbook/findings*.json (optional via --out)', '.playbook/execution/runs/** (session runtime state)']
     });
     return ExitCode.Success;
   }
 
+  const normalizedRuleIds = parseRuleIds(options.ruleIds);
+  validateVerifyOptions({ ...options, ruleIds: normalizedRuleIds });
   const tracker = createCommandQualityTracker(cwd, 'verify');
 
   const verifyRules = await loadVerifyRules(cwd);
-  const report = await collectVerifyReport(cwd);
+  const report = await collectVerifyReport(cwd, { phase: options.phase, ruleIds: normalizedRuleIds });
   const nextActions = collectNextActions(report, verifyRules);
 
   const { config } = await Promise.resolve(engine.loadConfig(cwd));
@@ -139,7 +181,7 @@ export const runVerify = async (
   const run = engine.appendExecutionStep(cwd, runId, {
     kind: 'verify',
     status: ok ? 'passed' : 'failed',
-    inputs: { policyMode: inPolicyMode },
+    inputs: { policyMode: inPolicyMode, phase: options.phase, ruleIds: normalizedRuleIds },
     outputs: {
       failures: report.failures.length,
       warnings: report.warnings.length,
@@ -155,7 +197,6 @@ export const runVerify = async (
       }))
     ]
   });
-
 
   const runArtifactPath = engine.executionRunPath(cwd, runId);
   engine.attachSessionRunState(cwd, {
@@ -180,7 +221,7 @@ export const runVerify = async (
       printCompactNextActions(nextActions);
     }
     tracker.finish({
-      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}; phase=${options.phase ?? 'full'}; rules=${normalizedRuleIds?.join(',') ?? 'all'}`,
       artifactsWritten: options.outFile ? [options.outFile] : [],
       downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
       successStatus: ok ? 'success' : 'failure',
@@ -198,7 +239,7 @@ export const runVerify = async (
       }
     }
     tracker.finish({
-      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}; phase=${options.phase ?? 'full'}; rules=${normalizedRuleIds?.join(',') ?? 'all'}`,
       artifactsWritten: options.outFile ? [options.outFile] : [],
       downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
       successStatus: ok ? 'success' : 'failure',
@@ -213,12 +254,15 @@ export const runVerify = async (
     ok,
     exitCode,
     summary: ok ? 'Verification passed.' : inPolicyMode ? 'Policy verification failed.' : 'Verification failed.',
+    phase: options.phase,
+    selectedRules: normalizedRuleIds ?? report.summary.ruleIds,
     findings: [
       ...report.failures.map((failure: VerifyFailure) => ({
         ...resolveFailureGuidance(verifyRules, failure),
         id: inPolicyMode ? `verify.rule.${failure.id}` : `verify.failure.${failure.id}`,
         level: inPolicyMode ? (policyFailureIds.has(failure.id) ? ('error' as const) : ('info' as const)) : ('error' as const),
-        message: failure.message
+        message: failure.message,
+        evidence: failure.evidence
       })),
       ...report.warnings.map((warning: VerifyWarning) => ({
         id: `verify.warning.${warning.id}`,
@@ -233,7 +277,7 @@ export const runVerify = async (
   if (options.format === 'json' && options.outFile) {
     emitJsonOutput({ cwd, command: 'verify', payload: buildResult(resultPayload), outFile: options.outFile });
     tracker.finish({
-      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+      inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}; phase=${options.phase ?? 'full'}; rules=${normalizedRuleIds?.join(',') ?? 'all'}`,
       artifactsWritten: options.outFile ? [options.outFile] : [],
       downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
       successStatus: ok ? 'success' : 'failure',
@@ -251,7 +295,7 @@ export const runVerify = async (
   });
 
   tracker.finish({
-    inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}`,
+    inputsSummary: `policy=${inPolicyMode ? 'on' : 'off'}; phase=${options.phase ?? 'full'}; rules=${normalizedRuleIds?.join(',') ?? 'all'}`,
     artifactsWritten: options.outFile ? [options.outFile] : [],
     downstreamArtifactsProduced: options.outFile ? [options.outFile] : [],
     successStatus: ok ? 'success' : 'failure',

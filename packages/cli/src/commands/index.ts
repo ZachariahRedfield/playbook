@@ -218,6 +218,8 @@ const commandRunners: Record<
       policy: parseFlag(commandArgs, "--policy"),
       outFile: parseOptionValue(commandArgs, "--out"),
       runId: parseOptionValue(commandArgs, "--run-id"),
+      phase: parseOptionValue(commandArgs, "--phase") as never,
+      ruleIds: commandArgs.flatMap((arg, index, allArgs) => arg == "--rule" && allArgs[index + 1] ? [String(allArgs[index + 1])] : []),
       help: parseFlag(commandArgs, "--help") || parseFlag(commandArgs, "-h"),
     });
   },

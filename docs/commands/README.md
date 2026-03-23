@@ -22,7 +22,10 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - `pnpm playbook workers submit --from <path> --json` is the canonical worker-receipt seam: worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
 - `pnpm playbook verify --json` now fails closed for protected singleton-doc governance when existing governed artifacts show unresolved consolidation, reviewed-plan gaps, consolidation conflicts, or guarded-apply drift on reviewed singleton-doc targets. `pnpm playbook verify --policy --json` inherits the same gate through the default `protected-doc.governance` policy rule.
 - `pnpm playbook test-triage --input .playbook/ci-failure.log` is the canonical CI/test failure summarization surface: it preserves raw logs while emitting deterministic `.playbook/failure-summary.json` / `.playbook/failure-summary.md` artifacts and a copy-paste-ready markdown brief for GitHub step summaries.
-- `pnpm playbook release plan --json --out .playbook/release-plan.json` is now auto-materialized in normal Playbook CI whenever release governance is present or the repository is eligible for it; CI renders one compact `.playbook/ci-summary.md` operator brief from canonical artifacts and keeps version mutation on the reviewed `apply --from-plan` boundary.
+- `pnpm playbook release plan --json --out .playbook/release-plan.json` is now auto-materialized in normal Playbook CI whenever release governance is present or the repository is eligible for it; CI immediately follows with `pnpm playbook verify --phase preflight --json --out .playbook/verify-preflight.json`, fails before `pnpm test` when canonical release/version evidence is already blocking, then still runs the later full `.playbook/verify.json` gate on aligned branches.
+- Rule: Diff-based release governance should fail before expensive test execution when canonical preflight evidence is already sufficient.
+- Pattern: Release plan -> preflight verify -> tests -> full verify.
+- Failure Mode: Late release-governance failures waste CI time and make correct policy failures look like random downstream breakage.
 
 ## Product-facing command surface (current)
 
