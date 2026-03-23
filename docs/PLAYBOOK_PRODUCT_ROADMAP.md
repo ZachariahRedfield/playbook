@@ -2568,3 +2568,8 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Rule — Worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
 - Pattern — Assign -> submit -> consolidate -> plan -> apply is the safe parallel-doc/runtime loop.
 - Failure Mode — Parallel workers without a receipt/submit seam force humans to reconstruct state manually and break deterministic orchestration.
+
+
+- Rule: Human CI surfaces should summarize canonical artifacts, not mirror every artifact one-to-one.
+- Pattern: Many machine artifacts, one operator brief.
+- Failure Mode: Accurate but fragmented CI reporting creates review drag even when each artifact is correct.

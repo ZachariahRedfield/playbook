@@ -13,7 +13,7 @@
   - `major` only when an explicit configured breaking marker is present
 - Emits evidence-backed reasons for every file, package, and version group.
 - Writes a deterministic reviewed mutation artifact sorted by path/name.
-- Lets CI materialize the same canonical `.playbook/release-plan.json` artifact early, then render one compact release summary from that artifact instead of re-implementing semver logic in workflow YAML.
+- Lets CI materialize the same canonical `.playbook/release-plan.json` artifact early, then feed one compact Playbook CI Summary renderer instead of re-implementing semver logic or posting separate release-only comments in workflow YAML.
 - Precompiles bounded `apply --from-plan` tasks for exactly three mutation classes:
   - package `version` field updates
   - linked workspace dependency spec rewrites when the reviewed plan bumps the referenced package version
@@ -58,7 +58,7 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 pnpm playbook verify --json
 ```
 
-In normal Playbook CI, the reusable action now materializes `.playbook/release-plan.json` before `verify` whenever release governance already exists or the repository is eligible for installable version governance. CI then renders a compact release summary from that canonical artifact, appends it to the GitHub step summary, and uploads both the plan and rendered markdown summary as artifacts. Normal PR CI stays plan-only: it does not auto-mutate versions.
+In normal Playbook CI, the reusable action now materializes `.playbook/release-plan.json` before `verify` whenever release governance already exists or the repository is eligible for installable version governance. CI then feeds that canonical artifact into one compact Playbook CI Summary alongside verify, merge-guard, and optional failure/remediation artifacts, and appends the unified summary to the GitHub step summary once. Normal PR CI stays plan-only: it does not auto-mutate versions.
 
 ## Trusted/manual release prep
 
@@ -70,3 +70,5 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 ```
 
 Then the workflow validates that the resulting diff contains only reviewed package manifest version rewrites, linked workspace dependency rewrites, and the managed `docs/CHANGELOG.md` release-notes block before it force-updates one managed `release/prep`-style branch and opens or updates a single release PR. This keeps release mutation on the existing reviewed `apply --from-plan` boundary instead of introducing a second executor.
+
+- Pattern: Many machine artifacts, one operator brief.

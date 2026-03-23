@@ -202,16 +202,6 @@ runs:
         echo "+ node packages/cli/dist/main.js release plan --json --out .playbook/release-plan.json > /dev/null"
         node packages/cli/dist/main.js release plan --json --out .playbook/release-plan.json > /dev/null
 
-    - name: Surface compact release summary from canonical artifact
-      if: steps.release-governance.outputs.eligible == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        node "$GITHUB_WORKSPACE/.github/scripts/render-release-summary.cjs" \
-          --plan .playbook/release-plan.json \
-          --out .playbook/release-summary.md \
-          --comment-out .playbook/release-summary-comment.md
-
     - name: Run tests and capture deterministic failure log
       id: run-tests
       shell: bash
@@ -244,10 +234,6 @@ runs:
         cp .playbook/failure-summary.json .playbook/test-triage.json
         echo "+ pnpm playbook test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md"
         pnpm playbook test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md
-        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
-          cat .playbook/failure-summary.md >> "$GITHUB_STEP_SUMMARY"
-          printf '\n\n' >> "$GITHUB_STEP_SUMMARY"
-        fi
 
     - name: Evaluate CI remediation policy gates
       id: remediation-policy
@@ -349,39 +335,19 @@ runs:
           exit "$verify_exit_code"
         fi
 
-    - name: Surface compact verify summary from canonical artifact
+    - name: Render unified Playbook CI Summary from canonical artifacts
       if: always()
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        node - <<'NODE'
-        const fs = require('node:fs');
-        const summaryPath = process.env.GITHUB_STEP_SUMMARY;
-        const verifyPath = '.playbook/verify.json';
-        if (!summaryPath || !fs.existsSync(verifyPath)) process.exit(0);
-        const payload = JSON.parse(fs.readFileSync(verifyPath, 'utf8'));
-        const findings = Array.isArray(payload.findings) ? payload.findings.filter((finding) => finding.level === 'error').slice(0, 5) : [];
-        const nextActions = Array.isArray(payload.nextActions) ? payload.nextActions.slice(0, 3) : [];
-        const lines = ['## Playbook Verify', '', `- Status: ${payload.ok ? 'PASS' : 'FAIL'}`, `- Artifact: \`.playbook/verify.json\``];
-        if (findings.length > 0) {
-          lines.push('- Findings:');
-          for (const finding of findings) lines.push(`  - ${finding.id}: ${finding.message}`);
-        }
-        if (nextActions.length > 0) {
-          lines.push('- Next actions:');
-          for (const action of nextActions) lines.push(`  - ${action}`);
-        }
-        fs.appendFileSync(summaryPath, `${lines.join('\n')}\n\n`, 'utf8');
-        NODE
-
-    - name: Surface canonical merge-guard summary
-      if: always()
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        node "$GITHUB_WORKSPACE/.github/scripts/render-verify-merge-guard-summary.cjs" \
+        node "$GITHUB_WORKSPACE/.github/scripts/render-playbook-ci-summary.cjs" \
           --verify .playbook/verify.json \
-          --out .playbook/merge-guard-comment.md
+          --release-plan .playbook/release-plan.json \
+          --remediation-policy .playbook/ci-remediation-policy.json \
+          --failure-summary .playbook/failure-summary.json \
+          --remediation-status .playbook/remediation-status.json \
+          --out .playbook/ci-summary.md \
+          --comment-out .playbook/ci-summary-comment.md
 
     - name: Validate roadmap contract (deterministic delivery gate)
       shell: bash

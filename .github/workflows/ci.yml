@@ -82,46 +82,12 @@ jobs:
             .playbook/release-summary-comment.md
             .playbook/merge-guard-comment.md
 
-      - name: Render Playbook remediation PR comment
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.playbook-ci.outputs.test-exit-code != '0'
-        shell: bash
-        run: |
-          node .github/scripts/render-remediation-pr-comment.cjs --out .playbook/remediation-comment.md
-
-      - name: Post sticky Playbook remediation PR comment
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.playbook-ci.outputs.test-exit-code != '0'
+      - name: Post sticky Playbook CI Summary PR comment
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && hashFiles('.playbook/ci-summary-comment.md') != ''
         uses: actions/github-script@v7
         env:
-          PLAYBOOK_COMMENT_MARKER: "<!-- playbook:ci-remediation-comment -->"
-          PLAYBOOK_COMMENT_FILE: ".playbook/remediation-comment.md"
-        with:
-          script: |
-            const fs = require('node:fs');
-            const { upsertStickyPrComment } = require('./.github/scripts/upsert-sticky-pr-comment.cjs');
-            const marker = process.env.PLAYBOOK_COMMENT_MARKER;
-            const body = fs.readFileSync(process.env.PLAYBOOK_COMMENT_FILE, 'utf8').trimEnd();
-            const { owner, repo } = context.repo;
-            const result = await upsertStickyPrComment({
-              github,
-              owner,
-              repo,
-              issue_number: context.issue.number,
-              marker,
-              body,
-            });
-            core.info(`${result.action === 'updated' ? 'Updated' : 'Created'} Playbook remediation PR comment: ${result.id}`);
-
-      - name: Skip remediation PR comment for fork pull requests
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && steps.playbook-ci.outputs.test-exit-code != '0'
-        run: |
-          echo "Skipping remediation sticky comment: pull_request originates from a fork and may not have pull-requests:write permission."
-
-      - name: Post sticky Playbook release summary PR comment
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && hashFiles('.playbook/release-summary-comment.md') != ''
-        uses: actions/github-script@v7
-        env:
-          PLAYBOOK_COMMENT_MARKER: "<!-- playbook:release-summary -->"
-          PLAYBOOK_COMMENT_FILE: ".playbook/release-summary-comment.md"
+          PLAYBOOK_COMMENT_MARKER: "<!-- playbook:ci-summary -->"
+          PLAYBOOK_COMMENT_FILE: ".playbook/ci-summary-comment.md"
         with:
           script: |
             const fs = require('node:fs');
@@ -136,39 +102,12 @@ jobs:
               marker: process.env.PLAYBOOK_COMMENT_MARKER,
               body,
             });
-            core.info(`${result.action === 'updated' ? 'Updated' : 'Created'} Playbook release summary PR comment: ${result.id}`);
+            core.info(`${result.action === 'updated' ? 'Updated' : 'Created'} Playbook CI Summary PR comment: ${result.id}`);
 
-      - name: Skip release summary PR comment for fork pull requests
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && hashFiles('.playbook/release-summary-comment.md') != ''
+      - name: Skip Playbook CI Summary PR comment for fork pull requests
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && hashFiles('.playbook/ci-summary-comment.md') != ''
         run: |
-          echo "Skipping release summary sticky comment: pull_request originates from a fork and may not have pull-requests:write permission."
-
-      - name: Post sticky Playbook merge-guard PR comment
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && hashFiles('.playbook/merge-guard-comment.md') != ''
-        uses: actions/github-script@v7
-        env:
-          PLAYBOOK_COMMENT_MARKER: "<!-- playbook:merge-guard-summary -->"
-          PLAYBOOK_COMMENT_FILE: ".playbook/merge-guard-comment.md"
-        with:
-          script: |
-            const fs = require('node:fs');
-            const { upsertStickyPrComment } = require('./.github/scripts/upsert-sticky-pr-comment.cjs');
-            const body = fs.readFileSync(process.env.PLAYBOOK_COMMENT_FILE, 'utf8').trimEnd();
-            const { owner, repo } = context.repo;
-            const result = await upsertStickyPrComment({
-              github,
-              owner,
-              repo,
-              issue_number: context.issue.number,
-              marker: process.env.PLAYBOOK_COMMENT_MARKER,
-              body,
-            });
-            core.info(`${result.action === 'updated' ? 'Updated' : 'Created'} Playbook merge-guard PR comment: ${result.id}`);
-
-      - name: Skip merge-guard PR comment for fork pull requests
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && hashFiles('.playbook/merge-guard-comment.md') != ''
-        run: |
-          echo "Skipping merge-guard sticky comment: pull_request originates from a fork and may not have pull-requests:write permission."
+          echo "Skipping Playbook CI Summary sticky comment: pull_request originates from a fork and may not have pull-requests:write permission."
 
   demo-validate:
     runs-on: ubuntu-latest
