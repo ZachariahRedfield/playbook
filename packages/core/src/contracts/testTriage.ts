@@ -8,7 +8,14 @@ export const testTriageFailureKinds = [
   'ordering_drift',
   'missing_artifact',
   'environment_limitation',
-  'likely_regression'
+  'likely_regression',
+  'missing_expected_finding',
+  'contract_drift',
+  'test_expectation_drift',
+  'lint_failure',
+  'typecheck_failure',
+  'runtime_failure',
+  'recursive_workspace_failure'
 ] as const;
 export type TestTriageFailureKind = (typeof testTriageFailureKinds)[number];
 
@@ -19,6 +26,18 @@ export type TestTriageFailureModeNote = {
   rule: string;
   pattern: string;
   failure_mode: string;
+};
+
+export type TestTriageFailure = {
+  type: TestTriageFailureKind;
+  workspace: string | null;
+  suite: string | null;
+  test: string | null;
+  file: string | null;
+  line: number | null;
+  column: number | null;
+  message: string;
+  likelyCauses: string[];
 };
 
 export type TestTriageFinding = {
@@ -36,6 +55,7 @@ export type TestTriageFinding = {
   repair_class: TestTriageRepairClass;
   summary: string;
   evidence: string[];
+  normalized_failure: TestTriageFailure;
 };
 
 export type TestTriageRepairPlan = {
@@ -48,11 +68,17 @@ export type TestTriageArtifact = {
   schemaVersion: typeof TEST_TRIAGE_SCHEMA_VERSION;
   kind: typeof TEST_TRIAGE_ARTIFACT_KIND;
   command: 'test-triage';
+  status: 'failed' | 'passed' | 'unknown';
+  summary: string;
+  primaryFailureClass: TestTriageFailureKind | 'unknown';
   generatedAt: string;
   source: {
     input: 'file' | 'stdin';
     path: string | null;
   };
+  failures: TestTriageFailure[];
+  crossCuttingDiagnosis: string[];
+  recommendedNextChecks: string[];
   findings: TestTriageFinding[];
   rerun_plan: {
     strategy: 'file_first_then_package_then_workspace';

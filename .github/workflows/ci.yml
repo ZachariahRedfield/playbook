@@ -65,6 +65,8 @@ jobs:
           path: |
             .playbook/ci-failure.log
             .playbook/ci-remediation-policy.json
+            .playbook/failure-summary.json
+            .playbook/failure-summary.md
             .playbook/test-triage.json
             .playbook/test-fix-plan.json
             .playbook/test-autofix-apply.json
@@ -161,6 +163,8 @@ jobs:
           path: |
             .playbook/ci-failure.log
             .playbook/ci-remediation-policy.json
+            .playbook/failure-summary.json
+            .playbook/failure-summary.md
             .playbook/test-triage.json
             .playbook/test-fix-plan.json
             .playbook/test-autofix-apply.json

@@ -19,7 +19,10 @@ describe('test triage engine', () => {
       'pnpm --filter @fawxzzy/playbook test',
       'pnpm -r test'
     ]);
-    expect(renderTestTriageText(artifact)).toContain('Rule / Pattern / Failure Mode');
+    expect(renderTestTriageText(artifact)).toContain('## Governance');
+    expect(renderTestTriageText(artifact)).toContain('- Rule:');
+    expect(renderTestTriageText(artifact)).toContain('- Pattern:');
+    expect(renderTestTriageText(artifact)).toContain('- Failure Mode:');
   });
 
   it('classifies optional esbuild dependency failures as environment limitations', () => {

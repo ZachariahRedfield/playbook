@@ -19,6 +19,9 @@
 - WHAT: Added deterministic `autofix_confidence` scoring, `confidence_reasoning`, `--dry-run` support, and confidence-threshold mutation gating to `test-autofix`, then wired CI/PR reporting to render those artifact-backed decisions while protected branches stay dry-run-only. WHY: Self-repair earns trust only when mutation is explainable, previewable, and gated by canonical runtime artifacts rather than workflow-local heuristics.
 # Changelog
 
+- WHAT: Expanded `pnpm playbook test-triage` into a first-class failure-summary contract that accepts stdin, saved logs, Vitest/pnpm recursive failures, and GitHub Actions annotations, and emits deterministic `summary`, `primaryFailureClass`, `failures[]`, `crossCuttingDiagnosis[]`, and `recommendedNextChecks[]` fields plus markdown rendering. WHY: CI/test failures become copy-paste-ready and machine-readable without replacing the raw audit log.
+- WHAT: Updated the reusable Playbook CI transport to emit `.playbook/failure-summary.json`, `.playbook/failure-summary.md`, `.playbook/test-triage.json`, and GitHub step summary content alongside `.playbook/ci-failure.log`. WHY: Every Playbook-managed CI/test failure now preserves raw output while publishing a normalized summary contract for humans, automation, and AI remediation loops.
+
 ## Unreleased
 - WHAT: Relaxed the CLI verify-rule loader test to require baseline core-rule membership plus uniqueness instead of freezing the entire derived registry. WHY: `coreVerifyRules` is an intentionally growing registry, so new core governance rules should not create false-red test failures across multiple loader surfaces.
 - Rule: Registry-growth tests should assert baseline required members plus uniqueness.

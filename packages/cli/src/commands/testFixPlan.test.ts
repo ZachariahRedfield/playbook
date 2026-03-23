@@ -89,17 +89,27 @@ describe('runTestFixPlan', () => {
 
     const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const exitCode = await runTestFixPlan(repo, { format: 'json', quiet: false, fromTriage: '.playbook/triage.json' });
-    const payload = JSON.parse(String(spy.mock.calls.at(-1)?.[0])) as { tasks: unknown[]; excluded: Array<{ reason: string; failure_kind: string }>; summary: { excluded_findings: number } };
+    const payload = JSON.parse(String(spy.mock.calls.at(-1)?.[0])) as { tasks: unknown[]; excluded: Array<{ reason: string; failure_kind: string; repair_class: string; summary: string }>; summary: { excluded_findings: number } };
 
     expect(exitCode).toBe(ExitCode.Success);
     expect(payload.tasks).toEqual([]);
-    expect(payload.summary.excluded_findings).toBe(1);
-    expect(payload.excluded).toEqual([
+    expect(payload.excluded).toHaveLength(2);
+    expect(payload.summary.excluded_findings).toBe(payload.excluded.length);
+    expect(payload.summary.excluded_findings).toBe(2);
+    expect(payload.excluded).toEqual(expect.arrayContaining([
       expect.objectContaining({
         reason: 'risky_or_review_required',
-        failure_kind: 'environment_limitation'
+        failure_kind: 'recursive_workspace_failure',
+        repair_class: 'review_required',
+        summary: 'ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL @fawxzzy/playbook test: `node ./scripts/run-tests.mjs`'
+      }),
+      expect.objectContaining({
+        reason: 'risky_or_review_required',
+        failure_kind: 'environment_limitation',
+        repair_class: 'review_required',
+        summary: 'Error: Cannot find module @esbuild/linux-x64'
       })
-    ]);
+    ]));
     spy.mockRestore();
   });
 });

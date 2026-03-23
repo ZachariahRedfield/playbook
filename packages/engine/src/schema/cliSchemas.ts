@@ -2181,11 +2181,14 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'kind', 'command', 'generatedAt', 'source', 'findings', 'rerun_plan', 'repair_plan'],
+        required: ['schemaVersion', 'kind', 'command', 'status', 'summary', 'primaryFailureClass', 'generatedAt', 'source', 'failures', 'crossCuttingDiagnosis', 'recommendedNextChecks', 'findings', 'rerun_plan', 'repair_plan'],
         properties: {
           schemaVersion: { const: '1.0' },
           kind: { const: 'test-triage' },
           command: { const: 'test-triage' },
+          status: { enum: ['failed', 'passed', 'unknown'] },
+          summary: { type: 'string' },
+          primaryFailureClass: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression', 'missing_expected_finding', 'contract_drift', 'test_expectation_drift', 'lint_failure', 'typecheck_failure', 'runtime_failure', 'recursive_workspace_failure', 'unknown'] },
           generatedAt: { type: 'string' },
           source: {
             type: 'object',
@@ -2196,14 +2199,36 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
               path: { type: ['string', 'null'] }
             }
           },
+          failures: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['type', 'workspace', 'suite', 'test', 'file', 'line', 'column', 'message', 'likelyCauses'],
+              properties: {
+                type: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression', 'missing_expected_finding', 'contract_drift', 'test_expectation_drift', 'lint_failure', 'typecheck_failure', 'runtime_failure', 'recursive_workspace_failure'] },
+                workspace: { type: ['string', 'null'] },
+                suite: { type: ['string', 'null'] },
+                test: { type: ['string', 'null'] },
+                file: { type: ['string', 'null'] },
+                line: { type: ['integer', 'null'] },
+                column: { type: ['integer', 'null'] },
+                message: { type: 'string' },
+                likelyCauses: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          },
+          crossCuttingDiagnosis: { type: 'array', items: { type: 'string' } },
+          recommendedNextChecks: { type: 'array', items: { type: 'string' } },
           findings: {
             type: 'array',
             items: {
               type: 'object',
               additionalProperties: false,
-              required: ['failure_kind', 'confidence', 'package', 'test_file', 'test_name', 'likely_files_to_modify', 'suggested_fix_strategy', 'verification_commands', 'docs_update_recommendation', 'rule_pattern_failure_mode', 'repair_class', 'summary', 'evidence'],
+              required: ['failure_signature', 'failure_kind', 'confidence', 'package', 'test_file', 'test_name', 'likely_files_to_modify', 'suggested_fix_strategy', 'verification_commands', 'docs_update_recommendation', 'rule_pattern_failure_mode', 'repair_class', 'summary', 'evidence', 'normalized_failure'],
               properties: {
-                failure_kind: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression'] },
+                failure_signature: { type: 'string' },
+                failure_kind: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression', 'missing_expected_finding', 'contract_drift', 'test_expectation_drift', 'lint_failure', 'typecheck_failure', 'runtime_failure', 'recursive_workspace_failure'] },
                 confidence: { type: 'number' },
                 package: { type: ['string', 'null'] },
                 test_file: { type: ['string', 'null'] },
@@ -2224,7 +2249,23 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
                 },
                 repair_class: { enum: ['autofix_plan_only', 'review_required'] },
                 summary: { type: 'string' },
-                evidence: { type: 'array', items: { type: 'string' } }
+                evidence: { type: 'array', items: { type: 'string' } },
+                normalized_failure: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['type', 'workspace', 'suite', 'test', 'file', 'line', 'column', 'message', 'likelyCauses'],
+                  properties: {
+                    type: { enum: ['snapshot_drift', 'stale_assertion', 'fixture_drift', 'ordering_drift', 'missing_artifact', 'environment_limitation', 'likely_regression', 'missing_expected_finding', 'contract_drift', 'test_expectation_drift', 'lint_failure', 'typecheck_failure', 'runtime_failure', 'recursive_workspace_failure'] },
+                    workspace: { type: ['string', 'null'] },
+                    suite: { type: ['string', 'null'] },
+                    test: { type: ['string', 'null'] },
+                    file: { type: ['string', 'null'] },
+                    line: { type: ['integer', 'null'] },
+                    column: { type: ['integer', 'null'] },
+                    message: { type: 'string' },
+                    likelyCauses: { type: 'array', items: { type: 'string' } }
+                  }
+                }
               }
             }
           },
@@ -2251,34 +2292,11 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       }
     ]
   },
-
 };
 
 export const CLI_SCHEMA_COMMANDS: readonly CliSchemaCommand[] = Object.freeze(Object.keys(cliSchemas) as CliSchemaCommand[]);
 
-export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => ({
-  rules: cliSchemas.rules,
-  explain: cliSchemas.explain,
-  index: cliSchemas.index,
-  graph: cliSchemas.graph,
-  verify: cliSchemas.verify,
-  plan: cliSchemas.plan,
-  context: cliSchemas.context,
-  'ai-context': cliSchemas['ai-context'],
-  'ai-contract': cliSchemas['ai-contract'],
-  doctor: cliSchemas.doctor,
-  'analyze-pr': cliSchemas['analyze-pr'],
-  knowledge: cliSchemas.knowledge,
-  docs: cliSchemas.docs,
-  contracts: cliSchemas.contracts,
-  ignore: cliSchemas.ignore,
-  learn: cliSchemas.learn,
-  query: cliSchemas.query,
-  'test-triage': cliSchemas['test-triage'],
-  'test-fix-plan': cliSchemas['test-fix-plan'],
-  'test-autofix': cliSchemas['test-autofix'],
-  'remediation-status': cliSchemas['remediation-status']
-});
+export const getCliSchemas = (): Record<CliSchemaCommand, JsonSchema> => cliSchemas;
 
 export const getCliSchema = (command: CliSchemaCommand): JsonSchema => cliSchemas[command];
 

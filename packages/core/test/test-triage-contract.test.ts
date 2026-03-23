@@ -12,7 +12,14 @@ describe('test triage contracts', () => {
       'ordering_drift',
       'missing_artifact',
       'environment_limitation',
-      'likely_regression'
+      'likely_regression',
+      'missing_expected_finding',
+      'contract_drift',
+      'test_expectation_drift',
+      'lint_failure',
+      'typecheck_failure',
+      'runtime_failure',
+      'recursive_workspace_failure'
     ]);
     expect(testTriageRepairClasses).toEqual(['autofix_plan_only', 'review_required']);
   });

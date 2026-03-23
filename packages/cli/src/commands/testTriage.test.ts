@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { PassThrough } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { ExitCode } from '../lib/cliContract.js';
 import { listRegisteredCommands } from './index.js';
@@ -26,20 +27,45 @@ describe('runTestTriage', () => {
 
     expect(firstExit).toBe(ExitCode.Success);
     expect(secondExit).toBe(ExitCode.Success);
-    expect(second).toBe(first);
+    expect(JSON.parse(second)).toEqual(JSON.parse(first));
     spy.mockRestore();
   });
 
-  it('returns a stable json error when the input path is missing', async () => {
+  it('accepts stdin when --input is omitted', async () => {
+    const repo = createRepo();
+    const stdin = new PassThrough();
+    stdin.end([
+      '@fawxzzy/playbook lint: Error: eslint found 2 problems',
+      'ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL @fawxzzy/playbook lint: `eslint .`'
+    ].join('\n'));
+    Object.defineProperty(stdin, 'isTTY', { value: false });
+    const originalStdin = process.stdin;
+    Object.defineProperty(process, 'stdin', { value: stdin, configurable: true });
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runTestTriage(repo, { format: 'json', quiet: false });
+    const payload = JSON.parse(String(spy.mock.calls.at(-1)?.[0])) as Record<string, unknown>;
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(payload.source).toEqual({ input: 'stdin', path: null });
+    expect(payload.status).toBe('failed');
+    Object.defineProperty(process, 'stdin', { value: originalStdin, configurable: true });
+    spy.mockRestore();
+  });
+
+  it('returns a stable json error when no input source is available', async () => {
     const repo = createRepo();
     const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const originalIsTTY = process.stdin.isTTY;
+    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
 
     const exitCode = await runTestTriage(repo, { format: 'json', quiet: false });
     const payload = JSON.parse(String(spy.mock.calls.at(-1)?.[0])) as Record<string, unknown>;
 
     expect(exitCode).toBe(ExitCode.Failure);
     expect(payload.command).toBe('test-triage');
-    expect(String(payload.error)).toContain('--input');
+    expect(String(payload.error)).toContain('provide --input');
+    Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true });
     spy.mockRestore();
   });
 });
