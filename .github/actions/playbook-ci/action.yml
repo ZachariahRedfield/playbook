@@ -253,10 +253,6 @@ runs:
         cp .playbook/failure-summary.json .playbook/test-triage.json
         echo "+ pnpm playbook test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md"
         pnpm playbook test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md
-        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
-          cat .playbook/failure-summary.md >> "$GITHUB_STEP_SUMMARY"
-          printf '\n\n' >> "$GITHUB_STEP_SUMMARY"
-        fi
 
     - name: Evaluate CI remediation policy gates
       if: inputs.execution-path == 'ci'
@@ -360,6 +356,8 @@ runs:
           exit "$verify_exit_code"
         fi
 
+    - name: Render unified Playbook CI Summary from canonical artifacts
+      if: always()
     - name: Surface compact verify summary from canonical artifact
       if: inputs.execution-path == 'ci' && always()
       shell: bash
@@ -390,9 +388,14 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        node "$GITHUB_WORKSPACE/.github/scripts/render-verify-merge-guard-summary.cjs" \
+        node "$GITHUB_WORKSPACE/.github/scripts/render-playbook-ci-summary.cjs" \
           --verify .playbook/verify.json \
-          --out .playbook/merge-guard-comment.md
+          --release-plan .playbook/release-plan.json \
+          --remediation-policy .playbook/ci-remediation-policy.json \
+          --failure-summary .playbook/failure-summary.json \
+          --remediation-status .playbook/remediation-status.json \
+          --out .playbook/ci-summary.md \
+          --comment-out .playbook/ci-summary-comment.md
 
     - name: Validate roadmap contract (deterministic delivery gate)
       if: inputs.execution-path == 'ci'

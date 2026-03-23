@@ -22,7 +22,7 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - `pnpm playbook workers submit --from <path> --json` is the canonical worker-receipt seam: worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
 - `pnpm playbook verify --json` now fails closed for protected singleton-doc governance when existing governed artifacts show unresolved consolidation, reviewed-plan gaps, consolidation conflicts, or guarded-apply drift on reviewed singleton-doc targets. `pnpm playbook verify --policy --json` inherits the same gate through the default `protected-doc.governance` policy rule.
 - `pnpm playbook test-triage --input .playbook/ci-failure.log` is the canonical CI/test failure summarization surface: it preserves raw logs while emitting deterministic `.playbook/failure-summary.json` / `.playbook/failure-summary.md` artifacts and a copy-paste-ready markdown brief for GitHub step summaries.
-- `pnpm playbook release plan --json --out .playbook/release-plan.json` is now auto-materialized in normal Playbook CI whenever release governance is present or the repository is eligible for it; CI renders one compact `.playbook/release-summary.md` brief from the canonical artifact and keeps version mutation on the reviewed `apply --from-plan` boundary.
+- `pnpm playbook release plan --json --out .playbook/release-plan.json` is now auto-materialized in normal Playbook CI whenever release governance is present or the repository is eligible for it; CI folds release, verify, merge-guard, and failure/remediation signals into one compact `.playbook/ci-summary.md` / `.playbook/ci-summary-comment.md` operator brief while keeping version mutation on the reviewed `apply --from-plan` boundary.
 
 ## Product-facing command surface (current)
 
@@ -401,7 +401,7 @@ pnpm playbook ask "what modules are affected by this?" --repo-context --json
 - Keeps `--json` as the canonical analysis contract and applies a single formatter pipeline for `--format text|json|github-comment|github-review`.
 - Supports formatter exports, including `--format github-comment` for sticky PR summaries and `--format github-review` for inline review diagnostics on specific files/lines without adding new analysis inference.
 - GitHub Actions transport posts the summary formatter output as one sticky Playbook PR comment (`<!-- playbook:analyze-pr-comment -->`) and synchronizes inline diagnostics (`<!-- playbook:analyze-pr-inline -->`) so new findings are added, unchanged findings are not duplicated, and resolved findings are removed.
-- GitHub Actions CI also captures failed `pnpm test` output to `.playbook/ci-failure.log`, evaluates explicit mutation gates, suppresses repeated autofix attempts for the same commit SHA after the first workflow-run attempt unless an explicit operator retry override is present, keeps protected branches and protected PR targets dry-run by default, uploads a standardized remediation artifact set with retention, and posts one sticky remediation summary comment (`<!-- playbook:ci-remediation-comment -->`) that renders only deterministic remediation artifacts.
+- GitHub Actions CI also captures failed `pnpm test` output to `.playbook/ci-failure.log`, evaluates explicit mutation gates, suppresses repeated autofix attempts for the same commit SHA after the first workflow-run attempt unless an explicit operator retry override is present, keeps protected branches and protected PR targets dry-run by default, uploads the same canonical artifact set with retention, and posts one sticky Playbook CI Summary comment (`<!-- playbook:ci-summary -->`) that renders only canonical CI artifacts.
 - Artifact contract: `analyze-pr` consumes `.playbook/repo-index.json`, so CI runs `pnpm playbook index` before PR analysis; creating `.playbook/` alone is insufficient.
 - Diff contract: CI should pass explicit base refs (for example `--base origin/${{ github.base_ref }}`) and use `fetch-depth: 0` checkout for deterministic PR diff analysis.
 
@@ -690,3 +690,7 @@ Docs command references:
 - Rule: Worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
 - Pattern: Assign -> submit -> consolidate -> plan -> apply is the safe parallel-doc/runtime loop.
 - Failure Mode: Parallel workers without a receipt/submit seam force humans to reconstruct state manually and break deterministic orchestration.
+
+- Rule: Human CI surfaces should summarize canonical artifacts, not mirror every artifact one-to-one.
+- Pattern: Many machine artifacts, one operator brief.
+- Failure Mode: Accurate but fragmented CI reporting creates review drag even when each artifact is correct.

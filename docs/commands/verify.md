@@ -43,4 +43,6 @@ It checks three deterministic cases from repository evidence:
 
 In text mode, failed runs also print compact `Next actions` so CI and local shells can reuse the canonical verify output instead of custom workflow logic.
 
-Normal Playbook CI now materializes `.playbook/release-plan.json` before `verify` whenever release governance is present or the repository is eligible for it, and renders a compact release summary from that artifact into the step summary / PR transport. That summary is advisory and artifact-backed; `verify` still owns merge authority.
+Normal Playbook CI now materializes `.playbook/release-plan.json` before `verify` whenever release governance is present or the repository is eligible for it, then renders one compact Playbook CI Summary from `.playbook/verify.json`, `.playbook/release-plan.json`, and any failure/remediation artifacts. The summary is advisory and artifact-backed; `verify` still owns merge authority.
+
+- Rule: Human CI surfaces should summarize canonical artifacts, not mirror every artifact one-to-one.
