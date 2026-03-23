@@ -286,6 +286,7 @@ Practical initiatives to stage from this doctrine:
    - Add a lightweight architecture decision rubric that records governing constraints, competing cost surfaces, expected interface pressure, and why a chosen structure fits that environment.
 2. **Postmortem reconsolidation loop**
    - Add a postmortem template/flow that explicitly distinguishes observed facts, interpreted causes, changed mental models, and the doctrine candidates that should or should not be promoted.
+   - Delivered: repo-scoped postmortems can now use `docs/postmortems/PLAYBOOK_POSTMORTEM_TEMPLATE.md`, and `pnpm playbook docs audit --json` performs a lightweight path-scoped heading check only for `docs/postmortems/*.md`.
 3. **Documentation revision protocol**
    - Add a docs maintenance protocol that separates `fact`, `interpretation`, and `narrative` layers so updates can refine meaning without blurring truth surfaces.
 4. **Retrieval-based review workflow**

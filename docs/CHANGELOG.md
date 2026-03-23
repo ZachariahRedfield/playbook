@@ -855,3 +855,4 @@
 - Pattern: Artifact-rich, prompt-thin orchestration keeps operators fast.
 - Failure Mode: Dumping full machine context into worker prompts lowers signal and increases drift.
 <!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->
+- WHAT: Added a canonical repo-scoped postmortem template at `docs/postmortems/PLAYBOOK_POSTMORTEM_TEMPLATE.md` (and synced CLI template copy) plus a lightweight `pnpm playbook docs audit --json` contract that only checks `docs/postmortems/*.md` for the required `Facts`, `Interpretation`, `Model Changes`, `Promotion Candidates`, and `Non-Promotion Notes` headings. WHY: Postmortems now separate observed evidence, explanation, revised models, and doctrine candidates without introducing a new mutation path or broad surprise failures for unrelated docs.

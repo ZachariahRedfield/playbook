@@ -175,6 +175,72 @@ describe('docs audit', () => {
     expect(result.findings.find((finding) => finding.ruleId === 'docs.command-truth.status-table-drift')).toBeDefined();
   });
 
+
+  it('passes postmortem docs when all required sections are present', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/postmortems/incident-2026-03.md',
+      [
+        '# Incident',
+        '',
+        '## Facts',
+        'Observed evidence only.',
+        '',
+        '## Interpretation',
+        'Working explanation.',
+        '',
+        '## Model Changes',
+        'Revised understanding.',
+        '',
+        '## Promotion Candidates',
+        'Candidate doctrine update.',
+        '',
+        '## Non-Promotion Notes',
+        'Keep this local for now.',
+        ''
+      ].join('\n')
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.postmortem.required-sections.missing')).toBeUndefined();
+  });
+
+  it('fails postmortem docs missing a required section with a stable finding id', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/postmortems/incident-2026-03.md',
+      [
+        '# Incident',
+        '',
+        '## Facts',
+        'Observed evidence only.',
+        '',
+        '## Interpretation',
+        'Working explanation.',
+        '',
+        '## Model Changes',
+        'Revised understanding.',
+        '',
+        '## Promotion Candidates',
+        'Candidate doctrine update.',
+        ''
+      ].join('\n')
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.postmortem.required-sections.missing' && finding.path === 'docs/postmortems/incident-2026-03.md')).toBeDefined();
+  });
+
+  it('does not apply postmortem heading checks to non-postmortem docs', () => {
+    const root = createRepo();
+    write(root, 'docs/RETRO.md', ['# Retro', '', '## Facts', 'Only some headings.'].join('\n'));
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.postmortem.required-sections.missing')).toBeUndefined();
+  });
+
   it('fails when global reusable pattern memory points at repo-local storage', () => {
     const root = createRepo();
     write(

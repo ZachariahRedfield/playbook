@@ -57,6 +57,12 @@ For documentation/governance changes, also run:
 pnpm playbook docs audit --ci --json
 ```
 
+Repo-scoped postmortems can opt into the same lightweight governance by storing files under `docs/postmortems/*.md` and using the canonical `PLAYBOOK_POSTMORTEM_TEMPLATE.md`. The docs audit only checks those postmortem files for the required sections (`Facts`, `Interpretation`, `Model Changes`, `Promotion Candidates`, and `Non-Promotion Notes`), so existing non-postmortem docs remain unaffected.
+
+- Rule: Postmortems must separate observed facts from interpretation and promotion candidates.
+- Pattern: Recall -> reinterpret -> promote -> restabilize becomes concrete through structured postmortems.
+- Failure Mode: Blending fact, explanation, and doctrine in one narrative rewrites history and weakens promotion quality.
+
 For remediation workflow updates, run canonical deterministic flow checks:
 
 ```bash

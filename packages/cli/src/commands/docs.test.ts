@@ -8,6 +8,7 @@ const createFixtureRepo = (): string => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-docs-audit-'));
   fs.mkdirSync(path.join(root, 'docs', 'archive'), { recursive: true });
   fs.mkdirSync(path.join(root, 'docs', 'stories'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'docs', 'postmortems'), { recursive: true });
   fs.mkdirSync(path.join(root, '.playbook', 'orchestrator', 'workers', 'lane-1'), { recursive: true });
 
   const files: Record<string, string> = {
@@ -184,6 +185,103 @@ describe('runDocs', () => {
           level: 'warning',
           suggestedDestination: 'docs/roadmap/IMPROVEMENTS_BACKLOG.md'
         })
+      ])
+    );
+  });
+
+
+  it('passes postmortem docs with all required sections', async () => {
+    const repo = createFixtureRepo();
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'postmortems', 'incident-2026-03.md'),
+      [
+        '# Incident',
+        '',
+        '## Facts',
+        'Observed evidence.',
+        '',
+        '## Interpretation',
+        'Explanation.',
+        '',
+        '## Model Changes',
+        'Updated model.',
+        '',
+        '## Promotion Candidates',
+        'Candidate follow-up.',
+        '',
+        '## Non-Promotion Notes',
+        'Do not promote yet.',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    const { runDocs } = await import('./docs.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['audit'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'docs.postmortem.required-sections.missing' })
+      ])
+    );
+  });
+
+  it('fails postmortem docs missing one required section', async () => {
+    const repo = createFixtureRepo();
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'postmortems', 'incident-2026-03.md'),
+      [
+        '# Incident',
+        '',
+        '## Facts',
+        'Observed evidence.',
+        '',
+        '## Interpretation',
+        'Explanation.',
+        '',
+        '## Model Changes',
+        'Updated model.',
+        '',
+        '## Promotion Candidates',
+        'Candidate follow-up.',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    const { runDocs } = await import('./docs.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['audit'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'docs.postmortem.required-sections.missing',
+          path: 'docs/postmortems/incident-2026-03.md',
+          level: 'error'
+        })
+      ])
+    );
+  });
+
+  it('does not enforce postmortem headings on non-postmortem docs', async () => {
+    const repo = createFixtureRepo();
+    fs.writeFileSync(path.join(repo, 'docs', 'RETRO.md'), ['# Retro', '', '## Facts', 'Partial headings only.', ''].join('\n'), 'utf8');
+    const { runDocs } = await import('./docs.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['audit'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'docs.postmortem.required-sections.missing' })
       ])
     );
   });

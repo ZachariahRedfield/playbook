@@ -225,6 +225,7 @@ Playbook now recommends an optional repo-scoped product-direction contract for c
 - `docs/ROADMAP.md` defines pillars, active stories, and lightweight priority
 - `docs/stories/<STORY_ID>.md` defines one independently shippable vertical slice
 - `pnpm playbook docs audit --json` validates the contract when a repo opts in
+- `docs/postmortems/*.md` opts into lightweight postmortem validation: each postmortem must separate `Facts`, `Interpretation`, `Model Changes`, `Promotion Candidates`, and `Non-Promotion Notes` so evidence, explanation, and doctrine candidates do not blur together
 - `pnpm playbook ask ... --repo-context` can answer lightweight story/pillar mapping prompts
 
 This remains a documentation contract first, not a new heavy workflow command surface.
