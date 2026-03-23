@@ -296,7 +296,8 @@ Practical initiatives to stage from this doctrine:
 Rule: Design systems from constraints first; let structure emerge from interface, cost, and coordination realities.
 Rule: Retrieval is the only safe moment to revise active knowledge, and revision must preserve provenance.
 Pattern: Constraint -> optimization -> emergent structure.
-Pattern: Retrieval opens a controlled edit window; promotion restabilizes knowledge.
+Pattern: Recall -> reinterpret -> promote -> restabilize.
+Operationally: recall brings active knowledge into bounded review with provenance; reinterpret compares it against fresh evidence without mutating doctrine yet; promote is the explicit reviewed write boundary; restabilize returns promoted knowledge to active doctrine.
 Failure Mode: Teams copy fashionable architectures or metaphors without mapping the constraints that made them work elsewhere.
 Failure Mode: Review loops that blend fact, interpretation, and narrative silently rewrite doctrine and erode trust.
 
