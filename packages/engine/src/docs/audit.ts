@@ -112,6 +112,9 @@ const POSTMORTEM_REQUIRED_SECTIONS = [
   'non-promotion notes'
 ] as const;
 
+const REVISION_LAYER_REQUIRED_MARKERS = ['fact:', 'interpretation:', 'narrative:'] as const;
+const REVISION_LAYER_REQUIRED_DOCS = ['docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/PLAYBOOK_DEV_WORKFLOW.md'] as const;
+
 const PLANNING_ALLOWED_PATHS = new Set([
   'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
   'docs/roadmap/README.md',
@@ -256,6 +259,19 @@ const hasQuickStartSection = (content: string): boolean =>
 const hasAllMarkers = (content: string, markers: readonly string[]): boolean => {
   const normalized = content.toLowerCase();
   return markers.every((marker) => normalized.includes(marker.toLowerCase()));
+};
+
+const listPostmortemDocs = (repoRoot: string): string[] => {
+  const postmortemDocsPath = path.join(repoRoot, 'docs', 'postmortems');
+  if (!fs.existsSync(postmortemDocsPath)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(postmortemDocsPath, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+    .map((entry) => `docs/postmortems/${entry.name}`)
+    .sort();
 };
 
 
@@ -407,30 +423,42 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
   }
 
 
-  const postmortemDocsPath = path.join(repoRoot, 'docs', 'postmortems');
-  if (fs.existsSync(postmortemDocsPath)) {
-    const postmortemDocs = fs
-      .readdirSync(postmortemDocsPath, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
-      .map((entry) => `docs/postmortems/${entry.name}`)
-      .sort();
+  const postmortemDocs = listPostmortemDocs(repoRoot);
+  for (const postmortemDoc of postmortemDocs) {
+    const content = readTextIfExists(repoRoot, postmortemDoc);
+    if (!content) {
+      continue;
+    }
 
-    for (const postmortemDoc of postmortemDocs) {
-      const content = readTextIfExists(repoRoot, postmortemDoc);
-      if (!content) {
-        continue;
-      }
+    const missingSections = hasRequiredSections(content, POSTMORTEM_REQUIRED_SECTIONS);
+    if (missingSections.length > 0) {
+      findings.push({
+        ruleId: 'docs.postmortem.required-sections',
+        level: 'error',
+        message: `Postmortem document is missing required sections: ${missingSections.join(', ')}.`,
+        path: postmortemDoc,
+        suggestedDestination: 'templates/repo/docs/postmortems/PLAYBOOK_POSTMORTEM_TEMPLATE.md'
+      });
+    }
+  }
 
-      const missingSections = hasRequiredSections(content, POSTMORTEM_REQUIRED_SECTIONS);
-      if (missingSections.length > 0) {
-        findings.push({
-          ruleId: 'docs.postmortem.required-sections',
-          level: 'error',
-          message: `Postmortem document is missing required sections: ${missingSections.join(', ')}.`,
-          path: postmortemDoc,
-          suggestedDestination: 'templates/repo/docs/postmortems/PLAYBOOK_POSTMORTEM_TEMPLATE.md'
-        });
-      }
+  const revisionLayerGovernedDocs = [...REVISION_LAYER_REQUIRED_DOCS, ...postmortemDocs];
+  for (const governedDoc of revisionLayerGovernedDocs) {
+    const content = readTextIfExists(repoRoot, governedDoc);
+    if (!content) {
+      continue;
+    }
+
+    const normalized = content.toLowerCase();
+    const missingMarkers = REVISION_LAYER_REQUIRED_MARKERS.filter((marker) => !normalized.includes(marker));
+    if (missingMarkers.length > 0) {
+      findings.push({
+        ruleId: 'docs.revision-layer.required-markers',
+        level: 'error',
+        message: `Governed revision-layer doc is missing required markers: ${missingMarkers.join(', ')}.`,
+        path: governedDoc,
+        suggestedDestination: 'docs/PLAYBOOK_DEV_WORKFLOW.md'
+      });
     }
   }
 
@@ -712,7 +740,7 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
     summary: {
       errors,
       warnings,
-      checksRun: 15
+      checksRun: 16
     },
     findings
   };

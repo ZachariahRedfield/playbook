@@ -309,6 +309,12 @@ Failure Mode: Doctrine updates sourced from memory of the incident instead of th
 Failure Mode: Teams copy fashionable architectures or metaphors without mapping the constraints that made them work elsewhere.
 Failure Mode: Review loops that blend fact, interpretation, and narrative silently rewrite doctrine and erode trust.
 
+## Revision Layers (Governed Docs)
+
+- Fact: evidence-linked statements from runtime behavior, contracts, or observed outcomes.
+- Interpretation: bounded meaning derived from facts without changing canonical truth artifacts.
+- Narrative: operator-facing guidance and sequencing built on facts and interpretation.
+
 Toroidal Flow framing (additive overlay):
 
 - Treat the lifecycle as a deterministic closed loop: `observe -> verify -> plan -> apply -> extract -> canonicalize -> compact -> promote -> retire`.

@@ -25,7 +25,9 @@ const createRepo = (): string => {
     'docs/commands/README.md': '# Commands\nLifecycle Role Discoverability',
     'docs/commands/docs.md': '# docs audit',
     'docs/PLAYBOOK_PRODUCT_ROADMAP.md':
-      '# Product roadmap\nRoadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.',
+      '# Product roadmap\nRoadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.\n\n## Revision Layers\n- Fact: runtime/source-of-truth evidence.\n- Interpretation: meaning derived from evidence.\n- Narrative: operator-facing explanation.',
+    'docs/PLAYBOOK_DEV_WORKFLOW.md':
+      '# Dev workflow\n\n## Revision Layers\n- Fact: runtime/source-of-truth evidence.\n- Interpretation: meaning derived from evidence.\n- Narrative: operator-facing explanation.',
     'docs/PLAYBOOK_BUSINESS_STRATEGY.md': '# Business strategy',
     'docs/CONSUMER_INTEGRATION_CONTRACT.md': '# Consumer contract',
     'docs/AI_AGENT_CONTEXT.md': '# AI context\nai-context ai-contract context verify plan apply',
@@ -247,6 +249,33 @@ describe('docs audit', () => {
 
     const result = runDocsAudit(root);
     expect(result.findings.find((finding) => finding.path === 'docs/notes.md' && finding.ruleId === 'docs.postmortem.required-sections')).toBeUndefined();
+  });
+
+  it('passes governed revision-layer docs that include explicit markers', () => {
+    const root = createRepo();
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.revision-layer.required-markers')).toBeUndefined();
+  });
+
+  it('fails governed revision-layer docs missing explicit markers with a stable rule id', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/PLAYBOOK_DEV_WORKFLOW.md',
+      '# Dev workflow\n\nThis intentionally omits governed revision-layer markers.\n'
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'docs.revision-layer.required-markers',
+          path: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
+          level: 'error'
+        })
+      ])
+    );
   });
 
   it('fails when global reusable pattern memory points at repo-local storage', () => {

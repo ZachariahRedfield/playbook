@@ -18,7 +18,10 @@ const createFixtureRepo = (): string => {
     'docs/commands/README.md': '# Commands\n\nLifecycle, role, and discoverability are documented here.\n',
     'docs/commands/docs.md': '# docs audit\n',
     'docs/CHANGELOG.md': '# Changelog\n\n<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->\n- Existing release note.\n<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->\n',
-    'docs/PLAYBOOK_PRODUCT_ROADMAP.md': '# Strategic Roadmap\n\n## Pillars\n- Pillar A\n\n## Active Stories\n- Story A\n\nRoadmap entries describe implementation intent.\ndocs/commands/README.md is the source of truth for live command availability.\n',
+    'docs/PLAYBOOK_PRODUCT_ROADMAP.md':
+      '# Strategic Roadmap\n\n## Pillars\n- Pillar A\n\n## Active Stories\n- Story A\n\nRoadmap entries describe implementation intent.\ndocs/commands/README.md is the source of truth for live command availability.\n\n## Revision Layers\n- Fact: runtime/source-of-truth evidence.\n- Interpretation: meaning derived from evidence.\n- Narrative: operator-facing explanation.\n',
+    'docs/PLAYBOOK_DEV_WORKFLOW.md':
+      '# Dev Workflow\n\n## Revision Layers\n- Fact: runtime/source-of-truth evidence.\n- Interpretation: meaning derived from evidence.\n- Narrative: operator-facing explanation.\n',
     'docs/PLAYBOOK_BUSINESS_STRATEGY.md': '# Business\n',
     'docs/CONSUMER_INTEGRATION_CONTRACT.md': '# Contract\n',
     'docs/AI_AGENT_CONTEXT.md': '# AI Context\nai-context ai-contract context verify plan apply\n',
@@ -216,6 +219,33 @@ describe('runDocs', () => {
     expect(payload.findings).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ path: 'docs/random-notes.md', ruleId: 'docs.postmortem.required-sections' })
+      ])
+    );
+  });
+
+  it('flags missing revision-layer markers only on governed docs and leaves unrelated docs unaffected', async () => {
+    const repo = createFixtureRepo();
+    fs.writeFileSync(path.join(repo, 'docs', 'PLAYBOOK_DEV_WORKFLOW.md'), '# Dev Workflow\n\nMissing governed revision-layer markers.\n', 'utf8');
+    fs.writeFileSync(path.join(repo, 'docs', 'random-notes.md'), '# Random notes\n\nNo governed contract markers required.\n', 'utf8');
+    const { runDocs } = await import('./docs.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['audit'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'docs.revision-layer.required-markers',
+          path: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
+          level: 'error'
+        })
+      ])
+    );
+    expect(payload.findings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'docs/random-notes.md', ruleId: 'docs.revision-layer.required-markers' })
       ])
     );
   });

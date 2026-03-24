@@ -182,6 +182,18 @@ Pattern: Recall -> reinterpret -> promote -> restabilize becomes concrete throug
 Failure Mode: Doctrine updates sourced from memory of the incident instead of the reviewed postmortem artifact create silent drift.
 Failure Mode: Blending fact, explanation, and doctrine in one narrative rewrites history and weakens promotion quality.
 
+## Revision layer markers (governed docs)
+
+Use explicit revision-layer markers in governed docs so updates remain auditable and provenance-safe:
+
+- Fact: concrete evidence, contracts, command output, or observed behavior.
+- Interpretation: the meaning drawn from facts without mutating truth artifacts.
+- Narrative: operator-facing explanation, sequencing, or guidance built on facts and interpretation.
+
+Rule: Only governed docs should carry enforced revision-layer structure.
+Pattern: Path-scoped audit keeps doctrine enforceable without turning docs audit into noise.
+Failure Mode: Broad unscoped docs rules create compliance churn and push teams away from the process.
+
 ## Deterministic delivery protocol (v1)
 
 - Every PR must reference at least one roadmap `feature_id` from `docs/roadmap/ROADMAP.json`.
