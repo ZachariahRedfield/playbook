@@ -28,6 +28,7 @@ Subcommands:
   stale                           Show stale, retired, and superseded records
   portability                     Inspect cross-repo portability scoring evidence
   review                          Materialize and inspect retrieval review queue entries
+  review record                   Record a durable retrieval review receipt
 
 Options:
   --type <type>                Filter by type (evidence|candidate|promoted|superseded)
@@ -41,6 +42,12 @@ Options:
   --days <n>                   Override stale threshold in days
   --action <action>            Review filter (reaffirm|revise|supersede)
   --kind <kind>                Review filter (knowledge|doc|rule|pattern)
+  --from <queueEntryId>        Review record source queue entry id
+  --decision <decision>        Review record decision (reaffirm|revise|supersede|defer)
+  --reason-code <id>           Optional review record reason-code override
+  --evidence-ref <value>       Optional evidence reference (repeatable)
+  --followup-ref <value>       Optional follow-up artifact reference (repeatable)
+  --receipt-id <id>            Optional stable receipt id for deterministic upsert
   --json                       Print machine-readable JSON output
   --help                       Show help`);
 };
@@ -77,6 +84,16 @@ export const readOptionValue = (args: string[], optionName: string): string | nu
   }
 
   return prefixed.slice(optionName.length + 1) || null;
+};
+
+
+export const readOptionValues = (args: string[], optionName: string): string[] => {
+  const exactValues = args.flatMap((arg, index) => (args[index - 1] === optionName ? [arg] : []));
+  const prefixedValues = args
+    .filter((arg) => arg.startsWith(`${optionName}=`))
+    .map((arg) => arg.slice(optionName.length + 1));
+
+  return [...exactValues, ...prefixedValues].filter((value): value is string => typeof value === 'string' && value.length > 0);
 };
 
 export const parseIntegerOption = (raw: string | null, optionName: string): number | undefined => {

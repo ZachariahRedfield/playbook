@@ -3,13 +3,16 @@ import { ExitCode } from '../../lib/cliContract.js';
 
 const buildReviewQueue = vi.fn();
 const writeReviewQueueArtifact = vi.fn();
+const writeKnowledgeReviewReceipt = vi.fn();
 const existsSync = vi.fn();
 const readFileSync = vi.fn();
 
 vi.mock('@zachariahredfield/playbook-engine', () => ({
   buildReviewQueue,
   writeReviewQueueArtifact,
-  REVIEW_QUEUE_RELATIVE_PATH: '.playbook/review-queue.json'
+  writeKnowledgeReviewReceipt,
+  REVIEW_QUEUE_RELATIVE_PATH: '.playbook/review-queue.json',
+  KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH: '.playbook/knowledge-review-receipts.json'
 }));
 
 vi.mock('node:fs', () => ({
@@ -26,6 +29,7 @@ const reviewQueueFixture = () => ({
   generatedAt: '2026-03-24T00:00:00.000Z',
   entries: [
     {
+      queueEntryId: 'q-knowledge-1',
       targetKind: 'knowledge',
       targetId: 'knowledge:stale-runtime-guard',
       sourceSurface: 'memory-knowledge',
@@ -36,6 +40,7 @@ const reviewQueueFixture = () => ({
       generatedAt: '2026-03-24T00:00:00.000Z'
     },
     {
+      queueEntryId: 'q-doc-1',
       targetKind: 'doc',
       path: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
       sourceSurface: 'governed-docs',
@@ -46,6 +51,7 @@ const reviewQueueFixture = () => ({
       generatedAt: '2026-03-24T00:00:00.000Z'
     },
     {
+      queueEntryId: 'q-rule-1',
       targetKind: 'rule',
       targetId: 'rule:review-surface-only',
       sourceSurface: 'governance',
@@ -56,6 +62,7 @@ const reviewQueueFixture = () => ({
       generatedAt: '2026-03-24T00:00:00.000Z'
     },
     {
+      queueEntryId: 'q-pattern-1',
       targetKind: 'pattern',
       targetId: 'pattern:existing-review-family-first',
       sourceSurface: 'governance',
@@ -68,6 +75,26 @@ const reviewQueueFixture = () => ({
   ]
 });
 
+const receiptsFixture = () => ({
+  schemaVersion: '1.0',
+  kind: 'playbook-knowledge-review-receipts',
+  generatedAt: '2026-03-24T12:00:00.000Z',
+  receipts: [
+    {
+      receiptId: 'receipt-123',
+      queueEntryId: 'q-knowledge-1',
+      targetKind: 'knowledge',
+      targetId: 'knowledge:stale-runtime-guard',
+      sourceSurface: 'memory-knowledge',
+      reasonCode: 'stale-active-knowledge',
+      decision: 'defer',
+      evidenceRefs: ['.playbook/memory/knowledge/patterns.json', 'ticket:KB-321'],
+      decidedAt: '2026-03-24T12:00:00.000Z',
+      followUpArtifactPath: 'docs/postmortems/KB-321.md'
+    }
+  ]
+});
+
 describe('knowledge review', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -75,6 +102,7 @@ describe('knowledge review', () => {
     writeReviewQueueArtifact.mockReturnValue('/repo/.playbook/review-queue.json');
     existsSync.mockReturnValue(true);
     readFileSync.mockReturnValue(JSON.stringify(reviewQueueFixture()));
+    writeKnowledgeReviewReceipt.mockReturnValue(receiptsFixture());
   });
 
   it('materializes and emits deterministic json output', async () => {
@@ -127,6 +155,54 @@ describe('knowledge review', () => {
     logSpy.mockRestore();
   });
 
+  it('records a deterministic review receipt from queue entry linkage', async () => {
+    const { runKnowledge } = await import('../knowledge.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runKnowledge(
+      '/repo',
+      [
+        'review',
+        'record',
+        '--from',
+        'q-knowledge-1',
+        '--decision',
+        'defer',
+        '--evidence-ref',
+        'ticket:KB-321',
+        '--followup-ref',
+        'docs/postmortems/KB-321.md',
+        '--receipt-id',
+        'receipt-123'
+      ],
+      { format: 'json', quiet: false }
+    );
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(writeKnowledgeReviewReceipt).toHaveBeenCalledWith(
+      '/repo',
+      expect.objectContaining({
+        receiptId: 'receipt-123',
+        queueEntryId: 'q-knowledge-1',
+        targetKind: 'knowledge',
+        targetId: 'knowledge:stale-runtime-guard',
+        decision: 'defer',
+        sourceSurface: 'memory-knowledge',
+        followUpArtifactPath: 'docs/postmortems/KB-321.md'
+      })
+    );
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('knowledge-review-record');
+    expect(payload.artifactPath).toBe('.playbook/knowledge-review-receipts.json');
+    expect(payload.queueEntryId).toBe('q-knowledge-1');
+    expect(payload.target).toEqual({ targetKind: 'knowledge', targetId: 'knowledge:stale-runtime-guard' });
+    expect(payload.decision).toBe('defer');
+    expect(payload.reasonCode).toBe('stale-active-knowledge');
+    expect(payload.receipt.receiptId).toBe('receipt-123');
+    logSpy.mockRestore();
+  });
+
   it('renders compact operator-facing text output', async () => {
     const { runKnowledge } = await import('../knowledge.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -142,6 +218,24 @@ describe('knowledge review', () => {
     logSpy.mockRestore();
   });
 
+  it('renders brief text output for recorded receipt', async () => {
+    const { runKnowledge } = await import('../knowledge.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runKnowledge('/repo', ['review', 'record', '--from', 'q-knowledge-1', '--decision', 'defer'], {
+      format: 'text',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const rendered = String(logSpy.mock.calls[0]?.[0]);
+    expect(rendered).toContain('Decision: defer');
+    expect(rendered).toContain('Affected target: knowledge:stale-runtime-guard');
+    expect(rendered).toContain('Next action: wait for defer window before the next review pass');
+
+    logSpy.mockRestore();
+  });
+
   it('fails with deterministic validation for unsupported filters', async () => {
     const { runKnowledge } = await import('../knowledge.js');
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -149,6 +243,17 @@ describe('knowledge review', () => {
     const exitCode = await runKnowledge('/repo', ['review', '--action', 'invalid'], { format: 'text', quiet: false });
     expect(exitCode).toBe(ExitCode.Failure);
     expect(String(errorSpy.mock.calls[0]?.[0])).toContain('invalid --action value "invalid"');
+    errorSpy.mockRestore();
+  });
+
+  it('fails when --from is missing for record', async () => {
+    const { runKnowledge } = await import('../knowledge.js');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const exitCode = await runKnowledge('/repo', ['review', 'record', '--decision', 'reaffirm'], { format: 'text', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain('missing required --from');
+
     errorSpy.mockRestore();
   });
 });

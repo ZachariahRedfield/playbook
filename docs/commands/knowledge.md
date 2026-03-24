@@ -73,7 +73,7 @@ Views:
 
 ### `knowledge review`
 
-Materialize and inspect `.playbook/review-queue.json` through a read-only retrieval review surface under the existing knowledge command family.
+Materialize and inspect `.playbook/review-queue.json` through the existing retrieval review surface under the knowledge command family.
 
 Filters:
 
@@ -88,6 +88,38 @@ Text output remains compact and operator-facing:
 - next action
 
 JSON output preserves full detail and deterministic queue metadata for automation consumers.
+
+
+### `knowledge review record`
+
+Record a durable retrieval review outcome in `.playbook/knowledge-review-receipts.json` from an existing queue entry.
+
+Required options:
+
+- `--from <queueEntryId>`
+- `--decision reaffirm|revise|supersede|defer`
+
+Optional options:
+
+- `--reason-code <id>`
+- `--evidence-ref <value>` (repeatable)
+- `--followup-ref <value>` (repeatable; first value is stored as `followUpArtifactPath`)
+- `--receipt-id <id>` (stable overwrite semantics for repeated writes)
+
+Behavior guarantees:
+
+- records the review receipt only
+- does not auto-promote
+- does not auto-supersede
+- does not mutate active doctrine
+
+Text output remains thin:
+
+- decision
+- affected target
+- next action
+
+JSON output and `.playbook/knowledge-review-receipts.json` preserve full deterministic detail.
 
 ## Examples
 
@@ -109,6 +141,7 @@ pnpm playbook knowledge portability --view blocked-transfers --json
 pnpm playbook knowledge review --json
 pnpm playbook knowledge review --action reaffirm --kind knowledge
 pnpm playbook knowledge review --kind doc
+pnpm playbook knowledge review record --from <queue-entry-id> --decision defer --json
 ```
 
 ## Guarantees

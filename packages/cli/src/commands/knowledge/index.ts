@@ -190,6 +190,16 @@ const renderText = (subcommand: string, payload: Record<string, unknown>): strin
     return renderPortabilityText(payload);
   }
   if (subcommand === 'review') {
+    if (String(payload.command ?? '') === 'knowledge-review-record') {
+      const target = payload.target as Record<string, unknown> | undefined;
+      const affectedTarget = String(target?.targetId ?? target?.path ?? 'target');
+      return [
+        `Decision: ${String(payload.decision ?? 'n/a')}`,
+        `Affected target: ${affectedTarget}`,
+        `Next action: ${String(payload.nextAction ?? 'none')}`
+      ].join('\n');
+    }
+
     const entries = payload.entries as Array<Record<string, unknown>> | undefined;
     if (!entries || entries.length === 0) {
       return 'Status: review queue clear.\nAffected targets: none\nBlockers / reason: none\nNext action: no review action required.';
@@ -257,7 +267,7 @@ export const runKnowledge = async (cwd: string, args: string[], options: Knowled
         return runKnowledgeReview(cwd, args);
       }
 
-      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, inspect, compare, timeline, provenance, supersession, stale, portability, or review.');
+      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, inspect, compare, timeline, provenance, supersession, stale, portability, review, or review record.');
     })();
 
     if (options.format === 'json') {

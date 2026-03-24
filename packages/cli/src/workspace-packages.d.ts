@@ -78,6 +78,16 @@ declare module "@zachariahredfield/playbook-engine" {
   export type ReviewQueueEntry = any;
   export type ReviewQueueArtifact = any;
   export type BuildReviewQueueOptions = any;
+  export const KNOWLEDGE_REVIEW_RECEIPTS_SCHEMA_VERSION: any;
+  export const KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH: '.playbook/knowledge-review-receipts.json';
+  export const readKnowledgeReviewReceiptsArtifact: (...args: any[]) => any;
+  export const writeKnowledgeReviewReceiptsArtifact: (...args: any[]) => any;
+  export const writeKnowledgeReviewReceipt: (...args: any[]) => any;
+  export type KnowledgeReviewDecision = any;
+  export type KnowledgeReviewTargetKind = any;
+  export type KnowledgeReviewReceiptEntry = any;
+  export type KnowledgeReviewReceiptsArtifact = any;
+  export type WriteKnowledgeReviewReceiptInput = any;
   export type KnowledgeQueryOptions = any;
   export const knowledgeList: (...args: any[]) => any;
   export const knowledgeQuery: (...args: any[]) => any;
