@@ -359,36 +359,44 @@ describe('runApply', () => {
 
   it('fails policy-check when combined with --from-plan', async () => {
     const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-policy-check-from-plan-'));
 
-    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policyCheck: true, fromPlan: 'plan.json' })).rejects.toThrow(
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false, policyCheck: true, fromPlan: 'plan.json' })).rejects.toThrow(
       'The --policy-check flag is read-only and cannot be combined with --from-plan.'
     );
+    fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
 
   it('fails policy-check when combined with --task', async () => {
     const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-policy-check-task-'));
 
-    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policyCheck: true, tasks: ['task-1'] })).rejects.toThrow(
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false, policyCheck: true, tasks: ['task-1'] })).rejects.toThrow(
       'The --policy-check flag is read-only and cannot be combined with --task.'
     );
+    fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
   it('fails when --policy is combined with --policy-check', async () => {
     const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-policy-with-policy-check-'));
 
-    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policy: true, policyCheck: true })).rejects.toThrow(
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false, policy: true, policyCheck: true })).rejects.toThrow(
       'The --policy flag cannot be combined with --policy-check.'
     );
+    fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
 
   it('fails policy mode when combined with --task', async () => {
     const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-policy-task-'));
 
-    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, policy: true, tasks: ['task-1'] })).rejects.toThrow(
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false, policy: true, tasks: ['task-1'] })).rejects.toThrow(
       'The --policy flag cannot be combined with --task.'
     );
+    fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
   it('fails clearly when --policy artifact is missing', async () => {
@@ -618,11 +626,13 @@ describe('runApply', () => {
 
   it('fails clearly when --from-plan file is missing', async () => {
     const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-missing-plan-'));
 
-    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, fromPlan: 'missing-plan.json' })).rejects.toThrow(
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false, fromPlan: 'missing-plan.json' })).rejects.toThrow(
       /Unable to read plan file at .*missing-plan\.json:/
     );
     expect(generatePlanContract).not.toHaveBeenCalled();
+    fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
   it('fails clearly when --from-plan file has invalid json', async () => {
@@ -665,11 +675,13 @@ describe('runApply', () => {
 
   it('fails clearly when --task is used without --from-plan', async () => {
     const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-task-without-plan-'));
 
-    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false, tasks: ['task-1'] })).rejects.toThrow(
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false, tasks: ['task-1'] })).rejects.toThrow(
       'The --task flag requires --from-plan so task selection is tied to a reviewed artifact.'
     );
     expect(generatePlanContract).not.toHaveBeenCalled();
+    fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
 
@@ -917,17 +929,19 @@ describe('runApply remediation status preconditions', () => {
 
   it('fails deterministically when remediation status is unavailable', async () => {
     const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-remediation-unavailable-'));
 
     generatePlanContract.mockReturnValue({
       verify: { ok: false, summary: { failures: 2, warnings: 0 } },
       tasks: []
     });
 
-    await expect(runApply('/repo', { format: 'json', ci: false, quiet: false })).rejects.toThrow(
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false })).rejects.toThrow(
       'Cannot apply remediation: Verify failures were detected but no remediation tasks are currently available.'
     );
     expect(applyExecutionPlan).not.toHaveBeenCalled();
     expect(loadVerifyRules).not.toHaveBeenCalled();
+    fs.rmSync(repoDir, { recursive: true, force: true });
   });
 });
 
