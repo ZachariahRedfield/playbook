@@ -4,9 +4,45 @@ const path = require('node:path');
 const DEFAULT_COMMENT_MARKER = '<!-- playbook:ci-summary -->';
 const PROTECTED_DOC_RULE_PREFIX = 'protected-doc.';
 
+function toPreview(raw) {
+  const text = String(raw ?? '');
+  const normalized = text.replace(/\r/g, '');
+  const preview = normalized.slice(0, 220).replace(/\n/g, '\\n');
+  return preview.length > 0 ? preview : '(empty file)';
+}
+
+function unwrapArtifactEnvelope(parsed) {
+  if (parsed && typeof parsed === 'object' && parsed.data && typeof parsed.data === 'object') {
+    return parsed.data;
+  }
+  return parsed;
+}
+
+function readJsonArtifact(filePath, options = {}) {
+  const { required = false, label = filePath } = options;
+  if (!filePath || !fs.existsSync(filePath)) {
+    if (required) {
+      throw new Error(`Missing required JSON artifact at ${label} (${filePath}).`);
+    }
+    return null;
+  }
+
+  const raw = fs.readFileSync(filePath, 'utf8');
+  try {
+    return unwrapArtifactEnvelope(JSON.parse(raw));
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    const detail = `Invalid JSON artifact at ${label} (${filePath}). preview="${toPreview(raw)}". parseError="${reason}"`;
+    if (required) {
+      throw new Error(detail);
+    }
+    console.warn(detail);
+    return null;
+  }
+}
+
 function readJsonIfExists(filePath) {
-  if (!filePath || !fs.existsSync(filePath)) return null;
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  return readJsonArtifact(filePath, { required: false });
 }
 
 function unique(values) {
@@ -129,18 +165,66 @@ function buildRemediationSummary(policy, failureSummary, remediationStatus) {
   };
 }
 
-function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifactPath, remediationPolicy, remediationPolicyArtifactPath, failureSummary, failureSummaryArtifactPath, remediationStatus, remediationStatusArtifactPath }) {
+function buildFirstFailureSummary(firstFailure) {
+  if (!firstFailure || typeof firstFailure !== 'object' || firstFailure.found !== true) return null;
+  return {
+    file: typeof firstFailure.file === 'string' ? firstFailure.file : '(unknown)',
+    test: typeof firstFailure.test === 'string' ? firstFailure.test : '(unknown)',
+    message: typeof firstFailure.message === 'string' ? firstFailure.message : '(unknown)',
+  };
+}
+
+function buildSetupFailureSummary({
+  verifyArtifactPath,
+  verifyPreflightArtifactPath,
+  releasePlan,
+  releaseArtifactPath,
+  remediationPolicy,
+  remediationPolicyArtifactPath,
+  failureSummary,
+  failureSummaryArtifactPath,
+  remediationStatus,
+  remediationStatusArtifactPath,
+  firstFailure,
+  firstFailureArtifactPath
+}) {
+  const releaseSummary = buildReleaseSummary(releasePlan);
+  const remediationSummary = buildRemediationSummary(remediationPolicy, failureSummary, remediationStatus);
+  const firstFailureSummary = buildFirstFailureSummary(firstFailure);
+  const artifacts = [verifyArtifactPath, verifyPreflightArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null, firstFailureSummary ? firstFailureArtifactPath : null]
+    .filter((value) => typeof value === 'string' && value.trim().length > 0);
+
+  return {
+    overall: {
+      decision: 'setup failed before verify',
+      status: 'blocked',
+    },
+    verify: {
+      status: 'NOT_RUN',
+      blockers: ['Verify artifacts unavailable; CI failed before verify could run.'],
+      nextAction: 'Inspect setup/install/runtime diagnostics earlier in the CI log.'
+    },
+    mergeGuard: null,
+    release: releaseSummary,
+    remediation: remediationSummary,
+    firstFailure: firstFailureSummary,
+    artifacts,
+  };
+}
+
+function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifactPath, remediationPolicy, remediationPolicyArtifactPath, failureSummary, failureSummaryArtifactPath, remediationStatus, remediationStatusArtifactPath, firstFailure, firstFailureArtifactPath }) {
   const verifySummary = buildVerifySummary(verify);
   if (!verifySummary) return null;
   const mergeGuardSummary = buildMergeGuardSummary(verify);
   const releaseSummary = buildReleaseSummary(releasePlan);
   const remediationSummary = buildRemediationSummary(remediationPolicy, failureSummary, remediationStatus);
+  const firstFailureSummary = buildFirstFailureSummary(firstFailure);
 
   let overallStatus = verifySummary.status === 'FAIL' ? 'blocked' : 'clear';
   if (remediationSummary) overallStatus = remediationSummary.status === 'allowed' ? overallStatus : `${overallStatus} · test failure`; // retains compact context
   const overallDecision = verify?.ok ? 'merge-ready pending policy context' : 'verify blocked';
 
-  const artifacts = [verifyArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null]
+  const artifacts = [verifyArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null, firstFailureSummary ? firstFailureArtifactPath : null]
     .filter((value) => typeof value === 'string' && value.trim().length > 0);
 
   return {
@@ -152,6 +236,7 @@ function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifact
     mergeGuard: mergeGuardSummary,
     release: releaseSummary,
     remediation: remediationSummary,
+    firstFailure: firstFailureSummary,
     artifacts,
   };
 }
@@ -184,6 +269,12 @@ function renderMarkdown(summary, { marker, title }) {
     lines.push(`| Remediation next action | ${summary.remediation.nextAction} |`);
   }
 
+  if (summary.firstFailure) {
+    lines.push(`| First failing suite | ${summary.firstFailure.file} |`);
+    lines.push(`| First failing test | ${summary.firstFailure.test} |`);
+    lines.push(`| First failure message | ${summary.firstFailure.message} |`);
+  }
+
   lines.push('', `Artifacts: ${summary.artifacts.map((artifact) => `\`${artifact}\``).join(', ')}.`);
   return `${lines.join('\n').trimEnd()}\n`;
 }
@@ -196,6 +287,7 @@ function parseArgs(argv) {
     remediationPolicy: '.playbook/ci-remediation-policy.json',
     failureSummary: '.playbook/failure-summary.json',
     remediationStatus: '.playbook/remediation-status.json',
+    firstFailure: '.playbook/first-test-failure.json',
     out: '.playbook/ci-summary.md',
     commentOut: '.playbook/ci-summary-comment.md',
     marker: DEFAULT_COMMENT_MARKER,
@@ -218,6 +310,8 @@ function parseArgs(argv) {
       options.failureSummary = next; index += 1;
     } else if (token === '--remediation-status' && next) {
       options.remediationStatus = next; index += 1;
+    } else if (token === '--first-failure' && next) {
+      options.firstFailure = next; index += 1;
     } else if (token === '--out' && next) {
       options.out = next; index += 1;
     } else if (token === '--comment-out' && next) {
@@ -235,22 +329,30 @@ function parseArgs(argv) {
 
 if (require.main === module) {
   const options = parseArgs(process.argv.slice(2));
-  const verify = readJsonIfExists(path.resolve(process.cwd(), options.verify))
-    ?? readJsonIfExists(path.resolve(process.cwd(), options.verifyPreflight));
-  const verifyArtifactPath = fs.existsSync(path.resolve(process.cwd(), options.verify)) ? options.verify : (fs.existsSync(path.resolve(process.cwd(), options.verifyPreflight)) ? options.verifyPreflight : options.verify);
+  const verifyPath = path.resolve(process.cwd(), options.verify);
+  const preflightPath = path.resolve(process.cwd(), options.verifyPreflight);
+  const verify = readJsonArtifact(verifyPath, { required: false, label: options.verify })
+    ?? readJsonArtifact(preflightPath, { required: false, label: options.verifyPreflight });
+  const verifyArtifactPath = fs.existsSync(verifyPath) ? options.verify : (fs.existsSync(preflightPath) ? options.verifyPreflight : options.verify);
+
   const payload = {
     verify,
     verifyArtifactPath,
-    releasePlan: readJsonIfExists(path.resolve(process.cwd(), options.releasePlan)),
+    verifyPreflightArtifactPath: options.verifyPreflight,
+    releasePlan: readJsonArtifact(path.resolve(process.cwd(), options.releasePlan), { required: false, label: options.releasePlan }),
     releaseArtifactPath: options.releasePlan,
-    remediationPolicy: readJsonIfExists(path.resolve(process.cwd(), options.remediationPolicy)),
+    remediationPolicy: readJsonArtifact(path.resolve(process.cwd(), options.remediationPolicy), { required: false, label: options.remediationPolicy }),
     remediationPolicyArtifactPath: options.remediationPolicy,
-    failureSummary: readJsonIfExists(path.resolve(process.cwd(), options.failureSummary)),
+    failureSummary: readJsonArtifact(path.resolve(process.cwd(), options.failureSummary), { required: false, label: options.failureSummary }),
     failureSummaryArtifactPath: options.failureSummary,
-    remediationStatus: readJsonIfExists(path.resolve(process.cwd(), options.remediationStatus)),
+    remediationStatus: readJsonArtifact(path.resolve(process.cwd(), options.remediationStatus), { required: false, label: options.remediationStatus }),
     remediationStatusArtifactPath: options.remediationStatus,
+    firstFailure: readJsonArtifact(path.resolve(process.cwd(), options.firstFailure), { required: false, label: options.firstFailure }),
+    firstFailureArtifactPath: options.firstFailure,
   };
-  const summary = buildSummary(payload);
+  const summary = verify
+    ? buildSummary(payload)
+    : buildSetupFailureSummary(payload);
   const outPath = path.resolve(process.cwd(), options.out);
   const commentOutPath = path.resolve(process.cwd(), options.commentOut);
 
@@ -280,6 +382,9 @@ module.exports = {
   buildMergeGuardSummary,
   buildReleaseSummary,
   buildRemediationSummary,
+  buildFirstFailureSummary,
+  buildSetupFailureSummary,
   renderMarkdown,
   readJsonIfExists,
+  readJsonArtifact,
 };

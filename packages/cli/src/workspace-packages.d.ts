@@ -77,6 +77,12 @@ declare module "@zachariahredfield/playbook-engine" {
   export const knowledgeProvenance: (...args: any[]) => any;
   export const knowledgeSupersession: (...args: any[]) => any;
   export const knowledgeStale: (...args: any[]) => any;
+  export const REVIEW_QUEUE_RELATIVE_PATH: ".playbook/review-queue.json";
+  export const buildReviewQueue: (...args: any[]) => any;
+  export const writeReviewQueueArtifact: (...args: any[]) => any;
+  export type ReviewQueueArtifact = any;
+  export type ReviewQueueEntry = any;
+  export type ReviewRecommendedAction = any;
   export const generateRepositoryIndex: (...args: any[]) => any;
   export const generateRepositoryGraph: (...args: any[]) => any;
   export const buildModuleContextDigests: (...args: any[]) => any;

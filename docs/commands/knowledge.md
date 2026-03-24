@@ -24,6 +24,22 @@ Filter knowledge records with:
 - `--text`
 - `--limit`
 
+### `knowledge review`
+
+Materialize and inspect `.playbook/review-queue.json` through a read-only retrieval review surface.
+
+Compact filters:
+
+- `--action reaffirm|revise|supersede`
+- `--kind knowledge|doc|rule|pattern`
+  - `pattern` is a focused subset of `knowledge` entries tied to promoted pattern memory evidence (for example `.playbook/memory/knowledge/patterns.json`).
+
+Output contract:
+
+- Text output stays brief (`status`, `affected targets`, `blockers/reason`, `next action`).
+- Full deterministic details stay in JSON and `.playbook/review-queue.json`.
+- This surface does **not** auto-promote and does **not** introduce a new mutation authority path.
+
 ### `knowledge inspect <id>`
 
 Inspect one knowledge record by id, including normalized lifecycle metadata, warnings, and supersession links.
@@ -76,6 +92,8 @@ Views:
 ```bash
 pnpm playbook knowledge list --json
 pnpm playbook knowledge query --type candidate --json
+pnpm playbook knowledge review --json
+pnpm playbook knowledge review --action reaffirm --kind knowledge --json
 pnpm playbook knowledge inspect <id> --json
 pnpm playbook knowledge compare <left-id> <right-id> --json
 pnpm playbook knowledge provenance <id> --json

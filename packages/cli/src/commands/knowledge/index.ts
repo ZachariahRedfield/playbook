@@ -6,6 +6,7 @@ import { runKnowledgeList } from './list.js';
 import { runKnowledgePortability, parsePortabilityView } from './portability.js';
 import { runKnowledgeProvenance } from './provenance.js';
 import { runKnowledgeQuery } from './query.js';
+import { runKnowledgeReview } from './review.js';
 import { printKnowledgeHelp, printKnowledgePortabilityHelp, type KnowledgeCommandOptions } from './shared.js';
 import { runKnowledgeStale } from './stale.js';
 import { runKnowledgeSupersession } from './supersession.js';
@@ -147,6 +148,17 @@ Sample Size: ${String(entry.sample_size)}`
 };
 
 const renderText = (subcommand: string, payload: Record<string, unknown>): string => {
+  if (subcommand === 'review') {
+    const entries = (payload.entries as Array<Record<string, unknown>> | undefined) ?? [];
+    const targetLabels = [...new Set(entries.map((entry) => String(entry.targetId ?? entry.path ?? 'unknown-target')))].sort((a, b) => a.localeCompare(b));
+    const reasons = [...new Set(entries.map((entry) => String(entry.reasonCode ?? 'n/a')))].sort((a, b) => a.localeCompare(b));
+    const nextActions = [...new Set(entries.map((entry) => String(entry.recommendedAction ?? 'n/a')))].sort((a, b) => a.localeCompare(b));
+    return `Status: review-only queue ready (${entries.length} entries)
+Affected targets: ${targetLabels.length === 0 ? 'none' : targetLabels.join(', ')}
+Blockers / reason: ${reasons.length === 0 ? 'none' : reasons.join(', ')}
+Next action: ${nextActions.length === 0 ? 'none' : nextActions.join(', ')}`;
+  }
+
   if (subcommand === 'inspect') {
     const knowledge = payload.knowledge as Record<string, unknown>;
     return `Knowledge ${String(payload.id)} (${String(knowledge.type ?? 'unknown')}).`;
@@ -214,6 +226,9 @@ export const runKnowledge = async (cwd: string, args: string[], options: Knowled
       if (subcommand === 'query') {
         return runKnowledgeQuery(cwd, args);
       }
+      if (subcommand === 'review') {
+        return runKnowledgeReview(cwd, args);
+      }
       if (subcommand === 'inspect') {
         return runKnowledgeInspect(cwd, args);
       }
@@ -236,7 +251,7 @@ export const runKnowledge = async (cwd: string, args: string[], options: Knowled
         return runKnowledgePortability(cwd, parsePortabilityView(args));
       }
 
-      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, inspect, compare, timeline, provenance, supersession, stale, or portability.');
+      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, review, inspect, compare, timeline, provenance, supersession, stale, or portability.');
     })();
 
     if (options.format === 'json') {

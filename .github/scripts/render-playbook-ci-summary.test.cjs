@@ -1,7 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
-const { buildSummary, renderMarkdown } = require('./render-playbook-ci-summary.cjs');
+const { buildSummary, buildSetupFailureSummary, renderMarkdown, readJsonArtifact } = require('./render-playbook-ci-summary.cjs');
 
 test('buildSummary renders compact success summary with verify, release, and merge-guard sections', () => {
   const summary = buildSummary({
@@ -74,6 +77,26 @@ test('buildSummary includes remediation only when a test failure artifact exists
   assert.equal(summary.remediation.nextAction, 'autofix disabled by workflow input');
 });
 
+test('buildSetupFailureSummary produces a valid summary when verify artifacts are absent', () => {
+  const summary = buildSetupFailureSummary({
+    verifyArtifactPath: '.playbook/verify.json',
+    verifyPreflightArtifactPath: '.playbook/verify-preflight.json',
+    releasePlan: null,
+    releaseArtifactPath: '.playbook/release-plan.json',
+    remediationPolicy: null,
+    remediationPolicyArtifactPath: '.playbook/ci-remediation-policy.json',
+    failureSummary: null,
+    failureSummaryArtifactPath: '.playbook/failure-summary.json',
+    remediationStatus: null,
+    remediationStatusArtifactPath: '.playbook/remediation-status.json',
+    firstFailure: null,
+    firstFailureArtifactPath: '.playbook/first-test-failure.json'
+  });
+
+  assert.equal(summary.overall.decision, 'setup failed before verify');
+  assert.equal(summary.verify.status, 'NOT_RUN');
+});
+
 test('renderMarkdown uses one compact operator brief', () => {
   const markdown = renderMarkdown({
     overall: { decision: 'verify blocked', status: 'blocked · test failure' },
@@ -81,7 +104,8 @@ test('renderMarkdown uses one compact operator brief', () => {
     mergeGuard: { decision: 'fail_closed', status: 'merge guard blocked', blockers: ['lane:docs'], nextAction: 'Resolve docs lane.' },
     release: { recommendedBump: 'patch', status: 'release plan ready', currentVersion: '1.2.3', nextVersion: '1.2.4', affected: '@scope/alpha' },
     remediation: { status: 'blocked_low_confidence', failureClass: 'vitest_assertion', failureCount: 2, retryDecision: 'hold', preferredRepairClass: 'snapshot_refresh', nextAction: 'Manual review required.' },
-    artifacts: ['.playbook/verify.json', '.playbook/release-plan.json', '.playbook/ci-remediation-policy.json', '.playbook/failure-summary.json', '.playbook/remediation-status.json'],
+    firstFailure: { file: 'packages/core/test/foo.test.ts', test: 'matches expected output', message: 'expected 2 to equal 3' },
+    artifacts: ['.playbook/verify.json', '.playbook/release-plan.json', '.playbook/ci-remediation-policy.json', '.playbook/failure-summary.json', '.playbook/remediation-status.json', '.playbook/first-test-failure.json'],
   }, { marker: '<!-- marker -->', title: 'Playbook CI Summary' });
 
   assert.match(markdown, /Overall decision \/ status \| verify blocked \/ blocked · test failure/);
@@ -89,5 +113,40 @@ test('renderMarkdown uses one compact operator brief', () => {
   assert.match(markdown, /Merge guard \| fail_closed \/ merge guard blocked/);
   assert.match(markdown, /Release bump \| patch \/ release plan ready/);
   assert.match(markdown, /Remediation \| blocked_low_confidence/);
+  assert.match(markdown, /First failing suite \| packages\/core\/test\/foo\.test\.ts/);
   assert.match(markdown, /Artifacts: `\.playbook\/verify\.json`, `\.playbook\/release-plan\.json`/);
+});
+
+test('readJsonArtifact reports path+preview for malformed JSON and degrades for non-critical artifacts', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-ci-summary-'));
+  const artifactPath = path.join(tempDir, 'bad-artifact.json');
+  fs.writeFileSync(artifactPath, '> playbook-monorepo@0.1.8 playbook\n{ "ok": true }\n', 'utf8');
+
+  const warningLogs = [];
+  const warn = console.warn;
+  console.warn = (message) => warningLogs.push(String(message));
+
+  const optionalArtifact = readJsonArtifact(artifactPath, { required: false, label: '.playbook/failure-summary.json' });
+  console.warn = warn;
+  assert.equal(optionalArtifact, null);
+  assert.match(warningLogs[0], /Invalid JSON artifact at \.playbook\/failure-summary\.json/);
+  assert.match(warningLogs[0], /preview=/);
+
+  assert.throws(
+    () => readJsonArtifact(artifactPath, { required: true, label: '.playbook/verify.json' }),
+    /Invalid JSON artifact at \.playbook\/verify\.json/
+  );
+});
+
+test('readJsonArtifact unwraps Playbook artifact envelopes', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-ci-summary-'));
+  const artifactPath = path.join(tempDir, 'verify.json');
+  fs.writeFileSync(
+    artifactPath,
+    JSON.stringify({ artifact: 'playbook.findings', data: { command: 'verify', ok: true, findings: [] } }),
+    'utf8'
+  );
+
+  const parsed = readJsonArtifact(artifactPath, { required: true, label: '.playbook/verify.json' });
+  assert.deepEqual(parsed, { command: 'verify', ok: true, findings: [] });
 });
