@@ -65,8 +65,9 @@ const readReviewQueueArtifact = (cwd: string): ReviewQueueArtifact => {
 };
 
 const asReviewKind = (entry: ReviewQueueEntry): ReviewKind => {
-  if (entry.targetKind === 'knowledge' || entry.targetKind === 'doc') {
-    return entry.targetKind;
+  const targetKind = String((entry as { targetKind?: unknown }).targetKind);
+  if (targetKind === 'knowledge' || targetKind === 'doc' || targetKind === 'rule' || targetKind === 'pattern') {
+    return targetKind;
   }
   return 'knowledge';
 };

@@ -44,6 +44,26 @@ const reviewQueueFixture = () => ({
       recommendedAction: 'revise',
       reviewPriority: 'medium',
       generatedAt: '2026-03-24T00:00:00.000Z'
+    },
+    {
+      targetKind: 'rule',
+      targetId: 'rule:review-surface-only',
+      sourceSurface: 'governance',
+      reasonCode: 'rule-review-window',
+      evidenceRefs: ['docs/commands/README.md'],
+      recommendedAction: 'reaffirm',
+      reviewPriority: 'low',
+      generatedAt: '2026-03-24T00:00:00.000Z'
+    },
+    {
+      targetKind: 'pattern',
+      targetId: 'pattern:existing-review-family-first',
+      sourceSurface: 'governance',
+      reasonCode: 'pattern-review-window',
+      evidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md'],
+      recommendedAction: 'supersede',
+      reviewPriority: 'medium',
+      generatedAt: '2026-03-24T00:00:00.000Z'
     }
   ]
 });
@@ -70,12 +90,12 @@ describe('knowledge review', () => {
     expect(payload.command).toBe('knowledge-review');
     expect(payload.artifactPath).toBe('.playbook/review-queue.json');
     expect(payload.summary).toMatchObject({
-      total: 2,
-      returned: 2,
-      byAction: { reaffirm: 1, revise: 1, supersede: 0 },
-      byKind: { knowledge: 1, doc: 1, rule: 0, pattern: 0 }
+      total: 4,
+      returned: 4,
+      byAction: { reaffirm: 2, revise: 1, supersede: 1 },
+      byKind: { knowledge: 1, doc: 1, rule: 1, pattern: 1 }
     });
-    expect(payload.entries).toHaveLength(2);
+    expect(payload.entries).toHaveLength(4);
     logSpy.mockRestore();
   });
 
@@ -97,6 +117,13 @@ describe('knowledge review', () => {
     expect(payload.summary.returned).toBe(1);
     expect(payload.entries[0].targetKind).toBe('doc');
 
+    logSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', '--kind', 'pattern'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.summary.returned).toBe(1);
+    expect(payload.entries[0].targetKind).toBe('pattern');
+
     logSpy.mockRestore();
   });
 
@@ -108,7 +135,7 @@ describe('knowledge review', () => {
     expect(exitCode).toBe(ExitCode.Success);
 
     const rendered = String(logSpy.mock.calls[0]?.[0]);
-    expect(rendered).toContain('Status: 2 review item(s) pending');
+    expect(rendered).toContain('Status: 4 review item(s) pending');
     expect(rendered).toContain('Affected targets: knowledge:stale-runtime-guard, docs/PLAYBOOK_DEV_WORKFLOW.md');
     expect(rendered).toContain('Blockers / reason: stale-active-knowledge');
     expect(rendered).toContain('Next action: reaffirm knowledge:stale-runtime-guard');
