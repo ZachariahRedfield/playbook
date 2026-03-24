@@ -20,6 +20,7 @@
         "required": [
           "queueEntryId",
           "targetKind",
+          "cadenceKind",
           "sourceSurface",
           "reasonCode",
           "evidenceRefs",
@@ -30,6 +31,7 @@
         "properties": {
           "queueEntryId": { "type": "string", "minLength": 1 },
           "targetKind": { "type": "string", "enum": ["knowledge", "doc"] },
+          "cadenceKind": { "type": "string", "enum": ["pattern", "rule", "doc", "knowledge"] },
           "targetId": { "type": "string", "minLength": 1 },
           "path": { "type": "string", "minLength": 1 },
           "sourceSurface": { "type": "string", "minLength": 1 },
@@ -40,6 +42,9 @@
           },
           "recommendedAction": { "type": "string", "enum": ["reaffirm", "revise", "supersede"] },
           "reviewPriority": { "type": "string", "enum": ["high", "medium", "low"] },
+          "nextReviewAt": { "type": "string", "format": "date-time" },
+          "deferredUntil": { "type": "string", "format": "date-time" },
+          "overdue": { "type": "boolean" },
           "generatedAt": { "type": "string", "format": "date-time" }
         },
         "allOf": [

@@ -179,6 +179,14 @@ export type { MemoryKnowledgeKind, MemoryKnowledgeEntry, MemoryKnowledgeArtifact
 export { REVIEW_QUEUE_SCHEMA_VERSION, REVIEW_QUEUE_RELATIVE_PATH, buildReviewQueue, writeReviewQueueArtifact } from './retrieval/reviewQueue.js';
 export type { ReviewRecommendedAction, ReviewPriority, ReviewTargetKind, ReviewQueueEntry, ReviewQueueArtifact, BuildReviewQueueOptions } from './retrieval/reviewQueue.js';
 export {
+  REVIEW_POLICY_SCHEMA_VERSION,
+  REVIEW_POLICY_RELATIVE_PATH,
+  createDefaultReviewPolicyArtifact,
+  normalizeReviewPolicyArtifact,
+  readReviewPolicyArtifact
+} from './retrieval/reviewPolicy.js';
+export type { ReviewPolicyTargetKind, ReviewPolicyTargetDefaults, ReviewPolicyArtifact } from './retrieval/reviewPolicy.js';
+export {
   KNOWLEDGE_REVIEW_RECEIPTS_SCHEMA_VERSION,
   KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH,
   createEmptyKnowledgeReviewReceiptsArtifact,

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/review-policy.schema.json",
+  "title": "Review Policy",
+  "description": "Deterministic cadence policy for retrieval review queue scheduling.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "generatedAt", "targetDefaults"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "playbook-review-policy" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "targetDefaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pattern", "rule", "doc", "knowledge"],
+      "properties": {
+        "pattern": { "$ref": "#/$defs/targetDefault" },
+        "rule": { "$ref": "#/$defs/targetDefault" },
+        "doc": { "$ref": "#/$defs/targetDefault" },
+        "knowledge": { "$ref": "#/$defs/targetDefault" }
+      }
+    }
+  },
+  "$defs": {
+    "targetDefault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reaffirmCadenceDays", "deferWindowDays"],
+      "properties": {
+        "reaffirmCadenceDays": { "type": "integer", "minimum": 1 },
+        "deferWindowDays": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

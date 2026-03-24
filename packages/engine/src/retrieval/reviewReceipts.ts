@@ -18,6 +18,7 @@ export type KnowledgeReviewReceiptEntry = {
   decision: KnowledgeReviewDecision;
   evidenceRefs: string[];
   decidedAt: string;
+  deferUntil?: string;
   followUpArtifactPath?: string;
 };
 
@@ -78,6 +79,7 @@ const normalizeReceipt = (raw: unknown): KnowledgeReviewReceiptEntry | null => {
   const targetId = typeof raw.targetId === 'string' && raw.targetId.length > 0 ? raw.targetId : undefined;
   const targetPath = typeof raw.path === 'string' && raw.path.length > 0 ? raw.path : undefined;
   const followUpArtifactPath = typeof raw.followUpArtifactPath === 'string' && raw.followUpArtifactPath.length > 0 ? raw.followUpArtifactPath : undefined;
+  const deferUntil = asIso(typeof raw.deferUntil === 'string' ? raw.deferUntil : undefined, '');
 
   if (!queueEntryId || !targetKind || !sourceSurface || !reasonCode || !decision) {
     return null;
@@ -100,6 +102,7 @@ const normalizeReceipt = (raw: unknown): KnowledgeReviewReceiptEntry | null => {
     decision,
     evidenceRefs,
     decidedAt,
+    ...(deferUntil ? { deferUntil } : {}),
     ...(followUpArtifactPath ? { followUpArtifactPath } : {})
   };
 
@@ -200,6 +203,7 @@ export const writeKnowledgeReviewReceipt = (repoRoot: string, input: WriteKnowle
     decision: input.decision,
     evidenceRefs: ensureUniqueSortedStrings(input.evidenceRefs),
     decidedAt,
+    ...(typeof input.deferUntil === 'string' && input.deferUntil.length > 0 ? { deferUntil: asIso(input.deferUntil, decidedAt) } : {}),
     ...(input.followUpArtifactPath ? { followUpArtifactPath: input.followUpArtifactPath } : {})
   };
 

@@ -276,7 +276,7 @@ describe('buildReviewQueue', () => {
     expect(resurfacedQueue.entries.some((entry) => entry.targetId === 'k-reaffirm')).toBe(true);
   });
 
-  it('keeps deferred entries with lower priority and future-dated generatedAt', () => {
+  it('suppresses deferred entries until defer window expires', () => {
     const repoRoot = createTempRepo();
     writeJson(repoRoot, '.playbook/memory/knowledge/patterns.json', {
       schemaVersion: '1.0',
@@ -327,10 +327,86 @@ describe('buildReviewQueue', () => {
       ]
     });
 
-    const deferredQueue = buildReviewQueue(repoRoot, { generatedAt: '2026-03-24T12:00:00.000Z', staleKnowledgeDays: 30, deferWindowDays: 10 });
-    const deferredEntry = deferredQueue.entries.find((entry) => entry.targetId === 'k-defer');
-    expect(deferredEntry?.reviewPriority).toBe('low');
-    expect(deferredEntry?.generatedAt).toBe('2026-04-03T01:00:00.000Z');
+    const beforeWindowQueue = buildReviewQueue(repoRoot, { generatedAt: '2026-03-24T12:00:00.000Z', staleKnowledgeDays: 30, deferWindowDays: 10 });
+    expect(beforeWindowQueue.entries.some((entry) => entry.targetId === 'k-defer')).toBe(false);
+
+    const afterWindowQueue = buildReviewQueue(repoRoot, { generatedAt: '2026-04-04T00:00:00.000Z', staleKnowledgeDays: 30, deferWindowDays: 10 });
+    const deferredEntry = afterWindowQueue.entries.find((entry) => entry.targetId === 'k-defer');
+    expect(deferredEntry?.deferredUntil).toBe('2026-04-03T01:00:00.000Z');
+    expect(deferredEntry?.nextReviewAt).toBe('2026-04-03T01:00:00.000Z');
+    expect(deferredEntry?.overdue).toBe(true);
+  });
+
+  it('supports explicit deferUntil and per-kind cadence policy defaults', () => {
+    const repoRoot = createTempRepo();
+    writeJson(repoRoot, '.playbook/review-policy.json', {
+      schemaVersion: '1.0',
+      kind: 'playbook-review-policy',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      targetDefaults: {
+        knowledge: { reaffirmCadenceDays: 45, deferWindowDays: 14 },
+        pattern: { reaffirmCadenceDays: 10, deferWindowDays: 3 },
+        rule: { reaffirmCadenceDays: 45, deferWindowDays: 14 },
+        doc: { reaffirmCadenceDays: 90, deferWindowDays: 14 }
+      }
+    });
+    writeJson(repoRoot, '.playbook/memory/knowledge/patterns.json', {
+      schemaVersion: '1.0',
+      artifact: 'memory-knowledge',
+      kind: 'pattern',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      entries: [
+        {
+          knowledgeId: 'k-policy-pattern',
+          candidateId: 'c-policy-pattern',
+          sourceCandidateIds: ['c-policy-pattern'],
+          sourceEventFingerprints: ['e-policy-pattern'],
+          kind: 'pattern',
+          title: 'Pattern from policy',
+          summary: 'Summary',
+          fingerprint: 'fp-policy-pattern',
+          module: 'engine',
+          ruleId: 'engine.rule',
+          failureShape: 'shape',
+          promotedAt: '2026-03-01T00:00:00.000Z',
+          provenance: [],
+          status: 'active',
+          supersedes: [],
+          supersededBy: []
+        }
+      ]
+    });
+
+    const policyDrivenQueue = buildReviewQueue(repoRoot, { generatedAt: '2026-03-20T00:00:00.000Z' });
+    const policyEntry = policyDrivenQueue.entries.find((entry) => entry.targetId === 'k-policy-pattern');
+    expect(policyEntry?.cadenceKind).toBe('pattern');
+
+    writeJson(repoRoot, '.playbook/knowledge-review-receipts.json', {
+      schemaVersion: '1.0',
+      kind: 'playbook-knowledge-review-receipts',
+      generatedAt: '2026-03-24T01:00:00.000Z',
+      receipts: [
+        {
+          receiptId: 'r-policy-defer-1',
+          queueEntryId: policyEntry?.queueEntryId,
+          targetKind: 'knowledge',
+          targetId: 'k-policy-pattern',
+          sourceSurface: 'memory-knowledge',
+          reasonCode: 'stale-active-knowledge',
+          decision: 'defer',
+          evidenceRefs: ['candidate:c-policy-pattern'],
+          decidedAt: '2026-03-24T01:00:00.000Z',
+          deferUntil: '2026-04-15T00:00:00.000Z'
+        }
+      ]
+    });
+
+    const beforeExplicitDeferQueue = buildReviewQueue(repoRoot, { generatedAt: '2026-04-14T00:00:00.000Z' });
+    expect(beforeExplicitDeferQueue.entries.some((entry) => entry.targetId === 'k-policy-pattern')).toBe(false);
+
+    const afterExplicitDeferQueue = buildReviewQueue(repoRoot, { generatedAt: '2026-04-16T00:00:00.000Z' });
+    const explicitDeferredEntry = afterExplicitDeferQueue.entries.find((entry) => entry.targetId === 'k-policy-pattern');
+    expect(explicitDeferredEntry?.deferredUntil).toBe('2026-04-15T00:00:00.000Z');
   });
 
   it('suppresses superseded receipts and keeps revise visible until follow-up exists', () => {

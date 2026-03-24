@@ -74,4 +74,21 @@ describe('writeKnowledgeReviewReceipt', () => {
       })
     ).toThrow('receipt requires targetId or path');
   });
+
+  it('persists explicit deferUntil as normalized ISO timestamp', () => {
+    const repoRoot = createTempRepo();
+
+    const artifact = writeKnowledgeReviewReceipt(repoRoot, {
+      queueEntryId: 'queue-3',
+      targetKind: 'knowledge',
+      targetId: 'k-3',
+      sourceSurface: 'memory-knowledge',
+      reasonCode: 'stale-active-knowledge',
+      decision: 'defer',
+      decidedAt: '2026-03-24T01:00:00.000Z',
+      deferUntil: '2026-03-30'
+    });
+
+    expect(artifact.receipts[0]?.deferUntil).toBe('2026-03-30T00:00:00.000Z');
+  });
 });

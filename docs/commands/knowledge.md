@@ -157,5 +157,6 @@ pnpm playbook knowledge review record --from <queue-entry-id> --decision defer -
 - Pattern: Scope-first resolution beats path inference.
 - Failure Mode: Storage-path drift makes governance legible in code but confusing to operators.
 - Rule: Retrieval review is incomplete until the review decision is recorded as a durable artifact.
-- Pattern: Recall -> reinterpret -> receipt -> explicit promotion/supersession.
-- Failure Mode: A review queue without receipts becomes a repeating reminder list instead of a governed maintenance loop.
+- Rule: Retrieval review needs both receipts and cadence, or reaffirmed knowledge will either disappear forever or reappear as noise.
+- Pattern: Recall -> reinterpret -> receipt -> scheduled recall.
+- Failure Mode: Review queues without cadence become either spammy or silently stale.

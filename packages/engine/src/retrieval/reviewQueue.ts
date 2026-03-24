@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { MemoryKnowledgeArtifact, MemoryKnowledgeEntry } from '../memory/knowledge.js';
 import type { MemoryReplayResult } from '../schema/memoryReplay.js';
 import { readKnowledgeReviewReceiptsArtifact, type KnowledgeReviewReceiptEntry } from './reviewReceipts.js';
+import { readReviewPolicyArtifact, type ReviewPolicyTargetKind } from './reviewPolicy.js';
 
 export const REVIEW_QUEUE_SCHEMA_VERSION = '1.0' as const;
 export const REVIEW_QUEUE_RELATIVE_PATH = '.playbook/review-queue.json' as const;
@@ -26,6 +27,7 @@ export type ReviewTargetKind = 'knowledge' | 'doc';
 export type ReviewQueueEntry = {
   queueEntryId: string;
   targetKind: ReviewTargetKind;
+  cadenceKind: ReviewPolicyTargetKind;
   targetId?: string;
   path?: string;
   sourceSurface: string;
@@ -33,6 +35,9 @@ export type ReviewQueueEntry = {
   evidenceRefs: string[];
   recommendedAction: ReviewRecommendedAction;
   reviewPriority: ReviewPriority;
+  nextReviewAt?: string;
+  overdue?: boolean;
+  deferredUntil?: string;
   generatedAt: string;
 };
 
@@ -148,6 +153,7 @@ const buildQueueEntryId = (entry: Omit<ReviewQueueEntry, 'queueEntryId' | 'gener
     .update(
       [
         entry.targetKind,
+        entry.cadenceKind,
         entry.targetId ?? '',
         entry.path ?? '',
         entry.sourceSurface,
@@ -171,6 +177,7 @@ const dedupeQueueEntries = (entries: ReviewQueueEntry[]): ReviewQueueEntry[] => 
   for (const entry of entries) {
     const entryKey = [
       entry.targetKind,
+      entry.cadenceKind,
       entry.targetId ?? '',
       entry.path ?? '',
       entry.sourceSurface,
@@ -222,11 +229,29 @@ const resolveLatestReceipts = (receipts: KnowledgeReviewReceiptEntry[]): {
   return { byQueueEntryId, byTarget };
 };
 
+const addDays = (dateMs: number, days: number): number => dateMs + days * 24 * 60 * 60 * 1000;
+
+const asIsoIfValid = (value: string | undefined): string | undefined => {
+  if (typeof value !== 'string' || value.length === 0) {
+    return undefined;
+  }
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) {
+    return undefined;
+  }
+  return new Date(parsed).toISOString();
+};
+
+const asOverdue = (nowMs: number, nextReviewAt: string): boolean => {
+  const nextMs = Date.parse(nextReviewAt);
+  return !Number.isNaN(nextMs) && nowMs > nextMs;
+};
+
 const applyReceiptState = (
   repoRoot: string,
   entries: ReviewQueueEntry[],
   nowMs: number,
-  options: Required<Pick<BuildReviewQueueOptions, 'staleKnowledgeDays' | 'docReviewWindowDays' | 'deferWindowDays'>>
+  cadenceByKind: Record<ReviewPolicyTargetKind, { reaffirmCadenceDays: number; deferWindowDays: number }>
 ): ReviewQueueEntry[] => {
   const receiptArtifact = readKnowledgeReviewReceiptsArtifact(repoRoot);
   const { byQueueEntryId, byTarget } = resolveLatestReceipts(receiptArtifact.receipts);
@@ -241,23 +266,30 @@ const applyReceiptState = (
     }
 
     const receiptMs = Date.parse(latestReceipt.decidedAt);
-    const windowDays = entry.targetKind === 'knowledge' ? options.staleKnowledgeDays : options.docReviewWindowDays;
+    const cadence = cadenceByKind[entry.cadenceKind];
 
     if (latestReceipt.decision === 'reaffirm') {
-      const nextReviewMs = receiptMs + windowDays * 24 * 60 * 60 * 1000;
+      const nextReviewMs = addDays(receiptMs, cadence.reaffirmCadenceDays);
       if (nowMs < nextReviewMs) {
         continue;
       }
-      transformed.push(entry);
+      const nextReviewAt = new Date(nextReviewMs).toISOString();
+      transformed.push({ ...entry, nextReviewAt, overdue: asOverdue(nowMs, nextReviewAt) });
       continue;
     }
 
     if (latestReceipt.decision === 'defer') {
-      const nextReviewMs = receiptMs + options.deferWindowDays * 24 * 60 * 60 * 1000;
+      const explicitDeferredUntil = asIsoIfValid(latestReceipt.deferUntil);
+      const nextReviewMs = explicitDeferredUntil ? Date.parse(explicitDeferredUntil) : addDays(receiptMs, cadence.deferWindowDays);
+      if (nowMs < nextReviewMs) {
+        continue;
+      }
+      const deferredUntil = new Date(nextReviewMs).toISOString();
       transformed.push({
         ...entry,
-        reviewPriority: 'low',
-        generatedAt: new Date(Math.max(nowMs, nextReviewMs)).toISOString(),
+        deferredUntil,
+        nextReviewAt: deferredUntil,
+        overdue: asOverdue(nowMs, deferredUntil),
         evidenceRefs: [...entry.evidenceRefs, `review-receipt:${latestReceipt.receiptId}`]
           .filter((value, index, all) => all.indexOf(value) === index)
           .sort((left, right) => left.localeCompare(right))
@@ -279,6 +311,8 @@ const applyReceiptState = (
 
       transformed.push({
         ...entry,
+        nextReviewAt: latestReceipt.decidedAt,
+        overdue: true,
         evidenceRefs: [...entry.evidenceRefs, `review-receipt:${latestReceipt.receiptId}`]
           .filter((value, index, all) => all.indexOf(value) === index)
           .sort((left, right) => left.localeCompare(right))
@@ -295,19 +329,38 @@ const applyReceiptState = (
 export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOptions = {}): ReviewQueueArtifact => {
   const generatedAt = safeIso(options.generatedAt, new Date().toISOString());
   const nowMs = Date.parse(generatedAt);
-  const staleKnowledgeDays = options.staleKnowledgeDays ?? 45;
-  const docReviewWindowDays = options.docReviewWindowDays ?? 90;
-  const deferWindowDays = options.deferWindowDays ?? 14;
+  const policy = readReviewPolicyArtifact(repoRoot);
+  const cadenceByKind: Record<ReviewPolicyTargetKind, { reaffirmCadenceDays: number; deferWindowDays: number }> = {
+    knowledge: {
+      reaffirmCadenceDays: options.staleKnowledgeDays ?? policy.targetDefaults.knowledge.reaffirmCadenceDays,
+      deferWindowDays: options.deferWindowDays ?? policy.targetDefaults.knowledge.deferWindowDays
+    },
+    pattern: {
+      reaffirmCadenceDays: options.staleKnowledgeDays ?? policy.targetDefaults.pattern.reaffirmCadenceDays,
+      deferWindowDays: options.deferWindowDays ?? policy.targetDefaults.pattern.deferWindowDays
+    },
+    rule: {
+      reaffirmCadenceDays: options.staleKnowledgeDays ?? policy.targetDefaults.rule.reaffirmCadenceDays,
+      deferWindowDays: options.deferWindowDays ?? policy.targetDefaults.rule.deferWindowDays
+    },
+    doc: {
+      reaffirmCadenceDays: options.docReviewWindowDays ?? policy.targetDefaults.doc.reaffirmCadenceDays,
+      deferWindowDays: options.deferWindowDays ?? policy.targetDefaults.doc.deferWindowDays
+    }
+  };
 
   const entries: ReviewQueueEntry[] = [];
 
   for (const { entry, sourcePath } of parseKnowledgeEntries(repoRoot)) {
+    const cadenceKind: ReviewPolicyTargetKind = entry.kind === 'pattern' ? 'pattern' : 'knowledge';
+    const staleKnowledgeDays = cadenceByKind[cadenceKind].reaffirmCadenceDays;
     const promotedMs = Date.parse(entry.promotedAt);
     const promotedAgeDays = Number.isNaN(promotedMs) ? staleKnowledgeDays + 1 : Math.max(0, (nowMs - promotedMs) / (1000 * 60 * 60 * 24));
 
     if (entry.status === 'active' && promotedAgeDays >= staleKnowledgeDays) {
       entries.push(withQueueEntryId({
         targetKind: 'knowledge',
+        cadenceKind,
         targetId: entry.knowledgeId,
         sourceSurface: 'memory-knowledge',
         reasonCode: 'stale-active-knowledge',
@@ -322,6 +375,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
     if (entry.status === 'superseded') {
       entries.push(withQueueEntryId({
         targetKind: 'knowledge',
+        cadenceKind,
         targetId: entry.knowledgeId,
         sourceSurface: 'memory-knowledge',
         reasonCode: 'superseded-knowledge-lineage-check',
@@ -336,6 +390,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
   for (const { candidateId, sourcePath } of parsePostmortemCandidateEntries(repoRoot)) {
     entries.push(withQueueEntryId({
       targetKind: 'doc',
+      cadenceKind: 'doc',
       path: sourcePath,
       sourceSurface: 'memory-candidates',
       reasonCode: 'postmortem-candidate-context',
@@ -352,6 +407,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
       continue;
     }
 
+    const docReviewWindowDays = cadenceByKind.doc.reaffirmCadenceDays;
     const ageDays = fileAgeDays(fullPath, nowMs);
     if (ageDays < docReviewWindowDays || !isGovernedDoc(relativePath)) {
       continue;
@@ -359,6 +415,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
 
     entries.push(withQueueEntryId({
       targetKind: 'doc',
+      cadenceKind: 'doc',
       path: relativePath,
       sourceSurface: 'governed-docs',
       reasonCode: 'governed-doc-staleness-window',
@@ -379,6 +436,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
       .sort((a, b) => a.localeCompare(b));
 
     for (const relativePath of postmortemDocs) {
+      const docReviewWindowDays = cadenceByKind.doc.reaffirmCadenceDays;
       const fullPath = path.join(repoRoot, relativePath);
       const ageDays = fileAgeDays(fullPath, nowMs);
       if (ageDays < docReviewWindowDays) {
@@ -387,6 +445,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
 
       entries.push(withQueueEntryId({
         targetKind: 'doc',
+        cadenceKind: 'doc',
         path: relativePath,
         sourceSurface: 'governed-docs',
         reasonCode: 'governed-doc-staleness-window',
@@ -398,11 +457,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
     }
   }
 
-  const receiptAppliedEntries = applyReceiptState(repoRoot, entries, nowMs, {
-    staleKnowledgeDays,
-    docReviewWindowDays,
-    deferWindowDays
-  });
+  const receiptAppliedEntries = applyReceiptState(repoRoot, entries, nowMs, cadenceByKind);
 
   return {
     schemaVersion: REVIEW_QUEUE_SCHEMA_VERSION,
