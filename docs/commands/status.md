@@ -67,6 +67,8 @@ The underlying JSON contracts and `.playbook/*` artifacts remain the source of t
 - `blockers[]`: deterministic blocker code/message/next command
 - `recommended_next_steps[]`: exact commands to advance stage
 
+Lifecycle note: `plan` and `apply` success states (including no-op success) are expected to persist canonical `.playbook/plan.json` and `.playbook/policy-apply-result.json` artifacts in the active repo root, including `--repo <target>` executions.
+
 ## Fleet summary JSON contract highlights
 
 - `total_repos`

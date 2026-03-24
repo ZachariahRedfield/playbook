@@ -14,6 +14,8 @@ Generate a deterministic remediation task plan from current verify findings.
 - Produces a plan contract with stable `tasks` ordering derived from verify findings.
 - Emits a canonical `remediation.status` (`ready`, `not_needed`, `unavailable`).
 - Records plan execution step metadata in runtime session state.
+- Always persists canonical lifecycle state to `.playbook/plan.json` on successful runs, including no-op (`tasks: []`) outcomes.
+- When `--repo <target>` is used, lifecycle artifacts are persisted in the target repository's `.playbook/` directory.
 - `--out <path>` writes the JSON artifact when using JSON mode.
 - `--run-id <id>` attaches planning to an existing execution run; otherwise a run is created/resolved automatically.
 

@@ -203,6 +203,72 @@ const decodePlanPayload = (buffer: Buffer): DecodedPlanPayload => {
   return { text: stripLeadingBom(buffer.toString('utf8')), likelyShellEncodingIssue: false };
 };
 
+const toPolicyApplyResultArtifact = (results: ApplyResult[]): PolicyApplyResultArtifact => {
+  const executed: PolicyApplyResultEntry[] = [];
+  const skippedRequiresReview: PolicyApplyResultEntry[] = [];
+  const skippedBlocked: PolicyApplyResultEntry[] = [];
+  const failedExecution: PolicyApplyFailureEntry[] = [];
+
+  for (const result of results) {
+    const reason = result.message ?? `${result.ruleId} ${result.status}`;
+    if (result.status === 'failed') {
+      failedExecution.push({
+        proposal_id: result.id,
+        decision: 'safe',
+        reason,
+        error: result.message ?? `Task ${result.id} failed during execution.`
+      });
+      continue;
+    }
+
+    if (result.status === 'unsupported') {
+      skippedBlocked.push({
+        proposal_id: result.id,
+        decision: 'blocked',
+        reason
+      });
+      continue;
+    }
+
+    if (result.status === 'skipped') {
+      skippedRequiresReview.push({
+        proposal_id: result.id,
+        decision: 'requires_review',
+        reason
+      });
+      continue;
+    }
+
+    executed.push({
+      proposal_id: result.id,
+      decision: 'safe',
+      reason
+    });
+  }
+
+  return {
+    schemaVersion: '1.0',
+    kind: 'policy-apply-result',
+    executed,
+    skipped_requires_review: skippedRequiresReview,
+    skipped_blocked: skippedBlocked,
+    failed_execution: failedExecution,
+    summary: {
+      executed: executed.length,
+      skipped_requires_review: skippedRequiresReview.length,
+      skipped_blocked: skippedBlocked.length,
+      failed_execution: failedExecution.length,
+      total: results.length
+    }
+  };
+};
+
+const writeCanonicalApplyArtifact = (cwd: string, results: ApplyResult[]): string => {
+  const artifactPath = path.resolve(cwd, POLICY_APPLY_RESULT_RELATIVE_PATH);
+  writeJsonArtifactAbsolute(artifactPath, toPolicyApplyResultArtifact(results), 'apply', { envelope: false });
+  return artifactPath;
+};
+
 
 const readRequiredNonNegativeInteger = (value: unknown, fieldName: string): number => {
   if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
@@ -914,6 +980,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
       evidence: options.fromPlan ? [{ id: 'evidence-plan-artifact', kind: 'artifact', ref: options.fromPlan }] : []
     });
 
+    writeCanonicalApplyArtifact(cwd, []);
     attachApplyRunArtifacts(cwd, runId, options.fromPlan);
 
     if (options.format === 'json') {
@@ -974,6 +1041,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     ]
   });
 
+  writeCanonicalApplyArtifact(cwd, execution.results);
   attachApplyRunArtifacts(cwd, runId, options.fromPlan);
   return emitApplyOutput(options, payload, renderTextApply);
 };

@@ -56,4 +56,26 @@ describe('cli --repo with --out json artifacts', () => {
     expect(queryJson.command).toBe('query');
     expect(Array.isArray(queryJson.result)).toBe(true);
   });
+
+  it('persists canonical lifecycle artifacts for external repo targeting without --out', { timeout: 45000 }, () => {
+    execFileSync('node', [scriptPath, '--repo', targetRepo, 'plan', '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+    execFileSync('node', [scriptPath, '--repo', targetRepo, 'apply', '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+
+    const planArtifactPath = path.join(targetRepo, '.playbook', 'plan.json');
+    const applyArtifactPath = path.join(targetRepo, '.playbook', 'policy-apply-result.json');
+    expect(fs.existsSync(planArtifactPath)).toBe(true);
+    expect(fs.existsSync(applyArtifactPath)).toBe(true);
+
+    const planArtifact = JSON.parse(fs.readFileSync(planArtifactPath, 'utf8'));
+    expect(planArtifact.command).toBe('plan');
+
+    const applyArtifact = JSON.parse(fs.readFileSync(applyArtifactPath, 'utf8'));
+    expect(applyArtifact.kind).toBe('policy-apply-result');
+  });
 });

@@ -53,6 +53,8 @@ Controlled policy-gated execution:
 - `--policy` never recomputes policy and fails clearly when `.playbook/policy-evaluation.json` is missing or invalid.
 - `--policy` writes `.playbook/policy-apply-result.json` on every run (including no-op runs) with stable ordering and shape.
 - `--policy` cannot be combined with `--policy-check`, `--from-plan`, or `--task`.
+- Standard `apply` runs also persist `.playbook/policy-apply-result.json` on success, including no-op success (`not_needed`) outcomes, so lifecycle/status stages advance deterministically.
+- When `--repo <target>` is used, apply lifecycle artifacts are written into the target repository's `.playbook/` directory.
 
 
 - `--from-plan` executes a previously exported reviewed artifact without recomputing intent.
