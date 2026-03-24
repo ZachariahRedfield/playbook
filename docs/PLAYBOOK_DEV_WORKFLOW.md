@@ -63,6 +63,8 @@ The reusable Playbook CI action enforces this PR `feature_id` rule in `pull_requ
 
 Optional sync surface: run `pnpm pr:sync-metadata` to project `.playbook/pr-metadata.json` into GitHub PR title/body when token permissions allow. The sync helper degrades with warnings and is not required for validator success.
 
+CI artifact governance note: machine-consumed `.playbook/*.json` artifacts must be produced by deterministic JSON writers at the source (for example `node packages/cli/dist/main.js <command> --json --out <path>`), never by shell-capturing wrapper stdout where pnpm/script banners can corrupt JSON payloads.
+
 For documentation/governance changes, also run:
 
 ```bash

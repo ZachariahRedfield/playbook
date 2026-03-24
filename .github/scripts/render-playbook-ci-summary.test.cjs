@@ -1,7 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
-const { buildSummary, renderMarkdown } = require('./render-playbook-ci-summary.cjs');
+const { buildSummary, renderMarkdown, readJsonArtifact } = require('./render-playbook-ci-summary.cjs');
 
 test('buildSummary renders compact success summary with verify, release, and merge-guard sections', () => {
   const summary = buildSummary({
@@ -90,4 +93,38 @@ test('renderMarkdown uses one compact operator brief', () => {
   assert.match(markdown, /Release bump \| patch \/ release plan ready/);
   assert.match(markdown, /Remediation \| blocked_low_confidence/);
   assert.match(markdown, /Artifacts: `\.playbook\/verify\.json`, `\.playbook\/release-plan\.json`/);
+});
+
+test('readJsonArtifact reports path+preview for malformed JSON and degrades for non-critical artifacts', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-ci-summary-'));
+  const artifactPath = path.join(tempDir, 'bad-artifact.json');
+  fs.writeFileSync(artifactPath, '> playbook-monorepo@0.1.8 playbook\n{ "ok": true }\n', 'utf8');
+
+  const warningLogs = [];
+  const warn = console.warn;
+  console.warn = (message) => warningLogs.push(String(message));
+
+  const optionalArtifact = readJsonArtifact(artifactPath, { required: false, label: '.playbook/failure-summary.json' });
+  console.warn = warn;
+  assert.equal(optionalArtifact, null);
+  assert.match(warningLogs[0], /Invalid JSON artifact at \.playbook\/failure-summary\.json/);
+  assert.match(warningLogs[0], /preview=/);
+
+  assert.throws(
+    () => readJsonArtifact(artifactPath, { required: true, label: '.playbook/verify.json' }),
+    /Invalid JSON artifact at \.playbook\/verify\.json/
+  );
+});
+
+test('readJsonArtifact unwraps Playbook artifact envelopes', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-ci-summary-'));
+  const artifactPath = path.join(tempDir, 'verify.json');
+  fs.writeFileSync(
+    artifactPath,
+    JSON.stringify({ artifact: 'playbook.findings', data: { command: 'verify', ok: true, findings: [] } }),
+    'utf8'
+  );
+
+  const parsed = readJsonArtifact(artifactPath, { required: true, label: '.playbook/verify.json' });
+  assert.deepEqual(parsed, { command: 'verify', ok: true, findings: [] });
 });

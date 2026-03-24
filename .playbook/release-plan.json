@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "kind": "playbook-release-plan",
-  "generatedAt": "2026-03-24T03:45:23.407Z",
+  "generatedAt": "2026-03-24T04:02:10.958Z",
   "policy": {
     "path": ".playbook/version-policy.json",
     "breakingChangeMarkers": [
@@ -24,8 +24,32 @@
   "diff": {
     "baseRef": "HEAD~1",
     "baseSha": "b8f00178a33b3d620352e8bb53adae327716ebc9",
-    "headSha": "13610198a7f0c6a2ed19e6e20786d2944c7bb03e",
+    "headSha": "0d673a4315a7a2aacd82fedd31d48fceab743d2e",
     "changedFiles": [
+      {
+        "path": ".github/actions/playbook-ci/action.yml",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "docs/tests/CI-only surface changed"
+        ]
+      },
+      {
+        "path": ".github/scripts/render-playbook-ci-summary.cjs",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "docs/tests/CI-only surface changed"
+        ]
+      },
+      {
+        "path": ".github/scripts/render-playbook-ci-summary.test.cjs",
+        "status": "M",
+        "bump": "none",
+        "reasons": [
+          "docs/tests/CI-only surface changed"
+        ]
+      },
       {
         "path": ".playbook/release-plan.json",
         "status": "M",
@@ -104,6 +128,14 @@
         "bump": "minor",
         "reasons": [
           "command surface changed"
+        ]
+      },
+      {
+        "path": "packages/cli/src/commands/knowledge/review.test.ts",
+        "status": "A",
+        "bump": "none",
+        "reasons": [
+          "docs/tests/CI-only surface changed"
         ]
       },
       {
@@ -201,6 +233,14 @@
           "bump": "minor",
           "reasons": [
             "command surface changed"
+          ]
+        },
+        {
+          "path": "packages/cli/src/commands/knowledge/review.test.ts",
+          "status": "A",
+          "bump": "none",
+          "reasons": [
+            "docs/tests/CI-only surface changed"
           ]
         },
         {

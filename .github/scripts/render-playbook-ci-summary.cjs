@@ -4,9 +4,45 @@ const path = require('node:path');
 const DEFAULT_COMMENT_MARKER = '<!-- playbook:ci-summary -->';
 const PROTECTED_DOC_RULE_PREFIX = 'protected-doc.';
 
+function toPreview(raw) {
+  const text = String(raw ?? '');
+  const normalized = text.replace(/\r/g, '');
+  const preview = normalized.slice(0, 220).replace(/\n/g, '\\n');
+  return preview.length > 0 ? preview : '(empty file)';
+}
+
+function unwrapArtifactEnvelope(parsed) {
+  if (parsed && typeof parsed === 'object' && parsed.data && typeof parsed.data === 'object') {
+    return parsed.data;
+  }
+  return parsed;
+}
+
+function readJsonArtifact(filePath, options = {}) {
+  const { required = false, label = filePath } = options;
+  if (!filePath || !fs.existsSync(filePath)) {
+    if (required) {
+      throw new Error(`Missing required JSON artifact at ${label} (${filePath}).`);
+    }
+    return null;
+  }
+
+  const raw = fs.readFileSync(filePath, 'utf8');
+  try {
+    return unwrapArtifactEnvelope(JSON.parse(raw));
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    const detail = `Invalid JSON artifact at ${label} (${filePath}). preview="${toPreview(raw)}". parseError="${reason}"`;
+    if (required) {
+      throw new Error(detail);
+    }
+    console.warn(detail);
+    return null;
+  }
+}
+
 function readJsonIfExists(filePath) {
-  if (!filePath || !fs.existsSync(filePath)) return null;
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  return readJsonArtifact(filePath, { required: false });
 }
 
 function unique(values) {
@@ -235,19 +271,26 @@ function parseArgs(argv) {
 
 if (require.main === module) {
   const options = parseArgs(process.argv.slice(2));
-  const verify = readJsonIfExists(path.resolve(process.cwd(), options.verify))
-    ?? readJsonIfExists(path.resolve(process.cwd(), options.verifyPreflight));
-  const verifyArtifactPath = fs.existsSync(path.resolve(process.cwd(), options.verify)) ? options.verify : (fs.existsSync(path.resolve(process.cwd(), options.verifyPreflight)) ? options.verifyPreflight : options.verify);
+  const verifyPath = path.resolve(process.cwd(), options.verify);
+  const preflightPath = path.resolve(process.cwd(), options.verifyPreflight);
+  const verify = readJsonArtifact(verifyPath, { required: false, label: options.verify })
+    ?? readJsonArtifact(preflightPath, { required: false, label: options.verifyPreflight });
+  const verifyArtifactPath = fs.existsSync(verifyPath) ? options.verify : (fs.existsSync(preflightPath) ? options.verifyPreflight : options.verify);
+
+  if (!verify) {
+    throw new Error(`Unable to render CI summary: no parseable verify artifact found at ${options.verify} or ${options.verifyPreflight}.`);
+  }
+
   const payload = {
     verify,
     verifyArtifactPath,
-    releasePlan: readJsonIfExists(path.resolve(process.cwd(), options.releasePlan)),
+    releasePlan: readJsonArtifact(path.resolve(process.cwd(), options.releasePlan), { required: false, label: options.releasePlan }),
     releaseArtifactPath: options.releasePlan,
-    remediationPolicy: readJsonIfExists(path.resolve(process.cwd(), options.remediationPolicy)),
+    remediationPolicy: readJsonArtifact(path.resolve(process.cwd(), options.remediationPolicy), { required: false, label: options.remediationPolicy }),
     remediationPolicyArtifactPath: options.remediationPolicy,
-    failureSummary: readJsonIfExists(path.resolve(process.cwd(), options.failureSummary)),
+    failureSummary: readJsonArtifact(path.resolve(process.cwd(), options.failureSummary), { required: false, label: options.failureSummary }),
     failureSummaryArtifactPath: options.failureSummary,
-    remediationStatus: readJsonIfExists(path.resolve(process.cwd(), options.remediationStatus)),
+    remediationStatus: readJsonArtifact(path.resolve(process.cwd(), options.remediationStatus), { required: false, label: options.remediationStatus }),
     remediationStatusArtifactPath: options.remediationStatus,
   };
   const summary = buildSummary(payload);
@@ -282,4 +325,5 @@ module.exports = {
   buildRemediationSummary,
   renderMarkdown,
   readJsonIfExists,
+  readJsonArtifact,
 };

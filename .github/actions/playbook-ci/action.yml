@@ -256,11 +256,11 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         mkdir -p .playbook
-        echo "+ pnpm playbook test-triage --input .playbook/ci-failure.log --json | tee .playbook/failure-summary.json > /dev/null"
-        pnpm playbook test-triage --input .playbook/ci-failure.log --json | tee .playbook/failure-summary.json > /dev/null
+        echo "+ node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log --json --out .playbook/failure-summary.json"
+        node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log --json --out .playbook/failure-summary.json
         cp .playbook/failure-summary.json .playbook/test-triage.json
-        echo "+ pnpm playbook test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md"
-        pnpm playbook test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md
+        echo "+ node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md"
+        node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md
 
     - name: Evaluate CI remediation policy gates
       if: inputs.execution-path == 'ci'
@@ -320,16 +320,16 @@ runs:
           EXTRA_ARGS+=(--dry-run)
         fi
         EXTRA_ARGS+=(--confidence-threshold "$PLAYBOOK_AUTOFIX_CONFIDENCE_THRESHOLD")
-        echo "+ pnpm playbook test-autofix --input .playbook/ci-failure.log ${EXTRA_ARGS[*]} --json | tee .playbook/test-autofix.json"
-        pnpm playbook test-autofix --input .playbook/ci-failure.log "${EXTRA_ARGS[@]}" --json | tee .playbook/test-autofix.json
+        echo "+ node packages/cli/dist/main.js test-autofix --input .playbook/ci-failure.log ${EXTRA_ARGS[*]} --json --out .playbook/test-autofix.json"
+        node packages/cli/dist/main.js test-autofix --input .playbook/ci-failure.log "${EXTRA_ARGS[@]}" --json --out .playbook/test-autofix.json
 
     - name: Run canonical remediation-status read model
       if: inputs.execution-path == 'ci' && env.PLAYBOOK_TEST_EXIT_CODE != '0' && steps.remediation-policy.outputs.mutation-allowed == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "+ pnpm playbook remediation-status --json | tee .playbook/remediation-status.json"
-        pnpm playbook remediation-status --json | tee .playbook/remediation-status.json
+        echo "+ node packages/cli/dist/main.js remediation-status --json --out .playbook/remediation-status.json"
+        node packages/cli/dist/main.js remediation-status --json --out .playbook/remediation-status.json
 
     - name: Log blocked-by-policy CI remediation state
       if: inputs.execution-path == 'ci' && env.PLAYBOOK_TEST_EXIT_CODE != '0' && steps.remediation-policy.outputs.mutation-allowed != 'true'
