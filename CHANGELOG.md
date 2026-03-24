@@ -4,6 +4,18 @@
 
 ### WHAT
 
+- Introduced Simple Rule Theory and Triadic System Pattern as first-class architectural doctrines.
+- Expanded Simple Rule Theory to include data refinement, invariant extraction, and minimal sufficient representation.
+- Integrated these doctrines into architecture documentation, checklist guidance, and command metadata descriptions for `verify`, `plan`, and `apply`.
+
+### WHY
+
+- Establish consistent design primitives for deterministic automation and governance.
+- Encourage storing compact invariant state and deriving redundant views/behavior on demand.
+- Align Playbook workflow framing with triadic system structure.
+
+### WHAT
+
 - Added Phase 7 Wave 2A additive outcome telemetry context fields (`task_profile_id`, `task_family`, `affected_surfaces`, `estimated_change_surface`, `actual_change_surface`, `files_changed_count`, `post_apply_verify_passed`, `post_apply_ci_passed`, `regression_categories`, `pattern_families_implicated`) plus deterministic normalization/rollups and safe degradation for partial or legacy records.
 - Added Phase 7 Wave 1 deterministic learning-state snapshots (`learning-state-snapshot`) with required compact metrics (`first_pass_yield`, `retry_pressure`, `validation_load_ratio`, `route_efficiency_score`, `smallest_sufficient_route_score`, `pattern_family_effectiveness_score`, `portability_confidence`) derived from outcome telemetry, process telemetry, and optional task-execution-profile evidence.
 - Added `pnpm playbook telemetry learning-state` inspection surface with JSON/text output and safe degradation when telemetry artifacts are partially or fully missing.

@@ -36,6 +36,15 @@ Rule: Roadmap sequencing must preserve CLI-first, offline-capable, private-first
 Failure Mode: Business docs drifting away from runtime truth.
 
 
+## Architecture doctrine status
+
+### System Design Doctrines: Simple Rule Theory + Triadic Pattern
+
+Status: complete
+
+- Simple Rule Theory now explicitly includes rule-based governance, invariant extraction, minimal sufficient representation, and derive-don't-duplicate behavior.
+- Triadic System Pattern defines `state -> transformation -> enforcement` as the preferred workflow shape, with `verify -> plan -> apply` as the canonical Playbook mapping.
+
 ## Phase 9 — Unified Doctrine Loop (Self-Improving Playbook Core)
 
 Phase 9 unifies Phase 7/8 knowledge, promotion, story, and lifecycle systems into one closed deterministic product loop.
