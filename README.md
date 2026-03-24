@@ -57,6 +57,7 @@ Pattern: **config/plugins/rule packs over forks** for project-specific customiza
 ## Runtime artifacts and storage
 
 Playbook uses `.playbook/` as the default home for local runtime artifacts (for example repository intelligence indexes, plans, and machine-readable reports).
+Playbook also publishes checked-in machine-readable Lifeline presets under `exports/lifeline/` so external tooling can consume stable defaults directly from a local Playbook checkout without starting the Playbook UI.
 Playbook routing inspection emits deterministic proposal-only execution plans at `.playbook/execution-plan.json` via `pnpm playbook route "<task>" --json`.
 
 - Generated runtime artifacts should generally be gitignored unless intentionally committed as stable contracts/examples.

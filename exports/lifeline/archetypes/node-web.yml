@@ -1,0 +1,6 @@
+archetype: node-web
+defaults:
+  installCommand: pnpm install
+  buildCommand: pnpm build
+  startCommand: pnpm start
+  healthcheckPath: /health
