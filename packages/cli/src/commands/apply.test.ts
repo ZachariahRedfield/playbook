@@ -233,6 +233,70 @@ describe('runApply', () => {
     logSpy.mockRestore();
   });
 
+  it('persists canonical apply artifact after successful execution', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-artifact-'));
+    const artifactPath = path.join(tmpRoot, '.playbook', 'policy-apply-result.json');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    generatePlanContract.mockReturnValue({
+      verify: { ok: false, summary: { failures: 1, warnings: 0 } },
+      tasks: [{ id: 'task-3', ruleId: 'PB003', file: 'docs/PLAYBOOK_CHECKLIST.md', action: 'add verify step', autoFix: false }]
+    });
+    parsePlanArtifact.mockReturnValue({ tasks: [{ id: 'task-from-file', ruleId: 'plugin.failure', file: 'docs/PLUGIN.md', action: 'create plugin doc', autoFix: true }] });
+    loadVerifyRules.mockResolvedValue([]);
+    applyExecutionPlan.mockResolvedValue({
+      results: [{ id: 'task-3', ruleId: 'PB003', file: 'docs/PLAYBOOK_CHECKLIST.md', action: 'add verify step', autoFix: false, status: 'skipped' }],
+      summary: { applied: 0, skipped: 1, unsupported: 0, failed: 0 }
+    });
+
+    const exitCode = await runApply(tmpRoot, { format: 'json', ci: false, quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(fs.existsSync(artifactPath)).toBe(true);
+    const artifactPayload = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+    expect(artifactPayload.kind).toBe('policy-apply-result');
+    expect(artifactPayload.summary).toEqual({
+      executed: 0,
+      skipped_requires_review: 1,
+      skipped_blocked: 0,
+      failed_execution: 0,
+      total: 1
+    });
+
+    logSpy.mockRestore();
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('persists canonical apply artifact for no-op success', async () => {
+    const { runApply } = await import('./apply.js');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-noop-artifact-'));
+    const artifactPath = path.join(tmpRoot, '.playbook', 'policy-apply-result.json');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    generatePlanContract.mockReturnValue({
+      verify: { ok: true, summary: { failures: 0, warnings: 0 } },
+      tasks: []
+    });
+
+    const exitCode = await runApply(tmpRoot, { format: 'json', ci: false, quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(fs.existsSync(artifactPath)).toBe(true);
+    const artifactPayload = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+    expect(artifactPayload.kind).toBe('policy-apply-result');
+    expect(artifactPayload.summary).toEqual({
+      executed: 0,
+      skipped_requires_review: 0,
+      skipped_blocked: 0,
+      failed_execution: 0,
+      total: 0
+    });
+
+    logSpy.mockRestore();
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
 
 
 

@@ -191,7 +191,7 @@ Rules:
 - Missing runtime resolution must fail loudly with actionable setup guidance; silent PATH assumptions are not allowed.
 - Development fallbacks must remain opt-in and must not become the default runtime path.
 
-When `--repo` is set, runtime artifacts are written into the target repository under `.playbook/` (for example `repo-index.json`, `repo-graph.json`, `findings.json`, `plan.json`, and runtime cycle artifacts).
+When `--repo` is set, runtime artifacts are written into the target repository under `.playbook/` (for example `repo-index.json`, `repo-graph.json`, `findings.json`, `plan.json`, `policy-apply-result.json`, and runtime cycle artifacts). Lifecycle commands persist canonical artifacts even on no-op success (`plan` with zero tasks and `apply` with zero executed tasks).
 
 For machine-consumed JSON artifacts, use CLI-owned output flags (for example `--json --out ...`). Shell redirection is not a supported canonical artifact-generation path.
 

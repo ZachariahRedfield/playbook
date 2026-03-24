@@ -106,6 +106,29 @@ describe('runPlan', () => {
     logSpy.mockRestore();
   });
 
+  it('persists canonical .playbook/plan.json even without --out', async () => {
+    const { runPlan } = await import('./plan.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-plan-canonical-'));
+    const planPath = path.join(repoDir, '.playbook', 'plan.json');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    generatePlanContract.mockReturnValue({
+      verify: { ok: true, summary: { failures: 0, warnings: 0 }, failures: [], warnings: [] },
+      tasks: []
+    });
+
+    const exitCode = await runPlan(repoDir, { format: 'json', ci: false, quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(fs.existsSync(planPath)).toBe(true);
+    const artifactPayload = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+    expect(artifactPayload.command).toBe('plan');
+    expect(artifactPayload.tasks).toEqual([]);
+    expect(artifactPayload.remediation?.status).toBe('not_needed');
+
+    logSpy.mockRestore();
+  });
+
   it('reports explicit unavailable remediation state when failures have no tasks', async () => {
     const { runPlan } = await import('./plan.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

@@ -1,7 +1,10 @@
 import * as engine from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
-import { emitJsonOutput } from '../lib/jsonArtifact.js';
+import { emitJsonOutput, writeJsonArtifactAbsolute } from '../lib/jsonArtifact.js';
 import { buildPlanRemediation, deriveVerifyFailureFacts } from '../lib/remediationContract.js';
+import path from 'node:path';
+
+const PLAN_ARTIFACT_RELATIVE_PATH = '.playbook/plan.json' as const;
 
 const renderTextPlan = (tasks: Array<{ ruleId: string; action: string }>): void => {
   console.log('Plan');
@@ -95,16 +98,19 @@ export const runPlan = async (
     );
   }
 
+  const payload = {
+    schemaVersion: '1.0',
+    command: 'plan',
+    ok: true,
+    exitCode: ExitCode.Success,
+    verify: plan.verify,
+    remediation,
+    tasks: plan.tasks
+  };
+
+  writeJsonArtifactAbsolute(path.resolve(cwd, PLAN_ARTIFACT_RELATIVE_PATH), payload as Record<string, unknown>, 'plan', { envelope: false });
+
   if (options.format === 'json') {
-    const payload = {
-      schemaVersion: '1.0',
-      command: 'plan',
-      ok: true,
-      exitCode: ExitCode.Success,
-        verify: plan.verify,
-      remediation,
-      tasks: plan.tasks
-    };
 
     emitJsonOutput({ cwd, command: 'plan', payload, outFile: options.outFile });
     return ExitCode.Success;

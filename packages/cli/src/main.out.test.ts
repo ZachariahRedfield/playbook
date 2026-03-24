@@ -56,4 +56,39 @@ describe('cli --repo with --out json artifacts', () => {
     expect(queryJson.command).toBe('query');
     expect(Array.isArray(queryJson.result)).toBe(true);
   });
+
+  it('persists lifecycle artifacts in target repos for no-op plan/apply runs', { timeout: 45000 }, () => {
+    const planPath = path.join(targetRepo, '.playbook', 'plan.json');
+    const applyPath = path.join(targetRepo, '.playbook', 'policy-apply-result.json');
+
+    execFileSync('node', [scriptPath, '--repo', targetRepo, 'index', '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+    execFileSync('node', [scriptPath, '--repo', targetRepo, 'plan', '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+    execFileSync('node', [scriptPath, '--repo', targetRepo, 'apply', '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+
+    expect(fs.existsSync(planPath)).toBe(true);
+    expect(fs.existsSync(applyPath)).toBe(true);
+    const planArtifact = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+    const applyArtifact = JSON.parse(fs.readFileSync(applyPath, 'utf8'));
+    expect(planArtifact.command).toBe('plan');
+    expect(Array.isArray(planArtifact.tasks)).toBe(true);
+    expect(applyArtifact.kind).toBe('policy-apply-result');
+
+    const statusRaw = execFileSync('node', [scriptPath, '--repo', targetRepo, 'status', '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+    const statusJson = JSON.parse(statusRaw.slice(statusRaw.indexOf('{')));
+    expect(statusJson.adoption.lifecycle_stage).toBe('ready');
+    expect(statusJson.adoption.governed_artifacts_present.plan.valid).toBe(true);
+    expect(statusJson.adoption.governed_artifacts_present.policy_apply_result.valid).toBe(true);
+  });
 });

@@ -203,6 +203,27 @@ const decodePlanPayload = (buffer: Buffer): DecodedPlanPayload => {
   return { text: stripLeadingBom(buffer.toString('utf8')), likelyShellEncodingIssue: false };
 };
 
+const persistStandardApplyArtifact = (cwd: string, payload: ApplyJsonResult): void => {
+  const resultArtifactPath = path.resolve(cwd, POLICY_APPLY_RESULT_RELATIVE_PATH);
+  const resultArtifact: PolicyApplyResultArtifact = {
+    schemaVersion: '1.0',
+    kind: 'policy-apply-result',
+    executed: [],
+    skipped_requires_review: [],
+    skipped_blocked: [],
+    failed_execution: [],
+    summary: {
+      executed: payload.summary.applied,
+      skipped_requires_review: payload.summary.skipped,
+      skipped_blocked: payload.summary.unsupported,
+      failed_execution: payload.summary.failed,
+      total: payload.results.length
+    }
+  };
+
+  writeJsonArtifactAbsolute(resultArtifactPath, resultArtifact as Record<string, unknown>, 'apply', { envelope: false });
+};
+
 
 const readRequiredNonNegativeInteger = (value: unknown, fieldName: string): number => {
   if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
@@ -915,6 +936,7 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
     });
 
     attachApplyRunArtifacts(cwd, runId, options.fromPlan);
+    persistStandardApplyArtifact(cwd, payload);
 
     if (options.format === 'json') {
       console.log(JSON.stringify(payload, null, 2));
@@ -975,5 +997,6 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   });
 
   attachApplyRunArtifacts(cwd, runId, options.fromPlan);
+  persistStandardApplyArtifact(cwd, payload);
   return emitApplyOutput(options, payload, renderTextApply);
 };
