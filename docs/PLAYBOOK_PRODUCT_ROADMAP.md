@@ -317,8 +317,11 @@ Operationally: recall brings active knowledge into bounded review with provenanc
 First operational realization: the postmortem reconsolidation loop. Operators should capture incidents or notable changes in a structured postmortem, extract explicit promotion candidates, review them through existing `memory` / `promote` surfaces, and then restabilize doctrine only through reviewed updates to memory, promoted knowledge, and docs.
 
 Rule: Retrieval-based revision must enter the system through explicit evidence-bearing review artifacts.
+Rule: Retrieval-based review must recall knowledge through explicit evidence-bearing artifacts.
 Pattern: Structured postmortem -> candidate extraction -> explicit promotion.
+Pattern: Recall -> reinterpret -> review queue -> explicit promotion or supersession.
 Failure Mode: Doctrine updates sourced from memory of the incident instead of the reviewed postmortem artifact create silent drift.
+Failure Mode: High-value knowledge stays active forever when there is no bounded retrieval review queue surface.
 Failure Mode: Teams copy fashionable architectures or metaphors without mapping the constraints that made them work elsewhere.
 Failure Mode: Review loops that blend fact, interpretation, and narrative silently rewrite doctrine and erode trust.
 

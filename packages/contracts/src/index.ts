@@ -35,6 +35,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   testFixPlan: 'packages/contracts/src/test-fix-plan.schema.json',
   testAutofix: 'packages/contracts/src/test-autofix.schema.json',
   remediationStatus: 'packages/contracts/src/remediation-status.schema.json',
+  reviewQueue: 'packages/contracts/src/review-queue.schema.json',
   versionPolicy: 'packages/contracts/src/version-policy.schema.json',
   releasePlan: 'packages/contracts/src/release-plan.schema.json',
   managedSurfaceManifest: 'packages/contracts/src/managed-surface-manifest.schema.json'

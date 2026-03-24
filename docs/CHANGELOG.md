@@ -105,6 +105,10 @@
 - WHAT: Updated the reusable Playbook CI transport to emit `.playbook/failure-summary.json`, `.playbook/failure-summary.md`, `.playbook/test-triage.json`, and GitHub step summary content alongside `.playbook/ci-failure.log`. WHY: Every Playbook-managed CI/test failure now preserves raw output while publishing a normalized summary contract for humans, automation, and AI remediation loops.
 
 ## Unreleased
+- WHAT: Added a first-class deterministic retrieval review read model in engine that builds `.playbook/review-queue.json` from governed promoted knowledge artifacts, stale/superseded lifecycle signals, postmortem candidate provenance, and governed roadmap/workflow/postmortem docs metadata; also added contracts schema coverage and focused queue tests. WHY: Playbook needs a bounded, evidence-bearing recall surface so high-value knowledge and governed docs can be periodically reaffirmed, revised, or superseded without crossing promotion mutation boundaries.
+- Rule: Retrieval-based review must recall knowledge through explicit evidence-bearing artifacts.
+- Pattern: Recall -> reinterpret -> review queue -> explicit promotion or supersession.
+- Failure Mode: High-value knowledge can remain marked active forever when no bounded retrieval review surface exists.
 - WHAT: Refreshed the committed CLI contract snapshot after the intentional contracts-registry expansion that now includes the managed-surface manifest schema. WHY: Contract-surface governance must be updated in lockstep so CI fails on real surface drift instead of stale snapshots.
 - Rule: Refresh committed contract snapshots whenever intentional CLI JSON surfaces change.
 - Failure Mode: Fixing governance first will not unblock CI if stale contract snapshots stop the pipeline earlier.

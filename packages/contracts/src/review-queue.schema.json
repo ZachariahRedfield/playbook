@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/review-queue.schema.json",
+  "title": "Review Queue",
+  "description": "Read-only retrieval review queue artifact for reaffirm/revise/supersede review targets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "proposalOnly", "authority", "generatedAt", "entries"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "playbook-review-queue" },
+    "proposalOnly": { "type": "boolean", "const": true },
+    "authority": { "type": "string", "const": "read-only" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "targetKind",
+          "sourceSurface",
+          "reasonCode",
+          "evidenceRefs",
+          "recommendedAction",
+          "reviewPriority",
+          "generatedAt"
+        ],
+        "properties": {
+          "targetKind": { "type": "string", "enum": ["knowledge", "doc"] },
+          "targetId": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "sourceSurface": { "type": "string", "minLength": 1 },
+          "reasonCode": { "type": "string", "minLength": 1 },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "recommendedAction": { "type": "string", "enum": ["reaffirm", "revise", "supersede"] },
+          "reviewPriority": { "type": "string", "enum": ["high", "medium", "low"] },
+          "generatedAt": { "type": "string", "format": "date-time" }
+        },
+        "allOf": [
+          {
+            "anyOf": [
+              { "required": ["targetId"] },
+              { "required": ["path"] }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
