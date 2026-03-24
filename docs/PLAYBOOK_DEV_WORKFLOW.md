@@ -205,6 +205,9 @@ Failure Mode: Broad unscoped docs rules create compliance churn and push teams a
 - Generated artifacts must be produced in staging and promoted only after validation succeeds.
 - Snapshot refresh uses the built CLI directly (`node scripts/update-contract-snapshots.mjs`) and therefore requires `pnpm -r build` before regeneration.
 - Documentation and governance changes must pass `pnpm playbook docs audit` in CI.
+- Rule: Generating `.playbook/release-plan.json` is evidence only; release-relevant diffs must also mirror approved version/changelog updates in-branch.
+- Pattern: If release plan says patch/minor/major but verify reports `observed_version_bumps=none`, apply and commit the lockstep package/changelog updates from the reviewed plan.
+- Failure Mode: Internal shipped code can hide inside docs/test-heavy PRs and still require governed version bumps.
 
 ## Suggested PR structure
 
