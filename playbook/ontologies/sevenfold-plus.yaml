@@ -1,0 +1,256 @@
+version: 1.0.0
+ontology: sevenfold-plus
+rules:
+  - "0, 8, and 9 are meta-states around the seven, not extra entries beside them."
+  - "Every symbolic number maps across metaphysical, psychological, aesthetic, mechanical, and historical layers."
+layers:
+  canon:
+    description: Player-facing symbolic truth.
+  esoteric_reference:
+    description: Internal comparative references only.
+  dev_mnemonic:
+    description: Internal shorthand; never player-facing.
+canonical_pattern:
+  "0": substrate
+  "1-7": differentiation
+  "8": synthesis
+  "9": persistence
+
+meta_states:
+  "0":
+    public_name: The Quiet
+    shadow_name: Refusal of Form
+    redeemed_form: Receptive Silence
+    core_meaning: Undivided potential before identity.
+    core_wound: Terror of limitation.
+    false_promise: Non-being prevents suffering.
+    healthy_expression: Stillness and possibility.
+    shadow_expression: Nihilism and dissociation.
+    visual_language: abyss fog, blank horizons, uncarved stone
+    audio_language: near-silence, sub-bass air, unresolved drones
+    symbolic_objects: [seed-vessel, unlit lantern, erased tablet]
+    realm_expression: substrate abyss beneath all kingdoms
+    enemy_logic: erase all distinctions
+    relic_logic: latent relics that awaken by alignment
+    quest_logic: recover names from erased memory fields
+    narrative_role: prelude and origin veil
+    gameplay_role: onboarding void, latent potential systems
+    engine_role: null state, seed state, pre-instantiated space
+    crossover_rules: may prefix any archetype as unformed variant
+    taboo_or_failure_risk: meaning collapse via pure abstraction
+
+  "8":
+    public_name: The Octave
+    shadow_name: False Unity
+    redeemed_form: Mercy
+    core_meaning: Reintegration at higher order.
+    core_wound: Fragmentation trauma.
+    false_promise: Forced sameness creates peace.
+    healthy_expression: Forgiveness and synthesis.
+    shadow_expression: Assimilation and sterile perfection.
+    visual_language: braided geometries, repaired kintsugi seams, prismatic halos
+    audio_language: resolved reprises, blended motifs, octave returns
+    symbolic_objects: [mended crown, woven sigil, reconciler key]
+    realm_expression: reconciled borderlands and healed fault zones
+    enemy_logic: purges difference to enforce order
+    relic_logic: fusion relics requiring two prior archetypes
+    quest_logic: reconcile incompatible houses through costly mercy
+    narrative_role: hidden reconciliation arc / true ending gate
+    gameplay_role: hybrid builds, cleanse transforms, synthesis trees
+    engine_role: fusion rules engine, archetype composition, postgame transforms
+    crossover_rules: requires at least two differentiated sources
+    taboo_or_failure_risk: purity tyranny disguised as harmony
+
+  "9":
+    public_name: The Fruit
+    shadow_name: Canon Prison
+    redeemed_form: Living Kingdom
+    core_meaning: Truth embodied in history and stewardship.
+    core_wound: Fear of loss across generations.
+    false_promise: Total control preserves legacy.
+    healthy_expression: Maturity, lineage, transmission.
+    shadow_expression: Bureaucratic calcification and empire dogma.
+    visual_language: archives, city strata, family standards, harvest banners
+    audio_language: inherited themes, chorales, folk variation over time
+    symbolic_objects: [archive seal, heirloom blade, civic charter]
+    realm_expression: restored city-state with visible historical layers
+    enemy_logic: freeze history into unchangeable doctrine
+    relic_logic: heirloom relics evolving through save lineage
+    quest_logic: adjudicate consequences from prior acts across eras
+    narrative_role: epilogue civilization and living aftermath
+    gameplay_role: long-tail progression, civic governance, lineage systems
+    engine_role: persistence graph, world memory, consequence propagation
+    crossover_rules: consumes outcomes from 1-8 and records them
+    taboo_or_failure_risk: replacing living history with static lore
+
+archetypes:
+  "1":
+    public_name: The Crown
+    shadow_name: Pride
+    redeemed_form: Vocation
+    core_meaning: identity and initiating will
+    core_wound: unworthy selfhood
+    false_promise: superiority heals shame
+    healthy_expression: responsible leadership
+    shadow_expression: domination and contempt
+    visual_language: spires, crowns, sun emblems
+    audio_language: solo brass calls
+    symbolic_objects: [scepter, seal ring, oath blade]
+    realm_expression: high citadel biome
+    enemy_logic: tries to become its own source
+    relic_logic: initiative buffs with humility checks
+    quest_logic: authority proven through service
+    narrative_role: sovereign caller
+    gameplay_role: opener / command stance
+    engine_role: ownership and authority tags
+    crossover_rules: pairs with 2 for just governance
+    taboo_or_failure_risk: hero exceptionalism cult
+
+  "2":
+    public_name: The Ledger
+    shadow_name: Greed
+    redeemed_form: Stewardship
+    core_meaning: resource and exchange
+    core_wound: scarcity panic
+    false_promise: possession ends absence
+    healthy_expression: generous provisioning
+    shadow_expression: hoarding extraction
+    visual_language: scales, keys, vault geometry
+    audio_language: counting ticks, metallic pulses
+    symbolic_objects: [keyring, trade weights, contract scroll]
+    realm_expression: market deltas and vault-cities
+    enemy_logic: tries to possess enough to fill absence
+    relic_logic: reserve conversion with corruption caps
+    quest_logic: redistribute cursed abundance
+    narrative_role: steward-merchant tension
+    gameplay_role: economy and crafting pressure
+    engine_role: inventory/currency sinks and sources
+    crossover_rules: pairs with 4 for valuation mirrors
+    taboo_or_failure_risk: extractive play dominance
+
+  "3":
+    public_name: The Brand
+    shadow_name: Wrath
+    redeemed_form: Courage
+    core_meaning: judgment and boundary defense
+    core_wound: betrayal
+    false_promise: destruction ends separation
+    healthy_expression: protective force
+    shadow_expression: vengeance spiral
+    visual_language: fissures, scars, ember light
+    audio_language: impacts, alarms, distorted strings
+    symbolic_objects: [verdict bell, branded shield, gauntlet]
+    realm_expression: volcanic frontier
+    enemy_logic: tries to destroy separation
+    relic_logic: retaliation power with collateral risk
+    quest_logic: convert vengeance into oathbound defense
+    narrative_role: avenger-guardian
+    gameplay_role: burst retaliation
+    engine_role: threat and retaliation events
+    crossover_rules: pairs with 5 to temper fury
+    taboo_or_failure_risk: cruelty framed as justice
+
+  "4":
+    public_name: The Mirror
+    shadow_name: Envy
+    redeemed_form: Admiration
+    core_meaning: comparison and aspiration
+    core_wound: displaced worth
+    false_promise: stolen wholeness grants identity
+    healthy_expression: grateful emulation
+    shadow_expression: sabotage mimicry
+    visual_language: reflective planes, doubled silhouettes
+    audio_language: echoes and detuned doubles
+    symbolic_objects: [mirror mask, prism lens, borrowed sigil]
+    realm_expression: illusion marsh and mirror court
+    enemy_logic: tries to steal another's wholeness
+    relic_logic: copy buffs with instability
+    quest_logic: recover stolen names
+    narrative_role: rival/foil/twin
+    gameplay_role: adaptive counterplay
+    engine_role: snapshot/mimic behavior systems
+    crossover_rules: pairs with 6 for transformed appetite
+    taboo_or_failure_risk: identity flattening
+
+  "5":
+    public_name: The Veil
+    shadow_name: Sloth
+    redeemed_form: Sabbath
+    core_meaning: rest and incubation
+    core_wound: fear of becoming
+    false_promise: withdrawal avoids pain
+    healthy_expression: restorative stillness
+    shadow_expression: apathy and entropy drift
+    visual_language: mist, low contrast, suspended forms
+    audio_language: drones and long reverbs
+    symbolic_objects: [still hourglass, sleep charm, watchfire]
+    realm_expression: dream bog and hibernal sanctum
+    enemy_logic: refuses the burden of becoming
+    relic_logic: cooldown reset with tempo debt
+    quest_logic: awaken dormant wards gently
+    narrative_role: sleeper oracle
+    gameplay_role: tempo and cooldown control
+    engine_role: scheduler/idle/time-dilation hooks
+    crossover_rules: pairs with 3 for disciplined force
+    taboo_or_failure_risk: non-interactive pacing
+
+  "6":
+    public_name: The Banquet
+    shadow_name: Gluttony
+    redeemed_form: Communion
+    core_meaning: intake and abundance processing
+    core_wound: starvation memory
+    false_promise: consumption creates fullness
+    healthy_expression: shared feast and measure
+    shadow_expression: excess dependency loops
+    visual_language: abundance spirals, overripe gold
+    audio_language: layered swells and dense ostinatos
+    symbolic_objects: [chalice, harvest horn, endless bowl]
+    realm_expression: overgrown orchard necropolis
+    enemy_logic: tries to consume fullness
+    relic_logic: stacking sustain with toxicity meter
+    quest_logic: heal famine engines without glut
+    narrative_role: host-devourer paradox
+    gameplay_role: sustain and drain loops
+    engine_role: stack counters and decay balancing
+    crossover_rules: pairs with 7 for covenant feasts
+    taboo_or_failure_risk: compulsive min-max loops
+
+  "7":
+    public_name: The Knot
+    shadow_name: Lust
+    redeemed_form: Covenant
+    core_meaning: attraction and union
+    core_wound: unheld longing
+    false_promise: instant fusion without transformation
+    healthy_expression: bonded mutual transformation
+    shadow_expression: possession obsession
+    visual_language: interlace sigils, braided forms
+    audio_language: duet tension-release motifs
+    symbolic_objects: [braided cord, twin rings, vow-lock]
+    realm_expression: magnetized cathedrals and vine vaults
+    enemy_logic: tries to fuse instantly without transformation
+    relic_logic: tether effects with consent/strain limits
+    quest_logic: untangle cursed bonds into chosen vows
+    narrative_role: oath and temptation arcs
+    gameplay_role: links/synergy/risk-sharing
+    engine_role: link-state graphs and aura overlap
+    crossover_rules: pairs with 8 for redeemed unions
+    taboo_or_failure_risk: coercive bond framing
+
+generation_constraints:
+  per_number_minimums:
+    realm_or_biome: 1
+    boss_or_faction: 1
+    relic_line: 1
+    questline_pattern: 1
+    system_engine_hook: 1
+  synthesis_rules:
+    - "8 outputs hybridized reconciliations; never duplicate base archetype realms."
+    - "9 outputs persistence, consequence, civilization, lineage, or stewardship systems."
+
+failure_modes:
+  - Overfitting correspondences across too many traditions makes the system arbitrary.
+  - Letting dev mnemonics leak into canon reduces originality.
+  - Treating 8 as another realm instead of reconciliation weakens ontology.
+  - Treating 9 as transcendence instead of legacy/consequence duplicates 8.
