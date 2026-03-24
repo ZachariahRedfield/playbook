@@ -37,6 +37,8 @@ Replay output remains candidate-only and is derived from memory evidence in `.pl
 
 Operator note: postmortem reconsolidation should enter here as a reviewed artifact flow — write the structured postmortem first, extract explicit candidates from that artifact, then review them through `memory` / `promote` surfaces without introducing a new command family or automatic promotion.
 
+Retrieval review note: use `pnpm playbook knowledge review --json` as the compact read-only retrieval review surface for `.playbook/review-queue.json`. This remains a review surface only; it does not auto-promote knowledge and does not change command authority.
+
 ### `memory knowledge`
 
 List promoted knowledge artifacts from `.playbook/memory/knowledge/*.json`.

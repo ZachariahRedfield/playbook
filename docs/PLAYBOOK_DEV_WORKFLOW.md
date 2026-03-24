@@ -63,6 +63,12 @@ The reusable Playbook CI action enforces this PR `feature_id` rule in `pull_requ
 
 Optional sync surface: run `pnpm pr:sync-metadata` to project `.playbook/pr-metadata.json` into GitHub PR title/body when token permissions allow. The sync helper degrades with warnings and is not required for validator success.
 
+CI artifact governance note: machine-consumed `.playbook/*.json` artifacts must be produced by deterministic JSON writers at the source (for example `node packages/cli/dist/main.js <command> --json --out <path>`), never by shell-capturing wrapper stdout where pnpm/script banners can corrupt JSON payloads.
+`.playbook/failure-summary.json` is a conditional diagnostics artifact for CI failure triage paths; consumers must check existence before copy/read/publish and preserve the original primary test failure status independently.
+Linux CI validates esbuild by runtime capability (`require('esbuild')` + transform smoke test), not direct optional-package layout checks such as `require.resolve('@esbuild/linux-x64')`.
+Because this runtime check executes from repository root, `esbuild` must be declared as a direct root dependency in `package.json` (not only transitively through workspace packages).
+When primary `pnpm test` fails in Playbook CI, remediation/reporting steps may still run, but the preserved upstream test exit code remains the canonical blocker; CI now also emits `.playbook/first-test-failure.json` to surface the first failing suite/test/message near the final failure step.
+
 For documentation/governance changes, also run:
 
 ```bash
@@ -85,6 +91,8 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 ```
 
 The GitHub Actions workflow `.github/workflows/release-prep.yml` is the only automation that should commit the resulting reviewed package-version, linked-workspace-dependency, and managed changelog updates into the single release-prep PR branch. Normal PR CI remains detect/plan/report only and must never auto-apply release mutations.
+
+Release-governance note: `release plan` evidence alone is advisory. `verify` continues to fail until the planned version/changelog updates are mirrored in committed branch state.
 
 Rule: Installable workflow policy is incomplete until the trusted/manual mutation path is installable too.
 Pattern: Seed policy, seed reviewed executor, keep normal CI plan-only.
@@ -201,11 +209,16 @@ Postmortem outputs should feed three reviewed destinations:
 - **Doctrine candidates** for reusable Rule / Pattern / Failure Mode updates that still require explicit review and promotion.
 - **Docs revision** when the reviewed postmortem shows workflow, roadmap, or operator guidance should be clarified.
 
+Retrieval review should stay on existing read-only surfaces: `pnpm playbook knowledge review --json` materializes and inspects `.playbook/review-queue.json` for reaffirm/revise/supersede decisions with compact filters, but it does not auto-promote and does not introduce a new mutation path.
+
 Rule: Retrieval-based revision must enter the system through explicit evidence-bearing review artifacts.
+Rule: Review surfaces recall governed knowledge without mutating it.
 Rule: Postmortems must separate observed facts from interpretation and promotion candidates.
 Pattern: Structured postmortem -> candidate extraction -> explicit promotion.
+Pattern: Use existing review families before inventing new top-level command families.
 Pattern: Recall -> reinterpret -> promote -> restabilize becomes concrete through structured postmortems.
 Failure Mode: Doctrine updates sourced from memory of the incident instead of the reviewed postmortem artifact create silent drift.
+Failure Mode: Retrieval review that lands as a new command silo instead of an existing review surface fragments the workflow.
 Failure Mode: Blending fact, explanation, and doctrine in one narrative rewrites history and weakens promotion quality.
 
 ## Deterministic delivery protocol (v1)

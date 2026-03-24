@@ -6,6 +6,7 @@
 - @zachariahredfield/playbook-core: 0.7.0 -> 0.8.0 (playbook-installable-workspace)
 - @zachariahredfield/playbook-engine: 0.7.0 -> 0.8.0 (playbook-installable-workspace)
 - @zachariahredfield/playbook-node: 0.7.0 -> 0.8.0 (playbook-installable-workspace)
+- WHAT: Added the read-only `pnpm playbook knowledge review` surface that materializes `.playbook/review-queue.json` and supports compact review filters (`--action`, `--kind`) while keeping terse text output and full JSON detail. WHY: Command-surface expansion in the installable CLI must ship with synchronized workspace version/changelog updates so release-governance verify can validate committed state, not just computed plan intent.
 
 ## 0.6.1 - 2026-03-24
 - Recommended bump: patch

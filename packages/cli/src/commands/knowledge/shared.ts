@@ -20,6 +20,7 @@ Inspect repository knowledge artifacts through read-only deterministic surfaces.
 Subcommands:
   list                            List evidence, candidate, promoted, and superseded knowledge records
   query                           Filter knowledge records
+  review                          Materialize/read retrieval review queue (read-only)
   inspect <id>                    Inspect one knowledge record by id
   compare <left-id> <right-id>    Compare two knowledge records
   timeline                        Show the knowledge timeline
@@ -38,6 +39,8 @@ Options:
   --limit <n>                  Limit returned records
   --order <asc|desc>           Ordering for list/timeline/stale (default desc)
   --days <n>                   Override stale threshold in days
+  --action <action>            Review filter action (reaffirm|revise|supersede)
+  --kind <kind>                Review filter kind (knowledge|doc|rule|pattern)
   --json                       Print machine-readable JSON output
   --help                       Show help`);
 };

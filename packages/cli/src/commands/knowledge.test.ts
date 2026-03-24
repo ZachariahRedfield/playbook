@@ -11,10 +11,13 @@ const knowledgeSupersession = vi.fn();
 const knowledgeStale = vi.fn();
 const readCrossRepoPatternsArtifact = vi.fn();
 const readPortabilityOutcomesArtifact = vi.fn();
+const buildReviewQueue = vi.fn();
+const writeReviewQueueArtifact = vi.fn();
 const existsSync = vi.fn();
 const readFileSync = vi.fn();
 
 vi.mock('@zachariahredfield/playbook-engine', () => ({
+  REVIEW_QUEUE_RELATIVE_PATH: '.playbook/review-queue.json',
   knowledgeList,
   knowledgeQuery,
   knowledgeInspect,
@@ -24,7 +27,9 @@ vi.mock('@zachariahredfield/playbook-engine', () => ({
   knowledgeSupersession,
   knowledgeStale,
   readCrossRepoPatternsArtifact,
-  readPortabilityOutcomesArtifact
+  readPortabilityOutcomesArtifact,
+  buildReviewQueue,
+  writeReviewQueueArtifact
 }));
 
 
@@ -227,6 +232,67 @@ describe('runKnowledge', () => {
 
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.command).toBe('knowledge-provenance');
+    logSpy.mockRestore();
+  });
+
+  it('supports review queue materialization with deterministic filters', async () => {
+    const { runKnowledge } = await import('./knowledge.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const queueArtifact = {
+      schemaVersion: '1.0',
+      kind: 'playbook-review-queue',
+      proposalOnly: true,
+      authority: 'read-only',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      entries: [
+        {
+          targetKind: 'knowledge',
+          targetId: 'knowledge.contracts.review',
+          path: undefined,
+          sourceSurface: 'memory-knowledge',
+          reasonCode: 'stale-active-knowledge',
+          evidenceRefs: ['.playbook/memory/knowledge/patterns.json'],
+          recommendedAction: 'reaffirm',
+          reviewPriority: 'high',
+          generatedAt: '2026-03-24T00:00:00.000Z'
+        },
+        {
+          targetKind: 'doc',
+          path: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
+          sourceSurface: 'governed-docs',
+          reasonCode: 'governed-doc-staleness-window',
+          evidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md'],
+          recommendedAction: 'revise',
+          reviewPriority: 'medium',
+          generatedAt: '2026-03-24T00:00:00.000Z'
+        }
+      ]
+    };
+
+    buildReviewQueue.mockReturnValue(queueArtifact);
+    writeReviewQueueArtifact.mockReturnValue('/repo/.playbook/review-queue.json');
+    readFileSync.mockReturnValue(JSON.stringify(queueArtifact));
+
+    let exitCode = await runKnowledge('/repo', ['review', '--action', 'reaffirm', '--kind', 'knowledge'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(buildReviewQueue).toHaveBeenCalledWith('/repo');
+    expect(writeReviewQueueArtifact).toHaveBeenCalledWith('/repo', queueArtifact);
+    let payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('knowledge-review');
+    expect(payload.queuePath).toBe('.playbook/review-queue.json');
+    expect(payload.entries).toHaveLength(1);
+    expect(payload.entries[0].targetKind).toBe('knowledge');
+
+    logSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', '--kind', 'pattern'], { format: 'text', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    const rendered = String(logSpy.mock.calls[0]?.[0]);
+    expect(rendered).toContain('Status: review-only queue ready (1 entries)');
+    expect(rendered).toContain('Affected targets: knowledge.contracts.review');
+    expect(rendered).toContain('Blockers / reason: stale-active-knowledge');
+    expect(rendered).toContain('Next action: reaffirm');
+
     logSpy.mockRestore();
   });
 
