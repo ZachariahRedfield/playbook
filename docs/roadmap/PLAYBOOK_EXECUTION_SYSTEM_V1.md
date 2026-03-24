@@ -113,6 +113,13 @@ Next hardening step:
 - define guardrails preventing direct concurrent edits to protected singleton docs
 - connect the slice to the future path `worker partitioning / overlap detection -> worker-local fragments / receipts -> workers submit -> proposal-only docs consolidate -> docs consolidate-plan -> drift-locked apply guards -> verify/CI protected-doc merge-guard enforcement -> managed subagents / hooks`
 
+Planned consolidation-governance contract slice (incomplete):
+- define worker-local fragment / receipt shape used as canonical consolidation input
+- define protected singleton doc surfaces vs worker-owned implementation surfaces
+- define deterministic final consolidation responsibilities for singleton narrative docs
+- keep parallel worker edits on implementation surfaces only, routing singleton narrative updates through consolidation
+- preserve dependency order: worker partitioning safety first, singleton-doc consolidation boundary second, managed subagents/hooks expansion later
+
 Rule: Shared singleton docs should be updated through worker-local fragments plus a reviewed deterministic consolidation boundary, not direct concurrent edits from multiple workers.
 Rule: Implemented state and next-state must never overlap in roadmap language.
 Pattern: Workers own isolated implementation changes; a final consolidator worker owns canonical narrative artifacts such as changelogs, roadmap rollups, and shared summary docs.

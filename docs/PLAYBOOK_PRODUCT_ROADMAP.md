@@ -1503,6 +1503,15 @@ Use a layered phase model so each phase compounds directly on the previous one:
    - Worker-owned implementation surfaces remain safe for direct edits; narrative singleton surfaces are updated through consolidation only.
    - Next hardening step: add verify/CI protected-doc merge-guard enforcement so already-reviewed, target-locked consolidation plans become an explicitly enforced merge boundary with deterministic conflict checks on canonical narrative docs.
    - Dependency positioning: this slice now sits after worker partitioning / lane safety and before verify/CI protected-doc merge-guard enforcement for future managed subagents / hooks execution.
+   - Planned next contract slice (incomplete): **Worker Fragment Consolidation for Shared Singleton Docs - consolidation governance hardening**.
+     - Scope: keep worker-local fragment/receipt production as the only parallel worker write path for protected singleton narrative surfaces, then require one deterministic final consolidation boundary for canonical docs.
+     - Acceptance criteria:
+       - define and document worker-local fragment / receipt shape used by consolidation.
+       - define protected singleton narrative surfaces (`docs/CHANGELOG.md`, roadmap rollups, shared summary docs) as consolidation-only targets.
+       - define consolidation-step responsibilities and deterministic output expectations.
+       - define guardrails preventing direct concurrent edits to protected singleton docs during parallel execution.
+       - connect this dependency path explicitly to future managed subagents / hooks orchestration.
+     - Dependency path: `worker partitioning / overlap detection -> worker-local fragments / receipts -> final consolidation pass for singleton narrative docs -> managed subagents / hooks`.
 10. **Phase 10 â€” Repository Memory System**  
    Establish the temporal memory substrate (session/episodic evidence) while keeping repository structural intelligence (`index`/`graph`) as a distinct deterministic layer.
    - Worker assignment slice (implemented): deterministic proposal-only `worker-assignments` contract generation from lane-state readiness/dependency gates via `pnpm playbook workers` / `pnpm playbook workers assign`, including `.playbook/worker-assignments.json` and `.playbook/prompts/<lane_id>.md` outputs without worker launch or branch/PR automation.
