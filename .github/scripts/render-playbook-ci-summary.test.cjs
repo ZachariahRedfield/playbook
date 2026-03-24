@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { buildSummary, renderMarkdown, readJsonArtifact } = require('./render-playbook-ci-summary.cjs');
+const { buildSummary, buildSetupFailureSummary, renderMarkdown, readJsonArtifact } = require('./render-playbook-ci-summary.cjs');
 
 test('buildSummary renders compact success summary with verify, release, and merge-guard sections', () => {
   const summary = buildSummary({
@@ -75,6 +75,26 @@ test('buildSummary includes remediation only when a test failure artifact exists
   assert.equal(summary.remediation.failureClass, 'vitest_assertion');
   assert.equal(summary.remediation.failureCount, 3);
   assert.equal(summary.remediation.nextAction, 'autofix disabled by workflow input');
+});
+
+test('buildSetupFailureSummary produces a valid summary when verify artifacts are absent', () => {
+  const summary = buildSetupFailureSummary({
+    verifyArtifactPath: '.playbook/verify.json',
+    verifyPreflightArtifactPath: '.playbook/verify-preflight.json',
+    releasePlan: null,
+    releaseArtifactPath: '.playbook/release-plan.json',
+    remediationPolicy: null,
+    remediationPolicyArtifactPath: '.playbook/ci-remediation-policy.json',
+    failureSummary: null,
+    failureSummaryArtifactPath: '.playbook/failure-summary.json',
+    remediationStatus: null,
+    remediationStatusArtifactPath: '.playbook/remediation-status.json',
+    firstFailure: null,
+    firstFailureArtifactPath: '.playbook/first-test-failure.json'
+  });
+
+  assert.equal(summary.overall.decision, 'setup failed before verify');
+  assert.equal(summary.verify.status, 'NOT_RUN');
 });
 
 test('renderMarkdown uses one compact operator brief', () => {

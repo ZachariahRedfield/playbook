@@ -174,6 +174,44 @@ function buildFirstFailureSummary(firstFailure) {
   };
 }
 
+function buildSetupFailureSummary({
+  verifyArtifactPath,
+  verifyPreflightArtifactPath,
+  releasePlan,
+  releaseArtifactPath,
+  remediationPolicy,
+  remediationPolicyArtifactPath,
+  failureSummary,
+  failureSummaryArtifactPath,
+  remediationStatus,
+  remediationStatusArtifactPath,
+  firstFailure,
+  firstFailureArtifactPath
+}) {
+  const releaseSummary = buildReleaseSummary(releasePlan);
+  const remediationSummary = buildRemediationSummary(remediationPolicy, failureSummary, remediationStatus);
+  const firstFailureSummary = buildFirstFailureSummary(firstFailure);
+  const artifacts = [verifyArtifactPath, verifyPreflightArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null, firstFailureSummary ? firstFailureArtifactPath : null]
+    .filter((value) => typeof value === 'string' && value.trim().length > 0);
+
+  return {
+    overall: {
+      decision: 'setup failed before verify',
+      status: 'blocked',
+    },
+    verify: {
+      status: 'NOT_RUN',
+      blockers: ['Verify artifacts unavailable; CI failed before verify could run.'],
+      nextAction: 'Inspect setup/install/runtime diagnostics earlier in the CI log.'
+    },
+    mergeGuard: null,
+    release: releaseSummary,
+    remediation: remediationSummary,
+    firstFailure: firstFailureSummary,
+    artifacts,
+  };
+}
+
 function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifactPath, remediationPolicy, remediationPolicyArtifactPath, failureSummary, failureSummaryArtifactPath, remediationStatus, remediationStatusArtifactPath, firstFailure, firstFailureArtifactPath }) {
   const verifySummary = buildVerifySummary(verify);
   if (!verifySummary) return null;
@@ -297,13 +335,10 @@ if (require.main === module) {
     ?? readJsonArtifact(preflightPath, { required: false, label: options.verifyPreflight });
   const verifyArtifactPath = fs.existsSync(verifyPath) ? options.verify : (fs.existsSync(preflightPath) ? options.verifyPreflight : options.verify);
 
-  if (!verify) {
-    throw new Error(`Unable to render CI summary: no parseable verify artifact found at ${options.verify} or ${options.verifyPreflight}.`);
-  }
-
   const payload = {
     verify,
     verifyArtifactPath,
+    verifyPreflightArtifactPath: options.verifyPreflight,
     releasePlan: readJsonArtifact(path.resolve(process.cwd(), options.releasePlan), { required: false, label: options.releasePlan }),
     releaseArtifactPath: options.releasePlan,
     remediationPolicy: readJsonArtifact(path.resolve(process.cwd(), options.remediationPolicy), { required: false, label: options.remediationPolicy }),
@@ -315,7 +350,9 @@ if (require.main === module) {
     firstFailure: readJsonArtifact(path.resolve(process.cwd(), options.firstFailure), { required: false, label: options.firstFailure }),
     firstFailureArtifactPath: options.firstFailure,
   };
-  const summary = buildSummary(payload);
+  const summary = verify
+    ? buildSummary(payload)
+    : buildSetupFailureSummary(payload);
   const outPath = path.resolve(process.cwd(), options.out);
   const commentOutPath = path.resolve(process.cwd(), options.commentOut);
 
@@ -346,6 +383,7 @@ module.exports = {
   buildReleaseSummary,
   buildRemediationSummary,
   buildFirstFailureSummary,
+  buildSetupFailureSummary,
   renderMarkdown,
   readJsonIfExists,
   readJsonArtifact,

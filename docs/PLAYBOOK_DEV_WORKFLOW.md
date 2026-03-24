@@ -65,6 +65,7 @@ Optional sync surface: run `pnpm pr:sync-metadata` to project `.playbook/pr-meta
 
 CI artifact governance note: machine-consumed `.playbook/*.json` artifacts must be produced by deterministic JSON writers at the source (for example `node packages/cli/dist/main.js <command> --json --out <path>`), never by shell-capturing wrapper stdout where pnpm/script banners can corrupt JSON payloads.
 `.playbook/failure-summary.json` is a conditional diagnostics artifact for CI failure triage paths; consumers must check existence before copy/read/publish and preserve the original primary test failure status independently.
+Linux CI validates esbuild by runtime capability (`require('esbuild')` + transform smoke test), not direct optional-package layout checks such as `require.resolve('@esbuild/linux-x64')`.
 When primary `pnpm test` fails in Playbook CI, remediation/reporting steps may still run, but the preserved upstream test exit code remains the canonical blocker; CI now also emits `.playbook/first-test-failure.json` to surface the first failing suite/test/message near the final failure step.
 
 For documentation/governance changes, also run:

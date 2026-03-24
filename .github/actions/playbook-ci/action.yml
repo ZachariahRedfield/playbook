@@ -147,21 +147,21 @@ runs:
           exit 1
         fi
 
-    - name: Ensure esbuild native optional package (Linux)
+    - name: Ensure esbuild runtime capability (Linux)
       if: runner.os == 'Linux'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        if node -e "require.resolve('@esbuild/linux-x64')"; then
-          echo "esbuild native optional package present."
+        if node "$GITHUB_WORKSPACE/.github/scripts/check-esbuild-runtime.cjs"; then
+          echo "esbuild runtime capability check passed."
           exit 0
         fi
 
-        echo "esbuild native optional package missing; attempting pnpm rebuild esbuild for deterministic CI test execution."
+        echo "esbuild runtime capability check failed; attempting pnpm rebuild esbuild."
         pnpm rebuild esbuild
 
-        if ! node -e "require.resolve('@esbuild/linux-x64')"; then
-          echo "esbuild native optional package still missing after rebuild; failing early so primary test failures remain explicit."
+        if ! node "$GITHUB_WORKSPACE/.github/scripts/check-esbuild-runtime.cjs"; then
+          echo "esbuild runtime contract still failed after rebuild; failing early with explicit environment/runtime diagnostics."
           exit 1
         fi
 
