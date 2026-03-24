@@ -1,4 +1,13 @@
 <!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+## 0.6.1 - 2026-03-24
+- Recommended bump: patch
+- @fawxzzy/playbook: 0.6.0 -> 0.6.1 (playbook-installable-workspace)
+- @fawxzzy/playbook-cli: 0.6.0 -> 0.6.1 (playbook-installable-workspace)
+- @zachariahredfield/playbook-core: 0.6.0 -> 0.6.1 (playbook-installable-workspace)
+- @zachariahredfield/playbook-engine: 0.6.0 -> 0.6.1 (playbook-installable-workspace)
+- @zachariahredfield/playbook-node: 0.6.0 -> 0.6.1 (playbook-installable-workspace)
+- WHAT: Promoted a path-scoped docs-audit rule in shipped engine code (`packages/engine/src/docs/audit.ts`) that enforces revision-layer structure only on governed docs. WHY: Even if most touched files are docs/tests, changing shipped internal engine behavior requires lockstep package/changelog mirroring so preflight release governance can prove intentional release state.
+
 ## 0.6.0 - 2026-03-24
 - Recommended bump: minor
 - @fawxzzy/playbook: 0.5.0 -> 0.6.0 (playbook-installable-workspace)

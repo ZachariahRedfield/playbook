@@ -111,6 +111,8 @@ const POSTMORTEM_REQUIRED_SECTIONS = [
   'promotion candidates',
   'non-promotion notes'
 ] as const;
+const REVISION_LAYER_REQUIRED_SECTIONS = ['fact', 'interpretation', 'narrative'] as const;
+const REVISION_LAYER_GOVERNED_DOC_PATHS = ['docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/PLAYBOOK_DEV_WORKFLOW.md'] as const;
 
 const PLANNING_ALLOWED_PATHS = new Set([
   'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
@@ -431,6 +433,36 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
           suggestedDestination: 'templates/repo/docs/postmortems/PLAYBOOK_POSTMORTEM_TEMPLATE.md'
         });
       }
+    }
+  }
+
+  const revisionLayerGovernedDocs = new Set<string>(REVISION_LAYER_GOVERNED_DOC_PATHS as readonly string[]);
+  if (fs.existsSync(postmortemDocsPath)) {
+    const postmortemDocs = fs
+      .readdirSync(postmortemDocsPath, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+      .map((entry) => `docs/postmortems/${entry.name}`);
+
+    for (const postmortemDoc of postmortemDocs) {
+      revisionLayerGovernedDocs.add(postmortemDoc);
+    }
+  }
+
+  for (const governedDocPath of [...revisionLayerGovernedDocs].sort()) {
+    const content = readTextIfExists(repoRoot, governedDocPath);
+    if (!content) {
+      continue;
+    }
+
+    const missingSections = hasRequiredSections(content, REVISION_LAYER_REQUIRED_SECTIONS);
+    if (missingSections.length > 0) {
+      findings.push({
+        ruleId: 'docs.revision-layer.required-sections',
+        level: 'error',
+        message: `Governed document is missing required revision-layer sections: ${missingSections.join(', ')}.`,
+        path: governedDocPath,
+        suggestedDestination: 'docs/architecture/PLAYBOOK_DOCUMENTATION_REVISION_PROTOCOL.md'
+      });
     }
   }
 

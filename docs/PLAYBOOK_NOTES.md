@@ -12,6 +12,12 @@ If docs do not clearly separate `fix` (convenience direct remediation) from `app
 • Pattern: AI-operable repository interface
 Playbook commands expose repository structure, health, and architecture so AI agents can reason about a codebase without reading the entire source tree.
 
+• Rule: Release-plan artifacts are necessary but not sufficient for shipped-code diffs
+When verify classifies any changed file as shipped internal code, a committed release plan must be mirrored by matching lockstep package version bumps and changelog updates in the same branch.
+
+• Failure Mode: “Mostly docs” diffs can still fail preflight release governance
+A branch can look docs/CI-only at a glance while containing one shipped engine/CLI code-path change; if versions/changelog are not mirrored, `verify` fails before tests.
+
 • Pattern: CLI Command Architecture
 Commands live under `packages/cli/src/commands` with a central registry at `packages/cli/src/commands/index.ts`, while shared helpers stay under `packages/cli/src/lib`.
 

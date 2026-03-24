@@ -226,10 +226,14 @@ Playbook now recommends an optional repo-scoped product-direction contract for c
 - `docs/ROADMAP.md` defines pillars, active stories, and lightweight priority
 - `docs/stories/<STORY_ID>.md` defines one independently shippable vertical slice
 - `pnpm playbook docs audit --json` validates the contract when a repo opts in
-- `docs/postmortems/*.md` now get a narrow path-scoped contract check for required reconsolidation headings so existing non-postmortem docs remain unaffected
+- `docs/postmortems/*.md`, `docs/PLAYBOOK_PRODUCT_ROADMAP.md`, and `docs/PLAYBOOK_DEV_WORKFLOW.md` now get a narrow path-scoped revision-layer contract check (Fact/Interpretation/Narrative) so doctrine remains enforceable only on governed docs
 - `pnpm playbook ask ... --repo-context` can answer lightweight story/pillar mapping prompts
 
 This remains a documentation contract first, not a new heavy workflow command surface.
+
+Rule: Only governed docs should carry enforced revision-layer structure.
+Pattern: Path-scoped docs audit keeps doctrine enforceable without turning docs audit into noise.
+Failure Mode: Broad unscoped docs rules create compliance churn and push teams away from the process.
 
 ## Product-state anchoring rule
 

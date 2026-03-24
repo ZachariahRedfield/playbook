@@ -67,6 +67,14 @@ Apply this gate to roadmap, workflow, architecture doctrine, and command-governa
 3. If Interpretation changed, link to the underlying Fact entries.
 4. If Narrative changed, confirm “presentation-only” in the PR summary.
 
+Docs-audit enforcement scope (path-scoped, opt-in):
+
+- `docs/postmortems/*.md`
+- `docs/PLAYBOOK_PRODUCT_ROADMAP.md`
+- `docs/PLAYBOOK_DEV_WORKFLOW.md`
+
+For governed docs under this gate, include explicit `## Fact`, `## Interpretation`, and `## Narrative` sections so revision layers are machine-auditable where doctrine value is highest.
+
 ## Compact example (same incident across layers)
 
 Incident: CI remediation loop stopped after one bounded autofix attempt.

@@ -4,6 +4,18 @@
 
 This document defines the standard workflow for developing Playbook so changes remain consistent, governed, and easy to review.
 
+## Fact
+
+- Workflow evidence should cite the commands, checks, and generated artifacts that were actually executed.
+
+## Interpretation
+
+- Workflow guidance should explain why those checks and artifacts are required for deterministic governance.
+
+## Narrative
+
+- Contributor-facing wording may evolve for clarity without changing factual evidence or governance meaning.
+
 ## Development principles
 
 - Deterministic changes: every change is intentional, documented, and traceable.

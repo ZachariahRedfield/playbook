@@ -9,6 +9,18 @@ Build the deterministic runtime and trust layer between humans/AI agents and rea
 Truth-boundary note: this document captures **future intent and sequencing**. For current command implementation truth, use `docs/commands/README.md`. For machine-readable committed delivery state, use `docs/roadmap/ROADMAP.json`.
 Documentation revision boundary: for high-value doctrine docs, apply `docs/architecture/PLAYBOOK_DOCUMENTATION_REVISION_PROTOCOL.md` to keep fact, interpretation, and narrative updates explicitly separated.
 
+## Fact
+
+- Evidence-backed implementation updates should reference concrete command outputs and artifact paths.
+
+## Interpretation
+
+- Strategic prioritization and sequencing rationale should explain how evidence supports current direction.
+
+## Narrative
+
+- Messaging and framing may change for clarity without rewriting fact provenance or interpretation intent.
+
 ## Document job and alignment boundaries
 
 This roadmap defines strategic product direction and sequencing only.

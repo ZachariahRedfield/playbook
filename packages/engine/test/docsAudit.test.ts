@@ -25,7 +25,8 @@ const createRepo = (): string => {
     'docs/commands/README.md': '# Commands\nLifecycle Role Discoverability',
     'docs/commands/docs.md': '# docs audit',
     'docs/PLAYBOOK_PRODUCT_ROADMAP.md':
-      '# Product roadmap\nRoadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.',
+      '# Product roadmap\n## Fact\nObserved roadmap evidence.\n## Interpretation\nCurrent roadmap implications.\n## Narrative\nRoadmap entries describe implementation intent and may include planned command families that are not yet discoverable in current CLI help. Treat `playbook --help` and implemented command contracts as the source of truth for live command availability.',
+    'docs/PLAYBOOK_DEV_WORKFLOW.md': '# Development workflow\n## Fact\nValidated checks.\n## Interpretation\nWhy checks matter.\n## Narrative\nHow to communicate updates.',
     'docs/PLAYBOOK_BUSINESS_STRATEGY.md': '# Business strategy',
     'docs/CONSUMER_INTEGRATION_CONTRACT.md': '# Consumer contract',
     'docs/AI_AGENT_CONTEXT.md': '# AI context\nai-context ai-contract context verify plan apply',
@@ -190,6 +191,12 @@ describe('docs audit', () => {
         '## Interpretation',
         'What the facts suggest.',
         '',
+        '## Fact',
+        'Fact layer marker.',
+        '',
+        '## Narrative',
+        'Narrative layer marker.',
+        '',
         '## Model Changes',
         'Updated understanding.',
         '',
@@ -220,6 +227,9 @@ describe('docs audit', () => {
         '## Interpretation',
         'What the facts suggest.',
         '',
+        '## Fact',
+        'Fact layer marker.',
+        '',
         '## Promotion Candidates',
         'Candidate follow-up.',
         '',
@@ -247,6 +257,30 @@ describe('docs audit', () => {
 
     const result = runDocsAudit(root);
     expect(result.findings.find((finding) => finding.path === 'docs/notes.md' && finding.ruleId === 'docs.postmortem.required-sections')).toBeUndefined();
+  });
+
+  it('fails governed docs missing revision-layer sections with a stable rule id', () => {
+    const root = createRepo();
+    write(root, 'docs/PLAYBOOK_DEV_WORKFLOW.md', '# Development workflow\n## Fact\nEvidence only.\n## Interpretation\nMeaning only.\n');
+
+    const result = runDocsAudit(root);
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'docs.revision-layer.required-sections',
+          path: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
+          level: 'error'
+        })
+      ])
+    );
+  });
+
+  it('does not apply governed revision-layer checks to unrelated docs', () => {
+    const root = createRepo();
+    write(root, 'docs/notes.md', '# Notes\n## Fact\nOptional note.\n');
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.path === 'docs/notes.md' && finding.ruleId === 'docs.revision-layer.required-sections')).toBeUndefined();
   });
 
   it('fails when global reusable pattern memory points at repo-local storage', () => {
