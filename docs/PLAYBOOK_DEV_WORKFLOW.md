@@ -89,6 +89,9 @@ The GitHub Actions workflow `.github/workflows/release-prep.yml` is the only aut
 Rule: Installable workflow policy is incomplete until the trusted/manual mutation path is installable too.
 Pattern: Seed policy, seed reviewed executor, keep normal CI plan-only.
 Failure Mode: Shipping only the policy file makes release governance look portable while leaving the actual release path repo-specific.
+Rule: Release-plan artifacts are only valid when mirrored by committed package-version and changelog updates in the same branch state.
+Pattern: release plan -> mirror versions/changelog -> verify.
+Failure Mode: Keeping `.playbook/release-plan.json` while dropping mirrored package/changelog state leaves preflight verify blocked.
 
 ## Smoke testing
 

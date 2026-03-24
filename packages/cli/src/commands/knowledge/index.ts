@@ -6,6 +6,7 @@ import { runKnowledgeList } from './list.js';
 import { runKnowledgePortability, parsePortabilityView } from './portability.js';
 import { runKnowledgeProvenance } from './provenance.js';
 import { runKnowledgeQuery } from './query.js';
+import { runKnowledgeReview } from './review.js';
 import { printKnowledgeHelp, printKnowledgePortabilityHelp, type KnowledgeCommandOptions } from './shared.js';
 import { runKnowledgeStale } from './stale.js';
 import { runKnowledgeSupersession } from './supersession.js';
@@ -188,6 +189,23 @@ const renderText = (subcommand: string, payload: Record<string, unknown>): strin
     }
     return renderPortabilityText(payload);
   }
+  if (subcommand === 'review') {
+    const entries = payload.entries as Array<Record<string, unknown>> | undefined;
+    if (!entries || entries.length === 0) {
+      return 'Status: review queue clear.\nAffected targets: none\nBlockers / reason: none\nNext action: no review action required.';
+    }
+
+    const first = entries[0]!;
+    return [
+      `Status: ${entries.length} review item(s) pending`,
+      `Affected targets: ${entries
+        .map((entry) => String(entry.targetId ?? entry.path ?? 'unknown-target'))
+        .slice(0, 4)
+        .join(', ')}${entries.length > 4 ? ` (+${entries.length - 4} more)` : ''}`,
+      `Blockers / reason: ${String(first.reasonCode ?? 'n/a')}`,
+      `Next action: ${String(first.recommendedAction ?? 'review')} ${String(first.targetId ?? first.path ?? 'target')}`
+    ].join('\n');
+  }
 
   const knowledge = payload.knowledge as unknown[] | undefined;
   return `Found ${knowledge?.length ?? 0} knowledge records.`;
@@ -235,8 +253,11 @@ export const runKnowledge = async (cwd: string, args: string[], options: Knowled
       if (subcommand === 'portability') {
         return runKnowledgePortability(cwd, parsePortabilityView(args));
       }
+      if (subcommand === 'review') {
+        return runKnowledgeReview(cwd, args);
+      }
 
-      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, inspect, compare, timeline, provenance, supersession, stale, or portability.');
+      throw new Error('playbook knowledge: unsupported subcommand. Use list, query, inspect, compare, timeline, provenance, supersession, stale, portability, or review.');
     })();
 
     if (options.format === 'json') {

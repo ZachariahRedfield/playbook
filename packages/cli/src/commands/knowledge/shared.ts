@@ -27,6 +27,7 @@ Subcommands:
   supersession <id>               Show supersession links for one record
   stale                           Show stale, retired, and superseded records
   portability                     Inspect cross-repo portability scoring evidence
+  review                          Materialize and inspect retrieval review queue entries
 
 Options:
   --type <type>                Filter by type (evidence|candidate|promoted|superseded)
@@ -38,6 +39,8 @@ Options:
   --limit <n>                  Limit returned records
   --order <asc|desc>           Ordering for list/timeline/stale (default desc)
   --days <n>                   Override stale threshold in days
+  --action <action>            Review filter (reaffirm|revise|supersede)
+  --kind <kind>                Review filter (knowledge|doc|rule|pattern)
   --json                       Print machine-readable JSON output
   --help                       Show help`);
 };

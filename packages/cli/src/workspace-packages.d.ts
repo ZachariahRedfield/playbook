@@ -68,6 +68,16 @@ declare module "@zachariahredfield/playbook-engine" {
   export const retirePromotedKnowledge: (...args: any[]) => any;
   export const pruneMemoryKnowledge: (...args: any[]) => any;
   export const generateAndWriteLifecycleCandidatesArtifact: (...args: any[]) => any;
+  export const REVIEW_QUEUE_SCHEMA_VERSION: any;
+  export const REVIEW_QUEUE_RELATIVE_PATH: '.playbook/review-queue.json';
+  export const buildReviewQueue: (...args: any[]) => any;
+  export const writeReviewQueueArtifact: (...args: any[]) => any;
+  export type ReviewRecommendedAction = any;
+  export type ReviewPriority = any;
+  export type ReviewTargetKind = any;
+  export type ReviewQueueEntry = any;
+  export type ReviewQueueArtifact = any;
+  export type BuildReviewQueueOptions = any;
   export type KnowledgeQueryOptions = any;
   export const knowledgeList: (...args: any[]) => any;
   export const knowledgeQuery: (...args: any[]) => any;
