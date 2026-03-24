@@ -201,6 +201,17 @@ Boundary:
 - Agent authority is a strict subset of task scope and policy allowance.
 - Mutation-capable runs are evidence-linked and audit-visible.
 
+## Parallel worker safety note: singleton narrative docs
+
+Parallelizable work is not automatically parallel-safe. Even when implementation ownership is partitioned cleanly across lanes, singleton narrative docs (for example root changelog, roadmap rollups, or shared summary docs) become merge hotspots if every worker edits them directly.
+
+Design principle for orchestration planning:
+- workers own implementation surfaces and can edit those directly within scope
+- workers emit lane-local fragments / receipts for protected singleton narrative docs
+- one deterministic final consolidation step updates canonical singleton narrative docs
+
+This consolidation boundary is enabling infrastructure for future managed subagents/hooks orchestration, not the final autonomous-agent system.
+
 ## Control Plane vs Automation Synthesis
 
 These are distinct layers with separate trust semantics:

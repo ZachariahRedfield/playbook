@@ -39,14 +39,14 @@ Do not hand-edit entries inside the managed markers.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `analyze` | Analyze project stack | compatibility | compatibility | hidden-compatibility | Later | Current (implemented) | `pnpm playbook analyze --json` |
 | `pilot` | Run one-command external baseline analysis workflow for a target repository | canonical | bootstrap | primary | Later | Current (implemented) | `pnpm playbook pilot --repo "./target-repo" --json` |
-| `verify` | Verify governance rules | canonical | governance | primary | P8 | Current (implemented) | `pnpm playbook verify --ci --json` |
-| `plan` | Generate a structured fix plan from rule findings | canonical | remediation | primary | P9 | Current (implemented) | `pnpm playbook plan --json` |
+| `verify` | Detect repository state and extract governance invariants | canonical | governance | primary | P8 | Current (implemented) | `pnpm playbook verify --ci --json` |
+| `plan` | Transform findings into a structured remediation model | canonical | remediation | primary | P9 | Current (implemented) | `pnpm playbook plan --json` |
 | `lanes` | Derive deterministic lane-state from .playbook/workset-plan.json | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook lanes --json` |
 | `workers` | Assign deterministic proposal-only workers and submit worker results from lane-state/workset artifacts | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook workers assign --json` |
 | `orchestrate` | Generate deterministic orchestration lane artifacts for a goal or tasks-file workset | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook orchestrate --goal "ship capability" --lanes 3 --format both` |
 | `execute` | Execute orchestration lanes through the execution supervisor runtime | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook execute --json` |
 | `cycle` | Run the hardened execution primitives as one deterministic cycle orchestration pass | canonical | remediation | primary | Later | Current (implemented) | `pnpm playbook cycle --json` |
-| `apply` | Execute deterministic auto-fixable plan tasks | canonical | remediation | primary | P10 | Current (implemented) | `pnpm playbook apply --from-plan .playbook/plan.json` |
+| `apply` | Enforce and materialize deterministic plan tasks | canonical | remediation | primary | P10 | Current (implemented) | `pnpm playbook apply --from-plan .playbook/plan.json` |
 | `analyze-pr` | Analyze local branch/worktree changes with deterministic PR intelligence | canonical | repo-intelligence | secondary | Later | Current (implemented) | `pnpm playbook analyze-pr --json` |
 | `review-pr` | Run governed read-only PR review by composing analyze-pr, improve, and policy evaluate outputs | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook review-pr --json` |
 | `doctor` | Diagnose repository health by aggregating verify, risk, docs, and index analyzers | canonical | governance | secondary | Later | Current (implemented) | `pnpm playbook doctor --fix --dry-run` |

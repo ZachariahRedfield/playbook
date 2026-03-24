@@ -170,9 +170,9 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook analyze --json`
 - `pilot`: Run one-command external baseline analysis workflow for a target repository
   - Example: `pnpm playbook pilot --repo "./target-repo" --json`
-- `verify`: Verify governance rules
+- `verify`: Detect repository state and extract governance invariants
   - Example: `pnpm playbook verify --ci --json`
-- `plan`: Generate a structured fix plan from rule findings
+- `plan`: Transform findings into a structured remediation model
   - Example: `pnpm playbook plan --json`
 - `lanes`: Derive deterministic lane-state from .playbook/workset-plan.json
   - Example: `pnpm playbook lanes --json`
@@ -184,7 +184,7 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook execute --json`
 - `cycle`: Run the hardened execution primitives as one deterministic cycle orchestration pass
   - Example: `pnpm playbook cycle --json`
-- `apply`: Execute deterministic auto-fixable plan tasks
+- `apply`: Enforce and materialize deterministic plan tasks
   - Example: `pnpm playbook apply --from-plan .playbook/plan.json`
 
 ### Repository tools

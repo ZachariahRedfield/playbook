@@ -18,6 +18,13 @@ Boundary rule: research docs describe conceptual models; architecture/runtime do
 Rule: architecture documents describe current-state design and bounded staged capability, not live command inventory status.
 
 
+## System Design Doctrines
+
+Playbook uses two first-class design doctrines:
+
+- **Simple Rule Theory** (`[docs/architecture/SIMPLE_RULE_THEORY.md](./architecture/SIMPLE_RULE_THEORY.md)`): all automatable behavior should be expressed through explicit rules; rules should extract invariants, preserve minimal sufficient representation, and derive downstream behaviors/views from compact rule state rather than duplicating expanded state.
+- **Triadic System Pattern** (`[docs/architecture/TRIAD_SYSTEM_PATTERN.md](./architecture/TRIAD_SYSTEM_PATTERN.md)`): stable workflows should prefer `state -> transformation -> enforcement`, with `verify -> plan -> apply` as the canonical Playbook workflow shape.
+
 ## External pilot doctrine boundary
 
 The first external pilot clarified a core architecture need: deterministic system truth is necessary but not sufficient for adoption.

@@ -64,7 +64,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: "verify",
-    description: "Verify governance rules",
+    description: "Detect repository state and extract governance invariants",
     category: "Core",
     role: "governance",
     lifecycle: "canonical",
@@ -77,7 +77,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: "plan",
-    description: "Generate a structured fix plan from rule findings",
+    description: "Transform findings into a structured remediation model",
     category: "Core",
     role: "remediation",
     lifecycle: "canonical",
@@ -161,7 +161,7 @@ export const commandMetadata: CommandMetadata[] = [
   },
   {
     name: "apply",
-    description: "Execute deterministic auto-fixable plan tasks",
+    description: "Enforce and materialize deterministic plan tasks",
     category: "Core",
     role: "remediation",
     lifecycle: "canonical",

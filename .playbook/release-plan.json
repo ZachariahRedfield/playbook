@@ -55,7 +55,7 @@
         "status": "M",
         "bump": "none",
         "reasons": [
-          "non-shipping repository change"
+          "docs/tests/CI-only surface changed"
         ]
       },
       {
@@ -103,7 +103,7 @@
         "status": "M",
         "bump": "none",
         "reasons": [
-          "non-shipping repository change"
+          "docs/tests/CI-only surface changed"
         ]
       },
       {
@@ -111,7 +111,7 @@
         "status": "M",
         "bump": "none",
         "reasons": [
-          "non-shipping repository change"
+          "docs/tests/CI-only surface changed"
         ]
       },
       {
@@ -159,7 +159,7 @@
         "status": "M",
         "bump": "patch",
         "reasons": [
-          "shipped internal code changed"
+          "docs/tests/CI-only surface changed"
         ]
       },
       {
@@ -181,9 +181,9 @@
       {
         "path": "packages/node/package.json",
         "status": "M",
-        "bump": "none",
+        "bump": "minor",
         "reasons": [
-          "non-shipping repository change"
+          "command surface changed"
         ]
       }
     ]
@@ -212,11 +212,11 @@
       ],
       "evidence": [
         {
-          "path": "packages/cli/package.json",
+          "path": "packages/cli/src/lib/commandMetadata.ts",
           "status": "M",
-          "bump": "none",
+          "bump": "minor",
           "reasons": [
-            "non-shipping repository change"
+            "command surface changed"
           ]
         },
         {
@@ -275,19 +275,8 @@
       "currentVersion": "0.8.0",
       "recommendedBump": "minor",
       "versionGroup": "playbook-installable-workspace",
-      "reasons": [
-        "non-shipping repository change"
-      ],
-      "evidence": [
-        {
-          "path": "packages/cli-wrapper/package.json",
-          "status": "M",
-          "bump": "none",
-          "reasons": [
-            "non-shipping repository change"
-          ]
-        }
-      ]
+      "reasons": [],
+      "evidence": []
     },
     {
       "name": "@zachariahredfield/playbook-core",
@@ -295,19 +284,8 @@
       "currentVersion": "0.8.0",
       "recommendedBump": "minor",
       "versionGroup": "playbook-installable-workspace",
-      "reasons": [
-        "non-shipping repository change"
-      ],
-      "evidence": [
-        {
-          "path": "packages/core/package.json",
-          "status": "M",
-          "bump": "none",
-          "reasons": [
-            "non-shipping repository change"
-          ]
-        }
-      ]
+      "reasons": [],
+      "evidence": []
     },
     {
       "name": "@zachariahredfield/playbook-engine",
@@ -335,19 +313,8 @@
       "currentVersion": "0.8.0",
       "recommendedBump": "minor",
       "versionGroup": "playbook-installable-workspace",
-      "reasons": [
-        "non-shipping repository change"
-      ],
-      "evidence": [
-        {
-          "path": "packages/node/package.json",
-          "status": "M",
-          "bump": "none",
-          "reasons": [
-            "non-shipping repository change"
-          ]
-        }
-      ]
+      "reasons": [],
+      "evidence": []
     }
   ],
   "versionGroups": [
