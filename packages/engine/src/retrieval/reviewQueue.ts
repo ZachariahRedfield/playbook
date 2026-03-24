@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { MemoryKnowledgeArtifact, MemoryKnowledgeEntry } from '../memory/knowledge.js';
@@ -5,6 +6,8 @@ import type { MemoryReplayResult } from '../schema/memoryReplay.js';
 
 export const REVIEW_QUEUE_SCHEMA_VERSION = '1.0' as const;
 export const REVIEW_QUEUE_RELATIVE_PATH = '.playbook/review-queue.json' as const;
+export const KNOWLEDGE_REVIEW_RECEIPTS_SCHEMA_VERSION = '1.0' as const;
+export const KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH = '.playbook/knowledge-review-receipts.json' as const;
 
 const KNOWLEDGE_ARTIFACT_PATHS = [
   '.playbook/memory/knowledge/decisions.json',
@@ -18,10 +21,12 @@ const GOVERNED_DOC_PREFIXES = ['docs/postmortems/'] as const;
 const MEMORY_CANDIDATES_PATH = '.playbook/memory/candidates.json' as const;
 
 export type ReviewRecommendedAction = 'reaffirm' | 'revise' | 'supersede';
+export type ReviewDecision = ReviewRecommendedAction | 'defer';
 export type ReviewPriority = 'high' | 'medium' | 'low';
 export type ReviewTargetKind = 'knowledge' | 'doc';
 
 export type ReviewQueueEntry = {
+  queueEntryId: string;
   targetKind: ReviewTargetKind;
   targetId?: string;
   path?: string;
@@ -31,6 +36,7 @@ export type ReviewQueueEntry = {
   recommendedAction: ReviewRecommendedAction;
   reviewPriority: ReviewPriority;
   generatedAt: string;
+  availableAt?: string;
 };
 
 export type ReviewQueueArtifact = {
@@ -40,6 +46,44 @@ export type ReviewQueueArtifact = {
   authority: 'read-only';
   generatedAt: string;
   entries: ReviewQueueEntry[];
+};
+
+export type KnowledgeReviewReceipt = {
+  receiptId: string;
+  queueEntryId: string;
+  targetKind: ReviewTargetKind;
+  targetId?: string;
+  path?: string;
+  sourceSurface: string;
+  reasonCode: string;
+  decision: ReviewDecision;
+  decidedAt: string;
+  evidenceRefs: string[];
+  followUpArtifactRef?: string;
+  availableAt?: string;
+};
+
+export type KnowledgeReviewReceiptsArtifact = {
+  schemaVersion: typeof KNOWLEDGE_REVIEW_RECEIPTS_SCHEMA_VERSION;
+  kind: 'playbook-knowledge-review-receipts';
+  proposalOnly: true;
+  authority: 'read-only';
+  generatedAt: string;
+  receipts: KnowledgeReviewReceipt[];
+};
+
+export type WriteKnowledgeReviewReceiptInput = {
+  queueEntryId: string;
+  targetKind: ReviewTargetKind;
+  targetId?: string;
+  path?: string;
+  sourceSurface: string;
+  reasonCode: string;
+  decision: ReviewDecision;
+  decidedAt?: string;
+  evidenceRefs?: string[];
+  followUpArtifactRef?: string;
+  availableAt?: string;
 };
 
 export type BuildReviewQueueOptions = {
@@ -68,6 +112,8 @@ const safeIso = (value: string | undefined, fallback: string): string => {
   }
   return new Date(ms).toISOString();
 };
+
+const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort((a, b) => a.localeCompare(b));
 
 const parseKnowledgeEntries = (repoRoot: string): Array<{ entry: MemoryKnowledgeEntry; sourcePath: string }> => {
   const collected: Array<{ entry: MemoryKnowledgeEntry; sourcePath: string }> = [];
@@ -135,36 +181,176 @@ const sortQueueEntries = (entries: ReviewQueueEntry[]): ReviewQueueEntry[] =>
     left.reasonCode.localeCompare(right.reasonCode) ||
     left.sourceSurface.localeCompare(right.sourceSurface) ||
     left.recommendedAction.localeCompare(right.recommendedAction) ||
+    (left.availableAt ?? '').localeCompare(right.availableAt ?? '') ||
     left.evidenceRefs.join('|').localeCompare(right.evidenceRefs.join('|'))
   );
 
-const dedupeQueueEntries = (entries: ReviewQueueEntry[]): ReviewQueueEntry[] => {
+const queueIdentity = (entry: Omit<ReviewQueueEntry, 'queueEntryId' | 'generatedAt'>): string =>
+  JSON.stringify({
+    targetKind: entry.targetKind,
+    targetId: entry.targetId ?? '',
+    path: entry.path ?? '',
+    sourceSurface: entry.sourceSurface,
+    reasonCode: entry.reasonCode,
+    recommendedAction: entry.recommendedAction,
+    reviewPriority: entry.reviewPriority,
+    availableAt: entry.availableAt ?? '',
+    evidenceRefs: uniqueSorted(entry.evidenceRefs)
+  });
+
+const toQueueEntryId = (entry: Omit<ReviewQueueEntry, 'queueEntryId' | 'generatedAt'>): string =>
+  `rq_${createHash('sha256').update(queueIdentity(entry)).digest('hex').slice(0, 16)}`;
+
+const dedupeQueueEntries = (entries: Omit<ReviewQueueEntry, 'queueEntryId'>[]): ReviewQueueEntry[] => {
   const byKey = new Map<string, ReviewQueueEntry>();
 
   for (const entry of entries) {
-    const entryKey = [
-      entry.targetKind,
-      entry.targetId ?? '',
-      entry.path ?? '',
-      entry.sourceSurface,
-      entry.reasonCode,
-      entry.recommendedAction,
-      entry.reviewPriority
-    ].join('|');
+    const keyEntry: Omit<ReviewQueueEntry, 'queueEntryId' | 'generatedAt'> = {
+      targetKind: entry.targetKind,
+      targetId: entry.targetId,
+      path: entry.path,
+      sourceSurface: entry.sourceSurface,
+      reasonCode: entry.reasonCode,
+      evidenceRefs: entry.evidenceRefs,
+      recommendedAction: entry.recommendedAction,
+      reviewPriority: entry.reviewPriority,
+      availableAt: entry.availableAt
+    };
 
+    const entryKey = queueIdentity(keyEntry);
     const existing = byKey.get(entryKey);
     if (!existing) {
-      byKey.set(entryKey, { ...entry, evidenceRefs: [...entry.evidenceRefs].sort((a, b) => a.localeCompare(b)) });
+      byKey.set(entryKey, {
+        ...entry,
+        queueEntryId: toQueueEntryId(keyEntry),
+        evidenceRefs: uniqueSorted(entry.evidenceRefs)
+      });
       continue;
     }
 
-    const mergedEvidence = [...existing.evidenceRefs, ...entry.evidenceRefs]
-      .filter((value, index, all) => all.indexOf(value) === index)
-      .sort((a, b) => a.localeCompare(b));
+    const mergedEvidence = uniqueSorted([...existing.evidenceRefs, ...entry.evidenceRefs]);
     byKey.set(entryKey, { ...existing, evidenceRefs: mergedEvidence });
   }
 
   return [...byKey.values()];
+};
+
+const reviewTargetKey = (targetKind: ReviewTargetKind, targetId?: string, path?: string): string => `${targetKind}|${targetId ?? ''}|${path ?? ''}`;
+
+const reviewWindowDaysForEntry = (entry: ReviewQueueEntry, staleKnowledgeDays: number, docReviewWindowDays: number): number =>
+  entry.targetKind === 'knowledge' ? staleKnowledgeDays : docReviewWindowDays;
+
+const normalizeReceipt = (input: WriteKnowledgeReviewReceiptInput, generatedAt: string): KnowledgeReviewReceipt => {
+  const decidedAt = safeIso(input.decidedAt, generatedAt);
+  const availableAt = input.decision === 'defer' ? safeIso(input.availableAt, decidedAt) : undefined;
+  const evidenceRefs = uniqueSorted(Array.isArray(input.evidenceRefs) ? input.evidenceRefs.map((value) => String(value)) : []);
+  const payload = {
+    queueEntryId: input.queueEntryId,
+    targetKind: input.targetKind,
+    targetId: input.targetId ?? '',
+    path: input.path ?? '',
+    sourceSurface: input.sourceSurface,
+    reasonCode: input.reasonCode,
+    decision: input.decision,
+    decidedAt,
+    evidenceRefs,
+    followUpArtifactRef: input.followUpArtifactRef ?? '',
+    availableAt: availableAt ?? ''
+  };
+
+  return {
+    receiptId: `krr_${createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 16)}`,
+    queueEntryId: input.queueEntryId,
+    targetKind: input.targetKind,
+    targetId: input.targetId,
+    path: input.path,
+    sourceSurface: input.sourceSurface,
+    reasonCode: input.reasonCode,
+    decision: input.decision,
+    decidedAt,
+    evidenceRefs,
+    followUpArtifactRef: input.followUpArtifactRef,
+    availableAt
+  };
+};
+
+export const readKnowledgeReviewReceiptsArtifact = (repoRoot: string): KnowledgeReviewReceiptsArtifact => {
+  const artifactPath = path.join(repoRoot, KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH);
+  const fallbackGeneratedAt = new Date(0).toISOString();
+  if (!fs.existsSync(artifactPath)) {
+    return {
+      schemaVersion: KNOWLEDGE_REVIEW_RECEIPTS_SCHEMA_VERSION,
+      kind: 'playbook-knowledge-review-receipts',
+      proposalOnly: true,
+      authority: 'read-only',
+      generatedAt: fallbackGeneratedAt,
+      receipts: []
+    };
+  }
+
+  const parsed = readJsonFile<Partial<KnowledgeReviewReceiptsArtifact>>(artifactPath);
+  const receipts: KnowledgeReviewReceipt[] = Array.isArray(parsed.receipts)
+    ? parsed.receipts
+        .filter((value): value is KnowledgeReviewReceipt => isRecord(value) && typeof value.queueEntryId === 'string' && typeof value.decision === 'string')
+        .map((value) => ({
+          receiptId: typeof value.receiptId === 'string' && value.receiptId.length > 0 ? value.receiptId : `krr_${createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 16)}`,
+          queueEntryId: value.queueEntryId,
+          targetKind: (value.targetKind === 'doc' ? 'doc' : 'knowledge') as ReviewTargetKind,
+          targetId: typeof value.targetId === 'string' ? value.targetId : undefined,
+          path: typeof value.path === 'string' ? value.path : undefined,
+          sourceSurface: typeof value.sourceSurface === 'string' ? value.sourceSurface : 'unknown',
+          reasonCode: typeof value.reasonCode === 'string' ? value.reasonCode : 'unknown',
+          decision: (value.decision === 'defer' ? 'defer' : value.decision === 'revise' ? 'revise' : value.decision === 'supersede' ? 'supersede' : 'reaffirm') as ReviewDecision,
+          decidedAt: safeIso(value.decidedAt, fallbackGeneratedAt),
+          evidenceRefs: uniqueSorted(Array.isArray(value.evidenceRefs) ? value.evidenceRefs.map((ref) => String(ref)) : []),
+          followUpArtifactRef: typeof value.followUpArtifactRef === 'string' ? value.followUpArtifactRef : undefined,
+          availableAt: typeof value.availableAt === 'string' ? safeIso(value.availableAt, safeIso(value.decidedAt, fallbackGeneratedAt)) : undefined
+        }))
+    : [];
+
+  const sortedReceipts = [...receipts].sort((left, right) =>
+    left.decidedAt.localeCompare(right.decidedAt) || left.queueEntryId.localeCompare(right.queueEntryId) || left.receiptId.localeCompare(right.receiptId)
+  );
+
+  return {
+    schemaVersion: KNOWLEDGE_REVIEW_RECEIPTS_SCHEMA_VERSION,
+    kind: 'playbook-knowledge-review-receipts',
+    proposalOnly: true,
+    authority: 'read-only',
+    generatedAt: safeIso(parsed.generatedAt, fallbackGeneratedAt),
+    receipts: sortedReceipts
+  };
+};
+
+export const writeKnowledgeReviewReceipt = (repoRoot: string, input: WriteKnowledgeReviewReceiptInput): string => {
+  const artifact = readKnowledgeReviewReceiptsArtifact(repoRoot);
+  const generatedAt = new Date().toISOString();
+  const receipt = normalizeReceipt(input, generatedAt);
+
+  const nextArtifact: KnowledgeReviewReceiptsArtifact = {
+    ...artifact,
+    generatedAt,
+    receipts: [...artifact.receipts, receipt].sort((left, right) =>
+      left.decidedAt.localeCompare(right.decidedAt) || left.queueEntryId.localeCompare(right.queueEntryId) || left.receiptId.localeCompare(right.receiptId)
+    )
+  };
+
+  const outputPath = path.join(repoRoot, KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, `${JSON.stringify(nextArtifact, null, 2)}\n`, 'utf8');
+  return outputPath;
+};
+
+const latestReceiptByTarget = (receipts: KnowledgeReviewReceipt[]): Map<string, KnowledgeReviewReceipt> => {
+  const latest = new Map<string, KnowledgeReviewReceipt>();
+  for (const receipt of receipts) {
+    const key = reviewTargetKey(receipt.targetKind, receipt.targetId, receipt.path);
+    const prior = latest.get(key);
+    if (!prior || prior.decidedAt < receipt.decidedAt || (prior.decidedAt === receipt.decidedAt && prior.receiptId < receipt.receiptId)) {
+      latest.set(key, receipt);
+    }
+  }
+  return latest;
 };
 
 export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOptions = {}): ReviewQueueArtifact => {
@@ -173,7 +359,7 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
   const staleKnowledgeDays = options.staleKnowledgeDays ?? 45;
   const docReviewWindowDays = options.docReviewWindowDays ?? 90;
 
-  const entries: ReviewQueueEntry[] = [];
+  const entries: Array<Omit<ReviewQueueEntry, 'queueEntryId'>> = [];
 
   for (const { entry, sourcePath } of parseKnowledgeEntries(repoRoot)) {
     const promotedMs = Date.parse(entry.promotedAt);
@@ -272,13 +458,48 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
     }
   }
 
+  const latestReceipts = latestReceiptByTarget(readKnowledgeReviewReceiptsArtifact(repoRoot).receipts);
+  const deduped = dedupeQueueEntries(entries);
+  const filtered = deduped.flatMap<ReviewQueueEntry>((entry) => {
+    const receipt = latestReceipts.get(reviewTargetKey(entry.targetKind, entry.targetId, entry.path));
+    if (!receipt) {
+      return [entry];
+    }
+
+    if (receipt.decision === 'supersede') {
+      return [];
+    }
+
+    if (receipt.decision === 'reaffirm') {
+      const receiptMs = Date.parse(receipt.decidedAt);
+      const suppressUntilMs = receiptMs + reviewWindowDaysForEntry(entry, staleKnowledgeDays, docReviewWindowDays) * 24 * 60 * 60 * 1000;
+      if (nowMs < suppressUntilMs) {
+        return [];
+      }
+      return [entry];
+    }
+
+    if (receipt.decision === 'revise') {
+      if (typeof receipt.followUpArtifactRef === 'string' && receipt.followUpArtifactRef.length > 0) {
+        const followUpPath = path.join(repoRoot, receipt.followUpArtifactRef);
+        if (fs.existsSync(followUpPath)) {
+          return [];
+        }
+      }
+      return [entry];
+    }
+
+    const availableAt = safeIso(receipt.availableAt, receipt.decidedAt);
+    return [{ ...entry, reviewPriority: 'low' as ReviewPriority, availableAt }];
+  });
+
   return {
     schemaVersion: REVIEW_QUEUE_SCHEMA_VERSION,
     kind: 'playbook-review-queue',
     proposalOnly: true,
     authority: 'read-only',
     generatedAt,
-    entries: sortQueueEntries(dedupeQueueEntries(entries))
+    entries: sortQueueEntries(filtered)
   };
 };
 

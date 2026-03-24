@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/knowledge-review-receipts.schema.json",
+  "title": "Knowledge Review Receipts",
+  "description": "Durable deterministic receipt log for retrieval review decisions and queue suppression state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "proposalOnly", "authority", "generatedAt", "receipts"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "playbook-knowledge-review-receipts" },
+    "proposalOnly": { "type": "boolean", "const": true },
+    "authority": { "type": "string", "const": "read-only" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "receipts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "receiptId",
+          "queueEntryId",
+          "targetKind",
+          "sourceSurface",
+          "reasonCode",
+          "decision",
+          "decidedAt",
+          "evidenceRefs"
+        ],
+        "properties": {
+          "receiptId": { "type": "string", "minLength": 1 },
+          "queueEntryId": { "type": "string", "minLength": 1 },
+          "targetKind": { "type": "string", "enum": ["knowledge", "doc"] },
+          "targetId": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "sourceSurface": { "type": "string", "minLength": 1 },
+          "reasonCode": { "type": "string", "minLength": 1 },
+          "decision": { "type": "string", "enum": ["reaffirm", "revise", "supersede", "defer"] },
+          "decidedAt": { "type": "string", "format": "date-time" },
+          "evidenceRefs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "followUpArtifactRef": { "type": "string", "minLength": 1 },
+          "availableAt": { "type": "string", "format": "date-time" }
+        },
+        "allOf": [
+          {
+            "anyOf": [
+              { "required": ["targetId"] },
+              { "required": ["path"] }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

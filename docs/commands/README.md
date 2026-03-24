@@ -359,7 +359,10 @@ Command boundary note:
 - `knowledge provenance <id>` resolves direct evidence and related records.
 - `knowledge stale` returns stale, retired, and superseded records.
 - `knowledge review` materializes and reads `.playbook/review-queue.json` via a compact read-only review surface with deterministic `--action` and `--kind` filters.
+- Rule: Retrieval review is incomplete until the review decision is recorded as a durable artifact receipt.
 - Rule: Review surfaces recall governed knowledge without mutating it.
+- Pattern: Recall -> reinterpret -> receipt -> explicit promotion/supersession.
+- Failure Mode: A review queue without receipts becomes a repeating reminder list instead of a governed maintenance loop.
 - Pattern: Prefer existing review families before inventing new top-level command families.
 - Failure Mode: Launching retrieval review as a separate command silo fragments operator workflow and weakens command authority.
 
