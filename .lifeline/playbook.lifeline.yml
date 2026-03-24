@@ -1,11 +1,17 @@
 name: playbook
 archetype: node-web
+repo: https://github.com/fawxzzy/playbook
+branch: main
+installCommand: pnpm install
+buildCommand: pnpm -r build
+startCommand: pnpm start:lifeline
 port: 4300
 healthcheckPath: /healthz
 
-deploy:
-  workingDirectory: .
-  startCommand: pnpm start:lifeline
-
 env:
+  mode: development
   requiredKeys: []
+
+deploy:
+  strategy: local
+  workingDirectory: .

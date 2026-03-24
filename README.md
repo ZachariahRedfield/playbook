@@ -63,8 +63,8 @@ Playbook also publishes checked-in machine-readable Lifeline presets under `expo
 
 Playbook can be used as both the Lifeline convention source and the app target runtime from the same local checkout:
 
-- `exports/lifeline/` provides machine-readable archetype defaults for Lifeline resolution.
-- `.lifeline/playbook.lifeline.yml` defines how to run the Playbook observer app from this repo.
+- `exports/lifeline/` stays intentionally sparse and generic for shared archetype defaults.
+- `.lifeline/playbook.lifeline.yml` is the checked-in explicit runnable app target for this repository.
 
 From a machine with both repositories checked out locally:
 
