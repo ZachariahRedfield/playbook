@@ -17,6 +17,7 @@ const existsSync = vi.fn();
 const readFileSync = vi.fn();
 
 vi.mock('@zachariahredfield/playbook-engine', () => ({
+  REVIEW_QUEUE_RELATIVE_PATH: '.playbook/review-queue.json',
   knowledgeList,
   knowledgeQuery,
   knowledgeInspect,
