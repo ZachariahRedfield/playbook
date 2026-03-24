@@ -165,18 +165,28 @@ function buildRemediationSummary(policy, failureSummary, remediationStatus) {
   };
 }
 
-function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifactPath, remediationPolicy, remediationPolicyArtifactPath, failureSummary, failureSummaryArtifactPath, remediationStatus, remediationStatusArtifactPath }) {
+function buildFirstFailureSummary(firstFailure) {
+  if (!firstFailure || typeof firstFailure !== 'object' || firstFailure.found !== true) return null;
+  return {
+    file: typeof firstFailure.file === 'string' ? firstFailure.file : '(unknown)',
+    test: typeof firstFailure.test === 'string' ? firstFailure.test : '(unknown)',
+    message: typeof firstFailure.message === 'string' ? firstFailure.message : '(unknown)',
+  };
+}
+
+function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifactPath, remediationPolicy, remediationPolicyArtifactPath, failureSummary, failureSummaryArtifactPath, remediationStatus, remediationStatusArtifactPath, firstFailure, firstFailureArtifactPath }) {
   const verifySummary = buildVerifySummary(verify);
   if (!verifySummary) return null;
   const mergeGuardSummary = buildMergeGuardSummary(verify);
   const releaseSummary = buildReleaseSummary(releasePlan);
   const remediationSummary = buildRemediationSummary(remediationPolicy, failureSummary, remediationStatus);
+  const firstFailureSummary = buildFirstFailureSummary(firstFailure);
 
   let overallStatus = verifySummary.status === 'FAIL' ? 'blocked' : 'clear';
   if (remediationSummary) overallStatus = remediationSummary.status === 'allowed' ? overallStatus : `${overallStatus} · test failure`; // retains compact context
   const overallDecision = verify?.ok ? 'merge-ready pending policy context' : 'verify blocked';
 
-  const artifacts = [verifyArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null]
+  const artifacts = [verifyArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null, firstFailureSummary ? firstFailureArtifactPath : null]
     .filter((value) => typeof value === 'string' && value.trim().length > 0);
 
   return {
@@ -188,6 +198,7 @@ function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifact
     mergeGuard: mergeGuardSummary,
     release: releaseSummary,
     remediation: remediationSummary,
+    firstFailure: firstFailureSummary,
     artifacts,
   };
 }
@@ -220,6 +231,12 @@ function renderMarkdown(summary, { marker, title }) {
     lines.push(`| Remediation next action | ${summary.remediation.nextAction} |`);
   }
 
+  if (summary.firstFailure) {
+    lines.push(`| First failing suite | ${summary.firstFailure.file} |`);
+    lines.push(`| First failing test | ${summary.firstFailure.test} |`);
+    lines.push(`| First failure message | ${summary.firstFailure.message} |`);
+  }
+
   lines.push('', `Artifacts: ${summary.artifacts.map((artifact) => `\`${artifact}\``).join(', ')}.`);
   return `${lines.join('\n').trimEnd()}\n`;
 }
@@ -232,6 +249,7 @@ function parseArgs(argv) {
     remediationPolicy: '.playbook/ci-remediation-policy.json',
     failureSummary: '.playbook/failure-summary.json',
     remediationStatus: '.playbook/remediation-status.json',
+    firstFailure: '.playbook/first-test-failure.json',
     out: '.playbook/ci-summary.md',
     commentOut: '.playbook/ci-summary-comment.md',
     marker: DEFAULT_COMMENT_MARKER,
@@ -254,6 +272,8 @@ function parseArgs(argv) {
       options.failureSummary = next; index += 1;
     } else if (token === '--remediation-status' && next) {
       options.remediationStatus = next; index += 1;
+    } else if (token === '--first-failure' && next) {
+      options.firstFailure = next; index += 1;
     } else if (token === '--out' && next) {
       options.out = next; index += 1;
     } else if (token === '--comment-out' && next) {
@@ -292,6 +312,8 @@ if (require.main === module) {
     failureSummaryArtifactPath: options.failureSummary,
     remediationStatus: readJsonArtifact(path.resolve(process.cwd(), options.remediationStatus), { required: false, label: options.remediationStatus }),
     remediationStatusArtifactPath: options.remediationStatus,
+    firstFailure: readJsonArtifact(path.resolve(process.cwd(), options.firstFailure), { required: false, label: options.firstFailure }),
+    firstFailureArtifactPath: options.firstFailure,
   };
   const summary = buildSummary(payload);
   const outPath = path.resolve(process.cwd(), options.out);
@@ -323,6 +345,7 @@ module.exports = {
   buildMergeGuardSummary,
   buildReleaseSummary,
   buildRemediationSummary,
+  buildFirstFailureSummary,
   renderMarkdown,
   readJsonIfExists,
   readJsonArtifact,

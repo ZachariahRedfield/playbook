@@ -147,6 +147,24 @@ runs:
           exit 1
         fi
 
+    - name: Ensure esbuild native optional package (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if node -e "require.resolve('@esbuild/linux-x64')"; then
+          echo "esbuild native optional package present."
+          exit 0
+        fi
+
+        echo "esbuild native optional package missing; attempting pnpm rebuild esbuild for deterministic CI test execution."
+        pnpm rebuild esbuild
+
+        if ! node -e "require.resolve('@esbuild/linux-x64')"; then
+          echo "esbuild native optional package still missing after rebuild; failing early so primary test failures remain explicit."
+          exit 1
+        fi
+
     - name: Build workspace packages
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -282,6 +300,15 @@ runs:
           echo "test-triage markdown exit code: $triage_markdown_exit_code"
         fi
 
+    - name: Capture compact first-test-failure artifact
+      if: inputs.execution-path == 'ci' && env.PLAYBOOK_TEST_EXIT_CODE != '0'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        mkdir -p .playbook
+        echo "+ node $GITHUB_WORKSPACE/.github/scripts/extract-first-test-failure.cjs --input .playbook/ci-failure.log --out .playbook/first-test-failure.json"
+        node "$GITHUB_WORKSPACE/.github/scripts/extract-first-test-failure.cjs" --input .playbook/ci-failure.log --out .playbook/first-test-failure.json
+
     - name: Evaluate CI remediation policy gates
       if: inputs.execution-path == 'ci'
       id: remediation-policy
@@ -396,6 +423,7 @@ runs:
           --remediation-policy .playbook/ci-remediation-policy.json \
           --failure-summary .playbook/failure-summary.json \
           --remediation-status .playbook/remediation-status.json \
+          --first-failure .playbook/first-test-failure.json \
           --out .playbook/ci-summary.md \
           --comment-out .playbook/ci-summary-comment.md
 
@@ -418,6 +446,13 @@ runs:
     - name: Fail when primary tests failed
       if: inputs.execution-path == 'ci' && always() && steps.run-tests.outputs.test-exit-code != '0'
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |
         echo "Primary pnpm test failed earlier in Playbook CI; preserving failure after remediation reporting."
+        if [[ -f .playbook/first-test-failure.json ]]; then
+          echo "First failing test context (canonical blocker):"
+          cat .playbook/first-test-failure.json
+        else
+          echo "First failing test context unavailable (.playbook/first-test-failure.json missing)."
+        fi
         exit 1

@@ -70,6 +70,7 @@ jobs:
             .playbook/ci-remediation-policy.json
             .playbook/failure-summary.json
             .playbook/failure-summary.md
+            .playbook/first-test-failure.json
             .playbook/test-triage.json
             .playbook/test-fix-plan.json
             .playbook/test-autofix-apply.json
@@ -141,6 +142,7 @@ jobs:
             .playbook/ci-remediation-policy.json
             .playbook/failure-summary.json
             .playbook/failure-summary.md
+            .playbook/first-test-failure.json
             .playbook/test-triage.json
             .playbook/test-fix-plan.json
             .playbook/test-autofix-apply.json

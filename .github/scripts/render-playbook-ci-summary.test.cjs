@@ -84,7 +84,8 @@ test('renderMarkdown uses one compact operator brief', () => {
     mergeGuard: { decision: 'fail_closed', status: 'merge guard blocked', blockers: ['lane:docs'], nextAction: 'Resolve docs lane.' },
     release: { recommendedBump: 'patch', status: 'release plan ready', currentVersion: '1.2.3', nextVersion: '1.2.4', affected: '@scope/alpha' },
     remediation: { status: 'blocked_low_confidence', failureClass: 'vitest_assertion', failureCount: 2, retryDecision: 'hold', preferredRepairClass: 'snapshot_refresh', nextAction: 'Manual review required.' },
-    artifacts: ['.playbook/verify.json', '.playbook/release-plan.json', '.playbook/ci-remediation-policy.json', '.playbook/failure-summary.json', '.playbook/remediation-status.json'],
+    firstFailure: { file: 'packages/core/test/foo.test.ts', test: 'matches expected output', message: 'expected 2 to equal 3' },
+    artifacts: ['.playbook/verify.json', '.playbook/release-plan.json', '.playbook/ci-remediation-policy.json', '.playbook/failure-summary.json', '.playbook/remediation-status.json', '.playbook/first-test-failure.json'],
   }, { marker: '<!-- marker -->', title: 'Playbook CI Summary' });
 
   assert.match(markdown, /Overall decision \/ status \| verify blocked \/ blocked · test failure/);
@@ -92,6 +93,7 @@ test('renderMarkdown uses one compact operator brief', () => {
   assert.match(markdown, /Merge guard \| fail_closed \/ merge guard blocked/);
   assert.match(markdown, /Release bump \| patch \/ release plan ready/);
   assert.match(markdown, /Remediation \| blocked_low_confidence/);
+  assert.match(markdown, /First failing suite \| packages\/core\/test\/foo\.test\.ts/);
   assert.match(markdown, /Artifacts: `\.playbook\/verify\.json`, `\.playbook\/release-plan\.json`/);
 });
 
