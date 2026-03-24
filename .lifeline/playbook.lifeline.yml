@@ -10,9 +10,8 @@ healthcheckPath: /healthz
 
 env:
   mode: inline
-  requiredKeys:
-    - PATH
+  requiredKeys: []
 
 deploy:
   strategy: rebuild
-  workingDirectory: .
+  workingDirectory: ..
