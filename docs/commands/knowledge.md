@@ -71,6 +71,24 @@ Views:
 - `readiness`: compatibility/readiness rows from `.playbook/transfer-readiness.json` (`pattern`, `target_repo`, `readiness_score`, `recommendation`, required/missing subsystems, artifacts, validations, contracts, blockers, missing prerequisites, open questions)
 - `blocked-transfers`: readiness subset where blockers or blocked recommendations are present, preserving the same audit fields used by `readiness`
 
+### `knowledge review`
+
+Materialize and inspect `.playbook/review-queue.json` through a read-only retrieval review surface under the existing knowledge command family.
+
+Filters:
+
+- `--action reaffirm|revise|supersede`
+- `--kind knowledge|doc|rule|pattern`
+
+Text output remains compact and operator-facing:
+
+- status
+- affected targets
+- blockers / reason
+- next action
+
+JSON output preserves full detail and deterministic queue metadata for automation consumers.
+
 ## Examples
 
 ```bash
@@ -88,6 +106,9 @@ pnpm playbook knowledge portability --view recalibration --json
 pnpm playbook knowledge portability --view transfer-plans --json
 pnpm playbook knowledge portability --view readiness --json
 pnpm playbook knowledge portability --view blocked-transfers --json
+pnpm playbook knowledge review --json
+pnpm playbook knowledge review --action reaffirm --kind knowledge
+pnpm playbook knowledge review --kind doc
 ```
 
 ## Guarantees
@@ -96,6 +117,9 @@ pnpm playbook knowledge portability --view blocked-transfers --json
 - Deterministic normalized record shape
 - Provenance-preserving output
 - Lifecycle-aware filtering and warnings without introducing mutation routes
+- Rule: Review surfaces recall governed knowledge without mutating it.
+- Pattern: Use existing review families before inventing new top-level command families.
+- Failure Mode: Retrieval review that lands as a new command silo instead of an existing review surface fragments the workflow.
 - Rule: One canonical storage contract per knowledge scope.
 - Pattern: Scope-first resolution beats path inference.
 - Failure Mode: Storage-path drift makes governance legible in code but confusing to operators.

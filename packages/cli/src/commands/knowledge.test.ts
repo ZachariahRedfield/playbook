@@ -11,6 +11,9 @@ const knowledgeSupersession = vi.fn();
 const knowledgeStale = vi.fn();
 const readCrossRepoPatternsArtifact = vi.fn();
 const readPortabilityOutcomesArtifact = vi.fn();
+const buildReviewQueue = vi.fn();
+const writeReviewQueueArtifact = vi.fn();
+const REVIEW_QUEUE_RELATIVE_PATH = '.playbook/review-queue.json';
 const existsSync = vi.fn();
 const readFileSync = vi.fn();
 
@@ -24,7 +27,10 @@ vi.mock('@zachariahredfield/playbook-engine', () => ({
   knowledgeSupersession,
   knowledgeStale,
   readCrossRepoPatternsArtifact,
-  readPortabilityOutcomesArtifact
+  readPortabilityOutcomesArtifact,
+  buildReviewQueue,
+  writeReviewQueueArtifact,
+  REVIEW_QUEUE_RELATIVE_PATH
 }));
 
 
