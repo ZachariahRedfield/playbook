@@ -9,9 +9,10 @@ port: 4300
 healthcheckPath: /healthz
 
 env:
-  mode: development
-  requiredKeys: []
+  mode: inline
+  requiredKeys:
+    - PATH
 
 deploy:
-  strategy: local
+  strategy: rebuild
   workingDirectory: .
