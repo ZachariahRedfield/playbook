@@ -257,10 +257,30 @@ runs:
       run: |
         mkdir -p .playbook
         echo "+ node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log --json --out .playbook/failure-summary.json"
+        set +e
         node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log --json --out .playbook/failure-summary.json
-        cp .playbook/failure-summary.json .playbook/test-triage.json
+        triage_json_exit_code=$?
+        set -e
+
+        if [[ "$triage_json_exit_code" -eq 0 && -s .playbook/failure-summary.json ]]; then
+          cp .playbook/failure-summary.json .playbook/test-triage.json
+          echo "failure-summary.json found and published for downstream remediation/summary consumers."
+        else
+          echo "failure-summary.json unavailable on this failure path; skipping copy/publish of failure-summary/test-triage artifacts."
+          echo "test-triage json exit code: $triage_json_exit_code"
+        fi
+
         echo "+ node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md"
+        set +e
         node packages/cli/dist/main.js test-triage --input .playbook/ci-failure.log > .playbook/failure-summary.md
+        triage_markdown_exit_code=$?
+        set -e
+        if [[ "$triage_markdown_exit_code" -eq 0 && -s .playbook/failure-summary.md ]]; then
+          echo "failure-summary.md generated for human-readable diagnostics."
+        else
+          echo "failure-summary.md unavailable on this failure path; continuing without markdown summary."
+          echo "test-triage markdown exit code: $triage_markdown_exit_code"
+        fi
 
     - name: Evaluate CI remediation policy gates
       if: inputs.execution-path == 'ci'
