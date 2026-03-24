@@ -1,7 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
-const { buildSummary, renderMarkdown } = require('./render-playbook-ci-summary.cjs');
+const { buildSummary, renderMarkdown, readJsonIfExists } = require('./render-playbook-ci-summary.cjs');
 
 test('buildSummary renders compact success summary with verify, release, and merge-guard sections', () => {
   const summary = buildSummary({
@@ -90,4 +93,29 @@ test('renderMarkdown uses one compact operator brief', () => {
   assert.match(markdown, /Release bump \| patch \/ release plan ready/);
   assert.match(markdown, /Remediation \| blocked_low_confidence/);
   assert.match(markdown, /Artifacts: `\.playbook\/verify\.json`, `\.playbook\/release-plan\.json`/);
+});
+
+test('readJsonIfExists parses pure JSON artifacts', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-summary-json-ok-'));
+  const artifactPath = path.join(tmpDir, 'verify.json');
+  fs.writeFileSync(artifactPath, '{"ok":true,"findings":[]}', 'utf8');
+
+  const payload = readJsonIfExists(artifactPath);
+  assert.deepEqual(payload, { ok: true, findings: [] });
+});
+
+test('readJsonIfExists names offending file when JSON is contaminated', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-summary-json-bad-'));
+  const artifactPath = path.join(tmpDir, 'failure-summary.json');
+  fs.writeFileSync(artifactPath, '> playbook-monorepo@0.1.8 playbook\n{"ok":true}', 'utf8');
+
+  assert.throws(
+    () => readJsonIfExists(artifactPath),
+    (error) => {
+      assert.match(String(error.message), /Invalid JSON artifact at/);
+      assert.match(String(error.message), /failure-summary\.json/);
+      assert.match(String(error.message), /pure JSON/);
+      return true;
+    }
+  );
 });

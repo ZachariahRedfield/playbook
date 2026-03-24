@@ -541,6 +541,9 @@ When JSON artifacts are captured through script wrappers and shell redirection, 
 Failure Mode â€” Human-Readable Wrapper Leakage
 Operator-friendly wrapper output is acceptable on stdout, but it must never leak into persisted JSON artifacts that are intended for later programmatic reads.
 
+Rule â€” CI Summary Artifacts Are Pure JSON Contracts
+Artifacts consumed by CI summary/reporting (for example `.playbook/verify.json`, `.playbook/release-plan.json`, `.playbook/failure-summary.json`, `.playbook/remediation-status.json`) must be written through dedicated JSON-only paths such as `--out` or direct file writes, never via redirected wrapper stdout.
+
 Human-facing text surfaces should prefer compact briefs that answer decision/status, affected surfaces, blockers, and next action, while `.playbook/*` artifacts and `--json` preserve machine detail for automation.
 
 Failure Mode â€” Opaque JSON Parse Crash

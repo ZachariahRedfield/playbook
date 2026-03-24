@@ -6,7 +6,17 @@ const PROTECTED_DOC_RULE_PREFIX = 'protected-doc.';
 
 function readJsonIfExists(filePath) {
   if (!filePath || !fs.existsSync(filePath)) return null;
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  const raw = fs.readFileSync(filePath, 'utf8');
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    const firstLine = raw.split(/\r?\n/, 1)[0] ?? '';
+    const preview = firstLine.length > 160 ? `${firstLine.slice(0, 157)}...` : firstLine;
+    const parseMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Invalid JSON artifact at ${filePath}. Summary artifacts must be pure JSON with no wrapper stdout contamination. Parse error: ${parseMessage}. First line: ${JSON.stringify(preview)}`
+    );
+  }
 }
 
 function unique(values) {
