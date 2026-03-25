@@ -64,12 +64,25 @@ State what gets worse, likely failure modes, and mitigation expectations.
 
 Define concrete triggers for re-evaluation (constraint changes, scale shifts, incident patterns, ownership changes, cost spikes).
 
+Use a compact, machine-extractable line format:
+
+- `- [trigger_id] when <observable condition> -> <required review action>`
+
+Example:
+
+- `[p95_latency_budget_breach] when p95 latency exceeds 250ms for 7 consecutive days -> run architecture decision review`
+
 ## Operating guardrails
 
 - Do not justify structure with taste language alone.
 - Do not copy external architecture patterns without local constraint mapping.
 - Do not treat today’s chosen shape as a permanent endpoint.
 - Keep updates deterministic and reviewable through existing docs/governance flows.
+- Write review triggers as structured signals, not narrative prose.
+
+Rule: Review-trigger sections should be structured enough for deterministic extraction.
+Pattern: Human-readable, machine-extractable trigger design.
+Failure Mode: “Review triggers” written as narrative prose never become usable operational signals.
 
 ## Template
 
