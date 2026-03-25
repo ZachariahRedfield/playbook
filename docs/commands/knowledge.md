@@ -80,6 +80,14 @@ Filters:
 - `--action reaffirm|revise|supersede`
 - `--kind knowledge|doc|rule|pattern`
 - `--due now|overdue|all` (default `all`)
+- `--trigger cadence|evidence|all` (default `all`)
+
+Trigger metadata surfaced in JSON (`entries[*]` and persisted queue artifact):
+
+- `triggerType`
+- `triggerReasonCode`
+- `triggerSource`
+- `triggerEvidenceRefs`
 
 Cadence fields surfaced in JSON (`entries[*]` when present and additive summaries):
 
@@ -90,14 +98,17 @@ Cadence fields surfaced in JSON (`entries[*]` when present and additive summarie
 Text output remains compact and operator-facing:
 
 - status
-- due now
-- overdue
-- deferred
-- next action
+- Due now
+- Evidence-triggered
+- Overdue
+- Deferred
+- Next action
 
-Cadence is review scheduling only; it does not mutate doctrine.
+Cadence schedules recall, while evidence can reopen or raise recall priority without creating a new command family.
 
-JSON output preserves full detail and deterministic queue metadata for automation consumers.
+Review recording remains receipt-only; it does not auto-promote or auto-supersede doctrine.
+
+JSON output and `.playbook/review-queue.json` preserve full deterministic trigger/cadence detail for automation consumers.
 
 
 ### `knowledge review record`
@@ -150,6 +161,7 @@ pnpm playbook knowledge portability --view readiness --json
 pnpm playbook knowledge portability --view blocked-transfers --json
 pnpm playbook knowledge review --json
 pnpm playbook knowledge review --due overdue --json
+pnpm playbook knowledge review --trigger evidence --json
 pnpm playbook knowledge review --action reaffirm --kind knowledge --due all
 pnpm playbook knowledge review --kind doc
 pnpm playbook knowledge review record --from <queue-entry-id> --decision defer --json
@@ -172,6 +184,8 @@ pnpm playbook knowledge review record --from <queue-entry-id> --decision defer -
 - Rule: Cadence metadata schedules retrieval review only and must not mutate doctrine.
 - Rule: Existing review surfaces should absorb cadence before inventing new workflow silos.
 - Pattern: Recall -> reinterpret -> receipt -> scheduled recall.
-- Pattern: Queue + receipt + cadence = governed retrieval review.
+- Rule: Existing review surfaces should absorb evidence-triggered recall before inventing new workflow silos.
+- Pattern: Queue + receipt + cadence + evidence = governed retrieval review.
 - Failure Mode: Review queues without cadence become either spammy or silently stale.
 - Failure Mode: A review system that cannot say when something should return encourages ad hoc maintenance.
+- Failure Mode: Review systems that ignore fresh evidence become formally tidy but operationally stale.

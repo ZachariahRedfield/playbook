@@ -202,15 +202,16 @@ const renderText = (subcommand: string, payload: Record<string, unknown>): strin
 
     const entries = payload.entries as Array<Record<string, unknown>> | undefined;
     if (!entries || entries.length === 0) {
-      return 'Status: review queue clear.\nDue now: 0\nOverdue: 0\nDeferred: 0\nNext action: no review action required.';
+      return 'Status: review queue clear.\nDue now: 0\nEvidence-triggered: 0\nOverdue: 0\nDeferred: 0\nNext action: no review action required.';
     }
 
     const first = entries[0]!;
-    const summary = payload.summary as { cadence?: { dueNow?: number; overdue?: number; deferred?: number } } | undefined;
+    const summary = payload.summary as { cadence?: { dueNow?: number; evidenceTriggered?: number; overdue?: number; deferred?: number } } | undefined;
     const cadence = summary?.cadence;
     return [
       `Status: ${entries.length} review item(s) pending`,
       `Due now: ${String(cadence?.dueNow ?? entries.length)}`,
+      `Evidence-triggered: ${String(cadence?.evidenceTriggered ?? entries.filter((entry) => entry.triggerType === 'evidence' || entry.triggerType === 'cadence+evidence').length)}`,
       `Overdue: ${String(cadence?.overdue ?? entries.filter((entry) => entry.overdue === true).length)}`,
       `Deferred: ${String(cadence?.deferred ?? entries.filter((entry) => typeof entry.deferredUntil === 'string' && entry.overdue !== true).length)}`,
       `Next action: ${String(first.recommendedAction ?? 'review')} ${String(first.targetId ?? first.path ?? 'target')}`
