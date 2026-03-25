@@ -141,6 +141,16 @@ Behavior guarantees:
 - no second mutation executor
 - full detail retained in JSON output and `.playbook/review-handoffs.json`
 
+Routing matrix (canonical, compact, and aligned to routed artifact fields):
+
+| `decision` | `kind` | routed follow-up surface | routing semantics |
+| --- | --- | --- | --- |
+| `revise` | `doc` | docs revision | route a docs follow-up handoff (`recommendedFollowUp=docs-revision`) |
+| `revise` | `knowledge` / `rule` / `pattern` | promote/memory follow-up | route a promotion-oriented follow-up handoff (`recommendedFollowUp=promote-or-memory`) |
+| `supersede` | `knowledge` / `rule` / `pattern` | supersession follow-up | route a supersession follow-up handoff (`recommendedFollowUp=supersession`) |
+| `defer` | any | none | no immediate route (receipt only) |
+| `reaffirm` | any | none | no route (receipt only) |
+
 
 ### `knowledge review record`
 

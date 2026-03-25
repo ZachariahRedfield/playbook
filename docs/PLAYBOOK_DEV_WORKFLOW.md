@@ -67,14 +67,19 @@ For retrieval review outcome changes, verify both queue and receipt seams stay d
 
 Cadence fields are retrieval-review scheduling metadata only; they do not mutate doctrine.
 
+Routing semantics for review outcomes are canonicalized in `docs/commands/knowledge.md` under `knowledge review handoffs` (single matrix, many consumers).
+
 - Rule: Recall should be driven by both cadence and fresh evidence, not by time alone.
 - Rule: Existing review surfaces should absorb evidence-triggered recall before inventing new workflow silos.
 - Rule: Existing review surfaces should expose follow-up handoffs before inventing a new command family.
+- Rule: Review decision meaning must stay consistent across docs, artifacts, and CLI surfaces.
 - Pattern: Queue + receipt + cadence + evidence = governed retrieval review.
 - Pattern: One review family should cover queue, receipt, and next-step handoff.
+- Pattern: One routing matrix, many consumers.
 - Failure Mode: A cadence-only system misses important new evidence; an evidence-only system becomes noisy and forgets routine maintenance.
 - Failure Mode: Review systems that ignore fresh evidence become formally tidy but operationally stale.
 - Failure Mode: Review outcomes become dead-end records instead of governed work handoffs.
+- Failure Mode: Operators interpret revise/supersede differently across knowledge, docs, and backlog flows.
 
 ```bash
 pnpm playbook knowledge review --due overdue --json
