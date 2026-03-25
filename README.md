@@ -815,4 +815,7 @@ This receipt is designed to feed future prioritization cleanly: `verification_su
 - `pnpm playbook promote pattern ...` and global pattern read surfaces now normalize the canonical global reusable pattern store to `.playbook/patterns.json` under `PLAYBOOK_HOME`, with deterministic compatibility reads from legacy `patterns.json` during migration.
 - Rule: One canonical storage contract per knowledge scope.
 - Pattern: Scope-first knowledge resolution beats path inference.
+- Rule: Review decisions that require action should become explicit handoff artifacts, not implicit human memory.
+- Pattern: Recall -> review -> receipt -> handoff -> explicit promotion/supersession/doc revision.
+- Failure Mode: Operators can record revise/supersede decisions, but without deterministic next-step packaging the remediation loop stalls.
 - Failure Mode: Global pattern path drift creates operator confusion and hidden read/write mismatch.
