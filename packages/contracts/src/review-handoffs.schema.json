@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/review-handoffs.schema.json",
+  "title": "Review Handoffs",
+  "description": "Deterministic handoff rows derived from review queue + review receipt decisions for explicit downstream follow-up.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "proposalOnly", "authority", "generatedAt", "handoffs", "deferred"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "playbook-review-handoffs" },
+    "proposalOnly": { "type": "boolean", "const": true },
+    "authority": { "type": "string", "const": "read-only" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "handoffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "handoffId",
+          "queueEntryId",
+          "receiptId",
+          "targetKind",
+          "decision",
+          "recommendedFollowupType",
+          "recommendedFollowupRef",
+          "evidenceRefs",
+          "nextActionText"
+        ],
+        "properties": {
+          "handoffId": { "type": "string", "minLength": 1 },
+          "queueEntryId": { "type": "string", "minLength": 1 },
+          "receiptId": { "type": "string", "minLength": 1 },
+          "targetKind": { "type": "string", "enum": ["knowledge", "doc"] },
+          "targetId": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "decision": { "type": "string", "enum": ["revise", "supersede"] },
+          "recommendedFollowupType": { "type": "string", "enum": ["revise-target", "supersede-target"] },
+          "recommendedFollowupRef": { "type": "string", "minLength": 1 },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "nextActionText": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "anyOf": [
+              { "required": ["targetId"] },
+              { "required": ["path"] }
+            ]
+          }
+        ]
+      }
+    },
+    "deferred": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["queueEntryId", "receiptId", "decision", "deferUntil", "evidenceRefs"],
+        "properties": {
+          "queueEntryId": { "type": "string", "minLength": 1 },
+          "receiptId": { "type": "string", "minLength": 1 },
+          "decision": { "type": "string", "const": "defer" },
+          "deferUntil": { "type": "string", "format": "date-time" },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}
