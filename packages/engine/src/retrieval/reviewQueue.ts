@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import type { MemoryKnowledgeArtifact, MemoryKnowledgeEntry } from '../memory/knowledge.js';
+import type { MemoryCompactionReviewArtifact } from '../memory/compactionReview.js';
 import type { MemoryReplayResult } from '../schema/memoryReplay.js';
+import type { LifecycleCandidatesArtifact } from '../schema/lifecycleCandidate.js';
 import { readKnowledgeReviewReceiptsArtifact, type KnowledgeReviewReceiptEntry } from './reviewReceipts.js';
 import { readReviewPolicyArtifact, type ReviewPolicyTargetKind } from './reviewPolicy.js';
 
@@ -19,10 +21,15 @@ const KNOWLEDGE_ARTIFACT_PATHS = [
 const GOVERNED_DOC_PATHS = ['docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/PLAYBOOK_DEV_WORKFLOW.md'] as const;
 const GOVERNED_DOC_PREFIXES = ['docs/postmortems/'] as const;
 const MEMORY_CANDIDATES_PATH = '.playbook/memory/candidates.json' as const;
+const MEMORY_COMPACTION_REVIEW_PATH = '.playbook/memory/compaction-review.json' as const;
+const MEMORY_LIFECYCLE_CANDIDATES_PATH = '.playbook/memory/lifecycle-candidates.json' as const;
+
+const TRIGGER_STRENGTH_EVIDENCE_PREFIX = 'trigger-strength:' as const;
 
 export type ReviewRecommendedAction = 'reaffirm' | 'revise' | 'supersede';
 export type ReviewPriority = 'high' | 'medium' | 'low';
 export type ReviewTargetKind = 'knowledge' | 'doc';
+export type ReviewTriggerType = 'cadence' | 'evidence' | 'cadence+evidence';
 
 export type ReviewQueueEntry = {
   queueEntryId: string;
@@ -33,6 +40,11 @@ export type ReviewQueueEntry = {
   sourceSurface: string;
   reasonCode: string;
   evidenceRefs: string[];
+  triggerType: ReviewTriggerType;
+  triggerSource: string;
+  triggerReasonCode: string;
+  triggerEvidenceRefs: string[];
+  triggerStrength: number;
   recommendedAction: ReviewRecommendedAction;
   reviewPriority: ReviewPriority;
   nextReviewAt?: string;
@@ -76,6 +88,40 @@ const safeIso = (value: string | undefined, fallback: string): string => {
     return fallback;
   }
   return new Date(ms).toISOString();
+};
+
+const normalizeTriggerStrength = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
+const priorityWeight: Record<ReviewPriority, number> = { high: 0, medium: 1, low: 2 };
+
+const priorityFromTriggerStrength = (triggerStrength: number): ReviewPriority => {
+  if (triggerStrength >= 85) {
+    return 'high';
+  }
+  if (triggerStrength >= 60) {
+    return 'medium';
+  }
+  return 'low';
+};
+
+const toTriggerStrengthEvidence = (triggerStrength: number): string =>
+  `${TRIGGER_STRENGTH_EVIDENCE_PREFIX}${normalizeTriggerStrength(triggerStrength)}`;
+
+const parseTriggerStrengthEvidence = (evidenceRefs: string[]): number | null => {
+  const strengths = evidenceRefs
+    .filter((value) => value.startsWith(TRIGGER_STRENGTH_EVIDENCE_PREFIX))
+    .map((value) => Number.parseInt(value.slice(TRIGGER_STRENGTH_EVIDENCE_PREFIX.length), 10))
+    .filter((value) => Number.isInteger(value))
+    .map((value) => normalizeTriggerStrength(value));
+  if (strengths.length === 0) {
+    return null;
+  }
+  return Math.max(...strengths);
 };
 
 const parseKnowledgeEntries = (repoRoot: string): Array<{ entry: MemoryKnowledgeEntry; sourcePath: string }> => {
@@ -134,11 +180,26 @@ const parsePostmortemCandidateEntries = (repoRoot: string): Array<{ candidateId:
   return entries;
 };
 
-const priorityWeight: Record<ReviewPriority, number> = { high: 0, medium: 1, low: 2 };
+const parseCompactionReviewArtifact = (repoRoot: string): Partial<MemoryCompactionReviewArtifact> | null => {
+  const reviewPath = path.join(repoRoot, MEMORY_COMPACTION_REVIEW_PATH);
+  if (!fs.existsSync(reviewPath)) {
+    return null;
+  }
+  return readJsonFile<Partial<MemoryCompactionReviewArtifact>>(reviewPath);
+};
+
+const parseLifecycleCandidatesArtifact = (repoRoot: string): Partial<LifecycleCandidatesArtifact> | null => {
+  const candidatesPath = path.join(repoRoot, MEMORY_LIFECYCLE_CANDIDATES_PATH);
+  if (!fs.existsSync(candidatesPath)) {
+    return null;
+  }
+  return readJsonFile<Partial<LifecycleCandidatesArtifact>>(candidatesPath);
+};
 
 const sortQueueEntries = (entries: ReviewQueueEntry[]): ReviewQueueEntry[] =>
   [...entries].sort((left, right) =>
     priorityWeight[left.reviewPriority] - priorityWeight[right.reviewPriority] ||
+    right.triggerStrength - left.triggerStrength ||
     left.queueEntryId.localeCompare(right.queueEntryId) ||
     left.targetKind.localeCompare(right.targetKind) ||
     (left.targetId ?? left.path ?? '').localeCompare(right.targetId ?? right.path ?? '') ||
@@ -158,6 +219,10 @@ const buildQueueEntryId = (entry: Omit<ReviewQueueEntry, 'queueEntryId' | 'gener
         entry.path ?? '',
         entry.sourceSurface,
         entry.reasonCode,
+        entry.triggerType,
+        entry.triggerSource,
+        entry.triggerReasonCode,
+        String(entry.triggerStrength),
         entry.recommendedAction,
         entry.reviewPriority,
         [...entry.evidenceRefs].sort((left, right) => left.localeCompare(right)).join('|')
@@ -182,20 +247,33 @@ const dedupeQueueEntries = (entries: ReviewQueueEntry[]): ReviewQueueEntry[] => 
       entry.path ?? '',
       entry.sourceSurface,
       entry.reasonCode,
+      entry.triggerType,
+      entry.triggerSource,
+      entry.triggerReasonCode,
+      String(entry.triggerStrength),
       entry.recommendedAction,
       entry.reviewPriority
     ].join('|');
 
     const existing = byKey.get(entryKey);
     if (!existing) {
-      byKey.set(entryKey, { ...entry, evidenceRefs: [...entry.evidenceRefs].sort((a, b) => a.localeCompare(b)) });
+      byKey.set(entryKey, {
+        ...entry,
+        evidenceRefs: [...entry.evidenceRefs].sort((a, b) => a.localeCompare(b)),
+        triggerEvidenceRefs: [...entry.triggerEvidenceRefs].sort((a, b) => a.localeCompare(b))
+      });
       continue;
     }
 
     const mergedEvidence = [...existing.evidenceRefs, ...entry.evidenceRefs]
       .filter((value, index, all) => all.indexOf(value) === index)
       .sort((a, b) => a.localeCompare(b));
-    byKey.set(entryKey, { ...existing, evidenceRefs: mergedEvidence });
+
+    const mergedTriggerEvidence = [...existing.triggerEvidenceRefs, ...entry.triggerEvidenceRefs]
+      .filter((value, index, all) => all.indexOf(value) === index)
+      .sort((a, b) => a.localeCompare(b));
+
+    byKey.set(entryKey, { ...existing, evidenceRefs: mergedEvidence, triggerEvidenceRefs: mergedTriggerEvidence });
   }
 
   return [...byKey.values()];
@@ -269,6 +347,13 @@ const applyReceiptState = (
     const cadence = cadenceByKind[entry.cadenceKind];
 
     if (latestReceipt.decision === 'reaffirm') {
+      const priorStrength = parseTriggerStrengthEvidence(latestReceipt.evidenceRefs);
+      const strongerEvidence = priorStrength !== null && entry.triggerStrength > priorStrength;
+      if (strongerEvidence) {
+        transformed.push(entry);
+        continue;
+      }
+
       const nextReviewMs = addDays(receiptMs, cadence.reaffirmCadenceDays);
       if (nowMs < nextReviewMs) {
         continue;
@@ -279,6 +364,13 @@ const applyReceiptState = (
     }
 
     if (latestReceipt.decision === 'defer') {
+      const priorStrength = parseTriggerStrengthEvidence(latestReceipt.evidenceRefs);
+      const strongerEvidence = priorStrength !== null && entry.triggerStrength > priorStrength;
+      if (strongerEvidence) {
+        transformed.push(entry);
+        continue;
+      }
+
       const explicitDeferredUntil = asIsoIfValid(latestReceipt.deferUntil);
       const nextReviewMs = explicitDeferredUntil ? Date.parse(explicitDeferredUntil) : addDays(receiptMs, cadence.deferWindowDays);
       if (nowMs < nextReviewMs) {
@@ -349,6 +441,20 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
     }
   };
 
+  const lifecycleCandidates = parseLifecycleCandidatesArtifact(repoRoot);
+  const lifecycleByTarget = new Map<string, number>();
+  if (Array.isArray(lifecycleCandidates?.candidates)) {
+    for (const candidate of lifecycleCandidates.candidates) {
+      if (!isRecord(candidate) || typeof candidate.target_pattern_id !== 'string') {
+        continue;
+      }
+      const confidence = typeof candidate.confidence === 'number' ? candidate.confidence : 0;
+      const score = normalizeTriggerStrength(confidence * 100);
+      const current = lifecycleByTarget.get(candidate.target_pattern_id) ?? 0;
+      lifecycleByTarget.set(candidate.target_pattern_id, Math.max(current, score));
+    }
+  }
+
   const entries: ReviewQueueEntry[] = [];
 
   for (const { entry, sourcePath } of parseKnowledgeEntries(repoRoot)) {
@@ -358,47 +464,142 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
     const promotedAgeDays = Number.isNaN(promotedMs) ? staleKnowledgeDays + 1 : Math.max(0, (nowMs - promotedMs) / (1000 * 60 * 60 * 24));
 
     if (entry.status === 'active' && promotedAgeDays >= staleKnowledgeDays) {
+      const lifecycleStrength = lifecycleByTarget.get(entry.knowledgeId) ?? 0;
+      const triggerStrength = Math.max(55, lifecycleStrength);
+      const triggerEvidenceRefs = [
+        sourcePath,
+        ...(lifecycleStrength > 0 ? [MEMORY_LIFECYCLE_CANDIDATES_PATH] : []),
+        ...entry.sourceCandidateIds.map((id) => `candidate:${id}`),
+        ...entry.sourceEventFingerprints.map((id) => `event:${id}`)
+      ].sort((a, b) => a.localeCompare(b));
+
       entries.push(withQueueEntryId({
         targetKind: 'knowledge',
         cadenceKind,
         targetId: entry.knowledgeId,
         sourceSurface: 'memory-knowledge',
         reasonCode: 'stale-active-knowledge',
-        evidenceRefs: [sourcePath, ...entry.sourceCandidateIds.map((id) => `candidate:${id}`), ...entry.sourceEventFingerprints.map((id) => `event:${id}`)].sort((a, b) => a.localeCompare(b)),
+        evidenceRefs: [...triggerEvidenceRefs, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+        triggerType: lifecycleStrength > 0 ? 'cadence+evidence' : 'cadence',
+        triggerSource: lifecycleStrength > 0 ? 'memory-lifecycle-candidates' : 'memory-knowledge-cadence',
+        triggerReasonCode: lifecycleStrength > 0 ? 'cadence-with-lifecycle-evidence' : 'cadence-window-due',
+        triggerEvidenceRefs,
+        triggerStrength,
         recommendedAction: 'reaffirm',
-        reviewPriority: 'high',
+        reviewPriority: lifecycleStrength > 0 ? priorityFromTriggerStrength(triggerStrength) : 'high',
         generatedAt
       }));
       continue;
     }
 
     if (entry.status === 'superseded') {
+      const triggerStrength = 90;
+      const triggerEvidenceRefs = [sourcePath, ...entry.supersededBy.map((id) => `knowledge:${id}`)].sort((a, b) => a.localeCompare(b));
       entries.push(withQueueEntryId({
         targetKind: 'knowledge',
         cadenceKind,
         targetId: entry.knowledgeId,
         sourceSurface: 'memory-knowledge',
         reasonCode: 'superseded-knowledge-lineage-check',
-        evidenceRefs: [sourcePath, ...entry.supersededBy.map((id) => `knowledge:${id}`)].sort((a, b) => a.localeCompare(b)),
+        evidenceRefs: [...triggerEvidenceRefs, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+        triggerType: 'evidence',
+        triggerSource: 'memory-knowledge',
+        triggerReasonCode: 'knowledge-supersession-state',
+        triggerEvidenceRefs,
+        triggerStrength,
         recommendedAction: 'supersede',
-        reviewPriority: 'medium',
+        reviewPriority: priorityFromTriggerStrength(triggerStrength),
         generatedAt
       }));
     }
   }
 
   for (const { candidateId, sourcePath } of parsePostmortemCandidateEntries(repoRoot)) {
+    const triggerStrength = 78;
+    const triggerEvidenceRefs = [`candidate:${candidateId}`, MEMORY_CANDIDATES_PATH].sort((a, b) => a.localeCompare(b));
     entries.push(withQueueEntryId({
       targetKind: 'doc',
       cadenceKind: 'doc',
       path: sourcePath,
       sourceSurface: 'memory-candidates',
       reasonCode: 'postmortem-candidate-context',
-      evidenceRefs: [`candidate:${candidateId}`, MEMORY_CANDIDATES_PATH],
+      evidenceRefs: [...triggerEvidenceRefs, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+      triggerType: 'evidence',
+      triggerSource: 'memory-candidates',
+      triggerReasonCode: 'postmortem-promotion-candidate',
+      triggerEvidenceRefs,
+      triggerStrength,
       recommendedAction: 'revise',
-      reviewPriority: 'medium',
+      reviewPriority: priorityFromTriggerStrength(triggerStrength),
       generatedAt
     }));
+  }
+
+  const compactionReview = parseCompactionReviewArtifact(repoRoot);
+  if (Array.isArray(compactionReview?.entries)) {
+    for (const reviewEntry of compactionReview.entries) {
+      if (!isRecord(reviewEntry) || !isRecord(reviewEntry.promotion) || !Array.isArray(reviewEntry.promotion.matchedKnowledgeIds)) {
+        continue;
+      }
+
+      for (const knowledgeId of reviewEntry.promotion.matchedKnowledgeIds) {
+        if (typeof knowledgeId !== 'string' || knowledgeId.length === 0) {
+          continue;
+        }
+        const triggerStrength = 82;
+        const triggerEvidenceRefs = [MEMORY_COMPACTION_REVIEW_PATH, `compaction-review:${String(reviewEntry.reviewId ?? 'unknown')}`]
+          .sort((a, b) => a.localeCompare(b));
+        entries.push(withQueueEntryId({
+          targetKind: 'knowledge',
+          cadenceKind: 'knowledge',
+          targetId: knowledgeId,
+          sourceSurface: 'memory-compaction-review',
+          reasonCode: 'compaction-review-evidence',
+          evidenceRefs: [...triggerEvidenceRefs, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+          triggerType: 'evidence',
+          triggerSource: 'memory-compaction-review',
+          triggerReasonCode: 'compaction-knowledge-match',
+          triggerEvidenceRefs,
+          triggerStrength,
+          recommendedAction: 'revise',
+          reviewPriority: priorityFromTriggerStrength(triggerStrength),
+          generatedAt
+        }));
+      }
+    }
+  }
+
+  if (Array.isArray(lifecycleCandidates?.candidates)) {
+    for (const candidate of lifecycleCandidates.candidates) {
+      if (!isRecord(candidate) || typeof candidate.target_pattern_id !== 'string' || candidate.target_pattern_id.length === 0) {
+        continue;
+      }
+      const confidence = typeof candidate.confidence === 'number' ? candidate.confidence : 0;
+      const triggerStrength = normalizeTriggerStrength(confidence * 100);
+      if (triggerStrength < 60) {
+        continue;
+      }
+      const triggerEvidenceRefs = [
+        MEMORY_LIFECYCLE_CANDIDATES_PATH,
+        `lifecycle:${typeof candidate.recommendation_id === 'string' ? candidate.recommendation_id : candidate.target_pattern_id}`
+      ].sort((a, b) => a.localeCompare(b));
+      entries.push(withQueueEntryId({
+        targetKind: 'knowledge',
+        cadenceKind: 'pattern',
+        targetId: candidate.target_pattern_id,
+        sourceSurface: 'memory-lifecycle-candidates',
+        reasonCode: 'lifecycle-fresh-evidence',
+        evidenceRefs: [...triggerEvidenceRefs, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+        triggerType: 'evidence',
+        triggerSource: 'memory-lifecycle-candidates',
+        triggerReasonCode: 'pattern-lifecycle-candidate',
+        triggerEvidenceRefs,
+        triggerStrength,
+        recommendedAction: 'revise',
+        reviewPriority: priorityFromTriggerStrength(triggerStrength),
+        generatedAt
+      }));
+    }
   }
 
   for (const relativePath of GOVERNED_DOC_PATHS) {
@@ -413,13 +614,19 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
       continue;
     }
 
+    const triggerStrength = 35;
     entries.push(withQueueEntryId({
       targetKind: 'doc',
       cadenceKind: 'doc',
       path: relativePath,
       sourceSurface: 'governed-docs',
       reasonCode: 'governed-doc-staleness-window',
-      evidenceRefs: [relativePath],
+      evidenceRefs: [relativePath, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+      triggerType: 'cadence',
+      triggerSource: 'governed-docs',
+      triggerReasonCode: 'cadence-window-due',
+      triggerEvidenceRefs: [relativePath],
+      triggerStrength,
       recommendedAction: 'reaffirm',
       reviewPriority: 'low',
       generatedAt
@@ -443,13 +650,19 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
         continue;
       }
 
+      const triggerStrength = 35;
       entries.push(withQueueEntryId({
         targetKind: 'doc',
         cadenceKind: 'doc',
         path: relativePath,
         sourceSurface: 'governed-docs',
         reasonCode: 'governed-doc-staleness-window',
-        evidenceRefs: [relativePath],
+        evidenceRefs: [relativePath, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+        triggerType: 'cadence',
+        triggerSource: 'governed-docs',
+        triggerReasonCode: 'cadence-window-due',
+        triggerEvidenceRefs: [relativePath],
+        triggerStrength,
         recommendedAction: 'reaffirm',
         reviewPriority: 'low',
         generatedAt

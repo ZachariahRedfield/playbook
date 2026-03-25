@@ -62,7 +62,45 @@ describe('buildReleasePlanFromInputs', () => {
 
     const plan = buildPlan(repoRoot, [{ path: 'packages/contracts/src/new-contract.schema.json', status: 'A' }]);
     expect(plan.summary.recommendedBump).toBe('minor');
+    expect(plan.versionGroups[0]?.recommendedBump).toBe('minor');
+    expect(plan.packages.map((pkg) => pkg.recommendedBump)).toEqual(['minor', 'minor']);
+    expect(plan.tasks.filter((task) => task.task_kind === 'release-package-version').map((task) => task.action)).toEqual([
+      'Update @scope/alpha package.json to 1.3.0',
+      'Update @scope/beta package.json to 1.3.0'
+    ]);
     expect(plan.diff.changedFiles[0]?.reasons).toContain('stable contract expansion changed');
+  });
+
+  it('uses the max required bump for executable tasks when patch and minor inputs are mixed', () => {
+    const repoRoot = createFixtureRepo();
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'alpha', 'src', 'feature.ts'), 'export const value = 1;\n');
+    fs.mkdirSync(path.join(repoRoot, 'packages', 'contracts', 'src'), { recursive: true });
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'contracts', 'src', 'new-contract.schema.json'), '{"type":"object"}\n');
+
+    const plan = buildPlan(repoRoot, [
+      { path: 'packages/alpha/src/feature.ts', status: 'M' },
+      { path: 'packages/contracts/src/new-contract.schema.json', status: 'A' }
+    ]);
+    expect(plan.summary.recommendedBump).toBe('minor');
+    expect(plan.versionGroups[0]?.recommendedBump).toBe('minor');
+    expect(plan.packages.map((pkg) => pkg.recommendedBump)).toEqual(['minor', 'minor']);
+    expect(plan.tasks.filter((task) => task.task_kind === 'release-package-version').map((task) => task.action)).toEqual([
+      'Update @scope/alpha package.json to 1.3.0',
+      'Update @scope/beta package.json to 1.3.0'
+    ]);
+  });
+
+  it('keeps changelog managed block bump aligned with executable release tasks', () => {
+    const repoRoot = createFixtureRepo();
+    fs.mkdirSync(path.join(repoRoot, 'packages', 'contracts', 'src'), { recursive: true });
+    fs.writeFileSync(path.join(repoRoot, 'packages', 'contracts', 'src', 'new-contract.schema.json'), '{"type":"object"}\n');
+
+    const plan = buildPlan(repoRoot, [{ path: 'packages/contracts/src/new-contract.schema.json', status: 'A' }]);
+    const changelogTask = plan.tasks.find((task) => task.task_kind === 'docs-managed-write');
+    expect(changelogTask).toBeDefined();
+    expect(changelogTask?.write?.content).toContain('- Recommended bump: minor');
+    expect(changelogTask?.write?.content).toContain('@scope/alpha: 1.2.3 -> 1.3.0');
+    expect(changelogTask?.write?.content).toContain('@scope/beta: 1.2.3 -> 1.3.0');
   });
 
   it('does not inflate internal runtime artifacts', () => {
@@ -82,6 +120,15 @@ describe('buildReleasePlanFromInputs', () => {
     const plan = buildPlan(repoRoot, [{ path: 'docs/commands/release.md', status: 'M' }]);
     expect(plan.summary.recommendedBump).toBe('none');
     expect(plan.diff.changedFiles[0]?.reasons).toContain('docs/tests/CI-only surface changed');
+  });
+
+  it('ignores breaking markers that appear only inside docs or test files', () => {
+    const repoRoot = createFixtureRepo();
+    fs.writeFileSync(path.join(repoRoot, 'docs', 'commands', 'release.md'), '# release\nBREAKING CHANGE\n');
+
+    const plan = buildPlan(repoRoot, [{ path: 'docs/commands/release.md', status: 'M' }]);
+    expect(plan.summary.recommendedBump).toBe('none');
+    expect(plan.diff.changedFiles[0]?.reasons).toEqual(['docs/tests/CI-only surface changed']);
   });
 
   it('emits apply-compatible package and changelog tasks', () => {

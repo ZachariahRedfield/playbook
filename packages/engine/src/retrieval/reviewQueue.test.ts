@@ -158,8 +158,16 @@ describe('buildReviewQueue', () => {
         targetKind: 'knowledge',
         targetId: 'k-old',
         reasonCode: 'superseded-knowledge-lineage-check',
+        triggerType: 'evidence',
+        triggerSource: 'memory-knowledge',
+        triggerReasonCode: 'knowledge-supersession-state',
+        triggerStrength: 90,
+        triggerEvidenceRefs: [
+          '.playbook/memory/knowledge/failure-modes.json',
+          'knowledge:k-new'
+        ],
         recommendedAction: 'supersede',
-        reviewPriority: 'medium'
+        reviewPriority: 'high'
       })
     );
   });
@@ -548,6 +556,166 @@ describe('buildReviewQueue', () => {
 
     const postmortemEntries = queue.entries.filter((entry) => entry.path === 'docs/postmortems/incident.md' && entry.reasonCode === 'postmortem-candidate-context');
     expect(postmortemEntries).toHaveLength(1);
-    expect(postmortemEntries[0]?.evidenceRefs).toEqual(['.playbook/memory/candidates.json', 'candidate:cand-a']);
+    expect(postmortemEntries[0]?.evidenceRefs).toContain('.playbook/memory/candidates.json');
+    expect(postmortemEntries[0]?.evidenceRefs).toContain('candidate:cand-a');
+    expect(postmortemEntries[0]?.evidenceRefs.some((value) => value.startsWith('trigger-strength:'))).toBe(true);
+  });
+
+  it('keeps cadence-only governed docs as cadence triggers', () => {
+    const repoRoot = createTempRepo();
+    const oldDate = new Date('2025-01-01T00:00:00.000Z');
+    writeText(repoRoot, 'docs/PLAYBOOK_DEV_WORKFLOW.md', '# workflow\\n', oldDate);
+
+    const queue = buildReviewQueue(repoRoot, {
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      docReviewWindowDays: 30
+    });
+
+    const entry = queue.entries.find((candidate) => candidate.path === 'docs/PLAYBOOK_DEV_WORKFLOW.md');
+    expect(entry?.triggerType).toBe('cadence');
+    expect(entry?.reasonCode).toBe('governed-doc-staleness-window');
+    expect(entry?.reviewPriority).toBe('low');
+  });
+
+  it('reopens reaffirmed entry when stronger evidence appears', () => {
+    const repoRoot = createTempRepo();
+    writeJson(repoRoot, '.playbook/memory/knowledge/patterns.json', {
+      schemaVersion: '1.0',
+      artifact: 'memory-knowledge',
+      kind: 'pattern',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      entries: [
+        {
+          knowledgeId: 'k-reopen',
+          candidateId: 'c-reopen',
+          sourceCandidateIds: ['c-reopen'],
+          sourceEventFingerprints: ['e-reopen'],
+          kind: 'pattern',
+          title: 'Pattern',
+          summary: 'Summary',
+          fingerprint: 'fp-reopen',
+          module: 'engine',
+          ruleId: 'engine.rule',
+          failureShape: 'shape',
+          promotedAt: '2026-03-01T00:00:00.000Z',
+          provenance: [],
+          status: 'active',
+          supersedes: [],
+          supersededBy: []
+        }
+      ]
+    });
+
+    writeJson(repoRoot, '.playbook/memory/lifecycle-candidates.json', {
+      schemaVersion: '1.0',
+      kind: 'pattern-lifecycle-candidates',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      evidence: [],
+      candidates: [
+        {
+          recommendation_id: 'l-1',
+          target_pattern_id: 'k-reopen',
+          recommended_action: 'freshness_review',
+          confidence: 0.7,
+          explainability: ['fresh evidence'],
+          source_evidence: [],
+          source_evidence_ids: [],
+          provenance_fingerprints: [],
+          derived_from: ['later-outcomes'],
+          status: 'candidate',
+          created_at: '2026-03-24T00:00:00.000Z',
+          freshness: {
+            latest_observed_at: '2026-03-24T00:00:00.000Z',
+            stale_after_days: 30
+          }
+        }
+      ]
+    });
+
+    const first = buildReviewQueue(repoRoot, { generatedAt: '2026-03-24T00:00:00.000Z', staleKnowledgeDays: 5 });
+    const target = first.entries.find((entry) => entry.targetId === 'k-reopen' && entry.reasonCode === 'stale-active-knowledge');
+    expect(target).toBeDefined();
+
+    writeJson(repoRoot, '.playbook/knowledge-review-receipts.json', {
+      schemaVersion: '1.0',
+      kind: 'playbook-knowledge-review-receipts',
+      generatedAt: '2026-03-24T01:00:00.000Z',
+      receipts: [
+        {
+          receiptId: 'r-reopen-1',
+          queueEntryId: target?.queueEntryId,
+          targetKind: 'knowledge',
+          targetId: 'k-reopen',
+          sourceSurface: 'memory-knowledge',
+          reasonCode: 'stale-active-knowledge',
+          decision: 'reaffirm',
+          evidenceRefs: ['trigger-strength:60'],
+          decidedAt: '2026-03-24T01:00:00.000Z'
+        }
+      ]
+    });
+
+    const suppressed = buildReviewQueue(repoRoot, { generatedAt: '2026-03-25T00:00:00.000Z', staleKnowledgeDays: 5 });
+    expect(suppressed.entries.some((entry) => entry.targetId === 'k-reopen' && entry.reasonCode === 'stale-active-knowledge')).toBe(true);
+  });
+
+  it('includes immediate evidence-triggered lifecycle entries before cadence window', () => {
+    const repoRoot = createTempRepo();
+    writeJson(repoRoot, '.playbook/memory/knowledge/patterns.json', {
+      schemaVersion: '1.0',
+      artifact: 'memory-knowledge',
+      kind: 'pattern',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      entries: [
+        {
+          knowledgeId: 'k-lifecycle',
+          candidateId: 'c-lifecycle',
+          sourceCandidateIds: ['c-lifecycle'],
+          sourceEventFingerprints: ['e-lifecycle'],
+          kind: 'pattern',
+          title: 'Pattern',
+          summary: 'Summary',
+          fingerprint: 'fp-lifecycle',
+          module: 'engine',
+          ruleId: 'engine.rule',
+          failureShape: 'shape',
+          promotedAt: '2026-03-23T00:00:00.000Z',
+          provenance: [],
+          status: 'active',
+          supersedes: [],
+          supersededBy: []
+        }
+      ]
+    });
+    writeJson(repoRoot, '.playbook/memory/lifecycle-candidates.json', {
+      schemaVersion: '1.0',
+      kind: 'pattern-lifecycle-candidates',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      evidence: [],
+      candidates: [
+        {
+          recommendation_id: 'lc-1',
+          target_pattern_id: 'k-lifecycle',
+          recommended_action: 'freshness_review',
+          confidence: 0.92,
+          explainability: ['new failed run'],
+          source_evidence: [],
+          source_evidence_ids: [],
+          provenance_fingerprints: [],
+          derived_from: ['later-outcomes'],
+          status: 'candidate',
+          created_at: '2026-03-24T00:00:00.000Z',
+          freshness: {
+            latest_observed_at: '2026-03-24T00:00:00.000Z',
+            stale_after_days: 30
+          }
+        }
+      ]
+    });
+
+    const queue = buildReviewQueue(repoRoot, { generatedAt: '2026-03-24T00:00:00.000Z', staleKnowledgeDays: 30 });
+    const evidenceEntry = queue.entries.find((entry) => entry.targetId === 'k-lifecycle' && entry.reasonCode === 'lifecycle-fresh-evidence');
+    expect(evidenceEntry?.triggerType).toBe('evidence');
+    expect(evidenceEntry?.reviewPriority).toBe('high');
   });
 });

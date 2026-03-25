@@ -320,14 +320,6 @@ export const classifyFileChange = (file: { path: string; status: string }, repoR
     return { path: normalized, status: file.status, bump: 'none', reasons };
   }
 
-  const text = readFileText(repoRoot, normalized);
-
-  const matchingMarkers = policy.breakingChangeMarkers.filter((marker) => text.includes(marker)).sort((left, right) => left.localeCompare(right));
-  if (matchingMarkers.length > 0) {
-    reasons.push(`explicit breaking marker detected (${matchingMarkers.join(', ')})`);
-    return { path: normalized, status: file.status, bump: 'major', reasons };
-  }
-
   const docsOnly = normalized.startsWith('docs/')
     || normalized.startsWith('tests/')
     || normalized.startsWith('.github/')
@@ -340,6 +332,14 @@ export const classifyFileChange = (file: { path: string; status: string }, repoR
   if (docsOnly) {
     reasons.push('docs/tests/CI-only surface changed');
     return { path: normalized, status: file.status, bump: 'none', reasons };
+  }
+
+  const text = readFileText(repoRoot, normalized);
+
+  const matchingMarkers = policy.breakingChangeMarkers.filter((marker) => text.includes(marker)).sort((left, right) => left.localeCompare(right));
+  if (matchingMarkers.length > 0) {
+    reasons.push(`explicit breaking marker detected (${matchingMarkers.join(', ')})`);
+    return { path: normalized, status: file.status, bump: 'major', reasons };
   }
 
   if (normalized === 'packages/cli/src/lib/commandMetadata.ts' || normalized.startsWith('packages/cli/src/commands/')) {
@@ -419,28 +419,38 @@ export const buildReleasePlanFromInputs = (
     return { name: group.name, packages: [...group.packages], recommendedBump, reasons };
   });
 
-  const groupBumpByName = new Map(versionGroups.map((group) => [group.name, group.recommendedBump] as const));
-  const normalizedPackages = packagePlans
-    .map((entry) => ({
-      ...entry,
-      recommendedBump: entry.versionGroup ? (groupBumpByName.get(entry.versionGroup) ?? entry.recommendedBump) : entry.recommendedBump
+  let effectiveBump: ReleaseBump = 'none';
+  for (const file of changedFiles) {
+    effectiveBump = compareBumps(effectiveBump, file.bump);
+  }
+  for (const group of versionGroups) {
+    effectiveBump = compareBumps(effectiveBump, group.recommendedBump);
+  }
+  for (const pkg of packagePlans) {
+    effectiveBump = compareBumps(effectiveBump, pkg.recommendedBump);
+  }
+
+  const normalizedVersionGroups = versionGroups
+    .map((group) => ({
+      ...group,
+      recommendedBump: compareBumps(group.recommendedBump, effectiveBump)
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
 
-  let recommendedBump: ReleaseBump = 'none';
-  for (const file of changedFiles) {
-    recommendedBump = compareBumps(recommendedBump, file.bump);
-  }
-  for (const group of versionGroups) {
-    recommendedBump = compareBumps(recommendedBump, group.recommendedBump);
-  }
-  for (const pkg of normalizedPackages) {
-    recommendedBump = compareBumps(recommendedBump, pkg.recommendedBump);
-  }
+  const groupBumpByName = new Map(normalizedVersionGroups.map((group) => [group.name, group.recommendedBump] as const));
+  const normalizedPackages = packagePlans
+    .map((entry) => ({
+      ...entry,
+      recommendedBump: entry.versionGroup
+        ? compareBumps(groupBumpByName.get(entry.versionGroup) ?? entry.recommendedBump, effectiveBump)
+        : entry.recommendedBump
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
 
+  const recommendedBump = effectiveBump;
   const summaryReasons = uniqueSorted([
     ...changedFiles.filter((file) => file.bump === recommendedBump).flatMap((file) => file.reasons),
-    ...versionGroups.filter((group) => group.recommendedBump === recommendedBump).flatMap((group) => group.reasons)
+    ...normalizedVersionGroups.filter((group) => group.recommendedBump === recommendedBump).flatMap((group) => group.reasons)
   ]);
 
   const nextVersionByPackage = new Map<string, string>();
@@ -494,7 +504,7 @@ export const buildReleasePlanFromInputs = (
       reasons: summaryReasons
     },
     packages: normalizedPackages,
-    versionGroups,
+    versionGroups: normalizedVersionGroups,
     tasks
   };
 };

@@ -1,4 +1,13 @@
 <!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
+## 0.16.0 - 2026-03-25
+- Recommended bump: minor
+- @fawxzzy/playbook: 0.15.0 -> 0.16.0 (playbook-installable-workspace)
+- @fawxzzy/playbook-cli: 0.15.0 -> 0.16.0 (playbook-installable-workspace)
+- @zachariahredfield/playbook-core: 0.15.0 -> 0.16.0 (playbook-installable-workspace)
+- @zachariahredfield/playbook-engine: 0.15.0 -> 0.16.0 (playbook-installable-workspace)
+- @zachariahredfield/playbook-node: 0.15.0 -> 0.16.0 (playbook-installable-workspace)
+- WHAT: Unified release-plan bump resolution around one canonical effective bump so stable contract expansion and mixed patch+minor diffs produce aligned summary, version-group/package recommendations, executable package-version tasks, and managed changelog output. WHY: Prevents governance drift where summary reported `minor` while executable tasks silently applied `patch`.
+
 ## 0.15.0 - 2026-03-24
 - Recommended bump: minor
 - @fawxzzy/playbook: 0.14.0 -> 0.15.0 (playbook-installable-workspace)

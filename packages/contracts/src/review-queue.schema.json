@@ -5,13 +5,35 @@
   "description": "Read-only retrieval review queue artifact for reaffirm/revise/supersede review targets.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "proposalOnly", "authority", "generatedAt", "entries"],
+  "required": [
+    "schemaVersion",
+    "kind",
+    "proposalOnly",
+    "authority",
+    "generatedAt",
+    "entries"
+  ],
   "properties": {
-    "schemaVersion": { "type": "string", "const": "1.0" },
-    "kind": { "type": "string", "const": "playbook-review-queue" },
-    "proposalOnly": { "type": "boolean", "const": true },
-    "authority": { "type": "string", "const": "read-only" },
-    "generatedAt": { "type": "string", "format": "date-time" },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "const": "playbook-review-queue"
+    },
+    "proposalOnly": {
+      "type": "boolean",
+      "const": true
+    },
+    "authority": {
+      "type": "string",
+      "const": "read-only"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
     "entries": {
       "type": "array",
       "items": {
@@ -24,34 +46,132 @@
           "sourceSurface",
           "reasonCode",
           "evidenceRefs",
+          "triggerType",
+          "triggerSource",
+          "triggerReasonCode",
+          "triggerEvidenceRefs",
+          "triggerStrength",
           "recommendedAction",
           "reviewPriority",
           "generatedAt"
         ],
         "properties": {
-          "queueEntryId": { "type": "string", "minLength": 1 },
-          "targetKind": { "type": "string", "enum": ["knowledge", "doc"] },
-          "cadenceKind": { "type": "string", "enum": ["pattern", "rule", "doc", "knowledge"] },
-          "targetId": { "type": "string", "minLength": 1 },
-          "path": { "type": "string", "minLength": 1 },
-          "sourceSurface": { "type": "string", "minLength": 1 },
-          "reasonCode": { "type": "string", "minLength": 1 },
+          "queueEntryId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetKind": {
+            "type": "string",
+            "enum": [
+              "knowledge",
+              "doc"
+            ]
+          },
+          "cadenceKind": {
+            "type": "string",
+            "enum": [
+              "pattern",
+              "rule",
+              "doc",
+              "knowledge"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceSurface": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reasonCode": {
+            "type": "string",
+            "minLength": 1
+          },
           "evidenceRefs": {
             "type": "array",
-            "items": { "type": "string", "minLength": 1 }
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
-          "recommendedAction": { "type": "string", "enum": ["reaffirm", "revise", "supersede"] },
-          "reviewPriority": { "type": "string", "enum": ["high", "medium", "low"] },
-          "nextReviewAt": { "type": "string", "format": "date-time" },
-          "deferredUntil": { "type": "string", "format": "date-time" },
-          "overdue": { "type": "boolean" },
-          "generatedAt": { "type": "string", "format": "date-time" }
+          "triggerType": {
+            "type": "string",
+            "enum": [
+              "cadence",
+              "evidence",
+              "cadence+evidence"
+            ]
+          },
+          "triggerSource": {
+            "type": "string",
+            "minLength": 1
+          },
+          "triggerReasonCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "triggerEvidenceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "triggerStrength": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "recommendedAction": {
+            "type": "string",
+            "enum": [
+              "reaffirm",
+              "revise",
+              "supersede"
+            ]
+          },
+          "reviewPriority": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "nextReviewAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deferredUntil": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
         "allOf": [
           {
             "anyOf": [
-              { "required": ["targetId"] },
-              { "required": ["path"] }
+              {
+                "required": [
+                  "targetId"
+                ]
+              },
+              {
+                "required": [
+                  "path"
+                ]
+              }
             ]
           }
         ]
