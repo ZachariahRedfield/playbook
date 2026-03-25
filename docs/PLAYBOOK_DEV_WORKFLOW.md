@@ -222,6 +222,8 @@ Required sections are intentionally compact:
 
 `pnpm playbook docs audit --json` enforces these sections only for `docs/architecture/decisions/*.md` via stable finding id `docs.architecture-rubric.required-sections`.
 
+For deterministic extraction, write `## Review Triggers` entries in compact trigger form: `- [trigger_id] when <observable condition> -> <required review action>`.
+
 Rule: Record architecture from governing constraints first, not from preferred shapes.
 Pattern: Constraint -> optimization -> emergent structure.
 Failure Mode: Teams cargo-cult attractive architectures without documenting the constraints that made them fit.
