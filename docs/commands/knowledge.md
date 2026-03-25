@@ -153,6 +153,30 @@ Routing matrix (canonical, compact, and aligned to routed artifact fields):
 | `defer` | any | none | no immediate route (receipt only) |
 | `reaffirm` | any | none | no route (receipt only) |
 
+### `knowledge review routes`
+
+Materialize and inspect proposal-only routed follow-up suggestions from retrieval handoffs using `.playbook/review-handoff-routes.json`.
+
+Filters:
+
+- `--surface story|promote|docs|memory`
+- `--decision revise|supersede`
+- `--kind knowledge|doc|rule|pattern`
+
+Text output stays brief-thin:
+
+- status
+- affected targets
+- recommended surface
+- next action
+
+Behavior guarantees:
+
+- proposal-only routed visibility
+- no write or mutation path
+- no auto-promotion
+- no auto-supersession
+- full route detail retained in JSON output and `.playbook/review-handoff-routes.json`
 
 ### `knowledge review record`
 
@@ -209,6 +233,8 @@ pnpm playbook knowledge review --action reaffirm --kind knowledge --due all
 pnpm playbook knowledge review --kind doc
 pnpm playbook knowledge review handoffs --json
 pnpm playbook knowledge review handoffs --decision revise --kind doc --json
+pnpm playbook knowledge review routes --json
+pnpm playbook knowledge review routes --surface docs --decision revise --kind doc --json
 pnpm playbook knowledge review record --from <queue-entry-id> --decision defer --json
 ```
 
@@ -231,12 +257,15 @@ pnpm playbook knowledge review record --from <queue-entry-id> --decision defer -
 - Pattern: Recall -> reinterpret -> receipt -> scheduled recall.
 - Rule: Existing review surfaces should absorb evidence-triggered recall before inventing new workflow silos.
 - Rule: Existing review surfaces should expose follow-up handoffs before inventing a new command family.
+- Rule: Existing review surfaces should expose routed next steps before inventing new command families.
 - Pattern: Queue + receipt + cadence + evidence = governed retrieval review.
 - Pattern: One review family should cover queue, receipt, and next-step handoff.
+- Pattern: Queue -> receipt -> handoff -> routed follow-up, all inside one review family.
 - Rule: Proposal-only review handoffs should compile into explicit next governed surfaces, not depend on operator memory.
 - Pattern: Review receipt -> handoff -> routed follow-up -> explicit reviewed action.
 - Failure Mode: Review queues without cadence become either spammy or silently stale.
 - Failure Mode: A review system that cannot say when something should return encourages ad hoc maintenance.
 - Failure Mode: Review systems that ignore fresh evidence become formally tidy but operationally stale.
 - Failure Mode: Review outcomes become dead-end records instead of governed work handoffs.
+- Failure Mode: Review handoffs become a dead-end list instead of a governed bridge to action.
 - Failure Mode: Handoffs can exist while next steps still require manual reconstruction when routed follow-up artifacts are missing.

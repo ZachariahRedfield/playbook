@@ -2,10 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH,
+  REVIEW_HANDOFF_ROUTES_RELATIVE_PATH,
   REVIEW_HANDOFFS_RELATIVE_PATH,
   REVIEW_QUEUE_RELATIVE_PATH,
+  buildReviewHandoffRoutesArtifact,
   buildReviewQueue,
   buildReviewHandoffsArtifact,
+  writeReviewHandoffRoutesArtifact,
   writeKnowledgeReviewReceipt,
   writeReviewHandoffsArtifact,
   writeReviewQueueArtifact,
@@ -13,6 +16,8 @@ import {
   type ReviewHandoffDecision,
   type ReviewHandoffEntry,
   type ReviewHandoffsArtifact,
+  type ReviewHandoffRouteEntry,
+  type ReviewHandoffRoutesArtifact,
   type KnowledgeReviewReceiptEntry,
   type ReviewQueueArtifact,
   type ReviewQueueEntry
@@ -26,6 +31,7 @@ type RecordableReviewKind = 'knowledge' | 'doc';
 type DueFilter = 'now' | 'overdue' | 'all';
 type TriggerFilter = 'cadence' | 'evidence' | 'all';
 type HandoffDecisionFilter = ReviewHandoffDecision;
+type RouteSurfaceFilter = ReviewHandoffRouteEntry['recommendedSurface'];
 
 type KnowledgeReviewListPayload = {
   schemaVersion: '1.0';
@@ -102,7 +108,30 @@ type KnowledgeReviewHandoffsPayload = {
   handoffs: ReviewHandoffEntry[];
 };
 
-export type KnowledgeReviewPayload = KnowledgeReviewListPayload | KnowledgeReviewRecordPayload | KnowledgeReviewHandoffsPayload;
+type KnowledgeReviewRoutesPayload = {
+  schemaVersion: '1.0';
+  command: 'knowledge-review-routes';
+  artifactPath: typeof REVIEW_HANDOFF_ROUTES_RELATIVE_PATH;
+  generatedAt: string;
+  reviewOnly: true;
+  authority: 'read-only';
+  proposalOnly: true;
+  filters: {
+    surface?: RouteSurfaceFilter;
+    decision?: HandoffDecisionFilter;
+    kind?: ReviewKind;
+  };
+  summary: {
+    total: number;
+    returned: number;
+    bySurface: Record<RouteSurfaceFilter, number>;
+    byDecision: Record<ReviewHandoffDecision, number>;
+    byKind: Record<ReviewKind, number>;
+  };
+  routes: ReviewHandoffRouteEntry[];
+};
+
+export type KnowledgeReviewPayload = KnowledgeReviewListPayload | KnowledgeReviewRecordPayload | KnowledgeReviewHandoffsPayload | KnowledgeReviewRoutesPayload;
 
 const reviewActions: readonly ReviewAction[] = ['reaffirm', 'revise', 'supersede'] as const;
 const reviewKinds: readonly ReviewKind[] = ['knowledge', 'doc', 'rule', 'pattern'] as const;
@@ -173,6 +202,16 @@ const parseHandoffDecisionFilter = (raw: string | null): HandoffDecisionFilter |
   throw new Error(`playbook knowledge review handoffs: invalid --decision value "${raw}"; expected revise or supersede`);
 };
 
+const parseRouteSurfaceFilter = (raw: string | null): RouteSurfaceFilter | undefined => {
+  if (raw === null) {
+    return undefined;
+  }
+  if (raw === 'story' || raw === 'promote' || raw === 'docs' || raw === 'memory') {
+    return raw;
+  }
+  throw new Error(`playbook knowledge review routes: invalid --surface value "${raw}"; expected story, promote, docs, or memory`);
+};
+
 const readReviewQueueArtifact = (cwd: string): ReviewQueueArtifact => {
   const fullPath = path.join(cwd, REVIEW_QUEUE_RELATIVE_PATH);
   if (!fs.existsSync(fullPath)) {
@@ -214,6 +253,16 @@ const materializeReviewHandoffs = (cwd: string): ReviewHandoffsArtifact => {
     throw new Error(`playbook knowledge review handoffs: missing artifact at ${REVIEW_HANDOFFS_RELATIVE_PATH}`);
   }
   return JSON.parse(fs.readFileSync(fullPath, 'utf8')) as ReviewHandoffsArtifact;
+};
+
+const materializeReviewHandoffRoutes = (cwd: string): ReviewHandoffRoutesArtifact => {
+  const materialized = buildReviewHandoffRoutesArtifact(cwd);
+  writeReviewHandoffRoutesArtifact(cwd, materialized);
+  const fullPath = path.join(cwd, REVIEW_HANDOFF_ROUTES_RELATIVE_PATH);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`playbook knowledge review routes: missing artifact at ${REVIEW_HANDOFF_ROUTES_RELATIVE_PATH}`);
+  }
+  return JSON.parse(fs.readFileSync(fullPath, 'utf8')) as ReviewHandoffRoutesArtifact;
 };
 
 const isOverdueEntry = (entry: ReviewQueueEntry): boolean => entry.overdue === true;
@@ -373,6 +422,65 @@ const runKnowledgeReviewHandoffs = (cwd: string, args: string[]): KnowledgeRevie
   };
 };
 
+const runKnowledgeReviewRoutes = (cwd: string, args: string[]): KnowledgeReviewRoutesPayload => {
+  const surfaceFilter = parseRouteSurfaceFilter(readOptionValue(args, '--surface'));
+  const decisionFilter = parseHandoffDecisionFilter(readOptionValue(args, '--decision'));
+  const kindFilter = parseKindFilter(readOptionValue(args, '--kind'));
+  const handoffArtifact = materializeReviewHandoffs(cwd);
+  const routeArtifact = materializeReviewHandoffRoutes(cwd);
+  const decisionByHandoffId = new Map<string, ReviewHandoffDecision>(
+    handoffArtifact.handoffs.map((handoff: ReviewHandoffEntry) => [handoff.handoffId, handoff.decision])
+  );
+
+  const routes = routeArtifact.routes.filter((route: ReviewHandoffRouteEntry) => {
+    if (surfaceFilter && route.recommendedSurface !== surfaceFilter) {
+      return false;
+    }
+    if (kindFilter && asReviewKindValue(route.targetKind) !== kindFilter) {
+      return false;
+    }
+    if (decisionFilter && decisionByHandoffId.get(route.handoffId) !== decisionFilter) {
+      return false;
+    }
+    return true;
+  });
+
+  const bySurface: Record<RouteSurfaceFilter, number> = { story: 0, promote: 0, docs: 0, memory: 0 };
+  const byDecision: Record<ReviewHandoffDecision, number> = { revise: 0, supersede: 0 };
+  const byKind = zeroKindSummary();
+  for (const route of routes) {
+    bySurface[route.recommendedSurface] += 1;
+    byKind[asReviewKindValue(route.targetKind)] += 1;
+    const decision = decisionByHandoffId.get(route.handoffId);
+    if (decision === 'revise' || decision === 'supersede') {
+      byDecision[decision] += 1;
+    }
+  }
+
+  return {
+    schemaVersion: '1.0',
+    command: 'knowledge-review-routes',
+    artifactPath: REVIEW_HANDOFF_ROUTES_RELATIVE_PATH,
+    generatedAt: routeArtifact.generatedAt,
+    reviewOnly: true,
+    authority: 'read-only',
+    proposalOnly: true,
+    filters: {
+      ...(surfaceFilter ? { surface: surfaceFilter } : {}),
+      ...(decisionFilter ? { decision: decisionFilter } : {}),
+      ...(kindFilter ? { kind: kindFilter } : {})
+    },
+    summary: {
+      total: routeArtifact.routes.length,
+      returned: routes.length,
+      bySurface,
+      byDecision,
+      byKind
+    },
+    routes
+  };
+};
+
 const asRecordableTargetKind = (targetKind: ReviewQueueEntry['targetKind']): RecordableReviewKind => {
   if (targetKind === 'knowledge' || targetKind === 'doc') {
     return targetKind;
@@ -481,6 +589,9 @@ export const runKnowledgeReview = (cwd: string, args: string[]): KnowledgeReview
   }
   if (reviewSubcommand === 'handoffs') {
     return runKnowledgeReviewHandoffs(cwd, args);
+  }
+  if (reviewSubcommand === 'routes') {
+    return runKnowledgeReviewRoutes(cwd, args);
   }
 
   return runKnowledgeReviewList(cwd, args);

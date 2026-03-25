@@ -367,12 +367,16 @@ Command boundary note:
 - Architecture decisions in `docs/architecture/decisions/*.md` are recalled via explicit `## Review Triggers` lines in canonical format (`- [trigger_id] when <observable condition> -> <required review action>`); satisfied triggers enter the same retrieval queue as evidence (`triggerSource=architecture-decision`) instead of introducing a separate workflow surface.
 - Rule: Existing review surfaces should absorb architecture-triggered recall before inventing a new workflow silo.
 - `knowledge review handoffs` materializes and reads `.playbook/review-handoffs.json` from the same review family with deterministic `--decision revise|supersede` and `--kind knowledge|doc|rule|pattern` filters; text output stays brief (status, affected targets, recommended follow-up, next action) while JSON preserves full detail.
+- `knowledge review routes` materializes and reads `.playbook/review-handoff-routes.json` from the same review family with deterministic `--surface story|promote|docs|memory`, `--decision revise|supersede`, and `--kind knowledge|doc|rule|pattern` filters; text output stays brief (status, affected targets, recommended surface, next action) while JSON preserves full routed detail.
 - `knowledge review record` records durable review outcomes in `.playbook/knowledge-review-receipts.json` using an explicit queue-entry linkage (`--from <queueEntryId>`) and decision (`--decision <reaffirm|revise|supersede|defer>`), without mutating doctrine or auto-promoting changes.
 - Rule: Review surfaces recall governed knowledge without mutating it.
+- Rule: Existing review surfaces should expose routed next steps before inventing new command families.
 - Pattern: Prefer existing review families before inventing new top-level command families.
 - Pattern: Queue + receipt + cadence + evidence + decision triggers = governed review.
+- Pattern: Queue -> receipt -> handoff -> routed follow-up, all inside one review family.
 - Failure Mode: Architecture review triggers live only in docs and never become operational review signals.
 - Failure Mode: Launching retrieval review as a separate command silo fragments operator workflow and weakens command authority.
+- Failure Mode: Review handoffs become a dead-end list instead of a governed bridge to action.
 - Failure Mode: A review system that cannot say when something should return encourages ad hoc maintenance.
 
 ## Internal knowledge compaction status (no public command surface yet)
