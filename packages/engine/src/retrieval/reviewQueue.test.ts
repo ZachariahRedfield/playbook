@@ -158,8 +158,16 @@ describe('buildReviewQueue', () => {
         targetKind: 'knowledge',
         targetId: 'k-old',
         reasonCode: 'superseded-knowledge-lineage-check',
+        triggerType: 'evidence',
+        triggerSource: 'memory-knowledge',
+        triggerReasonCode: 'knowledge-supersession-state',
+        triggerStrength: 90,
+        triggerEvidenceRefs: [
+          '.playbook/memory/knowledge/failure-modes.json',
+          'knowledge:k-new'
+        ],
         recommendedAction: 'supersede',
-        reviewPriority: 'medium'
+        reviewPriority: 'high'
       })
     );
   });
