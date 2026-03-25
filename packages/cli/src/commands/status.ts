@@ -214,21 +214,22 @@ const toStatusResult = async (cwd: string): Promise<{ result: StatusResult; exit
   const warnings = analyze.recommendations.filter((rec: { severity: string }) => rec.severity === 'WARN').length;
   const errors = 0;
 
-  const environmentOk = doctor.status !== 'error';
-
   const adoption = buildRepoAdoptionReadiness({ repoRoot: analyze.repoPath, connected: true });
+  const lifecycleReady = adoption.lifecycle_stage === 'ready' && adoption.blockers.length === 0;
+  const hasBlockingEnvironmentFailure = doctor.status === 'error' && !lifecycleReady;
+  const repoOk = verify.ok && !hasBlockingEnvironmentFailure;
 
   const result: StatusResult = {
     schemaVersion: '1.0',
     command: 'status',
-    ok: doctor.status !== 'error' && verify.ok,
-    environment: { ok: environmentOk },
+    ok: repoOk,
+    environment: { ok: !hasBlockingEnvironmentFailure },
     analysis: { warnings, errors },
     verification: { ok: verify.ok },
     summary: { warnings, errors },
     adoption,
     interpretation: buildRepoStatusInterpretation({
-      ok: doctor.status !== 'error' && verify.ok,
+      ok: repoOk,
       adoption,
       topIssueDescription: null,
       topIssueId: null
