@@ -29,6 +29,7 @@ Subcommands:
   portability                     Inspect cross-repo portability scoring evidence
   review                          Materialize and inspect retrieval review queue entries
   review handoffs                 Materialize and inspect review follow-up handoffs
+  review routes                   Materialize and inspect routed review follow-up suggestions
   review record                   Record a durable retrieval review receipt
 
 Options:
@@ -47,6 +48,7 @@ Options:
   --trigger <scope>           Review trigger filter (cadence|evidence|all; default all)
   --trigger-source <source>   Review trigger-source filter (for example architecture-decision)
   --decision <decision>       Review handoff/record decision filter (handoffs: revise|supersede; record: reaffirm|revise|supersede|defer)
+  --surface <surface>         Review routes filter (story|promote|docs|memory)
   --from <queueEntryId>        Review record source queue entry id
   --reason-code <id>           Optional review record reason-code override
   --evidence-ref <value>       Optional evidence reference (repeatable)

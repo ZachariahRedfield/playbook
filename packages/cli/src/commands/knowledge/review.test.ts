@@ -6,6 +6,8 @@ const writeReviewQueueArtifact = vi.fn();
 const writeKnowledgeReviewReceipt = vi.fn();
 const buildReviewHandoffsArtifact = vi.fn();
 const writeReviewHandoffsArtifact = vi.fn();
+const buildReviewHandoffRoutesArtifact = vi.fn();
+const writeReviewHandoffRoutesArtifact = vi.fn();
 const existsSync = vi.fn();
 const readFileSync = vi.fn();
 
@@ -15,9 +17,12 @@ vi.mock('@zachariahredfield/playbook-engine', () => ({
   writeKnowledgeReviewReceipt,
   buildReviewHandoffsArtifact,
   writeReviewHandoffsArtifact,
+  buildReviewHandoffRoutesArtifact,
+  writeReviewHandoffRoutesArtifact,
   REVIEW_QUEUE_RELATIVE_PATH: '.playbook/review-queue.json',
   KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH: '.playbook/knowledge-review-receipts.json',
-  REVIEW_HANDOFFS_RELATIVE_PATH: '.playbook/review-handoffs.json'
+  REVIEW_HANDOFFS_RELATIVE_PATH: '.playbook/review-handoffs.json',
+  REVIEW_HANDOFF_ROUTES_RELATIVE_PATH: '.playbook/review-handoff-routes.json'
 }));
 
 vi.mock('node:fs', () => ({
@@ -177,6 +182,38 @@ const handoffsFixture = () => ({
   deferred: []
 });
 
+const handoffRoutesFixture = () => ({
+  schemaVersion: '1.0',
+  kind: 'playbook-review-handoff-routes',
+  proposalOnly: true as const,
+  authority: 'read-only' as const,
+  generatedAt: '2026-03-24T12:31:00.000Z',
+  routes: [
+    {
+      routeId: 'route-001',
+      handoffId: 'handoff-001',
+      targetKind: 'doc',
+      path: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
+      recommendedSurface: 'docs',
+      recommendedArtifact: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
+      reasonCode: 'docs-revision-follow-up',
+      evidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md', 'review-handoff:handoff-001'],
+      nextActionText: 'Record a docs revision follow-up for path:docs/PLAYBOOK_DEV_WORKFLOW.md in the governed docs workflow.'
+    },
+    {
+      routeId: 'route-002',
+      handoffId: 'handoff-002',
+      targetKind: 'pattern',
+      targetId: 'pattern:existing-review-family-first',
+      recommendedSurface: 'promote',
+      recommendedArtifact: '.playbook/memory/knowledge/superseded.json',
+      reasonCode: 'supersession-follow-up',
+      evidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md', 'review-handoff:handoff-002'],
+      nextActionText: 'Record an explicit supersession follow-up for pattern:pattern:existing-review-family-first through governed promotion/supersede flows.'
+    }
+  ]
+});
+
 describe('knowledge review', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -184,6 +221,8 @@ describe('knowledge review', () => {
     writeReviewQueueArtifact.mockReturnValue('/repo/.playbook/review-queue.json');
     buildReviewHandoffsArtifact.mockReturnValue(handoffsFixture());
     writeReviewHandoffsArtifact.mockReturnValue('/repo/.playbook/review-handoffs.json');
+    buildReviewHandoffRoutesArtifact.mockReturnValue(handoffRoutesFixture());
+    writeReviewHandoffRoutesArtifact.mockReturnValue('/repo/.playbook/review-handoff-routes.json');
     existsSync.mockReturnValue(true);
     readFileSync.mockReturnValue(JSON.stringify(reviewQueueFixture()));
     writeKnowledgeReviewReceipt.mockReturnValue(receiptsFixture());
@@ -440,6 +479,81 @@ describe('knowledge review', () => {
     const exitCode = await runKnowledge('/repo', ['review', 'handoffs', '--decision', 'defer'], { format: 'text', quiet: false });
     expect(exitCode).toBe(ExitCode.Failure);
     expect(String(errorSpy.mock.calls[0]?.[0])).toContain('invalid --decision value "defer"; expected revise or supersede');
+    errorSpy.mockRestore();
+  });
+
+  it('materializes and filters review routes with deterministic json output', async () => {
+    const { runKnowledge } = await import('../knowledge.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    readFileSync.mockImplementation((inputPath: string) => {
+      if (inputPath.includes('review-handoff-routes.json')) {
+        return JSON.stringify(handoffRoutesFixture());
+      }
+      if (inputPath.includes('review-handoffs.json')) {
+        return JSON.stringify(handoffsFixture());
+      }
+      return JSON.stringify(reviewQueueFixture());
+    });
+
+    let exitCode = await runKnowledge('/repo', ['review', 'routes', '--json'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(buildReviewHandoffRoutesArtifact).toHaveBeenCalledWith('/repo');
+    expect(writeReviewHandoffRoutesArtifact).toHaveBeenCalledWith('/repo', expect.objectContaining({ kind: 'playbook-review-handoff-routes' }));
+
+    let payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('knowledge-review-routes');
+    expect(payload.summary).toMatchObject({
+      total: 2,
+      returned: 2,
+      bySurface: { story: 0, promote: 1, docs: 1, memory: 0 },
+      byDecision: { revise: 1, supersede: 1 },
+      byKind: { knowledge: 0, doc: 1, rule: 0, pattern: 1 }
+    });
+
+    logSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', 'routes', '--surface', 'docs', '--decision', 'revise', '--kind', 'doc', '--json'], {
+      format: 'json',
+      quiet: false
+    });
+    expect(exitCode).toBe(ExitCode.Success);
+    payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.summary.returned).toBe(1);
+    expect(payload.routes[0].recommendedSurface).toBe('docs');
+    expect(payload.routes[0].targetKind).toBe('doc');
+
+    logSpy.mockRestore();
+  });
+
+  it('renders compact routed handoff text output', async () => {
+    const { runKnowledge } = await import('../knowledge.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    readFileSync.mockImplementation((inputPath: string) => {
+      if (inputPath.includes('review-handoff-routes.json')) {
+        return JSON.stringify(handoffRoutesFixture());
+      }
+      if (inputPath.includes('review-handoffs.json')) {
+        return JSON.stringify(handoffsFixture());
+      }
+      return JSON.stringify(reviewQueueFixture());
+    });
+
+    const exitCode = await runKnowledge('/repo', ['review', 'routes'], { format: 'text', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    const rendered = String(logSpy.mock.calls[0]?.[0]);
+    expect(rendered).toContain('Status: 2 routed handoff(s) pending');
+    expect(rendered).toContain('Affected targets: docs/PLAYBOOK_DEV_WORKFLOW.md, pattern:existing-review-family-first');
+    expect(rendered).toContain('Recommended surface: docs');
+    expect(rendered).toContain('Next action: Record a docs revision follow-up');
+    logSpy.mockRestore();
+  });
+
+  it('fails with deterministic validation for unsupported review route surface filters', async () => {
+    const { runKnowledge } = await import('../knowledge.js');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const exitCode = await runKnowledge('/repo', ['review', 'routes', '--surface', 'queue'], { format: 'text', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain('invalid --surface value "queue"; expected story, promote, docs, or memory');
     errorSpy.mockRestore();
   });
 });

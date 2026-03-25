@@ -190,6 +190,26 @@ const renderText = (subcommand: string, payload: Record<string, unknown>): strin
     return renderPortabilityText(payload);
   }
   if (subcommand === 'review') {
+    if (String(payload.command ?? '') === 'knowledge-review-routes') {
+      const routes = payload.routes as Array<Record<string, unknown>> | undefined;
+      if (!routes || routes.length === 0) {
+        return 'Status: no routed handoffs pending.\nAffected targets: none\nRecommended surface: none\nNext action: continue through existing review and governance surfaces.';
+      }
+
+      const first = routes[0]!;
+      const affectedTargets = routes
+        .slice(0, 3)
+        .map((route) => String(route.targetId ?? route.path ?? 'target'))
+        .join(', ');
+
+      return [
+        `Status: ${routes.length} routed handoff(s) pending`,
+        `Affected targets: ${affectedTargets}`,
+        `Recommended surface: ${String(first.recommendedSurface ?? 'n/a')}`,
+        `Next action: ${String(first.nextActionText ?? 'review the routed handoff artifact for details')}`
+      ].join('\n');
+    }
+
     if (String(payload.command ?? '') === 'knowledge-review-handoffs') {
       const handoffs = payload.handoffs as Array<Record<string, unknown>> | undefined;
       if (!handoffs || handoffs.length === 0) {

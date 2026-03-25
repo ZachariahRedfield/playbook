@@ -87,6 +87,14 @@ declare module "@zachariahredfield/playbook-engine" {
   export type ReviewHandoffEntry = any;
   export type ReviewDeferredMetadata = any;
   export type ReviewHandoffsArtifact = any;
+  export const REVIEW_HANDOFF_ROUTES_SCHEMA_VERSION: any;
+  export const REVIEW_HANDOFF_ROUTES_RELATIVE_PATH: '.playbook/review-handoff-routes.json';
+  export const buildReviewHandoffRoutesArtifact: (...args: any[]) => any;
+  export const writeReviewHandoffRoutesArtifact: (...args: any[]) => any;
+  export type ReviewHandoffRouteTargetKind = any;
+  export type ReviewHandoffRouteSurface = any;
+  export type ReviewHandoffRouteEntry = any;
+  export type ReviewHandoffRoutesArtifact = any;
   export const KNOWLEDGE_REVIEW_RECEIPTS_SCHEMA_VERSION: any;
   export const KNOWLEDGE_REVIEW_RECEIPTS_RELATIVE_PATH: '.playbook/knowledge-review-receipts.json';
   export const readKnowledgeReviewReceiptsArtifact: (...args: any[]) => any;
