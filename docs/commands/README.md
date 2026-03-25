@@ -228,6 +228,7 @@ Playbook now recommends an optional repo-scoped product-direction contract for c
 - `docs/stories/<STORY_ID>.md` defines one independently shippable vertical slice
 - `pnpm playbook docs audit --json` validates the contract when a repo opts in
 - `docs/postmortems/*.md`, `docs/PLAYBOOK_PRODUCT_ROADMAP.md`, and `docs/PLAYBOOK_DEV_WORKFLOW.md` now get a narrow path-scoped revision-layer contract check (Fact/Interpretation/Narrative) so doctrine remains enforceable only on governed docs
+- `docs/architecture/decisions/*.md` now gets a narrow path-scoped architecture-rubric check (Constraints, Cost Surfaces, Chosen Shape, Why This Fits, Tradeoffs / Failure Modes, Review Triggers) with stable finding id `docs.architecture-rubric.required-sections`
 - `pnpm playbook ask ... --repo-context` can answer lightweight story/pillar mapping prompts
 
 This remains a documentation contract first, not a new heavy workflow command surface.
@@ -235,6 +236,9 @@ This remains a documentation contract first, not a new heavy workflow command su
 Rule: Only governed docs should carry enforced revision-layer structure.
 Pattern: Path-scoped docs audit keeps doctrine enforceable without turning docs audit into noise.
 Failure Mode: Broad unscoped docs rules create compliance churn and push teams away from the process.
+Rule: Only governed architecture-decision docs should carry enforced rubric structure.
+Pattern: Path-scoped architecture-rubric audit makes doctrine enforceable without widening documentation noise.
+Failure Mode: Broad docs rules create compliance churn; no rubric rules leave architecture decisions style-driven and inconsistent.
 
 ## Product-state anchoring rule
 

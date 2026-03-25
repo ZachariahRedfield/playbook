@@ -246,6 +246,41 @@ describe('runDocs', () => {
     );
   });
 
+  it('fails architecture decision docs missing required rubric sections without affecting non-architecture docs', async () => {
+    const repo = createFixtureRepo();
+    fs.mkdirSync(path.join(repo, 'docs', 'architecture', 'decisions'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'architecture', 'decisions', 'adr-003.md'),
+      ['# ADR-003', '', '## Constraints', 'Constraint details.', '', '## Cost Surfaces', 'Cost details.', ''].join('\n'),
+      'utf8'
+    );
+    fs.writeFileSync(path.join(repo, 'docs', 'notes.md'), '# Notes\n\n## Constraints\nOptional notes only.\n', 'utf8');
+    const { runDocs } = await import('./docs.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runDocs(repo, ['audit'], { ci: false, format: 'json', quiet: true });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'docs.architecture-rubric.required-sections',
+          path: 'docs/architecture/decisions/adr-003.md',
+          level: 'error'
+        })
+      ])
+    );
+    expect(payload.findings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'docs.architecture-rubric.required-sections',
+          path: 'docs/notes.md'
+        })
+      ])
+    );
+  });
+
   it('emits stable JSON envelope', async () => {
     const repo = createFixtureRepo();
     const { runDocs } = await import('./docs.js');

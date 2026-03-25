@@ -113,6 +113,14 @@ const POSTMORTEM_REQUIRED_SECTIONS = [
 ] as const;
 const REVISION_LAYER_REQUIRED_SECTIONS = ['fact', 'interpretation', 'narrative'] as const;
 const REVISION_LAYER_GOVERNED_DOC_PATHS = ['docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/PLAYBOOK_DEV_WORKFLOW.md'] as const;
+const ARCHITECTURE_DECISION_REQUIRED_SECTIONS = [
+  'constraints',
+  'cost surfaces',
+  'chosen shape',
+  'why this fits',
+  'tradeoffs / failure modes',
+  'review triggers'
+] as const;
 
 const PLANNING_ALLOWED_PATHS = new Set([
   'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
@@ -445,6 +453,33 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
 
     for (const postmortemDoc of postmortemDocs) {
       revisionLayerGovernedDocs.add(postmortemDoc);
+    }
+  }
+
+  const architectureDecisionDocsPath = path.join(repoRoot, 'docs', 'architecture', 'decisions');
+  if (fs.existsSync(architectureDecisionDocsPath)) {
+    const architectureDecisionDocs = fs
+      .readdirSync(architectureDecisionDocsPath, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+      .map((entry) => `docs/architecture/decisions/${entry.name}`)
+      .sort();
+
+    for (const architectureDecisionDoc of architectureDecisionDocs) {
+      const content = readTextIfExists(repoRoot, architectureDecisionDoc);
+      if (!content) {
+        continue;
+      }
+
+      const missingSections = hasRequiredSections(content, ARCHITECTURE_DECISION_REQUIRED_SECTIONS);
+      if (missingSections.length > 0) {
+        findings.push({
+          ruleId: 'docs.architecture-rubric.required-sections',
+          level: 'error',
+          message: `Architecture decision doc is missing required sections: ${missingSections.join(', ')}.`,
+          path: architectureDecisionDoc,
+          suggestedDestination: 'templates/repo/docs/architecture/PLAYBOOK_ARCHITECTURE_DECISION_TEMPLATE.md'
+        });
+      }
     }
   }
 
