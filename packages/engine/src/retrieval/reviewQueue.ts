@@ -20,6 +20,7 @@ const KNOWLEDGE_ARTIFACT_PATHS = [
 
 const GOVERNED_DOC_PATHS = ['docs/PLAYBOOK_PRODUCT_ROADMAP.md', 'docs/PLAYBOOK_DEV_WORKFLOW.md'] as const;
 const GOVERNED_DOC_PREFIXES = ['docs/postmortems/'] as const;
+const ARCHITECTURE_DECISIONS_DIR = 'docs/architecture/decisions' as const;
 const MEMORY_CANDIDATES_PATH = '.playbook/memory/candidates.json' as const;
 const MEMORY_COMPACTION_REVIEW_PATH = '.playbook/memory/compaction-review.json' as const;
 const MEMORY_LIFECYCLE_CANDIDATES_PATH = '.playbook/memory/lifecycle-candidates.json' as const;
@@ -194,6 +195,86 @@ const parseLifecycleCandidatesArtifact = (repoRoot: string): Partial<LifecycleCa
     return null;
   }
   return readJsonFile<Partial<LifecycleCandidatesArtifact>>(candidatesPath);
+};
+
+type ArchitectureDecisionTriggerMetadata = {
+  reasonCode: string;
+  signalPath: string;
+  evidenceRefs: string[];
+  strength?: number;
+};
+
+const REVIEW_TRIGGER_METADATA_BLOCK_PATTERN =
+  /##\s+Review Triggers[\s\S]*?```json\s*([\s\S]*?)```/im;
+
+const asArchitectureDecisionTrigger = (value: unknown): ArchitectureDecisionTriggerMetadata | null => {
+  if (!isRecord(value) || typeof value.reasonCode !== 'string' || typeof value.signalPath !== 'string') {
+    return null;
+  }
+
+  const reasonCode = value.reasonCode.trim();
+  const signalPath = value.signalPath.trim();
+  if (reasonCode.length === 0 || signalPath.length === 0) {
+    return null;
+  }
+
+  const evidenceRefs = Array.isArray(value.evidenceRefs)
+    ? value.evidenceRefs
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0)
+    : [];
+
+  const strength = typeof value.strength === 'number' ? value.strength : undefined;
+  return {
+    reasonCode,
+    signalPath,
+    evidenceRefs: evidenceRefs.length > 0 ? evidenceRefs : [signalPath],
+    strength
+  };
+};
+
+const parseArchitectureDecisionTriggers = (
+  repoRoot: string
+): Array<{ decisionPath: string; trigger: ArchitectureDecisionTriggerMetadata }> => {
+  const decisionsDir = path.join(repoRoot, ARCHITECTURE_DECISIONS_DIR);
+  if (!fs.existsSync(decisionsDir)) {
+    return [];
+  }
+
+  const decisionDocs = fs
+    .readdirSync(decisionsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+    .map((entry) => `${ARCHITECTURE_DECISIONS_DIR}/${entry.name}`)
+    .sort((a, b) => a.localeCompare(b));
+
+  const collected: Array<{ decisionPath: string; trigger: ArchitectureDecisionTriggerMetadata }> = [];
+  for (const decisionPath of decisionDocs) {
+    const fullPath = path.join(repoRoot, decisionPath);
+    const content = fs.readFileSync(fullPath, 'utf8');
+    const metadataMatch = content.match(REVIEW_TRIGGER_METADATA_BLOCK_PATTERN);
+    if (!metadataMatch || typeof metadataMatch[1] !== 'string') {
+      continue;
+    }
+
+    let parsedMetadata: unknown;
+    try {
+      parsedMetadata = JSON.parse(metadataMatch[1]);
+    } catch {
+      continue;
+    }
+
+    const metadataEntries = Array.isArray(parsedMetadata) ? parsedMetadata : [];
+    for (const metadataEntry of metadataEntries) {
+      const trigger = asArchitectureDecisionTrigger(metadataEntry);
+      if (!trigger) {
+        continue;
+      }
+      collected.push({ decisionPath, trigger });
+    }
+  }
+
+  return collected;
 };
 
 const sortQueueEntries = (entries: ReviewQueueEntry[]): ReviewQueueEntry[] =>
@@ -600,6 +681,35 @@ export const buildReviewQueue = (repoRoot: string, options: BuildReviewQueueOpti
         generatedAt
       }));
     }
+  }
+
+  for (const { decisionPath, trigger } of parseArchitectureDecisionTriggers(repoRoot)) {
+    const signalPath = path.join(repoRoot, trigger.signalPath);
+    if (!fs.existsSync(signalPath)) {
+      continue;
+    }
+
+    const triggerStrength = normalizeTriggerStrength(trigger.strength ?? 72);
+    const triggerEvidenceRefs = [trigger.signalPath, ...trigger.evidenceRefs]
+      .filter((value, index, all) => all.indexOf(value) === index)
+      .sort((a, b) => a.localeCompare(b));
+
+    entries.push(withQueueEntryId({
+      targetKind: 'doc',
+      cadenceKind: 'doc',
+      path: decisionPath,
+      sourceSurface: 'architecture-decisions',
+      reasonCode: 'architecture-decision-review-trigger',
+      evidenceRefs: [...triggerEvidenceRefs, toTriggerStrengthEvidence(triggerStrength)].sort((a, b) => a.localeCompare(b)),
+      triggerType: 'evidence',
+      triggerSource: 'architecture-decision',
+      triggerReasonCode: trigger.reasonCode,
+      triggerEvidenceRefs,
+      triggerStrength,
+      recommendedAction: 'reaffirm',
+      reviewPriority: priorityFromTriggerStrength(triggerStrength),
+      generatedAt
+    }));
   }
 
   for (const relativePath of GOVERNED_DOC_PATHS) {

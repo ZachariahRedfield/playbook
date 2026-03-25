@@ -215,6 +215,95 @@ describe('buildReviewQueue', () => {
     expect(queue.entries.some((entry) => entry.path === 'docs/random-notes.md')).toBe(false);
   });
 
+  it('adds deterministic evidence-triggered queue entries for architecture decisions when review triggers are satisfied', () => {
+    const repoRoot = createTempRepo();
+    const oldDate = new Date('2025-01-01T00:00:00.000Z');
+    writeText(
+      repoRoot,
+      'docs/architecture/decisions/decision-a.md',
+      `# Architecture Decision: Example
+
+## Review Triggers
+
+\`\`\`json
+[
+  {
+    "reasonCode": "assumption-evidence-updated",
+    "signalPath": ".playbook/memory/lifecycle-candidates.json",
+    "evidenceRefs": [
+      "docs/architecture/decisions/decision-a.md",
+      ".playbook/memory/lifecycle-candidates.json"
+    ],
+    "strength": 77
+  }
+]
+\`\`\`
+`,
+      oldDate
+    );
+
+    writeJson(repoRoot, '.playbook/memory/lifecycle-candidates.json', {
+      schemaVersion: '1.0',
+      kind: 'playbook-lifecycle-candidates',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      candidates: []
+    });
+
+    const queue = buildReviewQueue(repoRoot, {
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      docReviewWindowDays: 999
+    });
+
+    expect(queue.entries).toContainEqual(
+      expect.objectContaining({
+        targetKind: 'doc',
+        path: 'docs/architecture/decisions/decision-a.md',
+        triggerType: 'evidence',
+        triggerSource: 'architecture-decision',
+        triggerReasonCode: 'assumption-evidence-updated',
+        triggerStrength: 77,
+        triggerEvidenceRefs: [
+          '.playbook/memory/lifecycle-candidates.json',
+          'docs/architecture/decisions/decision-a.md'
+        ],
+        reasonCode: 'architecture-decision-review-trigger'
+      })
+    );
+  });
+
+  it('does not add architecture decision queue noise when review trigger signals are not satisfied', () => {
+    const repoRoot = createTempRepo();
+    writeText(
+      repoRoot,
+      'docs/architecture/decisions/decision-b.md',
+      `# Architecture Decision: Example
+
+## Review Triggers
+
+\`\`\`json
+[
+  {
+    "reasonCode": "assumption-evidence-updated",
+    "signalPath": ".playbook/memory/lifecycle-candidates.json",
+    "evidenceRefs": [
+      "docs/architecture/decisions/decision-b.md",
+      ".playbook/memory/lifecycle-candidates.json"
+    ]
+  }
+]
+\`\`\`
+`,
+      new Date('2026-03-01T00:00:00.000Z')
+    );
+
+    const queue = buildReviewQueue(repoRoot, {
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      docReviewWindowDays: 999
+    });
+
+    expect(queue.entries.some((entry) => entry.path === 'docs/architecture/decisions/decision-b.md')).toBe(false);
+  });
+
   it('remains proposal-only with read-only authority', () => {
     const repoRoot = createTempRepo();
     const queue = buildReviewQueue(repoRoot, {

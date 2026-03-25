@@ -364,6 +364,7 @@ Command boundary note:
 - `knowledge provenance <id>` resolves direct evidence and related records.
 - `knowledge stale` returns stale, retired, and superseded records.
 - `knowledge review` materializes and reads `.playbook/review-queue.json` via a compact review surface with deterministic `--action`, `--kind`, cadence-aware `--due now|overdue|all`, and trigger-aware `--trigger cadence|evidence|all` filtering while surfacing additive trigger metadata (`triggerType`, `triggerReasonCode`, `triggerSource`, `triggerEvidenceRefs`) plus cadence fields (`nextReviewAt`, `overdue`, `deferredUntil`) in JSON output.
+- Architecture decisions in `docs/architecture/decisions/*.md` are recalled via explicit `## Review Triggers` metadata hits that enter the same retrieval queue as evidence (`triggerSource=architecture-decision`) instead of introducing a separate workflow surface.
 - `knowledge review handoffs` materializes and reads `.playbook/review-handoffs.json` from the same review family with deterministic `--decision revise|supersede` and `--kind knowledge|doc|rule|pattern` filters; text output stays brief (status, affected targets, recommended follow-up, next action) while JSON preserves full detail.
 - `knowledge review record` records durable review outcomes in `.playbook/knowledge-review-receipts.json` using an explicit queue-entry linkage (`--from <queueEntryId>`) and decision (`--decision <reaffirm|revise|supersede|defer>`), without mutating doctrine or auto-promoting changes.
 - Rule: Review surfaces recall governed knowledge without mutating it.

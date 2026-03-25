@@ -110,6 +110,14 @@ Review recording remains receipt-only; it does not auto-promote or auto-supersed
 
 JSON output and `.playbook/review-queue.json` preserve full deterministic trigger/cadence detail for automation consumers.
 
+Architecture-decision recall is trigger-driven: `docs/architecture/decisions/*.md` can publish explicit `## Review Triggers` JSON metadata, and satisfied signals are merged as additive `triggerSource=architecture-decision` evidence entries.
+
+Rule: Architecture decisions should be recalled through explicit trigger metadata, not ad hoc memory.
+
+Pattern: Architecture decision -> trigger hit -> retrieval review.
+
+Failure Mode: Architecture decisions get written once and never re-evaluated when their own assumptions change.
+
 ### `knowledge review handoffs`
 
 Materialize and inspect proposal-only follow-up handoffs from retrieval review outcomes using `.playbook/review-handoffs.json`.

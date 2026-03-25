@@ -225,6 +225,9 @@ Required sections are intentionally compact:
 Rule: Record architecture from governing constraints first, not from preferred shapes.
 Pattern: Constraint -> optimization -> emergent structure.
 Failure Mode: Teams cargo-cult attractive architectures without documenting the constraints that made them fit.
+Rule: Architecture decisions should be recalled through explicit trigger metadata, not ad hoc memory.
+Pattern: Architecture decision -> trigger hit -> retrieval review.
+Failure Mode: Architecture decisions get written once and never re-evaluated when their own assumptions change.
 Rule: Only governed architecture-decision docs should carry enforced rubric structure.
 Pattern: Path-scoped architecture-rubric audit makes doctrine enforceable without widening documentation noise.
 Failure Mode: Broad docs rules create compliance churn; no rubric rules leave architecture decisions style-driven and inconsistent.
