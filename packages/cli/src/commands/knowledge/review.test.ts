@@ -251,21 +251,31 @@ describe('knowledge review', () => {
     exitCode = await runKnowledge('/repo', ['review', '--due', 'overdue'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.summary.returned).toBe(2);
+    expect(payload.summary.returned).toBe(3);
     expect(payload.entries.every((entry: { overdue?: boolean }) => entry.overdue === true)).toBe(true);
+    expect(payload.entries.map((entry: { queueEntryId: string }) => entry.queueEntryId).sort()).toEqual([
+      'q-architecture-1',
+      'q-knowledge-1',
+      'q-rule-1'
+    ]);
 
     logSpy.mockClear();
     exitCode = await runKnowledge('/repo', ['review', '--due', 'all'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.summary.returned).toBe(4);
+    expect(payload.summary.returned).toBe(5);
 
     logSpy.mockClear();
     exitCode = await runKnowledge('/repo', ['review', '--trigger', 'evidence'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.summary.returned).toBe(2);
+    expect(payload.summary.returned).toBe(3);
     expect(payload.entries.every((entry: { triggerType?: string }) => entry.triggerType === 'evidence' || entry.triggerType === 'cadence+evidence')).toBe(true);
+    expect(payload.entries.map((entry: { queueEntryId: string }) => entry.queueEntryId).sort()).toEqual([
+      'q-architecture-1',
+      'q-knowledge-1',
+      'q-pattern-1'
+    ]);
 
     logSpy.mockClear();
     exitCode = await runKnowledge('/repo', ['review', '--trigger-source', 'architecture-decision'], { format: 'json', quiet: false });
