@@ -259,6 +259,67 @@ describe('docs audit', () => {
     expect(result.findings.find((finding) => finding.path === 'docs/notes.md' && finding.ruleId === 'docs.postmortem.required-sections')).toBeUndefined();
   });
 
+  it('passes architecture decision docs with required rubric sections', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/architecture/decisions/adr-001.md',
+      [
+        '# ADR-001',
+        '',
+        '## Constraints',
+        'Constraint details.',
+        '',
+        '## Cost Surfaces',
+        'Cost details.',
+        '',
+        '## Chosen Shape',
+        'Chosen approach.',
+        '',
+        '## Why This Fits',
+        'Fit details.',
+        '',
+        '## Tradeoffs / Failure Modes',
+        'Tradeoffs.',
+        '',
+        '## Review Triggers',
+        'Trigger details.',
+        ''
+      ].join('\n')
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId === 'docs.architecture-rubric.required-sections')).toBeUndefined();
+  });
+
+  it('fails architecture decision docs missing required rubric sections with a stable rule id', () => {
+    const root = createRepo();
+    write(
+      root,
+      'docs/architecture/decisions/adr-002.md',
+      ['# ADR-002', '', '## Constraints', 'Constraint details.', '', '## Cost Surfaces', 'Cost details.', ''].join('\n')
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'docs.architecture-rubric.required-sections',
+          path: 'docs/architecture/decisions/adr-002.md',
+          level: 'error'
+        })
+      ])
+    );
+  });
+
+  it('does not apply architecture rubric heading validation to non-architecture docs', () => {
+    const root = createRepo();
+    write(root, 'docs/notes.md', '# Notes\n\n## Constraints\nOptional note.');
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.path === 'docs/notes.md' && finding.ruleId === 'docs.architecture-rubric.required-sections')).toBeUndefined();
+  });
+
   it('fails governed docs missing revision-layer sections with a stable rule id', () => {
     const root = createRepo();
     write(root, 'docs/PLAYBOOK_DEV_WORKFLOW.md', '# Development workflow\n## Fact\nEvidence only.\n## Interpretation\nMeaning only.\n');

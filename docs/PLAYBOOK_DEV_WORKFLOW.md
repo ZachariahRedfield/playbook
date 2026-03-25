@@ -220,9 +220,14 @@ Required sections are intentionally compact:
 - `## Tradeoffs / Failure Modes`
 - `## Review Triggers`
 
+`pnpm playbook docs audit --json` enforces these sections only for `docs/architecture/decisions/*.md` via stable finding id `docs.architecture-rubric.required-sections`.
+
 Rule: Record architecture from governing constraints first, not from preferred shapes.
 Pattern: Constraint -> optimization -> emergent structure.
 Failure Mode: Teams cargo-cult attractive architectures without documenting the constraints that made them fit.
+Rule: Only governed architecture-decision docs should carry enforced rubric structure.
+Pattern: Path-scoped architecture-rubric audit makes doctrine enforceable without widening documentation noise.
+Failure Mode: Broad docs rules create compliance churn; no rubric rules leave architecture decisions style-driven and inconsistent.
 
 ## Operator postmortem reconsolidation loop
 
