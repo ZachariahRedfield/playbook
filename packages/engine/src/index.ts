@@ -182,6 +182,8 @@ export { REVIEW_HANDOFFS_SCHEMA_VERSION, REVIEW_HANDOFFS_RELATIVE_PATH, buildRev
 export type { ReviewHandoffDecision, ReviewHandoffFollowupType, ReviewHandoffEntry, ReviewDeferredMetadata, ReviewHandoffsArtifact } from './retrieval/reviewHandoffs.js';
 export { REVIEW_HANDOFF_ROUTES_SCHEMA_VERSION, REVIEW_HANDOFF_ROUTES_RELATIVE_PATH, buildReviewHandoffRoutesArtifact, writeReviewHandoffRoutesArtifact } from './retrieval/reviewHandoffRoutes.js';
 export type { ReviewHandoffRouteTargetKind, ReviewHandoffRouteSurface, ReviewHandoffRouteEntry, ReviewHandoffRoutesArtifact } from './retrieval/reviewHandoffRoutes.js';
+export { REVIEW_DOWNSTREAM_FOLLOWUPS_SCHEMA_VERSION, REVIEW_DOWNSTREAM_FOLLOWUPS_RELATIVE_PATH, buildReviewDownstreamFollowupsArtifact, writeReviewDownstreamFollowupsArtifact } from './retrieval/reviewDownstreamFollowups.js';
+export type { ReviewDownstreamFollowupType, ReviewDownstreamFollowupEntry, ReviewDownstreamFollowupsArtifact } from './retrieval/reviewDownstreamFollowups.js';
 export {
   REVIEW_POLICY_SCHEMA_VERSION,
   REVIEW_POLICY_RELATIVE_PATH,

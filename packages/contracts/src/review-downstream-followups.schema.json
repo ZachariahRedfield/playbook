@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/review-downstream-followups.schema.json",
+  "title": "Review Downstream Followups",
+  "description": "Deterministic proposal-only downstream follow-up suggestions compiled from routed review handoffs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "proposalOnly", "authority", "generatedAt", "followups"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "playbook-review-downstream-followups" },
+    "proposalOnly": { "type": "boolean", "const": true },
+    "authority": { "type": "string", "const": "read-only" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "followups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "followupId",
+          "type",
+          "routeId",
+          "handoffId",
+          "targetKind",
+          "recommendedSurface",
+          "recommendedArtifact",
+          "reasonCode",
+          "evidenceRefs",
+          "nextActionText"
+        ],
+        "properties": {
+          "followupId": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "enum": ["docs-revision", "promote-memory", "story-seed", "supersession"]
+          },
+          "routeId": { "type": "string", "minLength": 1 },
+          "handoffId": { "type": "string", "minLength": 1 },
+          "targetKind": { "type": "string", "enum": ["knowledge", "doc", "pattern", "rule"] },
+          "targetId": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "recommendedSurface": { "type": "string", "enum": ["story", "promote", "docs", "memory"] },
+          "recommendedArtifact": { "type": "string", "minLength": 1 },
+          "reasonCode": { "type": "string", "minLength": 1 },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "nextActionText": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "anyOf": [
+              { "required": ["targetId"] },
+              { "required": ["path"] }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
