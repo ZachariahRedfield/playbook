@@ -35,6 +35,10 @@ const reviewQueueFixture = () => ({
       sourceSurface: 'memory-knowledge',
       reasonCode: 'stale-active-knowledge',
       evidenceRefs: ['.playbook/memory/knowledge/patterns.json'],
+      triggerType: 'evidence',
+      triggerSource: 'memory-knowledge',
+      triggerReasonCode: 'stale-active-knowledge',
+      triggerEvidenceRefs: ['.playbook/memory/knowledge/patterns.json'],
       recommendedAction: 'reaffirm',
       reviewPriority: 'high',
       generatedAt: '2026-03-24T00:00:00.000Z',
@@ -48,6 +52,10 @@ const reviewQueueFixture = () => ({
       sourceSurface: 'governed-docs',
       reasonCode: 'governed-doc-staleness-window',
       evidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md'],
+      triggerType: 'cadence',
+      triggerSource: 'governed-docs',
+      triggerReasonCode: 'cadence-window-due',
+      triggerEvidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md'],
       recommendedAction: 'revise',
       reviewPriority: 'medium',
       generatedAt: '2026-03-24T00:00:00.000Z',
@@ -62,6 +70,10 @@ const reviewQueueFixture = () => ({
       sourceSurface: 'governance',
       reasonCode: 'rule-review-window',
       evidenceRefs: ['docs/commands/README.md'],
+      triggerType: 'cadence',
+      triggerSource: 'governance',
+      triggerReasonCode: 'rule-review-window',
+      triggerEvidenceRefs: ['docs/commands/README.md'],
       recommendedAction: 'reaffirm',
       reviewPriority: 'low',
       generatedAt: '2026-03-24T00:00:00.000Z',
@@ -75,6 +87,10 @@ const reviewQueueFixture = () => ({
       sourceSurface: 'governance',
       reasonCode: 'pattern-review-window',
       evidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md'],
+      triggerType: 'cadence+evidence',
+      triggerSource: 'governance',
+      triggerReasonCode: 'pattern-review-window',
+      triggerEvidenceRefs: ['docs/PLAYBOOK_DEV_WORKFLOW.md'],
       recommendedAction: 'supersede',
       reviewPriority: 'medium',
       generatedAt: '2026-03-24T00:00:00.000Z',
@@ -131,7 +147,8 @@ describe('knowledge review', () => {
       returned: 4,
       byAction: { reaffirm: 2, revise: 1, supersede: 1 },
       byKind: { knowledge: 1, doc: 1, rule: 1, pattern: 1 },
-      cadence: { dueNow: 3, overdue: 2, deferred: 1 }
+      cadence: { dueNow: 3, overdue: 2, deferred: 1, evidenceTriggered: 2 },
+      triggers: { cadence: 2, evidence: 1, mixed: 1 }
     });
     expect(payload.entries).toHaveLength(4);
     logSpy.mockRestore();
@@ -174,6 +191,13 @@ describe('knowledge review', () => {
     expect(exitCode).toBe(ExitCode.Success);
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.summary.returned).toBe(4);
+
+    logSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', '--trigger', 'evidence'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.summary.returned).toBe(2);
+    expect(payload.entries.every((entry: { triggerType?: string }) => entry.triggerType === 'evidence' || entry.triggerType === 'cadence+evidence')).toBe(true);
 
     logSpy.mockRestore();
   });
@@ -236,6 +260,7 @@ describe('knowledge review', () => {
     const rendered = String(logSpy.mock.calls[0]?.[0]);
     expect(rendered).toContain('Status: 4 review item(s) pending');
     expect(rendered).toContain('Due now: 3');
+    expect(rendered).toContain('Evidence-triggered: 2');
     expect(rendered).toContain('Overdue: 2');
     expect(rendered).toContain('Deferred: 1');
     expect(rendered).toContain('Next action: reaffirm knowledge:stale-runtime-guard');
@@ -272,6 +297,11 @@ describe('knowledge review', () => {
     exitCode = await runKnowledge('/repo', ['review', '--due', 'later'], { format: 'text', quiet: false });
     expect(exitCode).toBe(ExitCode.Failure);
     expect(String(errorSpy.mock.calls[0]?.[0])).toContain('invalid --due value "later"');
+
+    errorSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', '--trigger', 'priority'], { format: 'text', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain('invalid --trigger value "priority"');
     errorSpy.mockRestore();
   });
 

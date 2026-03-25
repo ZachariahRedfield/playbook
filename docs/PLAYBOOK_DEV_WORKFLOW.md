@@ -68,11 +68,14 @@ For retrieval review outcome changes, verify both queue and receipt seams stay d
 Cadence fields are retrieval-review scheduling metadata only; they do not mutate doctrine.
 
 - Rule: Recall should be driven by both cadence and fresh evidence, not by time alone.
-- Pattern: Scheduled recall plus evidence-triggered recall keeps doctrine live without widening mutation authority.
+- Rule: Existing review surfaces should absorb evidence-triggered recall before inventing new workflow silos.
+- Pattern: Queue + receipt + cadence + evidence = governed retrieval review.
 - Failure Mode: A cadence-only system misses important new evidence; an evidence-only system becomes noisy and forgets routine maintenance.
+- Failure Mode: Review systems that ignore fresh evidence become formally tidy but operationally stale.
 
 ```bash
 pnpm playbook knowledge review --due overdue --json
+pnpm playbook knowledge review --trigger evidence --json
 pnpm playbook knowledge review record --from <queue-entry-id> --decision defer --json
 ```
 

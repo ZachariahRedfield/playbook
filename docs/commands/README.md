@@ -358,11 +358,11 @@ Command boundary note:
 - `knowledge inspect <id>` reads one record.
 - `knowledge provenance <id>` resolves direct evidence and related records.
 - `knowledge stale` returns stale, retired, and superseded records.
-- `knowledge review` materializes and reads `.playbook/review-queue.json` via a compact review surface with deterministic `--action`, `--kind`, and cadence-aware `--due now|overdue|all` filtering while surfacing `nextReviewAt`, `overdue`, and `deferredUntil` in additive JSON output.
+- `knowledge review` materializes and reads `.playbook/review-queue.json` via a compact review surface with deterministic `--action`, `--kind`, cadence-aware `--due now|overdue|all`, and trigger-aware `--trigger cadence|evidence|all` filtering while surfacing additive trigger metadata (`triggerType`, `triggerReasonCode`, `triggerSource`, `triggerEvidenceRefs`) plus cadence fields (`nextReviewAt`, `overdue`, `deferredUntil`) in JSON output.
 - `knowledge review record` records durable review outcomes in `.playbook/knowledge-review-receipts.json` using an explicit queue-entry linkage (`--from <queueEntryId>`) and decision (`--decision <reaffirm|revise|supersede|defer>`), without mutating doctrine or auto-promoting changes.
 - Rule: Review surfaces recall governed knowledge without mutating it.
 - Pattern: Prefer existing review families before inventing new top-level command families.
-- Pattern: Queue + receipt + cadence = governed retrieval review.
+- Pattern: Queue + receipt + cadence + evidence = governed retrieval review.
 - Failure Mode: Launching retrieval review as a separate command silo fragments operator workflow and weakens command authority.
 - Failure Mode: A review system that cannot say when something should return encourages ad hoc maintenance.
 

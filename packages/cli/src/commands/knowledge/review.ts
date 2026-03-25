@@ -18,6 +18,7 @@ type ReviewKind = 'knowledge' | 'doc' | 'rule' | 'pattern';
 type ReviewDecision = KnowledgeReviewDecision;
 type RecordableReviewKind = 'knowledge' | 'doc';
 type DueFilter = 'now' | 'overdue' | 'all';
+type TriggerFilter = 'cadence' | 'evidence' | 'all';
 
 type KnowledgeReviewListPayload = {
   schemaVersion: '1.0';
@@ -30,6 +31,7 @@ type KnowledgeReviewListPayload = {
     action?: ReviewAction;
     kind?: ReviewKind;
     due?: DueFilter;
+    trigger?: TriggerFilter;
   };
   summary: {
     total: number;
@@ -40,6 +42,12 @@ type KnowledgeReviewListPayload = {
       dueNow: number;
       overdue: number;
       deferred: number;
+      evidenceTriggered: number;
+    };
+    triggers: {
+      cadence: number;
+      evidence: number;
+      mixed: number;
     };
   };
   entries: ReviewQueueEntry[];
@@ -71,6 +79,7 @@ const reviewActions: readonly ReviewAction[] = ['reaffirm', 'revise', 'supersede
 const reviewKinds: readonly ReviewKind[] = ['knowledge', 'doc', 'rule', 'pattern'] as const;
 const reviewDecisions: readonly ReviewDecision[] = ['reaffirm', 'revise', 'supersede', 'defer'] as const;
 const dueFilters: readonly DueFilter[] = ['now', 'overdue', 'all'] as const;
+const triggerFilters: readonly TriggerFilter[] = ['cadence', 'evidence', 'all'] as const;
 
 const parseActionFilter = (raw: string | null): ReviewAction | undefined => {
   if (raw === null) {
@@ -100,6 +109,17 @@ const parseDueFilter = (raw: string | null): DueFilter => {
     return raw as DueFilter;
   }
   throw new Error(`playbook knowledge review: invalid --due value "${raw}"; expected now, overdue, or all`);
+};
+
+
+const parseTriggerFilter = (raw: string | null): TriggerFilter => {
+  if (raw === null) {
+    return 'all';
+  }
+  if ((triggerFilters as readonly string[]).includes(raw)) {
+    return raw as TriggerFilter;
+  }
+  throw new Error(`playbook knowledge review: invalid --trigger value "${raw}"; expected cadence, evidence, or all`);
 };
 
 const parseRecordDecision = (raw: string | null): ReviewDecision => {
@@ -154,16 +174,46 @@ const matchesDueFilter = (entry: ReviewQueueEntry, dueFilter: DueFilter): boolea
   return !isDeferredEntry(entry) || isOverdueEntry(entry);
 };
 
-const summarizeCadence = (entries: ReviewQueueEntry[]): { dueNow: number; overdue: number; deferred: number } => ({
+const summarizeCadence = (entries: ReviewQueueEntry[]): { dueNow: number; overdue: number; deferred: number; evidenceTriggered: number } => ({
   dueNow: entries.filter((entry) => !isDeferredEntry(entry) || isOverdueEntry(entry)).length,
   overdue: entries.filter((entry) => isOverdueEntry(entry)).length,
-  deferred: entries.filter((entry) => isDeferredEntry(entry) && !isOverdueEntry(entry)).length
+  deferred: entries.filter((entry) => isDeferredEntry(entry) && !isOverdueEntry(entry)).length,
+  evidenceTriggered: entries.filter((entry) => includesEvidenceTrigger(entry)).length
 });
+
+const summarizeTriggers = (entries: ReviewQueueEntry[]): { cadence: number; evidence: number; mixed: number } => ({
+  cadence: entries.filter((entry) => entry.triggerType === 'cadence').length,
+  evidence: entries.filter((entry) => entry.triggerType === 'evidence').length,
+  mixed: entries.filter((entry) => entry.triggerType === 'cadence+evidence').length
+});
+
+const includesCadenceTrigger = (entry: ReviewQueueEntry): boolean => entry.triggerType === 'cadence' || entry.triggerType === 'cadence+evidence';
+const includesEvidenceTrigger = (entry: ReviewQueueEntry): boolean => entry.triggerType === 'evidence' || entry.triggerType === 'cadence+evidence';
+
+const matchesTriggerFilter = (entry: ReviewQueueEntry, triggerFilter: TriggerFilter): boolean => {
+  if (triggerFilter === 'all') {
+    return true;
+  }
+  if (triggerFilter === 'cadence') {
+    return includesCadenceTrigger(entry);
+  }
+  return includesEvidenceTrigger(entry);
+};
+
+const enrichEntry = (entry: ReviewQueueEntry): ReviewQueueEntry => ({
+  ...entry,
+  triggerType: entry.triggerType,
+  triggerReasonCode: entry.triggerReasonCode,
+  triggerSource: entry.triggerSource,
+  triggerEvidenceRefs: [...entry.triggerEvidenceRefs]
+});
+
 
 const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewListPayload => {
   const actionFilter = parseActionFilter(readOptionValue(args, '--action'));
   const kindFilter = parseKindFilter(readOptionValue(args, '--kind'));
   const dueFilter = parseDueFilter(readOptionValue(args, '--due'));
+  const triggerFilter = parseTriggerFilter(readOptionValue(args, '--trigger'));
 
   const reviewQueue = materializeReviewQueue(cwd);
 
@@ -178,6 +228,9 @@ const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewLis
     if (!matchesDueFilter(entry, dueFilter)) {
       return false;
     }
+    if (!matchesTriggerFilter(entry, triggerFilter)) {
+      return false;
+    }
     return true;
   });
 
@@ -187,6 +240,8 @@ const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewLis
     byAction[entry.recommendedAction as ReviewAction] += 1;
     byKind[asReviewKind(entry)] += 1;
   }
+
+  const enrichedEntries = entries.map(enrichEntry);
 
   return {
     schemaVersion: '1.0',
@@ -198,16 +253,18 @@ const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewLis
     filters: {
       ...(actionFilter ? { action: actionFilter } : {}),
       ...(kindFilter ? { kind: kindFilter } : {}),
-      due: dueFilter
+      due: dueFilter,
+      trigger: triggerFilter
     },
     summary: {
       total: reviewQueue.entries.length,
       returned: entries.length,
       byAction,
       byKind,
-      cadence: summarizeCadence(entries)
+      cadence: summarizeCadence(enrichedEntries),
+      triggers: summarizeTriggers(enrichedEntries)
     },
-    entries
+    entries: enrichedEntries
   };
 };
 

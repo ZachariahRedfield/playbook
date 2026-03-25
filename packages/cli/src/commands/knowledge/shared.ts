@@ -43,6 +43,7 @@ Options:
   --action <action>            Review filter (reaffirm|revise|supersede)
   --kind <kind>                Review filter (knowledge|doc|rule|pattern)
   --due <scope>               Review cadence filter (now|overdue|all; default all)
+  --trigger <scope>           Review trigger filter (cadence|evidence|all; default all)
   --from <queueEntryId>        Review record source queue entry id
   --decision <decision>        Review record decision (reaffirm|revise|supersede|defer)
   --reason-code <id>           Optional review record reason-code override
