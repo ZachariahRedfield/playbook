@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/review-handoff-routes.schema.json",
+  "title": "Review Handoff Routes",
+  "description": "Deterministic routed follow-up suggestions compiled from proposal-only review handoffs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "proposalOnly", "authority", "generatedAt", "routes"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "playbook-review-handoff-routes" },
+    "proposalOnly": { "type": "boolean", "const": true },
+    "authority": { "type": "string", "const": "read-only" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "routeId",
+          "handoffId",
+          "targetKind",
+          "recommendedSurface",
+          "recommendedArtifact",
+          "reasonCode",
+          "evidenceRefs",
+          "nextActionText"
+        ],
+        "properties": {
+          "routeId": { "type": "string", "minLength": 1 },
+          "handoffId": { "type": "string", "minLength": 1 },
+          "targetKind": { "type": "string", "enum": ["knowledge", "doc", "pattern", "rule"] },
+          "targetId": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "recommendedSurface": { "type": "string", "enum": ["story", "promote", "docs", "memory"] },
+          "recommendedArtifact": { "type": "string", "minLength": 1 },
+          "reasonCode": { "type": "string", "minLength": 1 },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "nextActionText": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "anyOf": [
+              { "required": ["targetId"] },
+              { "required": ["path"] }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

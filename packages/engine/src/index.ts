@@ -180,6 +180,8 @@ export { REVIEW_QUEUE_SCHEMA_VERSION, REVIEW_QUEUE_RELATIVE_PATH, buildReviewQue
 export type { ReviewRecommendedAction, ReviewPriority, ReviewTargetKind, ReviewQueueEntry, ReviewQueueArtifact, BuildReviewQueueOptions } from './retrieval/reviewQueue.js';
 export { REVIEW_HANDOFFS_SCHEMA_VERSION, REVIEW_HANDOFFS_RELATIVE_PATH, buildReviewHandoffsArtifact, writeReviewHandoffsArtifact } from './retrieval/reviewHandoffs.js';
 export type { ReviewHandoffDecision, ReviewHandoffFollowupType, ReviewHandoffEntry, ReviewDeferredMetadata, ReviewHandoffsArtifact } from './retrieval/reviewHandoffs.js';
+export { REVIEW_HANDOFF_ROUTES_SCHEMA_VERSION, REVIEW_HANDOFF_ROUTES_RELATIVE_PATH, buildReviewHandoffRoutesArtifact, writeReviewHandoffRoutesArtifact } from './retrieval/reviewHandoffRoutes.js';
+export type { ReviewHandoffRouteTargetKind, ReviewHandoffRouteSurface, ReviewHandoffRouteEntry, ReviewHandoffRoutesArtifact } from './retrieval/reviewHandoffRoutes.js';
 export {
   REVIEW_POLICY_SCHEMA_VERSION,
   REVIEW_POLICY_RELATIVE_PATH,

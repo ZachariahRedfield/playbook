@@ -120,6 +120,7 @@ Failure Mode: Architecture review triggers live only in docs and never become op
 ### `knowledge review handoffs`
 
 Materialize and inspect proposal-only follow-up handoffs from retrieval review outcomes using `.playbook/review-handoffs.json`.
+Compile deterministic downstream routing suggestions into `.playbook/review-handoff-routes.json` so next governed surfaces are explicit.
 
 Filters:
 
@@ -140,6 +141,7 @@ Behavior guarantees:
 - no auto-supersession
 - no second mutation executor
 - full detail retained in JSON output and `.playbook/review-handoffs.json`
+- deterministic route detail retained in `.playbook/review-handoff-routes.json` with no auto-mutation authority
 
 Routing matrix (canonical, compact, and aligned to routed artifact fields):
 
@@ -231,7 +233,10 @@ pnpm playbook knowledge review record --from <queue-entry-id> --decision defer -
 - Rule: Existing review surfaces should expose follow-up handoffs before inventing a new command family.
 - Pattern: Queue + receipt + cadence + evidence = governed retrieval review.
 - Pattern: One review family should cover queue, receipt, and next-step handoff.
+- Rule: Proposal-only review handoffs should compile into explicit next governed surfaces, not depend on operator memory.
+- Pattern: Review receipt -> handoff -> routed follow-up -> explicit reviewed action.
 - Failure Mode: Review queues without cadence become either spammy or silently stale.
 - Failure Mode: A review system that cannot say when something should return encourages ad hoc maintenance.
 - Failure Mode: Review systems that ignore fresh evidence become formally tidy but operationally stale.
 - Failure Mode: Review outcomes become dead-end records instead of governed work handoffs.
+- Failure Mode: Handoffs can exist while next steps still require manual reconstruction when routed follow-up artifacts are missing.

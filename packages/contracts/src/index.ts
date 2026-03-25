@@ -39,6 +39,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   reviewPolicy: 'packages/contracts/src/review-policy.schema.json',
   knowledgeReviewReceipts: 'packages/contracts/src/knowledge-review-receipts.schema.json',
   reviewHandoffs: 'packages/contracts/src/review-handoffs.schema.json',
+  reviewHandoffRoutes: 'packages/contracts/src/review-handoff-routes.schema.json',
   versionPolicy: 'packages/contracts/src/version-policy.schema.json',
   releasePlan: 'packages/contracts/src/release-plan.schema.json',
   managedSurfaceManifest: 'packages/contracts/src/managed-surface-manifest.schema.json'
