@@ -1,5 +1,4 @@
 import { collectAnalyzeReport, ensureRepoIndex } from './analyze.js';
-import { collectDoctorReport } from './doctor.js';
 import { collectVerifyReport } from './verify.js';
 import { ExitCode } from '../lib/cliContract.js';
 import { loadAnalyzeRules } from '../lib/loadAnalyzeRules.js';
@@ -135,6 +134,14 @@ type TopIssue = {
   description: string;
 };
 
+const isArtifactValid = (artifact: RepoAdoptionReadiness['governed_artifacts_present'][keyof RepoAdoptionReadiness['governed_artifacts_present']]): boolean =>
+  artifact.present && artifact.valid && !artifact.stale;
+
+const isLifecycleReadyEnvironment = (adoption: RepoAdoptionReadiness): boolean =>
+  adoption.lifecycle_stage === 'ready'
+  && adoption.blockers.length === 0
+  && isArtifactValid(adoption.governed_artifacts_present.plan)
+  && isArtifactValid(adoption.governed_artifacts_present.policy_apply_result);
 
 const EXECUTION_OUTCOME_INPUT_RELATIVE_PATH = path.join('.playbook', 'execution-outcome-input.json');
 const UPDATED_STATE_RELATIVE_PATH = path.join('.playbook', 'execution-updated-state.json');
@@ -206,7 +213,6 @@ const resolveTopIssue = async (
 };
 
 const toStatusResult = async (cwd: string): Promise<{ result: StatusResult; exitCode: ExitCode; topIssue: TopIssue | null; repoRoot: string }> => {
-  const doctor = await collectDoctorReport(cwd);
   const analyze = await collectAnalyzeReport(cwd);
   const verify = await collectVerifyReport(cwd);
   await ensureRepoIndex(analyze.repoPath);
@@ -214,21 +220,21 @@ const toStatusResult = async (cwd: string): Promise<{ result: StatusResult; exit
   const warnings = analyze.recommendations.filter((rec: { severity: string }) => rec.severity === 'WARN').length;
   const errors = 0;
 
-  const environmentOk = doctor.status !== 'error';
-
   const adoption = buildRepoAdoptionReadiness({ repoRoot: analyze.repoPath, connected: true });
+  const environmentOk = isLifecycleReadyEnvironment(adoption);
+  const statusOk = environmentOk && verify.ok;
 
   const result: StatusResult = {
     schemaVersion: '1.0',
     command: 'status',
-    ok: doctor.status !== 'error' && verify.ok,
+    ok: statusOk,
     environment: { ok: environmentOk },
     analysis: { warnings, errors },
     verification: { ok: verify.ok },
     summary: { warnings, errors },
     adoption,
     interpretation: buildRepoStatusInterpretation({
-      ok: doctor.status !== 'error' && verify.ok,
+      ok: statusOk,
       adoption,
       topIssueDescription: null,
       topIssueId: null

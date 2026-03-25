@@ -285,6 +285,41 @@ describe('runStatus', () => {
     logSpy.mockRestore();
   });
 
+  it('treats lifecycle-ready repos with no blockers as healthy even when doctor reports errors', async () => {
+    const { runStatus } = await import('./status.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    collectDoctorReport.mockResolvedValue({ status: 'error' });
+    collectAnalyzeReport.mockResolvedValue(makeAnalyzeReport());
+    collectVerifyReport.mockResolvedValue(makeVerifyReport({ ok: true }));
+    buildRepoAdoptionReadiness.mockReturnValue({
+      schemaVersion: '1.0',
+      connection_status: 'connected',
+      playbook_detected: true,
+      governed_artifacts_present: {
+        repo_index: { present: true, valid: true, stale: false, failure_type: null },
+        repo_graph: { present: true, valid: true, stale: false, failure_type: null },
+        plan: { present: true, valid: true, stale: false, failure_type: null },
+        policy_apply_result: { present: true, valid: true, stale: false, failure_type: null }
+      },
+      lifecycle_stage: 'ready',
+      fallback_proof_ready: true,
+      cross_repo_eligible: true,
+      blockers: [],
+      recommended_next_steps: []
+    });
+
+    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.ok).toBe(true);
+    expect(payload.environment.ok).toBe(true);
+    expect(payload.adoption.lifecycle_stage).toBe('ready');
+    expect(collectDoctorReport).not.toHaveBeenCalled();
+    logSpy.mockRestore();
+  });
+
   it('generates repo index when missing before printing status output', async () => {
     const { runStatus } = await import('./status.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
