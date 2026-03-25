@@ -51,6 +51,26 @@ const reviewQueueFixture = () => ({
       overdue: true
     },
     {
+      queueEntryId: 'q-architecture-1',
+      targetKind: 'rule',
+      targetId: 'rule:architecture-boundary-ownership',
+      sourceSurface: 'architecture-decisions',
+      reasonCode: 'architecture-decision-recall',
+      evidenceRefs: ['docs/architecture/decisions/ADR-042.md'],
+      triggerType: 'evidence',
+      triggerSource: 'architecture-decisions',
+      triggerReasonCode: 'architecture-decision-changed',
+      triggerEvidenceRefs: ['docs/architecture/decisions/ADR-042.md'],
+      triggerStrength: 88,
+      triggerDecisionId: 'ADR-042',
+      triggerDecisionPath: 'docs/architecture/decisions/ADR-042.md',
+      recommendedAction: 'revise',
+      reviewPriority: 'high',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      nextReviewAt: '2026-03-24T00:00:00.000Z',
+      overdue: true
+    },
+    {
       queueEntryId: 'q-doc-1',
       targetKind: 'doc',
       path: 'docs/PLAYBOOK_DEV_WORKFLOW.md',
@@ -185,14 +205,20 @@ describe('knowledge review', () => {
     expect(payload.command).toBe('knowledge-review');
     expect(payload.artifactPath).toBe('.playbook/review-queue.json');
     expect(payload.summary).toMatchObject({
-      total: 4,
-      returned: 4,
-      byAction: { reaffirm: 2, revise: 1, supersede: 1 },
-      byKind: { knowledge: 1, doc: 1, rule: 1, pattern: 1 },
-      cadence: { dueNow: 3, overdue: 2, deferred: 1, evidenceTriggered: 2 },
-      triggers: { cadence: 2, evidence: 1, mixed: 1 }
+      total: 5,
+      returned: 5,
+      byAction: { reaffirm: 2, revise: 2, supersede: 1 },
+      byKind: { knowledge: 1, doc: 1, rule: 2, pattern: 1 },
+      cadence: { dueNow: 4, overdue: 3, deferred: 1, evidenceTriggered: 3 },
+      triggers: { cadence: 2, evidence: 2, mixed: 1 },
+      triggerSources: { architectureDecision: 1, other: 4 }
     });
-    expect(payload.entries).toHaveLength(4);
+    expect(payload.summary.affectedTargets).toContain('rule:architecture-boundary-ownership');
+    expect(payload.entries).toHaveLength(5);
+    expect(payload.entries.find((entry: { queueEntryId: string }) => entry.queueEntryId === 'q-architecture-1')).toMatchObject({
+      triggerDecisionId: 'ADR-042',
+      triggerDecisionPath: 'docs/architecture/decisions/ADR-042.md'
+    });
     logSpy.mockRestore();
   });
 
@@ -240,6 +266,13 @@ describe('knowledge review', () => {
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.summary.returned).toBe(2);
     expect(payload.entries.every((entry: { triggerType?: string }) => entry.triggerType === 'evidence' || entry.triggerType === 'cadence+evidence')).toBe(true);
+
+    logSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', '--trigger-source', 'architecture-decision'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.summary.returned).toBe(1);
+    expect(payload.entries[0].queueEntryId).toBe('q-architecture-1');
 
     logSpy.mockRestore();
   });
@@ -300,11 +333,9 @@ describe('knowledge review', () => {
     expect(exitCode).toBe(ExitCode.Success);
 
     const rendered = String(logSpy.mock.calls[0]?.[0]);
-    expect(rendered).toContain('Status: 4 review item(s) pending');
-    expect(rendered).toContain('Due now: 3');
-    expect(rendered).toContain('Evidence-triggered: 2');
-    expect(rendered).toContain('Overdue: 2');
-    expect(rendered).toContain('Deferred: 1');
+    expect(rendered).toContain('Status: 5 review item(s) pending');
+    expect(rendered).toContain('Evidence-triggered: 3');
+    expect(rendered).toContain('Affected targets:');
     expect(rendered).toContain('Next action: reaffirm knowledge:stale-runtime-guard');
     logSpy.mockRestore();
   });
@@ -344,6 +375,11 @@ describe('knowledge review', () => {
     exitCode = await runKnowledge('/repo', ['review', '--trigger', 'priority'], { format: 'text', quiet: false });
     expect(exitCode).toBe(ExitCode.Failure);
     expect(String(errorSpy.mock.calls[0]?.[0])).toContain('invalid --trigger value "priority"');
+
+    errorSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', '--trigger-source', 'architecture'], { format: 'text', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain('invalid --trigger-source value "architecture"');
     errorSpy.mockRestore();
   });
 

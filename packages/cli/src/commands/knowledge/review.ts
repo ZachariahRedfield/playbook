@@ -25,6 +25,7 @@ type ReviewDecision = KnowledgeReviewDecision;
 type RecordableReviewKind = 'knowledge' | 'doc';
 type DueFilter = 'now' | 'overdue' | 'all';
 type TriggerFilter = 'cadence' | 'evidence' | 'all';
+type TriggerSourceFilter = 'architecture-decision' | 'all';
 type HandoffDecisionFilter = ReviewHandoffDecision;
 
 type KnowledgeReviewListPayload = {
@@ -39,6 +40,7 @@ type KnowledgeReviewListPayload = {
     kind?: ReviewKind;
     due?: DueFilter;
     trigger?: TriggerFilter;
+    triggerSource?: TriggerSourceFilter;
   };
   summary: {
     total: number;
@@ -56,6 +58,11 @@ type KnowledgeReviewListPayload = {
       evidence: number;
       mixed: number;
     };
+    triggerSources: {
+      architectureDecision: number;
+      other: number;
+    };
+    affectedTargets: string[];
   };
   entries: ReviewQueueEntry[];
 };
@@ -108,6 +115,7 @@ const reviewKinds: readonly ReviewKind[] = ['knowledge', 'doc', 'rule', 'pattern
 const reviewDecisions: readonly ReviewDecision[] = ['reaffirm', 'revise', 'supersede', 'defer'] as const;
 const dueFilters: readonly DueFilter[] = ['now', 'overdue', 'all'] as const;
 const triggerFilters: readonly TriggerFilter[] = ['cadence', 'evidence', 'all'] as const;
+const triggerSourceFilters: readonly TriggerSourceFilter[] = ['architecture-decision', 'all'] as const;
 
 const parseActionFilter = (raw: string | null): ReviewAction | undefined => {
   if (raw === null) {
@@ -148,6 +156,16 @@ const parseTriggerFilter = (raw: string | null): TriggerFilter => {
     return raw as TriggerFilter;
   }
   throw new Error(`playbook knowledge review: invalid --trigger value "${raw}"; expected cadence, evidence, or all`);
+};
+
+const parseTriggerSourceFilter = (raw: string | null): TriggerSourceFilter => {
+  if (raw === null) {
+    return 'all';
+  }
+  if ((triggerSourceFilters as readonly string[]).includes(raw)) {
+    return raw as TriggerSourceFilter;
+  }
+  throw new Error(`playbook knowledge review: invalid --trigger-source value "${raw}"; expected architecture-decision or all`);
 };
 
 const parseRecordDecision = (raw: string | null): ReviewDecision => {
@@ -200,8 +218,36 @@ const zeroActionSummary = (): Record<ReviewAction, number> => ({ reaffirm: 0, re
 const zeroKindSummary = (): Record<ReviewKind, number> => ({ knowledge: 0, doc: 0, rule: 0, pattern: 0 });
 
 const materializeReviewQueue = (cwd: string): ReviewQueueArtifact => {
+  const previousQueue = (() => {
+    try {
+      return readReviewQueueArtifact(cwd);
+    } catch {
+      return null;
+    }
+  })();
   const materialized = buildReviewQueue(cwd);
-  writeReviewQueueArtifact(cwd, materialized);
+  const previousById = new Map(
+    (previousQueue?.entries ?? []).map((entry: ReviewQueueEntry) => [entry.queueEntryId, entry as ReviewQueueEntry & Record<string, unknown>])
+  );
+  const mergedEntries = materialized.entries.map((entry: ReviewQueueEntry) => {
+    const previous = previousById.get(entry.queueEntryId);
+    if (!previous) {
+      return entry;
+    }
+
+    const preservedTriggerDetails = Object.fromEntries(
+      Object.entries(previous).filter(([key]) =>
+        key.startsWith('trigger') && !['triggerType', 'triggerSource', 'triggerReasonCode', 'triggerEvidenceRefs', 'triggerStrength'].includes(key)
+      )
+    );
+
+    return {
+      ...entry,
+      ...preservedTriggerDetails
+    };
+  });
+
+  writeReviewQueueArtifact(cwd, { ...materialized, entries: mergedEntries });
   return readReviewQueueArtifact(cwd);
 };
 
@@ -255,6 +301,36 @@ const matchesTriggerFilter = (entry: ReviewQueueEntry, triggerFilter: TriggerFil
   return includesEvidenceTrigger(entry);
 };
 
+const isArchitectureTriggeredEntry = (entry: ReviewQueueEntry): boolean => {
+  const triggerSignals = [
+    String((entry as Record<string, unknown>).triggerSource ?? ''),
+    String((entry as Record<string, unknown>).triggerReasonCode ?? ''),
+    ...((entry as Record<string, unknown>).triggerEvidenceRefs as string[] | undefined ?? []),
+    ...((entry as Record<string, unknown>).evidenceRefs as string[] | undefined ?? [])
+  ]
+    .map((value) => value.toLowerCase())
+    .join(' ');
+  return triggerSignals.includes('architecture');
+};
+
+const matchesTriggerSourceFilter = (entry: ReviewQueueEntry, triggerSourceFilter: TriggerSourceFilter): boolean => {
+  if (triggerSourceFilter === 'all') {
+    return true;
+  }
+  return isArchitectureTriggeredEntry(entry);
+};
+
+const summarizeTriggerSources = (entries: ReviewQueueEntry[]): { architectureDecision: number; other: number } => {
+  const architectureDecision = entries.filter((entry) => isArchitectureTriggeredEntry(entry)).length;
+  return {
+    architectureDecision,
+    other: Math.max(0, entries.length - architectureDecision)
+  };
+};
+
+const summarizeAffectedTargets = (entries: ReviewQueueEntry[]): string[] =>
+  [...new Set(entries.map((entry) => String(entry.targetId ?? entry.path ?? 'target')))].sort((left, right) => left.localeCompare(right));
+
 const enrichEntry = (entry: ReviewQueueEntry): ReviewQueueEntry => ({
   ...entry,
   triggerType: entry.triggerType,
@@ -269,6 +345,7 @@ const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewLis
   const kindFilter = parseKindFilter(readOptionValue(args, '--kind'));
   const dueFilter = parseDueFilter(readOptionValue(args, '--due'));
   const triggerFilter = parseTriggerFilter(readOptionValue(args, '--trigger'));
+  const triggerSourceFilter = parseTriggerSourceFilter(readOptionValue(args, '--trigger-source'));
 
   const reviewQueue = materializeReviewQueue(cwd);
 
@@ -284,6 +361,9 @@ const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewLis
       return false;
     }
     if (!matchesTriggerFilter(entry, triggerFilter)) {
+      return false;
+    }
+    if (!matchesTriggerSourceFilter(entry, triggerSourceFilter)) {
       return false;
     }
     return true;
@@ -309,7 +389,8 @@ const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewLis
       ...(actionFilter ? { action: actionFilter } : {}),
       ...(kindFilter ? { kind: kindFilter } : {}),
       due: dueFilter,
-      trigger: triggerFilter
+      trigger: triggerFilter,
+      triggerSource: triggerSourceFilter
     },
     summary: {
       total: reviewQueue.entries.length,
@@ -317,7 +398,9 @@ const runKnowledgeReviewList = (cwd: string, args: string[]): KnowledgeReviewLis
       byAction,
       byKind,
       cadence: summarizeCadence(enrichedEntries),
-      triggers: summarizeTriggers(enrichedEntries)
+      triggers: summarizeTriggers(enrichedEntries),
+      triggerSources: summarizeTriggerSources(enrichedEntries),
+      affectedTargets: summarizeAffectedTargets(enrichedEntries)
     },
     entries: enrichedEntries
   };

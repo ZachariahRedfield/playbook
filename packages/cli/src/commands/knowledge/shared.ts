@@ -45,6 +45,7 @@ Options:
   --kind <kind>                Review filter (knowledge|doc|rule|pattern)
   --due <scope>               Review cadence filter (now|overdue|all; default all)
   --trigger <scope>           Review trigger filter (cadence|evidence|all; default all)
+  --trigger-source <scope>    Review trigger-source filter (architecture-decision|all; default all)
   --decision <decision>       Review handoff/record decision filter (handoffs: revise|supersede; record: reaffirm|revise|supersede|defer)
   --from <queueEntryId>        Review record source queue entry id
   --reason-code <id>           Optional review record reason-code override

@@ -81,6 +81,7 @@ Filters:
 - `--kind knowledge|doc|rule|pattern`
 - `--due now|overdue|all` (default `all`)
 - `--trigger cadence|evidence|all` (default `all`)
+- `--trigger-source architecture-decision|all` (default `all`)
 
 Trigger metadata surfaced in JSON (`entries[*]` and persisted queue artifact):
 
@@ -88,6 +89,7 @@ Trigger metadata surfaced in JSON (`entries[*]` and persisted queue artifact):
 - `triggerReasonCode`
 - `triggerSource`
 - `triggerEvidenceRefs`
+- additive architecture trigger source details already present in queue entries
 
 Cadence fields surfaced in JSON (`entries[*]` when present and additive summaries):
 
@@ -98,10 +100,8 @@ Cadence fields surfaced in JSON (`entries[*]` when present and additive summarie
 Text output remains compact and operator-facing:
 
 - status
-- Due now
 - Evidence-triggered
-- Overdue
-- Deferred
+- affected targets
 - Next action
 
 Cadence schedules recall, while evidence can reopen or raise recall priority without creating a new command family.
@@ -186,6 +186,7 @@ pnpm playbook knowledge portability --view blocked-transfers --json
 pnpm playbook knowledge review --json
 pnpm playbook knowledge review --due overdue --json
 pnpm playbook knowledge review --trigger evidence --json
+pnpm playbook knowledge review --trigger-source architecture-decision --json
 pnpm playbook knowledge review --action reaffirm --kind knowledge --due all
 pnpm playbook knowledge review --kind doc
 pnpm playbook knowledge review handoffs --json
@@ -211,10 +212,12 @@ pnpm playbook knowledge review record --from <queue-entry-id> --decision defer -
 - Rule: Existing review surfaces should absorb cadence before inventing new workflow silos.
 - Pattern: Recall -> reinterpret -> receipt -> scheduled recall.
 - Rule: Existing review surfaces should absorb evidence-triggered recall before inventing new workflow silos.
+- Rule: Existing review surfaces should absorb architecture-triggered recall before inventing a new workflow silo.
 - Rule: Existing review surfaces should expose follow-up handoffs before inventing a new command family.
-- Pattern: Queue + receipt + cadence + evidence = governed retrieval review.
+- Pattern: Queue + receipt + cadence + evidence + decision triggers = governed review.
 - Pattern: One review family should cover queue, receipt, and next-step handoff.
 - Failure Mode: Review queues without cadence become either spammy or silently stale.
 - Failure Mode: A review system that cannot say when something should return encourages ad hoc maintenance.
 - Failure Mode: Review systems that ignore fresh evidence become formally tidy but operationally stale.
+- Failure Mode: Architecture review triggers live only in docs and never become operational review signals.
 - Failure Mode: Review outcomes become dead-end records instead of governed work handoffs.
