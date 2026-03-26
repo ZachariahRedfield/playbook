@@ -45,6 +45,18 @@ Status: complete
 - Simple Rule Theory now explicitly includes rule-based governance, invariant extraction, minimal sufficient representation, and derive-don't-duplicate behavior.
 - Triadic System Pattern defines `state -> transformation -> enforcement` as the preferred workflow shape, with `verify -> plan -> apply` as the canonical Playbook mapping.
 
+### Future intelligence layer: Second Brain -> Deterministic Knowledge Systems
+
+Status: directional doctrine
+
+- Canonical reference: `docs/architecture/SECOND_BRAIN_TO_PLAYBOOK_EVOLUTION.md`
+- Direction: evolve personal PKM patterns (CODE/PARA) into explicit repository intelligence contracts that can safely influence planning and execution.
+- Constraint: knowledge remains advisory until promoted into provenance-linked doctrine with lifecycle state.
+
+Rule: Knowledge must cross explicit promotion and lifecycle gates before execution influence.
+Pattern: `verify -> plan -> apply -> verify` is the operational realization of CODE/PARA once mapped to deterministic contracts.
+Failure Mode: Routing raw notes directly into execution creates high-confidence drift and low-trust automation behavior.
+
 ## Phase 9 — Unified Doctrine Loop (Self-Improving Playbook Core)
 
 Phase 9 unifies Phase 7/8 knowledge, promotion, story, and lifecycle systems into one closed deterministic product loop.

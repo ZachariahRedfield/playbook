@@ -34,3 +34,7 @@ Triadic System Pattern is a preferred architectural workflow shape for determini
 ## Important Note
 
 "Triads are a preferred design pattern, not a forced constraint."
+
+## See also
+
+- [Second Brain to Playbook Evolution](./SECOND_BRAIN_TO_PLAYBOOK_EVOLUTION.md)
