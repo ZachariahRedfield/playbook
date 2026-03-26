@@ -392,6 +392,20 @@ export const commandMetadata: CommandMetadata[] = [
     machineReadable: true,
   },
   {
+    name: "rendezvous",
+    description:
+      "Create/status/release-dry-run artifact rendezvous readiness from canonical remediation artifacts",
+    category: "Repository tools",
+    role: "remediation",
+    lifecycle: "canonical",
+    discoverability: "secondary",
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: "rendezvous create --json",
+    machineReadable: true,
+  },
+  {
     name: "ignore",
     description:
       "Suggest and safely apply ranked .playbookignore recommendations",

@@ -221,6 +221,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook test-autofix --input .playbook/ci-failure.log --json`
 - `remediation-status`: Inspect recent test-autofix remediation history, repeat-policy decisions, and retry guidance
   - Example: `pnpm playbook remediation-status --json`
+- `rendezvous`: Create/status/release-dry-run artifact rendezvous readiness from canonical remediation artifacts
+  - Example: `pnpm playbook rendezvous create --json`
 - `ignore`: Suggest and safely apply ranked .playbookignore recommendations
   - Example: `pnpm playbook ignore suggest --repo ../target-repo --json`
 - `contracts`: Emit deterministic contract registry for schemas, artifacts, and roadmap status
@@ -317,6 +319,7 @@ Do not hand-edit entries inside the managed markers.
 | `test-fix-plan` | `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json` |
 | `test-autofix` | `pnpm playbook test-autofix --input .playbook/ci-failure.log --json` |
 | `remediation-status` | `pnpm playbook remediation-status --json` |
+| `rendezvous` | `pnpm playbook rendezvous create --json` |
 | `ignore` | `pnpm playbook ignore suggest --repo ../target-repo --json` |
 | `contracts` | `pnpm playbook contracts --json` |
 | `release` | `pnpm playbook release plan --json --out .playbook/release-plan.json` |

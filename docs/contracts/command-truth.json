@@ -484,6 +484,18 @@
       "example": "pnpm playbook remediation-status --json"
     },
     {
+      "name": "rendezvous",
+      "category": "Repository tools",
+      "role": "remediation",
+      "lifecycle": "canonical",
+      "discoverability": "secondary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook rendezvous create --json"
+    },
+    {
       "name": "review-pr",
       "category": "Repository tools",
       "role": "governance",
@@ -694,6 +706,7 @@
     "receipt",
     "release",
     "remediation-status",
+    "rendezvous",
     "review-pr",
     "route",
     "rules",

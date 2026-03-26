@@ -190,6 +190,14 @@ const commandRunners: Record<
       help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
     });
   },
+  rendezvous: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runRendezvous } = await import("./rendezvous.js");
+    return runRendezvous(cwd, commandArgs, {
+      format,
+      quiet,
+      help: parseFlag(commandArgs, '--help') || parseFlag(commandArgs, '-h')
+    });
+  },
   "analyze-pr": async ({ cwd, commandArgs, format, quiet }) => {
     const { runAnalyzePr } = await import("./analyzePr.js");
     return runAnalyzePr(cwd, commandArgs, {
@@ -647,6 +655,7 @@ const commandOrder = [
   "test-fix-plan",
   "test-autofix",
   "remediation-status",
+  "rendezvous",
   "verify",
   "plan",
   "orchestrate",
