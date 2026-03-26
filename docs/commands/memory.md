@@ -141,11 +141,15 @@ Inspection payload includes:
   - `highest_priority_recommended_actions` (compact top actions)
   - `counts_by_action_type` (`dedupe`, `compact`, `summarize`, `evict`)
 - deterministic proposal-only action lanes by band (`warm`, `pressure`, `critical`) that sequence dedupe/compact/summarize/evict without automatic sweeping
-- deterministic intake posture by band before any deletion is considered:
-  - `normal`: admit normally
-  - `warm`: dedupe repeated low-signal events
-  - `pressure`: summarize repeated low-value details into rollups
-  - `critical`: admit only canonical, review-critical, or high-signal memory
+
+### Pressure-band operator matrix (engine-aligned)
+
+| Band | Intake behavior | Compaction behavior | Summarization behavior | Eviction eligibility |
+| --- | --- | --- | --- | --- |
+| `normal` | Admit by default; canonical/review-critical always admitted. | No pressure-lane compaction requirement. | None required by pressure plan. | None (no pressure eviction lane). |
+| `warm` | Keep admitting, but dedupe repeated low-signal duplicates at intake. | Increase compaction cadence across compactable/disposable targets (proposal-only plan lane). | Not required in warm lane. | Not eligible in warm lane. |
+| `pressure` | Low-signal repeats shift to rollups; other eligible events still admit. | Compact after summarize to preserve signal under budget (proposal-only lane). | Summarize low-signal runtime detail into deterministic rollups. | Not eligible in pressure lane. |
+| `critical` | Strict gate: admit canonical, review-critical, or high-signal; skip low-value events. | Aggressive compaction across non-canonical classes (proposal-only lane). | Required before any disposable eviction is proposed. | Proposal-only and disposable-only, after summary requirement is satisfied; canonical is excluded. |
 
 Governance framing:
 
