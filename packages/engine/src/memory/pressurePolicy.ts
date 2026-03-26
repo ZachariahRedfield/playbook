@@ -5,6 +5,7 @@ import type { PlaybookConfig } from '../config/schema.js';
 export const MEMORY_PRESSURE_STATUS_RELATIVE_PATH = '.playbook/memory-pressure.json' as const;
 export const MEMORY_PRESSURE_STATUS_LEGACY_RELATIVE_PATH = '.playbook/memory/pressure-status.json' as const;
 export const MEMORY_PRESSURE_PLAN_RELATIVE_PATH = '.playbook/memory-pressure-plan.json' as const;
+export const MEMORY_PRESSURE_FOLLOWUPS_RELATIVE_PATH = '.playbook/memory-pressure-followups.json' as const;
 
 const CANONICAL_MEMORY_ARTIFACTS = new Set<string>([
   '.playbook/memory/knowledge/decisions.json',
@@ -33,6 +34,21 @@ export type MemoryPressurePlanStep = {
   reason: string;
   targets: string[];
   requiresSummary?: boolean;
+};
+
+export type MemoryPressureFollowupAction = 'dedupe' | 'compact' | 'summarize' | 'evict-disposable';
+export type MemoryPressureFollowupPriority = 'P1' | 'P2' | 'P3' | 'P4';
+
+export type MemoryPressureFollowupRow = {
+  followupId: string;
+  band: MemoryPressurePlanBand;
+  action: MemoryPressureFollowupAction;
+  priority: MemoryPressureFollowupPriority;
+  proposalOnly: true;
+  reason: string;
+  targets: string[];
+  excludedCanonicalTargets: string[];
+  requiresSummaryOrCompaction?: boolean;
 };
 
 export type MemoryPressurePlanArtifact = {
@@ -67,6 +83,35 @@ export type MemoryPressurePlanArtifact = {
     disposableEvictionRequiresSummary: boolean;
   };
   recommendedByBand: Record<MemoryPressurePlanBand, MemoryPressurePlanStep[]>;
+};
+
+export type MemoryPressureFollowupsArtifact = {
+  schemaVersion: '1.0';
+  kind: 'playbook-memory-pressure-followups';
+  command: 'memory-pressure-followups';
+  generatedAt: string;
+  reviewOnly: true;
+  authority: {
+    mutation: 'read-only';
+    promotion: 'review-required';
+  };
+  sourceArtifacts: {
+    plan: typeof MEMORY_PRESSURE_PLAN_RELATIVE_PATH;
+    status: typeof MEMORY_PRESSURE_STATUS_RELATIVE_PATH;
+    retention: '.playbook/memory/lifecycle-candidates.json';
+    memoryIndex: '.playbook/memory/index.json';
+  };
+  currentBand: MemoryPressureBand;
+  retentionClasses: MemoryPressureStatusArtifact['classes'];
+  currentArtifacts: string[];
+  safeguards: {
+    canonicalArtifactProtection: true;
+    canonicalArtifacts: string[];
+    canonicalEvictionCandidates: string[];
+    canonicalExcludedFromDisposableEviction: string[];
+    disposableEvictionRequiresSummaryOrCompaction: true;
+  };
+  rowsByBand: Record<MemoryPressurePlanBand, MemoryPressureFollowupRow[]>;
 };
 
 export type MemoryPressureStatusArtifact = {
@@ -305,7 +350,9 @@ export const writeMemoryPressureStatusArtifact = (repoRoot: string, artifact: Me
 export const evaluateMemoryPressurePolicy = (repoRoot: string, policy: PlaybookConfig['memory']['pressurePolicy']): MemoryPressureStatusArtifact => {
   const artifact = buildMemoryPressureStatusArtifact({ repoRoot, policy });
   writeMemoryPressureStatusArtifact(repoRoot, artifact);
-  writeMemoryPressurePlanArtifact(repoRoot, buildMemoryPressurePlanArtifact(artifact));
+  const plan = buildMemoryPressurePlanArtifact(artifact);
+  writeMemoryPressurePlanArtifact(repoRoot, plan);
+  writeMemoryPressureFollowupsArtifact(repoRoot, buildMemoryPressureFollowupsArtifact(plan));
   return artifact;
 };
 
@@ -412,6 +459,120 @@ export const buildMemoryPressurePlanArtifact = (status: MemoryPressureStatusArti
 
 export const writeMemoryPressurePlanArtifact = (repoRoot: string, artifact: MemoryPressurePlanArtifact): string => {
   const outputPath = path.join(repoRoot, MEMORY_PRESSURE_PLAN_RELATIVE_PATH);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+  return outputPath;
+};
+
+const followupPriorityFor = (action: MemoryPressureFollowupAction): MemoryPressureFollowupPriority => {
+  if (action === 'summarize' || action === 'compact') return 'P1';
+  if (action === 'dedupe') return 'P2';
+  return 'P3';
+};
+
+const followupOrderFor = (action: MemoryPressureFollowupAction): number => {
+  if (action === 'summarize') return 1;
+  if (action === 'compact') return 2;
+  if (action === 'dedupe') return 3;
+  return 4;
+};
+
+const sanitizeEvictTargets = (
+  targets: string[],
+  retentionClasses: MemoryPressureStatusArtifact['classes']
+): { allowed: string[]; excludedCanonical: string[] } => {
+  const canonical = new Set(retentionClasses.canonical);
+  const disposable = new Set(retentionClasses.disposable);
+  const excludedCanonical = uniqueSorted(targets.filter((entry) => canonical.has(entry)));
+  const allowed = uniqueSorted(targets.filter((entry) => disposable.has(entry) && !canonical.has(entry)));
+  return { allowed, excludedCanonical };
+};
+
+const toFollowupAction = (action: MemoryPressurePlanStepAction): MemoryPressureFollowupAction =>
+  action === 'evict' ? 'evict-disposable' : action;
+
+const buildFollowupRowsForBand = (band: MemoryPressurePlanBand, plan: MemoryPressurePlanArtifact): MemoryPressureFollowupRow[] => {
+  const steps = plan.recommendedByBand[band];
+  const hasSummaryOrCompaction = steps.some((step) => (step.action === 'summarize' || step.action === 'compact') && step.targets.length > 0);
+  const rows = steps
+    .map((step): MemoryPressureFollowupRow | null => {
+      const action = toFollowupAction(step.action);
+      if (action === 'evict-disposable') {
+        if (!hasSummaryOrCompaction) return null;
+        const sanitized = sanitizeEvictTargets(step.targets, plan.retentionClasses);
+        return {
+          followupId: `${band}:evict-disposable`,
+          band,
+          action,
+          priority: followupPriorityFor(action),
+          proposalOnly: true,
+          reason: step.reason,
+          targets: sanitized.allowed,
+          excludedCanonicalTargets: sanitized.excludedCanonical,
+          requiresSummaryOrCompaction: true
+        };
+      }
+      return {
+        followupId: `${band}:${action}`,
+        band,
+        action,
+        priority: followupPriorityFor(action),
+        proposalOnly: true,
+        reason: step.reason,
+        targets: uniqueSorted(step.targets),
+        excludedCanonicalTargets: []
+      };
+    })
+    .filter((row): row is MemoryPressureFollowupRow => row !== null)
+    .sort((left, right) => {
+      const rank = followupOrderFor(left.action) - followupOrderFor(right.action);
+      return rank !== 0 ? rank : left.followupId.localeCompare(right.followupId);
+    });
+  return rows;
+};
+
+export const buildMemoryPressureFollowupsArtifact = (plan: MemoryPressurePlanArtifact): MemoryPressureFollowupsArtifact => {
+  const rowsByBand = {
+    warm: buildFollowupRowsForBand('warm', plan),
+    pressure: buildFollowupRowsForBand('pressure', plan),
+    critical: buildFollowupRowsForBand('critical', plan)
+  };
+  const canonicalArtifacts = uniqueSorted(plan.retentionClasses.canonical);
+  const canonicalExcludedFromDisposableEviction = uniqueSorted(
+    rowsByBand.critical.flatMap((row) => (row.action === 'evict-disposable' ? row.excludedCanonicalTargets : []))
+  );
+  return {
+    schemaVersion: '1.0',
+    kind: 'playbook-memory-pressure-followups',
+    command: 'memory-pressure-followups',
+    generatedAt: new Date(0).toISOString(),
+    reviewOnly: true,
+    authority: {
+      mutation: 'read-only',
+      promotion: 'review-required'
+    },
+    sourceArtifacts: {
+      plan: MEMORY_PRESSURE_PLAN_RELATIVE_PATH,
+      status: MEMORY_PRESSURE_STATUS_RELATIVE_PATH,
+      retention: '.playbook/memory/lifecycle-candidates.json',
+      memoryIndex: '.playbook/memory/index.json'
+    },
+    currentBand: plan.status.band,
+    retentionClasses: plan.retentionClasses,
+    currentArtifacts: uniqueSorted(plan.currentArtifacts),
+    safeguards: {
+      canonicalArtifactProtection: true,
+      canonicalArtifacts,
+      canonicalEvictionCandidates: plan.safeguards.canonicalEvictionCandidates,
+      canonicalExcludedFromDisposableEviction,
+      disposableEvictionRequiresSummaryOrCompaction: true
+    },
+    rowsByBand
+  };
+};
+
+export const writeMemoryPressureFollowupsArtifact = (repoRoot: string, artifact: MemoryPressureFollowupsArtifact): string => {
+  const outputPath = path.join(repoRoot, MEMORY_PRESSURE_FOLLOWUPS_RELATIVE_PATH);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
   return outputPath;

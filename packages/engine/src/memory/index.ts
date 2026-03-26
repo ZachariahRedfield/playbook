@@ -294,6 +294,8 @@ export const buildSessionReplayEvidence = (entries: SessionReplayEvidenceInput[]
 export const computeMemoryEventFingerprint = toEventFingerprint;
 
 export {
+  MEMORY_PRESSURE_PLAN_RELATIVE_PATH,
+  MEMORY_PRESSURE_FOLLOWUPS_RELATIVE_PATH,
   MEMORY_PRESSURE_STATUS_RELATIVE_PATH,
   MEMORY_PRESSURE_STATUS_LEGACY_RELATIVE_PATH,
   computeMemoryPressureScore,
@@ -302,9 +304,26 @@ export {
   recommendedActionsForBand,
   buildMemoryPressureStatusArtifact,
   writeMemoryPressureStatusArtifact,
+  buildMemoryPressurePlanArtifact,
+  writeMemoryPressurePlanArtifact,
+  buildMemoryPressureFollowupsArtifact,
+  writeMemoryPressureFollowupsArtifact,
   evaluateMemoryPressurePolicy
 } from './pressurePolicy.js';
-export type { MemoryPressureAction, MemoryPressureBand, MemoryClass, MemoryPressureStatusArtifact } from './pressurePolicy.js';
+export type {
+  MemoryPressureAction,
+  MemoryPressureBand,
+  MemoryClass,
+  MemoryPressureStatusArtifact,
+  MemoryPressurePlanBand,
+  MemoryPressurePlanStepAction,
+  MemoryPressurePlanStep,
+  MemoryPressurePlanArtifact,
+  MemoryPressureFollowupAction,
+  MemoryPressureFollowupPriority,
+  MemoryPressureFollowupRow,
+  MemoryPressureFollowupsArtifact
+} from './pressurePolicy.js';
 
 export type { MemoryEvent, MemoryEventInput, MemoryIndex, MemoryIndexEntry, MemoryScope, SessionReplayEvidence, SessionReplayEvidenceInput } from './types.js';
 

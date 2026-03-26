@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/memory-pressure-followups.schema.json",
+  "title": "PlaybookMemoryPressureFollowups",
+  "description": "Deterministic proposal-only followup rows derived from memory pressure planning so operators can execute explicit next actions while preserving canonical artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "command", "generatedAt", "reviewOnly", "authority", "sourceArtifacts", "currentBand", "retentionClasses", "currentArtifacts", "safeguards", "rowsByBand"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-memory-pressure-followups" },
+    "command": { "const": "memory-pressure-followups" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "reviewOnly": { "const": true },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "promotion"],
+      "properties": {
+        "mutation": { "const": "read-only" },
+        "promotion": { "const": "review-required" }
+      }
+    },
+    "sourceArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan", "status", "retention", "memoryIndex"],
+      "properties": {
+        "plan": { "const": ".playbook/memory-pressure-plan.json" },
+        "status": { "const": ".playbook/memory-pressure.json" },
+        "retention": { "const": ".playbook/memory/lifecycle-candidates.json" },
+        "memoryIndex": { "const": ".playbook/memory/index.json" }
+      }
+    },
+    "currentBand": { "enum": ["normal", "warm", "pressure", "critical"] },
+    "retentionClasses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical", "compactable", "disposable"],
+      "properties": {
+        "canonical": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "compactable": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "disposable": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "currentArtifacts": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "safeguards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonicalArtifactProtection", "canonicalArtifacts", "canonicalEvictionCandidates", "canonicalExcludedFromDisposableEviction", "disposableEvictionRequiresSummaryOrCompaction"],
+      "properties": {
+        "canonicalArtifactProtection": { "const": true },
+        "canonicalArtifacts": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "canonicalEvictionCandidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "canonicalExcludedFromDisposableEviction": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "disposableEvictionRequiresSummaryOrCompaction": { "const": true }
+      }
+    },
+    "rowsByBand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["warm", "pressure", "critical"],
+      "properties": {
+        "warm": { "$ref": "#/$defs/followupRows" },
+        "pressure": { "$ref": "#/$defs/followupRows" },
+        "critical": { "$ref": "#/$defs/followupRows" }
+      }
+    }
+  },
+  "$defs": {
+    "followupRows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["followupId", "band", "action", "priority", "proposalOnly", "reason", "targets", "excludedCanonicalTargets"],
+        "properties": {
+          "followupId": { "type": "string", "minLength": 1 },
+          "band": { "enum": ["warm", "pressure", "critical"] },
+          "action": { "enum": ["dedupe", "compact", "summarize", "evict-disposable"] },
+          "priority": { "enum": ["P1", "P2", "P3", "P4"] },
+          "proposalOnly": { "const": true },
+          "reason": { "type": "string", "minLength": 1 },
+          "targets": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "excludedCanonicalTargets": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "requiresSummaryOrCompaction": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -3,12 +3,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  MEMORY_PRESSURE_FOLLOWUPS_RELATIVE_PATH,
   MEMORY_PRESSURE_PLAN_RELATIVE_PATH,
   MEMORY_PRESSURE_STATUS_LEGACY_RELATIVE_PATH,
   MEMORY_PRESSURE_STATUS_RELATIVE_PATH,
+  buildMemoryPressureFollowupsArtifact,
   buildMemoryPressurePlanArtifact,
   buildMemoryPressureStatusArtifact,
+  evaluateMemoryPressurePolicy,
   resolveMemoryPressureBand,
+  writeMemoryPressureFollowupsArtifact,
   writeMemoryPressurePlanArtifact,
   writeMemoryPressureStatusArtifact
 } from './pressurePolicy.js';
@@ -44,6 +48,7 @@ describe('memory pressure policy', () => {
     const firstPlan = buildMemoryPressurePlanArtifact(first);
     const secondPlan = buildMemoryPressurePlanArtifact(second);
     expect(secondPlan).toEqual(firstPlan);
+    expect(buildMemoryPressureFollowupsArtifact(secondPlan)).toEqual(buildMemoryPressureFollowupsArtifact(firstPlan));
   });
 
   it('applies hysteresis to prevent band thrash', () => {
@@ -112,6 +117,37 @@ describe('memory pressure policy', () => {
     expect(actions.find((step) => step.action === 'evict')?.requiresSummary).toBe(true);
   });
 
+  it('builds proposal-only followup rows and preserves canonical artifact protections', () => {
+    const repoRoot = makeRepo();
+    writeJson(repoRoot, '.playbook/memory/index.json', { events: [{ eventId: 'evt-1' }] });
+    writeJson(repoRoot, '.playbook/memory/events/evt-1.json', { kind: 'memory-event' });
+    writeJson(repoRoot, '.playbook/memory/knowledge/decisions.json', { entries: [] });
+    writeJson(repoRoot, '.playbook/memory/knowledge/patterns.json', { entries: [] });
+    writeJson(repoRoot, '.playbook/memory/knowledge/failure-modes.json', { entries: [] });
+    writeJson(repoRoot, '.playbook/memory/knowledge/invariants.json', { entries: [] });
+
+    const status = buildMemoryPressureStatusArtifact({
+      repoRoot,
+      policy: {
+        ...defaultConfig.memory.pressurePolicy,
+        budgetBytes: 1,
+        budgetFiles: 1,
+        budgetEvents: 1
+      },
+      previousBand: 'critical'
+    });
+    const followups = buildMemoryPressureFollowupsArtifact(buildMemoryPressurePlanArtifact(status));
+    const criticalRows = followups.rowsByBand.critical;
+    const evictRow = criticalRows.find((row) => row.action === 'evict-disposable');
+
+    expect(criticalRows.every((row) => row.proposalOnly)).toBe(true);
+    expect(evictRow?.requiresSummaryOrCompaction).toBe(true);
+    expect(evictRow?.targets.some((entry) => entry.includes('/knowledge/'))).toBe(false);
+    expect(followups.safeguards.canonicalArtifactProtection).toBe(true);
+    expect(criticalRows.findIndex((row) => row.action === 'summarize')).toBeLessThan(criticalRows.findIndex((row) => row.action === 'evict-disposable'));
+    expect(criticalRows.findIndex((row) => row.action === 'compact')).toBeLessThan(criticalRows.findIndex((row) => row.action === 'evict-disposable'));
+  });
+
   it('writes canonical and compatibility memory pressure artifacts', () => {
     const repoRoot = makeRepo();
     const artifact = buildMemoryPressureStatusArtifact({
@@ -147,5 +183,33 @@ describe('memory pressure policy', () => {
     writeMemoryPressurePlanArtifact(repoRoot, first);
     const planPath = path.join(repoRoot, MEMORY_PRESSURE_PLAN_RELATIVE_PATH);
     expect(fs.existsSync(planPath)).toBe(true);
+  });
+
+  it('writes deterministic memory pressure followups artifact', () => {
+    const repoRoot = makeRepo();
+    writeJson(repoRoot, '.playbook/memory/index.json', { events: [{ eventId: 'evt-1' }] });
+    writeJson(repoRoot, '.playbook/memory/events/evt-1.json', { kind: 'memory-event' });
+    writeJson(repoRoot, '.playbook/memory/knowledge/decisions.json', { entries: [] });
+
+    const status = buildMemoryPressureStatusArtifact({
+      repoRoot,
+      policy: defaultConfig.memory.pressurePolicy,
+      previousBand: 'pressure'
+    });
+    const followups = buildMemoryPressureFollowupsArtifact(buildMemoryPressurePlanArtifact(status));
+    const second = buildMemoryPressureFollowupsArtifact(buildMemoryPressurePlanArtifact(status));
+    expect(second).toEqual(followups);
+
+    writeMemoryPressureFollowupsArtifact(repoRoot, followups);
+    const followupsPath = path.join(repoRoot, MEMORY_PRESSURE_FOLLOWUPS_RELATIVE_PATH);
+    expect(fs.existsSync(followupsPath)).toBe(true);
+  });
+
+  it('evaluate memory pressure policy writes plan and followups artifacts', () => {
+    const repoRoot = makeRepo();
+    evaluateMemoryPressurePolicy(repoRoot, defaultConfig.memory.pressurePolicy);
+
+    expect(fs.existsSync(path.join(repoRoot, MEMORY_PRESSURE_PLAN_RELATIVE_PATH))).toBe(true);
+    expect(fs.existsSync(path.join(repoRoot, MEMORY_PRESSURE_FOLLOWUPS_RELATIVE_PATH))).toBe(true);
   });
 });
