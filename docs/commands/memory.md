@@ -114,12 +114,18 @@ Inspection payload includes:
 - current usage totals (`usedBytes`, `fileCount`, `eventCount`)
 - recommended actions already selected by the current pressure band
 - deterministic proposal-only action lanes by band (`warm`, `pressure`, `critical`) that sequence dedupe/compact/summarize/evict without automatic sweeping
+- deterministic intake posture by band before any deletion is considered:
+  - `normal`: admit normally
+  - `warm`: dedupe repeated low-signal events
+  - `pressure`: summarize repeated low-value details into rollups
+  - `critical`: admit only canonical, review-critical, or high-signal memory
 
 Governance framing:
 
 - Rule: **Canonical governance artifacts are preserved; everything else earns retention under pressure.**
-- Pattern: **Admit -> dedupe -> compact -> summarize -> evict.**
-- Failure Mode: **Pressure policy that jumps straight to deletion destroys useful context and operator trust.**
+- Rule: **Pressure policy should shape intake before it starts deleting history.**
+- Pattern: **Inspect first, then tighten intake, then plan compaction.**
+- Failure Mode: **Read-only pressure status is informative but not useful if intake behavior never changes.**
 
 ## Examples
 

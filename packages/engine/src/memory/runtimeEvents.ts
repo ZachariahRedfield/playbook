@@ -10,6 +10,7 @@ import {
 import type { VerifyReport } from '../report/types.js';
 import type { PlanTask } from '../execution/types.js';
 import type { FixExecutionResult } from '../execution/fixExecutor.js';
+import { decideAdmission, readCurrentMemoryPressureBand, toAdmissionKey, writeAdmissionRollup } from './admission.js';
 
 const canonicalize = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map((entry) => canonicalize(entry));
@@ -130,6 +131,32 @@ export const buildApplyMemoryEvent = (input: {
 };
 
 export const writeMemoryRuntimeEvent = (repoRoot: string, event: MemoryEvent): string => {
+  const eventPath = memoryArtifactPaths.runtimeEvents;
+  const existingCount = fs.existsSync(path.join(repoRoot, eventPath))
+    ? fs.readdirSync(path.join(repoRoot, eventPath)).filter((entry) => entry.endsWith('.json')).length
+    : 0;
+  const decision = decideAdmission({
+    band: readCurrentMemoryPressureBand(repoRoot),
+    isCanonical: false,
+    isReviewCritical: false,
+    isHighSignal: event.salience.score >= 0.75,
+    isLowSignal: event.salience.score < 0.4,
+    duplicateCount: existingCount,
+    admissionKey: toAdmissionKey({ channel: 'runtime-memory-event', kind: event.kind, payload: event })
+  });
+  if (decision.action === 'rollup') {
+    writeAdmissionRollup({
+      repoRoot,
+      channel: 'runtime-memory',
+      rollupKey: decision.rollupKey,
+      occurredAt: new Date(event.occurredAt).toISOString(),
+      sample: event as unknown as Record<string, unknown>
+    });
+    return path.join(repoRoot, '.playbook/memory/events/rollups', `runtime-memory-${decision.rollupKey}.json`);
+  }
+  if (decision.action === 'dedupe' || decision.action === 'skip') {
+    return path.join(repoRoot, memoryArtifactPaths.runtimeEvents, `${event.eventInstanceId}.skipped`);
+  }
   const filePath = path.join(repoRoot, memoryArtifactPaths.runtimeEvents, `${event.eventInstanceId}.json`);
   writeJson(filePath, event);
   return filePath;

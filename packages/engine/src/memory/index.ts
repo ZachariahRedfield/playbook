@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { MemoryEvent, MemoryEventInput, MemoryIndex, MemoryIndexEntry, MemoryScope, SessionReplayEvidence, SessionReplayEvidenceInput } from './types.js';
 import { MEMORY_SCHEMA_VERSION, SESSION_REPLAY_EVIDENCE_KIND, TEMPORAL_MEMORY_INDEX_KIND } from './types.js';
+import { decideAdmission, isLowSignalMemoryInput, readCurrentMemoryPressureBand, toAdmissionKey, writeAdmissionRollup } from './admission.js';
 
 const MEMORY_DIR = ['.playbook', 'memory'] as const;
 const EVENTS_DIR = [...MEMORY_DIR, 'events'] as const;
@@ -210,6 +211,63 @@ const updateMemoryIndex = (repoRoot: string, event: MemoryEvent): void => {
 };
 
 export const captureMemoryEvent = (repoRoot: string, input: MemoryEventInput): MemoryEvent => {
+  const current = readIndex(repoRoot);
+  const band = readCurrentMemoryPressureBand(repoRoot);
+  const admissionKey = toAdmissionKey({
+    channel: 'temporal-memory-event',
+    kind: input.kind,
+    subject: (Array.isArray(input.scope?.ruleIds) ? input.scope?.ruleIds.join(',') : '') || (Array.isArray(input.scope?.modules) ? input.scope?.modules.join(',') : ''),
+    payload: {
+      scope: normalizeScope(input.scope, input),
+      riskSummary: input.riskSummary,
+      outcome: input.outcome,
+      salienceInputs: input.salienceInputs
+    }
+  });
+  const duplicateCount = current.events.filter((entry) => entry.fingerprint === toEventFingerprint(input)).length;
+  const lowSignal = isLowSignalMemoryInput({
+    riskLevel: input.riskSummary.level,
+    outcomeStatus: input.outcome.status,
+    signalCount: Object.keys(input.salienceInputs ?? {}).length,
+    hasModules: normalizeScope(input.scope, input).modules.length > 0,
+    hasRuleIds: normalizeScope(input.scope, input).ruleIds.length > 0
+  });
+  const highSignal = !lowSignal || input.riskSummary.level === 'high' || input.outcome.status === 'failure';
+  const decision = decideAdmission({
+    band,
+    isCanonical: false,
+    isReviewCritical: false,
+    isHighSignal: highSignal,
+    isLowSignal: lowSignal,
+    duplicateCount,
+    admissionKey
+  });
+  if (decision.action === 'dedupe' || decision.action === 'skip') {
+    return normalizeMemoryEvent({
+      ...buildEvent(repoRoot, input),
+      kind: 'failure_ingest',
+      outcome: { status: 'skipped', summary: `memory admission ${decision.action}: ${decision.reason}` }
+    });
+  }
+  if (decision.action === 'rollup') {
+    writeAdmissionRollup({
+      repoRoot,
+      channel: 'temporal-memory',
+      rollupKey: decision.rollupKey,
+      occurredAt: new Date().toISOString(),
+      sample: {
+        kind: input.kind,
+        scope: normalizeScope(input.scope, input),
+        riskSummary: input.riskSummary,
+        outcome: input.outcome
+      }
+    });
+    return normalizeMemoryEvent({
+      ...buildEvent(repoRoot, input),
+      kind: 'failure_ingest',
+      outcome: { status: 'skipped', summary: `memory admission rollup: ${decision.reason}` }
+    });
+  }
   const event = buildEvent(repoRoot, input);
   writeDeterministicJson(path.join(repoRoot, ...EVENTS_DIR, `${event.eventInstanceId}.json`), event);
   updateMemoryIndex(repoRoot, event);
