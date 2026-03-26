@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "kind": "playbook-release-plan",
-  "generatedAt": "2026-03-26T01:31:08.250Z",
+  "generatedAt": "2026-03-26T03:21:20.446Z",
   "policy": {
     "path": ".playbook/version-policy.json",
     "breakingChangeMarkers": [
@@ -23,19 +23,11 @@
   },
   "diff": {
     "baseRef": "HEAD~1",
-    "baseSha": "b53c62034fee801a69a2d9803c7007e47eaaa268",
-    "headSha": "cad42754b41c5b889e74f104e9a6d193ef09e1fe",
+    "baseSha": "4722befde2658dc5161869346eb5aab1b8dac14b",
+    "headSha": "61e8f04b67636012d0e1a971838283fb38e71fff",
     "changedFiles": [
       {
-        "path": ".playbook/release-plan.json",
-        "status": "M",
-        "bump": "none",
-        "reasons": [
-          "non-shipping repository change"
-        ]
-      },
-      {
-        "path": "docs/architecture/REPOSITORY_MEMORY_MODEL.md",
+        "path": "docs/commands/memory.md",
         "status": "M",
         "bump": "none",
         "reasons": [
@@ -43,7 +35,7 @@
         ]
       },
       {
-        "path": "docs/CHANGELOG.md",
+        "path": "docs/commands/README.md",
         "status": "M",
         "bump": "none",
         "reasons": [
@@ -51,63 +43,23 @@
         ]
       },
       {
-        "path": "packages/cli-wrapper/package.json",
+        "path": "packages/cli/src/commands/status.test.ts",
         "status": "M",
         "bump": "none",
         "reasons": [
-          "non-shipping repository change"
+          "docs/tests/CI-only surface changed"
         ]
       },
       {
-        "path": "packages/cli/package.json",
-        "status": "M",
-        "bump": "none",
-        "reasons": [
-          "non-shipping repository change"
-        ]
-      },
-      {
-        "path": "packages/contracts/src/index.ts",
+        "path": "packages/cli/src/commands/status.ts",
         "status": "M",
         "bump": "minor",
         "reasons": [
-          "public export surface changed"
+          "command surface changed"
         ]
       },
       {
-        "path": "packages/contracts/src/memory-pressure-status.schema.json",
-        "status": "A",
-        "bump": "minor",
-        "reasons": [
-          "stable contract expansion changed"
-        ]
-      },
-      {
-        "path": "packages/core/package.json",
-        "status": "M",
-        "bump": "none",
-        "reasons": [
-          "non-shipping repository change"
-        ]
-      },
-      {
-        "path": "packages/engine/package.json",
-        "status": "M",
-        "bump": "none",
-        "reasons": [
-          "non-shipping repository change"
-        ]
-      },
-      {
-        "path": "packages/engine/src/config/load.ts",
-        "status": "M",
-        "bump": "patch",
-        "reasons": [
-          "shipped internal code changed"
-        ]
-      },
-      {
-        "path": "packages/engine/src/config/schema.ts",
+        "path": "packages/cli/src/workspace-packages.d.ts",
         "status": "M",
         "bump": "patch",
         "reasons": [
@@ -132,7 +84,7 @@
       },
       {
         "path": "packages/engine/src/memory/pressurePolicy.test.ts",
-        "status": "A",
+        "status": "M",
         "bump": "none",
         "reasons": [
           "docs/tests/CI-only surface changed"
@@ -140,18 +92,10 @@
       },
       {
         "path": "packages/engine/src/memory/pressurePolicy.ts",
-        "status": "A",
+        "status": "M",
         "bump": "patch",
         "reasons": [
           "shipped internal code changed"
-        ]
-      },
-      {
-        "path": "packages/node/package.json",
-        "status": "M",
-        "bump": "none",
-        "reasons": [
-          "non-shipping repository change"
         ]
       }
     ]
@@ -159,11 +103,10 @@
   "summary": {
     "recommendedBump": "minor",
     "reasons": [
+      "command surface changed",
       "docs/tests/CI-only surface changed",
-      "non-shipping repository change",
       "public export surface changed",
-      "shipped internal code changed",
-      "stable contract expansion changed"
+      "shipped internal code changed"
     ]
   },
   "packages": [
@@ -174,15 +117,33 @@
       "recommendedBump": "minor",
       "versionGroup": "playbook-installable-workspace",
       "reasons": [
-        "non-shipping repository change"
+        "command surface changed",
+        "docs/tests/CI-only surface changed",
+        "shipped internal code changed"
       ],
       "evidence": [
         {
-          "path": "packages/cli/package.json",
+          "path": "packages/cli/src/commands/status.test.ts",
           "status": "M",
           "bump": "none",
           "reasons": [
-            "non-shipping repository change"
+            "docs/tests/CI-only surface changed"
+          ]
+        },
+        {
+          "path": "packages/cli/src/commands/status.ts",
+          "status": "M",
+          "bump": "minor",
+          "reasons": [
+            "command surface changed"
+          ]
+        },
+        {
+          "path": "packages/cli/src/workspace-packages.d.ts",
+          "status": "M",
+          "bump": "patch",
+          "reasons": [
+            "shipped internal code changed"
           ]
         }
       ]
@@ -193,19 +154,8 @@
       "currentVersion": "0.26.0",
       "recommendedBump": "minor",
       "versionGroup": "playbook-installable-workspace",
-      "reasons": [
-        "non-shipping repository change"
-      ],
-      "evidence": [
-        {
-          "path": "packages/cli-wrapper/package.json",
-          "status": "M",
-          "bump": "none",
-          "reasons": [
-            "non-shipping repository change"
-          ]
-        }
-      ]
+      "reasons": [],
+      "evidence": []
     },
     {
       "name": "@zachariahredfield/playbook-core",
@@ -213,19 +163,8 @@
       "currentVersion": "0.26.0",
       "recommendedBump": "minor",
       "versionGroup": "playbook-installable-workspace",
-      "reasons": [
-        "non-shipping repository change"
-      ],
-      "evidence": [
-        {
-          "path": "packages/core/package.json",
-          "status": "M",
-          "bump": "none",
-          "reasons": [
-            "non-shipping repository change"
-          ]
-        }
-      ]
+      "reasons": [],
+      "evidence": []
     },
     {
       "name": "@zachariahredfield/playbook-engine",
@@ -235,35 +174,10 @@
       "versionGroup": "playbook-installable-workspace",
       "reasons": [
         "docs/tests/CI-only surface changed",
-        "non-shipping repository change",
         "public export surface changed",
         "shipped internal code changed"
       ],
       "evidence": [
-        {
-          "path": "packages/engine/package.json",
-          "status": "M",
-          "bump": "none",
-          "reasons": [
-            "non-shipping repository change"
-          ]
-        },
-        {
-          "path": "packages/engine/src/config/load.ts",
-          "status": "M",
-          "bump": "patch",
-          "reasons": [
-            "shipped internal code changed"
-          ]
-        },
-        {
-          "path": "packages/engine/src/config/schema.ts",
-          "status": "M",
-          "bump": "patch",
-          "reasons": [
-            "shipped internal code changed"
-          ]
-        },
         {
           "path": "packages/engine/src/index.ts",
           "status": "M",
@@ -282,7 +196,7 @@
         },
         {
           "path": "packages/engine/src/memory/pressurePolicy.test.ts",
-          "status": "A",
+          "status": "M",
           "bump": "none",
           "reasons": [
             "docs/tests/CI-only surface changed"
@@ -290,7 +204,7 @@
         },
         {
           "path": "packages/engine/src/memory/pressurePolicy.ts",
-          "status": "A",
+          "status": "M",
           "bump": "patch",
           "reasons": [
             "shipped internal code changed"
@@ -304,19 +218,8 @@
       "currentVersion": "0.26.0",
       "recommendedBump": "minor",
       "versionGroup": "playbook-installable-workspace",
-      "reasons": [
-        "non-shipping repository change"
-      ],
-      "evidence": [
-        {
-          "path": "packages/node/package.json",
-          "status": "M",
-          "bump": "none",
-          "reasons": [
-            "non-shipping repository change"
-          ]
-        }
-      ]
+      "reasons": [],
+      "evidence": []
     }
   ],
   "versionGroups": [
@@ -331,8 +234,8 @@
       ],
       "recommendedBump": "minor",
       "reasons": [
+        "command surface changed",
         "docs/tests/CI-only surface changed",
-        "non-shipping repository change",
         "public export surface changed",
         "shipped internal code changed"
       ]
