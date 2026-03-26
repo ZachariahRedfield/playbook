@@ -38,6 +38,7 @@
       "test-fix-plan",
       "test-autofix",
       "remediation-status",
+      "rendezvous",
       "verify",
       "plan",
       "orchestrate",
