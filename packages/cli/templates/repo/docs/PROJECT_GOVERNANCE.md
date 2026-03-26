@@ -2,6 +2,21 @@
 
 This repository uses Playbook for lightweight, deterministic change governance.
 
+## `.playbook` tracked vs runtime boundary
+
+Playbook keeps the `.playbook/` folder deterministic by default:
+
+- Track canonical governance artifacts in git:
+  - `.playbook/managed-surfaces.json`
+  - `.playbook/repo-index.json`
+  - `.playbook/repo-graph.json`
+  - `.playbook/plan.json`
+  - `.playbook/policy-apply-result.json`
+  - `.playbook/version-policy.json` (when release governance is scaffolded)
+- Ignore runtime/generated churn (for example `.playbook/runtime/**`, `.playbook/memory/**`, `.playbook/context/**`, `.playbook/session.json`, and related generated state).
+
+This split keeps reviewed governance state stable while preventing local runtime noise from polluting commits.
+
 ## Why Playbook requires notes updates
 
 When code changes without context, teams lose the engineering reasoning behind implementation decisions.

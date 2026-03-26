@@ -100,7 +100,12 @@ For remediation workflow updates, run canonical deterministic flow checks:
 pnpm playbook verify --json
 pnpm playbook plan --json
 pnpm playbook apply --from-plan .playbook/plan.json --dry-run
+pnpm playbook rendezvous create --json
+pnpm playbook rendezvous status --json
+pnpm playbook rendezvous release --dry-run --json
 ```
+
+`rendezvous` is read-first in v1: it only creates/updates `.playbook/rendezvous-manifest.json` and never performs release mutation directly.
 
 For trusted release preparation, use the dedicated manual workflow instead of ordinary PR CI mutation. The release-prep path must stay on the existing reviewed mutation boundary:
 
