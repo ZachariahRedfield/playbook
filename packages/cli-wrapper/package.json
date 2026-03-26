@@ -1,6 +1,6 @@
 {
   "name": "@fawxzzy/playbook-cli",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "type": "module",
   "bin": {
     "playbook": "bin/playbook.js"
