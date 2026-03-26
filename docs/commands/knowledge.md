@@ -109,7 +109,11 @@ Review recording remains receipt-only; it does not auto-promote or auto-supersed
 
 JSON output and `.playbook/review-queue.json` preserve full deterministic trigger/cadence detail for automation consumers.
 
-Architecture-decision recall is trigger-driven: `docs/architecture/decisions/*.md` must publish explicit `## Review Triggers` lines in canonical format (`- [trigger_id] when <observable condition> -> <required review action>`), and satisfied signals are merged as additive `triggerSource=architecture-decision` evidence entries.
+Architecture-decision recall is trigger-driven: `docs/architecture/decisions/*.md` must publish explicit `## Review Triggers` lines in canonical format:
+
+- `- [trigger_id] when <observable condition> -> <required review action>`
+
+Satisfied signals are merged as additive `triggerSource=architecture-decision` evidence entries.
 
 Rule: Architecture decisions should be recalled through explicit trigger metadata, not ad hoc memory.
 
