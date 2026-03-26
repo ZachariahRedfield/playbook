@@ -54,3 +54,7 @@ Simple Rule Theory does not claim information recovery beyond retained evidence.
 - What is raw noise vs governing signal?
 - What is the smallest rule/input set needed to regenerate required downstream behavior?
 - Which stored fields are redundant and should instead be derived?
+
+## See also
+
+- [Second Brain to Playbook Evolution](./SECOND_BRAIN_TO_PLAYBOOK_EVOLUTION.md)
