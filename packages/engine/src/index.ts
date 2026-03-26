@@ -176,15 +176,27 @@ export type {
 export {
   MEMORY_PRESSURE_STATUS_RELATIVE_PATH,
   MEMORY_PRESSURE_STATUS_LEGACY_RELATIVE_PATH,
+  MEMORY_PRESSURE_PLAN_RELATIVE_PATH,
   computeMemoryPressureScore,
   resolveMemoryPressureBand,
   classifyMemoryArtifact,
   recommendedActionsForBand,
   buildMemoryPressureStatusArtifact,
   writeMemoryPressureStatusArtifact,
+  buildMemoryPressurePlanArtifact,
+  writeMemoryPressurePlanArtifact,
   evaluateMemoryPressurePolicy
 } from './memory/pressurePolicy.js';
-export type { MemoryPressureAction, MemoryPressureBand, MemoryClass, MemoryPressureStatusArtifact } from './memory/pressurePolicy.js';
+export type {
+  MemoryPressureAction,
+  MemoryPressureBand,
+  MemoryClass,
+  MemoryPressureStatusArtifact,
+  MemoryPressurePlanBand,
+  MemoryPressurePlanStepAction,
+  MemoryPressurePlanStep,
+  MemoryPressurePlanArtifact
+} from './memory/pressurePolicy.js';
 export { lookupMemoryCompactionReview } from './memory/inspection.js';
 export { listCandidateKnowledge, loadCandidateKnowledgeById, promoteMemoryCandidate, retirePromotedKnowledge, supersedePromotedKnowledge, pruneMemoryKnowledge } from './memory/knowledge.js';
 export type { MemoryKnowledgeKind, MemoryKnowledgeEntry, MemoryKnowledgeArtifact, MemoryPromotionResult, MemoryRetireResult, MemorySupersedeResult, MemoryPruneResult } from './memory/knowledge.js';

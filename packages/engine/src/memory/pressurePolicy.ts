@@ -4,6 +4,7 @@ import type { PlaybookConfig } from '../config/schema.js';
 
 export const MEMORY_PRESSURE_STATUS_RELATIVE_PATH = '.playbook/memory-pressure.json' as const;
 export const MEMORY_PRESSURE_STATUS_LEGACY_RELATIVE_PATH = '.playbook/memory/pressure-status.json' as const;
+export const MEMORY_PRESSURE_PLAN_RELATIVE_PATH = '.playbook/memory-pressure-plan.json' as const;
 
 const CANONICAL_MEMORY_ARTIFACTS = new Set<string>([
   '.playbook/memory/knowledge/decisions.json',
@@ -23,6 +24,50 @@ export type MemoryPressureAction =
   | 'preserve-canonical-artifacts'
   | 'aggressive-compaction'
   | 'evict-disposable-after-summary';
+
+export type MemoryPressurePlanBand = Exclude<MemoryPressureBand, 'normal'>;
+export type MemoryPressurePlanStepAction = 'dedupe' | 'compact' | 'summarize' | 'evict';
+
+export type MemoryPressurePlanStep = {
+  action: MemoryPressurePlanStepAction;
+  reason: string;
+  targets: string[];
+  requiresSummary?: boolean;
+};
+
+export type MemoryPressurePlanArtifact = {
+  schemaVersion: '1.0';
+  kind: 'playbook-memory-pressure-plan';
+  command: 'memory-pressure-plan';
+  generatedAt: string;
+  reviewOnly: true;
+  authority: {
+    mutation: 'read-only';
+    promotion: 'review-required';
+  };
+  sourceArtifacts: {
+    policy: '.playbook/config.json';
+    status: typeof MEMORY_PRESSURE_STATUS_RELATIVE_PATH;
+    retention: '.playbook/memory/lifecycle-candidates.json';
+    memoryIndex: '.playbook/memory/index.json';
+  };
+  policy: PlaybookConfig['memory']['pressurePolicy'];
+  status: {
+    band: MemoryPressureBand;
+    previousBand: MemoryPressureBand | null;
+    usage: MemoryPressureStatusArtifact['usage'];
+    score: MemoryPressureStatusArtifact['score'];
+  };
+  retentionClasses: MemoryPressureStatusArtifact['classes'];
+  currentArtifacts: string[];
+  safeguards: {
+    canonicalArtifactProtection: true;
+    canonicalArtifacts: string[];
+    canonicalEvictionCandidates: string[];
+    disposableEvictionRequiresSummary: boolean;
+  };
+  recommendedByBand: Record<MemoryPressurePlanBand, MemoryPressurePlanStep[]>;
+};
 
 export type MemoryPressureStatusArtifact = {
   schemaVersion: '1.0';
@@ -260,5 +305,114 @@ export const writeMemoryPressureStatusArtifact = (repoRoot: string, artifact: Me
 export const evaluateMemoryPressurePolicy = (repoRoot: string, policy: PlaybookConfig['memory']['pressurePolicy']): MemoryPressureStatusArtifact => {
   const artifact = buildMemoryPressureStatusArtifact({ repoRoot, policy });
   writeMemoryPressureStatusArtifact(repoRoot, artifact);
+  writeMemoryPressurePlanArtifact(repoRoot, buildMemoryPressurePlanArtifact(artifact));
   return artifact;
+};
+
+const recommendedPlanForBand = (band: MemoryPressurePlanBand, status: MemoryPressureStatusArtifact): MemoryPressurePlanStep[] => {
+  const compactTargets = uniqueSorted([...status.classes.compactable, ...status.classes.disposable]);
+  const summarizeTargets = uniqueSorted(status.classes.disposable.filter((entry) => entry.startsWith('.playbook/memory/events/')));
+  const evictTargets = uniqueSorted(status.invariants.disposableEvictionCandidates);
+
+  if (band === 'warm') {
+    return [
+      {
+        action: 'dedupe',
+        reason: 'Reduce duplicate low-signal memory entries before pressure escalates.',
+        targets: compactTargets
+      },
+      {
+        action: 'compact',
+        reason: 'Compact replay and consolidation artifacts to preserve signal with less storage.',
+        targets: compactTargets
+      }
+    ];
+  }
+
+  if (band === 'pressure') {
+    return [
+      {
+        action: 'summarize',
+        reason: 'Roll up low-signal runtime detail into deterministic summaries.',
+        targets: summarizeTargets
+      },
+      {
+        action: 'compact',
+        reason: 'Increase compaction cadence to stay under pressure budget.',
+        targets: compactTargets
+      },
+      {
+        action: 'dedupe',
+        reason: 'Remove redundant low-value records after summary and compaction.',
+        targets: compactTargets
+      }
+    ];
+  }
+
+  return [
+    {
+      action: 'summarize',
+      reason: 'Critical pressure requires summaries before any disposable eviction.',
+      targets: summarizeTargets
+    },
+    {
+      action: 'compact',
+      reason: 'Apply aggressive compaction to all non-canonical classes.',
+      targets: compactTargets
+    },
+    {
+      action: 'evict',
+      reason: 'Eviction is proposal-only and limited to disposable artifacts with summaries.',
+      targets: evictTargets,
+      requiresSummary: true
+    }
+  ];
+};
+
+export const buildMemoryPressurePlanArtifact = (status: MemoryPressureStatusArtifact): MemoryPressurePlanArtifact => {
+  const currentArtifacts = uniqueSorted([...status.classes.canonical, ...status.classes.compactable, ...status.classes.disposable]);
+  return {
+    schemaVersion: '1.0',
+    kind: 'playbook-memory-pressure-plan',
+    command: 'memory-pressure-plan',
+    generatedAt: new Date(0).toISOString(),
+    reviewOnly: true,
+    authority: {
+      mutation: 'read-only',
+      promotion: 'review-required'
+    },
+    sourceArtifacts: {
+      policy: '.playbook/config.json',
+      status: MEMORY_PRESSURE_STATUS_RELATIVE_PATH,
+      retention: '.playbook/memory/lifecycle-candidates.json',
+      memoryIndex: '.playbook/memory/index.json'
+    },
+    policy: status.policy,
+    status: {
+      band: status.band,
+      previousBand: status.previousBand,
+      usage: status.usage,
+      score: status.score
+    },
+    retentionClasses: status.classes,
+    currentArtifacts,
+    safeguards: {
+      canonicalArtifactProtection: true,
+      canonicalArtifacts: status.classes.canonical,
+      canonicalEvictionCandidates: status.invariants.canonicalEvictionCandidates,
+      disposableEvictionRequiresSummary: status.invariants.disposableEvictionRequiresSummary
+    },
+    recommendedByBand: {
+      warm: recommendedPlanForBand('warm', status),
+      pressure: recommendedPlanForBand('pressure', status),
+      critical: recommendedPlanForBand('critical', status)
+    }
+  };
+};
+
+export const writeMemoryPressurePlanArtifact = (repoRoot: string, artifact: MemoryPressurePlanArtifact): string => {
+  const outputPath = path.join(repoRoot, MEMORY_PRESSURE_PLAN_RELATIVE_PATH);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+  return outputPath;
 };

@@ -3,10 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  MEMORY_PRESSURE_PLAN_RELATIVE_PATH,
   MEMORY_PRESSURE_STATUS_LEGACY_RELATIVE_PATH,
   MEMORY_PRESSURE_STATUS_RELATIVE_PATH,
+  buildMemoryPressurePlanArtifact,
   buildMemoryPressureStatusArtifact,
   resolveMemoryPressureBand,
+  writeMemoryPressurePlanArtifact,
   writeMemoryPressureStatusArtifact
 } from './pressurePolicy.js';
 import { defaultConfig } from '../config/schema.js';
@@ -37,6 +40,10 @@ describe('memory pressure policy', () => {
     const first = buildMemoryPressureStatusArtifact({ repoRoot, policy, previousBand: 'warm' });
     const second = buildMemoryPressureStatusArtifact({ repoRoot, policy, previousBand: 'warm' });
     expect(second).toEqual(first);
+
+    const firstPlan = buildMemoryPressurePlanArtifact(first);
+    const secondPlan = buildMemoryPressurePlanArtifact(second);
+    expect(secondPlan).toEqual(firstPlan);
   });
 
   it('applies hysteresis to prevent band thrash', () => {
@@ -72,9 +79,11 @@ describe('memory pressure policy', () => {
     };
 
     const artifact = buildMemoryPressureStatusArtifact({ repoRoot, policy, previousBand: 'critical' });
+    const plan = buildMemoryPressurePlanArtifact(artifact);
     expect(artifact.band).toBe('critical');
     expect(artifact.invariants.canonicalEvictionCandidates).toEqual([]);
     expect(artifact.invariants.disposableEvictionCandidates.some((entry) => entry.includes('/knowledge/'))).toBe(false);
+    expect(plan.recommendedByBand.critical.flatMap((step) => step.targets).some((entry) => entry.includes('/knowledge/'))).toBe(false);
   });
 
   it('requires summarize/compact actions before disposable eviction at critical band', () => {
@@ -85,7 +94,7 @@ describe('memory pressure policy', () => {
       summary: 'force critical-band pressure input'
     });
 
-    const actions = buildMemoryPressureStatusArtifact({
+    const status = buildMemoryPressureStatusArtifact({
       repoRoot,
       policy: {
         ...defaultConfig.memory.pressurePolicy,
@@ -94,11 +103,13 @@ describe('memory pressure policy', () => {
         budgetEvents: 1
       },
       previousBand: 'critical'
-    }).recommendedActions;
+    });
+    const actions = buildMemoryPressurePlanArtifact(status).recommendedByBand.critical;
 
-    expect(actions).toContain('evict-disposable-after-summary');
-    expect(actions.indexOf('summarize-runtime-events-into-rollups')).toBeLessThan(actions.indexOf('evict-disposable-after-summary'));
-    expect(actions.indexOf('aggressive-compaction')).toBeLessThan(actions.indexOf('evict-disposable-after-summary'));
+    expect(actions.some((step) => step.action === 'evict')).toBe(true);
+    expect(actions.findIndex((step) => step.action === 'summarize')).toBeLessThan(actions.findIndex((step) => step.action === 'evict'));
+    expect(actions.findIndex((step) => step.action === 'compact')).toBeLessThan(actions.findIndex((step) => step.action === 'evict'));
+    expect(actions.find((step) => step.action === 'evict')?.requiresSummary).toBe(true);
   });
 
   it('writes canonical and compatibility memory pressure artifacts', () => {
@@ -116,5 +127,25 @@ describe('memory pressure policy', () => {
     expect(fs.existsSync(canonicalPath)).toBe(true);
     expect(fs.existsSync(legacyPath)).toBe(true);
     expect(fs.readFileSync(canonicalPath, 'utf8')).toBe(fs.readFileSync(legacyPath, 'utf8'));
+  });
+
+  it('writes deterministic memory pressure plan artifact', () => {
+    const repoRoot = makeRepo();
+    writeJson(repoRoot, '.playbook/memory/index.json', { events: [{ eventId: 'evt-1' }] });
+    writeJson(repoRoot, '.playbook/memory/events/evt-1.json', { kind: 'memory-event' });
+    writeJson(repoRoot, '.playbook/memory/knowledge/decisions.json', { entries: [] });
+
+    const status = buildMemoryPressureStatusArtifact({
+      repoRoot,
+      policy: defaultConfig.memory.pressurePolicy,
+      previousBand: 'pressure'
+    });
+    const first = buildMemoryPressurePlanArtifact(status);
+    const second = buildMemoryPressurePlanArtifact(status);
+    expect(second).toEqual(first);
+
+    writeMemoryPressurePlanArtifact(repoRoot, first);
+    const planPath = path.join(repoRoot, MEMORY_PRESSURE_PLAN_RELATIVE_PATH);
+    expect(fs.existsSync(planPath)).toBe(true);
   });
 });
