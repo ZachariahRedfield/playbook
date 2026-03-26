@@ -105,7 +105,7 @@ Policy boundary notes:
 
 ## Memory pressure inspection (read-only)
 
-`pnpm playbook status` now includes additive memory-pressure inspection fields and points to the read-only artifact `.playbook/memory-pressure.json`.
+`pnpm playbook status` now includes additive memory-pressure inspection fields and points to the read-only artifacts `.playbook/memory-pressure.json` and `.playbook/memory-pressure-plan.json`.
 
 Inspection payload includes:
 
@@ -113,12 +113,13 @@ Inspection payload includes:
 - hysteresis thresholds (`warm`, `pressure`, `critical`, and `hysteresis`)
 - current usage totals (`usedBytes`, `fileCount`, `eventCount`)
 - recommended actions already selected by the current pressure band
+- deterministic proposal-only action lanes by band (`warm`, `pressure`, `critical`) that sequence dedupe/compact/summarize/evict without automatic sweeping
 
 Governance framing:
 
-- Rule: **Pressure policy should be inspectable before it is made more aggressive.**
-- Pattern: **Inspect first, then tighten automation.**
-- Failure Mode: **Hidden memory pressure logic feels random even when the policy is deterministic.**
+- Rule: **Canonical governance artifacts are preserved; everything else earns retention under pressure.**
+- Pattern: **Admit -> dedupe -> compact -> summarize -> evict.**
+- Failure Mode: **Pressure policy that jumps straight to deletion destroys useful context and operator trust.**
 
 ## Examples
 

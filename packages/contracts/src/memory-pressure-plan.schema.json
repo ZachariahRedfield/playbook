@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/memory-pressure-plan.schema.json",
+  "title": "PlaybookMemoryPressurePlan",
+  "description": "Deterministic read-only memory pressure action plan artifact that proposes banded compaction/summarize/eviction actions without mutating memory automatically.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "command", "generatedAt", "reviewOnly", "authority", "sourceArtifacts", "policy", "status", "retentionClasses", "currentArtifacts", "safeguards", "recommendedByBand"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-memory-pressure-plan" },
+    "command": { "const": "memory-pressure-plan" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "reviewOnly": { "const": true },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "promotion"],
+      "properties": {
+        "mutation": { "const": "read-only" },
+        "promotion": { "const": "review-required" }
+      }
+    },
+    "sourceArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "status", "retention", "memoryIndex"],
+      "properties": {
+        "policy": { "const": ".playbook/config.json" },
+        "status": { "const": ".playbook/memory-pressure.json" },
+        "retention": { "const": ".playbook/memory/lifecycle-candidates.json" },
+        "memoryIndex": { "const": ".playbook/memory/index.json" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["budgetBytes", "budgetFiles", "budgetEvents", "watermarks", "hysteresis"],
+      "properties": {
+        "budgetBytes": { "type": "integer", "minimum": 1 },
+        "budgetFiles": { "type": "integer", "minimum": 1 },
+        "budgetEvents": { "type": "integer", "minimum": 1 },
+        "watermarks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["warm", "pressure", "critical"],
+          "properties": {
+            "warm": { "type": "number", "minimum": 0 },
+            "pressure": { "type": "number", "minimum": 0 },
+            "critical": { "type": "number", "minimum": 0 }
+          }
+        },
+        "hysteresis": { "type": "number", "minimum": 0 }
+      }
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["band", "previousBand", "usage", "score"],
+      "properties": {
+        "band": { "enum": ["normal", "warm", "pressure", "critical"] },
+        "previousBand": { "enum": ["normal", "warm", "pressure", "critical", null] },
+        "usage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["usedBytes", "fileCount", "eventCount"],
+          "properties": {
+            "usedBytes": { "type": "integer", "minimum": 0 },
+            "fileCount": { "type": "integer", "minimum": 0 },
+            "eventCount": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "score": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bytes", "files", "events", "normalized"],
+          "properties": {
+            "bytes": { "type": "number", "minimum": 0 },
+            "files": { "type": "number", "minimum": 0 },
+            "events": { "type": "number", "minimum": 0 },
+            "normalized": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "retentionClasses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical", "compactable", "disposable"],
+      "properties": {
+        "canonical": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "compactable": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "disposable": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "currentArtifacts": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "safeguards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonicalArtifactProtection", "canonicalArtifacts", "canonicalEvictionCandidates", "disposableEvictionRequiresSummary"],
+      "properties": {
+        "canonicalArtifactProtection": { "const": true },
+        "canonicalArtifacts": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "canonicalEvictionCandidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "disposableEvictionRequiresSummary": { "const": true }
+      }
+    },
+    "recommendedByBand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["warm", "pressure", "critical"],
+      "properties": {
+        "warm": { "$ref": "#/$defs/steps" },
+        "pressure": { "$ref": "#/$defs/steps" },
+        "critical": { "$ref": "#/$defs/steps" }
+      }
+    }
+  },
+  "$defs": {
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action", "reason", "targets"],
+        "properties": {
+          "action": { "enum": ["dedupe", "compact", "summarize", "evict"] },
+          "reason": { "type": "string", "minLength": 1 },
+          "targets": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "requiresSummary": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}
