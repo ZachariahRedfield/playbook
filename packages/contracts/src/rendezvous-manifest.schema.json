@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/rendezvous-manifest.schema.json",
+  "title": "Artifact Rendezvous Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "baseSha",
+    "remediationId",
+    "requiredArtifactIds",
+    "artifacts",
+    "blockers",
+    "confidence",
+    "staleOnShaChange"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "artifact-rendezvous-manifest" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "baseSha": { "type": "string", "minLength": 1 },
+    "remediationId": { "type": "string", "minLength": 1 },
+    "requiredArtifactIds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifactId" },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "failure-log": { "$ref": "#/$defs/artifactEntry" },
+        "test-triage": { "$ref": "#/$defs/artifactEntry" },
+        "test-fix-plan": { "$ref": "#/$defs/artifactEntry" },
+        "apply-result": { "$ref": "#/$defs/artifactEntry" },
+        "test-autofix": { "$ref": "#/$defs/artifactEntry" },
+        "remediation-status": { "$ref": "#/$defs/artifactEntry" }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifactId", "reason"],
+        "properties": {
+          "artifactId": { "$ref": "#/$defs/artifactId" },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "staleOnShaChange": { "type": "boolean" }
+  },
+  "$defs": {
+    "artifactId": {
+      "type": "string",
+      "enum": [
+        "failure-log",
+        "test-triage",
+        "test-fix-plan",
+        "apply-result",
+        "test-autofix",
+        "remediation-status"
+      ]
+    },
+    "verification": {
+      "type": "string",
+      "enum": ["passed", "failed", "unknown"]
+    },
+    "artifactEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactId", "path", "sha256", "verification"],
+      "properties": {
+        "artifactId": { "$ref": "#/$defs/artifactId" },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "minLength": 1 },
+        "verification": { "$ref": "#/$defs/verification" }
+      }
+    }
+  }
+}

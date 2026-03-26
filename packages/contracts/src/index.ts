@@ -38,6 +38,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   testFixPlan: 'packages/contracts/src/test-fix-plan.schema.json',
   testAutofix: 'packages/contracts/src/test-autofix.schema.json',
   remediationStatus: 'packages/contracts/src/remediation-status.schema.json',
+  rendezvousManifest: 'packages/contracts/src/rendezvous-manifest.schema.json',
   reviewQueue: 'packages/contracts/src/review-queue.schema.json',
   reviewPolicy: 'packages/contracts/src/review-policy.schema.json',
   knowledgeReviewReceipts: 'packages/contracts/src/knowledge-review-receipts.schema.json',

@@ -90,6 +90,10 @@ If either artifact is missing or invalid, the command fails clearly instead of i
 - Pattern: Transport should hydrate canonical artifacts, not invent workflow-local state.
 - Failure Mode: Per-run ephemeral history makes repeat-aware policy look real while silently acting stateless.
 
+- Rule: Durable repo intelligence must survive carrier changes.
+- Pattern: Transport -> transduce -> store -> verify -> controlled release.
+- Failure Mode: Hidden session state makes retries, handoffs, and audits lose the exact state that mattered.
+
 
 ## Soak analysis doctrine
 
