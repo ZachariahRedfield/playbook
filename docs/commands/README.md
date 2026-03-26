@@ -370,7 +370,10 @@ Command boundary note:
 - `knowledge stale` returns stale, retired, and superseded records.
 - `knowledge review` materializes and reads `.playbook/review-queue.json` via a compact review surface with deterministic `--action`, `--kind`, cadence-aware `--due now|overdue|all`, trigger-aware `--trigger cadence|evidence|all`, and exact `--trigger-source <source>` filtering while surfacing additive trigger metadata (`triggerType`, `triggerReasonCode`, `triggerSource`, `triggerEvidenceRefs`) plus cadence fields (`nextReviewAt`, `overdue`, `deferredUntil`) in JSON output.
 - Architecture decisions in `docs/architecture/decisions/*.md` are recalled via explicit `## Review Triggers` lines in canonical format:
-  - `- [trigger_id] when <observable condition> -> <required review action>`
+
+  ```text
+  - [trigger_id] when <observable condition> -> <required review action>
+  ```
   Satisfied triggers enter the same retrieval queue as evidence (`triggerSource=architecture-decision`) instead of introducing a separate workflow surface.
 - Rule: Existing review surfaces should absorb architecture-triggered recall before inventing a new workflow silo.
 - `knowledge review handoffs` materializes and reads `.playbook/review-handoffs.json` from the same review family with deterministic `--decision revise|supersede` and `--kind knowledge|doc|rule|pattern` filters; text output stays brief (status, affected targets, recommended follow-up, next action) while JSON preserves full detail.
