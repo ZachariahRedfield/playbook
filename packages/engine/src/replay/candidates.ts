@@ -11,6 +11,7 @@ import type {
 } from '../schema/memoryReplay.js';
 import { buildSessionReplayEvidence, normalizeMemoryEvent } from '../memory/index.js';
 import type { MemoryEvent, MemoryIndex, SessionReplayEvidence } from '../memory/types.js';
+import { decideAdmission, readCurrentMemoryPressureBand, toAdmissionKey } from '../memory/admission.js';
 
 const MEMORY_INDEX_RELATIVE_PATH = '.playbook/memory/index.json' as const;
 export const REPLAY_CANDIDATES_RELATIVE_PATH = '.playbook/memory/replay-candidates.json' as const;
@@ -227,6 +228,15 @@ export const buildReplayCandidatesArtifact = (projectRoot: string): ReplayCandid
 
 export const replayMemoryToCandidates = (projectRoot: string): ReplayCandidatesArtifact => {
   const artifact = buildReplayCandidatesArtifact(projectRoot);
+  decideAdmission({
+    band: readCurrentMemoryPressureBand(projectRoot),
+    isCanonical: false,
+    isReviewCritical: true,
+    isHighSignal: true,
+    isLowSignal: false,
+    duplicateCount: 0,
+    admissionKey: toAdmissionKey({ channel: 'replay-candidates', kind: artifact.kind, payload: { totalEvents: artifact.totalEvents, candidates: artifact.candidates.length } })
+  });
   writeArtifact(projectRoot, REPLAY_CANDIDATES_RELATIVE_PATH, artifact);
   writeArtifact(projectRoot, MEMORY_CANDIDATES_RELATIVE_PATH, artifact);
   return artifact;

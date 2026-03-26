@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { writeDeterministicJsonAtomic } from '../learning/io.js';
+import { decideAdmission, isLowSignalMemoryInput, readCurrentMemoryPressureBand, toAdmissionKey, writeAdmissionRollup } from './admission.js';
 
 const MEMORY_ROOT = ['.playbook', 'memory'] as const;
 const EVENTS_DIR = [...MEMORY_ROOT, 'events'] as const;
@@ -294,6 +295,49 @@ type RepositoryEventInput = Omit<RepositoryEventBase, 'schemaVersion' | 'event_i
 
 const appendEvent = (repoRoot: string, event: RepositoryEventInput): RepositoryEvent => {
   const timestamp = ensureTimestamp(event.timestamp);
+  const eventsDir = path.join(repoRoot, ...EVENTS_DIR);
+  const duplicateCount = fs.existsSync(eventsDir)
+    ? fs.readdirSync(eventsDir).filter((entry) => entry.includes(`-${event.event_type}-`) && entry.endsWith('.json')).length
+    : 0;
+  const lowSignal = isLowSignalMemoryInput({
+    riskLevel: 'low',
+    outcomeStatus: event.event_type === 'execution_outcome' || event.event_type === 'command_quality' ? String((event as { success_status?: string }).success_status ?? 'success') : 'success',
+    signalCount: Object.keys((event.payload ?? {}) as Record<string, unknown>).length,
+    hasModules: false,
+    hasRuleIds: false
+  });
+  const decision = decideAdmission({
+    band: readCurrentMemoryPressureBand(repoRoot),
+    isCanonical: false,
+    isReviewCritical: event.event_type === 'improvement_signal' || event.event_type === 'improvement_candidate',
+    isHighSignal: event.event_type === 'execution_outcome' || event.event_type === 'improvement_signal',
+    isLowSignal: lowSignal,
+    duplicateCount,
+    admissionKey: toAdmissionKey({ channel: 'repository-event', kind: event.event_type, subject: event.subject, payload: event.payload })
+  });
+  if (decision.action === 'dedupe' || decision.action === 'skip') {
+    return {
+      ...event,
+      schemaVersion: REPOSITORY_EVENTS_SCHEMA_VERSION,
+      event_id: `${timestamp.replace(/[\-:.TZ]/g, '').slice(0, 14)}-${event.event_type}-admission-${decision.action}`,
+      timestamp
+    } as unknown as RepositoryEvent;
+  }
+  if (decision.action === 'rollup') {
+    writeAdmissionRollup({
+      repoRoot,
+      channel: 'repository-event',
+      rollupKey: decision.rollupKey,
+      occurredAt: timestamp,
+      sample: { event_type: event.event_type, subject: event.subject, payload: event.payload as Record<string, unknown> }
+    });
+    return {
+      ...event,
+      schemaVersion: REPOSITORY_EVENTS_SCHEMA_VERSION,
+      event_id: `${timestamp.replace(/[\-:.TZ]/g, '').slice(0, 14)}-${event.event_type}-admission-rollup`,
+      timestamp
+    } as unknown as RepositoryEvent;
+  }
   const { eventId, eventPath } = allocateEventPath(repoRoot, event.event_type, timestamp, event);
 
   const finalEvent = {

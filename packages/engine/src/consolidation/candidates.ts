@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import type { MemoryReplayCandidate, MemoryReplayResult } from '../schema/memoryReplay.js';
 import type { MemoryKnowledgeArtifact, MemoryKnowledgeEntry } from '../memory/knowledge.js';
 import { MEMORY_CANDIDATES_RELATIVE_PATH, REPLAY_CANDIDATES_RELATIVE_PATH } from '../replay/candidates.js';
+import { decideAdmission, readCurrentMemoryPressureBand, toAdmissionKey } from '../memory/admission.js';
 
 const MEMORY_INDEX_RELATIVE_PATH = '.playbook/memory/index.json' as const;
 export const CONSOLIDATION_CANDIDATES_RELATIVE_PATH = '.playbook/memory/consolidation-candidates.json' as const;
@@ -193,6 +194,19 @@ export const writeConsolidationCandidatesArtifact = (projectRoot: string, artifa
 
 export const consolidateReplayCandidates = (projectRoot: string): ConsolidationCandidatesArtifact => {
   const artifact = buildConsolidationCandidatesArtifact(projectRoot);
+  decideAdmission({
+    band: readCurrentMemoryPressureBand(projectRoot),
+    isCanonical: false,
+    isReviewCritical: true,
+    isHighSignal: true,
+    isLowSignal: false,
+    duplicateCount: 0,
+    admissionKey: toAdmissionKey({
+      channel: 'consolidation-candidates',
+      kind: artifact.kind,
+      payload: { replayCandidatesRead: artifact.summary.replayCandidatesRead, consolidatedCandidates: artifact.summary.consolidatedCandidates }
+    })
+  });
   writeConsolidationCandidatesArtifact(projectRoot, artifact);
   return artifact;
 };
