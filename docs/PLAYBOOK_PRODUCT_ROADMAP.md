@@ -65,6 +65,7 @@ Status: documented doctrine with future architecture expansion
 - Current doctrine alignment: evidence -> compaction -> promoted doctrine with deterministic contracts and provenance-linked promotion.
 - Canonical flow shape: Signal -> Compression -> Convergence -> Reuse.
 - Constraint: convergence is evidence of shared constraints and does not itself prove hidden coordination or causation.
+- Current implementation framing: convergence is implemented as doctrine + convergence artifact, surfaced as read-only review (`patterns convergence review`), and not yet integrated into promotion weighting policy.
 
 Rule: Stable input signals produce convergent abstractions across independent systems.
 Pattern: Signal -> Compression -> Convergence -> Reuse.

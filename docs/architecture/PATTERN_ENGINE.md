@@ -63,6 +63,8 @@ The multiplier can raise review priority, but it does not bypass promotion gates
 
 These are architecture targets, not claims of current automatic behavior.
 
+Current operator path note: doctrine -> convergence artifact -> patterns convergence review; explicit promotion remains a separate governed boundary.
+
 ## Engineering example: singleton docs / shared mutable resource / single-writer boundary
 
 Consider repository documentation where many tools can read, but only one governed command path writes canonical doctrine files.
