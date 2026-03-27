@@ -121,6 +121,22 @@ const ARCHITECTURE_DECISION_REQUIRED_SECTIONS = [
   'tradeoffs / failure modes',
   'review triggers'
 ] as const;
+const SUBAPP_TRUTH_PACK_BASE_PATHS = ['subapps', 'examples/subapps'] as const;
+const SUBAPP_TRUTH_PACK_REQUIRED_FILES = ['playbook/context.json', 'docs/architecture.md', 'docs/roadmap.md'] as const;
+const SUBAPP_TRUTH_PACK_OPTIONAL_JSON_FILES = ['playbook/app-integration.json'] as const;
+const SUBAPP_CONTEXT_REQUIRED_FIELDS = [
+  'repo_id',
+  'repo_name',
+  'mission',
+  'current_phase',
+  'current_focus',
+  'invariants',
+  'dependencies',
+  'integration_surfaces',
+  'next_milestones',
+  'open_questions',
+  'last_verified_timestamp'
+] as const;
 
 const PLANNING_ALLOWED_PATHS = new Set([
   'docs/PLAYBOOK_PRODUCT_ROADMAP.md',
@@ -183,6 +199,37 @@ const readTextIfExists = (repoRoot: string, relativePath: string): string | null
   }
 
   return fs.readFileSync(filePath, 'utf8');
+};
+
+const readJsonIfExists = (repoRoot: string, relativePath: string): unknown | null | undefined => {
+  const content = readTextIfExists(repoRoot, relativePath);
+  if (!content) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(content) as unknown;
+  } catch {
+    return undefined;
+  }
+};
+
+const listSubappTruthPackRoots = (repoRoot: string): string[] => {
+  const roots = new Set<string>();
+
+  for (const basePath of SUBAPP_TRUTH_PACK_BASE_PATHS) {
+    const absoluteBasePath = path.join(repoRoot, basePath);
+    if (!fs.existsSync(absoluteBasePath)) {
+      continue;
+    }
+
+    const entries = fs.readdirSync(absoluteBasePath, { withFileTypes: true }).filter((entry) => entry.isDirectory());
+    for (const entry of entries) {
+      roots.add(`${basePath}/${entry.name}`);
+    }
+  }
+
+  return [...roots].sort();
 };
 
 const listDocsTopLevelMarkdown = (repoRoot: string): string[] => {
@@ -413,6 +460,69 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
         message: `Story document is missing required sections: ${missingSections.join(', ')}.`,
         path: storyDoc
       });
+    }
+  }
+
+  const subappTruthPackRoots = listSubappTruthPackRoots(repoRoot);
+  for (const subappRoot of subappTruthPackRoots) {
+    for (const requiredRelativePath of SUBAPP_TRUTH_PACK_REQUIRED_FILES) {
+      const requiredPath = `${subappRoot}/${requiredRelativePath}`;
+      if (!fs.existsSync(path.join(repoRoot, requiredPath))) {
+        findings.push({
+          ruleId: 'docs.repo-truth-pack.required-file-missing',
+          level: 'error',
+          message: `Subapp truth pack is missing required file: ${requiredRelativePath}.`,
+          path: requiredPath,
+          suggestedDestination: 'docs/repo-truth-pack.md'
+        });
+      }
+    }
+
+    const adrDirectoryPath = `${subappRoot}/docs/adr`;
+    const adrAbsoluteDirectoryPath = path.join(repoRoot, adrDirectoryPath);
+    if (!fs.existsSync(adrAbsoluteDirectoryPath) || !fs.statSync(adrAbsoluteDirectoryPath).isDirectory()) {
+      findings.push({
+        ruleId: 'docs.repo-truth-pack.required-file-missing',
+        level: 'error',
+        message: 'Subapp truth pack is missing required directory: docs/adr/.',
+        path: adrDirectoryPath,
+        suggestedDestination: 'docs/repo-truth-pack.md'
+      });
+    }
+
+    const contextPath = `${subappRoot}/playbook/context.json`;
+    const parsedContext = readJsonIfExists(repoRoot, contextPath);
+    if (parsedContext === undefined) {
+      findings.push({
+        ruleId: 'docs.repo-truth-pack.context-invalid-json',
+        level: 'error',
+        message: 'Subapp truth pack context must be valid JSON.',
+        path: contextPath
+      });
+    } else if (parsedContext && typeof parsedContext === 'object' && !Array.isArray(parsedContext)) {
+      const contextRecord = parsedContext as Record<string, unknown>;
+      const missingFields = SUBAPP_CONTEXT_REQUIRED_FIELDS.filter((field) => !(field in contextRecord));
+      if (missingFields.length > 0) {
+        findings.push({
+          ruleId: 'docs.repo-truth-pack.context-missing-fields',
+          level: 'error',
+          message: `Subapp truth pack context is missing required fields: ${missingFields.join(', ')}.`,
+          path: contextPath
+        });
+      }
+    }
+
+    for (const optionalJsonRelativePath of SUBAPP_TRUTH_PACK_OPTIONAL_JSON_FILES) {
+      const optionalJsonPath = `${subappRoot}/${optionalJsonRelativePath}`;
+      const parsedJson = readJsonIfExists(repoRoot, optionalJsonPath);
+      if (parsedJson === undefined) {
+        findings.push({
+          ruleId: 'docs.repo-truth-pack.optional-json-invalid',
+          level: 'error',
+          message: `Subapp truth pack optional artifact must be valid JSON when present: ${optionalJsonRelativePath}.`,
+          path: optionalJsonPath
+        });
+      }
     }
   }
 
@@ -779,7 +889,7 @@ export const runDocsAudit = (repoRoot: string): DocsAuditResult => {
     summary: {
       errors,
       warnings,
-      checksRun: 15
+      checksRun: 16
     },
     findings
   };

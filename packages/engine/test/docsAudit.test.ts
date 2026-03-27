@@ -72,6 +72,106 @@ afterEach(() => {
 });
 
 describe('docs audit', () => {
+  it('passes when a subapp repo truth pack includes the required files and context fields', () => {
+    const root = createRepo();
+    write(
+      root,
+      'subapps/proving-ground-app/playbook/context.json',
+      JSON.stringify(
+        {
+          repo_id: 'proving-ground-app',
+          repo_name: 'Proving Ground App',
+          mission: 'Validate lightweight repository truth pack contracts.',
+          current_phase: 'validation',
+          current_focus: 'Document and enforce truth pack structure.',
+          invariants: ['Truth pack is committed and human-readable.'],
+          dependencies: ['@fawxzzy/playbook'],
+          integration_surfaces: ['webhook:playbook-ingest'],
+          next_milestones: ['Integrate truth-pack ingestion adapter.'],
+          open_questions: ['Should cadence include weekly touchpoints?'],
+          last_verified_timestamp: '2026-03-27T00:00:00Z'
+        },
+        null,
+        2
+      )
+    );
+    write(root, 'subapps/proving-ground-app/docs/architecture.md', '# Architecture');
+    write(root, 'subapps/proving-ground-app/docs/roadmap.md', '# Roadmap');
+    write(root, 'subapps/proving-ground-app/docs/adr/README.md', '# ADR');
+    write(
+      root,
+      'subapps/proving-ground-app/playbook/app-integration.json',
+      JSON.stringify({ integration_id: 'playbook-proving-ground', status: 'integrated' }, null, 2)
+    );
+
+    const result = runDocsAudit(root);
+    expect(result.findings.find((finding) => finding.ruleId.startsWith('docs.repo-truth-pack.'))).toBeUndefined();
+  });
+
+  it('fails when a subapp repo truth pack context is missing required fields', () => {
+    const root = createRepo();
+    write(
+      root,
+      'subapps/proving-ground-app/playbook/context.json',
+      JSON.stringify(
+        {
+          repo_id: 'proving-ground-app',
+          repo_name: 'Proving Ground App',
+          mission: 'Validate lightweight repository truth pack contracts.'
+        },
+        null,
+        2
+      )
+    );
+    write(root, 'subapps/proving-ground-app/docs/architecture.md', '# Architecture');
+    write(root, 'subapps/proving-ground-app/docs/roadmap.md', '# Roadmap');
+    write(root, 'subapps/proving-ground-app/docs/adr/README.md', '# ADR');
+
+    const result = runDocsAudit(root);
+    expect(
+      result.findings.find(
+        (finding) => finding.ruleId === 'docs.repo-truth-pack.context-missing-fields' && finding.path === 'subapps/proving-ground-app/playbook/context.json'
+      )
+    ).toBeDefined();
+  });
+
+  it('fails when a subapp repo truth pack is missing required files', () => {
+    const root = createRepo();
+    write(
+      root,
+      'subapps/proving-ground-app/playbook/context.json',
+      JSON.stringify(
+        {
+          repo_id: 'proving-ground-app',
+          repo_name: 'Proving Ground App',
+          mission: 'Validate lightweight repository truth pack contracts.',
+          current_phase: 'validation',
+          current_focus: 'Document and enforce truth pack structure.',
+          invariants: ['Truth pack is committed and human-readable.'],
+          dependencies: ['@fawxzzy/playbook'],
+          integration_surfaces: ['webhook:playbook-ingest'],
+          next_milestones: ['Integrate truth-pack ingestion adapter.'],
+          open_questions: ['Should cadence include weekly touchpoints?'],
+          last_verified_timestamp: '2026-03-27T00:00:00Z'
+        },
+        null,
+        2
+      )
+    );
+
+    const result = runDocsAudit(root);
+    expect(
+      result.findings.find(
+        (finding) => finding.ruleId === 'docs.repo-truth-pack.required-file-missing' && finding.path === 'subapps/proving-ground-app/docs/architecture.md'
+      )
+    ).toBeDefined();
+    expect(
+      result.findings.find(
+        (finding) => finding.ruleId === 'docs.repo-truth-pack.required-file-missing' && finding.path === 'subapps/proving-ground-app/docs/adr'
+      )
+    ).toBeDefined();
+  });
+
   it('accepts generalized archive naming and archive README', () => {
     const root = createRepo();
     write(root, 'docs/archive/PLAYBOOK_IMPROVEMENTS_2026.md', '# archived');

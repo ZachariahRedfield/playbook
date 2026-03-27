@@ -1,0 +1,27 @@
+{
+  "repo_id": "proving-ground-app",
+  "repo_name": "Proving Ground App",
+  "mission": "Provide a low-risk proving ground for validating Playbook repository intelligence integrations.",
+  "current_phase": "validation",
+  "current_focus": "Stabilize the subapp repo truth pack and ingestion contracts.",
+  "invariants": [
+    "Repo truth is committed in-repo and never chat-only.",
+    "Truth pack intentionally avoids duplicating generated .playbook runtime artifacts."
+  ],
+  "dependencies": [
+    "@fawxzzy/playbook",
+    "playbook observer local API"
+  ],
+  "integration_surfaces": [
+    "playbook/context.json ingest",
+    "playbook/app-integration.json capability handshake"
+  ],
+  "next_milestones": [
+    "Ship initial truth-pack ingestion adapter.",
+    "Add CI gate to enforce context freshness on phase transitions."
+  ],
+  "open_questions": [
+    "Should phase transitions require explicit ADR links in context.json?"
+  ],
+  "last_verified_timestamp": "2026-03-27T00:00:00Z"
+}

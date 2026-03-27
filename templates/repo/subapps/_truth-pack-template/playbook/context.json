@@ -1,0 +1,23 @@
+{
+  "repo_id": "<subapp-repo-id>",
+  "repo_name": "<Subapp Name>",
+  "mission": "<one sentence mission>",
+  "current_phase": "<idea|design|build|validation|launch|maintenance>",
+  "current_focus": "<what the team is currently doing>",
+  "invariants": [
+    "<stable truths that should not regress>"
+  ],
+  "dependencies": [
+    "<internal or external dependency identifiers>"
+  ],
+  "integration_surfaces": [
+    "<api, events, queues, webhooks, files, etc.>"
+  ],
+  "next_milestones": [
+    "<next milestone with expected outcome>"
+  ],
+  "open_questions": [
+    "<important unresolved question>"
+  ],
+  "last_verified_timestamp": "<ISO-8601 timestamp>"
+}

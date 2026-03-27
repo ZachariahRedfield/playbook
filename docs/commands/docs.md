@@ -21,6 +21,7 @@ pnpm playbook docs consolidate-plan --json
 5. Front-door canonical-ladder drift checks (`ai-context -> ai-contract -> context -> index/query/explain/ask --repo-context -> verify -> plan -> apply -> verify`) with `analyze` treated as compatibility/lightweight.
 6. Repo-scoped roadmap/story contract checks when a repository opts into `docs/ROADMAP.md`, including required roadmap sections, required `docs/stories/`, and required story headings.
 7. Archive and compatibility-stub hygiene (general archive naming conventions, intentional redirect stubs, and cleanup-candidate reporting for ad hoc trackers).
+8. Subapp repo truth-pack contract checks for `subapps/*` and `examples/subapps/*` (required files/directories, required `playbook/context.json` fields, and optional integration JSON validity when present).
 
 ## CI behavior
 

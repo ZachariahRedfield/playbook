@@ -1,0 +1,9 @@
+{
+  "integration_id": "<playbook-integration-id>",
+  "status": "integrated",
+  "surfaces": [
+    "<surface id>"
+  ],
+  "owner": "<team or contact>",
+  "last_checked": "<ISO-8601 timestamp>"
+}

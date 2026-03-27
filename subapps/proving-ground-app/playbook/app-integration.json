@@ -1,0 +1,9 @@
+{
+  "integration_id": "playbook-proving-ground-app",
+  "status": "integrated",
+  "surfaces": [
+    "repo-truth-pack-ingest-v1"
+  ],
+  "owner": "playbook-platform",
+  "last_checked": "2026-03-27T00:00:00Z"
+}
