@@ -39,6 +39,7 @@
       "test-autofix",
       "remediation-status",
       "rendezvous",
+      "interop",
       "verify",
       "plan",
       "orchestrate",

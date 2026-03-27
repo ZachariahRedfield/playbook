@@ -365,6 +365,46 @@
         "path": "packages/contracts/src/test-autofix-remediation-history.schema.json"
       },
       {
+        "id": "remediation-interop-capability-registration",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-capability-registration.schema.json"
+      },
+      {
+        "id": "remediation-interop-action-request",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-action-request.schema.json"
+      },
+      {
+        "id": "remediation-interop-action-status",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-action-status.schema.json"
+      },
+      {
+        "id": "remediation-interop-execution-receipt",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-execution-receipt.schema.json"
+      },
+      {
+        "id": "remediation-interop-heartbeat",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-heartbeat.schema.json"
+      },
+      {
+        "id": "remediation-interop-blocked-reason",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-blocked-reason.schema.json"
+      },
+      {
+        "id": "remediation-interop-retry-reconcile-state",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-retry-reconcile-state.schema.json"
+      },
+      {
+        "id": "remediation-interop-store",
+        "version": "1.0",
+        "path": "packages/contracts/src/remediation-interop-store.schema.json"
+      },
+      {
         "id": "version-policy",
         "version": "1.0",
         "path": "packages/contracts/src/version-policy.schema.json"
