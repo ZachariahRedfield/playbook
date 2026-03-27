@@ -194,19 +194,26 @@ runs:
         )
         echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
         if [[ "$eligible" == "true" ]]; then
-          echo "Release governance present or repo eligible; CI will materialize .playbook/release-plan.json."
+          echo "Release governance present or repo eligible; CI will generate .playbook/release-plan.json at runtime via release sync --check."
         else
           echo "Release governance not present and repo not eligible; skipping release-plan materialization."
         fi
 
-    - name: Materialize canonical release plan artifact
+    - name: Guard release drift before verify
       if: inputs.execution-path == 'ci' && steps.release-governance.outputs.eligible == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         mkdir -p .playbook
-        echo "+ node packages/cli/dist/main.js release plan --json --out .playbook/release-plan.json"
-        node packages/cli/dist/main.js release plan --json --out .playbook/release-plan.json
+        echo "+ node packages/cli/dist/main.js release sync --check --json --out .playbook/release-plan.json"
+        set +e
+        node packages/cli/dist/main.js release sync --check --json --out .playbook/release-plan.json
+        release_sync_exit_code=${PIPESTATUS[0]}
+        set -e
+        if [[ "$release_sync_exit_code" -ne 0 ]]; then
+          echo "Release drift detected before verify. Run 'pnpm playbook release sync' locally and commit the resulting version/changelog updates."
+          exit "$release_sync_exit_code"
+        fi
 
     - name: Run preflight verify for release governance
       if: inputs.execution-path == 'ci' && steps.release-governance.outputs.eligible == 'true'

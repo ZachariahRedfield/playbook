@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDoctrineCandidatesArtifact,
   buildPatternReviewQueue,
+  PATTERN_CONVERGENCE_RELATIVE_PATH,
   queryPatternReviewQueue,
   queryPromotedPatterns,
   promotePatternCandidate,
@@ -28,6 +29,8 @@ describe('pattern promotion queue', () => {
     const queue = buildPatternReviewQueue(artifact, '2026-01-01T00:00:00.000Z');
     expect(queue.candidates).toHaveLength(1);
     expect(queue.candidates[0]).toMatchObject({ id: 'candidate-module_test_absence', sourcePatternId: 'MODULE_TEST_ABSENCE' });
+    expect(queue.candidates[0]?.convergencePrioritySuggestion.proposalOnly).toBe(true);
+    expect(queue.candidates[0]?.convergencePrioritySuggestion.suggestedPriority).toBeDefined();
   });
 
   it('promotes approved candidates and removes them from queue', () => {
@@ -59,6 +62,19 @@ describe('pattern promotion queue', () => {
             governance_score: 0.9,
             attractor_score: 0.7,
             explanation: 'Attractor score ranks representational persistence and utility. It does not claim ontology or truth.'
+          },
+          convergencePrioritySuggestion: {
+            proposalOnly: true,
+            suggestedPriority: 'medium',
+            weightedScore: 0.804,
+            weightingFactors: {
+              basePromotionScore: 0.83,
+              convergenceConfidence: 0.7,
+              convergenceMemberCount: 2,
+              clusterMatch: true
+            },
+            rationale: 'Proposal-only weighting signal.',
+            matchedClusterId: 'cluster:module-test-review'
           },
           stage: 'review' as const
         }
@@ -106,6 +122,19 @@ describe('pattern promotion queue', () => {
             attractor_score: 0.86,
             explanation: 'Strong signal.'
           },
+          convergencePrioritySuggestion: {
+            proposalOnly: true,
+            suggestedPriority: 'high',
+            weightedScore: 0.88,
+            weightingFactors: {
+              basePromotionScore: 0.86,
+              convergenceConfidence: 0.95,
+              convergenceMemberCount: 3,
+              clusterMatch: true
+            },
+            rationale: 'Proposal-only weighting signal.',
+            matchedClusterId: 'cluster:strong-pattern'
+          },
           stage: 'review' as const
         },
         {
@@ -131,6 +160,19 @@ describe('pattern promotion queue', () => {
             attractor_score: 0.8,
             explanation: 'Not strong enough.'
           },
+          convergencePrioritySuggestion: {
+            proposalOnly: true,
+            suggestedPriority: 'low',
+            weightedScore: 0.58,
+            weightingFactors: {
+              basePromotionScore: 0.62,
+              convergenceConfidence: 0.4,
+              convergenceMemberCount: 1,
+              clusterMatch: false
+            },
+            rationale: 'Proposal-only weighting signal.',
+            matchedClusterId: null
+          },
           stage: 'review' as const
         }
       ]
@@ -150,6 +192,50 @@ describe('pattern promotion queue', () => {
         outcome_confidence: 0.9
       },
       reviewState: 'review_required'
+    });
+  });
+
+  it('reads convergence clusters and emits additive proposal-only priority suggestions', () => {
+    const repo = createRepo('playbook-pattern-convergence-weighting');
+    const convergencePath = path.join(repo, PATTERN_CONVERGENCE_RELATIVE_PATH);
+    fs.mkdirSync(path.dirname(convergencePath), { recursive: true });
+    fs.writeFileSync(
+      convergencePath,
+      JSON.stringify(
+        {
+          schemaVersion: '1.0',
+          kind: 'pattern-convergence',
+          generatedAt: '2026-01-01T00:00:00.000Z',
+          proposalOnly: true,
+          sourceArtifacts: ['.playbook/pattern-candidates.json'],
+          clusters: [
+            {
+              clusterId: 'cluster:module-test-governance',
+              intent: 'testing-governance',
+              constraint_class: 'mutation-boundary',
+              resolution_strategy: 'review-gated-promotion',
+              members: [{ source: 'candidate', id: 'candidate-one', title: 'module test governance', intent: 'testing-governance', constraint_class: 'mutation-boundary', resolution_strategy: 'review-gated-promotion' }],
+              shared_abstraction: 'shared',
+              convergence_confidence: 0.9,
+              recommended_higher_order_pattern: 'recommendation'
+            }
+          ]
+        },
+        null,
+        2
+      )
+    );
+
+    const artifact: PatternCompactionArtifact = {
+      schemaVersion: '1.0',
+      command: 'pattern-compaction',
+      patterns: [{ id: 'MODULE_TEST_GOVERNANCE', bucket: 'testing', occurrences: 3, examples: ['module test governance'] }]
+    };
+
+    const queue = buildPatternReviewQueue(artifact, '2026-01-01T00:00:00.000Z', { repoRoot: repo });
+    expect(queue.candidates[0]?.convergencePrioritySuggestion).toMatchObject({
+      proposalOnly: true,
+      matchedClusterId: 'cluster:module-test-governance'
     });
   });
 });

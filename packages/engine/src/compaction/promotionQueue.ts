@@ -3,6 +3,22 @@ import path from 'node:path';
 import type { PatternCompactionArtifact } from './compactPatterns.js';
 import { scorePatternCandidate } from './scorePatternCandidate.js';
 import type { AttractorScoreBreakdown } from './scorePatternCandidate.js';
+import type { PatternConvergenceArtifact, PatternConvergenceCluster } from '../learning/patternConvergence.js';
+import { PATTERN_CONVERGENCE_RELATIVE_PATH } from '../learning/patternConvergence.js';
+
+export type ConvergencePrioritySuggestion = {
+  proposalOnly: true;
+  suggestedPriority: 'low' | 'medium' | 'high';
+  weightedScore: number;
+  weightingFactors: {
+    basePromotionScore: number;
+    convergenceConfidence: number;
+    convergenceMemberCount: number;
+    clusterMatch: boolean;
+  };
+  rationale: string;
+  matchedClusterId: string | null;
+};
 
 type CandidatePattern = {
   id: string;
@@ -19,6 +35,7 @@ type CandidatePattern = {
   falsePositiveRisk: number;
   promotionScore: number;
   attractorScoreBreakdown: AttractorScoreBreakdown;
+  convergencePrioritySuggestion: ConvergencePrioritySuggestion;
   stage: 'candidate' | 'review';
 };
 
@@ -110,6 +127,12 @@ const readJsonIfExists = <T>(filePath: string): T | null => {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 };
 
+const readConvergenceArtifactIfPresent = (repoRoot?: string): PatternConvergenceArtifact | null => {
+  if (!repoRoot) return null;
+  const artifactPath = path.join(repoRoot, PATTERN_CONVERGENCE_RELATIVE_PATH);
+  return readJsonIfExists<PatternConvergenceArtifact>(artifactPath);
+};
+
 const toCanonicalPatternName = (id: string): string => id.replace(/_/g, ' ').toLowerCase();
 
 const buildWhyItExists = (patternId: string, recurrenceCount: number): string =>
@@ -118,7 +141,45 @@ const buildWhyItExists = (patternId: string, recurrenceCount: number): string =>
 const buildReusableMeaning = (patternId: string): string =>
   `Reusable engineering meaning: ${patternId} captures a recurring remediation and governance signal that can guide future deterministic analysis.`;
 
-export const buildPatternReviewQueue = (patternsArtifact: PatternCompactionArtifact, generatedAt?: string): PatternReviewQueueArtifact => {
+const findBestConvergenceCluster = (patternId: string, clusters: PatternConvergenceCluster[]): PatternConvergenceCluster | null => {
+  const normalizedId = patternId.toLowerCase();
+  return clusters.find((cluster) => {
+    const clusterText = `${cluster.clusterId} ${cluster.intent} ${cluster.constraint_class} ${cluster.resolution_strategy}`.toLowerCase();
+    return normalizedId.split('_').some((token) => token.length > 2 && clusterText.includes(token));
+  }) ?? null;
+};
+
+const buildConvergencePrioritySuggestion = (patternId: string, promotionScore: number, clusters: PatternConvergenceCluster[]): ConvergencePrioritySuggestion => {
+  const matchedCluster = findBestConvergenceCluster(patternId, clusters);
+  const convergenceConfidence = matchedCluster?.convergence_confidence ?? 0;
+  const convergenceMemberCount = matchedCluster?.members.length ?? 0;
+  const weightedScore = Number((promotionScore * 0.8 + convergenceConfidence * 0.2).toFixed(4));
+  const suggestedPriority = weightedScore >= 0.8 ? 'high' : weightedScore >= 0.65 ? 'medium' : 'low';
+
+  return {
+    proposalOnly: true,
+    suggestedPriority,
+    weightedScore,
+    weightingFactors: {
+      basePromotionScore: Number(promotionScore.toFixed(4)),
+      convergenceConfidence: Number(convergenceConfidence.toFixed(4)),
+      convergenceMemberCount,
+      clusterMatch: Boolean(matchedCluster)
+    },
+    rationale: matchedCluster
+      ? `Proposal-only weighting: convergence cluster ${matchedCluster.clusterId} contributes advisory priority signal without changing promotion confidence or lifecycle state.`
+      : 'Proposal-only weighting: no convergence cluster match found; base promotion score remains the primary advisory input.',
+    matchedClusterId: matchedCluster?.clusterId ?? null
+  };
+};
+
+export const buildPatternReviewQueue = (
+  patternsArtifact: PatternCompactionArtifact,
+  generatedAt?: string,
+  options?: { repoRoot?: string }
+): PatternReviewQueueArtifact => {
+  const convergenceArtifact = readConvergenceArtifactIfPresent(options?.repoRoot);
+  const convergenceClusters = convergenceArtifact?.clusters ?? [];
   const candidates = patternsArtifact.patterns
     .map((pattern): CandidatePattern | null => {
       const score = scorePatternCandidate(pattern);
@@ -141,6 +202,7 @@ export const buildPatternReviewQueue = (patternsArtifact: PatternCompactionArtif
         falsePositiveRisk: Number(score.falsePositiveRisk.toFixed(4)),
         promotionScore: Number(score.promotionScore.toFixed(4)),
         attractorScoreBreakdown: score.attractorScoreBreakdown,
+        convergencePrioritySuggestion: buildConvergencePrioritySuggestion(pattern.id, score.promotionScore, convergenceClusters),
         stage: 'review'
       };
     })

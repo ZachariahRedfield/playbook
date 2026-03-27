@@ -24,12 +24,28 @@
 ```bash
 pnpm playbook release plan --json --out .playbook/release-plan.json
 pnpm playbook release plan --base origin/main --json --out .playbook/release-plan.json
+pnpm playbook release sync --check --json --out .playbook/release-plan.json
+pnpm playbook release sync --json --out .playbook/release-plan.json
 pnpm playbook apply --from-plan .playbook/release-plan.json
 ```
+
+## `release sync`
+
+`pnpm playbook release sync` is the deterministic release-sync guard. It always computes a fresh release plan, checks drift between expected version/changelog updates and current repo state, and then:
+
+- `--check`: proposal-only guard mode; exits non-zero with actionable tasks when drift exists.
+- default mode: applies the reviewed `.playbook/release-plan.json` through `playbook apply --from-plan`, then re-checks for drift.
+
+This enforces the rule **Compute → Apply → Verify** and prevents recurring CI failures caused by committed code changes without mirrored release updates.
+
+Idempotency guarantee: release version computation is anchored to the selected `baseRef` package versions (base snapshot), not the current working version after local bumps. Re-running `release sync` against the same `baseRef` yields the same next-version targets instead of incrementing repeatedly.
+Generated-artifact mode: `.playbook/release-plan.json` may be absent in source control and is regenerated at runtime; enforcement checks durable version/changelog outputs rather than plan-file parity.
+Idempotent managed changelog behavior: once a release entry is already at the top of the managed block, repeated `release sync --check` runs keep the block byte-stable and do not prepend duplicate entries.
 
 ## Apply compatibility
 
 - `.playbook/release-plan.json` is now a reviewed mutation artifact that crosses the write boundary only through `pnpm playbook apply --from-plan .playbook/release-plan.json`.
+- `.playbook/release-plan.json` is generated runtime evidence; do not treat it as a committed contract artifact in the repository.
 - `release plan` stays proposal/review oriented; it does **not** mutate package versions or changelog content directly.
 - No `release apply` subcommand exists, and none should be introduced as a second mutation executor.
 - Lockstep version groups are compiled into coordinated package tasks, and `apply --task` fails closed if a reviewed selection splits a lockstep group.
@@ -40,7 +56,7 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 - Installable workspace packages carry the release-governed version line.
 - The private monorepo root `package.json` version is not the operator-facing release line.
 - Rule: Version decisions must be artifact-backed, not inferred late during packaging.
-- Rule: Version governance should be auto-materialized as an artifact, not inferred late by humans.
+- Rule: Version governance should be auto-materialized as runtime evidence, not inferred late by humans.
 - Rule: Reviewed release artifacts may prepare bounded mutations, but `apply` remains the only mutation boundary.
 - Pattern: Plan everywhere, apply only through reviewed boundaries.
 - Pattern: Detect -> plan -> apply -> verify is the safe release-governance loop.
@@ -63,10 +79,10 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 pnpm playbook verify --json
 ```
 
-In normal Playbook CI, the reusable action now materializes `.playbook/release-plan.json`, runs `pnpm playbook verify --phase preflight --json --out .playbook/verify-preflight.json`, and fails before `pnpm test` when release/version governance is already canonically blocked. Aligned branches then continue into tests and the later full `pnpm playbook verify --json --out .playbook/verify.json` merge gate. CI still renders one compact Playbook CI Summary from canonical artifacts, appends that operator brief once to the GitHub step summary, and uploads the canonical plan plus rendered summary artifacts unchanged. Normal PR CI stays plan-only: it does not auto-mutate versions.
+In normal Playbook CI, the reusable action runs `pnpm playbook release sync --check --json --out .playbook/release-plan.json` as a fail-fast drift guard (generating the plan artifact at runtime), then runs `pnpm playbook verify --phase preflight --json --out .playbook/verify-preflight.json`. If drift exists, CI fails before tests with an actionable release-sync message. Aligned branches then continue into tests and the later full `pnpm playbook verify --json --out .playbook/verify.json` merge gate. CI still renders one compact Playbook CI Summary from canonical artifacts, appends that operator brief once to the GitHub step summary, and uploads generated artifacts unchanged. Normal PR CI stays plan-only: it does not auto-mutate versions.
 
 - Rule: Diff-based release governance should fail before expensive test execution when canonical preflight evidence is already sufficient.
-- Pattern: Release plan -> preflight verify -> tests -> full verify.
+- Pattern: Release sync --check -> preflight verify -> tests -> full verify.
 - Failure Mode: Late release-governance failures waste CI time and make correct policy failures look like random downstream breakage.
 
 ## Trusted/manual release prep

@@ -119,9 +119,21 @@ The GitHub Actions workflow `.github/workflows/release-prep.yml` is the only aut
 Rule: Installable workflow policy is incomplete until the trusted/manual mutation path is installable too.
 Pattern: Seed policy, seed reviewed executor, keep normal CI plan-only.
 Failure Mode: Shipping only the policy file makes release governance look portable while leaving the actual release path repo-specific.
-Rule: Release-plan artifacts are only valid when mirrored by committed package-version and changelog updates in the same branch state.
-Pattern: release plan -> mirror versions/changelog -> verify.
-Failure Mode: Keeping `.playbook/release-plan.json` while dropping mirrored package/changelog state leaves preflight verify blocked.
+Rule: Release-plan output is generated runtime evidence; commit version/changelog results, not `.playbook/release-plan.json`.
+Pattern: compute release plan -> mirror versions/changelog -> verify.
+Failure Mode: Treating generated release-plan output as committed source of truth introduces drift between local and CI computation contexts.
+Rule: Always run `pnpm playbook release sync` before push on release-governed branches so plan artifacts and repo state cannot drift.
+Pattern: Compute -> Apply -> Verify (never Compute -> Verify).
+Failure Mode: Generating release plans without applying them causes deterministic CI failures and repeated developer friction.
+Rule: Release version must be derived from baseRef, not accumulated from prior local bumps.
+Pattern: Compute from base -> apply once -> stable thereafter.
+Failure Mode: Iterative release sync runs compound version increments and create infinite drift against CI.
+Rule: Generated artifacts must not be enforced as committed repo state.
+Pattern: Compute -> validate -> discard (not compute -> commit -> compare).
+Failure Mode: Enforcing generated artifacts as committed state causes perpetual drift and CI instability.
+Rule: Managed release artifacts must remain idempotent after first successful apply.
+Pattern: Apply once, verify many times.
+Failure Mode: Duplicate managed changelog prepends create permanent false drift.
 
 ## Smoke testing
 

@@ -123,7 +123,7 @@ export const compactPatterns = (repoRoot: string, verifyReport: VerifyReport): P
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
 
-  const reviewQueue = buildPatternReviewQueue(artifact);
+  const reviewQueue = buildPatternReviewQueue(artifact, undefined, { repoRoot });
   writePatternReviewQueue(repoRoot, reviewQueue);
   writeDoctrineCandidatesArtifact(repoRoot, buildDoctrineCandidatesArtifact(reviewQueue));
 

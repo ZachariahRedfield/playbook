@@ -7,7 +7,6 @@ coverage
 .playbook/*
 !.playbook/
 !.playbook/pr-metadata.json
-!.playbook/release-plan.json
 !.playbook/demo-artifacts/
 !.playbook/demo-artifacts/*.json
 packages/engine/.playbook/
