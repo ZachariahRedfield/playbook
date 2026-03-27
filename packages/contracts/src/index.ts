@@ -19,6 +19,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   transferPlans: 'packages/contracts/src/transfer-plans.schema.json',
   transferReadiness: 'packages/contracts/src/transfer-readiness.schema.json',
   patternTransferPackage: 'packages/contracts/src/pattern-transfer-package.schema.json',
+  patternConvergence: 'packages/contracts/src/pattern-convergence.schema.json',
   cycleState: 'packages/contracts/src/cycle-state.schema.json',
   cycleHistory: 'packages/contracts/src/cycle-history.schema.json',
   memoryIndex: 'packages/contracts/src/memory-index.schema.json',

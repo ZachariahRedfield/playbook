@@ -696,6 +696,14 @@ export {
   PATTERN_PROPOSALS_RELATIVE_PATH
 } from './learning/patternProposalBridge.js';
 export type { PatternProposal, PatternProposalArtifact, PatternProposalPromotionResult, PatternProposalEvidence } from './learning/patternProposalBridge.js';
+
+export {
+  buildPatternConvergenceArtifact,
+  writePatternConvergenceArtifact,
+  readPatternConvergenceArtifact,
+  PATTERN_CONVERGENCE_RELATIVE_PATH
+} from './learning/patternConvergence.js';
+export type { PatternConvergenceMember, PatternConvergenceCluster, PatternConvergenceArtifact } from './learning/patternConvergence.js';
 export { GLOBAL_PATTERNS_RELATIVE_PATH, readCanonicalPatternsArtifact, materializeStoryFromSource, materializePatternFromCandidate, transitionPatternLifecycle } from './promotion.js';
 export { exportPatternTransferPackage, importPatternTransferPackage, PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR } from './patternTransfer.js';
 export type { PromotionSourceRef, StoryRecordWithProvenance, StoryPromotionProvenance as PromotionStoryProvenance, PromotedPatternRecord, CanonicalPatternsArtifact, PreparedPromotion } from './promotion.js';
