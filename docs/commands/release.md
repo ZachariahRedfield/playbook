@@ -37,6 +37,8 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 
 ## Governance notes
 
+- Installable workspace packages carry the release-governed version line.
+- The private monorepo root `package.json` version is not the operator-facing release line.
 - Rule: Version decisions must be artifact-backed, not inferred late during packaging.
 - Rule: Version governance should be auto-materialized as an artifact, not inferred late by humans.
 - Rule: Reviewed release artifacts may prepare bounded mutations, but `apply` remains the only mutation boundary.
