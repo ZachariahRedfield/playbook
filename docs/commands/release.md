@@ -43,6 +43,7 @@ Idempotency guarantee: release version computation is anchored to the selected `
 ## Apply compatibility
 
 - `.playbook/release-plan.json` is now a reviewed mutation artifact that crosses the write boundary only through `pnpm playbook apply --from-plan .playbook/release-plan.json`.
+- `.playbook/release-plan.json` is generated runtime evidence; do not treat it as a committed contract artifact in the repository.
 - `release plan` stays proposal/review oriented; it does **not** mutate package versions or changelog content directly.
 - No `release apply` subcommand exists, and none should be introduced as a second mutation executor.
 - Lockstep version groups are compiled into coordinated package tasks, and `apply --task` fails closed if a reviewed selection splits a lockstep group.
@@ -53,7 +54,7 @@ Idempotency guarantee: release version computation is anchored to the selected `
 - Installable workspace packages carry the release-governed version line.
 - The private monorepo root `package.json` version is not the operator-facing release line.
 - Rule: Version decisions must be artifact-backed, not inferred late during packaging.
-- Rule: Version governance should be auto-materialized as an artifact, not inferred late by humans.
+- Rule: Version governance should be auto-materialized as runtime evidence, not inferred late by humans.
 - Rule: Reviewed release artifacts may prepare bounded mutations, but `apply` remains the only mutation boundary.
 - Pattern: Plan everywhere, apply only through reviewed boundaries.
 - Pattern: Detect -> plan -> apply -> verify is the safe release-governance loop.

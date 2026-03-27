@@ -603,18 +603,6 @@ const hasManagedChangelogUpdate = (repoRoot: string, baseSha: string): boolean =
   }
 };
 
-const readReleasePlanArtifact = (repoRoot: string): ReleasePlan | null => {
-  const absolutePath = path.join(repoRoot, RELEASE_PLAN_PATH);
-  if (!fs.existsSync(absolutePath)) {
-    return null;
-  }
-  try {
-    return readJson<ReleasePlan>(absolutePath);
-  } catch {
-    return null;
-  }
-};
-
 const extractManagedChangelogBlock = (content: string): string | null => {
   const startIndex = content.indexOf(CHANGELOG_START_MARKER);
   const endIndex = startIndex >= 0 ? content.indexOf(CHANGELOG_END_MARKER, startIndex + CHANGELOG_START_MARKER.length) : -1;
@@ -685,14 +673,6 @@ export const detectReleasePlanDrift = (repoRoot: string, plan: ReleasePlan): Rel
   }
 
   return drifts;
-};
-
-const readReleasePlanArtifactDrift = (repoRoot: string): ReleasePlanDrift[] => {
-  const releasePlan = readReleasePlanArtifact(repoRoot);
-  if (!releasePlan) {
-    return [];
-  }
-  return detectReleasePlanDrift(repoRoot, releasePlan);
 };
 
 export const verifyReleaseGovernance = (repoRoot: string, options: { baseRef: string; baseSha: string }): ReleaseGovernanceFailure[] => {
@@ -800,16 +780,6 @@ export const verifyReleaseGovernance = (repoRoot: string, options: { baseRef: st
     }
   }
 
-  const releasePlanDrift = readReleasePlanArtifactDrift(repoRoot);
-  if (releasePlanDrift.length > 0) {
-    failures.push({
-      id: 'release.plan.notApplied',
-      message: 'Release plan exists but expected version/changelog updates are not fully applied in the current repo state.',
-      evidence: `release_plan=${RELEASE_PLAN_PATH}; drift_count=${releasePlanDrift.length}; files=${uniqueSorted(releasePlanDrift.map((entry) => entry.file)).join(',')}`,
-      fix: 'Run `pnpm playbook release sync` (or `pnpm playbook release sync --check`) to reconcile release-plan drift before verify.'
-    });
-  }
-
   return failures;
 };
 
@@ -820,7 +790,6 @@ export const assessReleaseSync = (repoRoot: string, options: { baseRef?: string;
   const hasGovernanceDrift = governanceFailures.some((failure) => (
     failure.id === 'release.requiredVersionBump.missing'
     || failure.id === 'release.contractExpansion.releasePlan.required'
-    || failure.id === 'release.plan.notApplied'
     || failure.id === 'release.versionGroup.inconsistent'
   ));
 

@@ -95,54 +95,6 @@ describe('verifyReleaseGovernance', () => {
     ]);
   });
 
-  it('classifies unapplied committed release plan artifacts explicitly', () => {
-    const { repoRoot, baseSha } = createRepo();
-    writeJson(path.join(repoRoot, '.playbook', 'release-plan.json'), {
-      schemaVersion: '1.0',
-      kind: 'playbook-release-plan',
-      generatedAt: '2026-03-27T00:00:00.000Z',
-      policy: { path: '.playbook/version-policy.json', breakingChangeMarkers: [BREAKING_CHANGE_MARKER], versionGroups: [] },
-      diff: { baseRef: 'HEAD~0', baseSha, headSha: baseSha, changedFiles: [] },
-      summary: { recommendedBump: 'patch', reasons: ['shipped internal code changed'] },
-      packages: [],
-      versionGroups: [],
-      tasks: [
-        {
-          id: 'release-package-alpha',
-          ruleId: 'release.package-json.version',
-          file: 'packages/alpha/package.json',
-          action: 'Update @scope/alpha package.json to 1.2.4',
-          autoFix: true,
-          task_kind: 'release-package-version',
-          provenance: { next_version: '1.2.4' }
-        },
-        {
-          id: 'release-changelog',
-          ruleId: 'docs-consolidation.managed-write',
-          file: 'docs/CHANGELOG.md',
-          action: 'Update managed changelog block for release 1.2.4',
-          autoFix: true,
-          task_kind: 'docs-managed-write',
-          write: {
-            operation: 'replace-managed-block',
-            blockId: 'changelog-release-notes',
-            startMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->',
-            endMarker: '<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->',
-            content: `<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_START -->
-## 1.2.4 - 2026-03-27
-- Recommended bump: patch
-<!-- PLAYBOOK:CHANGELOG_RELEASE_NOTES_END -->`
-          },
-          provenance: {}
-        }
-      ]
-    });
-    run(repoRoot, 'add', '.playbook/release-plan.json');
-
-    const failures = verifyReleaseGovernance(repoRoot, { baseRef: 'HEAD~0', baseSha });
-    expect(failures.map((failure) => failure.id)).toContain('release.plan.notApplied');
-  });
-
   it('keeps release sync idempotent by deriving next version from baseRef version', () => {
     const { repoRoot, baseSha } = createRepo();
     const featurePath = path.join(repoRoot, 'packages', 'alpha', 'src', 'feature.ts');
