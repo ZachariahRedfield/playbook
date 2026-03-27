@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/pattern-convergence.schema.json",
+  "title": "Pattern Convergence Artifact",
+  "description": "Read-only proposal-only artifact that clusters independently-derived patterns by shared intent, constraint class, and resolution strategy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "proposalOnly",
+    "sourceArtifacts",
+    "clusters"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "const": "pattern-convergence"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "proposalOnly": {
+      "type": "boolean",
+      "const": true
+    },
+    "sourceArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          ".playbook/pattern-candidates.json",
+          ".playbook/patterns-promoted.json"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "clusters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/convergenceCluster"
+      }
+    }
+  },
+  "$defs": {
+    "convergenceMember": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "id",
+        "title",
+        "intent",
+        "constraint_class",
+        "resolution_strategy"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "candidate",
+            "promoted"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "intent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constraint_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolution_strategy": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "convergenceCluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clusterId",
+        "intent",
+        "constraint_class",
+        "resolution_strategy",
+        "members",
+        "shared_abstraction",
+        "convergence_confidence",
+        "recommended_higher_order_pattern"
+      ],
+      "properties": {
+        "clusterId": {
+          "type": "string",
+          "pattern": "^cluster:[a-z0-9-]+$"
+        },
+        "intent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constraint_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolution_strategy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/convergenceMember"
+          },
+          "minItems": 1
+        },
+        "shared_abstraction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "convergence_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recommended_higher_order_pattern": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
