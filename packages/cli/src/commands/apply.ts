@@ -903,17 +903,22 @@ const runPolicyApplyFlow = (cwd: string, options: ApplyOptions): number => {
 
 
 const shouldRunReleaseSyncBoundary = (cwd: string): boolean => {
-  const playbookDir = path.resolve(cwd, '.playbook');
-  const versionPolicyPath = path.resolve(playbookDir, 'version-policy.json');
+  const versionPolicyPath = path.resolve(cwd, '.playbook', 'version-policy.json');
   if (fs.existsSync(versionPolicyPath)) {
     return true;
   }
 
-  if (fs.existsSync(playbookDir)) {
-    return false;
+  const packageJsonPath = path.resolve(cwd, 'package.json');
+  if (!fs.existsSync(packageJsonPath)) {
+    return true;
   }
 
-  return true;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as { name?: unknown };
+    return parsed.name === 'playbook-monorepo';
+  } catch {
+    return false;
+  }
 };
 
 const applyReleaseSyncCommitBoundary = (cwd: string): void => {
