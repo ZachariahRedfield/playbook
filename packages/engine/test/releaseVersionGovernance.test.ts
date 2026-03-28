@@ -128,9 +128,10 @@ describe('verifyReleaseGovernance', () => {
     expect(afterApply.drift).toEqual([]);
     expect(afterApply.actionableTasks).toEqual([]);
 
-    const changelogTaskAfterApply = afterApply.plan.tasks.find((task) => task.task_kind === 'docs-managed-write');
-    const updatedManagedBlock = changelogTaskAfterApply?.write?.content ?? '';
-    expect((updatedManagedBlock.match(/## 1\.2\.4 - 2026-03-27/g) ?? []).length).toBe(1);
+    const changelogPath = path.join(repoRoot, 'docs', 'CHANGELOG.md');
+    const committedChangelog = fs.readFileSync(changelogPath, 'utf8');
+    const releaseHeaderMatches = committedChangelog.match(/## 1\.2\.4 - 2026-03-27/g) ?? [];
+    expect(releaseHeaderMatches.length).toBe(1);
   });
 
   it('passes generated-artifact mode when release-plan file is absent and durable outputs are aligned', () => {
