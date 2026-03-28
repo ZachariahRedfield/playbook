@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   fitnessIntegrationContract,
@@ -7,6 +8,9 @@ import {
   getFitnessReceiptTypeForAction,
   isFitnessActionName
 } from '../src/integrations/fitnessContract.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('fitness integration contract mirror', () => {
   it('preserves bounded action names and receipt mappings exactly', () => {
@@ -100,10 +104,7 @@ describe('fitness integration contract mirror', () => {
   });
 
   it('matches the drift-check truth pack for action/receipt/routing constraints', () => {
-    const truthPackPath = path.resolve(
-      process.cwd(),
-      'packages/engine/test/__fixtures__/fitness/actions-and-receipts.json'
-    );
+    const truthPackPath = path.join(__dirname, '__fixtures__', 'fitness', 'actions-and-receipts.json');
     const truthPack = JSON.parse(fs.readFileSync(truthPackPath, 'utf8')) as {
       governance: { loop: string; seam: string; bypassAllowed: boolean };
       actions: Array<{
