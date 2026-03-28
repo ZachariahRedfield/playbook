@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+set -eu
+
+echo "[pre-push] Running deterministic release sync..."
+pnpm playbook release sync --json --out .playbook/release-plan.json >/dev/null
+
+# Stage only release-governed outputs touched by release sync.
+git add package.json packages/*/package.json docs/CHANGELOG.md CHANGELOG.md 2>/dev/null || true
+
+if git diff --cached --quiet -- package.json packages/*/package.json docs/CHANGELOG.md CHANGELOG.md; then
+  echo "[pre-push] Release sync is already aligned (no version/changelog updates)."
+  exit 0
+fi
+
+echo "[pre-push] Committing release sync updates (version/changelog drift fix)."
+git commit -m "chore(release): apply release sync before push" --no-verify

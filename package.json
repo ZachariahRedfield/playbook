@@ -41,7 +41,8 @@
     "validate:docs-governance": "pnpm docs:check",
     "pack:cli-wrapper": "pnpm -C packages/cli-wrapper pack --out ../../dist/release/playbook-cli-%v.tgz",
     "pack:release:fallback": "node scripts/pack-release-fallback-asset.mjs",
-    "release:fallback:proof": "node scripts/release-fallback-proof.mjs"
+    "release:fallback:proof": "node scripts/release-fallback-proof.mjs",
+    "hooks:install": "git config core.hooksPath .husky"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
