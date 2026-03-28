@@ -123,14 +123,17 @@ Local pre-commit enforcement now runs `pnpm playbook release sync` before commit
 Behavior:
 
 - Runs deterministic release sync (`pnpm playbook release sync --json --out .playbook/release-plan.json`).
-- Stages release-sync updates into the in-flight commit (`git add .`) before commit finalization.
+- Stages release-sync updates into the in-flight commit (`git add -A`) before commit finalization.
+- Refreshes the Git index (`git update-index --again`) so the commit snapshot includes the post-sync mutation set.
 - Re-runs `pnpm playbook release sync --check` and blocks the commit on any residual drift.
 - Skips work when there are no staged changes, avoiding empty-commit loops.
 
 Rule: Release governance must be applied before CI, not discovered by CI.
 Rule: Release governance must fail locally before CI, not after commit.
 Pattern: Shift release sync from CI detection -> local pre-commit enforcement.
+Pattern: Mutate -> stage -> refresh index -> commit.
 Failure Mode: Relying on CI to detect release drift creates infinite failure loops and slows iteration.
+Failure Mode: Without index refresh, Git can commit stale snapshots after hook-time mutations.
 
 Rule: Installable workflow policy is incomplete until the trusted/manual mutation path is installable too.
 Pattern: Seed policy, seed reviewed executor, keep normal CI plan-only.

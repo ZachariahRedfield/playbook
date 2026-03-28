@@ -13,7 +13,11 @@ fi
 echo "🔄 Running Playbook release sync before commit..."
 pnpm playbook release sync --json --out .playbook/release-plan.json >/dev/null
 
-git add .
+# Stage all changes from release sync.
+git add -A
+
+# Refresh index so commit snapshot includes post-sync mutations.
+git update-index --again
 
 if ! pnpm playbook release sync --check --json --out .playbook/release-plan.json >/dev/null; then
   echo "❌ Release sync is still not clean. Blocking commit."
