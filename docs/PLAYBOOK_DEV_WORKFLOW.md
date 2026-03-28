@@ -116,18 +116,20 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 
 The GitHub Actions workflow `.github/workflows/release-prep.yml` is the only automation that should commit the resulting reviewed package-version, linked-workspace-dependency, and managed changelog updates into the single release-prep PR branch. Normal PR CI remains detect/plan/report only and must never auto-apply release mutations.
 
-## Release Sync Automation
+## Release Sync Enforcement
 
-Local pre-push enforcement now runs `pnpm playbook release sync` before every push through `.husky/pre-push`.
+Local pre-push enforcement now runs `pnpm playbook release sync` before every push through `.husky/pre-push` and fails closed if release drift remains after auto-commit + re-check.
 
 Behavior:
 
 - Runs deterministic release sync (`pnpm playbook release sync --json --out .playbook/release-plan.json`).
 - Stages only governed release surfaces (`package.json`, `packages/*/package.json`, `docs/CHANGELOG.md`, `CHANGELOG.md`).
-- Creates an automatic commit only when release sync produced version/changelog updates.
-- Exits cleanly with a no-op message when release surfaces are already aligned.
+- Creates an automatic commit when release sync produced changes.
+- Re-runs `pnpm playbook release sync --check` after commit and blocks push on any residual drift.
+- Blocks push when git working tree remains dirty after the re-check.
 
 Rule: Release governance must be applied before CI, not discovered by CI.
+Rule: Release governance must fail locally before CI, not after push.
 Pattern: Shift release sync from CI detection -> local pre-push enforcement.
 Failure Mode: Relying on CI to detect release drift creates infinite failure loops and slows iteration.
 

@@ -1,16 +1,30 @@
-#!/usr/bin/env sh
+#!/bin/sh
 set -eu
 
-echo "[pre-push] Running deterministic release sync..."
-pnpm playbook release sync --json --out .playbook/release-plan.json >/dev/null
-
-# Stage only release-governed outputs touched by release sync.
-git add package.json packages/*/package.json docs/CHANGELOG.md CHANGELOG.md 2>/dev/null || true
-
-if git diff --cached --quiet -- package.json packages/*/package.json docs/CHANGELOG.md CHANGELOG.md; then
-  echo "[pre-push] Release sync is already aligned (no version/changelog updates)."
-  exit 0
+if [ -f "$(dirname "$0")/_/husky.sh" ]; then
+  . "$(dirname "$0")/_/husky.sh"
 fi
 
-echo "[pre-push] Committing release sync updates (version/changelog drift fix)."
-git commit -m "chore(release): apply release sync before push" --no-verify
+echo "🔄 Running Playbook release sync..."
+pnpm playbook release sync --json --out .playbook/release-plan.json >/dev/null
+
+# Stage release sync results for commit.
+git add .
+
+if ! git diff --cached --quiet; then
+  echo "📦 Committing release sync changes..."
+  git commit -m "chore: sync release plan" --no-verify
+fi
+
+echo "🔍 Verifying release sync clean state..."
+if ! pnpm playbook release sync --check --json --out .playbook/release-plan.json >/dev/null; then
+  echo "❌ Release sync still not clean. Blocking push."
+  exit 1
+fi
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "❌ Working tree is still dirty after release sync. Blocking push."
+  exit 1
+fi
+
+echo "✅ Release state clean. Proceeding with push."
