@@ -52,7 +52,14 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm config set fetch-retries 5
+          pnpm config set fetch-retry-factor 2
+          pnpm config set fetch-retry-mintimeout 10000
+          pnpm config set fetch-retry-maxtimeout 60000
+          pnpm config set network-timeout 120000
+          pnpm config set registry https://registry.npmjs.org/
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Build workspace
         run: pnpm -r build

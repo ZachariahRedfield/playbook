@@ -191,6 +191,18 @@ Rule: Release sync must be applied before pushing when drift exists.
 Pattern: Local pre-push enforcement prevents CI release drift failures.
 Failure Mode: Relying on CI-only detection causes repeated failed pipelines and wasted cycles.
 
+## CI Install Stability
+
+Rule: CI dependency installs must tolerate transient registry/network failures.
+Rule: Infra-layer failures must be isolated from product-layer signals.
+Rule: Composite actions own reusable command sequences; workflows own execution policy.
+Pattern: Retry-hardened install + cache fallback.
+Pattern: Harden CI install so registry instability does not surface as product failure.
+Pattern: Put timeout-minutes, retries, and broader orchestration at workflow/job scope, not inside composite action manifests.
+Failure Mode: Treating network timeouts as code failures leads to false debugging cycles.
+Failure Mode: Misclassifying infra failures as contract drift wastes cycles and drives incorrect fixes.
+Failure Mode: Mixing workflow-only keys into composite-action steps causes parse-time CI failure before any real diagnostics run.
+
 ## Smoke testing
 
 Run the repository smoke test:
