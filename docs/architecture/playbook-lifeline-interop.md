@@ -1,21 +1,35 @@
-# Playbook ↔ Lifeline interop (remediation-first v1)
+# Playbook ↔ Lifeline interop (remediation-first with bounded Fitness seam)
 
-This document defines the deterministic interop seam for bounded remediation work.
+This document defines the deterministic interop seam for bounded remediation work, with one implemented external canonical-contract pilot.
 
 ## Scope (v1)
 
-Only remediation-loop actions are in scope:
+Historically, this runtime was remediation-only. That remains true as baseline doctrine.
 
-- `test-triage`
-- `test-fix-plan`
-- `apply-result`
-- `test-autofix`
-- `remediation-status`
+Current bounded scope:
+
+- remediation-loop actions:
+  - `test-triage`
+  - `test-fix-plan`
+  - `apply-result`
+  - `test-autofix`
+  - `remediation-status`
+- Fitness mirrored canonical actions (first external canonical-contract consumer pilot):
+  - `adjust_upcoming_workout_load`
+  - `schedule_recovery_block`
+  - `revise_weekly_goal_plan`
+
+Guardrails that still apply:
+
+- all requests require explicit request/receipt/rendezvous boundaries
+- no general autonomous execution expansion
 
 ## Canonical pause/resume manifest
 
 `.playbook/rendezvous-manifest.json` remains the source of truth for pause/resume/readiness.
-Playbook emits bounded Lifeline requests **only** when rendezvous evaluation is `releaseReady: true`.
+Playbook emits bounded Lifeline requests when rendezvous evaluation is `releaseReady: true`.
+
+For the plan-derived Fitness pilot path, emission is also allowed from explicit approved plan state using the same bounded request/receipt runtime seam.
 
 ## Interop contract shapes
 
@@ -36,19 +50,31 @@ Rule:
 
 External app contracts are consumed, not semantically redesigned.
 
+Rule:
+
+External canonical contracts may widen bounded execution only through existing request/receipt/rendezvous seams.
+
 Pattern:
 
 Source contract -> validated mirror -> adapter.
+
+Pattern:
+
+approved state -> bounded request -> receipt -> updated truth.
 
 Failure mode:
 
 Local reinterpretation drifts action/receipt/routing semantics away from the source contract.
 
+Failure mode:
+
+Runtime capabilities evolve faster than architecture docs, creating hidden scope drift and operator confusion.
+
 ## Deterministic runtime loop
 
 Pattern:
 
-`plan -> bounded request -> execution -> receipt -> updated truth`
+`approved plan or release-ready rendezvous -> bounded request -> execution -> receipt -> updated truth`
 
 Rule:
 
@@ -82,5 +108,6 @@ Mock runtime command family:
 
 - `pnpm playbook interop register --capability lifeline-remediation-v1 --action test-autofix --json`
 - `pnpm playbook interop emit --capability lifeline-remediation-v1 --action test-autofix --json`
+- `pnpm playbook interop emit-fitness-plan --capability lifeline-remediation-v1 --action schedule_recovery_block --approved-plan --json`
 - `pnpm playbook interop run-mock --json`
 - `pnpm playbook interop reconcile --json`

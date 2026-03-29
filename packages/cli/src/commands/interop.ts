@@ -74,6 +74,7 @@ const engine = engineRuntime as unknown as {
   writeInteropRuntime: (cwd: string, artifact: any) => string;
   registerInteropCapability: (runtime: any, capability: any) => any;
   emitBoundedInteropActionRequest: (input: any) => { runtime: any; request: any };
+  emitPlanDerivedFitnessRequest: (input: any) => { runtime: any; request: any };
   runLifelineMockRuntimeOnce: (runtime: any, runtimeId: string) => any;
   reconcileInteropRuntime: (runtime: any) => any;
   materializeFitnessContractArtifact: (options: { repoRoot: string }) => Promise<any>;
@@ -88,6 +89,35 @@ const readRendezvous = (cwd: string): { manifest: RendezvousManifest; evaluation
     ? engine.readArtifactJson<{ evaluation: RendezvousManifestEvaluation }>(statusPath).evaluation
     : { state: 'complete', releaseReady: true, blockers: [], missingArtifactIds: [], conflictingArtifactIds: [], stale: false } as RendezvousManifestEvaluation;
   return { manifest, evaluation: status };
+};
+
+const readPlanDerivedReadiness = (cwd: string, approvedPlan: boolean): {
+  source: 'rendezvous' | 'approved-plan';
+  manifest?: RendezvousManifest;
+  evaluation?: RendezvousManifestEvaluation;
+  plan?: { command: string };
+  approved?: boolean;
+  remediation_id?: string;
+  required_artifact_ids?: string[];
+} => {
+  const manifestPath = path.resolve(cwd, '.playbook/rendezvous-manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    const { manifest, evaluation } = readRendezvous(cwd);
+    return { source: 'rendezvous', manifest, evaluation };
+  }
+
+  const planPath = path.resolve(cwd, '.playbook/plan.json');
+  if (!fs.existsSync(planPath)) {
+    throw new Error('Cannot emit plan-derived Fitness request: missing .playbook/rendezvous-manifest.json or .playbook/plan.json.');
+  }
+  const plan = engine.readArtifactJson<{ command?: string }>(planPath);
+  return {
+    source: 'approved-plan',
+    plan: { command: String(plan.command ?? '') },
+    approved: approvedPlan,
+    remediation_id: `plan-${path.basename(cwd)}-fitness`,
+    required_artifact_ids: ['plan']
+  };
 };
 
 const toFitnessContractInspectPayload = async (cwd: string): Promise<FitnessContractInspectPayload> => {
@@ -115,12 +145,13 @@ const toFitnessContractInspectPayload = async (cwd: string): Promise<FitnessCont
 export const runInterop = async (cwd: string, commandArgs: string[], options: InteropOptions): Promise<number> => {
   if (options.help) {
     printCommandHelp({
-      usage: 'playbook interop <register|emit|run-mock|reconcile|capabilities|requests|receipts|health|fitness-contract> [--json]',
+      usage: 'playbook interop <register|emit|emit-fitness-plan|run-mock|reconcile|capabilities|requests|receipts|health|fitness-contract> [--json]',
       description: 'Inspect and operate remediation-first Playbook↔Lifeline interop runtime artifacts.',
       options: [
         '--capability <id>   capability id for register/emit',
         '--action <kind>     remediation action kind',
         '--action-input-json <json>  bounded action input payload (Fitness contract-shaped)',
+        '--approved-plan     require explicit approval when deriving from .playbook/plan.json',
         '--runtime <id>      runtime id (default lifeline-mock-runtime)',
         '--json              emit machine-readable output',
         '--help              show help'
@@ -191,6 +222,42 @@ export const runInterop = async (cwd: string, commandArgs: string[], options: In
         bounded_action_input: boundedActionInput,
         capability_id: capability
       });
+      runtime = emitted.runtime;
+      engine.writeInteropRuntime(cwd, runtime);
+    } else if (sub === 'emit-fitness-plan') {
+      const capability = valueFor('--capability') ?? 'lifeline-remediation-v1';
+      const action = (valueFor('--action') ?? 'adjust_upcoming_workout_load') as RemediationInteropActionKind;
+      if (!actionKinds.includes(action)) throw new Error(`Unsupported --action ${action}`);
+      const boundedActionInput = actionInputJson
+        ? JSON.parse(actionInputJson) as Record<string, unknown>
+        : defaultBoundedActionInputByAction[action as keyof typeof defaultBoundedActionInputByAction];
+      const approvedPlan = commandArgs.includes('--approved-plan');
+      const readiness = readPlanDerivedReadiness(cwd, approvedPlan);
+      const emitted = readiness.source === 'rendezvous'
+        ? engine.emitPlanDerivedFitnessRequest({
+          runtime,
+          readiness: {
+            source: 'rendezvous',
+            manifest: readiness.manifest!,
+            evaluation: readiness.evaluation!
+          },
+          action_kind: action,
+          bounded_action_input: boundedActionInput,
+          capability_id: capability
+        })
+        : engine.emitPlanDerivedFitnessRequest({
+          runtime,
+          readiness: {
+            source: 'approved-plan',
+            plan: readiness.plan!,
+            approved: Boolean(readiness.approved),
+            remediation_id: readiness.remediation_id!,
+            required_artifact_ids: readiness.required_artifact_ids!
+          },
+          action_kind: action,
+          bounded_action_input: boundedActionInput,
+          capability_id: capability
+        });
       runtime = emitted.runtime;
       engine.writeInteropRuntime(cwd, runtime);
     } else if (sub === 'run-mock') {

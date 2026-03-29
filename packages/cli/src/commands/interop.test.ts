@@ -122,6 +122,46 @@ describe('runInterop', () => {
     expect(exitCode).toBe(ExitCode.Failure);
   });
 
+  it('emits Fitness request from rendezvous/plan-derived command path and preserves canonical routing/receipt metadata', async () => {
+    const repo = createRepo();
+    writeArtifact(repo, '.playbook/rendezvous-manifest.json', {
+      remediationId: 'remediation-interop-fit-1',
+      requiredArtifactIds: ['fitness-contract']
+    });
+    writeArtifact(repo, '.playbook/rendezvous-status.json', {
+      evaluation: { state: 'complete', releaseReady: true, blockers: [], missingArtifactIds: [], conflictingArtifactIds: [], stale: false }
+    });
+
+    expect(await runInterop(repo, ['register', '--capability', 'lifeline-remediation-v1', '--action', 'schedule_recovery_block'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runInterop(repo, ['emit-fitness-plan', '--capability', 'lifeline-remediation-v1', '--action', 'schedule_recovery_block'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+
+    const runtime = JSON.parse(fs.readFileSync(path.join(repo, '.playbook/lifeline-interop-runtime.json'), 'utf8')) as {
+      requests: Array<{ action_kind: string; receipt_type: string; routing: { channel: string; target: string; priority: string; maxDeliveryLatencySeconds: number } }>;
+    };
+    expect(runtime.requests[0]).toMatchObject({
+      action_kind: 'schedule_recovery_block',
+      receipt_type: 'recovery_guardrail_applied',
+      routing: {
+        channel: 'fitness.actions',
+        target: 'recovery',
+        priority: 'high',
+        maxDeliveryLatencySeconds: 300
+      }
+    });
+  });
+
+  it('blocks plan-derived Fitness request emission when plan state is not explicitly approved', async () => {
+    const repo = createRepo();
+    writeArtifact(repo, '.playbook/plan.json', { command: 'plan', tasks: [] });
+    expect(await runInterop(repo, ['register', '--capability', 'lifeline-remediation-v1', '--action', 'schedule_recovery_block'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+
+    const blockedExit = await runInterop(repo, ['emit-fitness-plan', '--capability', 'lifeline-remediation-v1', '--action', 'schedule_recovery_block'], { format: 'json', quiet: false });
+    expect(blockedExit).toBe(ExitCode.Failure);
+
+    const allowedExit = await runInterop(repo, ['emit-fitness-plan', '--capability', 'lifeline-remediation-v1', '--action', 'schedule_recovery_block', '--approved-plan'], { format: 'json', quiet: false });
+    expect(allowedExit).toBe(ExitCode.Success);
+  });
+
   it('exposes consumed fitness contract inspect surface with deterministic summary and artifact', async () => {
     const repo = createRepo();
     writeArtifact(repo, 'playbook.fitness.config.json', {

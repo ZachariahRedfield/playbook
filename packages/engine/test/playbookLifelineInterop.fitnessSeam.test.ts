@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createEmptyInteropRuntime,
   emitBoundedInteropActionRequest,
+  emitPlanDerivedFitnessRequest,
   reconcileInteropRuntime,
   registerInteropCapability,
   runLifelineMockRuntimeOnce
@@ -187,5 +188,98 @@ describe('playbook lifeline interop fitness seam', () => {
     expect(request.routing).toEqual(action.routing);
     expect(action.constraints).toEqual(['same_week_only', 'max_duration_days_14']);
     expect((request.routing as Record<string, unknown>).constraints).toBeUndefined();
+  });
+
+  it('emits a Fitness request from release-ready rendezvous via plan-derived helper', () => {
+    const action_kind = 'adjust_upcoming_workout_load' as const;
+    const action = getFitnessActionContract(action_kind);
+    const runtime = registerInteropCapability(createEmptyInteropRuntime(), {
+      capability_id: 'lifeline-fitness-v1',
+      action_kind,
+      receipt_type: getFitnessReceiptTypeForAction(action_kind),
+      routing: action.routing,
+      version: '1.0.0',
+      runtime_id: 'lifeline-mock-runtime',
+      idempotency_key_prefix: `lifeline:${action_kind}`
+    });
+
+    const emitted = emitPlanDerivedFitnessRequest({
+      runtime,
+      readiness: {
+        source: 'rendezvous',
+        manifest: { remediationId: 'remediation-fit-004', requiredArtifactIds: ['fitness-contract'] },
+        evaluation: { state: 'complete', releaseReady: true, blockers: [], missingArtifactIds: [], conflictingArtifactIds: [], stale: false }
+      },
+      action_kind,
+      capability_id: 'lifeline-fitness-v1',
+      bounded_action_input: {
+        athlete_id: 'athlete-001',
+        week_id: 'week-2026-W13',
+        workout_id: 'workout-001',
+        load_adjustment_percent: -10,
+        duration_days: 3,
+        reason_code: 'fatigue_spike'
+      }
+    });
+
+    expect(emitted.request.action_kind).toBe('adjust_upcoming_workout_load');
+    expect(emitted.request.receipt_type).toBe('schedule_adjustment_applied');
+    expect(emitted.request.routing).toEqual(action.routing);
+  });
+
+  it('emits a Fitness request from explicit approved plan state and blocks non-approved plan state', () => {
+    const action_kind = 'schedule_recovery_block' as const;
+    const action = getFitnessActionContract(action_kind);
+    const runtime = registerInteropCapability(createEmptyInteropRuntime(), {
+      capability_id: 'lifeline-fitness-v1',
+      action_kind,
+      receipt_type: getFitnessReceiptTypeForAction(action_kind),
+      routing: action.routing,
+      version: '1.0.0',
+      runtime_id: 'lifeline-mock-runtime',
+      idempotency_key_prefix: `lifeline:${action_kind}`
+    });
+
+    expect(() => emitPlanDerivedFitnessRequest({
+      runtime,
+      readiness: {
+        source: 'approved-plan',
+        plan: { command: 'plan' },
+        approved: false,
+        remediation_id: 'plan-remediation-1',
+        required_artifact_ids: ['apply-result']
+      },
+      action_kind,
+      capability_id: 'lifeline-fitness-v1',
+      bounded_action_input: {
+        athlete_id: 'athlete-001',
+        week_id: 'week-2026-W13',
+        start_date: '2026-03-30',
+        duration_days: 3,
+        recovery_mode: 'rest'
+      }
+    })).toThrow(/approved plan state is required/);
+
+    const emitted = emitPlanDerivedFitnessRequest({
+      runtime,
+      readiness: {
+        source: 'approved-plan',
+        plan: { command: 'plan' },
+        approved: true,
+        remediation_id: 'plan-remediation-2',
+        required_artifact_ids: ['apply-result']
+      },
+      action_kind,
+      capability_id: 'lifeline-fitness-v1',
+      bounded_action_input: {
+        athlete_id: 'athlete-001',
+        week_id: 'week-2026-W13',
+        start_date: '2026-03-30',
+        duration_days: 3,
+        recovery_mode: 'rest'
+      }
+    });
+    expect(emitted.request.action_kind).toBe('schedule_recovery_block');
+    expect(emitted.request.receipt_type).toBe('recovery_guardrail_applied');
   });
 });

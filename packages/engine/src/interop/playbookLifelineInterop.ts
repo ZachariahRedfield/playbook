@@ -177,6 +177,72 @@ export const emitBoundedInteropActionRequest = (input: {
   };
 };
 
+type PlanDerivedInteropReadiness =
+  | {
+    source: 'rendezvous';
+    manifest: RendezvousManifest;
+    evaluation: RendezvousManifestEvaluation;
+    manifest_path?: string;
+  }
+  | {
+    source: 'approved-plan';
+    plan: { command: string };
+    approved: boolean;
+    remediation_id: string;
+    required_artifact_ids: RendezvousManifest['requiredArtifactIds'];
+    manifest_path?: string;
+  };
+
+export const emitPlanDerivedFitnessRequest = (input: {
+  runtime: PlaybookLifelineInteropRuntimeArtifact;
+  readiness: PlanDerivedInteropReadiness;
+  action_kind: RemediationInteropActionKind;
+  bounded_action_input?: Record<string, unknown>;
+  capability_id: string;
+  max_attempts?: number;
+}): { runtime: PlaybookLifelineInteropRuntimeArtifact; request: InteropActionRequest } => {
+  if (input.readiness.source === 'rendezvous') {
+    return emitBoundedInteropActionRequest({
+      runtime: input.runtime,
+      manifest: input.readiness.manifest,
+      evaluation: input.readiness.evaluation,
+      action_kind: input.action_kind,
+      bounded_action_input: input.bounded_action_input,
+      capability_id: input.capability_id,
+      manifest_path: input.readiness.manifest_path,
+      max_attempts: input.max_attempts
+    });
+  }
+
+  if (input.readiness.plan.command !== 'plan') {
+    throw new Error('Cannot emit plan-derived Fitness request: provided plan artifact is invalid (expected command=plan).');
+  }
+  if (!input.readiness.approved) {
+    throw new Error('Cannot emit plan-derived Fitness request: approved plan state is required.');
+  }
+
+  return emitBoundedInteropActionRequest({
+    runtime: input.runtime,
+    manifest: {
+      remediationId: input.readiness.remediation_id,
+      requiredArtifactIds: input.readiness.required_artifact_ids
+    } as RendezvousManifest,
+    evaluation: {
+      state: 'complete',
+      releaseReady: true,
+      blockers: [],
+      missingArtifactIds: [],
+      conflictingArtifactIds: [],
+      stale: false
+    },
+    action_kind: input.action_kind,
+    bounded_action_input: input.bounded_action_input,
+    capability_id: input.capability_id,
+    manifest_path: input.readiness.manifest_path ?? '.playbook/plan.json',
+    max_attempts: input.max_attempts
+  });
+};
+
 export const runLifelineMockRuntimeOnce = (runtime: PlaybookLifelineInteropRuntimeArtifact, runtimeId: string): PlaybookLifelineInteropRuntimeArtifact => {
   const next = { ...runtime, requests: [...runtime.requests], statuses: [...runtime.statuses], receipts: [...runtime.receipts] };
   const pending = next.requests.find((entry) => entry.request_state === 'pending' || entry.request_state === 'running');

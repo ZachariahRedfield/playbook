@@ -848,6 +848,7 @@ export {
   writeInteropRuntime,
   registerInteropCapability,
   emitBoundedInteropActionRequest,
+  emitPlanDerivedFitnessRequest,
   runLifelineMockRuntimeOnce,
   reconcileInteropRuntime,
   loadManifestHashFromDisk
