@@ -30,6 +30,27 @@ const sha256File = (filePath: string): string => createHash('sha256').update(fs.
 
 const sortById = <T extends { request_id: string }>(entries: T[]): T[] => [...entries].sort((a, b) => a.request_id.localeCompare(b.request_id));
 
+const assertFitnessSeamContract = (input: {
+  action_kind: RemediationInteropActionKind;
+  receipt_type: string;
+  routing: { channel: string; target: string; priority: string; maxDeliveryLatencySeconds: number };
+  context: string;
+}): void => {
+  const actionContract = getFitnessActionContract(input.action_kind);
+  const expectedReceiptType = getFitnessReceiptTypeForAction(input.action_kind);
+  if (input.receipt_type !== expectedReceiptType) {
+    throw new Error(`${input.context}: receipt_type mismatch for ${input.action_kind}. expected=${expectedReceiptType} actual=${input.receipt_type}.`);
+  }
+  if (
+    input.routing.channel !== actionContract.routing.channel ||
+    input.routing.target !== actionContract.routing.target ||
+    input.routing.priority !== actionContract.routing.priority ||
+    input.routing.maxDeliveryLatencySeconds !== actionContract.routing.maxDeliveryLatencySeconds
+  ) {
+    throw new Error(`${input.context}: routing mismatch for ${input.action_kind}.`);
+  }
+};
+
 export const createEmptyInteropRuntime = (): PlaybookLifelineInteropRuntimeArtifact => ({
   schemaVersion: PLAYBOOK_LIFELINE_INTEROP_SCHEMA_VERSION,
   kind: PLAYBOOK_LIFELINE_INTEROP_ARTIFACT_KIND,
@@ -77,21 +98,12 @@ export const registerInteropCapability = (
   if (!isFitnessActionName(capability.action_kind)) {
     throw new Error(`Cannot register interop capability: action_kind ${capability.action_kind} is not a supported Fitness contract action.`);
   }
-  const actionContract = getFitnessActionContract(capability.action_kind);
-  const receiptType = getFitnessReceiptTypeForAction(capability.action_kind);
-  if (capability.receipt_type !== receiptType) {
-    throw new Error(
-      `Cannot register interop capability: receipt_type mismatch for ${capability.action_kind}. expected=${receiptType} actual=${capability.receipt_type}.`
-    );
-  }
-  if (
-    capability.routing.channel !== actionContract.routing.channel ||
-    capability.routing.target !== actionContract.routing.target ||
-    capability.routing.priority !== actionContract.routing.priority ||
-    capability.routing.maxDeliveryLatencySeconds !== actionContract.routing.maxDeliveryLatencySeconds
-  ) {
-    throw new Error(`Cannot register interop capability: routing mismatch for ${capability.action_kind}.`);
-  }
+  assertFitnessSeamContract({
+    action_kind: capability.action_kind,
+    receipt_type: capability.receipt_type,
+    routing: capability.routing,
+    context: 'Cannot register interop capability'
+  });
   const registered: InteropCapabilityRegistration = { ...capability, registered_at: capability.registered_at ?? nowIso() };
   const filtered = runtime.capabilities.filter((entry) => entry.capability_id !== registered.capability_id);
   return { ...runtime, capabilities: [...filtered, registered] };
@@ -118,6 +130,12 @@ export const emitBoundedInteropActionRequest = (input: {
   if (!capability) {
     throw new Error(`Cannot emit interop request: capability ${input.capability_id} is not registered for ${input.action_kind}.`);
   }
+  assertFitnessSeamContract({
+    action_kind: capability.action_kind,
+    receipt_type: capability.receipt_type,
+    routing: capability.routing,
+    context: 'Cannot emit interop request'
+  });
 
   const manifestPath = input.manifest_path ?? '.playbook/rendezvous-manifest.json';
   const manifestHash = createHash('sha256').update(deterministicStringify(input.manifest)).digest('hex');
@@ -181,6 +199,13 @@ export const runLifelineMockRuntimeOnce = (runtime: PlaybookLifelineInteropRunti
     };
     return next;
   }
+
+  assertFitnessSeamContract({
+    action_kind: pending.action_kind,
+    receipt_type: pending.receipt_type,
+    routing: pending.routing,
+    context: 'Cannot execute interop request'
+  });
 
   if (pending.request_state === 'pending') {
     pending.request_state = 'running';

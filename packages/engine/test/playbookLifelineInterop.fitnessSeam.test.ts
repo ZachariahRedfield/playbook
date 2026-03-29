@@ -49,4 +49,39 @@ describe('playbook lifeline interop fitness seam', () => {
       routing: action.routing
     });
   });
+
+  it('rejects capability drift when receipt type does not match canonical fitness contract', () => {
+    const action_kind = 'schedule_recovery_block' as const;
+    const action = getFitnessActionContract(action_kind);
+    const runtime = {
+      ...createEmptyInteropRuntime(),
+      capabilities: [{
+        capability_id: 'lifeline-fitness-v1',
+        action_kind,
+        receipt_type: 'goal_plan_amended',
+        routing: action.routing,
+        version: '1.0.0',
+        registered_at: '2026-01-01T00:00:00.000Z',
+        runtime_id: 'lifeline-mock-runtime',
+        idempotency_key_prefix: `lifeline:${action_kind}`
+      }]
+    };
+
+    expect(() =>
+      emitBoundedInteropActionRequest({
+        runtime,
+        action_kind,
+        capability_id: 'lifeline-fitness-v1',
+        manifest: { remediationId: 'remediation-fit-001', requiredArtifactIds: ['fitness-contract'] },
+        evaluation: {
+          state: 'complete',
+          releaseReady: true,
+          blockers: [],
+          missingArtifactIds: [],
+          conflictingArtifactIds: [],
+          stale: false
+        }
+      })
+    ).toThrow(/receipt_type mismatch/);
+  });
 });
