@@ -16,14 +16,27 @@
     "heartbeat": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/heartbeat" }] }
   },
   "$defs": {
-    "actionKind": { "type": "string", "enum": ["test-triage", "test-fix-plan", "apply-result", "test-autofix", "remediation-status"] },
+    "actionKind": { "type": "string", "enum": ["adjust_upcoming_workout_load", "schedule_recovery_block", "revise_weekly_goal_plan"] },
+    "receiptType": { "type": "string", "enum": ["schedule_adjustment_applied", "recovery_guardrail_applied", "goal_plan_amended"] },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topic", "must_route_through_playbook_plan", "no_direct_lifeline_bypass"],
+      "properties": {
+        "topic": { "type": "string", "minLength": 1 },
+        "must_route_through_playbook_plan": { "type": "boolean" },
+        "no_direct_lifeline_bypass": { "type": "boolean" }
+      }
+    },
     "requestState": { "type": "string", "enum": ["pending", "running", "failed", "completed", "blocked"] },
     "capability": {
       "type": "object", "additionalProperties": false,
-      "required": ["capability_id", "action_kind", "version", "registered_at", "runtime_id", "idempotency_key_prefix"],
+      "required": ["capability_id", "action_kind", "receipt_type", "routing", "version", "registered_at", "runtime_id", "idempotency_key_prefix"],
       "properties": {
         "capability_id": { "type": "string", "minLength": 1 },
         "action_kind": { "$ref": "#/$defs/actionKind" },
+        "receipt_type": { "$ref": "#/$defs/receiptType" },
+        "routing": { "$ref": "#/$defs/routing" },
         "version": { "type": "string", "minLength": 1 },
         "registered_at": { "type": "string", "format": "date-time" },
         "runtime_id": { "type": "string", "minLength": 1 },
@@ -53,11 +66,13 @@
     },
     "request": {
       "type": "object", "additionalProperties": false,
-      "required": ["request_id", "remediation_id", "action_kind", "capability_id", "created_at", "updated_at", "request_state", "idempotency_key", "rendezvous_manifest_path", "rendezvous_manifest_sha256", "bounded_inputs", "blocked_reason", "retry"],
+      "required": ["request_id", "remediation_id", "action_kind", "receipt_type", "routing", "capability_id", "created_at", "updated_at", "request_state", "idempotency_key", "rendezvous_manifest_path", "rendezvous_manifest_sha256", "bounded_inputs", "blocked_reason", "retry"],
       "properties": {
         "request_id": { "type": "string", "minLength": 1 },
         "remediation_id": { "type": "string", "minLength": 1 },
         "action_kind": { "$ref": "#/$defs/actionKind" },
+        "receipt_type": { "$ref": "#/$defs/receiptType" },
+        "routing": { "$ref": "#/$defs/routing" },
         "capability_id": { "type": "string", "minLength": 1 },
         "created_at": { "type": "string", "format": "date-time" },
         "updated_at": { "type": "string", "format": "date-time" },
@@ -82,12 +97,14 @@
     },
     "receipt": {
       "type": "object", "additionalProperties": false,
-      "required": ["receipt_id", "request_id", "runtime_id", "action_kind", "received_at", "completed_at", "outcome", "output_artifact_path", "output_sha256", "detail"],
+      "required": ["receipt_id", "request_id", "runtime_id", "action_kind", "receipt_type", "routing", "received_at", "completed_at", "outcome", "output_artifact_path", "output_sha256", "detail"],
       "properties": {
         "receipt_id": { "type": "string", "minLength": 1 },
         "request_id": { "type": "string", "minLength": 1 },
         "runtime_id": { "type": "string", "minLength": 1 },
         "action_kind": { "$ref": "#/$defs/actionKind" },
+        "receipt_type": { "$ref": "#/$defs/receiptType" },
+        "routing": { "$ref": "#/$defs/routing" },
         "received_at": { "type": "string", "format": "date-time" },
         "completed_at": { "type": "string", "format": "date-time" },
         "outcome": { "type": "string", "enum": ["completed", "failed", "blocked"] },

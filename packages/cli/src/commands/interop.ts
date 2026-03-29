@@ -8,7 +8,12 @@ import { printCommandHelp } from '../lib/commandSurface.js';
 type InteropOptions = { format: 'text' | 'json'; quiet: boolean; help?: boolean };
 
 
-type RemediationInteropActionKind = 'test-triage' | 'test-fix-plan' | 'apply-result' | 'test-autofix' | 'remediation-status';
+type FitnessActionContract = {
+  name: string;
+  receiptType: string;
+  routing: { topic: string; must_route_through_playbook_plan: boolean; no_direct_lifeline_bypass: boolean };
+};
+type RemediationInteropActionKind = FitnessActionContract['name'];
 type RendezvousManifest = { remediationId: string; requiredArtifactIds: string[] };
 type RendezvousManifestEvaluation = {
   state: 'complete' | 'incomplete' | 'stale' | 'conflicted';
@@ -19,7 +24,8 @@ type RendezvousManifestEvaluation = {
   stale: boolean;
 };
 
-const actionKinds: RemediationInteropActionKind[] = ['test-triage', 'test-fix-plan', 'apply-result', 'test-autofix', 'remediation-status'];
+const fitnessIntegrationContract = (engineRuntime as unknown as { fitnessIntegrationContract: { actions: FitnessActionContract[] } }).fitnessIntegrationContract;
+const actionKinds = fitnessIntegrationContract.actions.map((entry: FitnessActionContract) => entry.name);
 
 const engine = engineRuntime as unknown as {
   readInteropRuntime: (cwd: string) => any;
@@ -70,11 +76,14 @@ export const runInterop = async (cwd: string, commandArgs: string[], options: In
 
     if (sub === 'register') {
       const capability = valueFor('--capability') ?? 'lifeline-remediation-v1';
-      const action = (valueFor('--action') ?? 'test-autofix') as RemediationInteropActionKind;
+      const action = (valueFor('--action') ?? 'adjust_upcoming_workout_load') as RemediationInteropActionKind;
       if (!actionKinds.includes(action)) throw new Error(`Unsupported --action ${action}`);
+      const actionContract = fitnessIntegrationContract.actions.find((entry: FitnessActionContract) => entry.name === action)!;
       runtime = engine.registerInteropCapability(runtime, {
         capability_id: capability,
         action_kind: action,
+        receipt_type: actionContract.receiptType,
+        routing: actionContract.routing,
         version: '1.0.0',
         runtime_id: runtimeId,
         idempotency_key_prefix: `lifeline:${action}`
@@ -82,7 +91,7 @@ export const runInterop = async (cwd: string, commandArgs: string[], options: In
       engine.writeInteropRuntime(cwd, runtime);
     } else if (sub === 'emit') {
       const capability = valueFor('--capability') ?? 'lifeline-remediation-v1';
-      const action = (valueFor('--action') ?? 'test-autofix') as RemediationInteropActionKind;
+      const action = (valueFor('--action') ?? 'adjust_upcoming_workout_load') as RemediationInteropActionKind;
       const { manifest, evaluation } = readRendezvous(cwd);
       const emitted = engine.emitBoundedInteropActionRequest({ runtime, manifest, evaluation, action_kind: action, capability_id: capability });
       runtime = emitted.runtime;

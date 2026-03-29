@@ -16,6 +16,11 @@ import {
   PLAYBOOK_LIFELINE_INTEROP_ARTIFACT_KIND,
   PLAYBOOK_LIFELINE_INTEROP_SCHEMA_VERSION
 } from '@zachariahredfield/playbook-core';
+import {
+  getFitnessActionContract,
+  getFitnessReceiptTypeForAction,
+  isFitnessActionName
+} from '../integrations/fitnessContract.js';
 
 const STORE_PATH = '.playbook/lifeline-interop-runtime.json' as const;
 
@@ -69,6 +74,23 @@ export const registerInteropCapability = (
   runtime: PlaybookLifelineInteropRuntimeArtifact,
   capability: Omit<InteropCapabilityRegistration, 'registered_at'> & { registered_at?: string }
 ): PlaybookLifelineInteropRuntimeArtifact => {
+  if (!isFitnessActionName(capability.action_kind)) {
+    throw new Error(`Cannot register interop capability: action_kind ${capability.action_kind} is not a supported Fitness contract action.`);
+  }
+  const actionContract = getFitnessActionContract(capability.action_kind);
+  const receiptType = getFitnessReceiptTypeForAction(capability.action_kind);
+  if (capability.receipt_type !== receiptType) {
+    throw new Error(
+      `Cannot register interop capability: receipt_type mismatch for ${capability.action_kind}. expected=${receiptType} actual=${capability.receipt_type}.`
+    );
+  }
+  if (
+    capability.routing.topic !== actionContract.routing.topic ||
+    capability.routing.must_route_through_playbook_plan !== actionContract.routing.must_route_through_playbook_plan ||
+    capability.routing.no_direct_lifeline_bypass !== actionContract.routing.no_direct_lifeline_bypass
+  ) {
+    throw new Error(`Cannot register interop capability: routing mismatch for ${capability.action_kind}.`);
+  }
   const registered: InteropCapabilityRegistration = { ...capability, registered_at: capability.registered_at ?? nowIso() };
   const filtered = runtime.capabilities.filter((entry) => entry.capability_id !== registered.capability_id);
   return { ...runtime, capabilities: [...filtered, registered] };
@@ -86,6 +108,11 @@ export const emitBoundedInteropActionRequest = (input: {
   if (!input.evaluation.releaseReady) {
     throw new Error('Cannot emit interop request: rendezvous state is not release-ready.');
   }
+  if (!isFitnessActionName(input.action_kind)) {
+    throw new Error(`Cannot emit interop request: action_kind ${input.action_kind} is not a supported Fitness contract action.`);
+  }
+  const actionContract = getFitnessActionContract(input.action_kind);
+  const receiptType = getFitnessReceiptTypeForAction(input.action_kind);
   const capability = input.runtime.capabilities.find((entry) => entry.capability_id === input.capability_id && entry.action_kind === input.action_kind);
   if (!capability) {
     throw new Error(`Cannot emit interop request: capability ${input.capability_id} is not registered for ${input.action_kind}.`);
@@ -104,6 +131,8 @@ export const emitBoundedInteropActionRequest = (input: {
     request_id: `interop-${String(input.runtime.requests.length + 1).padStart(4, '0')}`,
     remediation_id: input.manifest.remediationId,
     action_kind: input.action_kind,
+    receipt_type: receiptType,
+    routing: actionContract.routing,
     capability_id: input.capability_id,
     created_at: createdAt,
     updated_at: createdAt,
@@ -160,7 +189,7 @@ export const runLifelineMockRuntimeOnce = (runtime: PlaybookLifelineInteropRunti
     next.statuses.push({ request_id: pending.request_id, request_state: 'running', updated_at: pending.updated_at, detail: 'Mock runtime accepted request.' });
   }
 
-  const outcome: InteropExecutionReceipt['outcome'] = pending.action_kind === 'apply-result' ? 'blocked' : 'completed';
+  const outcome: InteropExecutionReceipt['outcome'] = pending.action_kind === 'revise_weekly_goal_plan' ? 'blocked' : 'completed';
   pending.updated_at = nowIso();
   pending.request_state = outcome === 'completed' ? 'completed' : 'blocked';
   pending.blocked_reason = outcome === 'blocked'
@@ -172,6 +201,8 @@ export const runLifelineMockRuntimeOnce = (runtime: PlaybookLifelineInteropRunti
     request_id: pending.request_id,
     runtime_id: runtimeId,
     action_kind: pending.action_kind,
+    receipt_type: pending.receipt_type,
+    routing: pending.routing,
     received_at: pending.created_at,
     completed_at: pending.updated_at,
     outcome,
