@@ -16,6 +16,18 @@
       "example": "pnpm playbook agent run --from-plan .playbook/plan.json --dry-run --json"
     },
     {
+      "name": "ai",
+      "category": "Repository tools",
+      "role": "bootstrap",
+      "lifecycle": "canonical",
+      "discoverability": "primary",
+      "onboardingPriority": null,
+      "canonicalSequence": null,
+      "productFacing": true,
+      "machineReadable": true,
+      "example": "pnpm playbook ai propose --json --out .playbook/ai-proposal.json"
+    },
+    {
       "name": "ai-context",
       "category": "Repository tools",
       "role": "bootstrap",
@@ -701,6 +713,7 @@
     }
   ],
   "canonicalCommands": [
+    "ai",
     "ai-context",
     "ai-contract",
     "analyze-pr",

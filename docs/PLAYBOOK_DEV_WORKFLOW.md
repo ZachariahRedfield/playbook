@@ -149,9 +149,12 @@ Failure Mode: Shipping only the policy file makes release governance look portab
 Rule: Release-plan output is generated runtime evidence; commit version/changelog results, not `.playbook/release-plan.json`.
 Pattern: compute release plan -> mirror versions/changelog -> verify.
 Failure Mode: Treating generated release-plan output as committed source of truth introduces drift between local and CI computation contexts.
-Rule: Always run `pnpm playbook release sync` before push on release-governed branches so plan artifacts and repo state cannot drift.
+Rule: Release-governed state should be reconciled inside the canonical mutation boundary, not as a separate human memory task.
+Rule: Prefer one trusted finalization command (`apply`/`commit`) over separate release-memory steps.
 Pattern: Compute -> Apply -> Verify (never Compute -> Verify).
+Pattern: One trusted finalization path owns implementation writes and release-governance writes together.
 Failure Mode: Generating release plans without applying them causes deterministic CI failures and repeated developer friction.
+Failure Mode: Requiring developers to remember a separate release command creates deterministic CI failures from workflow friction, not implementation defects.
 Rule: Release version must be derived from baseRef, not accumulated from prior local bumps.
 Pattern: Compute from base -> apply once -> stable thereafter.
 Failure Mode: Iterative release sync runs compound version increments and create infinite drift against CI.
@@ -359,3 +362,22 @@ Use this checklist in PR descriptions:
 - Rule: Upgrade must be scoped to managed artifacts only; repo-owned files are immutable unless explicitly migrated.
 - Pattern: A safe framework upgrade system separates Playbook-managed surfaces from repo-local product truth.
 - Failure Mode: Upgrade flows that cannot distinguish managed from local files overwrite product intent and destroy trust.
+
+## AI proposal-only boundary
+
+When using AI-assisted reasoning in Playbook, keep AI in proposal-only mode and route all state changes through governed deterministic commands.
+
+Canonical pattern:
+
+1. `pnpm playbook ai-context --json`
+2. `pnpm playbook ai-contract --json`
+3. `pnpm playbook ai propose --json --out .playbook/ai-proposal.json`
+4. `pnpm playbook route ...` / `pnpm playbook plan --json`
+5. `pnpm playbook apply --from-plan ...`
+6. `pnpm playbook verify --json`
+
+Rule: AI must remain a proposal-only layer within deterministic systems.
+
+Pattern: AI -> proposal artifact -> route/plan/review -> apply -> verify.
+
+Failure Mode: Allowing AI to mutate state directly collapses auditability and reproducibility.

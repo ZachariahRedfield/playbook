@@ -49,5 +49,6 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   reviewDownstreamFollowups: 'packages/contracts/src/review-downstream-followups.schema.json',
   versionPolicy: 'packages/contracts/src/version-policy.schema.json',
   releasePlan: 'packages/contracts/src/release-plan.schema.json',
-  managedSurfaceManifest: 'packages/contracts/src/managed-surface-manifest.schema.json'
+  managedSurfaceManifest: 'packages/contracts/src/managed-surface-manifest.schema.json',
+  aiProposal: 'packages/contracts/src/ai-proposal.schema.json'
 } as const;

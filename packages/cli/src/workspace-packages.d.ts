@@ -138,6 +138,10 @@ declare module "@zachariahredfield/playbook-engine" {
   export const REPOSITORY_GRAPH_RELATIVE_PATH: ".playbook/repo-graph.json";
   export const MODULE_CONTEXT_DIR_RELATIVE_PATH: ".playbook/context/modules";
   export const loadAiContract: (...args: any[]) => any;
+  export const generateAiProposal: (...args: any[]) => any;
+  export type GenerateAiProposalOptions = any;
+  export const assessReleaseSync: (...args: any[]) => any;
+  export const classifyReleaseSyncReconciliation: (...args: any[]) => any;
   export const buildContractRegistry: (...args: any[]) => any;
   export type OrchestratorContract = any;
   export type OrchestratorLane = any;

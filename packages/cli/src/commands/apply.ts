@@ -24,6 +24,7 @@ type ApplyOptions = {
   fromPlan?: string;
   tasks?: string[];
   runId?: string;
+  skipReleaseGovernanceBoundary?: boolean;
 };
 
 type ApplyMode = 'standard' | 'policy-check' | 'policy';
@@ -921,19 +922,41 @@ const shouldRunReleaseSyncBoundary = (cwd: string): boolean => {
   }
 };
 
-const applyReleaseSyncCommitBoundary = (cwd: string): void => {
+type ReleaseBoundaryResult =
+  | { status: 'skipped' | 'no_drift' }
+  | { status: 'auto_applied'; note: string };
+
+const applyReleaseSyncCommitBoundary = (cwd: string): ReleaseBoundaryResult => {
   if (!shouldRunReleaseSyncBoundary(cwd)) {
-    return;
+    return { status: 'skipped' };
+  }
+
+  const initialAssessment = engine.assessReleaseSync(cwd, { mode: 'check' });
+  const reconciliation = engine.classifyReleaseSyncReconciliation(initialAssessment);
+
+  if (reconciliation.status === 'no_drift') {
+    return { status: 'no_drift' };
+  }
+
+  if (reconciliation.status === 'blocked_drift') {
+    throw new Error(
+      `playbook apply: release-governed drift is blocked and cannot be auto-fixed in apply boundary (${reconciliation.reason}). Run \`pnpm playbook release sync --check\` for details.`
+    );
   }
 
   execSync('pnpm playbook release sync --json --out .playbook/release-plan.json', { cwd, stdio: 'inherit' });
-  execSync('git add -A', { cwd, stdio: 'inherit' });
-  execSync('git update-index --again', { cwd, stdio: 'inherit' });
-  try {
-    execSync('pnpm playbook release sync --check --json --out .playbook/release-plan.json', { cwd, stdio: 'inherit' });
-  } catch {
-    throw new Error('playbook apply: release sync check failed after apply; repository is not release-clean.');
+
+  const finalAssessment = engine.assessReleaseSync(cwd, { mode: 'check' });
+  const finalReconciliation = engine.classifyReleaseSyncReconciliation(finalAssessment);
+  if (finalReconciliation.status !== 'no_drift') {
+    throw new Error('playbook apply: release sync did not converge to a release-clean state.');
   }
+
+  const versionLabel = reconciliation.plannedVersions.length > 0 ? reconciliation.plannedVersions.join(', ') : initialAssessment.plan.summary.recommendedBump;
+  return {
+    status: 'auto_applied',
+    note: `Release governance auto-applied (${reconciliation.taskCount} task${reconciliation.taskCount === 1 ? '' : 's'}, planned version ${versionLabel}).`
+  };
 };
 
 const resolveRunId = (cwd: string, requestedRunId: string | undefined): string => {
@@ -1023,7 +1046,13 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
 
     writeCanonicalApplyArtifact(cwd, []);
     attachApplyRunArtifacts(cwd, runId, options.fromPlan);
-    applyReleaseSyncCommitBoundary(cwd);
+    const releaseBoundaryResult = options.skipReleaseGovernanceBoundary ? { status: 'skipped' as const } : applyReleaseSyncCommitBoundary(cwd);
+    if (releaseBoundaryResult.status === 'auto_applied') {
+      payload.message = payload.message ? `${payload.message} ${releaseBoundaryResult.note}` : releaseBoundaryResult.note;
+      if (options.format !== 'json' && !options.quiet) {
+        console.log(`playbook apply: ${releaseBoundaryResult.note}`);
+      }
+    }
 
     if (options.format === 'json') {
       console.log(JSON.stringify(payload, null, 2));
@@ -1087,7 +1116,13 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   attachApplyRunArtifacts(cwd, runId, options.fromPlan);
 
   if (exitCode === ExitCode.Success) {
-    applyReleaseSyncCommitBoundary(cwd);
+    const releaseBoundaryResult = options.skipReleaseGovernanceBoundary ? { status: 'skipped' as const } : applyReleaseSyncCommitBoundary(cwd);
+    if (releaseBoundaryResult.status === 'auto_applied') {
+      payload.message = payload.message ? `${payload.message} ${releaseBoundaryResult.note}` : releaseBoundaryResult.note;
+      if (options.format !== 'json' && !options.quiet) {
+        console.log(`playbook apply: ${releaseBoundaryResult.note}`);
+      }
+    }
   }
 
   return emitApplyOutput(options, payload, renderTextApply);

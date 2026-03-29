@@ -18,6 +18,7 @@ describe('runSchema', () => {
     expect(payload).toHaveProperty('context');
     expect(payload).toHaveProperty('ai-context');
     expect(payload).toHaveProperty('ai-contract');
+    expect(payload).toHaveProperty('ai-propose');
     expect(payload).toHaveProperty('query');
     expect(payload).toHaveProperty('ignore');
     expect(payload).toHaveProperty('learn');
@@ -116,6 +117,23 @@ describe('runSchema', () => {
 
     const retrieval = memoryProps.retrieval as Record<string, unknown>;
     expect((retrieval.required as string[])).toEqual(['requireProvenance', 'provenanceFields']);
+
+    logSpy.mockRestore();
+  });
+
+
+  it('prints the ai-propose schema', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runSchema('/repo', ['ai-propose'], { format: 'json', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+    expect(payload.title).toBe('PlaybookAiProposeOutput');
+
+    const properties = payload.properties as Record<string, unknown>;
+    const scope = properties.scope as Record<string, unknown>;
+    expect(scope.required).toEqual(['mode', 'boundaries', 'allowedInputs', 'optionalInputs']);
 
     logSpy.mockRestore();
   });

@@ -213,6 +213,8 @@ Do not hand-edit entries inside the managed markers.
   - Example: `pnpm playbook ai-context --json`
 - `ai-contract`: Print deterministic AI repository contract for Playbook-aware agents
   - Example: `pnpm playbook ai-contract --json`
+- `ai`: Emit proposal-only AI artifacts from deterministic context and contract surfaces
+  - Example: `pnpm playbook ai propose --json --out .playbook/ai-proposal.json`
 - `test-triage`: Parse deterministic test failure triage guidance from captured Vitest/pnpm logs
   - Example: `pnpm playbook test-triage --input .playbook/ci-failure.log --json`
 - `test-fix-plan`: Generate a bounded remediation plan from a deterministic test-triage artifact
@@ -320,6 +322,7 @@ Do not hand-edit entries inside the managed markers.
 | `context` | `pnpm playbook context --json` |
 | `ai-context` | `pnpm playbook ai-context --json` |
 | `ai-contract` | `pnpm playbook ai-contract --json` |
+| `ai` | `pnpm playbook ai propose --json --out .playbook/ai-proposal.json` |
 | `test-triage` | `pnpm playbook test-triage --input .playbook/ci-failure.log --json` |
 | `test-fix-plan` | `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json` |
 | `test-autofix` | `pnpm playbook test-autofix --input .playbook/ci-failure.log --json` |

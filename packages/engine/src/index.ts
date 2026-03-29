@@ -254,13 +254,30 @@ export { explainTarget } from './explain/explainEngine.js';
 export type { ExplainTargetResult, RuleExplanation, ModuleExplanation, ArchitectureExplanation, SubsystemExplanation, ArtifactExplanation, UnknownExplanation } from './explain/explainEngine.js';
 
 export { loadAiContract, validateAiContract, getDefaultAiContract, AI_CONTRACT_FILE, AI_CONTRACT_SCHEMA_VERSION } from './ai/aiContract.js';
+export { generateAiProposal, AI_PROPOSAL_DEFAULT_FILE, AI_PROPOSAL_SCHEMA_VERSION } from './ai/aiProposal.js';
 
 export { parseOrchestratorContract, buildOrchestratorPlan, writeOrchestratorArtifacts } from './orchestrator.js';
 export type { OrchestratorContract, OrchestratorLane, OrchestratorPlan, RepoShape } from './orchestrator.js';
 export type { AiContract, LoadedAiContract, AiContractSource } from './ai/aiContract.js';
+export type { AiProposal, GenerateAiProposalOptions } from './ai/aiProposal.js';
 
-export { buildReleasePlan, buildReleasePlanFromInputs, verifyReleaseGovernance, detectReleasePlanDrift, assessReleaseSync } from './release/index.js';
-export type { ReleasePlan, ReleaseBump, ReleasePlanDrift, ReleaseSyncAssessment, ReleaseGovernanceFailure } from './release/index.js';
+export {
+  buildReleasePlan,
+  buildReleasePlanFromInputs,
+  verifyReleaseGovernance,
+  detectReleasePlanDrift,
+  summarizePlannedReleaseVersions,
+  classifyReleaseSyncReconciliation,
+  assessReleaseSync
+} from './release/index.js';
+export type {
+  ReleasePlan,
+  ReleaseBump,
+  ReleasePlanDrift,
+  ReleaseSyncAssessment,
+  ReleaseSyncReconciliation,
+  ReleaseGovernanceFailure
+} from './release/index.js';
 
 export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } from './schema/cliSchemas.js';
 

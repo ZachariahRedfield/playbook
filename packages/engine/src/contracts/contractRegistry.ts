@@ -64,6 +64,7 @@ const ROADMAP_RELATIVE_PATH = 'docs/roadmap/ROADMAP.json' as const;
 const cliSchemaCommands = [
   'ai-context',
   'ai-contract',
+  'ai-propose',
   'analyze-pr',
   'knowledge',
   'context',

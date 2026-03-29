@@ -10,6 +10,7 @@ export type CliSchemaCommand =
   | 'context'
   | 'ai-context'
   | 'ai-contract'
+  | 'ai-propose'
   | 'doctor'
   | 'analyze-pr'
   | 'query'
@@ -793,6 +794,77 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     ]
   },
 
+
+
+  'ai-propose': {
+    $schema: JSON_SCHEMA_DRAFT,
+    title: 'PlaybookAiProposeOutput',
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'schemaVersion',
+      'command',
+      'proposalId',
+      'scope',
+      'reasoningSummary',
+      'recommendedNextGovernedSurface',
+      'suggestedArtifactPath',
+      'blockers',
+      'assumptions',
+      'confidence',
+      'provenance'
+    ],
+    properties: {
+      schemaVersion: { const: '1.0' },
+      command: { const: 'ai-propose' },
+      proposalId: { type: 'string' },
+      scope: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['mode', 'boundaries', 'allowedInputs', 'optionalInputs'],
+        properties: {
+          mode: { const: 'proposal-only' },
+          boundaries: {
+            type: 'array',
+            items: {
+              enum: [
+                'no-direct-apply',
+                'no-memory-promotion',
+                'no-pattern-promotion',
+                'no-external-interop-emit',
+                'artifact-only-output'
+              ]
+            },
+            minItems: 5,
+            maxItems: 5
+          },
+          allowedInputs: { type: 'array', items: { type: 'string' }, minItems: 2 },
+          optionalInputs: { type: 'array', items: { type: 'string' } }
+        }
+      },
+      reasoningSummary: { type: 'array', items: { type: 'string' }, minItems: 1 },
+      recommendedNextGovernedSurface: { enum: ['route', 'plan', 'review-pr', 'verify'] },
+      suggestedArtifactPath: { type: 'string' },
+      blockers: { type: 'array', items: { type: 'string' } },
+      assumptions: { type: 'array', items: { type: 'string' } },
+      confidence: { type: 'number', minimum: 0, maximum: 1 },
+      provenance: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['artifactPath', 'source', 'required', 'available', 'used'],
+          properties: {
+            artifactPath: { type: 'string' },
+            source: { enum: ['file', 'generated'] },
+            required: { type: 'boolean' },
+            available: { type: 'boolean' },
+            used: { type: 'boolean' }
+          }
+        }
+      }
+    }
+  },
 
   doctor: {
     $schema: JSON_SCHEMA_DRAFT,

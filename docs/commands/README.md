@@ -63,6 +63,7 @@ Do not hand-edit entries inside the managed markers.
 | `context` | Print deterministic CLI and architecture context for tools and agents | canonical | bootstrap | primary | P3 | Current (implemented) | `pnpm playbook context --json` |
 | `ai-context` | Print deterministic AI bootstrap context for Playbook-aware agents | canonical | bootstrap | primary | P1 | Current (implemented) | `pnpm playbook ai-context --json` |
 | `ai-contract` | Print deterministic AI repository contract for Playbook-aware agents | canonical | bootstrap | primary | P2 | Current (implemented) | `pnpm playbook ai-contract --json` |
+| `ai` | Emit proposal-only AI artifacts from deterministic context and contract surfaces | canonical | bootstrap | primary | Later | Current (implemented) | `pnpm playbook ai propose --json --out .playbook/ai-proposal.json` |
 | `test-triage` | Parse deterministic test failure triage guidance from captured Vitest/pnpm logs | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-triage --input .playbook/ci-failure.log --json` |
 | `test-fix-plan` | Generate a bounded remediation plan from a deterministic test-triage artifact | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-fix-plan --from-triage .playbook/test-triage.json --json` |
 | `test-autofix` | Orchestrate deterministic test diagnosis, bounded repair, apply, and narrow-first verification | canonical | remediation | secondary | Later | Current (implemented) | `pnpm playbook test-autofix --input .playbook/ci-failure.log --json` |
@@ -102,7 +103,7 @@ Do not hand-edit entries inside the managed markers.
 - Repository intelligence: [`index`](index.md), [`query`](query.md), [`knowledge`](knowledge.md), [`deps`](deps.md), [`ask`](ask.md), [`explain`](explain.md), [`analyze-pr`](analyze-pr.md), [`test-triage`](test-triage.md), [`test-fix-plan`](test-fix-plan.md), [`test-autofix`](test-autofix.md)
 - Knowledge review note: `pnpm playbook knowledge review followups` exposes compiled downstream follow-up suggestions through the existing read-only knowledge review family (`.playbook/review-downstream-followups.json`).
 - Memory pressure note: `pnpm playbook memory pressure followups` exposes canonical deterministic pressure followups through the existing read-only memory family (`.playbook/memory-pressure-followups.json`) with thin text output and full JSON detail.
-- AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`context`](overview.md)
+- AI bootstrap/context: [`ai-context`](ai-context.md), [`ai-contract`](ai-contract.md), [`ai`](ai.md), [`context`](overview.md)
 - Governance and support: [`docs`](docs.md), [`audit`](audit.md), [`rules`](rules.md), [`doctor`](doctor.md), [`schema`](schema.md), [`contracts`](contracts.md), [`release`](release.md), [`ignore`](ignore.md), [`diagram`](diagram.md), [`route`](route.md), [`memory`](memory.md), [`patterns`](patterns.md), [`story`](story.md), [`promote`](promote.md), [`observer`](observer.md), [`receipt`](receipt.md), [`learn`](learn.md), [`fix`](fix.md), [`upgrade`](upgrade.md), [`status`](status.md), [`analyze`](analyze.md)
 - `status proof` is the canonical external-consumer bootstrap proof surface for proving runtime + CLI + docs/artifact + execution/governance readiness in one read-only flow. It now also reads existing parallel-work artifacts (`lane-state`, `worker-results`, `docs-consolidation-plan`, and guarded-apply outcomes) to emit one compact operator brief while keeping required automation truth in the canonical `proof` payload and deterministic additive detail in JSON.
 
@@ -160,6 +161,10 @@ Pattern - Orchestrated Baseline Analysis.
 Failure Mode - Manual Workflow Drift.
 
 Failure Mode - Helper Script Becomes Shadow Product Surface.
+
+- Rule: AI must remain a proposal-only layer within deterministic systems.
+- Pattern: AI -> proposal artifact -> route/plan/review -> apply -> verify.
+- Failure Mode: Allowing AI to mutate state directly collapses auditability and reproducibility.
 
 ## Additional implemented CLI utility commands
 

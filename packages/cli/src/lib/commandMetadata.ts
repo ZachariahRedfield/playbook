@@ -352,6 +352,21 @@ export const commandMetadata: CommandMetadata[] = [
   },
 
   {
+    name: "ai",
+    description:
+      "Emit proposal-only AI artifacts from deterministic context and contract surfaces",
+    category: "Repository tools",
+    role: "bootstrap",
+    lifecycle: "canonical",
+    discoverability: "primary",
+    onboardingPriority: null,
+    canonicalSequence: null,
+    productFacing: true,
+    exampleArgs: "ai propose --json --out .playbook/ai-proposal.json",
+    machineReadable: true,
+  },
+
+  {
     name: "test-triage",
     description: "Parse deterministic test failure triage guidance from captured Vitest/pnpm logs",
     category: "Repository tools",

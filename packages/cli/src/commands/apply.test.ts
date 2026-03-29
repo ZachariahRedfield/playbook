@@ -18,10 +18,12 @@ const attachSessionRunState = vi.fn();
 const buildPolicyPreflight = vi.fn();
 const pinSessionArtifact = vi.fn();
 const updateSession = vi.fn();
+const assessReleaseSync = vi.fn();
+const classifyReleaseSyncReconciliation = vi.fn();
 const loadVerifyRules = vi.fn();
 const execSyncMock = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, pinSessionArtifact, updateSession, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, pinSessionArtifact, updateSession, assessReleaseSync, classifyReleaseSyncReconciliation, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 vi.mock('node:child_process', () => ({ execSync: execSyncMock }));
 
@@ -169,6 +171,8 @@ describe('runApply', () => {
     buildPolicyPreflight.mockReset();
     pinSessionArtifact.mockReset();
     updateSession.mockReset();
+    assessReleaseSync.mockReset();
+    classifyReleaseSyncReconciliation.mockReset();
     loadVerifyRules.mockReset();
     execSyncMock.mockReset();
     execSyncMock.mockReturnValue('');
@@ -181,6 +185,23 @@ describe('runApply', () => {
       requiredInputs: [],
       missingPrerequisites: [],
       repoMutationAllowed: true
+    });
+    assessReleaseSync.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'playbook-release-sync',
+      generatedAt: '2026-03-29T00:00:00.000Z',
+      mode: 'check',
+      plan: { summary: { recommendedBump: 'none', reasons: [] }, tasks: [] },
+      hasDrift: false,
+      drift: [],
+      governanceFailures: [],
+      actionableTasks: []
+    });
+    classifyReleaseSyncReconciliation.mockReturnValue({
+      status: 'no_drift',
+      taskCount: 0,
+      plannedVersions: [],
+      reason: 'release-governed state is already aligned'
     });
   });
 
@@ -251,17 +272,52 @@ describe('runApply', () => {
     fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
-  it('runs release sync boundary commands after successful apply execution', async () => {
+  it('runs release sync inside apply boundary when drift is auto-fixable', async () => {
     const { runApply } = await import('./apply.js');
     const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-release-boundary-'));
+    assessReleaseSync
+      .mockReturnValueOnce({
+        schemaVersion: '1.0',
+        kind: 'playbook-release-sync',
+        generatedAt: '2026-03-29T00:00:00.000Z',
+        mode: 'check',
+        plan: { summary: { recommendedBump: 'minor', reasons: [] }, tasks: [] },
+        hasDrift: true,
+        drift: [{ taskId: 'task-release-alpha', file: 'packages/alpha/package.json', reason: 'version mismatch', expected: '1.2.4', actual: '1.2.3' }],
+        governanceFailures: [],
+        actionableTasks: [{ id: 'task-release-alpha', file: 'packages/alpha/package.json', action: 'Update version', task_kind: 'release-package-version' }]
+      })
+      .mockReturnValueOnce({
+        schemaVersion: '1.0',
+        kind: 'playbook-release-sync',
+        generatedAt: '2026-03-29T00:00:00.000Z',
+        mode: 'check',
+        plan: { summary: { recommendedBump: 'minor', reasons: [] }, tasks: [] },
+        hasDrift: false,
+        drift: [],
+        governanceFailures: [],
+        actionableTasks: []
+      });
+    classifyReleaseSyncReconciliation
+      .mockReturnValueOnce({
+        status: 'auto_fixable_drift',
+        taskCount: 1,
+        plannedVersions: ['0.41.0'],
+        reason: 'release drift is auto-fixable via release sync'
+      })
+      .mockReturnValueOnce({
+        status: 'no_drift',
+        taskCount: 0,
+        plannedVersions: [],
+        reason: 'release-governed state is already aligned'
+      });
 
     const exitCode = await runApply(repoDir, { format: 'json', ci: false, quiet: false });
 
     expect(exitCode).toBe(ExitCode.Success);
     expect(execSyncMock).toHaveBeenCalledWith('pnpm playbook release sync --json --out .playbook/release-plan.json', { cwd: repoDir, stdio: 'inherit' });
-    expect(execSyncMock).toHaveBeenCalledWith('git add -A', { cwd: repoDir, stdio: 'inherit' });
-    expect(execSyncMock).toHaveBeenCalledWith('git update-index --again', { cwd: repoDir, stdio: 'inherit' });
-    expect(execSyncMock).toHaveBeenCalledWith('pnpm playbook release sync --check --json --out .playbook/release-plan.json', { cwd: repoDir, stdio: 'inherit' });
+    expect(execSyncMock).not.toHaveBeenCalledWith('git add -A', { cwd: repoDir, stdio: 'inherit' });
+    expect(execSyncMock).not.toHaveBeenCalledWith('git update-index --again', { cwd: repoDir, stdio: 'inherit' });
   });
 
   it('does not perform git commit directly during apply release-sync boundary', async () => {
@@ -274,19 +330,29 @@ describe('runApply', () => {
     expect(execSyncMock).not.toHaveBeenCalledWith('git commit -m "chore: apply + release sync" --no-verify', { cwd: repoDir, stdio: 'inherit' });
   });
 
-  it('fails clearly when release-sync check remains dirty after apply', async () => {
+  it('fails clearly when release-sync remains blocked after apply', async () => {
     const { runApply } = await import('./apply.js');
     const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-release-check-fail-'));
-
-    execSyncMock.mockImplementation((command: string) => {
-      if (command === 'pnpm playbook release sync --check --json --out .playbook/release-plan.json') {
-        throw new Error('drift remains');
-      }
-      return '';
+    assessReleaseSync.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'playbook-release-sync',
+      generatedAt: '2026-03-29T00:00:00.000Z',
+      mode: 'check',
+      plan: { summary: { recommendedBump: 'minor', reasons: [] }, tasks: [] },
+      hasDrift: true,
+      drift: [],
+      governanceFailures: [{ id: 'release.versionGroup.inconsistent', message: 'lockstep mismatch' }],
+      actionableTasks: []
+    });
+    classifyReleaseSyncReconciliation.mockReturnValue({
+      status: 'blocked_drift',
+      taskCount: 0,
+      plannedVersions: ['0.41.0'],
+      reason: 'lockstep mismatch'
     });
 
     await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false })).rejects.toThrow(
-      'playbook apply: release sync check failed after apply; repository is not release-clean.'
+      'playbook apply: release-governed drift is blocked and cannot be auto-fixed in apply boundary (lockstep mismatch).'
     );
   });
 

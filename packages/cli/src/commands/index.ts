@@ -435,6 +435,14 @@ const commandRunners: Record<
     const { runAiContract } = await import("./aiContract.js");
     return runAiContract(cwd, { format, quiet });
   },
+  ai: async ({ cwd, commandArgs, format, quiet }) => {
+    const { runAi } = await import('./ai.js');
+    return runAi(cwd, commandArgs, {
+      format,
+      quiet,
+      outFile: parseOptionValue(commandArgs, '--out')
+    });
+  },
   contracts: async ({ cwd, commandArgs, format, quiet }) => {
     const { runContracts } = await import("./contracts.js");
     return runContracts(cwd, {
@@ -691,6 +699,7 @@ const commandOrder = [
   "context",
   "ai-context",
   "ai-contract",
+  "ai",
   "contracts",
   "release",
   "docs",

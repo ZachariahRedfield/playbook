@@ -120,6 +120,30 @@ export type ReleaseSyncAssessment = {
   actionableTasks: Array<{ id: string; file: string | null; action: string; task_kind: ReleasePlanTask['task_kind'] }>;
 };
 
+type ReleaseTaskProvenance = {
+  next_version?: unknown;
+};
+
+export type ReleaseSyncReconciliation =
+  | {
+      status: 'no_drift';
+      taskCount: 0;
+      plannedVersions: string[];
+      reason: string;
+    }
+  | {
+      status: 'auto_fixable_drift';
+      taskCount: number;
+      plannedVersions: string[];
+      reason: string;
+    }
+  | {
+      status: 'blocked_drift';
+      taskCount: number;
+      plannedVersions: string[];
+      reason: string;
+    };
+
 const VERSION_POLICY_PATH = '.playbook/version-policy.json';
 const RELEASE_PLAN_PATH = '.playbook/release-plan.json';
 const CHANGELOG_PATH = 'docs/CHANGELOG.md';
@@ -684,6 +708,69 @@ export const detectReleasePlanDrift = (repoRoot: string, plan: ReleasePlan): Rel
   }
 
   return drifts;
+};
+
+export const summarizePlannedReleaseVersions = (plan: ReleasePlan): string[] => {
+  const versions = plan.tasks
+    .filter((task) => task.task_kind === 'release-package-version')
+    .map((task) => (task.provenance as ReleaseTaskProvenance | undefined)?.next_version)
+    .filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+  return uniqueSorted(versions);
+};
+
+export const classifyReleaseSyncReconciliation = (assessment: ReleaseSyncAssessment): ReleaseSyncReconciliation => {
+  const plannedVersions = summarizePlannedReleaseVersions(assessment.plan);
+
+  if (!assessment.hasDrift) {
+    return {
+      status: 'no_drift',
+      taskCount: 0,
+      plannedVersions,
+      reason: 'release-governed state is already aligned'
+    };
+  }
+
+  const blockedGovernanceFailure = assessment.governanceFailures.find((failure) => failure.id === 'release.versionGroup.inconsistent');
+  if (blockedGovernanceFailure) {
+    return {
+      status: 'blocked_drift',
+      taskCount: assessment.actionableTasks.length,
+      plannedVersions,
+      reason: blockedGovernanceFailure.message
+    };
+  }
+
+  if (assessment.actionableTasks.length === 0) {
+    return {
+      status: 'blocked_drift',
+      taskCount: 0,
+      plannedVersions,
+      reason: 'release drift exists but no actionable auto-fix tasks were produced'
+    };
+  }
+
+  const taskById = new Map(assessment.plan.tasks.map((task) => [task.id, task] as const));
+  const nonAutoFixTask = assessment.actionableTasks.find((task) => {
+    const planTask = taskById.get(task.id);
+    return !planTask || planTask.autoFix !== true;
+  });
+
+  if (nonAutoFixTask) {
+    return {
+      status: 'blocked_drift',
+      taskCount: assessment.actionableTasks.length,
+      plannedVersions,
+      reason: `release task ${nonAutoFixTask.id} is not auto-fixable inside canonical apply boundary`
+    };
+  }
+
+  return {
+    status: 'auto_fixable_drift',
+    taskCount: assessment.actionableTasks.length,
+    plannedVersions,
+    reason: 'release drift is auto-fixable via release sync'
+  };
 };
 
 export const verifyReleaseGovernance = (repoRoot: string, options: { baseRef: string; baseSha: string }): ReleaseGovernanceFailure[] => {
