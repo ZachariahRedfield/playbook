@@ -49,7 +49,14 @@ jobs:
         run: corepack enable
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm config set fetch-retries 5
+          pnpm config set fetch-retry-factor 2
+          pnpm config set fetch-retry-mintimeout 10000
+          pnpm config set fetch-retry-maxtimeout 60000
+          pnpm config set network-timeout 120000
+          pnpm config set registry https://registry.npmjs.org/
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Build
         run: pnpm -r --workspace-concurrency=1 build

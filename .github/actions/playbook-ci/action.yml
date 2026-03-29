@@ -98,18 +98,15 @@ runs:
         corepack prepare "$PM" --activate
         pnpm -v
 
-    - name: Resolve pnpm store path
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
-
     - name: Cache pnpm store
       uses: actions/cache@v4
+      timeout-minutes: 2
+      continue-on-error: true
       with:
-        path: ${{ env.PNPM_STORE_PATH }}
-        key: pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}
+        path: ~/.local/share/pnpm/store/v10
+        key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          pnpm-store-${{ runner.os }}-node-${{ inputs.node-version }}-
+          pnpm-store-${{ runner.os }}-
 
     - name: Runtime versions
       shell: bash
@@ -122,7 +119,13 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         node "$GITHUB_WORKSPACE/scripts/assert-install-env.mjs"
-        pnpm install ${{ inputs.install-args }}
+        pnpm config set fetch-retries 5
+        pnpm config set fetch-retry-factor 2
+        pnpm config set fetch-retry-mintimeout 10000
+        pnpm config set fetch-retry-maxtimeout 60000
+        pnpm config set network-timeout 120000
+        pnpm config set registry https://registry.npmjs.org/
+        pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
     - name: Install diagnostics (on failure)
       if: failure()

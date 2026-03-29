@@ -191,6 +191,15 @@ Rule: Release sync must be applied before pushing when drift exists.
 Pattern: Local pre-push enforcement prevents CI release drift failures.
 Failure Mode: Relying on CI-only detection causes repeated failed pipelines and wasted cycles.
 
+## CI Install Stability
+
+Rule: CI dependency installs must tolerate transient registry/network failures.
+Rule: Infra-layer failures must be isolated from product-layer signals.
+Pattern: Retry-hardened install + cache fallback.
+Pattern: Harden CI install so registry instability does not surface as product failure.
+Failure Mode: Treating network timeouts as code failures leads to false debugging cycles.
+Failure Mode: Misclassifying infra failures as contract drift wastes cycles and drives incorrect fixes.
+
 ## Smoke testing
 
 Run the repository smoke test:
