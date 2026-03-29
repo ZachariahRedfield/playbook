@@ -100,8 +100,6 @@ runs:
 
     - name: Cache pnpm store
       uses: actions/cache@v4
-      timeout-minutes: 2
-      continue-on-error: true
       with:
         path: ~/.local/share/pnpm/store/v10
         key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
