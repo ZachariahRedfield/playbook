@@ -23,6 +23,24 @@ type RendezvousManifestEvaluation = {
   conflictingArtifactIds: string[];
   stale: boolean;
 };
+type FitnessContractInspectPayload = {
+  sourceRepo: string;
+  sourceRef: string;
+  sourcePath: string;
+  syncMode: string;
+  sourceHash: string;
+  canonicalPayloadSummary: {
+    appIdentity: {
+      kind: string;
+      schemaVersion: string;
+    };
+    signalNames: string[];
+    stateSnapshotTypes: string[];
+    boundedActionNames: string[];
+    receiptTypes: string[];
+  };
+  contract: unknown;
+};
 
 const fitnessIntegrationContract = (engineRuntime as unknown as { fitnessIntegrationContract: { actions: FitnessActionContract[] } }).fitnessIntegrationContract;
 const actionKinds = fitnessIntegrationContract.actions.map((entry: FitnessActionContract) => entry.name);
@@ -34,6 +52,7 @@ const engine = engineRuntime as unknown as {
   emitBoundedInteropActionRequest: (input: any) => { runtime: any; request: any };
   runLifelineMockRuntimeOnce: (runtime: any, runtimeId: string) => any;
   reconcileInteropRuntime: (runtime: any) => any;
+  materializeFitnessContractArtifact: (options: { repoRoot: string }) => Promise<any>;
   readArtifactJson: <T>(path: string) => T;
 };
 
@@ -47,10 +66,32 @@ const readRendezvous = (cwd: string): { manifest: RendezvousManifest; evaluation
   return { manifest, evaluation: status };
 };
 
+const toFitnessContractInspectPayload = async (cwd: string): Promise<FitnessContractInspectPayload> => {
+  const artifact = await engine.materializeFitnessContractArtifact({ repoRoot: cwd });
+  return {
+    sourceRepo: artifact.source.sourceRepo,
+    sourceRef: artifact.source.sourceRef,
+    sourcePath: artifact.source.sourcePath,
+    syncMode: artifact.source.syncMode,
+    sourceHash: artifact.fingerprint,
+    canonicalPayloadSummary: {
+      appIdentity: {
+        kind: artifact.payload.kind,
+        schemaVersion: artifact.payload.schemaVersion
+      },
+      signalNames: [...artifact.payload.signalTypes],
+      stateSnapshotTypes: [...artifact.payload.stateSnapshotTypes],
+      boundedActionNames: artifact.payload.actions.map((entry: { name: string }) => entry.name),
+      receiptTypes: [...artifact.payload.receiptTypes]
+    },
+    contract: artifact.payload
+  };
+};
+
 export const runInterop = async (cwd: string, commandArgs: string[], options: InteropOptions): Promise<number> => {
   if (options.help) {
     printCommandHelp({
-      usage: 'playbook interop <register|emit|run-mock|reconcile|capabilities|requests|receipts|health> [--json]',
+      usage: 'playbook interop <register|emit|run-mock|reconcile|capabilities|requests|receipts|health|fitness-contract> [--json]',
       description: 'Inspect and operate remediation-first Playbook↔Lifeline interop runtime artifacts.',
       options: [
         '--capability <id>   capability id for register/emit',
@@ -71,8 +112,27 @@ export const runInterop = async (cwd: string, commandArgs: string[], options: In
   };
 
   try {
-    let runtime = engine.readInteropRuntime(cwd);
     const runtimeId = valueFor('--runtime') ?? 'lifeline-mock-runtime';
+    if (sub === 'fitness-contract') {
+      const payload = await toFitnessContractInspectPayload(cwd);
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'interop', payload: { command: 'interop', subcommand: sub, payload } });
+      } else if (!options.quiet) {
+        console.log(`sourceRepo: ${payload.sourceRepo}`);
+        console.log(`sourceRef: ${payload.sourceRef}`);
+        console.log(`sourcePath: ${payload.sourcePath}`);
+        console.log(`syncMode: ${payload.syncMode}`);
+        console.log(`sourceHash: ${payload.sourceHash}`);
+        console.log(`app: ${payload.canonicalPayloadSummary.appIdentity.kind}@${payload.canonicalPayloadSummary.appIdentity.schemaVersion}`);
+        console.log(`signals: ${payload.canonicalPayloadSummary.signalNames.join(', ')}`);
+        console.log(`state snapshots: ${payload.canonicalPayloadSummary.stateSnapshotTypes.join(', ')}`);
+        console.log(`bounded actions: ${payload.canonicalPayloadSummary.boundedActionNames.join(', ')}`);
+        console.log(`receipts: ${payload.canonicalPayloadSummary.receiptTypes.join(', ')}`);
+      }
+      return ExitCode.Success;
+    }
+
+    let runtime = engine.readInteropRuntime(cwd);
 
     if (sub === 'register') {
       const capability = valueFor('--capability') ?? 'lifeline-remediation-v1';

@@ -87,4 +87,97 @@ describe('runInterop', () => {
     });
     expect(runtime.heartbeat.health).toBe('healthy');
   });
+
+  it('exposes consumed fitness contract inspect surface with deterministic summary and artifact', async () => {
+    const repo = createRepo();
+    writeArtifact(repo, 'playbook.fitness.config.json', {
+      fitnessContractSource: {
+        sourceRepo: 'ZachariahRedfield/fawxzzy-fitness',
+        sourceRef: 'main',
+        sourcePath: 'src/lib/ecosystem/fitness-integration-contract.ts',
+        syncMode: 'mirrored'
+      }
+    });
+
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runInterop(repo, ['fitness-contract'], { format: 'json', quiet: false });
+    const payload = JSON.parse(String(spy.mock.calls.at(-1)?.[0])) as {
+      command: string;
+      subcommand: string;
+      payload: {
+        sourceRepo: string;
+        sourceRef: string;
+        sourcePath: string;
+        syncMode: string;
+        sourceHash: string;
+        canonicalPayloadSummary: {
+          appIdentity: { kind: string; schemaVersion: string };
+          signalNames: string[];
+          stateSnapshotTypes: string[];
+          boundedActionNames: string[];
+          receiptTypes: string[];
+        };
+        contract: {
+          signalTypes: string[];
+          stateSnapshotTypes: string[];
+          actions: Array<{ name: string; receiptType: string }>;
+          receiptTypes: string[];
+        };
+      };
+    };
+
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(payload.command).toBe('interop');
+    expect(payload.subcommand).toBe('fitness-contract');
+    expect(payload.payload.sourceRepo).toBe('ZachariahRedfield/fawxzzy-fitness');
+    expect(payload.payload.sourceRef).toBe('main');
+    expect(payload.payload.sourcePath).toBe('src/lib/ecosystem/fitness-integration-contract.ts');
+    expect(payload.payload.syncMode).toBe('mirrored');
+    expect(payload.payload.sourceHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(payload.payload.canonicalPayloadSummary).toEqual({
+      appIdentity: {
+        kind: 'fitness-integration-contract',
+        schemaVersion: '1.0'
+      },
+      signalNames: [
+        'fitness.session.events',
+        'fitness.recovery.events',
+        'fitness.goal.events'
+      ],
+      stateSnapshotTypes: [
+        'fitness.session.snapshot',
+        'fitness.recovery.snapshot',
+        'fitness.goal.snapshot'
+      ],
+      boundedActionNames: [
+        'adjust_upcoming_workout_load',
+        'schedule_recovery_block',
+        'revise_weekly_goal_plan'
+      ],
+      receiptTypes: [
+        'schedule_adjustment_applied',
+        'recovery_guardrail_applied',
+        'goal_plan_amended'
+      ]
+    });
+    expect(payload.payload.contract.actions.map((entry) => entry.name)).toEqual([
+      'adjust_upcoming_workout_load',
+      'schedule_recovery_block',
+      'revise_weekly_goal_plan'
+    ]);
+
+    const artifact = JSON.parse(fs.readFileSync(path.join(repo, '.playbook/fitness-contract.json'), 'utf8')) as {
+      kind: string;
+      source: { sourceRepo: string; sourceRef: string; sourcePath: string; syncMode: string };
+      fingerprint: string;
+    };
+    expect(artifact.kind).toBe('fitness-contract-artifact');
+    expect(artifact.source).toMatchObject({
+      sourceRepo: 'ZachariahRedfield/fawxzzy-fitness',
+      sourceRef: 'main',
+      sourcePath: 'src/lib/ecosystem/fitness-integration-contract.ts',
+      syncMode: 'mirrored'
+    });
+    expect(artifact.fingerprint).toBe(payload.payload.sourceHash);
+  });
 });

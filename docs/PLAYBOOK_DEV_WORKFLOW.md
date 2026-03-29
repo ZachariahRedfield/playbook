@@ -103,6 +103,7 @@ pnpm playbook apply --from-plan .playbook/plan.json --dry-run
 pnpm playbook rendezvous create --json
 pnpm playbook rendezvous status --json
 pnpm playbook rendezvous release --dry-run --json
+pnpm playbook interop fitness-contract --json
 ```
 
 `rendezvous` is read-first in v1: it only creates/updates `.playbook/rendezvous-manifest.json` and never performs release mutation directly.
