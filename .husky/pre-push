@@ -1,13 +1,17 @@
 #!/bin/sh
-set -eu
+. "$(dirname "$0")/_/husky.sh"
 
-if [ -f "$(dirname "$0")/_/husky.sh" ]; then
-  . "$(dirname "$0")/_/husky.sh"
-fi
+echo "Checking release sync..."
 
-# Fail closed: detect release drift only, do not mutate repo state in pre-push.
-if ! pnpm playbook release sync --check; then
-  echo "Release drift detected. Run: pnpm playbook release sync"
-  echo "CI will fail on release drift; fix locally before pushing."
+pnpm playbook release sync --check
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Release drift detected."
+  echo "Run: pnpm playbook release sync"
+  echo "Then commit the changes before pushing."
+  echo ""
   exit 1
 fi
+
+echo "✅ Release sync valid."
