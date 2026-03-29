@@ -1,6 +1,6 @@
 {
   "name": "@fawxzzy/playbook",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "type": "module",
   "bin": {
     "playbook": "dist/main.js"

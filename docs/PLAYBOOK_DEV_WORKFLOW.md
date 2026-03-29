@@ -125,7 +125,25 @@ The GitHub Actions workflow `.github/workflows/release-prep.yml` is the only aut
 
 ## Release Sync Enforcement
 
-Local pre-commit enforcement now runs `pnpm playbook release sync` before commit finalization through `.husky/pre-commit` and fails closed if release drift remains after staged updates + re-check.
+## Release Sync Required Before Push
+
+Contract surface change -> release sync must be applied in the same commit boundary before push.
+
+Local pre-commit enforcement now runs `pnpm release:guard` through `.husky/pre-commit`.
+`release:guard` applies the deterministic release loop:
+
+```bash
+pnpm playbook release plan --json --out .playbook/release-plan.json
+# if recommendedBump != none
+pnpm release:sync
+git add -A
+pnpm playbook release sync --check --json --out .playbook/release-plan.json
+```
+
+Rule: Contract surface change -> release sync must be applied in same commit boundary.
+Pattern: Detect -> plan -> apply -> commit -> push.
+Failure Mode: Forgetting to apply release plan leads to CI drift failure even when implementation is correct.
+
 
 Behavior:
 

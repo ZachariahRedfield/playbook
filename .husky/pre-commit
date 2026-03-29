@@ -5,23 +5,14 @@ if [ -f "$(dirname "$0")/_/husky.sh" ]; then
   . "$(dirname "$0")/_/husky.sh"
 fi
 
-# Avoid unnecessary release sync runs on commits with no staged content.
+# Avoid unnecessary release guard runs on commits with no staged content.
 if git diff --cached --quiet; then
   exit 0
 fi
 
-echo "🔄 Running Playbook release sync before commit..."
-pnpm playbook release sync --json --out .playbook/release-plan.json >/dev/null
+echo "🔄 Running release guard before commit..."
+pnpm release:guard
 
-# Stage all changes from release sync.
-git add -A
-
-# Refresh index so commit snapshot includes post-sync mutations.
 git update-index --again
 
-if ! pnpm playbook release sync --check --json --out .playbook/release-plan.json >/dev/null; then
-  echo "❌ Release sync is still not clean. Blocking commit."
-  exit 1
-fi
-
-echo "✅ Release sync applied to commit"
+echo "✅ Release guard passed"
