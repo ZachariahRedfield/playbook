@@ -26,6 +26,7 @@ pnpm playbook release plan --json --out .playbook/release-plan.json
 pnpm playbook release plan --base origin/main --json --out .playbook/release-plan.json
 pnpm playbook release sync --check --json --out .playbook/release-plan.json
 pnpm playbook release sync --json --out .playbook/release-plan.json
+pnpm playbook release sync --fix --json --out .playbook/release-plan.json
 pnpm playbook apply --from-plan .playbook/release-plan.json
 ```
 
@@ -34,6 +35,7 @@ pnpm playbook apply --from-plan .playbook/release-plan.json
 `pnpm playbook release sync` is the deterministic release-sync guard. It always computes a fresh release plan, checks drift between expected version/changelog updates and current repo state, and then:
 
 - `--check`: proposal-only guard mode; exits non-zero with actionable tasks when drift exists.
+- `--fix`: explicit drift-fix mode that computes the plan and applies it through the existing `apply --from-plan` mutation boundary.
 - default mode: applies the reviewed `.playbook/release-plan.json` through `playbook apply --from-plan`, then re-checks for drift.
 
 This enforces the rule **Compute → Apply → Verify** and prevents recurring CI failures caused by committed code changes without mirrored release updates.
@@ -41,6 +43,20 @@ This enforces the rule **Compute → Apply → Verify** and prevents recurring C
 Idempotency guarantee: release version computation is anchored to the selected `baseRef` package versions (base snapshot), not the current working version after local bumps. Re-running `release sync` against the same `baseRef` yields the same next-version targets instead of incrementing repeatedly.
 Generated-artifact mode: `.playbook/release-plan.json` may be absent in source control and is regenerated at runtime; enforcement checks durable version/changelog outputs rather than plan-file parity.
 Idempotent managed changelog behavior: once a release entry is already at the top of the managed block, repeated `release sync --check` runs keep the block byte-stable and do not prepend duplicate entries.
+
+## Release Drift
+
+If CI fails with release drift:
+
+1. Run `pnpm playbook release sync`
+2. Commit changes
+3. Push
+
+Rule: Release plans must be applied before merge.
+
+Pattern: Plan -> Apply -> Commit -> Verify.
+
+Failure Mode: Generating a valid release plan but not applying it causes deterministic CI failure.
 
 ## Apply compatibility
 

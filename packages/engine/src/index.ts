@@ -261,7 +261,7 @@ export type { OrchestratorContract, OrchestratorLane, OrchestratorPlan, RepoShap
 export type { AiContract, LoadedAiContract, AiContractSource } from './ai/aiContract.js';
 export type { AiProposal, GenerateAiProposalOptions } from './ai/aiProposal.js';
 
-export { buildReleasePlan, buildReleasePlanFromInputs, verifyReleaseGovernance, detectReleasePlanDrift, assessReleaseSync } from './release/index.js';
+export { buildReleasePlan, buildReleasePlanFromInputs, verifyReleaseGovernance, detectReleasePlanDrift, summarizePlannedReleaseVersions, assessReleaseSync } from './release/index.js';
 export type { ReleasePlan, ReleaseBump, ReleasePlanDrift, ReleaseSyncAssessment, ReleaseGovernanceFailure } from './release/index.js';
 
 export { getCliSchemas, getCliSchema, isCliSchemaCommand, CLI_SCHEMA_COMMANDS } from './schema/cliSchemas.js';

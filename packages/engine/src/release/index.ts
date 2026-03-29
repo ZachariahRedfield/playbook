@@ -120,6 +120,10 @@ export type ReleaseSyncAssessment = {
   actionableTasks: Array<{ id: string; file: string | null; action: string; task_kind: ReleasePlanTask['task_kind'] }>;
 };
 
+type ReleaseTaskProvenance = {
+  next_version?: unknown;
+};
+
 const VERSION_POLICY_PATH = '.playbook/version-policy.json';
 const RELEASE_PLAN_PATH = '.playbook/release-plan.json';
 const CHANGELOG_PATH = 'docs/CHANGELOG.md';
@@ -684,6 +688,15 @@ export const detectReleasePlanDrift = (repoRoot: string, plan: ReleasePlan): Rel
   }
 
   return drifts;
+};
+
+export const summarizePlannedReleaseVersions = (plan: ReleasePlan): string[] => {
+  const versions = plan.tasks
+    .filter((task) => task.task_kind === 'release-package-version')
+    .map((task) => (task.provenance as ReleaseTaskProvenance | undefined)?.next_version)
+    .filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+  return uniqueSorted(versions);
 };
 
 export const verifyReleaseGovernance = (repoRoot: string, options: { baseRef: string; baseSha: string }): ReleaseGovernanceFailure[] => {
