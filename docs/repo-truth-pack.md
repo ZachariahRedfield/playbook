@@ -51,6 +51,34 @@ Validation includes:
 - required context fields in `playbook/context.json`
 - JSON validity for optional `playbook/app-integration.json` when present
 
+## External truth contract boundary (Fitness)
+
+When a subapp integration depends on the Fitness contract, treat that contract as the
+authoritative external truth source.
+
+Boundary rules:
+- This repository **consumes** the Fitness contract; it does not redefine or fork the contract.
+- Playbook adapter surfaces (for example `pnpm playbook interop fitness-contract`) must be
+  derived from the Fitness contract boundary and stay schema-compatible with the upstream contract.
+- If direct contract import is unavailable in a given environment, local mirror artifacts must be
+  exact mirrors of the external contract (field names, types, and semantics), not interpretation layers.
+
+Recommended `playbook/app-integration.json` annotation (optional but preferred for explicitness):
+
+```json
+{
+  "integration_id": "playbook-proving-ground-app",
+  "status": "integrated",
+  "surfaces": ["repo-truth-pack-ingest-v1", "fitness-contract-consumer-v1"],
+  "external_truth": {
+    "source": "fitness-contract",
+    "mode": "consume",
+    "adapter": "playbook-interop-fitness-contract",
+    "mirror_policy": "must-match-exactly-when-direct-import-unavailable"
+  }
+}
+```
+
 ## Templates and example
 - Template: `templates/repo/subapps/_truth-pack-template/`
 - Example: `subapps/proving-ground-app/`

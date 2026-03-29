@@ -66,6 +66,17 @@ Failure-semantics rules:
 - Consumer repos must provide one canonical operator command path; shadow wrappers that redefine Playbook behavior are not allowed.
 - Published wrapper entrypoints (for example `@fawxzzy/playbook-cli`) must remain thin delegates to the canonical `@fawxzzy/playbook` runtime and preserve semantic artifact parity under `.playbook/` (not metadata-only execution).
 
+### External contract truth inheritance (Fitness)
+
+When consumer integration surfaces depend on the Fitness contract boundary, the Fitness contract is the source of truth and Playbook acts as a consumer adapter.
+
+Contract inheritance rules:
+
+- Consumer repositories should document the Fitness dependency as **external truth** in integration surfaces (for example truth-pack metadata or integration docs).
+- Playbook interop/adapter outputs must derive from the upstream Fitness contract and must not duplicate or reinterpret the contract into a divergent local spec.
+- If direct import from the external Fitness source is unavailable, local mirrors are permitted only as byte-for-byte semantic mirrors (same canonical fields, types, and meaning).
+- Any mismatch between local mirrors and upstream Fitness contract must be treated as contract drift and remediated before asserting integration health.
+
 ## 2) Project-Local Playbook State
 
 Playbook runtime state for a consumer repository is stored under `.playbook/`.

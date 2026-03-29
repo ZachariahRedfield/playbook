@@ -108,6 +108,13 @@ pnpm playbook interop fitness-contract --json
 
 `rendezvous` is read-first in v1: it only creates/updates `.playbook/rendezvous-manifest.json` and never performs release mutation directly.
 
+Fitness contract sync boundary clarification:
+
+- Treat the Fitness contract as an external truth dependency consumed by this repository.
+- Treat `pnpm playbook interop fitness-contract --json` as the canonical read-only verification seam for adapter/truth alignment.
+- The Playbook-facing adapter must derive from the Fitness contract boundary rather than re-specifying it in local docs.
+- If direct import from the external source is unavailable, any local mirror used for interop verification must match the upstream contract exactly (names, types, and semantics).
+
 For trusted release preparation, use the dedicated manual workflow instead of ordinary PR CI mutation. The release-prep path must stay on the existing reviewed mutation boundary:
 
 ```bash
