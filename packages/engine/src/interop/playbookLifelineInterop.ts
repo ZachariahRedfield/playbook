@@ -373,6 +373,9 @@ export const reconcileInteropRuntime = async (
   cwd: string,
   runtime: PlaybookLifelineInteropRuntimeArtifact
 ): Promise<{ runtime: PlaybookLifelineInteropRuntimeArtifact; updatedTruth: InteropUpdatedTruthArtifact; updatedTruthPath: string }> => {
+  if (typeof cwd !== 'string' || cwd.trim().length === 0) {
+    throw new Error('Cannot reconcile interop runtime: cwd must be a non-empty string path.');
+  }
   const fitnessContract = await loadFitnessContract({ repoRoot: cwd });
   const contractActionByName = new Map(fitnessContract.payload.actions.map((action) => [action.name, action]));
   const now = nowIso();
