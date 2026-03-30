@@ -2,6 +2,14 @@ export const TEST_TRIAGE_SCHEMA_VERSION = '1.0' as const;
 export const TEST_TRIAGE_ARTIFACT_KIND = 'test-triage' as const;
 
 export const testTriageFailureKinds = [
+  'registry_timeout_install_failure',
+  'cache_restore_failure',
+  'composite_action_manifest_parse_failure',
+  'tool_bootstrap_failure',
+  'release_governance_preflight_failure',
+  'contracts_snapshot_drift',
+  'docs_audit_contract_failure',
+  'command_governance_enforcement_failure',
   'snapshot_drift',
   'stale_assertion',
   'fixture_drift',
@@ -21,6 +29,10 @@ export type TestTriageFailureKind = (typeof testTriageFailureKinds)[number];
 
 export const testTriageRepairClasses = ['autofix_plan_only', 'review_required'] as const;
 export type TestTriageRepairClass = (typeof testTriageRepairClasses)[number];
+export const testTriageFailureLayers = ['infra_failure', 'governance_failure', 'product_failure', 'unknown'] as const;
+export type TestTriageFailureLayer = (typeof testTriageFailureLayers)[number];
+export const testTriageAutomationEligibilityStates = ['eligible_for_product_remediation', 'blocked_infra_failure', 'blocked_governance_failure', 'not_applicable'] as const;
+export type TestTriageAutomationEligibility = (typeof testTriageAutomationEligibilityStates)[number];
 
 export type TestTriageFailureModeNote = {
   rule: string;
@@ -70,7 +82,9 @@ export type TestTriageArtifact = {
   command: 'test-triage';
   status: 'failed' | 'passed' | 'unknown';
   summary: string;
+  failureLayer: TestTriageFailureLayer;
   primaryFailureClass: TestTriageFailureKind | 'unknown';
+  automationEligibility: TestTriageAutomationEligibility;
   generatedAt: string;
   source: {
     input: 'file' | 'stdin';

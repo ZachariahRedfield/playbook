@@ -27,6 +27,16 @@ function readGitHubEvent(eventPath) {
   return JSON.parse(fs.readFileSync(eventPath, 'utf8'));
 }
 
+function readTriageArtifact(cwd) {
+  const triagePath = path.join(cwd, '.playbook', 'test-triage.json');
+  if (!fs.existsSync(triagePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(triagePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 function detectCleanWorktree(cwd) {
   try {
     cp.execFileSync('git', ['update-index', '-q', '--refresh'], { cwd, stdio: 'ignore' });
@@ -63,6 +73,9 @@ function evaluateCiRemediationPolicy(input) {
     : [];
   const overrideLabel = pullRequestLabels.find((label) => retryOverrideLabels.includes(label)) || null;
   const overrideUsed = allowRetryOverride || Boolean(overrideLabel);
+  const triageArtifact = readTriageArtifact(cwd);
+  const triageFailureLayer = String(triageArtifact?.failureLayer || 'unknown');
+  const triageAutomationEligibility = String(triageArtifact?.automationEligibility || 'not_applicable');
 
   const reasons = [];
   const cleanWorktree = detectCleanWorktree(cwd);
@@ -79,6 +92,12 @@ function evaluateCiRemediationPolicy(input) {
   let mode = 'apply';
 
   if (testExitCode !== 0) {
+    if (triageFailureLayer === 'infra_failure' || triageAutomationEligibility === 'blocked_infra_failure') {
+      reasons.push('infra failure classified by test-triage; remediation mutation is intentionally disabled');
+    }
+    if (triageFailureLayer === 'governance_failure' || triageAutomationEligibility === 'blocked_governance_failure') {
+      reasons.push('governance failure classified by test-triage; run governance fixes before remediation mutation');
+    }
     if (!enabled) reasons.push('autofix disabled by workflow input');
     if (!trustedEvent) reasons.push(`event ${eventName || '(unknown)'} is not in trusted-autofix-events`);
     if (!trustedBranch) reasons.push(`ref ${ref || '(unknown)'} is not in trusted-autofix-branches`);
@@ -93,7 +112,9 @@ function evaluateCiRemediationPolicy(input) {
       && trustedBranch
       && trustedPrSource
       && (!requireCleanWorktree || cleanWorktree)
-      && (!attemptLimitReached || overrideUsed);
+      && (!attemptLimitReached || overrideUsed)
+      && triageFailureLayer !== 'infra_failure'
+      && triageFailureLayer !== 'governance_failure';
     status = mutationAllowed ? 'allowed' : 'blocked_by_policy';
 
     if (protectedTarget) {
@@ -133,6 +154,10 @@ function evaluateCiRemediationPolicy(input) {
       retry_override_label: overrideLabel,
       protected_target: protectedTarget,
       protected_target_source: currentRefProtected ? 'ref' : (baseRefProtected ? 'base_ref' : 'none')
+    },
+    triage: {
+      failure_layer: triageFailureLayer,
+      automation_eligibility: triageAutomationEligibility
     },
     reasons,
     artifact_paths: {

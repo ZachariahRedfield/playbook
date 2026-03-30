@@ -34,6 +34,8 @@ describe('test triage engine', () => {
     const artifact = buildTestTriageArtifact(log, { input: 'stdin', path: null });
     expect(artifact.findings[0]?.failure_kind).toBe('environment_limitation');
     expect(artifact.findings[0]?.repair_class).toBe('review_required');
+    expect(artifact.failureLayer).toBe('infra_failure');
+    expect(artifact.automationEligibility).toBe('blocked_infra_failure');
   });
 
   it('detects ordering-only array drift from expected versus received arrays', () => {
@@ -47,5 +49,31 @@ describe('test triage engine', () => {
     const artifact = buildTestTriageArtifact(log, { input: 'file', path: 'ordering.log' });
     expect(artifact.findings[0]?.failure_kind).toBe('ordering_drift');
     expect(artifact.findings[0]?.suggested_fix_strategy).toContain('deterministic ordering');
+    expect(artifact.failureLayer).toBe('product_failure');
+    expect(artifact.automationEligibility).toBe('eligible_for_product_remediation');
+  });
+
+  it('classifies install timeout logs as infra failures', () => {
+    const log = [
+      'ERR_PNPM_FETCH_504 GET https://registry.npmjs.org/typescript: request to registry timed out',
+      ' WARN  GET https://registry.npmjs.org/vitest error (ETIMEDOUT). Will retry in 10 seconds.'
+    ].join('\n');
+
+    const artifact = buildTestTriageArtifact(log, { input: 'file', path: '.playbook/ci-failure.log' });
+    expect(artifact.primaryFailureClass).toBe('registry_timeout_install_failure');
+    expect(artifact.failureLayer).toBe('infra_failure');
+    expect(artifact.automationEligibility).toBe('blocked_infra_failure');
+  });
+
+  it('classifies release-governance preflight failures as governance failures', () => {
+    const log = [
+      'Run preflight verify for release governance',
+      'Preflight verify failed before pnpm test; see .playbook/verify-preflight.json for canonical machine detail.'
+    ].join('\n');
+
+    const artifact = buildTestTriageArtifact(log, { input: 'file', path: '.playbook/ci-failure.log' });
+    expect(artifact.primaryFailureClass).toBe('release_governance_preflight_failure');
+    expect(artifact.failureLayer).toBe('governance_failure');
+    expect(artifact.automationEligibility).toBe('blocked_governance_failure');
   });
 });

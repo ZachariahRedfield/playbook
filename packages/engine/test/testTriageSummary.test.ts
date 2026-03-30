@@ -20,6 +20,7 @@ describe('test triage failure summary', () => {
 
     expect(first).toEqual(second);
     expect(first.summary).toContain('3 normalized failures');
+    expect(first.failureLayer).toBe('governance_failure');
     expect(first.primaryFailureClass).toBe('missing_expected_finding');
     expect(first.failures).toHaveLength(3);
     expect(first.failures.map((failure) => failure.type).sort()).toEqual([
@@ -46,14 +47,16 @@ describe('test triage failure summary', () => {
 
     expect(artifact.failures).toHaveLength(1);
     expect(artifact.failures[0]).toMatchObject({
-      type: 'runtime_failure',
+      type: 'contract_drift',
       file: 'packages/engine/src/schema/cliSchemas.ts',
       line: 2034,
       column: 17,
       message: 'contract drift in generated test-triage schema'
     });
     expect(artifact.summary).toContain('1 normalized failure');
+    expect(artifact.failureLayer).toBe('governance_failure');
     expect(markdown).toContain('# Playbook Failure Summary');
+    expect(markdown).toContain('- Failure layer: governance_failure');
     expect(markdown).toContain('## Recommended next checks');
     expect(markdown).toContain('contract drift in generated test-triage schema');
   });

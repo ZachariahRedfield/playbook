@@ -10,6 +10,8 @@
     "command",
     "status",
     "summary",
+    "failureLayer",
+    "automationEligibility",
     "primaryFailureClass",
     "generatedAt",
     "source",
@@ -47,6 +49,14 @@
     "primaryFailureClass": {
       "type": "string",
       "enum": [
+        "registry_timeout_install_failure",
+        "cache_restore_failure",
+        "composite_action_manifest_parse_failure",
+        "tool_bootstrap_failure",
+        "release_governance_preflight_failure",
+        "contracts_snapshot_drift",
+        "docs_audit_contract_failure",
+        "command_governance_enforcement_failure",
         "snapshot_drift",
         "stale_assertion",
         "fixture_drift",
@@ -108,6 +118,14 @@
         "properties": {
           "type": {
             "enum": [
+              "registry_timeout_install_failure",
+              "cache_restore_failure",
+              "composite_action_manifest_parse_failure",
+              "tool_bootstrap_failure",
+              "release_governance_preflight_failure",
+              "contracts_snapshot_drift",
+              "docs_audit_contract_failure",
+              "command_governance_enforcement_failure",
               "snapshot_drift",
               "stale_assertion",
               "fixture_drift",
@@ -212,6 +230,14 @@
           },
           "failure_kind": {
             "enum": [
+              "registry_timeout_install_failure",
+              "cache_restore_failure",
+              "composite_action_manifest_parse_failure",
+              "tool_bootstrap_failure",
+              "release_governance_preflight_failure",
+              "contracts_snapshot_drift",
+              "docs_audit_contract_failure",
+              "command_governance_enforcement_failure",
               "snapshot_drift",
               "stale_assertion",
               "fixture_drift",
@@ -349,6 +375,24 @@
           }
         }
       }
+    },
+    "failureLayer": {
+      "type": "string",
+      "enum": [
+        "infra_failure",
+        "governance_failure",
+        "product_failure",
+        "unknown"
+      ]
+    },
+    "automationEligibility": {
+      "type": "string",
+      "enum": [
+        "eligible_for_product_remediation",
+        "blocked_infra_failure",
+        "blocked_governance_failure",
+        "not_applicable"
+      ]
     }
   },
   "$defs": {

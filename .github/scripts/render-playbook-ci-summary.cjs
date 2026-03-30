@@ -124,18 +124,27 @@ function buildRemediationSummary(policy, failureSummary, remediationStatus) {
   const retryDecision = latestRun.retry_policy_decision ?? 'not_run';
   const preferredRepairClass = latestRun.preferred_repair_class ?? '(none)';
   const primaryFailure = failureSummary.primaryFailureClass ?? failureSummary.summary?.primaryFailureClass ?? '(unknown)';
+  const failureLayer = failureSummary.failureLayer ?? 'unknown';
+  const layerHeadline = failureLayer === 'infra_failure'
+    ? 'Infra failure'
+    : (failureLayer === 'governance_failure' ? 'Governance failure' : (failureLayer === 'product_failure' ? 'Product failure' : 'Unknown failure'));
+  const recommendedNextCheck = Array.isArray(failureSummary.recommendedNextChecks) && failureSummary.recommendedNextChecks.length > 0
+    ? failureSummary.recommendedNextChecks[0]
+    : null;
   const failureCount = failureSummary.summary?.totalFailures
     ?? failureSummary.summary?.total
     ?? (Array.isArray(failureSummary.failures) ? failureSummary.failures.length : 0);
   return {
     status: recentStatus,
+    failureLayer,
+    layerHeadline,
     failureClass: primaryFailure,
     failureCount,
     retryDecision,
     preferredRepairClass,
     nextAction: Array.isArray(policy?.reasons) && policy.reasons.length > 0
       ? policy.reasons[0]
-      : (latestRun.next_action ?? 'Review `.playbook/test-triage.json` and `.playbook/remediation-status.json` for deterministic remediation guidance.'),
+      : (recommendedNextCheck ?? latestRun.next_action ?? 'Review `.playbook/test-triage.json` and `.playbook/remediation-status.json` for deterministic remediation guidance.'),
   };
 }
 
@@ -148,7 +157,8 @@ function buildSummary({ verify, verifyArtifactPath, releasePlan, releaseArtifact
 
   let overallStatus = verifySummary.status === 'FAIL' ? 'blocked' : 'clear';
   if (remediationSummary) overallStatus = remediationSummary.status === 'allowed' ? overallStatus : `${overallStatus} · test failure`; // retains compact context
-  const overallDecision = verify?.ok ? 'merge-ready pending policy context' : 'verify blocked';
+  const decisionPrefix = remediationSummary ? `${remediationSummary.layerHeadline} · ` : '';
+  const overallDecision = `${decisionPrefix}${verify?.ok ? 'merge-ready pending policy context' : 'verify blocked'}`;
 
   const artifacts = [verifyArtifactPath, releaseSummary ? releaseArtifactPath : null, remediationSummary ? remediationPolicyArtifactPath : null, remediationSummary ? failureSummaryArtifactPath : null, remediationSummary ? remediationStatusArtifactPath : null]
     .filter((value) => typeof value === 'string' && value.trim().length > 0);
@@ -188,8 +198,9 @@ function renderMarkdown(summary, { marker, title }) {
   }
 
   if (summary.remediation) {
+    lines.push(`| Failure layer | ${summary.remediation.layerHeadline} |`);
     lines.push(`| Remediation | ${summary.remediation.status} |`);
-    lines.push(`| Test failure summary | class=${summary.remediation.failureClass}; failures=${summary.remediation.failureCount} |`);
+    lines.push(`| Test failure summary | layer=${summary.remediation.failureLayer}; class=${summary.remediation.failureClass}; failures=${summary.remediation.failureCount} |`);
     lines.push(`| Retry / repair | ${summary.remediation.retryDecision}; ${summary.remediation.preferredRepairClass} |`);
     lines.push(`| Remediation next action | ${summary.remediation.nextAction} |`);
   }

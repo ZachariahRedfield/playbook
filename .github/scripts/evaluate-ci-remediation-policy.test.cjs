@@ -131,3 +131,33 @@ test('accepts retry override label from pull request metadata', () => {
   assert.equal(artifact.gating.retry_override_source, 'pull_request_label');
   assert.equal(artifact.gating.retry_override_label, 'playbook:retry-autofix');
 });
+
+test('blocks mutation when test-triage classifies infra failure', () => {
+  const cwd = createRepo();
+  fs.mkdirSync(path.join(cwd, '.playbook'), { recursive: true });
+  fs.writeFileSync(path.join(cwd, '.playbook', 'test-triage.json'), JSON.stringify({
+    failureLayer: 'infra_failure',
+    automationEligibility: 'blocked_infra_failure'
+  }), 'utf8');
+
+  const artifact = evaluateCiRemediationPolicy({
+    cwd,
+    testExitCode: 1,
+    enabled: true,
+    requireCleanWorktree: true,
+    trustedEvents: 'workflow_dispatch',
+    trustedBranches: 'refs/heads/main',
+    protectedBranches: '',
+    eventName: 'workflow_dispatch',
+    ref: 'refs/heads/main',
+    sha: 'abc123',
+    runAttempt: 1,
+    maxAutofixAttemptsPerSha: 1,
+    repository: 'owner/repo',
+  });
+
+  assert.equal(artifact.status, 'blocked_by_policy');
+  assert.equal(artifact.mutation_allowed, false);
+  assert.equal(artifact.triage.failure_layer, 'infra_failure');
+  assert.match(artifact.reasons.join('\n'), /infra failure classified by test-triage/);
+});

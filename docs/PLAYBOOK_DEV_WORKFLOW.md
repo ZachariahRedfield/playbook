@@ -195,12 +195,18 @@ Failure Mode: Relying on CI-only detection causes repeated failed pipelines and 
 
 Rule: CI dependency installs must tolerate transient registry/network failures.
 Rule: Infra-layer failures must be isolated from product-layer signals.
+Rule: Infra failures, governance failures, and product failures must be classified separately before remediation is attempted.
+Rule: Schema or contract drift is always classified as governance_failure.
 Rule: Composite actions own reusable command sequences; workflows own execution policy.
 Pattern: Retry-hardened install + cache fallback.
 Pattern: Harden CI install so registry instability does not surface as product failure.
+Pattern: Classify first -> summarize clearly -> route the correct next action.
+Pattern: Failure classification must reflect system ownership, not symptom surface.
 Pattern: Put timeout-minutes, retries, and broader orchestration at workflow/job scope, not inside composite action manifests.
 Failure Mode: Treating network timeouts as code failures leads to false debugging cycles.
 Failure Mode: Misclassifying infra failures as contract drift wastes cycles and drives incorrect fixes.
+Failure Mode: Treating all red CI runs as the same kind of failure causes repeated wrong fixes and wasted cycles.
+Failure Mode: Treating contract drift as runtime failure misroutes remediation to product layer.
 Failure Mode: Mixing workflow-only keys into composite-action steps causes parse-time CI failure before any real diagnostics run.
 
 ## Smoke testing

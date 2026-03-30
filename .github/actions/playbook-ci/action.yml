@@ -345,6 +345,17 @@ runs:
       run: |
         echo "Playbook CI remediation blocked by policy gates."
         cat .playbook/ci-remediation-policy.json
+        if [[ -f .playbook/test-triage.json ]]; then
+          layer=$(node -e "const fs=require('node:fs'); const t=JSON.parse(fs.readFileSync('.playbook/test-triage.json','utf8')); console.log(t.failureLayer || 'unknown')")
+          echo "Classified CI failure layer: $layer"
+          if [[ "$layer" == "infra_failure" ]]; then
+            echo "Infra failure: no remediation/autofix mutation attempted; resolve install/cache/action/bootstrap reliability first."
+          elif [[ "$layer" == "governance_failure" ]]; then
+            echo "Governance failure: no remediation/autofix mutation attempted; run release/contracts/docs governance checks and commit deterministic fixes."
+          else
+            echo "Product failure: remediation was blocked by policy gates unrelated to failure-layer classification."
+          fi
+        fi
 
     - name: Run targeted CLI test filters
       if: inputs.execution-path == 'ci'

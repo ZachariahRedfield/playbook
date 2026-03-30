@@ -2,8 +2,10 @@ import {
   TEST_TRIAGE_ARTIFACT_KIND,
   TEST_TRIAGE_SCHEMA_VERSION,
   type TestTriageArtifact,
+  type TestTriageAutomationEligibility,
   type TestTriageFailure,
   type TestTriageFailureKind,
+  type TestTriageFailureLayer,
   type TestTriageFinding,
   type TestTriageRepairClass
 } from '@zachariahredfield/playbook-core';
@@ -52,7 +54,88 @@ const readArrayLiteral = (text: string): string[] => {
 };
 
 const classifyFailure = (joinedBlock: string): FailureClassification => {
+  if (/ERR_PNPM_FETCH|ERR_SOCKET_TIMEOUT|ETIMEDOUT|registry\.npmjs\.org|request to .*registry.*failed/i.test(joinedBlock)) {
+    return {
+      kind: 'registry_timeout_install_failure',
+      confidence: 0.98,
+      strategy: 'Treat this as infra-first. Re-run install with registry diagnostics before changing repository code.',
+      docs: 'No docs update needed unless CI install policy changed intentionally.',
+      likelyCauses: ['Registry timeout or package-fetch instability interrupted dependency install.', 'The CI run failed before repository logic could be validated.']
+    };
+  }
+  if (/cache (?:restore|download).*failed|Failed to restore cache|Unable to reserve cache/i.test(joinedBlock)) {
+    return {
+      kind: 'cache_restore_failure',
+      confidence: 0.97,
+      strategy: 'Treat this as infra-first. Re-run without relying on restored cache and confirm cache backend health.',
+      docs: 'Update CI docs only if cache policy changed intentionally.',
+      likelyCauses: ['CI cache restore failed and interrupted the deterministic setup path.', 'The run may be infra-limited rather than product-regressed.']
+    };
+  }
+  if (/Error:.*action\.yml|composite action|Unexpected value .*steps|manifest parse/i.test(joinedBlock)) {
+    return {
+      kind: 'composite_action_manifest_parse_failure',
+      confidence: 0.99,
+      strategy: 'Fix the composite action manifest syntax/keys before running product remediation.',
+      docs: 'Update CI workflow/composite-action docs when action contract changes intentionally.',
+      likelyCauses: ['Composite action manifest parse failure blocked execution before tests.', 'Workflow-only keys may have been mixed into composite action step schema.']
+    };
+  }
+  if (/Cannot find module ['"]@rollup\/rollup-linux-x64-gnu|Rollup native optional package missing|tool bootstrap failure|bootstrap failed/i.test(joinedBlock)) {
+    return {
+      kind: 'tool_bootstrap_failure',
+      confidence: 0.98,
+      strategy: 'Reconcile missing optional/native tool bootstrap prerequisites before attempting code-level fixes.',
+      docs: 'Document bootstrap prerequisites only if environment requirements changed intentionally.',
+      likelyCauses: ['Optional/native bootstrap binary was unavailable.', 'CI tooling prerequisites failed before product checks could run.']
+    };
+  }
+  if (/Preflight verify failed before pnpm test|release sync --check|Release drift detected before verify/i.test(joinedBlock)) {
+    return {
+      kind: 'release_governance_preflight_failure',
+      confidence: 0.98,
+      strategy: 'Run release governance sync/apply locally, commit governed outputs, and re-run CI.',
+      docs: 'Keep release-governance workflow docs aligned if command behavior changed intentionally.',
+      likelyCauses: ['Release governance preflight failed before product tests.', 'Governed release state drifted from repository changes.']
+    };
+  }
+  if (/contracts:check|contract snapshot|snapshot drift|generated schema drift|contracts snapshot drift/i.test(joinedBlock)) {
+    return {
+      kind: 'contracts_snapshot_drift',
+      confidence: 0.93,
+      strategy: 'Regenerate and review governed contract snapshots; do not run product autofix mutation.',
+      docs: 'Update contract/docs surfaces together if snapshot drift is intentional.',
+      likelyCauses: ['Contract snapshot drift triggered governance failure.', 'Command contract output changed without synchronized snapshots.']
+    };
+  }
+  if (/docs audit|docs contract failure|documentation governance/i.test(joinedBlock)) {
+    return {
+      kind: 'docs_audit_contract_failure',
+      confidence: 0.94,
+      strategy: 'Resolve docs-audit governance findings and rerun governance checks before product remediation.',
+      docs: 'Update owning command/governance docs in the same change.',
+      likelyCauses: ['Documentation governance contract check failed.', 'Required docs surfaces are not aligned with command/workflow behavior.']
+    };
+  }
+  if (/doctor.*failed|command-governance enforcement|governance enforcement failure|protected-doc\./i.test(joinedBlock)) {
+    return {
+      kind: 'command_governance_enforcement_failure',
+      confidence: 0.94,
+      strategy: 'Address command-governance/doctor findings directly; no product autofix mutation should run.',
+      docs: 'Update governance docs when enforcement contracts intentionally change.',
+      likelyCauses: ['Doctor or command-governance enforcement blocked CI.', 'Governed command/doc surfaces drifted from policy expectations.']
+    };
+  }
   if (/::(error|warning)\s+file=.*line=.*col=.*/i.test(joinedBlock)) {
+    if (/contract drift|schema drift|schema mismatch|contract snapshot|cliSchemas|invalid contract|generated .*schema/i.test(joinedBlock)) {
+      return {
+        kind: 'contract_drift',
+        confidence: 0.93,
+        strategy: 'Treat annotation-reported schema/contract drift as governance-first and reconcile the contract/schema surface before product remediation.',
+        docs: 'Update command contract docs, schema snapshots, and related governance docs together when intentional.',
+        likelyCauses: ['GitHub Actions annotation points to schema/contract drift.', 'Contract artifacts changed without aligned schema/snapshot updates.']
+      };
+    }
     return {
       kind: 'runtime_failure',
       confidence: 0.88,
@@ -161,7 +244,7 @@ const classifyFailure = (joinedBlock: string): FailureClassification => {
 
   if (/Expected:|Received:|expected .* to (be|equal|contain|match)/i.test(joinedBlock)) {
     return {
-      kind: /contract|schema|artifact/i.test(joinedBlock) ? 'contract_drift' : 'test_expectation_drift',
+      kind: /contract drift|schema mismatch|contract snapshot|invalid contract/i.test(joinedBlock) ? 'contract_drift' : 'test_expectation_drift',
       confidence: 0.84,
       strategy: 'Compare the current deterministic behavior with the asserted expectation and update the narrow assertion only if the new behavior is intended.',
       docs: 'Update docs if the assertion reflects an operator-facing text or contract change.',
@@ -335,6 +418,22 @@ const summarizeFailures = (failures: TestTriageFailure[]): { summary: string; pr
   };
 };
 
+const deriveFailureLayer = (failureKinds: TestTriageFailureKind[]): TestTriageFailureLayer => {
+  if (failureKinds.length === 0) return 'unknown';
+  const infraKinds = new Set<TestTriageFailureKind>(['registry_timeout_install_failure', 'cache_restore_failure', 'composite_action_manifest_parse_failure', 'tool_bootstrap_failure', 'environment_limitation']);
+  const governanceKinds = new Set<TestTriageFailureKind>(['release_governance_preflight_failure', 'contracts_snapshot_drift', 'docs_audit_contract_failure', 'command_governance_enforcement_failure', 'missing_expected_finding', 'contract_drift']);
+  if (failureKinds.some((kind) => infraKinds.has(kind))) return 'infra_failure';
+  if (failureKinds.some((kind) => governanceKinds.has(kind))) return 'governance_failure';
+  return 'product_failure';
+};
+
+const deriveAutomationEligibility = (status: TestTriageArtifact['status'], layer: TestTriageFailureLayer): TestTriageAutomationEligibility => {
+  if (status !== 'failed') return 'not_applicable';
+  if (layer === 'infra_failure') return 'blocked_infra_failure';
+  if (layer === 'governance_failure') return 'blocked_governance_failure';
+  return 'eligible_for_product_remediation';
+};
+
 const buildCrossCuttingDiagnosis = (failures: TestTriageFailure[]): string[] => {
   const diagnoses = new Set<string>();
   const byWorkspace = new Map<string, TestTriageFailure[]>();
@@ -366,6 +465,9 @@ const buildRecommendedNextChecks = (findings: TestTriageFinding[], crossCuttingD
   if (findings.some((finding) => finding.failure_kind === 'snapshot_drift')) checks.add('Inspect the referenced snapshot diff before refreshing snapshots.');
   if (findings.some((finding) => finding.failure_kind === 'contract_drift')) checks.add('Compare the emitted JSON against the canonical schema or contract snapshot before changing fixtures.');
   if (findings.some((finding) => finding.failure_kind === 'missing_expected_finding')) checks.add('Confirm the governed rule or detector still emits the expected finding for the current fixture input.');
+  if (findings.some((finding) => finding.failure_kind === 'registry_timeout_install_failure')) checks.add('Infra failure: validate npm/pnpm registry reachability and rerun install before any repository mutation.');
+  if (findings.some((finding) => finding.failure_kind === 'release_governance_preflight_failure')) checks.add('Governance failure: run `pnpm playbook release sync` (or `pnpm playbook commit`) and commit governed release outputs.');
+  if (findings.some((finding) => finding.failure_kind === 'docs_audit_contract_failure')) checks.add('Governance failure: run `pnpm playbook docs audit --json` locally and resolve reported doc contract drift.');
   if (crossCuttingDiagnosis.length > 0) checks.add('Review cross-cutting diagnoses before applying any broad multi-file repair.');
   return [...checks].sort(compareStrings);
 };
@@ -408,6 +510,8 @@ export const buildTestTriageArtifact = (rawLog: string, source: TriageInputSourc
 
   const failures = findings.map((finding) => finding.normalized_failure);
   const { summary, primaryFailureClass } = summarizeFailures(failures);
+  const failureLayer = deriveFailureLayer(failures.map((failure) => failure.type));
+  const automationEligibility = deriveAutomationEligibility(findings.length > 0 ? 'failed' : rawLog.trim().length === 0 ? 'unknown' : 'passed', failureLayer);
   const crossCuttingDiagnosis = buildCrossCuttingDiagnosis(failures);
   const recommendedNextChecks = buildRecommendedNextChecks(findings, crossCuttingDiagnosis);
   const rerunCommands = uniqueSorted(findings.flatMap((finding) => finding.verification_commands));
@@ -433,7 +537,9 @@ export const buildTestTriageArtifact = (rawLog: string, source: TriageInputSourc
     command: 'test-triage',
     status: findings.length > 0 ? 'failed' : rawLog.trim().length === 0 ? 'unknown' : 'passed',
     summary,
+    failureLayer,
     primaryFailureClass,
+    automationEligibility,
     generatedAt: new Date(0).toISOString(),
     source,
     failures,
@@ -457,7 +563,9 @@ export const renderTestTriageMarkdown = (artifact: TestTriageArtifact): string =
     '# Playbook Failure Summary',
     '',
     `- Status: ${artifact.status}`,
+    `- Failure layer: ${artifact.failureLayer}`,
     `- Primary failure class: ${artifact.primaryFailureClass}`,
+    `- Automation eligibility: ${artifact.automationEligibility}`,
     `- Summary: ${artifact.summary}`,
     artifact.source.path ? `- Source log: \`${artifact.source.path}\`` : '- Source log: stdin',
     ''

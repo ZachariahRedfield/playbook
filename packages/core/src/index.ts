@@ -23,8 +23,25 @@ export type {
 } from './contracts/remediationStatus.js';
 export { REMEDIATION_STATUS_ARTIFACT_KIND, REMEDIATION_STATUS_SCHEMA_VERSION } from './contracts/remediationStatus.js';
 export { TEST_FIX_PLAN_ARTIFACT_KIND, TEST_FIX_PLAN_SCHEMA_VERSION, testFixPlanExclusionReasons, testFixPlanTaskKinds } from './contracts/testFixPlan.js';
-export type { TestTriageArtifact, TestTriageFailure, TestTriageFailureKind, TestTriageFinding, TestTriageFailureModeNote, TestTriageRepairClass, TestTriageRepairPlan } from './contracts/testTriage.js';
-export { TEST_TRIAGE_ARTIFACT_KIND, TEST_TRIAGE_SCHEMA_VERSION, testTriageFailureKinds, testTriageRepairClasses } from './contracts/testTriage.js';
+export type {
+  TestTriageArtifact,
+  TestTriageAutomationEligibility,
+  TestTriageFailure,
+  TestTriageFailureKind,
+  TestTriageFailureLayer,
+  TestTriageFinding,
+  TestTriageFailureModeNote,
+  TestTriageRepairClass,
+  TestTriageRepairPlan
+} from './contracts/testTriage.js';
+export {
+  TEST_TRIAGE_ARTIFACT_KIND,
+  TEST_TRIAGE_SCHEMA_VERSION,
+  testTriageAutomationEligibilityStates,
+  testTriageFailureKinds,
+  testTriageFailureLayers,
+  testTriageRepairClasses
+} from './contracts/testTriage.js';
 export type { SessionContract, SessionPinnedArtifact, SessionPinnedArtifactKind, SessionStep, ResumeSessionResult } from './contracts/session.js';
 export { RENDEZVOUS_MANIFEST_SCHEMA_VERSION, RENDEZVOUS_MANIFEST_ARTIFACT_KIND, rendezvousArtifactIds, rendezvousVerificationStatuses, rendezvousEvaluationStates } from './contracts/rendezvousManifest.js';
 export type { RendezvousArtifactId, RendezvousVerificationStatus, RendezvousEvaluationState, RendezvousManifestArtifact, RendezvousManifestArtifactMap, RendezvousManifestArtifactObservation, RendezvousManifestArtifactObservations, RendezvousManifestArtifactBlocker, RendezvousManifest, RendezvousManifestEvaluation } from './contracts/rendezvousManifest.js';
