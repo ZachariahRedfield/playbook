@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   createEmptyInteropRuntime,
@@ -8,6 +11,23 @@ import {
   runLifelineMockRuntimeOnce
 } from '../src/interop/playbookLifelineInterop.js';
 import { getFitnessActionContract, getFitnessReceiptTypeForAction } from '../src/integrations/fitnessContract.js';
+
+const createRepoWithFitnessConfig = (): string => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-engine-interop-'));
+  fs.writeFileSync(
+    path.join(repo, 'playbook.fitness.config.json'),
+    `${JSON.stringify({
+      fitnessContractSource: {
+        sourceRepo: 'ZachariahRedfield/fawxzzy-fitness',
+        sourceRef: 'main',
+        sourcePath: 'src/lib/ecosystem/fitness-integration-contract.ts',
+        syncMode: 'mirrored'
+      }
+    }, null, 2)}\n`,
+    'utf8'
+  );
+  return repo;
+};
 
 describe('playbook lifeline interop fitness seam', () => {
   it('emits request and receipt using canonical fitness action, receipt type, and routing metadata', () => {
@@ -66,7 +86,8 @@ describe('playbook lifeline interop fitness seam', () => {
     });
   });
 
-  it('rejects mismatched action->receipt pairings during reconciliation', () => {
+  it('rejects mismatched action->receipt pairings during reconciliation', async () => {
+    const repo = createRepoWithFitnessConfig();
     const action_kind = 'adjust_upcoming_workout_load' as const;
     const action = getFitnessActionContract(action_kind);
     const runtime = registerInteropCapability(createEmptyInteropRuntime(), {
@@ -122,7 +143,7 @@ describe('playbook lifeline interop fitness seam', () => {
       ]
     };
 
-    expect(() => reconcileInteropRuntime(mismatched)).toThrow(/receipt mismatch/);
+    await expect(reconcileInteropRuntime(repo, mismatched)).rejects.toThrow(/receipt mismatch/);
   });
 
   it('rejects registration when canonical routing metadata drifts', () => {

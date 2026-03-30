@@ -28,6 +28,10 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - `pnpm playbook interop fitness-contract` is the canonical read-only inspect seam for the consumed Fitness contract boundary: text mode stays brief-thin (source pointer + canonical names/types), while full detail remains in JSON plus `.playbook/fitness-contract.json`.
 - `pnpm playbook interop draft --json` is the canonical thin compile/read seam for proposal-only Fitness interop request drafts: it reads `.playbook/ai-proposal.json`, validates canonical suggestion/action/input/receipt/routing fields, and writes additive `.playbook/interop-request-draft.json` without executing runtime interop.
 - `pnpm playbook interop emit-fitness-plan --from-draft .playbook/interop-request-draft.json` is the canonical explicit emit seam for reviewed request drafts: it only accepts the canonical draft artifact, re-validates target/action/capability/input/receipt/routing against the canonical Fitness contract, and then reuses the existing bounded emit runtime path.
+- `pnpm playbook interop reconcile --json` now closes the bounded Fitness loop by materializing deterministic `.playbook/interop-updated-truth.json` from canonical interop receipts plus canonical Fitness contract mirror fingerprint/source metadata, while remaining read-first and non-promotional.
+- Rule: Receipts must resolve into explicit truth-update artifacts, not implicit operator interpretation.
+- Pattern: bounded request -> receipt -> updated truth -> next action.
+- Failure Mode: If receipt handling stops at runtime reconciliation, the loop appears complete but truth updates still depend on human interpretation.
 - Rule: AI proposals may be compiled into bounded request drafts, but may not execute them directly.
 - Pattern: AI proposal -> request draft -> explicit interop emit -> receipt -> updated truth.
 - Failure Mode: Requiring operators to manually re-translate proposal artifacts into runtime requests recreates hidden session state and weakens auditability.

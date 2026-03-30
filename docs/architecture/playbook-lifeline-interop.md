@@ -97,6 +97,30 @@ Reconcile derives request states from durable receipts with explicit states:
 - `completed`
 - `blocked`
 
+Reconcile also materializes `.playbook/interop-updated-truth.json` as a read-first deterministic truth-update artifact derived only from canonical runtime receipts plus the canonical Fitness contract mirror fingerprint/source pointer. Each update entry carries:
+
+- `receiptId`
+- `requestId`
+- `action`
+- `receiptType`
+- `sourceHash`
+- `canonicalOutcomeSummary`
+- bounded state delta (`requestState`, output artifact refs)
+- `memoryProvenanceRefs`
+- `nextActionHints`
+
+Rule:
+
+Receipts must resolve into explicit truth-update artifacts, not implicit operator interpretation.
+
+Pattern:
+
+bounded request -> receipt -> updated truth -> next action.
+
+Failure mode:
+
+If receipt handling stops at runtime reconciliation, the loop can look complete while truth updates still live in human interpretation.
+
 ## Inspect surfaces
 
 CLI command:

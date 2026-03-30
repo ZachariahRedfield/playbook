@@ -76,7 +76,7 @@ const engine = engineRuntime as unknown as {
   emitBoundedInteropActionRequest: (input: any) => { runtime: any; request: any };
   emitPlanDerivedFitnessRequest: (input: any) => { runtime: any; request: any };
   runLifelineMockRuntimeOnce: (runtime: any, runtimeId: string) => any;
-  reconcileInteropRuntime: (runtime: any) => any;
+  reconcileInteropRuntime: (cwd: string, runtime: any) => Promise<{ runtime: any; updatedTruth: any; updatedTruthPath: string }>;
   materializeFitnessContractArtifact: (options: { repoRoot: string }) => Promise<any>;
   compileInteropRequestDraft: (cwd: string, options?: { proposalPath?: string; outFile?: string; capability?: string }) => { artifactPath: string; draft: any };
   readInteropRequestDraft: (cwd: string, options?: { draftPath?: string }) => { artifactPath: string; draft: any };
@@ -317,8 +317,23 @@ export const runInterop = async (cwd: string, commandArgs: string[], options: In
       runtime = engine.runLifelineMockRuntimeOnce(runtime, runtimeId);
       engine.writeInteropRuntime(cwd, runtime);
     } else if (sub === 'reconcile') {
-      runtime = engine.reconcileInteropRuntime(runtime);
+      const reconciled = await engine.reconcileInteropRuntime(cwd, runtime);
+      runtime = reconciled.runtime;
       engine.writeInteropRuntime(cwd, runtime);
+      const payload = {
+        runtime,
+        updated_truth: reconciled.updatedTruth,
+        written_artifacts: {
+          interop_runtime: '.playbook/lifeline-interop-runtime.json',
+          interop_updated_truth: reconciled.updatedTruthPath
+        }
+      };
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'interop', payload: { command: 'interop', subcommand: sub, payload } });
+      } else if (!options.quiet) {
+        console.log(JSON.stringify(payload, null, 2));
+      }
+      return ExitCode.Success;
     }
 
     const payload = sub === 'capabilities' ? runtime.capabilities

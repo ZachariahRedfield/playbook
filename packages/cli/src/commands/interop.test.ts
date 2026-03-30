@@ -96,6 +96,110 @@ describe('runInterop', () => {
     expect(runtime.heartbeat.health).toBe('healthy');
   });
 
+  it('reconciles canonical fitness receipts into deterministic updated-truth artifact', async () => {
+    const repo = createRepo();
+    writeArtifact(repo, 'playbook.fitness.config.json', {
+      fitnessContractSource: {
+        sourceRepo: 'ZachariahRedfield/fawxzzy-fitness',
+        sourceRef: 'main',
+        sourcePath: 'src/lib/ecosystem/fitness-integration-contract.ts',
+        syncMode: 'mirrored'
+      }
+    });
+    writeArtifact(repo, '.playbook/rendezvous-manifest.json', {
+      remediationId: 'remediation-interop-fit-2',
+      requiredArtifactIds: ['fitness-contract']
+    });
+    writeArtifact(repo, '.playbook/rendezvous-status.json', {
+      evaluation: { state: 'complete', releaseReady: true, blockers: [], missingArtifactIds: [], conflictingArtifactIds: [], stale: false }
+    });
+
+    expect(await runInterop(repo, ['register', '--capability', 'lifeline-remediation-v1', '--action', 'adjust_upcoming_workout_load'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runInterop(repo, ['emit-fitness-plan', '--capability', 'lifeline-remediation-v1', '--action', 'adjust_upcoming_workout_load'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    expect(await runInterop(repo, ['run-mock'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    expect(await runInterop(repo, ['reconcile'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    const firstPayload = JSON.parse(String(spy.mock.calls.at(-1)?.[0])) as {
+      command: string;
+      subcommand: string;
+      payload: { updated_truth: { kind: string; updates: Array<{ action: string; receiptType: string; sourceHash: string }> } };
+    };
+    const firstArtifactRaw = fs.readFileSync(path.join(repo, '.playbook/interop-updated-truth.json'), 'utf8');
+
+    expect(await runInterop(repo, ['reconcile'], { format: 'json', quiet: false })).toBe(ExitCode.Success);
+    const secondArtifactRaw = fs.readFileSync(path.join(repo, '.playbook/interop-updated-truth.json'), 'utf8');
+
+    expect(firstPayload.command).toBe('interop');
+    expect(firstPayload.subcommand).toBe('reconcile');
+    expect(firstPayload.payload.updated_truth.kind).toBe('interop-updated-truth-artifact');
+    expect(firstPayload.payload.updated_truth.updates[0]).toMatchObject({
+      action: 'adjust_upcoming_workout_load',
+      receiptType: 'schedule_adjustment_applied',
+      sourceHash: expect.any(String)
+    });
+    expect(firstArtifactRaw).toBe(secondArtifactRaw);
+  });
+
+  it('rejects reconcile when receipt type/action drift from canonical fitness contract', async () => {
+    const repo = createRepo();
+    writeArtifact(repo, 'playbook.fitness.config.json', {
+      fitnessContractSource: {
+        sourceRepo: 'ZachariahRedfield/fawxzzy-fitness',
+        sourceRef: 'main',
+        sourcePath: 'src/lib/ecosystem/fitness-integration-contract.ts',
+        syncMode: 'mirrored'
+      }
+    });
+    writeArtifact(repo, '.playbook/lifeline-interop-runtime.json', {
+      schemaVersion: '1.0',
+      kind: 'playbook-lifeline-interop-runtime',
+      generatedAt: '2026-03-30T00:00:00.000Z',
+      capabilities: [],
+      requests: [
+        {
+          request_id: 'interop-0001',
+          remediation_id: 'remediation-1',
+          action_kind: 'adjust_upcoming_workout_load',
+          receipt_type: 'schedule_adjustment_applied',
+          routing: { channel: 'fitness.actions', target: 'training-load', priority: 'high', maxDeliveryLatencySeconds: 300 },
+          capability_id: 'lifeline-remediation-v1',
+          created_at: '2026-03-30T00:00:00.000Z',
+          updated_at: '2026-03-30T00:00:00.000Z',
+          request_state: 'running',
+          idempotency_key: 'x',
+          rendezvous_manifest_path: '.playbook/rendezvous-manifest.json',
+          rendezvous_manifest_sha256: 'y',
+          bounded_inputs: ['artifact:fitness-contract'],
+          bounded_action_input: { athlete_id: 'athlete-001', week_id: 'week-2026-W13', workout_id: 'workout-001', load_adjustment_percent: -10, duration_days: 3, reason_code: 'fatigue_spike' },
+          blocked_reason: null,
+          retry: { attempts: 1, max_attempts: 3, reconcile_token: 'token', last_attempt_at: '2026-03-30T00:00:00.000Z', next_retry_at: null }
+        }
+      ],
+      statuses: [],
+      receipts: [
+        {
+          receipt_id: 'receipt-interop-0001',
+          request_id: 'interop-0001',
+          runtime_id: 'lifeline-mock-runtime',
+          action_kind: 'schedule_recovery_block',
+          receipt_type: 'recovery_guardrail_applied',
+          routing: { channel: 'fitness.actions', target: 'training-load', priority: 'high', maxDeliveryLatencySeconds: 300 },
+          received_at: '2026-03-30T00:00:00.000Z',
+          completed_at: '2026-03-30T00:01:00.000Z',
+          outcome: 'completed',
+          output_artifact_path: '.playbook/rendezvous-manifest.json',
+          output_sha256: 'abc',
+          detail: 'drifted receipt'
+        }
+      ],
+      heartbeat: null
+    });
+
+    const exitCode = await runInterop(repo, ['reconcile'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+  });
+
   it('rejects emit when provided bounded action input violates canonical fitness contract fields', async () => {
     const repo = createRepo();
     writeArtifact(repo, '.playbook/rendezvous-manifest.json', {

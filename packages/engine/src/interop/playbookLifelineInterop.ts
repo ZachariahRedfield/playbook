@@ -18,18 +18,83 @@ import {
 } from '@zachariahredfield/playbook-core';
 import {
   getFitnessActionContract,
+  loadFitnessContract,
   validateFitnessActionInput,
   getFitnessReceiptTypeForAction,
   isFitnessActionName
 } from '../integrations/fitnessContract.js';
 
 const STORE_PATH = '.playbook/lifeline-interop-runtime.json' as const;
+const INTEROP_UPDATED_TRUTH_PATH = '.playbook/interop-updated-truth.json' as const;
 
 const deterministicStringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
 const nowIso = (): string => new Date().toISOString();
 const sha256File = (filePath: string): string => createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 
 const sortById = <T extends { request_id: string }>(entries: T[]): T[] => [...entries].sort((a, b) => a.request_id.localeCompare(b.request_id));
+
+type InteropUpdatedTruthEntry = {
+  receiptId: string;
+  requestId: string;
+  action: string;
+  receiptType: string;
+  sourceHash: string;
+  canonicalOutcomeSummary: {
+    outcome: string;
+    detail: string;
+    completedAt: string;
+  };
+  boundedStateDelta: {
+    requestState: InteropActionStatus['request_state'];
+    outputArtifactPath: string | null;
+    outputSha256: string | null;
+  };
+  memoryProvenanceRefs: string[];
+  nextActionHints: string[];
+};
+
+export type InteropUpdatedTruthArtifact = {
+  schemaVersion: '1.0';
+  kind: 'interop-updated-truth-artifact';
+  contract: {
+    sourceHash: string;
+    sourceRef: string;
+    sourcePath: string;
+  };
+  updates: InteropUpdatedTruthEntry[];
+};
+
+const assertNonEmptyString = (value: unknown, label: string): string => {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Cannot reconcile interop runtime: ${label} must be a non-empty string.`);
+  }
+  return value;
+};
+
+const validateReceiptEnvelope = (receipt: InteropExecutionReceipt, requestId: string): void => {
+  assertNonEmptyString(receipt.receipt_id, `receipt_id for request ${requestId}`);
+  assertNonEmptyString(receipt.request_id, `receipt.request_id for request ${requestId}`);
+  assertNonEmptyString(receipt.runtime_id, `runtime_id for request ${requestId}`);
+  assertNonEmptyString(receipt.action_kind, `action_kind for request ${requestId}`);
+  assertNonEmptyString(receipt.receipt_type, `receipt_type for request ${requestId}`);
+  assertNonEmptyString(receipt.received_at, `received_at for request ${requestId}`);
+  assertNonEmptyString(receipt.completed_at, `completed_at for request ${requestId}`);
+  assertNonEmptyString(receipt.detail, `detail for request ${requestId}`);
+  if (receipt.outcome !== 'completed' && receipt.outcome !== 'blocked' && receipt.outcome !== 'failed') {
+    throw new Error(`Cannot reconcile interop runtime: invalid receipt outcome for request ${requestId}.`);
+  }
+};
+
+const writeInteropUpdatedTruthArtifact = (cwd: string, artifact: InteropUpdatedTruthArtifact): string => {
+  const absolute = path.resolve(cwd, INTEROP_UPDATED_TRUTH_PATH);
+  fs.mkdirSync(path.dirname(absolute), { recursive: true });
+  const stable: InteropUpdatedTruthArtifact = {
+    ...artifact,
+    updates: [...artifact.updates].sort((a, b) => a.receiptId.localeCompare(b.receiptId))
+  };
+  fs.writeFileSync(absolute, deterministicStringify(stable));
+  return INTEROP_UPDATED_TRUTH_PATH;
+};
 
 export const createEmptyInteropRuntime = (): PlaybookLifelineInteropRuntimeArtifact => ({
   schemaVersion: PLAYBOOK_LIFELINE_INTEROP_SCHEMA_VERSION,
@@ -304,15 +369,36 @@ export const runLifelineMockRuntimeOnce = (runtime: PlaybookLifelineInteropRunti
   return next;
 };
 
-export const reconcileInteropRuntime = (runtime: PlaybookLifelineInteropRuntimeArtifact): PlaybookLifelineInteropRuntimeArtifact => {
+export const reconcileInteropRuntime = async (
+  cwd: string,
+  runtime: PlaybookLifelineInteropRuntimeArtifact
+): Promise<{ runtime: PlaybookLifelineInteropRuntimeArtifact; updatedTruth: InteropUpdatedTruthArtifact; updatedTruthPath: string }> => {
+  if (typeof cwd !== 'string' || cwd.trim().length === 0) {
+    throw new Error('Cannot reconcile interop runtime: cwd must be a non-empty string path.');
+  }
+  const fitnessContract = await loadFitnessContract({ repoRoot: cwd });
+  const contractActionByName = new Map(fitnessContract.payload.actions.map((action) => [action.name, action]));
   const now = nowIso();
   const next = { ...runtime, requests: [...runtime.requests], statuses: [...runtime.statuses], receipts: [...runtime.receipts] };
+  const updates: InteropUpdatedTruthEntry[] = [];
 
   for (const request of next.requests) {
     const receipt = next.receipts.find((entry) => entry.request_id === request.request_id);
     if (!receipt) continue;
+    validateReceiptEnvelope(receipt, request.request_id);
     const expectedReceiptType = getFitnessReceiptTypeForAction(request.action_kind);
     const expectedRouting = getFitnessActionContract(request.action_kind).routing;
+    const canonicalAction = contractActionByName.get(request.action_kind);
+    if (!canonicalAction) {
+      throw new Error(
+        `Cannot reconcile interop runtime: action ${request.action_kind} for request ${request.request_id} is not present in canonical Fitness contract mirror.`
+      );
+    }
+    if (canonicalAction.receiptType !== expectedReceiptType) {
+      throw new Error(
+        `Cannot reconcile interop runtime: canonical receipt type drift for ${request.action_kind}. expected=${expectedReceiptType} mirrored=${canonicalAction.receiptType}.`
+      );
+    }
     if (receipt.action_kind !== request.action_kind || receipt.receipt_type !== expectedReceiptType) {
       throw new Error(
         `Cannot reconcile interop runtime: receipt mismatch for request ${request.request_id}. expected ${request.action_kind}->${expectedReceiptType}, actual ${receipt.action_kind}->${receipt.receipt_type}.`
@@ -331,6 +417,32 @@ export const reconcileInteropRuntime = (runtime: PlaybookLifelineInteropRuntimeA
     else request.request_state = 'failed';
     request.updated_at = now;
     next.statuses.push({ request_id: request.request_id, request_state: request.request_state, updated_at: now, detail: 'State reconciled from durable receipt.' });
+    updates.push({
+      receiptId: receipt.receipt_id,
+      requestId: request.request_id,
+      action: request.action_kind,
+      receiptType: receipt.receipt_type,
+      sourceHash: fitnessContract.fingerprint,
+      canonicalOutcomeSummary: {
+        outcome: receipt.outcome,
+        detail: receipt.detail,
+        completedAt: receipt.completed_at
+      },
+      boundedStateDelta: {
+        requestState: request.request_state,
+        outputArtifactPath: receipt.output_artifact_path,
+        outputSha256: receipt.output_sha256
+      },
+      memoryProvenanceRefs: [
+        '.playbook/lifeline-interop-runtime.json',
+        '.playbook/fitness-contract.json',
+        `request:${request.request_id}`,
+        `receipt:${receipt.receipt_id}`
+      ],
+      nextActionHints: receipt.outcome === 'completed'
+        ? ['Run `pnpm playbook interop health --json` to confirm runtime healthy state.', 'Continue with bounded next remediation action only through explicit request emission.']
+        : ['Inspect bounded receipt detail and runtime status before re-emitting.', 'Do not promote doctrine or mutate repo truth from interop receipt reconciliation.']
+    });
   }
 
   next.heartbeat = {
@@ -342,7 +454,18 @@ export const reconcileInteropRuntime = (runtime: PlaybookLifelineInteropRuntimeA
     completed_requests: next.requests.filter((entry) => entry.request_state === 'completed').length
   };
 
-  return next;
+  const updatedTruth: InteropUpdatedTruthArtifact = {
+    schemaVersion: '1.0',
+    kind: 'interop-updated-truth-artifact',
+    contract: {
+      sourceHash: fitnessContract.fingerprint,
+      sourceRef: fitnessContract.source.sourceRef,
+      sourcePath: fitnessContract.source.sourcePath
+    },
+    updates
+  };
+  const updatedTruthPath = writeInteropUpdatedTruthArtifact(cwd, updatedTruth);
+  return { runtime: next, updatedTruth, updatedTruthPath };
 };
 
 export const loadManifestHashFromDisk = (cwd: string, manifestPath = '.playbook/rendezvous-manifest.json'): string => {

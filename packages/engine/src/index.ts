@@ -872,3 +872,4 @@ export {
   reconcileInteropRuntime,
   loadManifestHashFromDisk
 } from './interop/playbookLifelineInterop.js';
+export type { InteropUpdatedTruthArtifact } from './interop/playbookLifelineInterop.js';
