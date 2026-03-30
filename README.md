@@ -83,6 +83,8 @@ lifeline down playbook
 The app process started by Lifeline is `pnpm start:lifeline`, which preserves the normal local Playbook CLI and terminal-based development flow.
 Playbook routing inspection emits deterministic proposal-only execution plans at `.playbook/execution-plan.json` via `pnpm playbook route "<task>" --json`.
 
+Layer ownership + closed-loop reference: [`docs/architecture/CONTROL_LOOP_AND_LAYER_OWNERSHIP.md`](docs/architecture/CONTROL_LOOP_AND_LAYER_OWNERSHIP.md).
+
 - Generated runtime artifacts should generally be gitignored unless intentionally committed as stable contracts/examples.
 - Committed demo artifacts under `.playbook/demo-artifacts/` are product-facing snapshot contracts and examples, not general-purpose runtime logs.
 - Allowed committed `.playbook` content is limited to curated contract/example fixtures (`.playbook/demo-artifacts/*.example.json`) and explicit governance metadata (`.playbook/pr-metadata.json`); generated runtime outputs like `.playbook/repo-index.json` and `.playbook/repo-graph.json` must remain untracked.

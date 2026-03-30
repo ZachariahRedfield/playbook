@@ -2,6 +2,8 @@
 
 This document defines the deterministic interop seam for bounded remediation work, with one implemented external canonical-contract pilot.
 
+See the canonical layer ownership + closed-loop definition in [`CONTROL_LOOP_AND_LAYER_OWNERSHIP.md`](./CONTROL_LOOP_AND_LAYER_OWNERSHIP.md).
+
 ## Scope (v1)
 
 Historically, this runtime was remediation-only. That remains true as baseline doctrine.
