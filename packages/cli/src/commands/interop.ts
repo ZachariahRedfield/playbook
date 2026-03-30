@@ -6,6 +6,24 @@ import { emitJsonOutput } from '../lib/jsonArtifact.js';
 import { printCommandHelp } from '../lib/commandSurface.js';
 
 type InteropOptions = { format: 'text' | 'json'; quiet: boolean; help?: boolean };
+type InteropFollowupType = 'memory-candidate' | 'next-plan-hint' | 'review-cue' | 'docs-story-followup';
+type InteropFollowupTargetSurface =
+  | '.playbook/memory/candidates.json'
+  | '.playbook/plan.json'
+  | '.playbook/review-queue.json'
+  | '.playbook/stories.json';
+type InteropFollowupRow = {
+  followupId: string;
+  targetSurface: InteropFollowupTargetSurface;
+  followupType: InteropFollowupType;
+  nextActionText: string;
+};
+type InteropFollowupsArtifact = {
+  schemaVersion: string;
+  kind: 'interop-followups-artifact';
+  command: 'interop followups';
+  followups: InteropFollowupRow[];
+};
 
 
 type FitnessActionContract = {
@@ -83,6 +101,34 @@ const engine = engineRuntime as unknown as {
   readArtifactJson: <T>(path: string) => T;
 };
 
+const interopFollowupTypes: ReadonlySet<InteropFollowupType> = new Set(['memory-candidate', 'next-plan-hint', 'review-cue', 'docs-story-followup']);
+const interopFollowupSurfaces: ReadonlySet<InteropFollowupTargetSurface> = new Set([
+  '.playbook/memory/candidates.json',
+  '.playbook/plan.json',
+  '.playbook/review-queue.json',
+  '.playbook/stories.json'
+]);
+
+const parseInteropFollowupTypeFilter = (raw?: string): InteropFollowupType | undefined => {
+  if (!raw) return undefined;
+  if (!interopFollowupTypes.has(raw as InteropFollowupType)) {
+    throw new Error(
+      `playbook interop followups: invalid --type value "${raw}"; expected memory-candidate, next-plan-hint, review-cue, or docs-story-followup`
+    );
+  }
+  return raw as InteropFollowupType;
+};
+
+const parseInteropFollowupSurfaceFilter = (raw?: string): InteropFollowupTargetSurface | undefined => {
+  if (!raw) return undefined;
+  if (!interopFollowupSurfaces.has(raw as InteropFollowupTargetSurface)) {
+    throw new Error(
+      `playbook interop followups: invalid --surface value "${raw}"; expected .playbook/memory/candidates.json, .playbook/plan.json, .playbook/review-queue.json, or .playbook/stories.json`
+    );
+  }
+  return raw as InteropFollowupTargetSurface;
+};
+
 const readRendezvous = (cwd: string): { manifest: RendezvousManifest; evaluation: RendezvousManifestEvaluation } => {
   const manifestPath = path.resolve(cwd, '.playbook/rendezvous-manifest.json');
   const statusPath = path.resolve(cwd, '.playbook/rendezvous-status.json');
@@ -147,7 +193,7 @@ const toFitnessContractInspectPayload = async (cwd: string): Promise<FitnessCont
 export const runInterop = async (cwd: string, commandArgs: string[], options: InteropOptions): Promise<number> => {
   if (options.help) {
     printCommandHelp({
-      usage: 'playbook interop <register|emit|emit-fitness-plan|draft|run-mock|reconcile|capabilities|requests|receipts|health|fitness-contract> [--json]',
+      usage: 'playbook interop <register|emit|emit-fitness-plan|draft|run-mock|reconcile|capabilities|requests|receipts|health|fitness-contract|followups> [--json]',
       description: 'Inspect and operate remediation-first Playbook↔Lifeline interop runtime artifacts.',
       options: [
         '--capability <id>   capability id for register/emit',
@@ -157,10 +203,17 @@ export const runInterop = async (cwd: string, commandArgs: string[], options: In
         '--runtime <id>      runtime id (default lifeline-mock-runtime)',
         '--from-proposal <path>  proposal artifact path for draft compile (default .playbook/ai-proposal.json)',
         '--from-draft <path>  emit from canonical .playbook/interop-request-draft.json after explicit review',
+        '--type <followup-type>  filter followups by type (followups subcommand only)',
+        '--surface <target-surface>  filter followups by target surface (followups subcommand only)',
         '--json              emit machine-readable output',
         '--help              show help'
       ],
-      artifacts: ['.playbook/lifeline-interop-runtime.json', '.playbook/rendezvous-manifest.json', '.playbook/interop-request-draft.json']
+      artifacts: [
+        '.playbook/lifeline-interop-runtime.json',
+        '.playbook/rendezvous-manifest.json',
+        '.playbook/interop-request-draft.json',
+        '.playbook/interop-followups.json'
+      ]
     });
     return ExitCode.Success;
   }
@@ -175,6 +228,60 @@ export const runInterop = async (cwd: string, commandArgs: string[], options: In
     const runtimeId = valueFor('--runtime') ?? 'lifeline-mock-runtime';
     const actionInputJson = valueFor('--action-input-json');
     const fromDraft = valueFor('--from-draft');
+    if (sub === 'followups') {
+      const typeFilter = parseInteropFollowupTypeFilter(valueFor('--type'));
+      const surfaceFilter = parseInteropFollowupSurfaceFilter(valueFor('--surface'));
+      const followupsPath = path.resolve(cwd, '.playbook/interop-followups.json');
+      if (!fs.existsSync(followupsPath)) {
+        throw new Error('playbook interop followups: missing required artifact .playbook/interop-followups.json');
+      }
+      const fullFollowupsArtifact = engine.readArtifactJson<InteropFollowupsArtifact>(followupsPath);
+      const followups = fullFollowupsArtifact.followups.filter((followup: InteropFollowupRow) => {
+        if (typeFilter && followup.followupType !== typeFilter) {
+          return false;
+        }
+        if (surfaceFilter && followup.targetSurface !== surfaceFilter) {
+          return false;
+        }
+        return true;
+      });
+      const payload = {
+        schemaVersion: '1.0',
+        command: 'interop-followups',
+        artifactPath: '.playbook/interop-followups.json',
+        reviewOnly: true,
+        authority: 'read-only',
+        proposalOnly: true,
+        filters: {
+          ...(typeFilter ? { type: typeFilter } : {}),
+          ...(surfaceFilter ? { surface: surfaceFilter } : {})
+        },
+        summary: {
+          total: fullFollowupsArtifact.followups.length,
+          returned: followups.length
+        },
+        followups,
+        full_followups_artifact: fullFollowupsArtifact
+      };
+      if (options.format === 'json') {
+        emitJsonOutput({ cwd, command: 'interop', payload: { command: 'interop', subcommand: sub, payload } });
+      } else if (!options.quiet) {
+        if (followups.length === 0) {
+          console.log('Status: no interop followups queued.');
+          console.log('Affected targets: none');
+          console.log('Next action: continue using existing read-only interop inspect surfaces.');
+        } else {
+          const affectedTargets = [...new Set(followups.map((followup: InteropFollowupRow) => followup.targetSurface))]
+            .slice(0, 3)
+            .join(', ');
+          console.log(`Status: ${followups.length} interop followup(s) queued.`);
+          console.log(`Affected targets: ${affectedTargets}`);
+          console.log(`Next action: ${followups[0]?.nextActionText ?? 'review followup payload details.'}`);
+        }
+      }
+      return ExitCode.Success;
+    }
+
     if (sub === 'draft') {
       const fromProposal = valueFor('--from-proposal');
       const compiled = engine.compileInteropRequestDraft(cwd, fromProposal ? { proposalPath: fromProposal } : {});

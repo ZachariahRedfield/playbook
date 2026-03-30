@@ -129,6 +129,14 @@ CLI command:
 - `pnpm playbook interop requests --json`
 - `pnpm playbook interop receipts --json`
 - `pnpm playbook interop health --json`
+- `pnpm playbook interop followups --json` (reads `.playbook/interop-followups.json`, supports `--type` and `--surface` filters, remains read-only/no execution)
+
+Followup contract note:
+
+- Deterministic followup rows include additive enrichment fields (`action`, `confidence`, `provenanceRefs`, `source.requestId`, `source.receiptId`) derived from updated-truth evidence.
+- Rule: Followup artifacts must include provenance and confidence when derived from deterministic updated-truth.
+- Pattern: Use partial object matching in tests for forward-compatible artifact evolution.
+- Failure Mode: Strict equality assertions on evolving artifacts cause false-negative CI failures during intentional contract expansion.
 
 Mock runtime command family:
 
