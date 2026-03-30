@@ -51,5 +51,6 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   releasePlan: 'packages/contracts/src/release-plan.schema.json',
   managedSurfaceManifest: 'packages/contracts/src/managed-surface-manifest.schema.json',
   aiProposal: 'packages/contracts/src/ai-proposal.schema.json',
-  interopRequestDraft: 'packages/contracts/src/interop-request-draft.schema.json'
+  interopRequestDraft: 'packages/contracts/src/interop-request-draft.schema.json',
+  interopFollowups: 'packages/contracts/src/interop-followups.schema.json'
 } as const;

@@ -40,7 +40,7 @@ type InteropUpdatedTruthEntry = {
   receiptType: string;
   sourceHash: string;
   canonicalOutcomeSummary: {
-    outcome: string;
+    outcome: InteropExecutionReceipt['outcome'];
     detail: string;
     completedAt: string;
   };
