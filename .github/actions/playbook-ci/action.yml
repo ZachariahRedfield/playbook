@@ -123,7 +123,7 @@ runs:
         pnpm config set fetch-retry-maxtimeout 60000
         pnpm config set network-timeout 120000
         pnpm config set registry https://registry.npmjs.org/
-        pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        pnpm install --config.optional=true --frozen-lockfile || pnpm install --config.optional=true --no-frozen-lockfile
 
     - name: Install diagnostics (on failure)
       if: failure()
@@ -147,6 +147,12 @@ runs:
           echo "Rollup native optional package missing. Lockfile should include it because we pin it in optionalDependencies; if missing, pnpm-lock.yaml is stale or install skipped optional deps."
           exit 1
         fi
+
+    - name: Verify esbuild availability
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        node scripts/assert-esbuild.mjs
 
     - name: Build workspace packages
       shell: bash
