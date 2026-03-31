@@ -395,7 +395,7 @@ Command boundary note:
 - `knowledge inspect <id>` reads one record.
 - `knowledge provenance <id>` resolves direct evidence and related records.
 - `knowledge stale` returns stale, retired, and superseded records.
-- `knowledge review` materializes and reads `.playbook/review-queue.json` via a compact review surface with deterministic `--action`, `--kind`, cadence-aware `--due now|overdue|all`, trigger-aware `--trigger cadence|evidence|all`, and exact `--trigger-source <source>` filtering while surfacing additive trigger metadata (`triggerType`, `triggerReasonCode`, `triggerSource`, `triggerEvidenceRefs`) plus cadence fields (`nextReviewAt`, `overdue`, `deferredUntil`) in JSON output.
+- `knowledge review` materializes and reads `.playbook/review-queue.json` via a compact review surface with deterministic `--action`, `--kind`, cadence-aware `--due now|overdue|all`, trigger-aware `--trigger cadence|evidence|all`, and exact `--trigger-source <source>` filtering (including interop-derived `interop-followup`) while surfacing additive trigger metadata (`triggerType`, `triggerReasonCode`, `triggerSource`, `triggerEvidenceRefs`) plus cadence fields (`nextReviewAt`, `overdue`, `deferredUntil`) in JSON output; text mode stays brief-thin with status, due now, evidence-triggered, interop-triggered, and next action.
 - Architecture decisions in `docs/architecture/decisions/*.md` are recalled via explicit `## Review Triggers` lines in canonical format:
 
   - `- [trigger_id] when <observable condition> -> <required review action>`

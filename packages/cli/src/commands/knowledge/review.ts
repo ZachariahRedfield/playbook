@@ -63,6 +63,7 @@ type KnowledgeReviewListPayload = {
       overdue: number;
       deferred: number;
       evidenceTriggered: number;
+      interopTriggered: number;
     };
     triggers: {
       cadence: number;
@@ -322,11 +323,12 @@ const matchesDueFilter = (entry: ReviewQueueEntry, dueFilter: DueFilter): boolea
   return !isDeferredEntry(entry) || isOverdueEntry(entry);
 };
 
-const summarizeCadence = (entries: ReviewQueueEntry[]): { dueNow: number; overdue: number; deferred: number; evidenceTriggered: number } => ({
+const summarizeCadence = (entries: ReviewQueueEntry[]): { dueNow: number; overdue: number; deferred: number; evidenceTriggered: number; interopTriggered: number } => ({
   dueNow: entries.filter((entry) => !isDeferredEntry(entry) || isOverdueEntry(entry)).length,
   overdue: entries.filter((entry) => isOverdueEntry(entry)).length,
   deferred: entries.filter((entry) => isDeferredEntry(entry) && !isOverdueEntry(entry)).length,
-  evidenceTriggered: entries.filter((entry) => includesEvidenceTrigger(entry)).length
+  evidenceTriggered: entries.filter((entry) => includesEvidenceTrigger(entry)).length,
+  interopTriggered: entries.filter((entry) => entry.triggerSource === 'interop-followup').length
 });
 
 const summarizeTriggers = (entries: ReviewQueueEntry[]): { cadence: number; evidence: number; mixed: number } => ({

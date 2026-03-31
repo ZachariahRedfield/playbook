@@ -81,7 +81,7 @@ Filters:
 - `--kind knowledge|doc|rule|pattern`
 - `--due now|overdue|all` (default `all`)
 - `--trigger cadence|evidence|all` (default `all`)
-- `--trigger-source <source>` (exact trigger source match, e.g. `architecture-decision`)
+- `--trigger-source <source>` (exact trigger source match, e.g. `architecture-decision` or `interop-followup`)
 
 Trigger metadata surfaced in JSON (`entries[*]` and persisted queue artifact):
 
@@ -99,8 +99,9 @@ Cadence fields surfaced in JSON (`entries[*]` when present and additive summarie
 Text output remains compact and operator-facing:
 
 - status
+- due now
 - Evidence-triggered
-- affected targets
+- interop-triggered
 - Next action
 
 Cadence schedules recall, while evidence can reopen or raise recall priority without creating a new command family.
@@ -114,6 +115,8 @@ Architecture-decision recall is trigger-driven: `docs/architecture/decisions/*.m
 - `- [trigger_id] when <observable condition> -> <required review action>`
 
 Satisfied signals are merged as additive `triggerSource=architecture-decision` evidence entries.
+
+Interop follow-up cues are merged into the same queue as additive `triggerSource=interop-followup` evidence entries, making interop-derived recall visible via existing `knowledge review` filtering.
 
 Rule: Architecture decisions should be recalled through explicit trigger metadata, not ad hoc memory.
 
@@ -255,6 +258,7 @@ pnpm playbook knowledge portability --view blocked-transfers --json
 pnpm playbook knowledge review --json
 pnpm playbook knowledge review --due overdue --json
 pnpm playbook knowledge review --trigger evidence --json
+pnpm playbook knowledge review --trigger-source interop-followup --json
 pnpm playbook knowledge review --action reaffirm --kind knowledge --due all
 pnpm playbook knowledge review --kind doc
 pnpm playbook knowledge review handoffs --json

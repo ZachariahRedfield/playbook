@@ -262,20 +262,17 @@ const renderText = (subcommand: string, payload: Record<string, unknown>): strin
 
     const entries = payload.entries as Array<Record<string, unknown>> | undefined;
     if (!entries || entries.length === 0) {
-      return 'Status: review queue clear.\nEvidence-triggered: 0\nAffected targets: none\nNext action: no review action required.';
+      return 'Status: review queue clear.\nDue now: 0\nEvidence-triggered: 0\nInterop-triggered: 0\nNext action: no review action required.';
     }
 
     const first = entries[0]!;
-    const summary = payload.summary as { cadence?: { dueNow?: number; evidenceTriggered?: number; overdue?: number; deferred?: number } } | undefined;
+    const summary = payload.summary as { cadence?: { dueNow?: number; evidenceTriggered?: number; interopTriggered?: number; overdue?: number; deferred?: number } } | undefined;
     const cadence = summary?.cadence;
-    const affectedTargets = entries
-      .slice(0, 3)
-      .map((entry) => String(entry.targetId ?? entry.path ?? 'target'))
-      .join(', ');
     return [
       `Status: ${entries.length} review item(s) pending`,
+      `Due now: ${String(cadence?.dueNow ?? entries.filter((entry) => !entry.deferredUntil || entry.overdue === true).length)}`,
       `Evidence-triggered: ${String(cadence?.evidenceTriggered ?? entries.filter((entry) => entry.triggerType === 'evidence' || entry.triggerType === 'cadence+evidence').length)}`,
-      `Affected targets: ${affectedTargets}`,
+      `Interop-triggered: ${String(cadence?.interopTriggered ?? entries.filter((entry) => entry.triggerSource === 'interop-followup').length)}`,
       `Next action: ${String(first.recommendedAction ?? 'review')} ${String(first.targetId ?? first.path ?? 'target')}`
     ].join('\n');
   }

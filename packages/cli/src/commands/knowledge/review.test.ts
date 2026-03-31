@@ -128,6 +128,23 @@ const reviewQueueFixture = () => ({
       generatedAt: '2026-03-24T00:00:00.000Z',
       nextReviewAt: '2026-03-24T00:00:00.000Z',
       overdue: false
+    },
+    {
+      queueEntryId: 'q-interop-1',
+      targetKind: 'knowledge',
+      targetId: 'knowledge:interop-health-gate',
+      sourceSurface: 'interop',
+      reasonCode: 'interop-followup-review-cue',
+      evidenceRefs: ['.playbook/interop-followups.json'],
+      triggerType: 'evidence',
+      triggerSource: 'interop-followup',
+      triggerReasonCode: 'interop-followup-evidence',
+      triggerEvidenceRefs: ['.playbook/interop-followups.json'],
+      recommendedAction: 'revise',
+      reviewPriority: 'high',
+      generatedAt: '2026-03-24T00:00:00.000Z',
+      nextReviewAt: '2026-03-24T00:00:00.000Z',
+      overdue: false
     }
   ]
 });
@@ -284,14 +301,14 @@ describe('knowledge review', () => {
     expect(payload.command).toBe('knowledge-review');
     expect(payload.artifactPath).toBe('.playbook/review-queue.json');
     expect(payload.summary).toMatchObject({
-      total: 5,
-      returned: 5,
-      byAction: { reaffirm: 3, revise: 1, supersede: 1 },
-      byKind: { knowledge: 1, doc: 2, rule: 1, pattern: 1 },
-      cadence: { dueNow: 4, overdue: 2, deferred: 1, evidenceTriggered: 3 },
-      triggers: { cadence: 2, evidence: 2, mixed: 1 }
+      total: 6,
+      returned: 6,
+      byAction: { reaffirm: 3, revise: 2, supersede: 1 },
+      byKind: { knowledge: 2, doc: 2, rule: 1, pattern: 1 },
+      cadence: { dueNow: 5, overdue: 2, deferred: 1, evidenceTriggered: 4, interopTriggered: 1 },
+      triggers: { cadence: 2, evidence: 3, mixed: 1 }
     });
-    expect(payload.entries).toHaveLength(5);
+    expect(payload.entries).toHaveLength(6);
     logSpy.mockRestore();
   });
 
@@ -337,7 +354,7 @@ describe('knowledge review', () => {
     exitCode = await runKnowledge('/repo', ['review', '--trigger', 'evidence'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.summary.returned).toBe(3);
+    expect(payload.summary.returned).toBe(4);
     expect(payload.entries.every((entry: { triggerType?: string }) => entry.triggerType === 'evidence' || entry.triggerType === 'cadence+evidence')).toBe(true);
 
     logSpy.mockClear();
@@ -350,6 +367,14 @@ describe('knowledge review', () => {
     expect(payload.summary.returned).toBe(1);
     expect(payload.filters.triggerSource).toBe('architecture-decision');
     expect(payload.entries[0].queueEntryId).toBe('q-architecture-1');
+
+    logSpy.mockClear();
+    exitCode = await runKnowledge('/repo', ['review', '--trigger-source', 'interop-followup'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.summary.returned).toBe(1);
+    expect(payload.filters.triggerSource).toBe('interop-followup');
+    expect(payload.entries[0].queueEntryId).toBe('q-interop-1');
 
     logSpy.mockRestore();
   });
@@ -410,9 +435,10 @@ describe('knowledge review', () => {
     expect(exitCode).toBe(ExitCode.Success);
 
     const rendered = String(logSpy.mock.calls[0]?.[0]);
-    expect(rendered).toContain('Status: 5 review item(s) pending');
-    expect(rendered).toContain('Evidence-triggered: 3');
-    expect(rendered).toContain('Affected targets: knowledge:stale-runtime-guard, docs/PLAYBOOK_DEV_WORKFLOW.md, rule:review-surface-only');
+    expect(rendered).toContain('Status: 6 review item(s) pending');
+    expect(rendered).toContain('Due now: 5');
+    expect(rendered).toContain('Evidence-triggered: 4');
+    expect(rendered).toContain('Interop-triggered: 1');
     expect(rendered).toContain('Next action: reaffirm knowledge:stale-runtime-guard');
     logSpy.mockRestore();
   });
