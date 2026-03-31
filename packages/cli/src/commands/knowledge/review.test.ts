@@ -348,7 +348,15 @@ describe('knowledge review', () => {
     exitCode = await runKnowledge('/repo', ['review', '--due', 'all'], { format: 'json', quiet: false });
     expect(exitCode).toBe(ExitCode.Success);
     payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
-    expect(payload.summary.returned).toBe(5);
+    expect(payload.summary.returned).toBe(6);
+    expect(payload.entries.map((entry: { queueEntryId: string }) => entry.queueEntryId)).toEqual([
+      'q-knowledge-1',
+      'q-doc-1',
+      'q-rule-1',
+      'q-pattern-1',
+      'q-architecture-1',
+      'q-interop-1'
+    ]);
 
     logSpy.mockClear();
     exitCode = await runKnowledge('/repo', ['review', '--trigger', 'evidence'], { format: 'json', quiet: false });
