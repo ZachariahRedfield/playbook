@@ -41,6 +41,8 @@ const run = (command, commandArgs) =>
     shell: process.platform === 'win32',
   });
 
+const runEsbuildPreflight = () => run('node', ['scripts/assert-esbuild.mjs']);
+
 const runSteps = (steps) => {
   for (const { command, commandArgs } of steps) {
     const result = run(command, commandArgs);
@@ -71,6 +73,11 @@ const runRootScriptTests = () => {
 };
 
 if (args.length === 0) {
+  const esbuildPreflightResult = runEsbuildPreflight();
+  if (esbuildPreflightResult.status !== 0) {
+    process.exit(typeof esbuildPreflightResult.status === 'number' ? esbuildPreflightResult.status : 1);
+  }
+
   const skipContractCheck = process.env.PLAYBOOK_SKIP_CONTRACTS_CHECK === '1';
   if (!skipContractCheck) {
     const contractCheckResult = run(PNPM_BIN, ['contracts:check']);
@@ -90,6 +97,11 @@ if (args.length === 0) {
 
 const filteredArgs = args.filter((arg) => arg !== '--');
 if (filteredArgs.length === 1) {
+  const esbuildPreflightResult = runEsbuildPreflight();
+  if (esbuildPreflightResult.status !== 0) {
+    process.exit(typeof esbuildPreflightResult.status === 'number' ? esbuildPreflightResult.status : 1);
+  }
+
   if (filteredArgs[0] === 'agent') {
     const result = runTargetedAgentDryRun();
     process.exit(typeof result.status === 'number' ? result.status : 1);
@@ -100,6 +112,11 @@ if (filteredArgs.length === 1) {
     const result = runSteps(steps);
     process.exit(typeof result.status === 'number' ? result.status : 1);
   }
+}
+
+const esbuildPreflightResult = runEsbuildPreflight();
+if (esbuildPreflightResult.status !== 0) {
+  process.exit(typeof esbuildPreflightResult.status === 'number' ? esbuildPreflightResult.status : 1);
 }
 
 const result = run(PNPM_BIN, ['-C', 'packages/cli', 'test', '--', ...args]);

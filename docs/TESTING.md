@@ -51,6 +51,7 @@ Typical checks:
 - `pnpm build`
 - `pnpm test`
 - `pnpm lint`
+- `pnpm test` now runs a bootstrap preflight (`node scripts/assert-esbuild.mjs`) so missing esbuild platform binaries fail fast with a deterministic message before suite execution.
 
 CI failures should block merges when core behavior or contracts break.
 
