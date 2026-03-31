@@ -1,9 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import type { InteropUpdatedTruthArtifact } from './playbookLifelineInterop.js';
+import type { MemoryReplayCandidate, MemoryReplayResult } from '../schema/memoryReplay.js';
 
 export const INTEROP_UPDATED_TRUTH_DEFAULT_FILE = '.playbook/interop-updated-truth.json' as const;
 export const INTEROP_FOLLOWUPS_DEFAULT_FILE = '.playbook/interop-followups.json' as const;
+export const MEMORY_CANDIDATES_DEFAULT_FILE = '.playbook/memory/candidates.json' as const;
 export const INTEROP_FOLLOWUPS_SCHEMA_VERSION = '1.0' as const;
 
 type InteropFollowupType = 'memory-candidate' | 'next-plan-hint' | 'review-cue' | 'docs-story-followup';
@@ -59,10 +62,39 @@ export type InteropFollowupsArtifact = {
 };
 
 type InteropReviewQueueEntry = NonNullable<InteropFollowupRow['reviewQueueEntry']>;
+type InteropOutcome = InteropUpdatedTruthArtifact['updates'][number]['canonicalOutcomeSummary']['outcome'];
+type InteropMemoryCandidateEligibility =
+  | 'repeated-blocked-runtime-outcome'
+  | 'repeated-failed-runtime-outcome'
+  | 'meaningful-domain-state-change';
+
+export type InteropDerivedMemoryCandidate = {
+  candidateId: string;
+  source: InteropFollowupRow['source'];
+  action: InteropFollowupAction;
+  confidence: InteropFollowupRow['confidence'];
+  provenanceRefs: string[];
+  canonicalOutcomeSummary: InteropUpdatedTruthArtifact['updates'][number]['canonicalOutcomeSummary'];
+  sourceHash: string;
+  sourceContractFingerprint: string;
+  interopFollowupId: string;
+  eligibilityReason: InteropMemoryCandidateEligibility;
+};
+
+type MemoryCandidatesWithInterop = MemoryReplayResult & {
+  kind: 'playbook-replay-candidates';
+  candidateOnly: true;
+  authority: {
+    mutation: 'read-only';
+    promotion: 'review-required';
+  };
+  interopDerivedCandidates?: InteropDerivedMemoryCandidate[];
+};
 
 const deterministicStringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
 const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort((a, b) => a.localeCompare(b));
 const parseUpdatedTruth = (raw: string): InteropUpdatedTruthArtifact => JSON.parse(raw) as InteropUpdatedTruthArtifact;
+const parseInteropFollowups = (raw: string): InteropFollowupsArtifact => JSON.parse(raw) as InteropFollowupsArtifact;
 
 const confidenceFor = (type: InteropFollowupType, outcome: 'completed' | 'blocked' | 'failed'): InteropFollowupRow['confidence'] => {
   if (type === 'memory-candidate') {
@@ -201,6 +233,179 @@ const buildFollowupRows = (updatedTruth: InteropUpdatedTruthArtifact): InteropFo
   }
 
   return rows.sort((a, b) => a.followupId.localeCompare(b.followupId));
+};
+
+const readMemoryCandidates = (cwd: string): MemoryCandidatesWithInterop => {
+  const absolutePath = path.resolve(cwd, MEMORY_CANDIDATES_DEFAULT_FILE);
+  if (!fs.existsSync(absolutePath)) {
+    return {
+      schemaVersion: '1.0',
+      kind: 'playbook-replay-candidates',
+      command: 'memory-replay',
+      sourceIndex: '.playbook/memory/index.json',
+      generatedAt: new Date(0).toISOString(),
+      totalEvents: 0,
+      clustersEvaluated: 0,
+      candidates: [],
+      candidateOnly: true,
+      authority: {
+        mutation: 'read-only',
+        promotion: 'review-required'
+      },
+      interopDerivedCandidates: []
+    };
+  }
+
+  return JSON.parse(fs.readFileSync(absolutePath, 'utf8')) as MemoryCandidatesWithInterop;
+};
+
+const interopFingerprint = (value: unknown): string => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+
+const chooseEligibility = (input: {
+  outcome: InteropOutcome;
+  repeats: number;
+  actionName: string;
+  detail: string;
+  hints: string[];
+  followupText: string;
+}): InteropMemoryCandidateEligibility | null => {
+  if (input.outcome === 'blocked' && input.repeats >= 2) return 'repeated-blocked-runtime-outcome';
+  if (input.outcome === 'failed' && input.repeats >= 2) return 'repeated-failed-runtime-outcome';
+
+  const hasRationale = input.followupText.trim().length > 0 || input.hints.some((hint) => hint.trim().length > 0);
+  const meaningfulAction = input.actionName === 'revise_weekly_goal_plan' || /(amend|revise|update|change|adjust)/i.test(input.detail);
+  if (input.outcome === 'completed' && hasRationale && meaningfulAction) return 'meaningful-domain-state-change';
+  return null;
+};
+
+const toMemoryReplayCandidate = (
+  followup: InteropFollowupRow,
+  update: InteropUpdatedTruthArtifact['updates'][number],
+  priorCandidates: MemoryReplayCandidate[],
+  repeats: number
+): MemoryReplayCandidate => {
+  const base = {
+    followupId: followup.followupId,
+    requestId: followup.source.requestId,
+    receiptId: followup.source.receiptId,
+    action: update.action,
+    outcome: update.canonicalOutcomeSummary.outcome,
+    sourceHash: update.sourceHash
+  };
+  const fingerprint = interopFingerprint(base);
+  const candidateId = `interop-${interopFingerprint({ ...base, completedAt: update.canonicalOutcomeSummary.completedAt }).slice(0, 16)}`;
+  const prior = priorCandidates
+    .filter((entry) => entry.fingerprint === fingerprint && entry.candidateId !== candidateId)
+    .map((entry) => entry.candidateId)
+    .sort((a, b) => a.localeCompare(b));
+  const severity = update.canonicalOutcomeSummary.outcome === 'failed' ? 8 : update.canonicalOutcomeSummary.outcome === 'blocked' ? 6 : 4;
+  return {
+    candidateId,
+    kind: update.canonicalOutcomeSummary.outcome === 'completed' ? 'decision' : 'failure_mode',
+    title: `interop ${update.canonicalOutcomeSummary.outcome}: ${update.action}`,
+    summary: update.canonicalOutcomeSummary.detail,
+    clusterKey: `interop:${update.action}:${update.canonicalOutcomeSummary.outcome}`,
+    salienceScore: Number((followup.confidence.score * 10).toFixed(3)),
+    salienceFactors: {
+      severity,
+      recurrenceCount: Math.min(10, Math.max(1, repeats)),
+      blastRadius: Math.min(10, Math.max(1, repeats + 1)),
+      crossModuleSpread: 1,
+      ownershipDocsGap: 0,
+      novelSuccessfulRemediationSignal: update.canonicalOutcomeSummary.outcome === 'completed' ? 1 : 0
+    },
+    fingerprint,
+    module: 'interop',
+    ruleId: 'interop-followups',
+    failureShape: `interop:${update.action}:${update.canonicalOutcomeSummary.outcome}`,
+    eventCount: repeats,
+    provenance: [{
+      eventId: `interop-request:${followup.source.requestId}`,
+      sourcePath: INTEROP_FOLLOWUPS_DEFAULT_FILE,
+      fingerprint,
+      runId: followup.source.receiptId
+    }],
+    lastSeenAt: update.canonicalOutcomeSummary.completedAt,
+    supersession: {
+      evolutionOrdinal: prior.length + 1,
+      priorCandidateIds: prior,
+      supersedesCandidateIds: prior
+    }
+  };
+};
+
+export const materializeInteropMemoryCandidates = (
+  cwd: string,
+  options?: { followupsPath?: string; updatedTruthPath?: string; memoryCandidatesPath?: string }
+): { memoryCandidatesPath: string; derivedCandidates: InteropDerivedMemoryCandidate[] } => {
+  const followupsPath = options?.followupsPath ?? INTEROP_FOLLOWUPS_DEFAULT_FILE;
+  const updatedTruthPath = options?.updatedTruthPath ?? INTEROP_UPDATED_TRUTH_DEFAULT_FILE;
+  const memoryCandidatesPath = options?.memoryCandidatesPath ?? MEMORY_CANDIDATES_DEFAULT_FILE;
+
+  if (followupsPath !== INTEROP_FOLLOWUPS_DEFAULT_FILE) throw new Error('Cannot materialize interop memory candidates: only canonical followups artifact path is supported.');
+  if (updatedTruthPath !== INTEROP_UPDATED_TRUTH_DEFAULT_FILE) throw new Error('Cannot materialize interop memory candidates: only canonical updated truth artifact path is supported.');
+  if (memoryCandidatesPath !== MEMORY_CANDIDATES_DEFAULT_FILE) throw new Error('Cannot materialize interop memory candidates: only canonical memory candidates artifact path is supported.');
+
+  const absFollowups = path.resolve(cwd, followupsPath);
+  const absUpdatedTruth = path.resolve(cwd, updatedTruthPath);
+  if (!fs.existsSync(absFollowups)) throw new Error(`Cannot materialize interop memory candidates: required artifact not found at ${followupsPath}.`);
+  if (!fs.existsSync(absUpdatedTruth)) throw new Error(`Cannot materialize interop memory candidates: required artifact not found at ${updatedTruthPath}.`);
+
+  const followups = parseInteropFollowups(fs.readFileSync(absFollowups, 'utf8'));
+  const updatedTruth = parseUpdatedTruth(fs.readFileSync(absUpdatedTruth, 'utf8'));
+  const updatesByReceiptId = new Map(updatedTruth.updates.map((entry) => [entry.receiptId, entry] as const));
+  const repeatsByActionOutcome = new Map<string, number>();
+  for (const entry of updatedTruth.updates) {
+    const key = `${entry.action}:${entry.canonicalOutcomeSummary.outcome}`;
+    repeatsByActionOutcome.set(key, (repeatsByActionOutcome.get(key) ?? 0) + 1);
+  }
+
+  const memoryCandidates = readMemoryCandidates(cwd);
+  const nextDerived: InteropDerivedMemoryCandidate[] = [];
+  const nextCandidates: MemoryReplayCandidate[] = [...memoryCandidates.candidates];
+  const existingById = new Map(nextCandidates.map((entry) => [entry.candidateId, entry] as const));
+
+  for (const followup of followups.followups.filter((entry) => entry.followupType === 'memory-candidate')) {
+    const update = updatesByReceiptId.get(followup.source.receiptId);
+    if (!update) continue;
+    const repeatKey = `${update.action}:${update.canonicalOutcomeSummary.outcome}`;
+    const repeats = repeatsByActionOutcome.get(repeatKey) ?? 0;
+    const eligibilityReason = chooseEligibility({
+      outcome: update.canonicalOutcomeSummary.outcome,
+      repeats,
+      actionName: update.action,
+      detail: update.canonicalOutcomeSummary.detail,
+      hints: update.nextActionHints,
+      followupText: followup.nextActionText
+    });
+    if (!eligibilityReason) continue;
+
+    const candidate = toMemoryReplayCandidate(followup, update, nextCandidates, repeats);
+    existingById.set(candidate.candidateId, candidate);
+    nextDerived.push({
+      candidateId: candidate.candidateId,
+      source: { ...followup.source },
+      action: followup.action,
+      confidence: followup.confidence,
+      provenanceRefs: uniqueSorted(followup.provenanceRefs),
+      canonicalOutcomeSummary: update.canonicalOutcomeSummary,
+      sourceHash: update.sourceHash,
+      sourceContractFingerprint: updatedTruth.contract.sourceHash,
+      interopFollowupId: followup.followupId,
+      eligibilityReason
+    });
+  }
+
+  const output: MemoryCandidatesWithInterop = {
+    ...memoryCandidates,
+    candidates: [...existingById.values()].sort((a, b) => (b.salienceScore - a.salienceScore) || a.candidateId.localeCompare(b.candidateId)),
+    interopDerivedCandidates: [...nextDerived].sort((a, b) => a.candidateId.localeCompare(b.candidateId))
+  };
+
+  const absMemoryPath = path.resolve(cwd, memoryCandidatesPath);
+  fs.mkdirSync(path.dirname(absMemoryPath), { recursive: true });
+  fs.writeFileSync(absMemoryPath, deterministicStringify(output), 'utf8');
+  return { memoryCandidatesPath, derivedCandidates: output.interopDerivedCandidates ?? [] };
 };
 
 export const compileInteropFollowups = (

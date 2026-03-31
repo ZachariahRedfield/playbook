@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { compileInteropFollowups } from './interopFollowups.js';
+import { compileInteropFollowups, materializeInteropMemoryCandidates } from './interopFollowups.js';
 import { reconcileInteropRuntime, type InteropUpdatedTruthArtifact } from './playbookLifelineInterop.js';
 
 const createRepo = (name: string): string => {
@@ -210,5 +210,79 @@ describe('reconcileInteropRuntime', () => {
     } as const;
 
     await expect(reconcileInteropRuntime(repo, runtime as any)).rejects.toThrow(/receipt mismatch/);
+  });
+});
+
+describe('materializeInteropMemoryCandidates', () => {
+  it('deterministically materializes only eligible interop followups into memory candidates', () => {
+    const repo = createRepo('playbook-engine-interop-memory-candidates');
+    writeUpdatedTruth(repo, [
+      {
+        receiptId: 'receipt-interop-1001',
+        requestId: 'interop-1001',
+        action: 'adjust_upcoming_workout_load',
+        receiptType: 'schedule_adjustment_applied',
+        sourceHash: 'fitness-contract-hash',
+        canonicalOutcomeSummary: { outcome: 'blocked', detail: 'Policy gate blocked update.', completedAt: '2026-03-30T00:00:00.000Z' },
+        boundedStateDelta: { requestState: 'blocked', outputArtifactPath: null, outputSha256: null },
+        memoryProvenanceRefs: ['.playbook/lifeline-interop-runtime.json', 'request:interop-1001'],
+        nextActionHints: ['Review guardrails before retrying.']
+      },
+      {
+        receiptId: 'receipt-interop-1002',
+        requestId: 'interop-1002',
+        action: 'adjust_upcoming_workout_load',
+        receiptType: 'schedule_adjustment_applied',
+        sourceHash: 'fitness-contract-hash',
+        canonicalOutcomeSummary: { outcome: 'blocked', detail: 'Policy gate blocked update again.', completedAt: '2026-03-30T01:00:00.000Z' },
+        boundedStateDelta: { requestState: 'blocked', outputArtifactPath: null, outputSha256: null },
+        memoryProvenanceRefs: ['.playbook/lifeline-interop-runtime.json', 'request:interop-1002'],
+        nextActionHints: ['Assumption review required.']
+      },
+      {
+        receiptId: 'receipt-interop-1003',
+        requestId: 'interop-1003',
+        action: 'revise_weekly_goal_plan',
+        receiptType: 'goal_plan_amended',
+        sourceHash: 'fitness-contract-hash',
+        canonicalOutcomeSummary: { outcome: 'completed', detail: 'Goal plan revised to reflect readiness.', completedAt: '2026-03-30T02:00:00.000Z' },
+        boundedStateDelta: { requestState: 'completed', outputArtifactPath: '.playbook/rendezvous-manifest.json', outputSha256: 'abc' },
+        memoryProvenanceRefs: ['.playbook/lifeline-interop-runtime.json', 'request:interop-1003'],
+        nextActionHints: ['Use revised plan for next bounded action.']
+      },
+      {
+        receiptId: 'receipt-interop-1004',
+        requestId: 'interop-1004',
+        action: 'adjust_upcoming_workout_load',
+        receiptType: 'schedule_adjustment_applied',
+        sourceHash: 'fitness-contract-hash',
+        canonicalOutcomeSummary: { outcome: 'failed', detail: 'Single failure should not create noise.', completedAt: '2026-03-30T03:00:00.000Z' },
+        boundedStateDelta: { requestState: 'failed', outputArtifactPath: null, outputSha256: null },
+        memoryProvenanceRefs: ['.playbook/lifeline-interop-runtime.json', 'request:interop-1004'],
+        nextActionHints: ['Wait for more evidence.']
+      }
+    ]);
+
+    compileInteropFollowups(repo);
+    const first = materializeInteropMemoryCandidates(repo);
+    const firstText = fs.readFileSync(path.join(repo, '.playbook', 'memory', 'candidates.json'), 'utf8');
+    const second = materializeInteropMemoryCandidates(repo);
+    const secondText = fs.readFileSync(path.join(repo, '.playbook', 'memory', 'candidates.json'), 'utf8');
+    const parsed = JSON.parse(firstText) as {
+      authority: { mutation: string; promotion: string };
+      candidates: Array<{ candidateId: string }>;
+      interopDerivedCandidates: Array<{ eligibilityReason: string; source: { receiptId: string } }>;
+    };
+
+    expect(first.memoryCandidatesPath).toBe('.playbook/memory/candidates.json');
+    expect(second.memoryCandidatesPath).toBe('.playbook/memory/candidates.json');
+    expect(firstText).toBe(secondText);
+    expect(parsed.authority).toEqual({ mutation: 'read-only', promotion: 'review-required' });
+    expect(first.derivedCandidates).toHaveLength(3);
+    expect(first.derivedCandidates.every((entry) => entry.action === 'queue-memory-candidate')).toBe(true);
+    expect(parsed.interopDerivedCandidates.some((entry) => entry.eligibilityReason === 'repeated-blocked-runtime-outcome')).toBe(true);
+    expect(parsed.interopDerivedCandidates.some((entry) => entry.eligibilityReason === 'meaningful-domain-state-change')).toBe(true);
+    expect(parsed.interopDerivedCandidates.some((entry) => entry.source.receiptId === 'receipt-interop-1004')).toBe(false);
+    expect(parsed.candidates.filter((entry) => entry.candidateId.startsWith('interop-')).length).toBe(3);
   });
 });
