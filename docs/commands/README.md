@@ -354,7 +354,7 @@ Doctrine summary anchors:
 `pnpm playbook memory` exposes thin operator review surfaces for repo-local memory artifacts.
 
 - `memory events` lists episodic events with deterministic filters.
-- `memory candidates` lists replay candidates for review from `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`).
+- `memory candidates` lists replay candidates for review from `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`) and now emits additive deterministic `source_metadata` so interop-derived candidates remain visible/identifiable on the existing memory surface; use `--source replay|interop-followup` for narrow filtering.
 - replay/consolidation remain candidate-only: replay is derived from memory evidence, and consolidation writes `.playbook/memory/consolidation-candidates.json` for explicit review without auto-promotion.
 - `memory knowledge` lists promoted knowledge records.
 - `memory pressure` exposes read-only pressure/operator inspection from canonical `.playbook/memory-pressure.json` + `.playbook/memory-pressure-plan.json`, with lightweight `--band` and `--action` filters.
@@ -371,6 +371,7 @@ Examples:
 ```bash
 pnpm playbook memory events --json
 pnpm playbook memory candidates --json
+pnpm playbook memory candidates --source interop-followup --json
 pnpm playbook memory knowledge --json
 pnpm playbook memory pressure --json
 pnpm playbook memory pressure --band pressure --action summarize --json

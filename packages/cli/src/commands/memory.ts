@@ -23,6 +23,7 @@ type MemorySubcommand = 'events' | 'query' | 'candidates' | 'knowledge' | 'compa
 type MemoryPressureBand = 'normal' | 'warm' | 'pressure' | 'critical';
 type MemoryPressureActionFilter = 'dedupe' | 'compact' | 'summarize' | 'evict';
 type MemoryClassFilter = 'canonical' | 'compactable' | 'disposable';
+type MemoryCandidateSourceFilter = 'replay' | 'interop-followup';
 
 const printMemoryHelp = (): void => {
   console.log(`Usage: playbook memory <subcommand> [options]
@@ -54,6 +55,7 @@ Options:
   --related-artifact <path>    Query filter for normalized related artifact path
   --view <name>                Query summary view (recent-routes|lane-transitions|worker-assignments|artifact-improvements)
   --include-stale              Include stale candidates in memory candidates
+  --source <name>              Filter candidates by source (replay|interop-followup)
   --include-superseded         Include superseded knowledge in memory knowledge
   --reason <text>              Retirement reason override for memory retire
   --decision <name>            Filter compaction review by decision bucket
@@ -155,6 +157,41 @@ const parseMemoryClassOption = (raw: string | null): MemoryClassFilter | undefin
     return raw;
   }
   throw new Error(`playbook memory pressure followups: invalid --class value "${raw}"; expected canonical, compactable, or disposable`);
+};
+
+const parseMemoryCandidateSourceOption = (raw: string | null): MemoryCandidateSourceFilter | undefined => {
+  if (raw === null) return undefined;
+  if (raw === 'replay' || raw === 'interop-followup') {
+    return raw;
+  }
+  throw new Error(`playbook memory candidates: invalid --source value "${raw}"; expected replay or interop-followup`);
+};
+
+type InteropDerivedCandidateMetadata = {
+  candidateId: string;
+  source: {
+    requestId: string;
+    receiptId: string;
+  };
+  confidence?: {
+    score?: number;
+    rationale?: string;
+  };
+  sourceHash?: string;
+  sourceContractFingerprint?: string;
+  interopFollowupId?: string;
+  eligibilityReason?: string;
+};
+
+const readInteropDerivedCandidateMetadata = (cwd: string): Map<string, InteropDerivedCandidateMetadata> => {
+  const artifactPath = path.join(cwd, '.playbook/memory/candidates.json');
+  if (!fs.existsSync(artifactPath)) {
+    return new Map();
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as { interopDerivedCandidates?: InteropDerivedCandidateMetadata[] };
+  const derived = Array.isArray(parsed.interopDerivedCandidates) ? parsed.interopDerivedCandidates : [];
+  return new Map(derived.map((entry) => [entry.candidateId, entry] as const));
 };
 
 const emitMemoryResult = (
@@ -287,13 +324,43 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
     }
 
     if (subcommand === 'candidates') {
+      const sourceFilter = parseMemoryCandidateSourceOption(readOptionValue(args, '--source'));
+      const interopMetadataById = readInteropDerivedCandidateMetadata(cwd);
+      const candidates = lookupMemoryCandidateKnowledge(cwd, {
+        kind: (readOptionValue(args, '--kind') as 'decision' | 'pattern' | 'failure_mode' | 'invariant' | 'open_question' | null) ?? undefined,
+        includeStale: args.includes('--include-stale')
+      })
+        .map((candidate) => {
+          const interop = interopMetadataById.get(candidate.candidateId);
+          return {
+            ...candidate,
+            source_metadata: interop
+              ? {
+                  source: 'interop-followup' as const,
+                  derived_from_interop_followup: true,
+                  interop_followup: {
+                    followup_id: interop.interopFollowupId ?? null,
+                    request_id: interop.source.requestId,
+                    receipt_id: interop.source.receiptId,
+                    eligibility_reason: interop.eligibilityReason ?? null,
+                    confidence_score: interop.confidence?.score ?? null,
+                    source_hash: interop.sourceHash ?? null,
+                    source_contract_fingerprint: interop.sourceContractFingerprint ?? null
+                  }
+                }
+              : {
+                  source: 'replay' as const,
+                  derived_from_interop_followup: false
+                }
+          };
+        })
+        .filter((candidate) => (sourceFilter ? candidate.source_metadata.source === sourceFilter : true));
+
       const payload = {
         schemaVersion: '1.0',
         command: 'memory-candidates',
-        candidates: lookupMemoryCandidateKnowledge(cwd, {
-          kind: (readOptionValue(args, '--kind') as 'decision' | 'pattern' | 'failure_mode' | 'invariant' | 'open_question' | null) ?? undefined,
-          includeStale: args.includes('--include-stale')
-        })
+        ...(sourceFilter ? { filters: { source: sourceFilter } } : {}),
+        candidates
       };
 
       emitMemoryResult(cwd, options, 'memory candidates', payload, `Found ${payload.candidates.length} memory candidates.`);

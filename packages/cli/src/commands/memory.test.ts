@@ -71,6 +71,86 @@ describe('runMemory', () => {
     logSpy.mockRestore();
   });
 
+  it('adds deterministic source metadata to candidates, including interop-derived records', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-candidates-'));
+
+    fs.mkdirSync(path.join(repoRoot, '.playbook', 'memory'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repoRoot, '.playbook', 'memory', 'candidates.json'),
+      `${JSON.stringify({
+        interopDerivedCandidates: [
+          {
+            candidateId: 'cand-interop',
+            source: { requestId: 'interop-1', receiptId: 'receipt-1' },
+            confidence: { score: 0.82 },
+            sourceHash: 'hash-1',
+            sourceContractFingerprint: 'contract-fp-1',
+            interopFollowupId: 'followup-1',
+            eligibilityReason: 'repeated-blocked-runtime-outcome'
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf8'
+    );
+    lookupMemoryCandidateKnowledge.mockReturnValue([
+      { candidateId: 'cand-replay', title: 'Replay Candidate' },
+      { candidateId: 'cand-interop', title: 'Interop Candidate' }
+    ]);
+
+    const exitCode = await runMemory(repoRoot, ['candidates'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-candidates');
+    expect(payload.candidates).toHaveLength(2);
+    expect(payload.candidates[0].source_metadata).toEqual({ source: 'replay', derived_from_interop_followup: false });
+    expect(payload.candidates[1].source_metadata).toMatchObject({
+      source: 'interop-followup',
+      derived_from_interop_followup: true,
+      interop_followup: {
+        followup_id: 'followup-1',
+        request_id: 'interop-1',
+        receipt_id: 'receipt-1',
+        eligibility_reason: 'repeated-blocked-runtime-outcome',
+        confidence_score: 0.82,
+        source_hash: 'hash-1',
+        source_contract_fingerprint: 'contract-fp-1'
+      }
+    });
+    logSpy.mockRestore();
+  });
+
+  it('supports memory candidates source filtering for interop-derived candidates', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-candidates-source-'));
+
+    fs.mkdirSync(path.join(repoRoot, '.playbook', 'memory'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repoRoot, '.playbook', 'memory', 'candidates.json'),
+      `${JSON.stringify({
+        interopDerivedCandidates: [{ candidateId: 'cand-interop', source: { requestId: 'interop-2', receiptId: 'receipt-2' } }]
+      }, null, 2)}\n`,
+      'utf8'
+    );
+    lookupMemoryCandidateKnowledge.mockReturnValue([
+      { candidateId: 'cand-replay', title: 'Replay Candidate' },
+      { candidateId: 'cand-interop', title: 'Interop Candidate' }
+    ]);
+
+    const exitCode = await runMemory(repoRoot, ['candidates', '--source', 'interop-followup'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.filters).toEqual({ source: 'interop-followup' });
+    expect(payload.candidates).toHaveLength(1);
+    expect(payload.candidates[0].candidateId).toBe('cand-interop');
+    expect(payload.candidates[0].source_metadata.source).toBe('interop-followup');
+    logSpy.mockRestore();
+  });
+
   it('supports query subcommand filters and emits json output', async () => {
     const { runMemory } = await import('./memory.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

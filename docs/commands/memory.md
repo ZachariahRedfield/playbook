@@ -33,6 +33,23 @@ Summary views:
 
 List replay candidates from `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`) for operator review.
 
+JSON output now includes additive deterministic `source_metadata` per candidate so interop-derived candidates are identifiable through the existing memory family without introducing a new command family.
+
+When `.playbook/memory/candidates.json` includes `interopDerivedCandidates`, matching entries are tagged with:
+
+- `source_metadata.source = "interop-followup"`
+- `source_metadata.derived_from_interop_followup = true`
+- `source_metadata.interop_followup` (followup/request/receipt + deterministic provenance metadata)
+
+All other candidates are tagged as replay-derived with:
+
+- `source_metadata.source = "replay"`
+- `source_metadata.derived_from_interop_followup = false`
+
+Additive filter:
+
+- `--source replay|interop-followup`
+
 Replay output remains candidate-only and is derived from memory evidence in `.playbook/memory/index.json` plus append-only event records under `.playbook/memory/events/*.json`; it does not read opaque raw logs directly.
 
 Operator note: postmortem reconsolidation should enter here as a reviewed artifact flow — write the structured postmortem first, extract explicit candidates from that artifact, then review them through `memory` / `promote` surfaces without introducing a new command family or automatic promotion.
@@ -191,6 +208,7 @@ pnpm playbook memory events --json
 pnpm playbook memory query --event-type lane_transition --run-id run-123 --json
 pnpm playbook memory query --view recent-routes --limit 5 --json
 pnpm playbook memory candidates --json
+pnpm playbook memory candidates --source interop-followup --json
 pnpm playbook memory knowledge --json
 pnpm playbook memory compaction --json
 pnpm playbook memory compaction --decision attach --json
