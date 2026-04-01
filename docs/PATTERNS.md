@@ -95,6 +95,8 @@ Failure Mode: A repo can look integrated while still failing real governed consu
 
 This repo also maintains a doctrine-level cognitive model in [Cognitive Dynamics Framework v0.1](./research/COGNITIVE_DYNAMICS_FRAMEWORK_V0_1.md).
 
+Operator surface: use `pnpm playbook patterns csia --json` for the machine-readable, read-only CSIA overlay view.
+
 ### When to use this framework
 
 Use it when reviewing interpretation drift, pattern/rule transferability, or recalibration needs across changing repository evidence.
