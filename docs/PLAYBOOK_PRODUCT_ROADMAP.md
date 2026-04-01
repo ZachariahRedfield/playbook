@@ -2711,3 +2711,32 @@ Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryab
 - Rule — Worker execution outputs must enter Playbook through explicit result artifacts, not inferred file diffs.
 - Pattern — Assign -> submit -> consolidate -> plan -> apply is the safe parallel-doc/runtime loop.
 - Failure Mode — Parallel workers without a receipt/submit seam force humans to reconstruct state manually and break deterministic orchestration.
+
+## Fitness mobile UX governance doctrine (proposed)
+
+Rule
+Any screen with persistent top or bottom chrome must use one canonical mobile shell.
+
+Rule
+An exercise card gets one execution state, not a pile of independently rendered flags.
+
+Rule
+All edit surfaces need one explicit save contract.
+
+Rule
+Rest-day behavior is a domain rule first, a UI state second.
+
+Pattern
+Reorder mode needs a dedicated row, not a normal content card plus drag handle.
+
+Pattern
+Read-only day detail and editable day detail should share structure, not behavior.
+
+Pattern
+Add and Edit should share one exercise goal-form contract.
+
+Failure Mode
+Without centralized taxonomy, the app drifts from strength to other and teaches inconsistent domain language.
+
+Failure Mode
+Without a single presentation mapper, summary surfaces invent contradictory states like LOGGED + Skipped.
