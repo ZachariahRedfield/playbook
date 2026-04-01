@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/interop-docs-story-followups.schema.json",
+  "title": "Playbook Interop Docs Story Followups Artifact",
+  "description": "Deterministic proposal-only docs/story followups compiled from canonical completed revise_weekly_goal_plan updated-truth outcomes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "reviewOnly",
+    "proposalOnly",
+    "authority",
+    "sourceArtifacts",
+    "followups"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "interop-docs-story-followups-artifact" },
+    "command": { "const": "interop docs-story-followups" },
+    "reviewOnly": { "const": true },
+    "proposalOnly": { "const": true },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "promotion"],
+      "properties": {
+        "mutation": { "const": "read-only" },
+        "promotion": { "const": "review-required" }
+      }
+    },
+    "sourceArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["updatedTruthPath", "followupsPath", "contractSourceHash", "contractSourceRef", "contractSourcePath"],
+      "properties": {
+        "updatedTruthPath": { "const": ".playbook/interop-updated-truth.json" },
+        "followupsPath": { "const": ".playbook/interop-followups.json" },
+        "contractSourceHash": { "type": "string", "minLength": 1 },
+        "contractSourceRef": { "type": "string", "minLength": 1 },
+        "contractSourcePath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "followups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "followupId",
+          "requestId",
+          "receiptId",
+          "action",
+          "canonicalOutcomeSummary",
+          "recommendedSurface",
+          "reasonCode",
+          "confidence",
+          "provenanceRefs",
+          "nextActionText"
+        ],
+        "properties": {
+          "followupId": { "type": "string", "minLength": 1 },
+          "requestId": { "type": "string", "minLength": 1 },
+          "receiptId": { "type": "string", "minLength": 1 },
+          "action": { "const": "revise_weekly_goal_plan" },
+          "canonicalOutcomeSummary": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outcome", "detail", "completedAt"],
+            "properties": {
+              "outcome": { "const": "completed" },
+              "detail": { "type": "string", "minLength": 1 },
+              "completedAt": { "type": "string", "format": "date-time" }
+            }
+          },
+          "recommendedSurface": { "enum": ["docs", "story"] },
+          "targetPath": { "type": "string", "minLength": 1 },
+          "targetStoryId": { "type": "string", "minLength": 1 },
+          "reasonCode": {
+            "enum": [
+              "completed-weekly-goal-plan-revision-docs-sync",
+              "completed-weekly-goal-plan-revision-story-candidate"
+            ]
+          },
+          "confidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["score", "rationale"],
+            "properties": {
+              "score": { "type": "number", "minimum": 0, "maximum": 1 },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          },
+          "provenanceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "nextActionText": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "recommendedSurface": { "const": "docs" } }, "required": ["recommendedSurface"] },
+            "then": { "required": ["targetPath"] }
+          },
+          {
+            "if": { "properties": { "recommendedSurface": { "const": "story" } }, "required": ["recommendedSurface"] },
+            "then": { "required": ["targetStoryId"] }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -154,12 +154,15 @@ Status key:
 
 | Outcome class (`canonicalOutcomeSummary.outcome`) | Updated-truth artifact | Followup surface(s) by status |
 | --- | --- | --- |
-| `completed` | `.playbook/interop-updated-truth.json` | Implemented (Lane A landed): `.playbook/review-queue.json` (`review-cue`), `.playbook/memory/candidates.json` (`memory-candidate`), `.playbook/interop-plan-hints.json` (`next-plan-hint`) for actionable completed bounded-state outcomes. Expected (not yet materialized): `.playbook/stories.json` (`docs-story-followup`) when the completed action is `revise_weekly_goal_plan`. |
+| `completed` | `.playbook/interop-updated-truth.json` | Implemented (Lane A landed): `.playbook/review-queue.json` (`review-cue`), `.playbook/memory/candidates.json` (`memory-candidate`), `.playbook/interop-plan-hints.json` (`next-plan-hint`) for actionable completed bounded-state outcomes, plus `.playbook/interop-docs-story-followups.json` (`docs-story-followup`) for completed `revise_weekly_goal_plan` actions as proposal-only docs/story followup rows. |
 | `blocked` or `failed` | `.playbook/interop-updated-truth.json` | Implemented (Lane A landed): `.playbook/review-queue.json` (`review-cue`), `.playbook/memory/candidates.json` (`memory-candidate`), `.playbook/interop-plan-hints.json` (`next-plan-hint`) when repeated blocked/failed outcomes imply deterministic plan adjustments. |
 
 - Deterministic followup rows include additive enrichment fields (`action`, `confidence`, `provenanceRefs`, `source.requestId`, `source.receiptId`) derived from updated-truth evidence.
 - Rule: Followup artifacts must include provenance and confidence when derived from deterministic updated-truth.
+- Rule: Updated truth should resolve into explicit docs/story followups when the bounded domain action semantically implies them.
+- Pattern: request -> receipt -> updated truth -> docs/story followup.
 - Pattern: Use partial object matching in tests for forward-compatible artifact evolution.
+- Failure Mode: The loop claims to derive the next action, but domain-specific planning/documentation followups remain manual interpretation.
 - Failure Mode: Strict equality assertions on evolving artifacts cause false-negative CI failures during intentional contract expansion.
 
 Mock runtime command family:

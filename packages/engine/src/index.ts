@@ -267,6 +267,8 @@ export {
 export type { InteropFollowupRow, InteropFollowupsArtifact, InteropDerivedMemoryCandidate } from './interop/interopFollowups.js';
 export { compileInteropPlanHints, INTEROP_PLAN_HINTS_DEFAULT_FILE, INTEROP_PLAN_HINTS_SCHEMA_VERSION } from './interop/interopPlanHints.js';
 export type { InteropPlanHintRow, InteropPlanHintsArtifact } from './interop/interopPlanHints.js';
+export { compileInteropDocsStoryFollowups, INTEROP_DOCS_STORY_FOLLOWUPS_DEFAULT_FILE, INTEROP_DOCS_STORY_FOLLOWUPS_SCHEMA_VERSION } from './interop/interopDocsStoryFollowups.js';
+export type { InteropDocsStoryFollowupRow, InteropDocsStoryFollowupsArtifact } from './interop/interopDocsStoryFollowups.js';
 
 export { parseOrchestratorContract, buildOrchestratorPlan, writeOrchestratorArtifacts } from './orchestrator.js';
 export type { OrchestratorContract, OrchestratorLane, OrchestratorPlan, RepoShape } from './orchestrator.js';
