@@ -86,4 +86,5 @@ This model provides a conceptual boundary:
 ## Related documents
 
 - [Attractor Model of Meaning](./ATTRACTOR_MODEL_OF_MEANING.md)
+- [Cognitive Dynamics Framework v0.1](./COGNITIVE_DYNAMICS_FRAMEWORK_V0_1.md)
 - [Evolutionary Dynamics of Knowledge Graphs (Architecture Mapping)](../architecture/EVOLUTIONARY_DYNAMICS_OF_KNOWLEDGE_GRAPHS.md)

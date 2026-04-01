@@ -90,3 +90,14 @@ The external fitness pilot promoted the following doctrine into repository-level
 - tooling migration incomplete until runtime + governance bootstrap proof passes
 
 Failure Mode: A repo can look integrated while still failing real governed consumption due to missing bootstrap/runtime/artifact guarantees.
+
+## Cognitive Dynamics Framework v0.1 (research link)
+
+This repo also maintains a doctrine-level cognitive model in [Cognitive Dynamics Framework v0.1](./research/COGNITIVE_DYNAMICS_FRAMEWORK_V0_1.md).
+
+### When to use this framework
+
+Use it when reviewing interpretation drift, pattern/rule transferability, or recalibration needs across changing repository evidence.
+
+Non-goal: it does not replace command truth or the canonical remediation flow.
+

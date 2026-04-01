@@ -24,6 +24,14 @@ Playbook is not a general-purpose chat assistant. It is a contract-first runtime
 - [Onboarding demo](./ONBOARDING_DEMO.md)
 - [Consumer integration contract](./CONSUMER_INTEGRATION_CONTRACT.md)
 
+## Research highlights
+
+### Cognitive Dynamics Framework v0.1
+
+Short summary: a doctrine-level model for how repository signals become compressed, stabilized, and recalibrated under governance without replacing deterministic command truth.
+
+- Framework spec: [Cognitive Dynamics Framework v0.1](./research/COGNITIVE_DYNAMICS_FRAMEWORK_V0_1.md)
+
 ## Historical/transitional docs
 
 - Archived docs index: [docs/archive/README.md](./archive/README.md)
