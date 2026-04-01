@@ -85,6 +85,25 @@ Rule: Cognitive framing must remain subordinate to deterministic command truth a
 
 Failure Mode: Cognitive drift occurs when stabilized language persists after contradictory repository evidence and no recalibration is performed.
 
+
+## Relation to CSIA overlay
+
+- **Minimum Cognitive Core**: frozen reasoning kernel used as the stability baseline.
+- **Cognitive Dynamics Framework v0.1**: doctrine-level interpretation/recalibration model for understanding how meaning shifts.
+- **CSIA overlay**: machine-readable, read-only analysis classification surface for operator inspection.
+
+Rule: CSIA is an analysis overlay, not runtime truth.
+
+Pattern: Reuse existing command families for new doctrine surfaces.
+
+Failure Mode: Competing cognitive models drift when their relationship is implicit.
+
+Example command:
+
+```bash
+pnpm playbook patterns csia --json
+```
+
 ## Related documents
 
 - [Theory of Pattern Meaning](./THEORY_OF_PATTERN_MEANING.md)
