@@ -136,6 +136,74 @@ const writeRepoPatternArtifacts = (repo: string): void => {
 };
 
 
+const writePatternConvergenceArtifact = (repo: string): void => {
+  const filePath = path.join(repo, '.playbook', 'pattern-convergence.json');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(
+      {
+        schemaVersion: '1.0',
+        kind: 'pattern-convergence',
+        generatedAt: '2026-01-04T00:00:00.000Z',
+        proposalOnly: true,
+        sourceArtifacts: ['.playbook/pattern-candidates.json', '.playbook/patterns-promoted.json'],
+        clusters: [
+          {
+            clusterId: 'cluster:deterministic-governance-mutation-boundary-review-gated-promotion',
+            intent: 'deterministic-governance',
+            constraint_class: 'mutation-boundary',
+            resolution_strategy: 'review-gated-promotion',
+            members: [
+              {
+                source: 'candidate',
+                id: 'candidate.module.tests.required',
+                title: 'Require deterministic module tests',
+                intent: 'deterministic-governance',
+                constraint_class: 'mutation-boundary',
+                resolution_strategy: 'review-gated-promotion'
+              }
+            ],
+            shared_abstraction: 'Promote only through explicit review to preserve deterministic governance boundaries.',
+            convergence_confidence: 0.64,
+            recommended_higher_order_pattern: 'Higher-order: enforce explicit review gates before promotion mutations.'
+          },
+          {
+            clusterId: 'cluster:pattern-portability-cross-repo-consistency-normalize-and-cluster',
+            intent: 'pattern-portability',
+            constraint_class: 'cross-repo-consistency',
+            resolution_strategy: 'normalize-and-cluster',
+            members: [
+              {
+                source: 'candidate',
+                id: 'candidate.portability.layering',
+                title: 'Portable layering family',
+                intent: 'pattern-portability',
+                constraint_class: 'cross-repo-consistency',
+                resolution_strategy: 'normalize-and-cluster'
+              },
+              {
+                source: 'promoted',
+                id: 'pattern.portability.layering',
+                title: 'Portable layering',
+                intent: 'pattern-portability',
+                constraint_class: 'cross-repo-consistency',
+                resolution_strategy: 'normalize-and-cluster'
+              }
+            ],
+            shared_abstraction: 'Compress cross-repo evidence into reusable normalized pattern families.',
+            convergence_confidence: 0.93,
+            recommended_higher_order_pattern: 'Higher-order: map shared portability constraints into one reusable abstraction.'
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
+};
+
+
 const writeCrossRepoCandidatesArtifact = (repo: string): void => {
   const filePath = path.join(repo, '.playbook', 'cross-repo-candidates.json');
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -708,6 +776,71 @@ describe('runPatterns', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.action).toBe('repo-delta');
     expect(payload.deltas[0]).toHaveProperty('strength_delta');
+
+    logSpy.mockRestore();
+  });
+
+
+  it('reads convergence artifact with deterministic JSON output', async () => {
+    const repo = createRepo('playbook-cli-patterns-convergence-json');
+    writePatternConvergenceArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['convergence'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.action).toBe('convergence');
+    expect(payload.cluster_count).toBe(2);
+    expect(payload.clusters[0]).toMatchObject({
+      intent: expect.any(String),
+      constraint_class: expect.any(String),
+      resolution_strategy: expect.any(String),
+      members: expect.any(Array),
+      convergence_confidence: expect.any(Number),
+      recommended_higher_order_pattern: expect.any(String)
+    });
+
+    logSpy.mockRestore();
+  });
+
+  it('filters convergence clusters predictably', async () => {
+    const repo = createRepo('playbook-cli-patterns-convergence-filters');
+    writePatternConvergenceArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['convergence', '--intent', 'pattern-portability', '--constraint', 'cross-repo-consistency', '--resolution', 'normalize-and-cluster', '--min-confidence', '0.9'], {
+      format: 'json',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.cluster_count).toBe(1);
+    expect(payload.clusters[0]?.clusterId).toBe('cluster:pattern-portability-cross-repo-consistency-normalize-and-cluster');
+
+    logSpy.mockRestore();
+  });
+
+  it('keeps convergence text output compact', async () => {
+    const repo = createRepo('playbook-cli-patterns-convergence-text');
+    writePatternConvergenceArtifact(repo);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runPatterns(repo, ['convergence'], {
+      format: 'text',
+      quiet: false
+    });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const lines = logSpy.mock.calls.map((call) => String(call[0]));
+    expect(lines[0]).toContain('Status:');
+    expect(lines[1]).toContain('Cluster count:');
+    expect(lines).toContainEqual(expect.stringContaining('Top convergent abstractions:'));
+    expect(lines.at(-1)).toContain('Next action:');
 
     logSpy.mockRestore();
   });

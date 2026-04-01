@@ -95,6 +95,26 @@ Compute and show candidate portability scores with signal breakdowns.
 
 Build governance-safe enrichment proposals from `.playbook/cross-repo-candidates.json` and write `.playbook/pattern-proposals.json`. Each proposal now carries normalized evidence lineage (`repo_id`, `artifact_kind`, semantics), a portability rationale, and explicit promotion targets for memory and story surfaces.
 
+### `patterns convergence [--intent <value>] [--constraint <value>] [--resolution <value>] [--min-confidence <n>]`
+
+Read `.playbook/pattern-convergence.json` as a first-class, read-only operator review surface.
+
+Returns additive cluster detail including:
+
+- normalized dimensions (`intent`, `constraint_class`, `resolution_strategy`)
+- member patterns per cluster
+- `convergence_confidence`
+- `recommended_higher_order_pattern`
+
+Filtering is deterministic and additive:
+
+- `--intent <value>`
+- `--constraint <value>`
+- `--resolution <value>`
+- `--min-confidence <n>` where `n` is in `[0,1]`
+
+Text mode remains brief-thin and prints only status, cluster count, top convergent abstractions, and next action.
+
 ### `patterns proposals promote --proposal <proposal-id> --target memory|story [--repo <repo-id>]`
 
 Explicitly promote one cross-repo proposal into a governed target:
@@ -170,8 +190,11 @@ Governance rule:
 ## Guarantees
 
 - Rule: New CLI knowledge surfaces begin as inspection tools.
+- Rule: Convergence is a promotion-confidence input, not a promotion bypass.
 - Pattern: Query-first CLI design keeps the command surface understandable and reduces governance risk.
+- Pattern: Signal -> Compression -> Convergence -> Reuse becomes operational through a read-only convergence review surface.
 - Failure Mode: Adding write semantics too early causes unclear ownership boundaries between curated and derived artifacts.
+- Failure Mode: Pattern convergence exists in doctrine and engine artifacts, but operators cannot inspect or review it directly.
 
 ## Examples
 
@@ -194,6 +217,8 @@ pnpm playbook patterns candidates generalized --json
 pnpm playbook patterns candidates portability --json
 
 pnpm playbook patterns proposals --json
+pnpm playbook patterns convergence --json
+pnpm playbook patterns convergence --intent pattern-portability --min-confidence 0.8 --json
 pnpm playbook patterns cross-repo --json
 pnpm playbook patterns portability
 pnpm playbook patterns generalized --json

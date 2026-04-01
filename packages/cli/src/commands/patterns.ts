@@ -8,6 +8,7 @@ import { runPatternsAntiPatterns } from './patterns/antiPatterns.js';
 import { runPatternsCrossRepo, runPatternsGeneralized, runPatternsPortability, runPatternsRepoDelta } from './patterns/crossRepo.js';
 import { runPatternsCandidates } from './patterns/candidates/index.js';
 import { runPatternsProposals } from './patterns/proposals.js';
+import { runPatternsConvergence } from './patterns/convergence.js';
 
 type PatternsOptions = {
   format: 'text' | 'json';
@@ -30,7 +31,7 @@ const emitError = (cwd: string, options: PatternsOptions, message: string): numb
 };
 
 const printHelp = (): void => {
-  console.log('playbook patterns subcommands: list | show <id> | related <id> | layers | score | top [--limit <n>] | outcomes <patternId> | doctrine-candidates | candidates [show <id>|unmatched|link|cross-repo|generalized|portability] | anti-patterns | proposals | transfer export --pattern <id> --target-repo <repo-id> [--risk-class <level>] [--sanitization-status <status>] | transfer import --file <path> --repo <repo-id> [--repo-tag <tag>] | cross-repo [--repo <path-or-slug>] | portability | generalized | repo-delta --left <repoId> --right <repoId> | promote --id <pattern-id> --decision approve|reject');
+  console.log('playbook patterns subcommands: list | show <id> | related <id> | layers | score | top [--limit <n>] | outcomes <patternId> | doctrine-candidates | candidates [show <id>|unmatched|link|cross-repo|generalized|portability] | anti-patterns | proposals | convergence [--intent <value>] [--constraint <value>] [--resolution <value>] [--min-confidence <n>] | transfer export --pattern <id> --target-repo <repo-id> [--risk-class <level>] [--sanitization-status <status>] | transfer import --file <path> --repo <repo-id> [--repo-tag <tag>] | cross-repo [--repo <path-or-slug>] | portability | generalized | repo-delta --left <repoId> --right <repoId> | promote --id <pattern-id> --decision approve|reject');
 };
 
 
@@ -144,7 +145,7 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
           payload: {
             schemaVersion: '1.0',
             command: 'patterns',
-            subcommands: ['list', 'show', 'related', 'layers', 'score', 'top', 'outcomes', 'doctrine-candidates', 'candidates', 'anti-patterns', 'proposals', 'transfer', 'cross-repo', 'portability', 'generalized', 'repo-delta', 'promote']
+            subcommands: ['list', 'show', 'related', 'layers', 'score', 'top', 'outcomes', 'doctrine-candidates', 'candidates', 'anti-patterns', 'proposals', 'convergence', 'transfer', 'cross-repo', 'portability', 'generalized', 'repo-delta', 'promote']
           },
           outFile: options.outFile
         });
@@ -185,6 +186,10 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
 
     if (subcommand === 'proposals') {
       return runPatternsProposals(cwd, commandArgs.slice(1), options);
+    }
+
+    if (subcommand === 'convergence') {
+      return runPatternsConvergence(cwd, commandArgs.slice(1), options);
     }
 
     if (subcommand === 'transfer') {
@@ -285,7 +290,7 @@ export const runPatterns = async (cwd: string, commandArgs: string[], options: P
     return emitError(
       cwd,
       options,
-      'playbook patterns: unsupported subcommand. Use list, show <id>, related <id>, layers, score, top [--limit <n>], outcomes <patternId>, doctrine-candidates, candidates [show <id>|unmatched|link|cross-repo|generalized|portability], anti-patterns, proposals, transfer export|import, cross-repo [--repo <path-or-slug>], portability, generalized, repo-delta --left <repoId> --right <repoId>, or promote --id <pattern-id> --decision approve|reject.'
+      'playbook patterns: unsupported subcommand. Use list, show <id>, related <id>, layers, score, top [--limit <n>], outcomes <patternId>, doctrine-candidates, candidates [show <id>|unmatched|link|cross-repo|generalized|portability], anti-patterns, proposals, convergence [--intent <value>] [--constraint <value>] [--resolution <value>] [--min-confidence <n>], transfer export|import, cross-repo [--repo <path-or-slug>], portability, generalized, repo-delta --left <repoId> --right <repoId>, or promote --id <pattern-id> --decision approve|reject.'
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
