@@ -96,9 +96,9 @@ pnpm playbook docs audit --ci --json
 
 Subapp truth-pack runtime manifest governance:
 
-- Rule: Integrated apps must expose one committed runtime manifest as repo-local truth.
-- Pattern: Repo Truth Pack -> runtime manifest -> bounded integration seam.
-- Failure Mode: Apps expose signals/actions/receipts implicitly across code and docs, so Playbook cannot ingest runtime truth deterministically.
+- Rule: Integrated apps must expose one committed runtime manifest as repo-local truth that Playbook consumes into `.playbook/runtime-manifests.json`.
+- Pattern: Repo Truth Pack -> runtime manifest -> consumed control-plane context.
+- Failure Mode: A runtime manifest that is only validated, never consumed, becomes governance theater instead of a real seam.
 
 For remediation workflow updates, run canonical deterministic flow checks:
 

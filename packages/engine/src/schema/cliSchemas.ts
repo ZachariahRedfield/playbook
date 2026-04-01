@@ -451,6 +451,16 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           prReview: { const: '.playbook/pr-review.json' }
         }
       },
+      runtimeManifests: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['artifact', 'manifestsCount', 'manifests'],
+        properties: {
+          artifact: { const: '.playbook/runtime-manifests.json' },
+          manifestsCount: { type: 'number' },
+          manifests: { type: 'array', items: { type: 'object', additionalProperties: true } }
+        }
+      },
       cli: {
         type: 'object',
         additionalProperties: false,
@@ -1948,6 +1958,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       'repo',
       'repositoryIntelligence',
       'controlPlaneArtifacts',
+      'runtimeManifests',
       'operatingLadder',
       'productCommands',
       'guidance'
@@ -1992,6 +2003,16 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           cycleHistory: { const: '.playbook/cycle-history.json' },
           improvementCandidates: { const: '.playbook/improvement-candidates.json' },
           prReview: { const: '.playbook/pr-review.json' }
+        }
+      },
+      runtimeManifests: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['artifact', 'manifestsCount', 'manifests'],
+        properties: {
+          artifact: { const: '.playbook/runtime-manifests.json' },
+          manifestsCount: { type: 'number' },
+          manifests: { type: 'array', items: { type: 'object', additionalProperties: true } }
         }
       },
       operatingLadder: {

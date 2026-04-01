@@ -62,6 +62,7 @@ Validation includes:
   - `receipt_families`
   - `integration_seams`
 - Fitness-aligned integrated subapps must set `external_truth_contract_ref` in `playbook/runtime-manifest.json`
+- consumed aggregate artifact at `.playbook/runtime-manifests.json` (read-only control-plane surface, sourced from subapp manifests)
 - non-integrated subapps remain unaffected by runtime manifest requirements
 
 
@@ -74,13 +75,13 @@ Integrated subapps must commit one runtime manifest that acts as deterministic r
 - integration seams
 
 Rule:
-- Integrated apps must expose one committed runtime manifest as repo-local truth.
+- Integrated apps must expose one committed runtime manifest as repo-local truth that Playbook consumes into `.playbook/runtime-manifests.json`.
 
 Pattern:
-- Repo Truth Pack -> runtime manifest -> bounded integration seam.
+- Repo Truth Pack -> runtime manifest -> consumed control-plane context.
 
 Failure Mode:
-- Apps expose signals/actions/receipts implicitly across code and docs, so Playbook cannot ingest runtime truth deterministically.
+- A runtime manifest that is only validated, never consumed, becomes governance theater instead of a real seam.
 
 ## External truth contract boundary (Fitness)
 

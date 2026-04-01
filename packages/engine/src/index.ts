@@ -64,6 +64,15 @@ export type {
 } from './indexer/playbookIgnore.js';
 export { generateRepositoryGraph, readRepositoryGraph, summarizeRepositoryGraph, summarizeGraphNeighborhood, REPOSITORY_GRAPH_RELATIVE_PATH, REPOSITORY_GRAPH_SCHEMA_VERSION } from './graph/repoGraph.js';
 export { buildModuleContextDigests, writeModuleContextDigests, readModuleContextDigest, MODULE_CONTEXT_DIR_RELATIVE_PATH } from './context/moduleContext.js';
+
+export {
+  RUNTIME_MANIFESTS_RELATIVE_PATH,
+  RUNTIME_MANIFESTS_SCHEMA_VERSION,
+  readRuntimeManifestsArtifact,
+  writeRuntimeManifestsArtifact,
+  materializeRuntimeManifestsArtifact
+} from './context/runtimeManifests.js';
+export type { RuntimeManifestEntry, RuntimeManifestsArtifact } from './context/runtimeManifests.js';
 export type { ModuleContextDigest } from './context/moduleContext.js';
 export type { RepositoryGraph, RepositoryGraphNode, RepositoryGraphEdge, RepositoryGraphSummary, GraphNeighborhoodSummary } from './graph/repoGraph.js';
 
