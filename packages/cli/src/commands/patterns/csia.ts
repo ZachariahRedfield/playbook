@@ -1,21 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { CSIA_SCHEMA_SOURCE, DEFAULT_CSIA_SOURCE, loadValidatedCsiaFramework } from '@zachariahredfield/playbook-engine';
 import { emitJsonOutput } from '../../lib/jsonArtifact.js';
 import { ExitCode } from '../../lib/cliContract.js';
 
-type PatternsOptions = {
-  format: 'text' | 'json';
-  quiet: boolean;
-  outFile?: string;
-};
 
 type CsiaPrimitive = 'compute' | 'simulate' | 'interpret' | 'adapt';
-
-type CsiaBridge = {
-  from: CsiaPrimitive;
-  to: CsiaPrimitive;
-  intent: string;
-};
 
 type CsiaRegime = {
   id: string;
@@ -28,63 +16,29 @@ type CsiaFailureMode = {
   id: string;
   risk: string;
   linkedPrimitives: CsiaPrimitive[];
-  mitigation: string;
+  mitigation?: string;
 };
 
 type CsiaFrameworkArtifact = {
-  schemaVersion: string;
+  schemaVersion: '1.0';
   kind: 'csia-framework';
   primitives: CsiaPrimitive[];
-  bridges: CsiaBridge[];
+  bridges: Array<{ from: CsiaPrimitive; to: CsiaPrimitive; intent: string }>;
   regimes: CsiaRegime[];
   failureModes: CsiaFailureMode[];
 };
 
-const DEFAULT_CSIA_SOURCE = path.join('docs', 'examples', 'csia-framework.mappings.json');
-const CSIA_SCHEMA_SOURCE = path.join('packages', 'contracts', 'src', 'csia-framework.schema.json');
+type PatternsOptions = {
+  format: 'text' | 'json';
+  quiet: boolean;
+  outFile?: string;
+};
+
 const SUPPORTED_PRIMITIVES: CsiaPrimitive[] = ['compute', 'simulate', 'interpret', 'adapt'];
 
 const readOptionValue = (args: string[], flag: string): string | undefined => {
   const index = args.indexOf(flag);
   return index >= 0 ? args[index + 1] : undefined;
-};
-
-const resolveLocalSourcePath = (cwd: string, commandArgs: string[]): { sourcePath: string; sourcePathForOutput: string } => {
-  const from = readOptionValue(commandArgs, '--from') ?? DEFAULT_CSIA_SOURCE;
-  const resolvedPath = path.resolve(cwd, from);
-  const relativePath = path.relative(cwd, resolvedPath);
-
-  if (path.isAbsolute(from) || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-    throw new Error('playbook patterns csia: --from must be a repository-local relative path.');
-  }
-
-  if (!fs.existsSync(resolvedPath)) {
-    throw new Error(`playbook patterns csia: mapping file not found: ${from}`);
-  }
-
-  return { sourcePath: resolvedPath, sourcePathForOutput: relativePath || '.' };
-};
-
-const readCsiaArtifact = (cwd: string, commandArgs: string[]): { artifact: CsiaFrameworkArtifact; sourcePathForOutput: string } => {
-  const { sourcePath, sourcePathForOutput } = resolveLocalSourcePath(cwd, commandArgs);
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(fs.readFileSync(sourcePath, 'utf8')) as unknown;
-  } catch {
-    throw new Error(`playbook patterns csia: invalid JSON in mapping file: ${sourcePathForOutput}`);
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error(`playbook patterns csia: invalid CSIA mapping artifact: ${sourcePathForOutput}`);
-  }
-
-  const candidate = parsed as Partial<CsiaFrameworkArtifact>;
-  if (candidate.kind !== 'csia-framework' || !Array.isArray(candidate.regimes) || !Array.isArray(candidate.failureModes) || !Array.isArray(candidate.primitives) || !Array.isArray(candidate.bridges)) {
-    throw new Error(`playbook patterns csia: invalid CSIA mapping artifact: ${sourcePathForOutput}`);
-  }
-
-  return { artifact: candidate as CsiaFrameworkArtifact, sourcePathForOutput };
 };
 
 const collectRegimePrimitives = (regime: CsiaRegime): Set<CsiaPrimitive> => new Set([regime.dominantPrimitive, ...regime.secondaryPrimitives]);
@@ -167,7 +121,9 @@ const selectLinkedFailureModes = (failureModes: CsiaFailureMode[], filteredRegim
 };
 
 export const runPatternsCsia = (cwd: string, commandArgs: string[], options: PatternsOptions): number => {
-  const { artifact, sourcePathForOutput } = readCsiaArtifact(cwd, commandArgs);
+  const sourcePath = readOptionValue(commandArgs, '--from') ?? DEFAULT_CSIA_SOURCE;
+  const { artifact: loadedArtifact, sourcePathForOutput } = loadValidatedCsiaFramework(cwd, sourcePath);
+  const artifact = loadedArtifact as CsiaFrameworkArtifact;
   const filteredRegimes = filterRegimes(artifact, commandArgs);
   const failureModes = selectLinkedFailureModes(artifact.failureModes, filteredRegimes);
   const dominantPrimitiveSummary = summarizeDominantPrimitives(filteredRegimes);

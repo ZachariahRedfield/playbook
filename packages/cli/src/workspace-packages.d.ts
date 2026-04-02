@@ -300,6 +300,13 @@ declare module "@zachariahredfield/playbook-engine" {
   export type RepositoryModule = any;
   export const answerRepositoryQuestion: (...args: any[]) => any;
   export const queryPatterns: (...args: any[]) => any;
+  export const loadValidatedCsiaFramework: (...args: any[]) => { artifact: any; sourcePathForOutput: string };
+  export const DEFAULT_CSIA_SOURCE: string;
+  export const CSIA_SCHEMA_SOURCE: string;
+  export type CsiaPrimitive = 'compute' | 'simulate' | 'interpret' | 'adapt';
+  export type CsiaRegime = any;
+  export type CsiaFailureMode = any;
+  export type CsiaFrameworkArtifact = any;
   export const queryPatternReviewQueue: (...args: any[]) => any;
   export const queryPromotedPatterns: (...args: any[]) => any;
   export const promotePatternCandidate: (...args: any[]) => any;
