@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { startExecution } from './supervisor.js';
+import { finalizeExecution, recordWorkerResult, startExecution } from './supervisor.js';
 import type { WorksetPlanArtifact } from '../orchestration/worksetPlan.js';
 import type { WorkerLaunchPlanArtifact } from '../orchestration/workerLaunchPlan.js';
+import { readOrchestrationExecutionRun } from './orchestrationRunState.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
 
@@ -112,5 +113,22 @@ describe('startExecution', () => {
     expect(run.lanes['lane-1']?.state).toBe('ready');
     expect(run.lanes['lane-2']?.state).toBe('blocked');
   });
-});
 
+  it('writes orchestration run-state and reconciles resume without relaunching completed lanes', async () => {
+    const repo = createRepo('execution-supervisor-run-state');
+    const firstRun = await startExecution(worksetPlanFixture(), launchPlanFixture(), repo);
+    await recordWorkerResult('lane-1', 'worker-lane-1', { status: 'completed', retries: 0, summary: 'ok' }, repo);
+    await finalizeExecution(firstRun.runId, repo);
+
+    const firstState = readOrchestrationExecutionRun(repo, firstRun.runId);
+    expect(firstState.lanes['lane-1']?.status).toBe('completed');
+    expect(firstState.lanes['lane-2']?.status).toBe('blocked');
+
+    const resumedRun = await startExecution(worksetPlanFixture(), launchPlanFixture(), repo);
+    const resumedState = readOrchestrationExecutionRun(repo, resumedRun.runId);
+    expect(resumedRun.runId).toBe(firstRun.runId);
+    expect(resumedState.lanes['lane-1']?.status).toBe('completed');
+    expect(resumedState.lanes['lane-2']?.status).toBe('blocked');
+    expect(resumedState.metadata.reconcile_revision).toBeGreaterThan(firstState.metadata.reconcile_revision);
+  });
+});

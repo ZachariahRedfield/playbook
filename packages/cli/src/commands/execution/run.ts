@@ -16,6 +16,7 @@ import { loadFleet, persistExecutionControlLoop } from './receiptIngest.js';
 
 const WORKSET_PLAN_PATH = '.playbook/workset-plan.json';
 const EXECUTION_STATE_PATH = '.playbook/execution-state.json';
+const ORCHESTRATION_RUNS_DIR = '.playbook/execution-runs';
 
 type ExecuteOptions = {
   format: 'text' | 'json';
@@ -27,7 +28,11 @@ type ExecuteOptions = {
 type LaneRuntimeState = 'blocked' | 'ready' | 'running' | 'completed' | 'failed';
 
 type ExecutionModule = {
-  startExecution?: (worksetPlan: WorksetPlanArtifact, launchPlan: WorkerLaunchPlanArtifact, repoRoot?: string) => Promise<{ runId: string }>;
+  startExecution?: (
+    worksetPlan: WorksetPlanArtifact,
+    launchPlan: WorkerLaunchPlanArtifact,
+    repoRoot?: string
+  ) => Promise<{ runId: string; laneStatuses: Record<string, 'pending' | 'running' | 'completed' | 'failed' | 'blocked'> }>;
   updateLaneState?: (laneId: string, state: LaneRuntimeState, repoRoot?: string) => Promise<void>;
   recordWorkerResult?: (laneId: string, workerId: string, result: { status: 'completed' | 'failed'; retries?: number; summary?: string }, repoRoot?: string) => Promise<void>;
   finalizeExecution?: (runId: string, repoRoot?: string) => Promise<void>;
@@ -290,7 +295,7 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
       usage: 'playbook execute [options]',
       description: 'Execute orchestration lanes through the deterministic execution supervisor runtime or bridge deterministic adoption prompts into canonical receipt/update ingestion.',
       options: ['--json                     Alias for --format=json', '--format <text|json>       Output format', '--quiet                    Suppress success output in text mode', '--worker-adapter <command> Execute deterministic adoption prompts through an external adapter and write canonical outcome artifacts', '--help                     Show help'],
-      artifacts: [EXECUTION_STATE_PATH, '.playbook/execution-outcome-input.json', '.playbook/execution-updated-state.json']
+      artifacts: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR, '.playbook/execution-outcome-input.json', '.playbook/execution-updated-state.json']
     });
     return ExitCode.Success;
   }
@@ -339,7 +344,12 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
       throw new Error('playbook execute: execution state artifact initialization failed.');
     }
 
+    const resumedLaneIds: string[] = [];
     for (const lane of launchPlanValidation.eligibleLanes) {
+      if (run.laneStatuses[lane.lane_id] === 'completed') {
+        resumedLaneIds.push(lane.lane_id);
+        continue;
+      }
       await engineModule.updateLaneState(lane.lane_id, 'running', cwd);
       await engineModule.recordWorkerResult(lane.lane_id, `worker-${lane.lane_id}`, { status: 'completed', retries: 0, summary: 'deterministic execution success (launch-authorized)' }, cwd);
     }
@@ -358,6 +368,8 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
             command: 'execute',
             run_id: run.runId,
             execution_state_path: EXECUTION_STATE_PATH,
+            orchestration_runs_path: ORCHESTRATION_RUNS_DIR,
+            resumed_lane_ids: resumedLaneIds,
             lanes,
             execution_status: status
           },
@@ -369,8 +381,8 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
       tracker.finish({
         inputsSummary: `lanes=${worksetPlan.lanes.length}`,
         artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH],
-        artifactsWritten: [EXECUTION_STATE_PATH],
-        downstreamArtifactsProduced: [EXECUTION_STATE_PATH],
+        artifactsWritten: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR],
+        downstreamArtifactsProduced: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR],
         successStatus: exitCode === ExitCode.Success ? 'success' : 'partial'
       });
       return exitCode;
@@ -384,8 +396,8 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
     tracker.finish({
       inputsSummary: `lanes=${worksetPlan.lanes.length}`,
       artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH],
-      artifactsWritten: [EXECUTION_STATE_PATH],
-      downstreamArtifactsProduced: [EXECUTION_STATE_PATH],
+      artifactsWritten: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR],
+      downstreamArtifactsProduced: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR],
       successStatus: exitCode === ExitCode.Success ? 'success' : 'partial'
     });
     return exitCode;

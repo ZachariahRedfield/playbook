@@ -38,6 +38,7 @@ type CycleStateArtifact = {
   started_at: string;
   steps: CycleStepRecord[];
   artifacts_written: string[];
+  execution_run_refs: string[];
   result: 'success' | 'failed';
   failed_step?: StepName;
 };
@@ -97,6 +98,9 @@ const validateCycleStateArtifact = (artifact: CycleStateArtifact): string[] => {
   if (!Array.isArray(artifact.artifacts_written) || artifact.artifacts_written.some((entry) => typeof entry !== 'string')) {
     errors.push('artifacts_written must be an array of strings');
   }
+  if (!Array.isArray(artifact.execution_run_refs) || artifact.execution_run_refs.some((entry) => typeof entry !== 'string')) {
+    errors.push('execution_run_refs must be an array of strings');
+  }
 
   if (artifact.result === 'success' && artifact.failed_step !== undefined) {
     errors.push('failed_step must be omitted when result is success');
@@ -121,7 +125,7 @@ const STEP_ARTIFACTS: Record<StepName, string[]> = {
   verify: ['.playbook/execution/runs'],
   route: ['.playbook/execution-plan.json'],
   orchestrate: ['.playbook/cycle-tasks.json', '.playbook/orchestrator/orchestrator.json', '.playbook/workset-plan.json', '.playbook/lane-state.json'],
-  execute: ['.playbook/execution-state.json'],
+  execute: ['.playbook/execution-state.json', '.playbook/execution-runs'],
   telemetry: ['.playbook/learning-compaction.json'],
   improve: ['.playbook/improvement-candidates.json', '.playbook/command-improvements.json']
 };
@@ -136,6 +140,7 @@ const toCycleArtifact = (
   startedAt: string,
   steps: CycleStepRecord[],
   artifactsWritten: string[],
+  executionRunRefs: string[],
   result: 'success' | 'failed',
   failedStep?: StepName
 ): CycleStateArtifact => ({
@@ -145,6 +150,7 @@ const toCycleArtifact = (
   started_at: startedAt,
   steps,
   artifacts_written: artifactsWritten,
+  execution_run_refs: executionRunRefs,
   result,
   ...(failedStep ? { failed_step: failedStep } : {})
 });
@@ -345,6 +351,7 @@ export const runCycle = async (cwd: string, options: CycleOptions): Promise<numb
   const cycleId = randomUUID();
   const steps: CycleStepRecord[] = [];
   const artifactsWritten: string[] = [];
+  const executionRunRefs = new Set<string>();
 
   let result: 'success' | 'failed' = 'success';
   let failedStep: StepName | undefined;
@@ -366,6 +373,14 @@ export const runCycle = async (cwd: string, options: CycleOptions): Promise<numb
           artifactsWritten.push(artifact);
         }
       }
+      if (step === 'execute') {
+        const executionRunsRoot = path.join(cwd, '.playbook', 'execution-runs');
+        if (fs.existsSync(executionRunsRoot)) {
+          for (const entry of fs.readdirSync(executionRunsRoot).filter((file) => file.endsWith('.json')).sort((left, right) => left.localeCompare(right))) {
+            executionRunRefs.add(path.join('.playbook', 'execution-runs', entry));
+          }
+        }
+      }
 
       if (status === 'failure') {
         result = 'failed';
@@ -379,7 +394,7 @@ export const runCycle = async (cwd: string, options: CycleOptions): Promise<numb
   } catch (error) {
     result = 'failed';
     failedStep = failedStep ?? activeStep;
-    const artifact = toCycleArtifact(cwd, cycleId, startedAt, steps, [...new Set(artifactsWritten)], result, failedStep);
+    const artifact = toCycleArtifact(cwd, cycleId, startedAt, steps, [...new Set(artifactsWritten)], [...executionRunRefs], result, failedStep);
     writeCycleState(cwd, artifact);
     appendCycleHistory(cwd, artifact);
     tracker.finish({
@@ -392,7 +407,7 @@ export const runCycle = async (cwd: string, options: CycleOptions): Promise<numb
     throw error;
   }
 
-  const artifact = toCycleArtifact(cwd, cycleId, startedAt, steps, [...new Set(artifactsWritten)], result, failedStep);
+  const artifact = toCycleArtifact(cwd, cycleId, startedAt, steps, [...new Set(artifactsWritten)], [...executionRunRefs], result, failedStep);
   writeCycleState(cwd, artifact);
   appendCycleHistory(cwd, artifact);
 

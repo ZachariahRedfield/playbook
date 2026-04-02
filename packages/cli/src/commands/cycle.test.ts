@@ -13,6 +13,7 @@ const readCycleArtifact = (repo: string): {
   result: string;
   failed_step?: string;
   artifacts_written: string[];
+  execution_run_refs: string[];
 } => JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'cycle-state.json'), 'utf8'));
 
 
@@ -31,6 +32,9 @@ const validateCycleStateShape = (artifact: ReturnType<typeof readCycleArtifact>)
   if (artifact.result !== 'success' && artifact.result !== 'failed') errors.push('result');
   if (!Array.isArray(artifact.artifacts_written) || artifact.artifacts_written.some((entry) => typeof entry !== 'string')) {
     errors.push('artifacts_written');
+  }
+  if (!Array.isArray(artifact.execution_run_refs) || artifact.execution_run_refs.some((entry) => typeof entry !== 'string')) {
+    errors.push('execution_run_refs');
   }
 
   if (Array.isArray(artifact.steps)) {
@@ -71,6 +75,8 @@ describe('runCycle', { timeout: 30000 }, () => {
     fs.writeFileSync(path.join(repo, '.playbook', 'workset-plan.json'), '{}\n', 'utf8');
     fs.writeFileSync(path.join(repo, '.playbook', 'lane-state.json'), '{}\n', 'utf8');
     fs.writeFileSync(path.join(repo, '.playbook', 'execution-state.json'), '{}\n', 'utf8');
+    fs.mkdirSync(path.join(repo, '.playbook', 'execution-runs'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbook', 'execution-runs', 'pb-exec-123.json'), '{}\n', 'utf8');
     fs.writeFileSync(path.join(repo, '.playbook', 'learning-compaction.json'), '{}\n', 'utf8');
     fs.writeFileSync(path.join(repo, '.playbook', 'improvement-candidates.json'), '{}\n', 'utf8');
     fs.writeFileSync(path.join(repo, '.playbook', 'command-improvements.json'), '{}\n', 'utf8');
@@ -91,10 +97,12 @@ describe('runCycle', { timeout: 30000 }, () => {
       '.playbook/workset-plan.json',
       '.playbook/lane-state.json',
       '.playbook/execution-state.json',
+      '.playbook/execution-runs',
       '.playbook/learning-compaction.json',
       '.playbook/improvement-candidates.json',
       '.playbook/command-improvements.json'
     ]);
+    expect(artifact.execution_run_refs).toEqual(['.playbook/execution-runs/pb-exec-123.json']);
 
     logSpy.mockRestore();
   });

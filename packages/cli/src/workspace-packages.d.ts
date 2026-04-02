@@ -310,6 +310,8 @@ declare module "@zachariahredfield/playbook-engine" {
   export type CsiaFrameworkArtifact = any;
   export const queryPatternReviewQueue: (...args: any[]) => any;
   export const queryPromotedPatterns: (...args: any[]) => any;
+  export const listOrchestrationExecutionRuns: (...args: any[]) => any;
+  export const readOrchestrationExecutionRun: (...args: any[]) => any;
   export const promotePatternCandidate: (...args: any[]) => any;
   export const scorePatternGraph: (...args: any[]) => any;
   export const listTopPatterns: (...args: any[]) => any[];

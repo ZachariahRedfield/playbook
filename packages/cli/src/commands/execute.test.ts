@@ -186,13 +186,36 @@ describe('runExecution', () => {
 
     expect(code).toBe(ExitCode.Success);
     expect(fs.existsSync(path.join(repo, '.playbook', 'execution-state.json'))).toBe(true);
+    expect(fs.existsSync(path.join(repo, '.playbook', 'execution-runs'))).toBe(true);
 
-    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as { command: string; execution_status: string; lanes: Array<{ state: string }> };
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as { command: string; execution_status: string; lanes: Array<{ state: string }>; orchestration_runs_path: string };
     expect(payload.command).toBe('execute');
     expect(payload.execution_status).toBe('SUCCESS');
     expect(payload.lanes.every((lane) => lane.state === 'completed')).toBe(true);
+    expect(payload.orchestration_runs_path).toBe('.playbook/execution-runs');
 
     logSpy.mockRestore();
+  });
+
+  it('reconciles interrupted run-state and does not relaunch completed lanes', async () => {
+    const repo = createRepo('playbook-cli-execute-resume');
+    writeWorksetPlan(repo);
+    writeLaunchPlan(repo);
+
+    const firstLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const firstCode = await runExecution(repo, { format: 'json', quiet: false });
+    expect(firstCode).toBe(ExitCode.Success);
+    const firstPayload = JSON.parse(String(firstLogSpy.mock.calls[0]?.[0])) as { run_id: string };
+    firstLogSpy.mockRestore();
+
+    const secondLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const secondCode = await runExecution(repo, { format: 'json', quiet: false });
+    expect(secondCode).toBe(ExitCode.Success);
+    const secondPayload = JSON.parse(String(secondLogSpy.mock.calls[0]?.[0])) as { run_id: string; resumed_lane_ids: string[] };
+    expect(secondPayload.run_id).toBe(firstPayload.run_id);
+    expect(secondPayload.resumed_lane_ids).toEqual(['lane-1', 'lane-2']);
+
+    secondLogSpy.mockRestore();
   });
 
   it('fails clearly when worker launch authorization artifact is missing', async () => {

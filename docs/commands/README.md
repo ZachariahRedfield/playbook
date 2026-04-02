@@ -308,9 +308,15 @@ For orchestration surfaces (`orchestrate`, `lanes`, `workers`), operator prompts
 - protected singleton narrative docs are fragment-only surfaces during parallel worker execution
 - compact text surfaces should report only pending/blocking summary plus next command while `.playbook` artifacts retain raw consolidation detail
 - Managed execution is now fail-closed on explicit launch authorization: `execute` (and `cycle` paths that run `execute`) require `.playbook/worker-launch-plan.json` and only launch lanes with `launchEligible: true`.
+- Managed execution now writes durable orchestration run-state at `.playbook/execution-runs/<run-id>.json` and treats that artifact as canonical state for inspect/reconcile/resume.
+- `execute` reconciles run-state deterministically from launch-plan fingerprint + existing lane receipts/state so interrupted runs can resume without relaunching completed lanes.
+- `cycle` now carries execution run refs in `.playbook/cycle-state.json` so cycle reporting points to canonical orchestration run-state instead of ephemeral in-process step summaries.
 - Rule: Managed execution may begin only from explicit launch authorization, never from worker intent alone.
+- Rule: Managed execution is not restart-safe until orchestration run-state is explicit and durable.
 - Pattern: `assign -> launch-plan -> execute -> receipt -> submit -> consolidate`.
+- Pattern: `launch-plan -> execute -> per-lane receipt/state -> reconcile/resume`.
 - Failure Mode: If execute bypasses launch authorization, managed subagents can skip the same governance gates already enforced for humans.
+- Failure Mode: If execution state lives only in process memory, restarts or partial failures break the same trust boundaries that launch authorization was meant to enforce.
 
 ## Learn draft (`pnpm playbook learn draft`)
 
@@ -690,7 +696,7 @@ Shell redirection (`>`) may introduce encoding corruption. CLI owned artifact ou
 
 ## Execution run state
 
-Remediation ladder commands (`verify`, `plan`, `apply`, `verify`) now append deterministic step state to run artifacts at `.playbook/runs/<run-id>.json`.
+Managed orchestration execution (`execute` / `cycle`) now persists canonical deterministic run-state at `.playbook/execution-runs/<run-id>.json`, including launch-plan fingerprint, eligible lanes, per-lane status, receipt refs, blocker refs, and reconcile metadata.
 
 Use query surfaces to inspect state:
 

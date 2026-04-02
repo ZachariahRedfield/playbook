@@ -14,6 +14,14 @@ import {
 import { computeLaneOutcomeScore } from '../telemetry/laneScoring.js';
 import { computeRouterAccuracyMetric } from '../telemetry/routerAccuracy.js';
 import type { LaneRuntime, LaneRuntimeState } from '@zachariahredfield/playbook-core';
+import {
+  computeLaunchPlanFingerprint,
+  deriveOrchestrationRunId,
+  readOrchestrationExecutionRun,
+  type OrchestrationExecutionRunState,
+  type OrchestrationLaneStatus,
+  writeOrchestrationExecutionRun
+} from './orchestrationRunState.js';
 
 const EXECUTION_STATE_PATH = '.playbook/execution-state.json';
 const PROCESS_TELEMETRY_PATH = '.playbook/process-telemetry.json';
@@ -30,6 +38,9 @@ export type WorkerResult = {
 export interface ExecutionRun {
   runId: string;
   startedAt: string;
+  resumed: boolean;
+  eligibleLaneIds: string[];
+  laneStatuses: Record<string, OrchestrationLaneStatus>;
   lanes: Record<string, LaneRuntime & { protected_doc_consolidation?: { has_protected_doc_work: boolean; stage: 'not_applicable' | 'pending' | 'blocked' | 'plan_ready' | 'applied'; summary: string; next_command: string | null } }>;
 }
 
@@ -56,26 +67,6 @@ const writeExecutionState = (repoRoot: string, state: ExecutionStateArtifact): v
   });
 };
 
-const parseRunSequence = (runId: string): number => {
-  const match = /^pb-run-(\d+)$/.exec(runId);
-  return match ? Number.parseInt(match[1] ?? '0', 10) : 0;
-};
-
-const nextRunId = (repoRoot: string): string => {
-  const statePath = path.join(repoRoot, EXECUTION_STATE_PATH);
-  if (!fs.existsSync(statePath)) {
-    return 'pb-run-001';
-  }
-
-  try {
-    const previous = readJsonArtifact<ExecutionStateArtifact>(statePath);
-    const next = parseRunSequence(previous.run_id) + 1;
-    return `pb-run-${String(next).padStart(3, '0')}`;
-  } catch {
-    return 'pb-run-001';
-  }
-};
-
 const deterministicIso = (input: string, minSeconds = 0): string => {
   const digest = createHash('sha256').update(input).digest('hex').slice(0, 8);
   const offsetSeconds = (Number.parseInt(digest, 16) % 86400) + minSeconds;
@@ -85,6 +76,86 @@ const deterministicIso = (input: string, minSeconds = 0): string => {
 const laneStartTimestamp = (runId: string, laneId: string): string => deterministicIso(`${runId}:${laneId}:start`);
 const laneFinishTimestamp = (runId: string, laneId: string): string => deterministicIso(`${runId}:${laneId}:finish`, 60);
 
+const deriveRunStatus = (laneStatuses: OrchestrationLaneStatus[]): OrchestrationExecutionRunState['status'] => {
+  if (laneStatuses.some((state) => state === 'failed')) {
+    return 'failed';
+  }
+  if (laneStatuses.every((state) => state === 'completed' || state === 'blocked')) {
+    return 'completed';
+  }
+  return 'running';
+};
+
+const reconcileOrchestrationRunState = (
+  repoRoot: string,
+  runId: string,
+  launchPlan: WorkerLaunchPlanArtifact,
+  startedAt: string
+): OrchestrationExecutionRunState => {
+  const launchFingerprint = computeLaunchPlanFingerprint(launchPlan);
+  const now = new Date().toISOString();
+  const launchByLaneId = new Map(launchPlan.lanes.map((lane) => [lane.lane_id, lane]));
+  const eligibleLaneIds = launchPlan.lanes.filter((lane) => lane.launchEligible).map((lane) => lane.lane_id).sort((left, right) => left.localeCompare(right));
+
+  let prior: OrchestrationExecutionRunState | null = null;
+  try {
+    prior = readOrchestrationExecutionRun(repoRoot, runId);
+  } catch {
+    prior = null;
+  }
+
+  if (prior && prior.source_launch_plan_fingerprint !== launchFingerprint) {
+    prior = null;
+  }
+
+  const laneIds = launchPlan.lanes.map((lane) => lane.lane_id).sort((left, right) => left.localeCompare(right));
+  const lanes = Object.fromEntries(
+    laneIds.map((laneId) => {
+      const launchLane = launchByLaneId.get(laneId);
+      const previousLane = prior?.lanes[laneId];
+      const defaultStatus: OrchestrationLaneStatus = launchLane?.launchEligible ? 'pending' : 'blocked';
+      const status =
+        previousLane?.status === 'completed' || previousLane?.status === 'failed' || previousLane?.status === 'running' || previousLane?.status === 'blocked'
+          ? previousLane.status
+          : defaultStatus;
+      return [
+        laneId,
+        {
+          lane_id: laneId,
+          status,
+          blocker_refs: [...(launchLane?.blockers ?? [])].sort((left, right) => left.localeCompare(right)),
+          receipt_refs: [...(previousLane?.receipt_refs ?? [])].sort((left, right) => left.localeCompare(right)),
+          worker_id: previousLane?.worker_id ?? (launchLane?.worker_id ?? null),
+          started_at: previousLane?.started_at ?? null,
+          completed_at: previousLane?.completed_at ?? null,
+          updated_at: now
+        }
+      ];
+    })
+  );
+
+  const status = deriveRunStatus(Object.values(lanes).map((lane) => lane.status));
+  const nextState: OrchestrationExecutionRunState = {
+    schemaVersion: '1.0',
+    kind: 'orchestration-execution-run-state',
+    run_id: runId,
+    source_launch_plan_fingerprint: launchFingerprint,
+    eligible_lanes: eligibleLaneIds,
+    status,
+    lanes,
+    metadata: {
+      runtime: 'execution-supervisor',
+      resumed_from_interrupted_run: prior !== null && prior.status === 'running',
+      reconcile_revision: (prior?.metadata.reconcile_revision ?? 0) + 1
+    },
+    created_at: prior?.created_at ?? startedAt,
+    updated_at: now,
+    completed_at: status === 'running' ? null : (prior?.completed_at ?? now)
+  };
+
+  writeOrchestrationExecutionRun(repoRoot, nextState);
+  return nextState;
+};
 
 const tryReadArtifact = <T>(repoRoot: string, relativePath: string): T | undefined => {
   const artifactPath = path.join(repoRoot, relativePath);
@@ -231,9 +302,10 @@ export async function startExecution(
   launchPlan: WorkerLaunchPlanArtifact,
   repoRoot = process.cwd()
 ): Promise<ExecutionRun> {
-  const runId = nextRunId(repoRoot);
+  const runId = deriveOrchestrationRunId(launchPlan);
   const startedAt = deterministicIso(runId);
   const launchByLaneId = new Map(launchPlan.lanes.map((lane) => [lane.lane_id, lane]));
+  const runState = reconcileOrchestrationRunState(repoRoot, runId, launchPlan, startedAt);
 
   const lanes = Object.fromEntries(
     [...worksetPlan.lanes]
@@ -257,7 +329,14 @@ export async function startExecution(
     workers: {}
   });
 
-  return { runId, startedAt, lanes };
+  return {
+    runId,
+    startedAt,
+    resumed: runState.metadata.resumed_from_interrupted_run,
+    eligibleLaneIds: [...runState.eligible_lanes],
+    laneStatuses: Object.fromEntries(Object.entries(runState.lanes).map(([laneId, state]) => [laneId, state.status])),
+    lanes
+  };
 }
 
 export async function updateLaneState(laneId: string, state: LaneRuntimeState, repoRoot = process.cwd()): Promise<void> {
@@ -272,6 +351,33 @@ export async function updateLaneState(laneId: string, state: LaneRuntimeState, r
   };
 
   writeExecutionState(repoRoot, execution);
+
+  try {
+    const runState = readOrchestrationExecutionRun(repoRoot, execution.run_id);
+    const now = new Date().toISOString();
+    const status: OrchestrationLaneStatus = state === 'ready' ? 'pending' : state;
+    runState.lanes[laneId] = {
+      ...(runState.lanes[laneId] ?? {
+        lane_id: laneId,
+        blocker_refs: [],
+        receipt_refs: [],
+        worker_id: null,
+        started_at: null,
+        completed_at: null,
+        updated_at: now
+      }),
+      status,
+      ...(status === 'running' && !runState.lanes[laneId]?.started_at ? { started_at: laneStartTimestamp(execution.run_id, laneId) } : {}),
+      ...(status === 'completed' || status === 'failed' ? { completed_at: laneFinishTimestamp(execution.run_id, laneId) } : {}),
+      updated_at: now
+    };
+    runState.status = deriveRunStatus(Object.values(runState.lanes).map((lane) => lane.status));
+    runState.updated_at = now;
+    runState.completed_at = runState.status === 'running' ? null : now;
+    writeOrchestrationExecutionRun(repoRoot, runState);
+  } catch {
+    // no-op: backwards compatibility for runtimes without orchestration run-state artifacts
+  }
 }
 
 export async function recordWorkerResult(laneId: string, workerId: string, result: WorkerResult, repoRoot = process.cwd()): Promise<void> {
@@ -326,6 +432,36 @@ export async function recordWorkerResult(laneId: string, workerId: string, resul
   emitSignalRecords(repoRoot, laneId, scoreSignals, routerAccuracyMetric);
 
   writeExecutionState(repoRoot, execution);
+
+  try {
+    const runState = readOrchestrationExecutionRun(repoRoot, execution.run_id);
+    const now = new Date().toISOString();
+    const current = runState.lanes[laneId] ?? {
+      lane_id: laneId,
+      status: 'pending' as OrchestrationLaneStatus,
+      blocker_refs: [],
+      receipt_refs: [],
+      worker_id: null,
+      started_at: null,
+      completed_at: null,
+      updated_at: now
+    };
+    runState.lanes[laneId] = {
+      ...current,
+      status: finalState,
+      worker_id: workerId,
+      started_at: current.started_at ?? startedAt,
+      completed_at: finishedAt,
+      updated_at: now,
+      receipt_refs: [...new Set([...current.receipt_refs, `execution-state:${execution.run_id}:lane:${laneId}:worker:${workerId}`])].sort((left, right) => left.localeCompare(right))
+    };
+    runState.status = deriveRunStatus(Object.values(runState.lanes).map((lane) => lane.status));
+    runState.updated_at = now;
+    runState.completed_at = runState.status === 'running' ? null : now;
+    writeOrchestrationExecutionRun(repoRoot, runState);
+  } catch {
+    // no-op: backwards compatibility for runtimes without orchestration run-state artifacts
+  }
 }
 
 export async function finalizeExecution(runId: string, repoRoot = process.cwd()): Promise<void> {
@@ -337,4 +473,15 @@ export async function finalizeExecution(runId: string, repoRoot = process.cwd())
   const laneStates = Object.values(execution.lanes).map((lane) => lane.state);
   execution.status = laneStates.some((state) => state === 'failed') ? 'failed' : laneStates.every((state) => state === 'completed') ? 'completed' : 'running';
   writeExecutionState(repoRoot, execution);
+
+  try {
+    const runState = readOrchestrationExecutionRun(repoRoot, runId);
+    const now = new Date().toISOString();
+    runState.status = deriveRunStatus(Object.values(runState.lanes).map((lane) => lane.status));
+    runState.updated_at = now;
+    runState.completed_at = runState.status === 'running' ? null : now;
+    writeOrchestrationExecutionRun(repoRoot, runState);
+  } catch {
+    // no-op: backwards compatibility for runtimes without orchestration run-state artifacts
+  }
 }

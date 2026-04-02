@@ -2633,7 +2633,11 @@ Playbook now treats remediation/agent execution as first-class state, persisted 
 - Pattern: Agent-ready systems model actions as inspectable state transitions rather than transient command output.
 - Failure mode: Without explicit run-state, the system cannot reliably resume, audit, compare, or learn from execution behavior.
 
-Execution state is persisted under `.playbook/runs/<run-id>.json` and is queryable through `playbook query runs` and `playbook query run --id <run-id>`.
+Execution state is persisted under `.playbook/execution-runs/<run-id>.json` and is queryable through `playbook query runs` and `playbook query run --id <run-id>`.
+
+- Rule: Managed execution is not restart-safe until orchestration run-state is explicit and durable.
+- Pattern: launch-plan -> execute -> per-lane receipt/state -> reconcile/resume.
+- Failure Mode: If execution state lives only in process memory, restarts or partial failures break the same trust boundaries that launch authorization was meant to enforce.
 
 ## Phase 8 progress update (lane compilation safety slice)
 

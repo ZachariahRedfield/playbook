@@ -10,8 +10,8 @@ import {
   queryPatterns,
   queryPatternReviewQueue,
   queryPromotedPatterns,
-  listExecutionRuns,
-  readExecutionRun,
+  listOrchestrationExecutionRuns,
+  readOrchestrationExecutionRun,
   SUPPORTED_QUERY_FIELDS,
   type DependenciesQueryResult,
   type ImpactQueryResult,
@@ -628,20 +628,21 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
 
   if (fieldArg === 'runs') {
     try {
-      const payload = { schemaVersion: '1.0', command: 'query', type: 'runs', runs: listExecutionRuns(cwd) };
+      const payload = { schemaVersion: '1.0', command: 'query', type: 'runs', runs: listOrchestrationExecutionRuns(cwd) };
       if (options.format === 'json') {
         emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
         return ExitCode.Success;
       }
 
       if (!options.quiet) {
-        console.log('Execution Runs');
-        console.log('──────────────');
+        console.log('Orchestration Execution Runs');
+        console.log('────────────────────────────');
         if (payload.runs.length === 0) {
           console.log('none');
         } else {
           for (const run of payload.runs) {
-            console.log(`${run.id} ${run.frozen ? 'frozen' : 'open'} steps=${run.steps.length}`);
+            const laneCount = Object.keys(run.lanes).length;
+            console.log(`${run.run_id} ${run.status} lanes=${laneCount} eligible=${run.eligible_lanes.length}`);
           }
         }
       }
@@ -674,18 +675,19 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     }
 
     try {
-      const payload = { schemaVersion: '1.0', command: 'query', type: 'run', run: readExecutionRun(cwd, runId) };
+      const payload = { schemaVersion: '1.0', command: 'query', type: 'run', run: readOrchestrationExecutionRun(cwd, runId) };
       if (options.format === 'json') {
         emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
         return ExitCode.Success;
       }
 
       if (!options.quiet) {
-        console.log('Execution Run');
-        console.log('────────────');
-        console.log(`id: ${payload.run.id}`);
-        console.log(`frozen: ${payload.run.frozen}`);
-        console.log(`steps: ${payload.run.steps.length}`);
+        console.log('Orchestration Execution Run');
+        console.log('───────────────────────────');
+        console.log(`id: ${payload.run.run_id}`);
+        console.log(`status: ${payload.run.status}`);
+        console.log(`eligible lanes: ${payload.run.eligible_lanes.length}`);
+        console.log(`lanes: ${Object.keys(payload.run.lanes).length}`);
       }
       return ExitCode.Success;
     } catch (error) {
