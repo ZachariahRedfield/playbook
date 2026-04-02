@@ -154,6 +154,8 @@ declare module "@zachariahredfield/playbook-engine" {
   export const buildChangeScopeBundleFromWorkerLaunchPlan: (...args: any[]) => any;
   export const buildChangeScopeBundleFromAiProposal: (...args: any[]) => any;
   export const writeChangeScopeArtifact: (...args: any[]) => any;
+  export const readApplyChangeScope: (...args: any[]) => any;
+  export const enforceApplyChangeScope: (...args: any[]) => any;
   export const generateAiProposal: (...args: any[]) => any;
   export type GenerateAiProposalOptions = any;
   export const assessReleaseSync: (...args: any[]) => any;

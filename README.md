@@ -46,6 +46,10 @@ Recent implementation note: promoted reusable patterns now carry explicit lifecy
 Recent implementation note: `pnpm playbook receipt ingest --json` now converts receipts, drift signals, rollback/deactivation notes, promotion history, and later portability outcomes into reviewable `.playbook/memory/lifecycle-candidates.json` rows that stay candidate-only until explicit human lifecycle review.
 Recent implementation note: `pnpm playbook docs consolidate --json` now provides a deterministic proposal-only docs seam for protected singleton narrative surfaces by reading worker fragments plus the protected-surface registry, writing `.playbook/docs-consolidation.json`, surfacing duplicate/conflicting fragment targets explicitly, and emitting one compact lead-agent integration brief without introducing any new doc mutation executor.
 Recent implementation note: `pnpm playbook docs consolidate-plan --json` now compiles `.playbook/docs-consolidation.json` into the first-class `.playbook/docs-consolidation-plan.json` reviewed-write artifact, stamping target-locked file/block fingerprints or anchor context onto each executable task so `pnpm playbook apply --from-plan .playbook/docs-consolidation-plan.json` fails closed if reviewed protected-doc targets drift before execution. Protected singleton docs still mutate only through `apply --from-plan`, so consolidation planning does not become a shadow executor.
+Recent implementation note: `pnpm playbook apply` now enforces declared `.playbook/change-scope.json` mutation bundles before execution succeeds, including `allowedFiles`, `patchSizeBudget`, and required `boundaryChecks`, and fails clearly when scope checks are missing, red, or exceeded.
+Rule: Declared mutation scope must be enforced before apply succeeds.
+Pattern: Declare scope -> enforce scope -> mutate -> receipt.
+Failure Mode: Scope bundles that are not enforced become advisory paperwork instead of real safety boundaries.
 
 ## Shared core, project-local intelligence
 

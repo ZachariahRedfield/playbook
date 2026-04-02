@@ -13,6 +13,7 @@ import type { VerifyReport } from '../report/types.js';
 import { verifyRepo } from '../verify/index.js';
 import { generateRepositoryHealth } from '../doctor/index.js';
 import { buildApplyMemoryEvent, buildPlanMemoryEvent, captureMemoryRuntimeEventSafe } from '../memory/runtimeEvents.js';
+import { enforceApplyChangeScope, readApplyChangeScope } from './changeScopeEnforcement.js';
 export { renderLanePrompt, writeLanePrompts, buildLanePromptFilename } from './lanePrompts.js';
 export type { LanePromptSpec, RenderLanePromptInput, WriteLanePromptsInput } from './lanePrompts.js';
 
@@ -239,6 +240,8 @@ export { PlanGenerator } from './planGenerator.js';
 export { FixExecutor, HandlerResolver } from './fixExecutor.js';
 export { defaultFixHandlers } from './defaultFixHandlers.js';
 export type { PlanTask, RuleFailure, Rule, FixHandler } from './types.js';
+export { readApplyChangeScope, enforceApplyChangeScope } from './changeScopeEnforcement.js';
+export type { ApplyChangeScope } from './changeScopeEnforcement.js';
 
 export { evaluateExecutionMergeGuards, evaluateExecutionMergeGuardForRun, readExecutionMergeGuards, EXECUTION_MERGE_GUARDS_RELATIVE_PATH } from './mergeGuards.js';
 export type { ExecutionMergeGuardsArtifact } from './mergeGuards.js';

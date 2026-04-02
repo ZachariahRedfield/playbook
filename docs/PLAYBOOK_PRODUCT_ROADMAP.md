@@ -36,6 +36,10 @@ Rule: Roadmap sequencing must preserve CLI-first, offline-capable, private-first
 Failure Mode: Business docs drifting away from runtime truth.
 Recent implementation note: `pnpm playbook interop emit-fitness-plan --from-draft .playbook/interop-request-draft.json` now closes the explicit bounded interop loop by consuming only the canonical draft artifact, re-validating canonical Fitness metadata, and reusing the existing bounded emit runtime path without widening runtime authority.
 Recent implementation note: deterministic change-scope bundles are now emitted at `.playbook/change-scope.json` from plan/analyze-pr/workers launch-plan/ai propose so mutation-scope declarations (`allowedFiles`, `patchSizeBudget`, `boundaryChecks`) can be carried as explicit governed artifacts without widening mutation authority in this slice.
+Recent implementation note: `apply` now enforces declared change-scope bundles before reporting success, with fail-closed checks for out-of-scope files, patch-budget overflow, and missing/red boundary checks.
+Rule: Declared mutation scope must be enforced before apply succeeds.
+Pattern: Declare scope -> enforce scope -> mutate -> receipt.
+Failure Mode: Scope bundles that are not enforced become advisory paperwork instead of real safety boundaries.
 Rule: Governed work must declare mutation scope explicitly before execution.
 Pattern: understand -> bound scope -> propose/apply within declared boundaries.
 Failure Mode: Without explicit change-scope bundles, safe systems still drift because mutation boundaries live only in human interpretation.

@@ -1068,6 +1068,10 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
 
   const selectedTasks = selectPlanTasks(plan.tasks, options.tasks);
   validateReleaseTaskSelection(plan, selectedTasks);
+  const declaredScope = engine.readApplyChangeScope(cwd);
+  if (declaredScope) {
+    engine.enforceApplyChangeScope(selectedTasks, declaredScope);
+  }
   engine.validateRemediationPlan(cwd, selectedTasks);
   const verifyRules = await loadVerifyRules(cwd);
 

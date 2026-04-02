@@ -9,6 +9,8 @@ const routeTask = vi.fn();
 const applyExecutionPlan = vi.fn();
 const parsePlanArtifact = vi.fn();
 const validateRemediationPlan = vi.fn();
+const readApplyChangeScope = vi.fn();
+const enforceApplyChangeScope = vi.fn();
 const getLatestMutableRun = vi.fn();
 const createExecutionIntent = vi.fn();
 const createExecutionRun = vi.fn();
@@ -23,7 +25,7 @@ const classifyReleaseSyncReconciliation = vi.fn();
 const loadVerifyRules = vi.fn();
 const execSyncMock = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, pinSessionArtifact, updateSession, assessReleaseSync, classifyReleaseSyncReconciliation, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, readApplyChangeScope, enforceApplyChangeScope, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, pinSessionArtifact, updateSession, assessReleaseSync, classifyReleaseSyncReconciliation, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 vi.mock('node:child_process', () => ({ execSync: execSyncMock }));
 
@@ -162,6 +164,8 @@ describe('runApply', () => {
     applyExecutionPlan.mockReset();
     parsePlanArtifact.mockReset();
     validateRemediationPlan.mockReset();
+    readApplyChangeScope.mockReset();
+    enforceApplyChangeScope.mockReset();
     getLatestMutableRun.mockReset();
     createExecutionIntent.mockReset();
     createExecutionRun.mockReset();
@@ -203,6 +207,7 @@ describe('runApply', () => {
       plannedVersions: [],
       reason: 'release-governed state is already aligned'
     });
+    readApplyChangeScope.mockReturnValue(null);
   });
 
   it('renders deterministic text output', async () => {
@@ -269,6 +274,37 @@ describe('runApply', () => {
     });
 
     logSpy.mockRestore();
+    fs.rmSync(repoDir, { recursive: true, force: true });
+  });
+
+  it('enforces declared change-scope when available', async () => {
+    const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-change-scope-'));
+
+    generatePlanContract.mockReturnValue({
+      verify: { ok: false, summary: { failures: 1, warnings: 0 } },
+      tasks: [{ id: 'task-scope', ruleId: 'PB101', file: 'packages/cli/src/commands/apply.ts', action: 'update apply', autoFix: true }]
+    });
+    loadVerifyRules.mockResolvedValue([]);
+    readApplyChangeScope.mockReturnValue({
+      scopeId: 'scope-123',
+      allowedFiles: ['packages/cli/src/commands/apply.ts'],
+      patchSizeBudget: { maxFiles: 1, maxHunks: 1, maxAddedLines: 20, maxRemovedLines: 20 },
+      boundaryChecks: ['no-mutation-authority-escalation', 'writes-must-stay-inside-allowedFiles']
+    });
+    applyExecutionPlan.mockResolvedValue({
+      results: [{ id: 'task-scope', ruleId: 'PB101', file: 'packages/cli/src/commands/apply.ts', action: 'update apply', autoFix: true, status: 'applied' }],
+      summary: { applied: 1, skipped: 0, unsupported: 0, failed: 0 }
+    });
+
+    const exitCode = await runApply(repoDir, { format: 'json', ci: false, quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(readApplyChangeScope).toHaveBeenCalledWith(repoDir);
+    expect(enforceApplyChangeScope).toHaveBeenCalledWith(
+      [{ id: 'task-scope', ruleId: 'PB101', file: 'packages/cli/src/commands/apply.ts', action: 'update apply', autoFix: true }],
+      expect.objectContaining({ scopeId: 'scope-123' })
+    );
+
     fs.rmSync(repoDir, { recursive: true, force: true });
   });
 
