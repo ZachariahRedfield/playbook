@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { writeChangeScopeArtifact } from '../changeScope.js';
 import { assignWorkersToLanes } from './workerAssignments.js';
 import { buildWorkerLaunchPlan } from './workerLaunchPlan.js';
 import { deriveLaneState } from './laneState.js';
@@ -125,5 +126,33 @@ describe('buildWorkerLaunchPlan', () => {
     const first = buildWorkerLaunchPlan(repo, { worksetPlan, laneState, workerAssignments: assignments });
     const second = buildWorkerLaunchPlan(repo, { worksetPlan, laneState, workerAssignments: assignments });
     expect(second).toStrictEqual(first);
+  });
+
+  it('threads declared change-scope surfaces into per-lane launch authorization', () => {
+    const repo = createRepo('launch-plan-scope');
+    const worksetPlan = basePlan();
+    const laneState = deriveLaneState(worksetPlan, '.playbook/workset-plan.json');
+    const assignments = assignWorkersToLanes(laneState, worksetPlan);
+    writeChangeScopeArtifact(repo, {
+      scopeId: 'scope-test',
+      source: { command: 'plan', artifactPath: '.playbook/plan.json' },
+      mutationScope: {
+        allowedFiles: ['packages/cli/src/commands/workers.ts'],
+        patchSizeBudget: { maxFiles: 1, maxHunks: 2, maxAddedLines: 10, maxRemovedLines: 10 },
+        boundaryChecks: ['no-mutation-authority-escalation', 'writes-must-stay-inside-allowedFiles']
+      },
+      expectedTests: [],
+      docsSurfaces: [],
+      rulesTouched: [],
+      riskLevel: 'low',
+      rationale: 'test fixture',
+      provenanceRefs: ['.playbook/plan.json']
+    });
+
+    const plan = buildWorkerLaunchPlan(repo, { worksetPlan, laneState, workerAssignments: assignments });
+    expect(plan.lanes[0]?.launchEligible).toBe(true);
+    expect(plan.lanes[0]?.declaredChangeScope.scopeId).toBe('scope-test');
+    expect(plan.lanes[0]?.declaredChangeScope.allowedWriteSurfaces).toEqual(['packages/cli/src/commands/workers.ts']);
+    expect(plan.lanes[0]?.declaredChangeScope.enforced).toBe(true);
   });
 });

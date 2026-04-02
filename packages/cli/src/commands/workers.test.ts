@@ -113,6 +113,7 @@ describe('runWorkers', () => {
     fs.mkdirSync(path.join(repo, '.playbook', 'orchestrator', 'workers', 'lane-1'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.playbook', 'orchestrator', 'workers', 'lane-1', 'worker-fragment.json'), JSON.stringify({ ok: true }), 'utf8');
     fs.writeFileSync(path.join(repo, '.playbook', 'proof.json'), JSON.stringify({ ok: true }), 'utf8');
+    await runWorkers(repo, { format: 'json', quiet: true, action: 'launch-plan' });
 
     const inputPath = path.join(repo, 'worker-result.json');
     fs.writeFileSync(inputPath, JSON.stringify({
@@ -185,6 +186,7 @@ describe('runWorkers', () => {
     const repo = createRepo('playbook-cli-workers-submit-invalid');
     writeWorksetPlan(repo);
     const inputPath = path.join(repo, 'worker-result-invalid.json');
+    await runWorkers(repo, { format: 'json', quiet: true, action: 'launch-plan' });
     fs.writeFileSync(inputPath, JSON.stringify({
       lane_id: 'lane-1',
       task_ids: ['task-1'],
@@ -203,6 +205,35 @@ describe('runWorkers', () => {
     expect(exitCode).toBe(ExitCode.Failure);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as { error: string };
     expect(payload.error).toContain('fragment ref target docs/README.md is not a protected singleton doc');
+    logSpy.mockRestore();
+  });
+
+  it('rejects out-of-scope worker submit targets from launch scope enforcement', async () => {
+    const repo = createRepo('playbook-cli-workers-submit-scope');
+    writeWorksetPlan(repo);
+    fs.mkdirSync(path.join(repo, '.playbook', 'orchestrator', 'workers', 'lane-1'), { recursive: true });
+    fs.writeFileSync(path.join(repo, '.playbook', 'orchestrator', 'workers', 'lane-1', 'worker-fragment.json'), JSON.stringify({ ok: true }), 'utf8');
+    await runWorkers(repo, { format: 'json', quiet: true, action: 'launch-plan' });
+
+    const inputPath = path.join(repo, 'worker-result-out-of-scope.json');
+    fs.writeFileSync(inputPath, JSON.stringify({
+      lane_id: 'lane-1',
+      task_ids: ['task-1'],
+      worker_type: 'codex-docs',
+      completion_status: 'completed',
+      summary: 'bounded lane work completed',
+      blockers: [],
+      unresolved_items: [],
+      fragment_refs: [{ target_path: 'docs/commands/workers.md', fragment_path: '.playbook/orchestrator/workers/lane-1/worker-fragment.json' }],
+      proof_refs: [],
+      artifact_refs: [{ path: '.playbook/foreign-output.json', kind: 'artifact' }]
+    }, null, 2));
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runWorkers(repo, { format: 'json', quiet: false, action: 'submit', from: inputPath });
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as { error: string };
+    expect(payload.error).toContain('scope:out-of-scope-targets:.playbook/foreign-output.json');
     logSpy.mockRestore();
   });
 

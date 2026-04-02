@@ -8,9 +8,13 @@
 - @zachariahredfield/playbook-node: 0.39.0 -> 0.40.0 (playbook-installable-workspace)
 - WHAT: Added explicit `pnpm playbook interop emit-fitness-plan --from-draft <path>` support to consume `.playbook/interop-request-draft.json` through the existing bounded interop emit path after canonical contract re-validation (target/action/input/receipt/routing + canonical artifact-path gate). WHY: This closes the bounded proposal→draft→emit loop without introducing hidden execution authority or bypassing remediation-first runtime controls.
 - WHAT: Enforced declared `.playbook/change-scope.json` bundles in the canonical `apply` path by fail-closing on out-of-scope mutation targets, patch-size budget overflow, and missing/red boundary checks. WHY: This turns mutation-scope artifacts into executable safety boundaries instead of advisory metadata.
+- WHAT: Threaded `.playbook/change-scope.json` into worker launch/submit authorization so each lane carries declared scope surfaces and submit rejects out-of-scope or budget-overrun mutation targets. WHY: Managed worker execution now fails closed against explicit mutation boundaries instead of inferred trust.
 - Rule: Declared mutation scope must be enforced before apply succeeds.
+- Rule: Managed workers may operate only within declared mutation scope.
 - Pattern: Declare scope -> enforce scope -> mutate -> receipt.
+- Pattern: Launch-plan + change-scope -> eligible execution.
 - Failure Mode: Scope bundles that are not enforced become advisory paperwork instead of real safety boundaries.
+- Failure Mode: Worker authorization without scope enforcement recreates hidden mutation boundaries.
 - Rule: AI proposals may be compiled into bounded request drafts, but may not execute them directly.
 - Pattern: AI proposal -> request draft -> explicit interop emit -> receipt -> updated truth.
 - Failure Mode: Operators manually re-translating proposal artifacts into runtime requests recreates hidden session state and weakens auditability.

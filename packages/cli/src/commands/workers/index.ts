@@ -12,6 +12,7 @@ import {
   recordWorkerAssignment,
   safeRecordRepositoryEvent,
   validateWorkerResultInput,
+  validateWorkerSubmitAgainstScope,
   writeChangeScopeArtifact,
   writeWorkerLaunchPlanArtifact,
   writeWorkerResultsArtifact,
@@ -231,8 +232,10 @@ const runSubmit = async (cwd: string, options: WorkersOptions, worksetPlan: Work
 
   const input = parseWorkerResultInput(cwd, options.from);
   const validationErrors = validateWorkerResultInput(worksetPlan, input);
-  if (validationErrors.length > 0) {
-    printError(options, `playbook workers submit: ${validationErrors.join('; ')}`);
+  const scopeValidation = validateWorkerSubmitAgainstScope(cwd, input);
+  const submitErrors = [...validationErrors, ...scopeValidation.errors];
+  if (submitErrors.length > 0) {
+    printError(options, `playbook workers submit: ${submitErrors.join('; ')}`);
     return ExitCode.Failure;
   }
 

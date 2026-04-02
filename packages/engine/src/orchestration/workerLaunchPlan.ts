@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { readApplyChangeScope, type ApplyChangeScope } from '../execution/changeScopeEnforcement.js';
 import type { LaneStateArtifact } from './laneState.js';
 import type { WorksetPlanArtifact } from './worksetPlan.js';
 import type { WorkerAssignmentsArtifact } from './workerAssignments.js';
@@ -24,6 +25,17 @@ export type WorkerLaunchPlanLane = {
   blockers: string[];
   requiredCapabilities: string[];
   allowedWriteSurfaces: string[];
+  declaredChangeScope: {
+    scopeId: string | null;
+    allowedWriteSurfaces: string[];
+    patchSizeBudget: {
+      maxFiles: number;
+      maxHunks: number;
+      maxAddedLines: number;
+      maxRemovedLines: number;
+    } | null;
+    enforced: boolean;
+  };
   protectedSingletonImpact: {
     hasProtectedSingletonWork: boolean;
     targets: string[];
@@ -65,6 +77,36 @@ const VERIFY_RELATIVE_PATH = '.playbook/verify-report.json';
 const POLICY_EVALUATION_RELATIVE_PATH = '.playbook/policy-evaluation.json';
 
 const uniqueSorted = (values: readonly string[]): string[] => [...new Set(values)].filter(Boolean).sort((a, b) => a.localeCompare(b));
+
+const isPathWithinSurface = (target: string, surface: string): boolean => {
+  if (surface.endsWith('/')) return target === surface.slice(0, -1) || target.startsWith(surface);
+  return target === surface;
+};
+
+const intersectAllowedSurfaces = (laneSurfaces: readonly string[], scopedAllowedFiles: readonly string[]): string[] => {
+  const scoped = new Set(scopedAllowedFiles);
+  return uniqueSorted(
+    laneSurfaces.filter((laneSurface) => {
+      if (scoped.has(laneSurface)) return true;
+      return scopedAllowedFiles.some((scopeSurface) => isPathWithinSurface(laneSurface, scopeSurface) || isPathWithinSurface(scopeSurface, laneSurface));
+    })
+  );
+};
+
+const deriveLanePatchBudget = (
+  scope: ApplyChangeScope,
+  laneSurfaceCount: number,
+  totalSurfaceCount: number
+): ApplyChangeScope['patchSizeBudget'] => {
+  const weight = Math.max(laneSurfaceCount, 1) / Math.max(totalSurfaceCount, 1);
+  const split = (value: number): number => Math.max(1, Math.floor(value * weight));
+  return {
+    maxFiles: split(scope.patchSizeBudget.maxFiles),
+    maxHunks: split(scope.patchSizeBudget.maxHunks),
+    maxAddedLines: split(scope.patchSizeBudget.maxAddedLines),
+    maxRemovedLines: split(scope.patchSizeBudget.maxRemovedLines)
+  };
+};
 
 const readJsonIfPresent = <T>(cwd: string, relativePath: string): T | undefined => {
   const absolutePath = path.join(cwd, relativePath);
@@ -118,6 +160,7 @@ export const buildWorkerLaunchPlan = (
 
   const verify = readJsonIfPresent<VerifyArtifact>(cwd, VERIFY_RELATIVE_PATH);
   const policy = readJsonIfPresent<PolicyEvaluationArtifact>(cwd, POLICY_EVALUATION_RELATIVE_PATH);
+  const changeScope = readApplyChangeScope(cwd);
   const repoVerifyBlockers = verifyBlockers(verify);
   const repoPolicyBlockers = policyBlockers(policy);
 
@@ -164,6 +207,14 @@ export const buildWorkerLaunchPlan = (
         ...((worksetLane?.expected_surfaces ?? []).filter((surface) => !PROTECTED_SINGLETON_DOCS.has(surface))),
         ...(hasProtectedSingletonWork ? [`.playbook/orchestrator/workers/${laneStateEntry.lane_id}/`] : [])
       ]);
+      const scopedAllowedWriteSurfaces = changeScope ? intersectAllowedSurfaces(allowedWriteSurfaces, changeScope.allowedFiles) : allowedWriteSurfaces;
+      const lanePatchSizeBudget = changeScope
+        ? deriveLanePatchBudget(changeScope, Math.max(scopedAllowedWriteSurfaces.length, 1), Math.max(changeScope.allowedFiles.length, 1))
+        : null;
+      const scopeBlocksLane = Boolean(changeScope) && allowedWriteSurfaces.length > 0 && scopedAllowedWriteSurfaces.length === 0;
+      if (scopeBlocksLane) {
+        blockers.push(`scope:no-allowed-surfaces-for-lane:${laneStateEntry.lane_id}`);
+      }
 
       return {
         lane_id: laneStateEntry.lane_id,
@@ -173,6 +224,12 @@ export const buildWorkerLaunchPlan = (
         blockers,
         requiredCapabilities: requiredCapabilitiesForLane(worker?.worker_type ?? null, hasProtectedSingletonWork),
         allowedWriteSurfaces,
+        declaredChangeScope: {
+          scopeId: changeScope?.scopeId ?? null,
+          allowedWriteSurfaces: scopedAllowedWriteSurfaces,
+          patchSizeBudget: lanePatchSizeBudget,
+          enforced: Boolean(changeScope)
+        },
         protectedSingletonImpact: {
           hasProtectedSingletonWork,
           targets: protectedTargets,

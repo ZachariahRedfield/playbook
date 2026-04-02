@@ -856,6 +856,7 @@ export type { AgentRunPlanDryRunInput, AgentRunPlanDryRunResult } from './runtim
 export { createExecutionRun, createExecutionIntent } from './execution/createExecutionRun.js';
 export { startExecution, updateLaneState, recordWorkerResult, finalizeExecution } from './execution/supervisor.js';
 export type { WorkerResult } from './execution/supervisor.js';
+export { validateWorkerSubmitAgainstScope } from './execution/workerScopeAuthorization.js';
 export {
   orchestrationExecutionRunPath,
   deriveOrchestrationRunId,
