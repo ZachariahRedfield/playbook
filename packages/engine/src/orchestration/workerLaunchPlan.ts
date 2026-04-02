@@ -156,6 +156,7 @@ export const buildWorkerLaunchPlan = (
         'lane-readiness-and-dependencies-satisfied',
         ...(hasProtectedSingletonWork ? ['protected-singleton-consolidation-resolved'] : []),
         'required-capabilities-present',
+        'runtime-capability-registration-authorized',
         'required-receipts-recorded'
       ]);
 
@@ -207,6 +208,7 @@ export const buildWorkerLaunchPlan = (
         'protected-singleton-docs-unresolved',
         'verify-or-policy-blockers',
         'missing-required-capability',
+        'runtime-capability-registration-incomplete',
         'unresolved-lane-dependency-or-blocker-state'
       ])
     },

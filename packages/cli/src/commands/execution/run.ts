@@ -5,8 +5,11 @@ import {
   type WorksetPlanArtifact,
   buildFleetAdoptionWorkQueue,
   buildFleetCodexExecutionPlan,
+  evaluateRuntimeCapabilityAuthorization,
   type ExecutionResult,
+  readInteropRuntime,
   WORKER_LAUNCH_PLAN_RELATIVE_PATH,
+  type RuntimeCapabilityAuthorizationResult,
   type WorkerLaunchPlanArtifact
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../../lib/cliContract.js';
@@ -18,6 +21,7 @@ const WORKSET_PLAN_PATH = '.playbook/workset-plan.json';
 const EXECUTION_STATE_PATH = '.playbook/execution-state.json';
 const ORCHESTRATION_RUNS_DIR = '.playbook/execution-runs';
 const EXECUTION_MERGE_GUARDS_PATH = '.playbook/execution-merge-guards.json';
+const LIFELINE_INTEROP_RUNTIME_PATH = '.playbook/lifeline-interop-runtime.json';
 
 type ExecuteOptions = {
   format: 'text' | 'json';
@@ -32,7 +36,8 @@ type ExecutionModule = {
   startExecution?: (
     worksetPlan: WorksetPlanArtifact,
     launchPlan: WorkerLaunchPlanArtifact,
-    repoRoot?: string
+    repoRoot?: string,
+    options?: { runtimeCapabilityFingerprint?: string | null }
   ) => Promise<{ runId: string; laneStatuses: Record<string, 'pending' | 'running' | 'completed' | 'failed' | 'blocked'> }>;
   updateLaneState?: (laneId: string, state: LaneRuntimeState, repoRoot?: string) => Promise<void>;
   recordWorkerResult?: (laneId: string, workerId: string, result: { status: 'completed' | 'failed'; retries?: number; summary?: string }, repoRoot?: string) => Promise<void>;
@@ -171,9 +176,10 @@ const normalizeLaunchArtifactInput = (value: WorkerLaunchPlanArtifact): WorkerLa
 };
 
 const validateLaunchPlan = (
+  cwd: string,
   worksetPlan: WorksetPlanArtifact,
   launchPlan: WorkerLaunchPlanArtifact | undefined
-): { ok: true; launchPlan: WorkerLaunchPlanArtifact; eligibleLanes: LaneStateLike[] } | { ok: false; summary: string; findingId: string; message: string; nextActions: string[] } => {
+): { ok: true; launchPlan: WorkerLaunchPlanArtifact; eligibleLanes: LaneStateLike[]; runtimeCapabilityAuthorization: RuntimeCapabilityAuthorizationResult } | { ok: false; summary: string; findingId: string; message: string; nextActions: string[] } => {
   if (!launchPlan) {
     return {
       ok: false,
@@ -225,7 +231,25 @@ const validateLaunchPlan = (
     };
   }
 
-  return { ok: true, launchPlan, eligibleLanes };
+  const runtime = readInteropRuntime(cwd);
+  const runtimeCapabilityAuthorization = evaluateRuntimeCapabilityAuthorization(launchPlan, runtime);
+  if (!runtimeCapabilityAuthorization.ok) {
+    const blockerSummary = runtimeCapabilityAuthorization.blockers
+      .map((blocker: RuntimeCapabilityAuthorizationResult['blockers'][number]) => `${blocker.lane_id}: ${blocker.blocker_code}; capabilities=${blocker.blocked_capability_ids.join(',') || 'none'}`)
+      .join(' | ');
+    return {
+      ok: false,
+      summary: 'Execution blocked by runtime capability authorization.',
+      findingId: 'execute.runtime-capability-authorization.blocked',
+      message: `Runtime capability authorization blocked launch-eligible lanes using ${LIFELINE_INTEROP_RUNTIME_PATH}: ${blockerSummary}`,
+      nextActions: [
+        'Register or repair required runtime capability declarations before execute.',
+        'Resolve stale/conflicted capability registration state in `.playbook/lifeline-interop-runtime.json` and rerun execute.'
+      ]
+    };
+  }
+
+  return { ok: true, launchPlan, eligibleLanes, runtimeCapabilityAuthorization };
 };
 
 const runWorkerBridge = async (cwd: string, options: ExecuteOptions, tracker: ReturnType<typeof createCommandQualityTracker>): Promise<number> => {
@@ -332,12 +356,12 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
 
     const rawLaunchPlan = readJsonArtifact<WorkerLaunchPlanArtifact>(cwd, WORKER_LAUNCH_PLAN_RELATIVE_PATH);
     const launchPlan = rawLaunchPlan ? normalizeLaunchArtifactInput(rawLaunchPlan) : undefined;
-    const launchPlanValidation = validateLaunchPlan(worksetPlan, launchPlan);
+    const launchPlanValidation = validateLaunchPlan(cwd, worksetPlan, launchPlan);
     if (!launchPlanValidation.ok) {
       const exitCode = emitCommandFailure('execute', options, launchPlanValidation);
       tracker.finish({
         inputsSummary: launchPlanValidation.findingId,
-        artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH],
+        artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH, LIFELINE_INTEROP_RUNTIME_PATH],
         successStatus: 'failure',
         warningsCount: 1
       });
@@ -349,7 +373,9 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
       throw new Error('playbook execute: execution supervisor exports are unavailable on this build.');
     }
 
-    const run = await engineModule.startExecution(worksetPlan, launchPlanValidation.launchPlan, cwd);
+    const run = await engineModule.startExecution(worksetPlan, launchPlanValidation.launchPlan, cwd, {
+      runtimeCapabilityFingerprint: launchPlanValidation.runtimeCapabilityAuthorization.runtime_capability_fingerprint
+    });
     const laneStateArtifact = path.join(cwd, EXECUTION_STATE_PATH);
     if (!fs.existsSync(laneStateArtifact)) {
       throw new Error('playbook execute: execution state artifact initialization failed.');
@@ -385,6 +411,7 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
             lanes,
             execution_status: status,
             execution_merge_guards_path: EXECUTION_MERGE_GUARDS_PATH,
+            runtime_capability_fingerprint: launchPlanValidation.runtimeCapabilityAuthorization.runtime_capability_fingerprint,
             merge_guard: mergeGuard
           },
           null,
@@ -394,7 +421,7 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
       const exitCode = status === 'SUCCESS' ? ExitCode.Success : ExitCode.Failure;
       tracker.finish({
         inputsSummary: `lanes=${worksetPlan.lanes.length}`,
-        artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH],
+        artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH, LIFELINE_INTEROP_RUNTIME_PATH],
         artifactsWritten: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR, EXECUTION_MERGE_GUARDS_PATH],
         downstreamArtifactsProduced: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR, EXECUTION_MERGE_GUARDS_PATH],
         successStatus: exitCode === ExitCode.Success ? 'success' : 'partial'
@@ -409,7 +436,7 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
     const exitCode = status === 'SUCCESS' ? ExitCode.Success : ExitCode.Failure;
     tracker.finish({
       inputsSummary: `lanes=${worksetPlan.lanes.length}`,
-      artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH],
+      artifactsRead: [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH, LIFELINE_INTEROP_RUNTIME_PATH],
       artifactsWritten: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR],
       downstreamArtifactsProduced: [EXECUTION_STATE_PATH, ORCHESTRATION_RUNS_DIR],
       successStatus: exitCode === ExitCode.Success ? 'success' : 'partial'
@@ -418,7 +445,7 @@ export const runExecution = async (cwd: string, options: ExecuteOptions): Promis
   } catch (error) {
     tracker.finish({
       inputsSummary: options.workerAdapter ? 'bridge runtime failure' : 'execution runtime failure',
-      artifactsRead: options.workerAdapter ? [] : [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH],
+      artifactsRead: options.workerAdapter ? [] : [WORKSET_PLAN_PATH, WORKER_LAUNCH_PLAN_RELATIVE_PATH, LIFELINE_INTEROP_RUNTIME_PATH],
       artifactsWritten: [EXECUTION_STATE_PATH],
       successStatus: 'failure',
       warningsCount: 1

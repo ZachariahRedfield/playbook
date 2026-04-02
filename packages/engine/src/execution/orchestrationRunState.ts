@@ -28,6 +28,7 @@ export type OrchestrationExecutionRunState = {
     runtime: 'execution-supervisor';
     resumed_from_interrupted_run: boolean;
     reconcile_revision: number;
+    runtime_capability_fingerprint?: string | null;
   };
   created_at: string;
   updated_at: string;

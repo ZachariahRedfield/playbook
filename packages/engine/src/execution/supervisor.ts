@@ -91,7 +91,8 @@ const reconcileOrchestrationRunState = (
   repoRoot: string,
   runId: string,
   launchPlan: WorkerLaunchPlanArtifact,
-  startedAt: string
+  startedAt: string,
+  runtimeCapabilityFingerprint: string | null = null
 ): OrchestrationExecutionRunState => {
   const launchFingerprint = computeLaunchPlanFingerprint(launchPlan);
   const now = new Date().toISOString();
@@ -147,7 +148,8 @@ const reconcileOrchestrationRunState = (
     metadata: {
       runtime: 'execution-supervisor',
       resumed_from_interrupted_run: prior !== null && prior.status === 'running',
-      reconcile_revision: (prior?.metadata.reconcile_revision ?? 0) + 1
+      reconcile_revision: (prior?.metadata.reconcile_revision ?? 0) + 1,
+      runtime_capability_fingerprint: runtimeCapabilityFingerprint ?? prior?.metadata.runtime_capability_fingerprint ?? null
     },
     created_at: prior?.created_at ?? startedAt,
     updated_at: now,
@@ -301,12 +303,13 @@ const emitLaneOutcomeScore = (repoRoot: string, laneId: string, signalValues: { 
 export async function startExecution(
   worksetPlan: WorksetPlanArtifact,
   launchPlan: WorkerLaunchPlanArtifact,
-  repoRoot = process.cwd()
+  repoRoot = process.cwd(),
+  options: { runtimeCapabilityFingerprint?: string | null } = {}
 ): Promise<ExecutionRun> {
   const runId = deriveOrchestrationRunId(launchPlan);
   const startedAt = deterministicIso(runId);
   const launchByLaneId = new Map(launchPlan.lanes.map((lane) => [lane.lane_id, lane]));
-  const runState = reconcileOrchestrationRunState(repoRoot, runId, launchPlan, startedAt);
+  const runState = reconcileOrchestrationRunState(repoRoot, runId, launchPlan, startedAt, options.runtimeCapabilityFingerprint ?? null);
 
   const lanes = Object.fromEntries(
     [...worksetPlan.lanes]

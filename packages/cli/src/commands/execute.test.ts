@@ -91,15 +91,15 @@ const writeLaunchPlan = (
   repo: string,
   options?: {
     blockedLaneIds?: string[];
-    lanes?: Array<{ lane_id: string; launchEligible: boolean; blockers: string[] }>;
+    lanes?: Array<{ lane_id: string; launchEligible: boolean; blockers: string[]; requiredCapabilities?: string[] }>;
   }
 ): void => {
   const blocked = new Set(options?.blockedLaneIds ?? []);
   const lanes =
     options?.lanes ??
     [
-      { lane_id: 'lane-1', launchEligible: !blocked.has('lane-1'), blockers: blocked.has('lane-1') ? ['capability:missing-required-worker-capability'] : [] },
-      { lane_id: 'lane-2', launchEligible: !blocked.has('lane-2'), blockers: blocked.has('lane-2') ? ['lane:dependency blocked'] : [] }
+      { lane_id: 'lane-1', launchEligible: !blocked.has('lane-1'), blockers: blocked.has('lane-1') ? ['capability:missing-required-worker-capability'] : [], requiredCapabilities: [] },
+      { lane_id: 'lane-2', launchEligible: !blocked.has('lane-2'), blockers: blocked.has('lane-2') ? ['lane:dependency blocked'] : [], requiredCapabilities: [] }
     ];
   writeJson(repo, '.playbook/worker-launch-plan.json', {
     schemaVersion: '1.0',
@@ -124,7 +124,7 @@ const writeLaunchPlan = (
       worker_type: lane.launchEligible ? 'general' : null,
       launchEligible: lane.launchEligible,
       blockers: lane.blockers,
-      requiredCapabilities: [],
+      requiredCapabilities: lane.requiredCapabilities ?? [],
       allowedWriteSurfaces: [],
       protectedSingletonImpact: {
         hasProtectedSingletonWork: false,
@@ -135,6 +135,54 @@ const writeLaunchPlan = (
       requiredReceipts: [],
       releaseReadyPreconditions: []
     }))
+  });
+};
+
+const writeInteropRuntime = (repo: string, capabilityOverrides?: Array<{
+  capability_id: string;
+  action_kind?: 'adjust_upcoming_workout_load' | 'schedule_recovery_block' | 'revise_weekly_goal_plan';
+  target?: string;
+}>): void => {
+  const capabilities = (capabilityOverrides ?? []).map((entry, index) => {
+    const action_kind = entry.action_kind ?? 'schedule_recovery_block';
+    const target =
+      entry.target ??
+      (action_kind === 'adjust_upcoming_workout_load'
+        ? 'training-load'
+        : action_kind === 'revise_weekly_goal_plan'
+          ? 'weekly-plan'
+          : 'recovery');
+    return {
+      capability_id: entry.capability_id,
+      action_kind,
+      receipt_type:
+        action_kind === 'adjust_upcoming_workout_load'
+          ? 'schedule_adjustment_applied'
+          : action_kind === 'revise_weekly_goal_plan'
+            ? 'goal_plan_amended'
+            : 'recovery_guardrail_applied',
+      routing: {
+        channel: 'fitness.actions',
+        target,
+        priority: 'high',
+        maxDeliveryLatencySeconds: 300
+      },
+      version: '1.0.0',
+      registered_at: `1970-01-01T00:00:0${index}.000Z`,
+      runtime_id: 'lifeline-mock-runtime',
+      idempotency_key_prefix: 'lifeline'
+    };
+  });
+
+  writeJson(repo, '.playbook/lifeline-interop-runtime.json', {
+    schemaVersion: '1.0',
+    kind: 'playbook-lifeline-interop-runtime',
+    generatedAt: '1970-01-01T00:00:00.000Z',
+    capabilities,
+    requests: [],
+    statuses: [],
+    receipts: [],
+    heartbeat: null
   });
 };
 
@@ -265,6 +313,47 @@ describe('runExecution', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.findings[0].id).toBe('execute.worker-launch-plan.stale');
 
+    logSpy.mockRestore();
+  });
+
+  it('blocks launch when required runtime capability is missing', async () => {
+    const repo = createRepo('playbook-cli-execute-runtime-capability-missing');
+    writeWorksetPlan(repo);
+    writeLaunchPlan(repo, {
+      lanes: [
+        { lane_id: 'lane-1', launchEligible: true, blockers: [], requiredCapabilities: ['interop-capability:lifeline-remediation-v1', 'interop-action-family:recovery'] },
+        { lane_id: 'lane-2', launchEligible: true, blockers: [], requiredCapabilities: [] }
+      ]
+    });
+    writeInteropRuntime(repo, []);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const code = await runExecution(repo, { format: 'json', quiet: false });
+    expect(code).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings[0].id).toBe('execute.runtime-capability-authorization.blocked');
+    expect(payload.findings[0].message).toContain('missing-required-runtime-capability');
+    expect(payload.findings[0].message).toContain('lane-1');
+    logSpy.mockRestore();
+  });
+
+  it('blocks launch when capability does not declare required action family', async () => {
+    const repo = createRepo('playbook-cli-execute-runtime-capability-family-mismatch');
+    writeWorksetPlan(repo);
+    writeLaunchPlan(repo, {
+      lanes: [
+        { lane_id: 'lane-1', launchEligible: true, blockers: [], requiredCapabilities: ['interop-capability:lifeline-remediation-v1', 'interop-action-family:recovery'] },
+        { lane_id: 'lane-2', launchEligible: true, blockers: [], requiredCapabilities: [] }
+      ]
+    });
+    writeInteropRuntime(repo, [{ capability_id: 'lifeline-remediation-v1', action_kind: 'adjust_upcoming_workout_load', target: 'training-load' }]);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const code = await runExecution(repo, { format: 'json', quiet: false });
+    expect(code).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.findings[0].id).toBe('execute.runtime-capability-authorization.blocked');
+    expect(payload.findings[0].message).toContain('required-action-family-not-declared');
     logSpy.mockRestore();
   });
 

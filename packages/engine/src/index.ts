@@ -914,3 +914,5 @@ export {
   loadManifestHashFromDisk
 } from './interop/playbookLifelineInterop.js';
 export type { InteropUpdatedTruthArtifact } from './interop/playbookLifelineInterop.js';
+export { evaluateRuntimeCapabilityAuthorization } from './interop/launchCapabilityAuthorization.js';
+export type { RuntimeCapabilityAuthorizationResult, RuntimeCapabilityAuthorizationBlocker } from './interop/launchCapabilityAuthorization.js';

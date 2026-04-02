@@ -78,13 +78,25 @@ Pattern:
 
 `approved plan or release-ready rendezvous -> bounded request -> execution -> receipt -> updated truth`
 
+Pattern:
+
+`launch-plan -> runtime capability check -> execute -> receipt -> reconcile`
+
 Rule:
 
 No action is considered real until a receipt returns to Playbook.
 
+Rule:
+
+Launch authorization is incomplete until required runtime capabilities and action-family declarations are explicitly registered in the runtime seam.
+
 Failure mode:
 
 Execution without receipts creates silent drift and destroys trust.
+
+Failure mode:
+
+A lane can appear launch-eligible in plan artifacts while runtime capability registration cannot honor its bounded action contract.
 
 ## Durable state
 
