@@ -78,6 +78,9 @@ export type { RepositoryGraph, RepositoryGraphNode, RepositoryGraphEdge, Reposit
 
 export { queryRepositoryIndex, SUPPORTED_QUERY_FIELDS } from './query/repoQuery.js';
 export { queryPatterns } from './query/patterns.js';
+export { loadValidatedCsiaFramework, DEFAULT_CSIA_SOURCE, CSIA_SCHEMA_SOURCE } from './patterns/csiaOverlay.js';
+export type { CsiaPrimitive, CsiaBridge, CsiaRegime, CsiaFailureMode, CsiaFrameworkArtifact } from './patterns/csiaOverlay.js';
+
 export {
   listPatternKnowledgePatterns,
   getPatternKnowledgePatternById,

@@ -164,7 +164,7 @@ Architecture positioning:
 
 - Rule: Minimum Cognitive Core remains frozen; overlays may interpret, but not redefine, the kernel.
 - Pattern: Frozen core -> doctrine interpretation -> machine-readable overlay.
-- Failure Mode: Letting overlays expand the core model surface turns interpretation tooling into architecture drift.
+- Failure Mode: Letting runtime CSIA output drift from schema/examples turns the overlay into a second model surface.
 
 
 ## Pattern candidate extraction overview
