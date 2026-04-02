@@ -373,6 +373,7 @@ It does **not** create a new state store. Full detail stays in JSON output and t
 - `clean`: prompts with explicit scope and no violation
 - `violated_files[]`: unique out-of-scope files
 - `budget_status`: `within_budget` | `over_budget` | `unknown`
+- `blockers[]` in the compact summary is normalized (trimmed, empty/whitespace-only entries removed, deterministic ordering preserved)
 
 Rule:
 

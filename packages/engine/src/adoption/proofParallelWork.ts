@@ -118,6 +118,11 @@ const readJsonIfPresent = <T>(repoRoot: string, relativePath: string): T | undef
   return JSON.parse(fs.readFileSync(absolutePath, 'utf8')) as T;
 };
 
+const normalizeSummaryStrings = (values: readonly string[]): string[] =>
+  values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
 const uniqueSorted = (values: readonly string[]): string[] => [...new Set(values)].sort((left, right) => left.localeCompare(right));
 
 const laneIsPending = (lane: LaneStateEntry): boolean => lane.status === 'ready' || lane.status === 'running' || lane.status === 'completed';
@@ -204,13 +209,13 @@ export const readProofParallelWorkSummary = (repoRoot: string): ProofParallelWor
     scopeMissing > 0 ? `scope missing=${scopeMissing}` : ''
   ].filter(Boolean));
 
-  const blockers = uniqueSorted([
+  const blockers = uniqueSorted(normalizeSummaryStrings([
     ...blockedLanes.slice(0, 3).map((laneId) => `blocked lane: ${laneId}`),
     ...guardConflicted.slice(0, 3).map((proposalId) => `guard conflict: ${proposalId}`),
     ...docsExcludedTargets.slice(0, 3).map((targetDoc) => `docs exclusion: ${targetDoc}`),
     ...violatedFiles.slice(0, 3).map((file) => `scope violation: ${file}`),
     overBudgetPrompts > 0 ? `scope budget exceeded: ${overBudgetPrompts} prompt(s)` : ''
-  ]);
+  ]));
 
   let decision: ProofParallelWorkDecision = 'parallel_clear';
   let status = 'parallel integration clear';

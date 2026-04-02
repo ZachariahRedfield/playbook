@@ -62,4 +62,28 @@ describe('readProofParallelWorkSummary scope drift', () => {
     expect(summary.affected_surfaces).toContain('scope clean=1');
     expect(summary.blockers.join('\n')).not.toContain('scope violation:');
   });
+
+  it('drops blank blocker entries from compact summary output', () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-proof-blockers-'));
+    writeJson(repoRoot, '.playbook/lane-state.json', {
+      lanes: [{ lane_id: 'lane-b', status: 'blocked', protected_doc_consolidation: { stage: 'not_applicable' } }],
+      blocked_lanes: ['lane-b'],
+      merge_ready_lanes: []
+    });
+    writeJson(repoRoot, '.playbook/docs-consolidation-plan.json', {
+      tasks: [],
+      excluded: [{ target_doc: 'docs/PLAYBOOK_PRODUCT_ROADMAP.md' }, { target_doc: '   ' }]
+    });
+    writeJson(repoRoot, '.playbook/policy-apply-result.json', {
+      skipped_blocked: [{ proposal_id: 'proposal-9' }, { proposal_id: '   ' }]
+    });
+
+    const summary = readProofParallelWorkSummary(repoRoot);
+
+    expect(summary.blockers).toEqual([
+      'blocked lane: lane-b',
+      'docs exclusion: docs/PLAYBOOK_PRODUCT_ROADMAP.md',
+      'guard conflict: proposal-9'
+    ]);
+  });
 });
