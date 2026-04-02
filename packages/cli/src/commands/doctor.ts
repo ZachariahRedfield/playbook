@@ -1,6 +1,7 @@
 import { runArchitectureAudit } from '@zachariahredfield/playbook-core';
 import {
   generateRepositoryHealth,
+  classifySignalFailureDomains,
   queryRepositoryIndex,
   queryRisk,
   runDocsAudit,
@@ -38,6 +39,10 @@ export type DoctorReport = {
     info: number;
   };
   findings: DoctorFinding[];
+  failureDomains: ReturnType<typeof classifySignalFailureDomains>['failureDomains'];
+  primaryFailureDomain: ReturnType<typeof classifySignalFailureDomains>['primaryFailureDomain'];
+  domainBlockers: ReturnType<typeof classifySignalFailureDomains>['domainBlockers'];
+  domainNextActions: ReturnType<typeof classifySignalFailureDomains>['domainNextActions'];
   artifactHygiene: ArtifactHygieneReport;
   memoryDiagnostics: RepositoryHealthSnapshot['memoryDiagnostics'];
 };
@@ -263,6 +268,13 @@ export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> =>
 
   const orderedFindings = [...findings].sort(compareFindings);
   const summary = summarizeFindings(orderedFindings);
+  const failureDomainSummary = classifySignalFailureDomains(
+    orderedFindings.map((finding) => ({
+      signal: finding.id,
+      summary: finding.message,
+      nextAction: finding.severity === 'error' ? 'Run `pnpm playbook verify --json && pnpm playbook plan --json` and resolve the blocking findings.' : null
+    }))
+  );
 
   return {
     schemaVersion: '1.0',
@@ -270,6 +282,10 @@ export const collectDoctorReport = async (cwd: string): Promise<DoctorReport> =>
     status: toReportStatus(summary),
     summary,
     findings: orderedFindings,
+    failureDomains: failureDomainSummary.failureDomains,
+    primaryFailureDomain: failureDomainSummary.primaryFailureDomain,
+    domainBlockers: failureDomainSummary.domainBlockers,
+    domainNextActions: failureDomainSummary.domainNextActions,
     artifactHygiene: repositoryHealth.artifactHygiene,
     memoryDiagnostics: repositoryHealth.memoryDiagnostics
   };
@@ -301,6 +317,9 @@ const printHumanReport = (report: DoctorReport): void => {
   printCategory('Risk', report.findings);
   printCategory('Memory', report.findings);
 
+  console.log(`Primary failure domain: ${report.primaryFailureDomain ?? 'none'}`);
+  console.log(`Domain blockers: ${report.domainBlockers.slice(0, 2).map((entry: { domain: string; summary: string }) => `${entry.domain}: ${entry.summary}`).join('; ') || 'none'}`);
+  console.log(`Domain next action: ${report.domainNextActions[0]?.action ?? 'none'}`);
   console.log(`Status: ${report.status.toUpperCase()}`);
   console.log(`Summary: errors=${report.summary.errors}, warnings=${report.summary.warnings}, info=${report.summary.info}`);
 };

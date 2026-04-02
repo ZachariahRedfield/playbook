@@ -13,9 +13,11 @@ import {
   deriveNextAdoptionQueueFromUpdatedState,
   buildRepoAdoptionReadiness,
   runBootstrapProof,
+  classifyProofFailureDomains,
   readProofParallelWorkSummary,
   defaultBootstrapCliResolutionCommands,
   type BootstrapCliResolutionCommand,
+  type FailureDomainSummary,
   type FleetAdoptionWorkQueue,
   type FleetCodexExecutionPlan,
   type FleetAdoptionReadinessSummary,
@@ -136,6 +138,10 @@ type StatusProofResult = {
   mode: 'proof';
   proof: ReturnType<typeof runBootstrapProof>;
   parallel_work: ReturnType<typeof readProofParallelWorkSummary>;
+  failureDomains: FailureDomainSummary['failureDomains'];
+  primaryFailureDomain: FailureDomainSummary['primaryFailureDomain'];
+  domainBlockers: FailureDomainSummary['domainBlockers'];
+  domainNextActions: FailureDomainSummary['domainNextActions'];
   interpretation: InterpretationLayer;
 };
 
@@ -488,6 +494,7 @@ const bootstrapCliResolutionCommands = (): BootstrapCliResolutionCommand[] => {
 const toProofStatusResult = (cwd: string): { result: StatusProofResult; exitCode: ExitCode } => {
   const proof = runBootstrapProof(cwd, { cliResolutionCommands: bootstrapCliResolutionCommands() });
   const parallelWork = readProofParallelWorkSummary(cwd);
+  const failureDomainSummary = classifyProofFailureDomains(proof, parallelWork);
   return {
     result: {
       schemaVersion: '1.0',
@@ -495,6 +502,10 @@ const toProofStatusResult = (cwd: string): { result: StatusProofResult; exitCode
       mode: 'proof',
       proof,
       parallel_work: parallelWork,
+      failureDomains: failureDomainSummary.failureDomains,
+      primaryFailureDomain: failureDomainSummary.primaryFailureDomain,
+      domainBlockers: failureDomainSummary.domainBlockers,
+      domainNextActions: failureDomainSummary.domainNextActions,
       interpretation: buildProofInterpretation(proof)
     },
     exitCode: proof.ok ? ExitCode.Success : ExitCode.Failure
@@ -670,8 +681,8 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
           decision: proofResult.parallel_work.decision,
           status: proofResult.parallel_work.status,
           affectedSurfaces: proofResult.parallel_work.affected_surfaces,
-          blockers: proofResult.parallel_work.blockers,
-          nextAction: proofResult.parallel_work.next_action,
+          blockers: proofResult.domainBlockers.slice(0, 2).map((entry: { domain: string; summary: string }) => `${entry.domain}: ${entry.summary}`),
+          nextAction: proofResult.domainNextActions[0]?.action ?? proofResult.parallel_work.next_action,
           extraSections: [{
             label: 'Counts',
             items: [
@@ -680,6 +691,12 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
               `plan_ready=${proofResult.parallel_work.counts.plan_ready}`,
               `guard_conflicted=${proofResult.parallel_work.counts.guard_conflicted}`,
               `merge_ready=${proofResult.parallel_work.counts.merge_ready}`
+            ]
+          }, {
+            label: 'Failure ownership',
+            items: [
+              `primary=${proofResult.primaryFailureDomain ?? 'none'}`,
+              `domains=${proofResult.failureDomains.join(',') || 'none'}`
             ]
           }]
         }));

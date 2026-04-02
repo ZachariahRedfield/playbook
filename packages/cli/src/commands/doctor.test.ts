@@ -5,6 +5,7 @@ const generateRepositoryHealth = vi.fn();
 const queryRepositoryIndex = vi.fn();
 const queryRisk = vi.fn();
 const runDocsAudit = vi.fn();
+const classifySignalFailureDomains = vi.fn();
 const existsSync = vi.fn();
 const collectVerifyReport = vi.fn();
 const runArchitectureAudit = vi.fn();
@@ -17,7 +18,8 @@ vi.mock('@zachariahredfield/playbook-engine', () => ({
   generateRepositoryHealth,
   queryRepositoryIndex,
   queryRisk,
-  runDocsAudit
+  runDocsAudit,
+  classifySignalFailureDomains
 }));
 
 vi.mock('node:fs', () => ({
@@ -35,6 +37,7 @@ describe('runDoctor', () => {
     queryRepositoryIndex.mockReset();
     queryRisk.mockReset();
     runDocsAudit.mockReset();
+    classifySignalFailureDomains.mockReset();
     existsSync.mockReset();
     collectVerifyReport.mockReset();
     runArchitectureAudit.mockReset();
@@ -95,6 +98,12 @@ describe('runDoctor', () => {
       contributions: { fanIn: 0, impact: 0.1, verifyFailures: 0, hub: 0 },
       reasons: ['Stable module']
     });
+    classifySignalFailureDomains.mockReturnValue({
+      failureDomains: [],
+      primaryFailureDomain: null,
+      domainBlockers: [],
+      domainNextActions: []
+    });
   });
 
   it('prints text diagnosis sections', async () => {
@@ -127,7 +136,9 @@ describe('runDoctor', () => {
       schemaVersion: '1.0',
       command: 'doctor',
       status: 'ok',
-      summary: { errors: 0, warnings: 0 }
+      summary: { errors: 0, warnings: 0 },
+      failureDomains: [],
+      primaryFailureDomain: null
     });
     expect(Array.isArray(payload.findings)).toBe(true);
     expect(payload.artifactHygiene).toMatchObject({

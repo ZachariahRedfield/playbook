@@ -159,6 +159,50 @@
       "message": "features risk is low (0.00)."
     }
   ],
+  "failureDomains": [
+    "contract_validation",
+    "sync_drift",
+    "governance_planning"
+  ],
+  "primaryFailureDomain": "contract_validation",
+  "domainBlockers": [
+    {
+      "domain": "contract_validation",
+      "signal": "doctor.docs.docs.required-anchor.missing",
+      "summary": "Required documentation anchor is missing. (docs/CONSUMER_INTEGRATION_CONTRACT.md)"
+    },
+    {
+      "domain": "contract_validation",
+      "signal": "doctor.architecture.audit.artifact.evolution-policy",
+      "summary": "Artifact evolution policy: Create docs/contracts/ARTIFACT_EVOLUTION_POLICY.md with schema evolution, compatibility, and regeneration guidance."
+    },
+    {
+      "domain": "contract_validation",
+      "signal": "doctor.architecture.audit.ecosystem.adapter-boundaries",
+      "summary": "Ecosystem adapter boundaries: Create or update docs/architecture/ECOSYSTEM_ADAPTERS.md to define external tool isolation and adapter boundary contracts."
+    },
+    {
+      "domain": "sync_drift",
+      "signal": "doctor.memory.replay-output-inconsistent",
+      "summary": "Replay output inconsistencies detected (0 missing indexed events, 2 provenance mismatches). Regenerate replay outputs from a valid memory index and event set before promotion."
+    },
+    {
+      "domain": "governance_planning",
+      "signal": "doctor.testing.verify.warning.base-selection",
+      "summary": "Repository is not a git work tree; skipping diff-based verification checks."
+    },
+    {
+      "domain": "governance_planning",
+      "signal": "doctor.testing.verify.warning.config-missing",
+      "summary": "playbook.config.json not found; using defaults (this is not an error). Add playbook.config.json for explicit settings and .playbookignore to tune scan scope."
+    }
+  ],
+  "domainNextActions": [
+    {
+      "domain": "contract_validation",
+      "action": "Run `pnpm playbook verify --json && pnpm playbook plan --json` and resolve the blocking findings."
+    }
+  ],
   "artifactHygiene": {
     "classification": {
       "runtime": [

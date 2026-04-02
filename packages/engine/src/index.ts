@@ -23,8 +23,10 @@ export type { RepositoryHealth, GovernanceStatusItem, ArtifactHygieneReport } fr
 
 export { buildRepoAdoptionReadiness } from './adoption/readiness.js';
 export { runBootstrapProof, resolveBootstrapCliAvailability, defaultBootstrapCliResolutionCommands } from './adoption/bootstrapProof.js';
+export { classifyProofFailureDomains, classifySignalFailureDomains } from './adoption/failureDomains.js';
 export { readProofParallelWorkSummary } from './adoption/proofParallelWork.js';
 export type { BootstrapProofStage, BootstrapProofFailureCategory, BootstrapProofCheck, BootstrapProofResult, BootstrapCliResolutionCommand } from './adoption/bootstrapProof.js';
+export type { CanonicalFailureDomain, FailureDomainBlocker, FailureDomainNextAction, FailureDomainSummary } from './adoption/failureDomains.js';
 export type { ProofParallelWorkDecision, ProofParallelWorkSummary, ProofParallelWorkArtifactState } from './adoption/proofParallelWork.js';
 export type { RepoAdoptionReadiness, RepoAdoptionBlocker, ReadinessLifecycleStage, ReadinessConnectionStatus, ReadinessArtifactStatus, ReadinessArtifactStatusCode } from './adoption/readiness.js';
 export { buildFleetAdoptionReadinessSummary } from './adoption/fleetReadiness.js';

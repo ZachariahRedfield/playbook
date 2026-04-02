@@ -31,10 +31,13 @@ declare module "@zachariahredfield/playbook-engine" {
   export const generateRepositoryHealth: (...args: any[]) => any;
   export const buildRepoAdoptionReadiness: (...args: any[]) => any;
   export const runBootstrapProof: (...args: any[]) => any;
+  export const classifyProofFailureDomains: (...args: any[]) => any;
+  export const classifySignalFailureDomains: (...args: any[]) => any;
   export const readProofParallelWorkSummary: (...args: any[]) => any;
   export const resolveBootstrapCliAvailability: (...args: any[]) => any;
   export const defaultBootstrapCliResolutionCommands: (...args: any[]) => any;
   export type BootstrapCliResolutionCommand = any;
+  export type FailureDomainSummary = any;
   export const buildFleetAdoptionReadinessSummary: (...args: any[]) => any;
   export const buildFleetAdoptionWorkQueue: (...args: any[]) => any;
   export const buildFleetCodexExecutionPlan: (...args: any[]) => any;

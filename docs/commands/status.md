@@ -307,6 +307,20 @@ Stages are evaluated in order:
 
 
 JSON proof output preserves the canonical `proof` object and may also include additive `interpretation` metadata when Playbook is intentionally exposing the same `state` / `why` / `next_step` narrative layer used by other user-facing status surfaces.
+`status proof --json` now also emits deterministic failure-domain ownership fields derived from existing classification signals:
+
+- `failureDomains[]`
+- `primaryFailureDomain`
+- `domainBlockers[]`
+- `domainNextActions[]`
+
+Canonical domain values are ownership-aware and align with control-loop doctrine:
+
+- `contract_validation`
+- `runtime_execution`
+- `ci_bootstrap`
+- `sync_drift`
+- `governance_planning`
 
 Pattern:
 
@@ -333,10 +347,10 @@ Failure categories are explicit and machine-readable:
 Human output for `status proof` now compresses parallel-work integration into one operator brief and emits only:
 
 1. decision / status
-2. affected surfaces
-3. blockers
+2. primary failure domain
+3. blocker summary
 4. next action
-5. counts for `pending`, `blocked`, `plan_ready`, `guard_conflicted`, and `merge_ready`
+5. compact counts for `pending`, `blocked`, `plan_ready`, `guard_conflicted`, and `merge_ready`
 
 The text brief intentionally omits the prior proof `why` narrative and artifact reference list so the operator view stays shorter than raw lane-state details.
 
@@ -360,3 +374,12 @@ Pattern:
 Failure Mode:
 
 - A repo can appear integrated because commands exist locally while still failing as a real governed consumer due to missing runtime/artifact/bootstrap guarantees.
+- When status/proof hides domain ownership, operators and AI can choose the wrong repair lane even when raw diagnostics are present.
+
+Rule:
+
+- Failure classification must reflect ownership, not just symptom location.
+
+Pattern:
+
+- Classify domain -> surface blocker -> route next action.

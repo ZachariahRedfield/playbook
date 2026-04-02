@@ -881,7 +881,19 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     title: 'PlaybookDoctorOutput',
     type: 'object',
     additionalProperties: false,
-    required: ['schemaVersion', 'command', 'status', 'summary', 'findings', 'artifactHygiene', 'memoryDiagnostics'],
+    required: [
+      'schemaVersion',
+      'command',
+      'status',
+      'summary',
+      'findings',
+      'failureDomains',
+      'primaryFailureDomain',
+      'domainBlockers',
+      'domainNextActions',
+      'artifactHygiene',
+      'memoryDiagnostics'
+    ],
     properties: {
       schemaVersion: { const: '1.0' },
       command: { const: 'doctor' },
@@ -907,6 +919,39 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
             severity: { enum: ['error', 'warning', 'info'] },
             id: { type: 'string' },
             message: { type: 'string' }
+          }
+        }
+      },
+      failureDomains: {
+        type: 'array',
+        items: { enum: ['contract_validation', 'runtime_execution', 'ci_bootstrap', 'sync_drift', 'governance_planning'] }
+      },
+      primaryFailureDomain: {
+        type: ['string', 'null'],
+        enum: ['contract_validation', 'runtime_execution', 'ci_bootstrap', 'sync_drift', 'governance_planning', null]
+      },
+      domainBlockers: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['domain', 'signal', 'summary'],
+          properties: {
+            domain: { enum: ['contract_validation', 'runtime_execution', 'ci_bootstrap', 'sync_drift', 'governance_planning'] },
+            signal: { type: 'string' },
+            summary: { type: 'string' }
+          }
+        }
+      },
+      domainNextActions: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['domain', 'action'],
+          properties: {
+            domain: { enum: ['contract_validation', 'runtime_execution', 'ci_bootstrap', 'sync_drift', 'governance_planning'] },
+            action: { type: 'string' }
           }
         }
       },

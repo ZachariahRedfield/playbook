@@ -27,8 +27,9 @@ const loadConfig = vi.fn();
 const runBootstrapProof = vi.fn();
 const readProofParallelWorkSummary = vi.fn();
 const defaultBootstrapCliResolutionCommands = vi.fn();
+const classifyProofFailureDomains = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState, buildMemoryPressureStatusArtifact, loadConfig, runBootstrapProof, readProofParallelWorkSummary, defaultBootstrapCliResolutionCommands }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ buildRepoAdoptionReadiness, buildFleetAdoptionReadinessSummary, buildFleetAdoptionWorkQueue, buildFleetCodexExecutionPlan, buildFleetExecutionReceipt, buildFleetUpdatedAdoptionState, deriveNextAdoptionQueueFromUpdatedState, buildMemoryPressureStatusArtifact, loadConfig, runBootstrapProof, readProofParallelWorkSummary, defaultBootstrapCliResolutionCommands, classifyProofFailureDomains }));
 
 const makeAnalyzeReport = (overrides?: Partial<AnalyzeReport>): AnalyzeReport => ({
   repoPath: '/tmp/repo',
@@ -68,7 +69,14 @@ describe('runStatus', () => {
     runBootstrapProof.mockReset();
     readProofParallelWorkSummary.mockReset();
     defaultBootstrapCliResolutionCommands.mockReset();
+    classifyProofFailureDomains.mockReset();
     defaultBootstrapCliResolutionCommands.mockReturnValue([]);
+    classifyProofFailureDomains.mockReturnValue({
+      failureDomains: [],
+      primaryFailureDomain: null,
+      domainBlockers: [],
+      domainNextActions: []
+    });
     loadConfig.mockReturnValue({
       config: {
         memory: {
@@ -777,6 +785,10 @@ describe('runStatus', () => {
         status: 'docs consolidation ready to apply',
         counts: { pending: 0, blocked: 0, plan_ready: 1, guard_conflicted: 0, merge_ready: 1 }
       },
+      failureDomains: [],
+      primaryFailureDomain: null,
+      domainBlockers: [],
+      domainNextActions: [],
       interpretation: {
         pattern: 'interpretation-layer',
         progressive_disclosure: {
@@ -856,6 +868,12 @@ describe('runStatus', () => {
         guarded_apply: { available: true, executed: 1, skipped_requires_review: 0, skipped_blocked: ['proposal-9'], failed_execution: [] }
       }
     });
+    classifyProofFailureDomains.mockReturnValue({
+      failureDomains: ['sync_drift'],
+      primaryFailureDomain: 'sync_drift',
+      domainBlockers: [{ domain: 'sync_drift', signal: 'parallel_work.blockers', summary: 'guard conflict: proposal-9' }],
+      domainNextActions: [{ domain: 'sync_drift', action: 'Inspect .playbook/policy-apply-result.json blocked/failed entries, resolve guard conflicts, then rerun `pnpm playbook apply --json`.' }]
+    });
 
     const exitCode = await runStatus(process.cwd(), { ci: false, format: 'text', quiet: false, scope: 'proof' });
 
@@ -865,8 +883,10 @@ describe('runStatus', () => {
     expect(output).toContain('Status: guarded apply conflicted');
     expect(output).not.toContain('Why:');
     expect(output).toContain('Affected surfaces: 1 pending lane(s); 1 blocked lane(s); 1 docs plan-ready lane(s); 1 guarded-apply conflict(s); 1 merge-ready lane(s)');
-    expect(output).toContain('Blockers: blocked lane: lane-b; guard conflict: proposal-9');
+    expect(output).toContain('Blockers: sync_drift: guard conflict: proposal-9');
     expect(output).toContain('Next action: Inspect .playbook/policy-apply-result.json blocked/failed entries, resolve guard conflicts, then rerun `pnpm playbook apply --json`.');
+    expect(output).toContain('Failure ownership');
+    expect(output).toContain('- primary=sync_drift');
     expect(output).toContain('- pending=1');
     expect(output).toContain('- blocked=1');
     expect(output).not.toContain('Artifacts:');
