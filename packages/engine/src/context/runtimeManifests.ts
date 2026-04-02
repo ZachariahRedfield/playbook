@@ -116,6 +116,36 @@ export const readRuntimeManifestsArtifact = (repoRoot: string): RuntimeManifests
   };
 };
 
+const EMPTY_RUNTIME_MANIFESTS_ARTIFACT: RuntimeManifestsArtifact = {
+  schemaVersion: RUNTIME_MANIFESTS_SCHEMA_VERSION,
+  kind: 'runtime-manifests',
+  manifests: []
+};
+
+export const readConsumedRuntimeManifestsArtifact = (repoRoot: string): RuntimeManifestsArtifact => {
+  const artifactPath = path.join(repoRoot, RUNTIME_MANIFESTS_RELATIVE_PATH);
+  if (!fs.existsSync(artifactPath) || !fs.statSync(artifactPath).isFile()) {
+    return EMPTY_RUNTIME_MANIFESTS_ARTIFACT;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as unknown;
+  } catch {
+    return EMPTY_RUNTIME_MANIFESTS_ARTIFACT;
+  }
+
+  if (!isRecord(parsed) || !Array.isArray(parsed.manifests)) {
+    return EMPTY_RUNTIME_MANIFESTS_ARTIFACT;
+  }
+
+  return {
+    schemaVersion: RUNTIME_MANIFESTS_SCHEMA_VERSION,
+    kind: 'runtime-manifests',
+    manifests: parsed.manifests as RuntimeManifestEntry[]
+  };
+};
+
 export const writeRuntimeManifestsArtifact = (repoRoot: string, artifact: RuntimeManifestsArtifact): string => {
   const targetPath = path.join(repoRoot, RUNTIME_MANIFESTS_RELATIVE_PATH);
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });

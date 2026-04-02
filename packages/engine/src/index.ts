@@ -69,6 +69,7 @@ export {
   RUNTIME_MANIFESTS_RELATIVE_PATH,
   RUNTIME_MANIFESTS_SCHEMA_VERSION,
   readRuntimeManifestsArtifact,
+  readConsumedRuntimeManifestsArtifact,
   writeRuntimeManifestsArtifact,
   materializeRuntimeManifestsArtifact
 } from './context/runtimeManifests.js';

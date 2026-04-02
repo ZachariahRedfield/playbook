@@ -1,4 +1,5 @@
 import { ExitCode } from '../lib/cliContract.js';
+import { RUNTIME_MANIFESTS_RELATIVE_PATH, readConsumedRuntimeManifestsArtifact } from '@zachariahredfield/playbook-engine';
 import { listRegisteredCommands } from './index.js';
 
 type ContextResult = {
@@ -19,33 +20,47 @@ type ContextResult = {
     improvementCandidates: '.playbook/improvement-candidates.json';
     prReview: '.playbook/pr-review.json';
   };
+  runtimeManifests: {
+    artifact: typeof RUNTIME_MANIFESTS_RELATIVE_PATH;
+    manifestsCount: number;
+    manifests: unknown[];
+  };
   cli: {
     commands: string[];
   };
 };
 
-const buildContextResult = (): ContextResult => ({
-  schemaVersion: '1.0',
-  command: 'context',
-  architecture: 'modular-monolith',
-  workflow: ['verify', 'plan', 'apply'],
-  repositoryIntelligence: {
-    artifact: '.playbook/repo-index.json',
-    commands: ['index', 'query', 'ask', 'explain']
-  },
-  controlPlaneArtifacts: {
-    policyEvaluation: '.playbook/policy-evaluation.json',
-    policyApplyResult: '.playbook/policy-apply-result.json',
-    session: '.playbook/session.json',
-    cycleState: '.playbook/cycle-state.json',
-    cycleHistory: '.playbook/cycle-history.json',
-    improvementCandidates: '.playbook/improvement-candidates.json',
-    prReview: '.playbook/pr-review.json'
-  },
-  cli: {
-    commands: listRegisteredCommands().map((entry) => entry.name)
-  }
-});
+const buildContextResult = (cwd: string): ContextResult => {
+  const runtimeManifestArtifact = readConsumedRuntimeManifestsArtifact(cwd);
+
+  return {
+    schemaVersion: '1.0',
+    command: 'context',
+    architecture: 'modular-monolith',
+    workflow: ['verify', 'plan', 'apply'],
+    repositoryIntelligence: {
+      artifact: '.playbook/repo-index.json',
+      commands: ['index', 'query', 'ask', 'explain']
+    },
+    controlPlaneArtifacts: {
+      policyEvaluation: '.playbook/policy-evaluation.json',
+      policyApplyResult: '.playbook/policy-apply-result.json',
+      session: '.playbook/session.json',
+      cycleState: '.playbook/cycle-state.json',
+      cycleHistory: '.playbook/cycle-history.json',
+      improvementCandidates: '.playbook/improvement-candidates.json',
+      prReview: '.playbook/pr-review.json'
+    },
+    runtimeManifests: {
+      artifact: RUNTIME_MANIFESTS_RELATIVE_PATH,
+      manifestsCount: runtimeManifestArtifact.manifests.length,
+      manifests: runtimeManifestArtifact.manifests
+    },
+    cli: {
+      commands: listRegisteredCommands().map((entry) => entry.name)
+    }
+  };
+};
 
 const printText = (result: ContextResult): void => {
   console.log('Playbook Context');
@@ -69,14 +84,18 @@ const printText = (result: ContextResult): void => {
   console.log(`Improvement candidates: ${result.controlPlaneArtifacts.improvementCandidates}`);
   console.log(`PR review: ${result.controlPlaneArtifacts.prReview}`);
   console.log('');
+  console.log('Runtime Manifests');
+  console.log(`Artifact: ${result.runtimeManifests.artifact}`);
+  console.log(`Manifests: ${result.runtimeManifests.manifestsCount}`);
+  console.log('');
   console.log('CLI Commands');
   for (const command of result.cli.commands) {
     console.log(command);
   }
 };
 
-export const runContext = async (_cwd: string, options: { format: 'text' | 'json'; quiet: boolean }): Promise<number> => {
-  const result = buildContextResult();
+export const runContext = async (cwd: string, options: { format: 'text' | 'json'; quiet: boolean }): Promise<number> => {
+  const result = buildContextResult(cwd);
 
   if (options.format === 'json') {
     console.log(JSON.stringify(result, null, 2));

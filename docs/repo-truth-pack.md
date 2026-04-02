@@ -63,6 +63,7 @@ Validation includes:
   - `integration_seams`
 - Fitness-aligned integrated subapps must set `external_truth_contract_ref` in `playbook/runtime-manifest.json`
 - consumed aggregate artifact at `.playbook/runtime-manifests.json` (read-only control-plane surface, sourced from subapp manifests)
+- consumed control-plane context surfaces: `pnpm playbook context --json` and `pnpm playbook ai-context --json` include additive runtime manifest data from `.playbook/runtime-manifests.json`
 - non-integrated subapps remain unaffected by runtime manifest requirements
 
 

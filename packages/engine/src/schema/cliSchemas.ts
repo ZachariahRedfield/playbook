@@ -412,7 +412,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     title: 'PlaybookContextOutput',
     type: 'object',
     additionalProperties: false,
-    required: ['schemaVersion', 'command', 'architecture', 'workflow', 'repositoryIntelligence', 'controlPlaneArtifacts', 'cli'],
+    required: ['schemaVersion', 'command', 'architecture', 'workflow', 'repositoryIntelligence', 'controlPlaneArtifacts', 'runtimeManifests', 'cli'],
     properties: {
       schemaVersion: { type: 'string' },
       command: { const: 'context' },

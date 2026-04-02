@@ -13,6 +13,7 @@ Allowed baseline inputs:
 - `.playbook/ai-context.json` (or deterministic generated context fallback)
 - `.playbook/ai-contract.json` (or deterministic generated contract fallback)
 - `.playbook/repo-index.json`
+- `.playbook/runtime-manifests.json` consumed through `ai-context` / `context` when present (read-only, additive)
 
 Optional inputs when explicitly requested:
 

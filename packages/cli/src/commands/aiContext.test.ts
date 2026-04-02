@@ -81,6 +81,51 @@ describe('runAiContext', () => {
     logSpy.mockRestore();
   });
 
+  it('consumes existing runtime-manifests artifact without mutating it', async () => {
+    const repo = createRepo();
+    const artifactPath = path.join(repo, '.playbook', 'runtime-manifests.json');
+    fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
+    const artifact = {
+      schemaVersion: '1.0',
+      kind: 'runtime-manifests',
+      manifests: [
+        {
+          subapp_path: 'subapps/proving-ground-app',
+          subapp_id: 'proving-ground-app',
+          app_identity: { app_id: 'proving-ground-app' },
+          runtime_role: 'integration-proving-ground',
+          runtime_status: 'integrated',
+          signal_groups: ['repo-truth-pack-signals'],
+          state_snapshot_types: ['subapp-truth-pack-context-v1'],
+          bounded_action_families: ['repo-truth-pack-ingest'],
+          receipt_families: ['repo-truth-pack-ingest-receipts'],
+          integration_seams: ['repo-truth-pack-ingest-v1'],
+          external_truth_contract_ref: 'docs/CONSUMER_INTEGRATION_CONTRACT.md',
+          source: {
+            path: 'subapps/proving-ground-app/playbook/runtime-manifest.json',
+            sha256: 'abc'
+          }
+        }
+      ]
+    };
+    fs.writeFileSync(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+    const before = fs.readFileSync(artifactPath, 'utf8');
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runAiContext(repo, { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+    const runtimeManifests = payload.runtimeManifests as Record<string, unknown>;
+    expect(runtimeManifests.manifestsCount).toBe(1);
+    const manifests = runtimeManifests.manifests as Array<Record<string, unknown>>;
+    expect(manifests[0]?.receipt_families).toEqual(['repo-truth-pack-ingest-receipts']);
+    expect(manifests[0]?.external_truth_contract_ref).toBe('docs/CONSUMER_INTEGRATION_CONTRACT.md');
+    expect(fs.readFileSync(artifactPath, 'utf8')).toBe(before);
+
+    logSpy.mockRestore();
+  });
+
   it('produces deterministic JSON ordering/stability', async () => {
     const repo = createRepo();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

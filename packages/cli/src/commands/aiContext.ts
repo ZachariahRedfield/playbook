@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { materializeRuntimeManifestsArtifact, RUNTIME_MANIFESTS_RELATIVE_PATH } from '@zachariahredfield/playbook-engine';
+import { readConsumedRuntimeManifestsArtifact, RUNTIME_MANIFESTS_RELATIVE_PATH } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { listRegisteredCommands } from './index.js';
 
@@ -71,7 +71,7 @@ type AiContextResult = {
 
 const buildAiContextResult = (cwd: string): AiContextResult => {
   const indexFile = path.join(cwd, '.playbook', 'repo-index.json');
-  const runtimeManifestArtifact = materializeRuntimeManifestsArtifact(cwd);
+  const runtimeManifestArtifact = readConsumedRuntimeManifestsArtifact(cwd);
 
   return {
     schemaVersion: '1.0',
@@ -93,7 +93,7 @@ const buildAiContextResult = (cwd: string): AiContextResult => {
       cycleState: '.playbook/cycle-state.json',
       cycleHistory: '.playbook/cycle-history.json',
       improvementCandidates: '.playbook/improvement-candidates.json',
-    prReview: '.playbook/pr-review.json'
+      prReview: '.playbook/pr-review.json'
     },
     runtimeManifests: {
       artifact: RUNTIME_MANIFESTS_RELATIVE_PATH,
