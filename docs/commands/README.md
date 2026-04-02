@@ -307,6 +307,7 @@ For orchestration surfaces (`orchestrate`, `lanes`, `workers`), operator prompts
 - `.playbook` artifacts retain full machine state, dependencies, and protected-doc fragment metadata
 - protected singleton narrative docs are fragment-only surfaces during parallel worker execution
 - compact text surfaces should report only pending/blocking summary plus next command while `.playbook` artifacts retain raw consolidation detail
+- Current `workers` / `execute` / `receipt` seams intentionally stop at deterministic planning, execution receipts, and updated truth; launch authorization (including managed subagent/hook runtime gates) remains the next explicit hardening seam.
 
 ## Learn draft (`pnpm playbook learn draft`)
 

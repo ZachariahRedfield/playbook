@@ -122,6 +122,7 @@ Fitness-targeted AI proposal boundary clarification:
 - `pnpm playbook interop draft --json` compiles `.playbook/ai-proposal.json` into additive `.playbook/interop-request-draft.json` for explicit review, with no runtime execution.
 - Rule: AI proposals may compile to request drafts, but execution must still pass through explicit `interop emit-fitness-plan` commands.
 - Rule: Updated truth should feed existing governed review surfaces before inventing new workflow silos.
+- Rule: Managed subagents/hooks may prepare deterministic plans and receipts, but launch authorization is a separate explicit hardening gate.
 - Pattern: AI proposal -> request draft -> explicit interop emit -> receipt -> updated truth -> review cue.
 - Failure Mode: Manually translating proposal suggestions into emit arguments recreates hidden session state and reduces auditability.
 - Failure Mode: The loop claims to derive next action, but that action remains trapped in a followup artifact no operator workflow actually consumes.
