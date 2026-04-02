@@ -9,6 +9,8 @@ export type OrchestrationLaneRunState = {
   lane_id: string;
   status: OrchestrationLaneStatus;
   blocker_refs: string[];
+  allowed_write_surfaces: string[];
+  scope_id: string | null;
   receipt_refs: string[];
   worker_id: string | null;
   started_at: string | null;

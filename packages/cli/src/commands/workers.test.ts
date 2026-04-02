@@ -206,6 +206,51 @@ describe('runWorkers', () => {
     logSpy.mockRestore();
   });
 
+  it('rejects out-of-scope worker submit payloads when change-scope is declared', async () => {
+    const repo = createRepo('playbook-cli-workers-submit-out-of-scope');
+    writeWorksetPlan(repo);
+    fs.writeFileSync(path.join(repo, '.playbook', 'change-scope.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'change-scope',
+      generatedAt: '1970-01-01T00:00:00.000Z',
+      bundles: [{
+        scopeId: 'scope-lane-1',
+        source: { command: 'workers launch-plan', artifactPath: '.playbook/worker-launch-plan.json' },
+        mutationScope: {
+          allowedFiles: ['.playbook/orchestrator/workers/lane-1/'],
+          patchSizeBudget: { maxFiles: 1, maxHunks: 2, maxAddedLines: 120, maxRemovedLines: 90 },
+          boundaryChecks: ['writes-must-stay-inside-allowedFiles']
+        },
+        expectedTests: [],
+        docsSurfaces: [],
+        rulesTouched: [],
+        riskLevel: 'low',
+        rationale: 'test',
+        provenanceRefs: []
+      }]
+    }, null, 2));
+    const inputPath = path.join(repo, 'worker-result-out-of-scope.json');
+    fs.writeFileSync(inputPath, JSON.stringify({
+      lane_id: 'lane-1',
+      task_ids: ['task-1'],
+      worker_type: 'codex-docs',
+      completion_status: 'completed',
+      summary: 'bounded lane work completed',
+      blockers: [],
+      unresolved_items: [],
+      fragment_refs: [{ target_path: 'docs/commands/workers.md', fragment_path: '.playbook/orchestrator/workers/lane-1/worker-fragment.json' }],
+      proof_refs: [{ path: '.playbook/proof.json', kind: 'proof' }],
+      artifact_refs: []
+    }, null, 2));
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exitCode = await runWorkers(repo, { format: 'json', quiet: false, action: 'submit', from: inputPath });
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as { error: string };
+    expect(payload.error).toContain('outside allowed change scope for lane lane-1');
+    logSpy.mockRestore();
+  });
+
   it('returns deterministic missing-workset error in json mode', async () => {
     const repo = createRepo('playbook-cli-workers-missing');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

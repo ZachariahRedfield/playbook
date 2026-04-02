@@ -67,6 +67,45 @@ describe('buildWorkerLaunchPlan', () => {
     expect(plan.lanes).toHaveLength(1);
     expect(plan.lanes[0]?.launchEligible).toBe(true);
     expect(plan.summary.launchEligibleLanes).toEqual(['lane-1']);
+    expect(plan.lanes[0]?.scopeBoundaries.scope_id).toBe(null);
+  });
+
+  it('keeps scoped lane launch-eligible when change-scope allows lane surfaces', () => {
+    const repo = createRepo('launch-plan-scope-eligible');
+    const worksetPlan = basePlan();
+    const laneState = deriveLaneState(worksetPlan, '.playbook/workset-plan.json');
+    const assignments = assignWorkersToLanes(laneState, worksetPlan);
+
+    fs.mkdirSync(path.join(repo, '.playbook'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repo, '.playbook/change-scope.json'),
+      JSON.stringify({
+        schemaVersion: '1.0',
+        kind: 'change-scope',
+        generatedAt: new Date(0).toISOString(),
+        bundles: [{
+          scopeId: 'scope-eligible',
+          source: { command: 'workers launch-plan', artifactPath: '.playbook/worker-launch-plan.json' },
+          mutationScope: {
+            allowedFiles: ['packages/cli/src/commands/workers.ts'],
+            patchSizeBudget: { maxFiles: 1, maxHunks: 5, maxAddedLines: 120, maxRemovedLines: 90 },
+            boundaryChecks: ['writes-must-stay-inside-allowedFiles']
+          },
+          expectedTests: [],
+          docsSurfaces: [],
+          rulesTouched: [],
+          riskLevel: 'low',
+          rationale: 'test fixture',
+          provenanceRefs: ['.playbook/workset-plan.json']
+        }]
+      }),
+      'utf8'
+    );
+
+    const plan = buildWorkerLaunchPlan(repo, { worksetPlan, laneState, workerAssignments: assignments });
+    expect(plan.lanes[0]?.launchEligible).toBe(true);
+    expect(plan.lanes[0]?.scopeBoundaries.scope_id).toBe('scope-eligible');
+    expect(plan.lanes[0]?.scopeBoundaries.allowed_write_surfaces).toEqual(['packages/cli/src/commands/workers.ts']);
   });
 
   it('fails closed for unresolved protected-doc consolidation state', () => {

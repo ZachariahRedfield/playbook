@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { ChangeScopeArtifact, ChangeScopeBundle } from '../changeScope.js';
 import type { LaneExecutionStatus } from './laneState.js';
 import type { WorksetPlanArtifact, WorksetLane } from './worksetPlan.js';
 
@@ -82,6 +83,29 @@ const sortRefs = <T extends { path?: string; target_path?: string; fragment_path
   );
 
 const normalizePath = (value: string): string => value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '');
+const pathWithinAllowedSurface = (target: string, allowedSurface: string): boolean => {
+  const normalizedTarget = normalizePath(target);
+  const normalizedAllowed = normalizePath(allowedSurface);
+  if (normalizedAllowed.endsWith('/')) return normalizedTarget.startsWith(normalizedAllowed);
+  return normalizedTarget === normalizedAllowed;
+};
+
+const selectWorkersChangeScopeBundle = (artifact: ChangeScopeArtifact | undefined): ChangeScopeBundle | undefined =>
+  artifact?.bundles
+    ?.filter((bundle) => bundle.source.command === 'workers launch-plan')
+    .sort((left, right) => left.scopeId.localeCompare(right.scopeId))[0];
+
+const laneAllowedWriteSurfaces = (lane: WorksetLane): string[] => {
+  const nonProtectedSurfaces = (lane.expected_surfaces ?? []).map((surface) => normalizePath(surface)).filter((surface) => !PROTECTED_SINGLETON_DOCS.has(surface));
+  const protectedFragmentSurface = lane.protected_doc_consolidation.has_protected_doc_work ? [`.playbook/orchestrator/workers/${lane.lane_id}/`] : [];
+  return sortUnique([...nonProtectedSurfaces, ...protectedFragmentSurface]);
+};
+
+const scopedAllowedWriteSurfaces = (lane: WorksetLane, scopeBundle: ChangeScopeBundle | undefined): string[] => {
+  const laneSurfaces = laneAllowedWriteSurfaces(lane);
+  if (!scopeBundle) return laneSurfaces;
+  return laneSurfaces.filter((surface) => scopeBundle.mutationScope.allowedFiles.some((allowed) => pathWithinAllowedSurface(surface, allowed)));
+};
 
 const laneById = (worksetPlan: WorksetPlanArtifact): Map<string, WorksetLane> =>
   new Map(worksetPlan.lanes.map((lane) => [lane.lane_id, lane]));
@@ -129,7 +153,7 @@ const validateFragmentRefs = (lane: WorksetLane, fragmentRefs: WorkerResultFragm
   return errors;
 };
 
-export const validateWorkerResultInput = (worksetPlan: WorksetPlanArtifact, input: WorkerResultInput): string[] => {
+export const validateWorkerResultInput = (worksetPlan: WorksetPlanArtifact, input: WorkerResultInput, options?: { changeScope?: ChangeScopeArtifact }): string[] => {
   const errors: string[] = [];
   const lane = laneById(worksetPlan).get(input.lane_id);
   if (!lane) return [`lane_id ${input.lane_id} was not found in .playbook/workset-plan.json`];
@@ -156,6 +180,28 @@ export const validateWorkerResultInput = (worksetPlan: WorksetPlanArtifact, inpu
   }
   for (const ref of [...(input.proof_refs ?? []), ...(input.artifact_refs ?? [])]) {
     if (!ref.path?.trim()) errors.push('proof/artifact refs must include a path');
+  }
+
+  const scopeBundle = selectWorkersChangeScopeBundle(options?.changeScope);
+  const allowedSurfaces = scopedAllowedWriteSurfaces(lane, scopeBundle);
+  const outputSurfaces = sortUnique([
+    ...(input.fragment_refs ?? []).map((ref) => normalizePath(ref.fragment_path)),
+    ...(input.proof_refs ?? []).map((ref) => normalizePath(ref.path)),
+    ...(input.artifact_refs ?? []).map((ref) => normalizePath(ref.path))
+  ]);
+  for (const outputPath of outputSurfaces) {
+    const inScope = allowedSurfaces.some((allowed) => pathWithinAllowedSurface(outputPath, allowed));
+    if (!inScope) errors.push(`worker output path ${outputPath} is outside allowed change scope for lane ${lane.lane_id}`);
+  }
+  if (scopeBundle) {
+    const budget = scopeBundle.mutationScope.patchSizeBudget;
+    if (outputSurfaces.length > budget.maxFiles) {
+      errors.push(`worker output implies ${outputSurfaces.length} files but scope budget maxFiles is ${budget.maxFiles}`);
+    }
+    const outputHunks = (input.fragment_refs ?? []).length + (input.proof_refs ?? []).length + (input.artifact_refs ?? []).length;
+    if (outputHunks > budget.maxHunks) {
+      errors.push(`worker output implies ${outputHunks} artifact hunks but scope budget maxHunks is ${budget.maxHunks}`);
+    }
   }
   return errors;
 };

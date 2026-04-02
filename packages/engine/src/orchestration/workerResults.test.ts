@@ -150,4 +150,43 @@ describe('worker results', () => {
     expect(laneState.merge_ready_lanes).toEqual([]);
     expect(laneState.merge_readiness.not_merge_ready_lanes[0]?.reasons).toContain('pending protected-doc consolidation');
   });
+
+  it('rejects out-of-scope worker output paths when change-scope is declared', () => {
+    const plan = worksetPlan();
+    const errors = validateWorkerResultInput(plan, {
+      lane_id: 'lane-1',
+      task_ids: ['task-1'],
+      worker_type: 'codex-docs',
+      completion_status: 'completed',
+      summary: 'attempted out-of-scope emission',
+      blockers: [],
+      unresolved_items: [],
+      fragment_refs: [{ target_path: 'docs/commands/workers.md', fragment_path: '.playbook/orchestrator/workers/lane-1/worker-fragment.json' }],
+      proof_refs: [{ path: '.playbook/proofs/out-of-scope.json', kind: 'proof' }],
+      artifact_refs: []
+    }, {
+      changeScope: {
+        schemaVersion: '1.0',
+        kind: 'change-scope',
+        generatedAt: '1970-01-01T00:00:00.000Z',
+        bundles: [{
+          scopeId: 'scope-lane-1',
+          source: { command: 'workers launch-plan', artifactPath: '.playbook/worker-launch-plan.json' },
+          mutationScope: {
+            allowedFiles: ['.playbook/orchestrator/workers/lane-1/'],
+            patchSizeBudget: { maxFiles: 1, maxHunks: 2, maxAddedLines: 120, maxRemovedLines: 90 },
+            boundaryChecks: ['writes-must-stay-inside-allowedFiles']
+          },
+          expectedTests: [],
+          docsSurfaces: [],
+          rulesTouched: [],
+          riskLevel: 'low',
+          rationale: 'test',
+          provenanceRefs: []
+        }]
+      }
+    });
+
+    expect(errors).toContain('worker output path .playbook/proofs/out-of-scope.json is outside allowed change scope for lane lane-1');
+  });
 });

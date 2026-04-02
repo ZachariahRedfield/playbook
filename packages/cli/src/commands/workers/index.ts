@@ -18,6 +18,7 @@ import {
   WORKER_LAUNCH_PLAN_RELATIVE_PATH,
   WORKER_RESULTS_RELATIVE_PATH,
   type LaneStateArtifact,
+  type ChangeScopeArtifact,
   type WorksetPlanArtifact,
   type WorkerAssignmentsArtifact,
   type WorkerResultArtifactRef,
@@ -230,7 +231,8 @@ const runSubmit = async (cwd: string, options: WorkersOptions, worksetPlan: Work
   }
 
   const input = parseWorkerResultInput(cwd, options.from);
-  const validationErrors = validateWorkerResultInput(worksetPlan, input);
+  const changeScope = readJsonArtifact<ChangeScopeArtifact>(cwd, '.playbook/change-scope.json');
+  const validationErrors = validateWorkerResultInput(worksetPlan, input, { changeScope });
   if (validationErrors.length > 0) {
     printError(options, `playbook workers submit: ${validationErrors.join('; ')}`);
     return ExitCode.Failure;

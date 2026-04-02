@@ -149,6 +149,8 @@ declare module "@zachariahredfield/playbook-engine" {
   export const loadAiContract: (...args: any[]) => any;
   export const CHANGE_SCOPE_SCHEMA_VERSION: any;
   export const CHANGE_SCOPE_RELATIVE_PATH: '.playbook/change-scope.json';
+  export type ChangeScopeArtifact = any;
+  export type ChangeScopeBundle = any;
   export const buildChangeScopeBundleFromPlan: (...args: any[]) => any;
   export const buildChangeScopeBundleFromAnalyzePr: (...args: any[]) => any;
   export const buildChangeScopeBundleFromWorkerLaunchPlan: (...args: any[]) => any;

@@ -126,6 +126,10 @@ const reconcileOrchestrationRunState = (
           lane_id: laneId,
           status,
           blocker_refs: [...(launchLane?.blockers ?? [])].sort((left, right) => left.localeCompare(right)),
+          allowed_write_surfaces: [...(launchLane?.scopeBoundaries.allowed_write_surfaces ?? launchLane?.allowedWriteSurfaces ?? [])].sort((left, right) =>
+            left.localeCompare(right)
+          ),
+          scope_id: launchLane?.scopeBoundaries.scope_id ?? null,
           receipt_refs: [...(previousLane?.receipt_refs ?? [])].sort((left, right) => left.localeCompare(right)),
           worker_id: previousLane?.worker_id ?? (launchLane?.worker_id ?? null),
           started_at: previousLane?.started_at ?? null,

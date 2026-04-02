@@ -24,6 +24,12 @@ const launchPlanFixture = (overrides?: Partial<WorkerLaunchPlanArtifact['lanes']
     blockers: [],
     requiredCapabilities: ['worker-type:general'],
     allowedWriteSurfaces: ['packages/engine/src/execution/'],
+    scopeBoundaries: {
+      scope_id: null,
+      allowed_write_surfaces: ['packages/engine/src/execution/'],
+      blocked_surfaces: [],
+      patch_size_budget: null
+    },
     protectedSingletonImpact: { hasProtectedSingletonWork: false, targets: [], consolidationStage: 'not_applicable', unresolved: false },
     requiredReceipts: ['.playbook/workset-plan.json', '.playbook/lane-state.json', '.playbook/worker-assignments.json'],
     releaseReadyPreconditions: ['lane-readiness-and-dependencies-satisfied', 'required-receipts-recorded']
@@ -58,6 +64,8 @@ const runStateFixture = (launchPlan: WorkerLaunchPlanArtifact, status: Orchestra
       lane_id: 'lane-1',
       status: laneStatus,
       blocker_refs: [],
+      allowed_write_surfaces: ['packages/engine/src/execution/'],
+      scope_id: null,
       receipt_refs: ['execution-state:pb-exec-test:lane:lane-1:worker:worker-lane-1'],
       worker_id: 'worker-lane-1',
       started_at: '1970-01-01T00:00:00.000Z',

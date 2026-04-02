@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { ChangeScopeArtifact, ChangeScopeBundle, PatchSizeBudget } from '../changeScope.js';
 import type { LaneStateArtifact } from './laneState.js';
 import type { WorksetPlanArtifact } from './worksetPlan.js';
 import type { WorkerAssignmentsArtifact } from './workerAssignments.js';
@@ -24,6 +25,12 @@ export type WorkerLaunchPlanLane = {
   blockers: string[];
   requiredCapabilities: string[];
   allowedWriteSurfaces: string[];
+  scopeBoundaries: {
+    scope_id: string | null;
+    allowed_write_surfaces: string[];
+    blocked_surfaces: string[];
+    patch_size_budget: PatchSizeBudget | null;
+  };
   protectedSingletonImpact: {
     hasProtectedSingletonWork: boolean;
     targets: string[];
@@ -63,8 +70,21 @@ const PROTECTED_SINGLETON_DOCS = new Set([
 
 const VERIFY_RELATIVE_PATH = '.playbook/verify-report.json';
 const POLICY_EVALUATION_RELATIVE_PATH = '.playbook/policy-evaluation.json';
+const CHANGE_SCOPE_RELATIVE_PATH = '.playbook/change-scope.json';
 
 const uniqueSorted = (values: readonly string[]): string[] => [...new Set(values)].filter(Boolean).sort((a, b) => a.localeCompare(b));
+const normalizePath = (value: string): string => value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '');
+const pathWithinAllowedSurface = (target: string, allowedSurface: string): boolean => {
+  const normalizedTarget = normalizePath(target);
+  const normalizedAllowed = normalizePath(allowedSurface);
+  if (normalizedAllowed.endsWith('/')) return normalizedTarget.startsWith(normalizedAllowed);
+  return normalizedTarget === normalizedAllowed;
+};
+
+const selectWorkersChangeScopeBundle = (artifact: ChangeScopeArtifact | undefined): ChangeScopeBundle | undefined =>
+  artifact?.bundles
+    ?.filter((bundle) => bundle.source.command === 'workers launch-plan')
+    .sort((left, right) => left.scopeId.localeCompare(right.scopeId))[0];
 
 const readJsonIfPresent = <T>(cwd: string, relativePath: string): T | undefined => {
   const absolutePath = path.join(cwd, relativePath);
@@ -118,6 +138,8 @@ export const buildWorkerLaunchPlan = (
 
   const verify = readJsonIfPresent<VerifyArtifact>(cwd, VERIFY_RELATIVE_PATH);
   const policy = readJsonIfPresent<PolicyEvaluationArtifact>(cwd, POLICY_EVALUATION_RELATIVE_PATH);
+  const changeScope = readJsonIfPresent<ChangeScopeArtifact>(cwd, CHANGE_SCOPE_RELATIVE_PATH);
+  const scopeBundle = selectWorkersChangeScopeBundle(changeScope);
   const repoVerifyBlockers = verifyBlockers(verify);
   const repoPolicyBlockers = policyBlockers(policy);
 
@@ -164,15 +186,31 @@ export const buildWorkerLaunchPlan = (
         ...((worksetLane?.expected_surfaces ?? []).filter((surface) => !PROTECTED_SINGLETON_DOCS.has(surface))),
         ...(hasProtectedSingletonWork ? [`.playbook/orchestrator/workers/${laneStateEntry.lane_id}/`] : [])
       ]);
+      const scopedAllowedWriteSurfaces = scopeBundle
+        ? allowedWriteSurfaces.filter((surface) => scopeBundle.mutationScope.allowedFiles.some((allowed) => pathWithinAllowedSurface(surface, allowed)))
+        : allowedWriteSurfaces;
+      const blockedSurfaces = scopeBundle ? allowedWriteSurfaces.filter((surface) => !scopedAllowedWriteSurfaces.includes(surface)) : [];
+      const scopeBudget = scopeBundle?.mutationScope.patchSizeBudget ?? null;
+      const laneScopeBlockers = uniqueSorted([
+        ...(blockedSurfaces.length > 0 ? blockedSurfaces.map((surface) => `scope:outside-change-scope:${surface}`) : []),
+        ...(scopeBudget && allowedWriteSurfaces.length > scopeBudget.maxFiles ? [`scope:allowed-surfaces-exceed-budget:maxFiles:${scopeBudget.maxFiles}`] : [])
+      ]);
+      const laneBlockers = uniqueSorted([...blockers, ...laneScopeBlockers]);
 
       return {
         lane_id: laneStateEntry.lane_id,
         worker_id: worker?.worker_id ?? null,
         worker_type: worker?.worker_type ?? null,
-        launchEligible: blockers.length === 0,
-        blockers,
+        launchEligible: laneBlockers.length === 0,
+        blockers: laneBlockers,
         requiredCapabilities: requiredCapabilitiesForLane(worker?.worker_type ?? null, hasProtectedSingletonWork),
-        allowedWriteSurfaces,
+        allowedWriteSurfaces: scopedAllowedWriteSurfaces,
+        scopeBoundaries: {
+          scope_id: scopeBundle?.scopeId ?? null,
+          allowed_write_surfaces: scopedAllowedWriteSurfaces,
+          blocked_surfaces: blockedSurfaces,
+          patch_size_budget: scopeBudget
+        },
         protectedSingletonImpact: {
           hasProtectedSingletonWork,
           targets: protectedTargets,

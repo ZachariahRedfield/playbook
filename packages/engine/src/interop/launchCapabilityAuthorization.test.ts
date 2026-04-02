@@ -29,6 +29,12 @@ const launchPlanFixture = (requiredCapabilities: string[]): WorkerLaunchPlanArti
       blockers: [],
       requiredCapabilities,
       allowedWriteSurfaces: [],
+      scopeBoundaries: {
+        scope_id: null,
+        allowed_write_surfaces: [],
+        blocked_surfaces: [],
+        patch_size_budget: null
+      },
       protectedSingletonImpact: {
         hasProtectedSingletonWork: false,
         targets: [],

@@ -86,6 +86,12 @@ const launchPlanFixture = (): WorkerLaunchPlanArtifact => ({
       blockers: [],
       requiredCapabilities: [],
       allowedWriteSurfaces: [],
+      scopeBoundaries: {
+        scope_id: null,
+        allowed_write_surfaces: [],
+        blocked_surfaces: [],
+        patch_size_budget: null
+      },
       protectedSingletonImpact: { hasProtectedSingletonWork: false, targets: [], consolidationStage: 'not_applicable', unresolved: false },
       requiredReceipts: [],
       releaseReadyPreconditions: []
@@ -98,6 +104,12 @@ const launchPlanFixture = (): WorkerLaunchPlanArtifact => ({
       blockers: ['lane:dependency blocked'],
       requiredCapabilities: [],
       allowedWriteSurfaces: [],
+      scopeBoundaries: {
+        scope_id: null,
+        allowed_write_surfaces: [],
+        blocked_surfaces: [],
+        patch_size_budget: null
+      },
       protectedSingletonImpact: { hasProtectedSingletonWork: false, targets: [], consolidationStage: 'not_applicable', unresolved: false },
       requiredReceipts: [],
       releaseReadyPreconditions: []

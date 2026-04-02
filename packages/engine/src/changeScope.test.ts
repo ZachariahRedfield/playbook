@@ -105,6 +105,12 @@ describe('change scope bundles', () => {
           blockers: ['verify:PB001'],
           requiredCapabilities: [],
           allowedWriteSurfaces: ['packages/engine/src/changeScope.ts'],
+          scopeBoundaries: {
+            scope_id: null,
+            allowed_write_surfaces: ['packages/engine/src/changeScope.ts'],
+            blocked_surfaces: [],
+            patch_size_budget: null
+          },
           protectedSingletonImpact: { hasProtectedSingletonWork: false, targets: [], consolidationStage: 'not_applicable', unresolved: false },
           requiredReceipts: [],
           releaseReadyPreconditions: []
