@@ -137,9 +137,9 @@ Do not hand-edit entries inside the managed markers.
 - CSIA overlay note: `pnpm playbook patterns csia --json` is the canonical read-only machine-readable overlay for CSIA mappings; it must not mutate doctrine or expand the Minimum Cognitive Core.
 - `status proof` is the canonical external-consumer bootstrap proof surface for proving runtime + CLI + docs/artifact + execution/governance readiness in one read-only flow. It now also reads existing parallel-work artifacts (`lane-state`, `worker-results`, `docs-consolidation-plan`, and guarded-apply outcomes) to emit one compact operator brief while keeping required automation truth in the canonical `proof` payload and deterministic additive detail in JSON, including failure-domain ownership fields (`failureDomains`, `primaryFailureDomain`, `domainBlockers`, `domainNextActions`) mapped to canonical domains (`contract_validation`, `runtime_execution`, `ci_bootstrap`, `sync_drift`, `governance_planning`) plus additive continuity/evidence summary fields under `continuity`.
 - Enforcement note: `status proof` is report-first (exit 0 for readable proof state), while `status proof --proof-gate` enables fail-closed bootstrap/readiness gating semantics.
-- Rule: Proof reporting and proof enforcement are separate contracts.
-- Pattern: Render proof state first, apply enforcement policy second.
-- Failure Mode: Deriving proof exit code directly from `proof.ok` collapses operator status and enforcement behavior into one path and makes tests fail in opposite directions.
+- Rule: Proof report mode and proof enforcement mode are separate CLI contracts.
+- Pattern: Render proof state first, then apply policy-specific exit behavior.
+- Failure Mode: Using `proof.ok` as the sole exit-code source breaks report mode and gate mode in opposite ways.
 - Rule: Local proof status reporting and proof enforcement are separate contracts even when bootstrap enforcement already passes through another caller path.
 - Pattern: Fix the shared local command surface after a specialized external caller turns green.
 - Failure Mode: Passing bootstrap enforcement can mask that `runStatus` still hardwires `proof.ok` to process exit behavior.

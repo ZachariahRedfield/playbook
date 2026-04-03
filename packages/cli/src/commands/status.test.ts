@@ -773,7 +773,13 @@ describe('runStatus', () => {
       }
     });
 
-    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'json', quiet: false, scope: 'proof' });
+    const exitCode = await runStatus(process.cwd(), {
+      ci: false,
+      format: 'json',
+      quiet: false,
+      scope: 'proof',
+      proofPolicy: 'report'
+    });
     expect(exitCode).toBe(ExitCode.Success);
 
     const payload = JSON.parse(logSpy.mock.calls.map((call) => String(call[0])).join('\n'));
@@ -1080,7 +1086,13 @@ describe('runStatus', () => {
       domainNextActions: [{ domain: 'sync_drift', action: 'Inspect .playbook/policy-apply-result.json blocked/failed entries, resolve guard conflicts, then rerun `pnpm playbook apply --json`.' }]
     });
 
-    const exitCode = await runStatus(process.cwd(), { ci: false, format: 'text', quiet: false, scope: 'proof' });
+    const exitCode = await runStatus(process.cwd(), {
+      ci: false,
+      format: 'text',
+      quiet: false,
+      scope: 'proof',
+      proofPolicy: 'report'
+    });
 
     expect(exitCode).toBe(ExitCode.Success);
     const output = String(logSpy.mock.calls[0]?.[0]);
