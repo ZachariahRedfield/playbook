@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/session-evidence.schema.json",
+  "title": "Playbook Session Evidence",
+  "description": "Deterministic repo-scoped session and evidence envelope contract synthesized from canonical workflow artifacts without widening mutation authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "session_id",
+    "active_command_lineage",
+    "pinned_refs",
+    "approval_governance_refs",
+    "latest_receipt_refs",
+    "plan_refs",
+    "run_refs",
+    "source_artifact_fingerprints",
+    "invalidation",
+    "authority"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-session-evidence" },
+    "session_id": { "type": "string", "minLength": 1 },
+    "active_command_lineage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["order", "stage", "artifact", "present"],
+        "properties": {
+          "order": { "type": "integer", "minimum": 1 },
+          "stage": { "enum": ["session", "proposal_generation", "policy_evaluation", "pr_review", "execution_result"] },
+          "artifact": { "type": "string", "minLength": 1 },
+          "present": { "type": "boolean" }
+        }
+      }
+    },
+    "pinned_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findings", "plans", "runs", "artifacts"],
+      "properties": {
+        "findings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "plans": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "runs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "artifacts": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "approval_governance_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifact", "present"],
+        "properties": {
+          "artifact": { "type": "string", "minLength": 1 },
+          "present": { "type": "boolean" }
+        }
+      }
+    },
+    "latest_receipt_refs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "plan_refs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "run_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["run_id", "artifact", "fingerprint"],
+        "properties": {
+          "run_id": { "type": "string", "minLength": 1 },
+          "artifact": { "type": "string", "minLength": 1 },
+          "fingerprint": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "source_artifact_fingerprints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifact", "present", "fingerprint"],
+        "properties": {
+          "artifact": { "type": "string", "minLength": 1 },
+          "present": { "type": "boolean" },
+          "fingerprint": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "previous_input_fingerprint", "current_input_fingerprint", "drifted_sources", "stale_reasons"],
+      "properties": {
+        "state": { "enum": ["fresh", "drifted"] },
+        "previous_input_fingerprint": { "type": ["string", "null"] },
+        "current_input_fingerprint": { "type": "string", "minLength": 1 },
+        "drifted_sources": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "stale_reasons": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "execution"],
+      "properties": {
+        "mutation": { "const": "read-only" },
+        "execution": { "const": "unchanged" }
+      }
+    }
+  }
+}

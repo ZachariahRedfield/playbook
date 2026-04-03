@@ -895,7 +895,19 @@ export {
   writeOrchestrationExecutionRun,
   listOrchestrationExecutionRuns
 } from './execution/orchestrationRunState.js';
-export { initializeSession, readSession, updateSession, pinSessionArtifact, clearSession, resumeSession, attachSessionRunState, sessionArtifactPath, SESSION_ARTIFACT_RELATIVE_PATH } from './session/sessionStore.js';
+export {
+  initializeSession,
+  readSession,
+  updateSession,
+  pinSessionArtifact,
+  clearSession,
+  resumeSession,
+  attachSessionRunState,
+  sessionArtifactPath,
+  sessionEvidenceArtifactPath,
+  SESSION_ARTIFACT_RELATIVE_PATH,
+  SESSION_EVIDENCE_ARTIFACT_RELATIVE_PATH
+} from './session/sessionStore.js';
 export { appendExecutionStep, completeExecutionRun, recordExecutionFailure } from './execution/updateExecutionRun.js';
 export { writeExecutionRun, readExecutionRun, listExecutionRuns, getLatestMutableRun, executionRunPath } from './execution/writeExecutionRun.js';
 

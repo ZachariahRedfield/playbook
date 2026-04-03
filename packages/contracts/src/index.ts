@@ -27,6 +27,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   cycleHistory: 'packages/contracts/src/cycle-history.schema.json',
   memoryIndex: 'packages/contracts/src/memory-index.schema.json',
   memoryEvent: 'packages/contracts/src/memory-event.schema.json',
+  sessionEvidence: 'packages/contracts/src/session-evidence.schema.json',
   sessionEvidenceEnvelope: 'packages/contracts/src/session-evidence-envelope.schema.json',
   sessionReplayEvidence: 'packages/contracts/src/session-replay-evidence.schema.json',
   replayCandidates: 'packages/contracts/src/replay-candidates.schema.json',
