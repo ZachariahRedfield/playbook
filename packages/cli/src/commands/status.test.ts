@@ -1088,8 +1088,11 @@ describe('runStatus', () => {
 
     expect(reportExit).toBe(ExitCode.Success);
     expect(enforceExit).toBe(ExitCode.Failure);
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0])).mode).toBe('proof');
-    expect(JSON.parse(String(logSpy.mock.calls[1]?.[0])).mode).toBe('proof');
+    const reportPayload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    const enforcePayload = JSON.parse(String(logSpy.mock.calls[1]?.[0]));
+    expect(reportPayload.mode).toBe('proof');
+    expect(enforcePayload.mode).toBe('proof');
+    expect(enforcePayload).toEqual(reportPayload);
 
     logSpy.mockRestore();
   });

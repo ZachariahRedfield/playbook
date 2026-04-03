@@ -143,6 +143,9 @@ Do not hand-edit entries inside the managed markers.
 - Rule: `proofPolicy` must be implemented at the exit-decision boundary, not only in tests/callers.
 - Pattern: Add policy fields to the runtime command contract before relying on them in tests.
 - Failure Mode: Adding `proofPolicy` to tests before adding it to `StatusOptions` and `runStatus` creates clustered proof-mode failures that look broader than they are.
+- Rule: `proofPolicy` is an exit-decision contract, not a payload-shape contract.
+- Pattern: Keep proof serialization invariant; vary only final exit behavior.
+- Failure Mode: Returning exit code from `proof.ok` inside payload construction prevents report/enforce policy splits.
 - Rule: Local proof status reporting and proof enforcement are separate contracts even when bootstrap enforcement already passes through another caller path.
 - Pattern: Fix the shared local command surface after a specialized external caller turns green.
 - Failure Mode: Passing bootstrap enforcement can mask that `runStatus` still hardwires `proof.ok` to process exit behavior.
