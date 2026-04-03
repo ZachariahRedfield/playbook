@@ -146,6 +146,9 @@ Do not hand-edit entries inside the managed markers.
 - Rule: `proofPolicy` is an exit-decision contract, not a payload-shape contract.
 - Pattern: Keep proof serialization invariant; vary only final exit behavior.
 - Failure Mode: Leaving `proof.ok` as the exit source inside proof result construction prevents report/enforce split and default-report behavior from working.
+- Rule: Policy-aware CLI behavior must be introduced at the runtime command boundary before or alongside test expansion.
+- Pattern: Keep proof serialization invariant and move policy selection to the final exit boundary.
+- Failure Mode: Branch tests can outrun branch implementation while main still reflects the older contract, producing misleading “many failures” noise from one missing seam.
 - Rule: Local proof status reporting and proof enforcement are separate contracts even when bootstrap enforcement already passes through another caller path.
 - Pattern: Fix the shared local command surface after a specialized external caller turns green.
 - Failure Mode: Passing bootstrap enforcement can mask that `runStatus` still hardwires `proof.ok` to process exit behavior.
