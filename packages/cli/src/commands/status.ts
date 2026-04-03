@@ -53,6 +53,7 @@ type StatusOptions = {
   format: 'text' | 'json';
   quiet: boolean;
   scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated' | 'proof';
+  enforceProofGate?: boolean;
   proofGate?: boolean;
 };
 
@@ -588,6 +589,8 @@ const resolveProofExitCode = (result: StatusProofResult, options?: { enforceGate
   return hasRenderableProofContract(result) ? ExitCode.Success : ExitCode.Failure;
 };
 
+const shouldEnforceProofGate = (options: StatusOptions): boolean => options.enforceProofGate ?? options.proofGate ?? false;
+
 const toUpdatedStateStatusResult = (cwd: string): { result: StatusUpdatedStateResult; exitCode: ExitCode } => {
   const { fleet, queue, executionPlan, receipt } = computeReceipt(cwd);
   const updatedState = buildFleetUpdatedAdoptionState(executionPlan, queue, fleet, receipt);
@@ -796,7 +799,7 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
           }]
         }));
       }
-      return resolveProofExitCode(proofResult, { enforceGate: options.proofGate });
+      return resolveProofExitCode(proofResult, { enforceGate: shouldEnforceProofGate(options) });
     }
 
     if (options.scope === 'updated') {

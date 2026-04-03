@@ -881,7 +881,7 @@ describe('runStatus', () => {
       format: 'json',
       quiet: false,
       scope: 'proof',
-      proofGate: true
+      enforceProofGate: true
     });
 
     expect(exitCode).toBe(ExitCode.Failure);
@@ -946,7 +946,7 @@ describe('runStatus', () => {
       format: 'text',
       quiet: false,
       scope: 'proof',
-      proofGate: true
+      enforceProofGate: true
     });
 
     expect(exitCode).toBe(ExitCode.Failure);
