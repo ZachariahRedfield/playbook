@@ -140,9 +140,9 @@ Do not hand-edit entries inside the managed markers.
 - Rule: Proof report mode and proof enforcement mode are separate CLI contracts.
 - Pattern: Render proof state first, then apply policy-specific exit behavior.
 - Failure Mode: Using `proof.ok` as the sole exit-code source breaks report mode and gate mode in opposite ways.
-- Rule: `proofPolicy` must be implemented at the command boundary where exit behavior is decided.
+- Rule: `proofPolicy` must be implemented at the exit-decision boundary, not only in tests/callers.
 - Pattern: Add policy fields to the runtime command contract before relying on them in tests.
-- Failure Mode: Tests and callers can move to multi-policy behavior while implementation remains single-policy, causing clustered proof-mode failures.
+- Failure Mode: Adding `proofPolicy` to tests before adding it to `StatusOptions` and `runStatus` creates clustered proof-mode failures that look broader than they are.
 - Rule: Local proof status reporting and proof enforcement are separate contracts even when bootstrap enforcement already passes through another caller path.
 - Pattern: Fix the shared local command surface after a specialized external caller turns green.
 - Failure Mode: Passing bootstrap enforcement can mask that `runStatus` still hardwires `proof.ok` to process exit behavior.
