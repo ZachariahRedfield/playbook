@@ -364,6 +364,7 @@ const commandRunners: Record<
   status: async ({ cwd, ci, format, quiet, commandArgs }) => {
     const { runStatus } = await import("./status.js");
     const scopeArg = commandArgs.find((arg) => !arg.startsWith("-"));
+    const proofGate = parseFlag(commandArgs, "--proof-gate");
     const scope =
       scopeArg === "fleet"
         ? "fleet"
@@ -378,7 +379,7 @@ const commandRunners: Record<
                 : scopeArg === "proof"
                   ? "proof"
                   : "repo";
-    return runStatus(cwd, { ci, format, quiet, scope });
+    return runStatus(cwd, { ci, format, quiet, scope, proofGate });
   },
   upgrade: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {
     const { runUpgrade } = await import("./upgrade.js");

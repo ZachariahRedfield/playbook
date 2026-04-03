@@ -828,6 +828,71 @@ describe('runStatus', () => {
     logSpy.mockRestore();
   });
 
+  it('fails closed for proof scope when explicit proof gate enforcement is enabled', async () => {
+    const { runStatus } = await import('./status.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    runBootstrapProof.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'playbook-bootstrap-proof',
+      repo_root: '/tmp/proof-repo',
+      command: 'status',
+      mode: 'proof',
+      ok: false,
+      current_state: 'execution_state_blocked',
+      highest_priority_next_action: 'Generate missing execution-state artifacts.',
+      summary: {
+        current_state: 'Execution state artifacts are missing.',
+        why: 'policy apply result is missing',
+        what_next: 'Run `pnpm playbook apply --json`.'
+      },
+      diagnostics: {
+        failing_stage: 'execution-state',
+        failing_category: 'required_execution_state_missing',
+        checks: []
+      }
+    });
+    readProofParallelWorkSummary.mockReturnValue({
+      decision: 'parallel_clear',
+      status: 'parallel integration clear',
+      affected_surfaces: [],
+      blockers: [],
+      next_action: 'none',
+      counts: { pending: 0, blocked: 0, plan_ready: 0, guard_conflicted: 0, merge_ready: 0 },
+      scope: { present: 0, missing: 0, violated: 0, clean: 0, violated_files: [], budget_status: 'unknown' },
+      artifacts: {
+        lane_state: { available: false, path: '.playbook/lane-state.json' },
+        worker_results: { available: false, path: '.playbook/worker-results.json' },
+        docs_consolidation_plan: { available: false, path: '.playbook/docs-consolidation-plan.json' },
+        guarded_apply: { available: false, path: '.playbook/policy-apply-result.json' },
+        execution_outcome_input: { available: false, path: '.playbook/execution-outcome-input.json' }
+      },
+      details: {
+        lane_state: { available: false, blocked_lanes: [], merge_ready_lanes: [], pending_lanes: [], plan_ready_lanes: [] },
+        worker_results: { available: false, in_progress_lanes: [], blocked_lanes: [], completed_lanes: [] },
+        docs_consolidation_plan: { available: false, executable_targets: 0, excluded_targets: 0, target_docs: [], excluded_targets_by_doc: [] },
+        guarded_apply: { available: false, executed: 0, skipped_requires_review: 0, skipped_blocked: [], failed_execution: [] },
+        scope: { over_budget_prompts: 0, prompts_with_scope: 0, prompts_missing_scope: 0 }
+      }
+    });
+
+    const exitCode = await runStatus(process.cwd(), {
+      ci: false,
+      format: 'json',
+      quiet: false,
+      scope: 'proof',
+      proofGate: true
+    });
+
+    expect(exitCode).toBe(ExitCode.Failure);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.mode).toBe('proof');
+    expect(payload.proof.ok).toBe(false);
+    expect(payload.parallel_work.decision).toBe('parallel_clear');
+
+    logSpy.mockRestore();
+  });
+
   it('renders proof text as a compact operator brief for parallel work state', async () => {
     const { runStatus } = await import('./status.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

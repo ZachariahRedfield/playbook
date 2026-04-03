@@ -53,6 +53,7 @@ type StatusOptions = {
   format: 'text' | 'json';
   quiet: boolean;
   scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated' | 'proof';
+  proofGate?: boolean;
 };
 
 type StatusResult = {
@@ -554,7 +555,10 @@ const readContinuitySummary = (cwd: string): StatusProofResult['continuity'] => 
   };
 };
 
-const toProofStatusResult = (cwd: string): { result: StatusProofResult; exitCode: ExitCode } => {
+const toProofStatusResult = (
+  cwd: string,
+  options?: { enforceGate?: boolean }
+): { result: StatusProofResult; exitCode: ExitCode } => {
   const proof = runBootstrapProof(cwd, { cliResolutionCommands: bootstrapCliResolutionCommands() });
   const parallelWork = readProofParallelWorkSummary(cwd);
   const failureDomainSummary = classifyProofFailureDomains(proof, parallelWork);
@@ -564,6 +568,7 @@ const toProofStatusResult = (cwd: string): { result: StatusProofResult; exitCode
     proof.current_state.trim().length > 0 &&
     typeof parallelWork.status === 'string' &&
     parallelWork.status.trim().length > 0;
+  const enforceGate = options?.enforceGate ?? false;
   return {
     result: {
       schemaVersion: '1.0',
@@ -578,7 +583,9 @@ const toProofStatusResult = (cwd: string): { result: StatusProofResult; exitCode
       continuity,
       interpretation: buildProofInterpretation(proof)
     },
-    exitCode: hasReadableProofState ? ExitCode.Success : ExitCode.Failure
+    exitCode: enforceGate
+      ? (proof.ok ? ExitCode.Success : ExitCode.Failure)
+      : (hasReadableProofState ? ExitCode.Success : ExitCode.Failure)
   };
 };
 
@@ -742,7 +749,7 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
     }
 
     if (options.scope === 'proof') {
-      const { result: proofResult, exitCode } = toProofStatusResult(cwd);
+      const { result: proofResult, exitCode } = toProofStatusResult(cwd, { enforceGate: options.proofGate });
       if (options.format === 'json') {
         console.log(JSON.stringify(proofResult, null, 2));
       } else {
