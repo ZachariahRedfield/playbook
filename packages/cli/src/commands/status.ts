@@ -577,17 +577,11 @@ const toProofStatusResult = (cwd: string): StatusProofResult => {
   };
 };
 
-const hasRenderableProofContract = (result: StatusProofResult): boolean =>
-  typeof result.proof.current_state === 'string' &&
-  result.proof.current_state.trim().length > 0 &&
-  typeof result.parallel_work.status === 'string' &&
-  result.parallel_work.status.trim().length > 0;
-
 const resolveProofExitCode = (result: StatusProofResult, proofPolicy: ProofPolicy): ExitCode => {
   if (proofPolicy === 'enforce') {
     return result.proof.ok ? ExitCode.Success : ExitCode.Failure;
   }
-  return hasRenderableProofContract(result) ? ExitCode.Success : ExitCode.Failure;
+  return ExitCode.Success;
 };
 
 const resolveProofPolicy = (options: StatusOptions): ProofPolicy => options.proofPolicy ?? 'report';
