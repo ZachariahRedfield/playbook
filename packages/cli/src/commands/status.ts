@@ -53,8 +53,10 @@ type StatusOptions = {
   format: 'text' | 'json';
   quiet: boolean;
   scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated' | 'proof';
-  proofPolicy?: 'report' | 'enforce';
+  proofPolicy?: ProofPolicy;
 };
+
+type ProofPolicy = 'report' | 'enforce';
 
 type StatusResult = {
   schemaVersion: '1.0';
@@ -581,14 +583,14 @@ const hasRenderableProofContract = (result: StatusProofResult): boolean =>
   typeof result.parallel_work.status === 'string' &&
   result.parallel_work.status.trim().length > 0;
 
-const resolveProofExitCode = (result: StatusProofResult, proofPolicy: 'report' | 'enforce'): ExitCode => {
+const resolveProofExitCode = (result: StatusProofResult, proofPolicy: ProofPolicy): ExitCode => {
   if (proofPolicy === 'enforce') {
     return result.proof.ok ? ExitCode.Success : ExitCode.Failure;
   }
   return hasRenderableProofContract(result) ? ExitCode.Success : ExitCode.Failure;
 };
 
-const resolveProofPolicy = (options: StatusOptions): 'report' | 'enforce' => options.proofPolicy ?? 'report';
+const resolveProofPolicy = (options: StatusOptions): ProofPolicy => options.proofPolicy ?? 'report';
 
 const toUpdatedStateStatusResult = (cwd: string): { result: StatusUpdatedStateResult; exitCode: ExitCode } => {
   const { fleet, queue, executionPlan, receipt } = computeReceipt(cwd);
