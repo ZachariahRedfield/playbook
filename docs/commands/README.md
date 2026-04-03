@@ -140,6 +140,9 @@ Do not hand-edit entries inside the managed markers.
 - Rule: Proof reporting and proof enforcement are separate contracts.
 - Pattern: Render proof state first, apply enforcement policy second.
 - Failure Mode: Deriving proof exit code directly from `proof.ok` collapses operator status and enforcement behavior into one path and makes tests fail in opposite directions.
+- Rule: Local proof status reporting and proof enforcement are separate contracts even when bootstrap enforcement already passes through another caller path.
+- Pattern: Fix the shared local command surface after a specialized external caller turns green.
+- Failure Mode: Passing bootstrap enforcement can mask that `runStatus` still hardwires `proof.ok` to process exit behavior.
 - Rule: Status proof mode must preserve additive-safe enrichment even when the base status envelope is valid.
 - Pattern: Separate “state is bad” from “command failed” so status proof can report blocked/conflicted operator states without turning readable state into a command execution failure.
 - Failure Mode: Returning a base status envelope before proof enrichment causes contract shrinkage and incorrect non-zero exits in operator brief rendering paths.
