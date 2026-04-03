@@ -8,6 +8,7 @@ import {
   summarizeGraphNeighborhood,
   summarizeRepositoryGraph
 } from '../src/graph/repoGraph.js';
+import { inferArchitectureRoles } from '../src/graph/architectureRoleInference.js';
 import type { RepositoryIndex } from '../src/indexer/repoIndexer.js';
 
 const createRepo = (name: string): string => fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
@@ -82,8 +83,66 @@ describe('repository graph', () => {
       topDependencyHubs: [
         { module: 'auth', incomingDependencies: 1 },
         { module: 'workouts', incomingDependencies: 0 }
+      ],
+      architectureRoleInference: {
+        schemaVersion: '1.0',
+        roles: [
+          {
+            module: 'auth',
+            role: 'foundation',
+            evidence: { incomingDependencies: 1, outgoingDependencies: 0, dependencyDirection: 'inbound' }
+          },
+          {
+            module: 'workouts',
+            role: 'interface',
+            evidence: { incomingDependencies: 0, outgoingDependencies: 1, dependencyDirection: 'outbound' }
+          }
+        ]
+      }
+    });
+  });
+
+
+  it('infers deterministic architecture roles from dependency direction and structural position', () => {
+    const roleFixtureIndex: RepositoryIndex = {
+      ...sampleIndex,
+      modules: [
+        { name: 'adapter', dependencies: [] },
+        { name: 'foundation', dependencies: [] },
+        { name: 'interface', dependencies: ['orchestration'] },
+        { name: 'orchestration', dependencies: ['foundation'] }
+      ]
+    };
+
+    const graph = generateRepositoryGraph(roleFixtureIndex, new Date('2026-01-01T00:00:00.000Z'));
+
+    expect(inferArchitectureRoles(graph)).toEqual({
+      schemaVersion: '1.0',
+      roles: [
+        {
+          module: 'adapter',
+          role: 'adapter',
+          evidence: { incomingDependencies: 0, outgoingDependencies: 0, dependencyDirection: 'isolated' }
+        },
+        {
+          module: 'foundation',
+          role: 'foundation',
+          evidence: { incomingDependencies: 1, outgoingDependencies: 0, dependencyDirection: 'inbound' }
+        },
+        {
+          module: 'interface',
+          role: 'interface',
+          evidence: { incomingDependencies: 0, outgoingDependencies: 1, dependencyDirection: 'outbound' }
+        },
+        {
+          module: 'orchestration',
+          role: 'orchestration',
+          evidence: { incomingDependencies: 1, outgoingDependencies: 1, dependencyDirection: 'bidirectional' }
+        }
       ]
     });
+
+    expect(inferArchitectureRoles(graph)).toEqual(inferArchitectureRoles(graph));
   });
 
   it('returns deterministic neighborhood summaries for module nodes', () => {

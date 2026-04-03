@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { RepositoryIndex } from '../indexer/repoIndexer.js';
 import { readJsonArtifact } from '../artifacts/artifactIO.js';
+import { inferArchitectureRoles, type ArchitectureRoleInferenceSummary } from './architectureRoleInference.js';
 
 export type RepositoryGraphNodeKind = 'module' | 'repository' | 'rule';
 export type RepositoryGraphEdgeKind = 'contains' | 'depends_on' | 'governed_by';
@@ -50,6 +51,7 @@ export type RepositoryGraphSummary = {
     module: string;
     incomingDependencies: number;
   }>;
+  architectureRoleInference: ArchitectureRoleInferenceSummary;
 };
 
 const GRAPH_RELATIVE_PATH = '.playbook/repo-graph.json' as const;
@@ -202,7 +204,8 @@ export const summarizeRepositoryGraph = (graph: RepositoryGraph): RepositoryGrap
     stats: canonicalStats,
     nodeKinds: toSortedUnique(graph.nodes.map((node) => node.kind)),
     edgeKinds: toSortedUnique(graph.edges.map((edge) => edge.kind)),
-    topDependencyHubs
+    topDependencyHubs,
+    architectureRoleInference: inferArchitectureRoles(graph)
   };
 };
 

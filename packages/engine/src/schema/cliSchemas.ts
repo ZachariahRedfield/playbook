@@ -348,7 +348,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           graph: {
             type: 'object',
             additionalProperties: false,
-            required: ['schemaVersion', 'kind', 'stats', 'nodeKinds', 'edgeKinds', 'topDependencyHubs'],
+            required: ['schemaVersion', 'kind', 'stats', 'nodeKinds', 'edgeKinds', 'topDependencyHubs', 'architectureRoleInference'],
             properties: {
               schemaVersion: { const: '1.1' },
               kind: { const: 'playbook-repo-graph' },
@@ -397,6 +397,36 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
                   properties: {
                     module: { type: 'string' },
                     incomingDependencies: { type: 'integer' }
+                  }
+                }
+              },
+              architectureRoleInference: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['schemaVersion', 'roles'],
+                properties: {
+                  schemaVersion: { const: '1.0' },
+                  roles: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      required: ['module', 'role', 'evidence'],
+                      properties: {
+                        module: { type: 'string' },
+                        role: { enum: ['interface', 'orchestration', 'foundation', 'adapter'] },
+                        evidence: {
+                          type: 'object',
+                          additionalProperties: false,
+                          required: ['incomingDependencies', 'outgoingDependencies', 'dependencyDirection'],
+                          properties: {
+                            incomingDependencies: { type: 'integer' },
+                            outgoingDependencies: { type: 'integer' },
+                            dependencyDirection: { enum: ['inbound', 'outbound', 'bidirectional', 'isolated'] }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }

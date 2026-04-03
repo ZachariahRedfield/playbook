@@ -61,7 +61,22 @@ describe('runGraph', () => {
         topDependencyHubs: [
           { module: 'auth', incomingDependencies: 1 },
           { module: 'workouts', incomingDependencies: 0 }
-        ]
+        ],
+        architectureRoleInference: {
+          schemaVersion: '1.0',
+          roles: [
+            {
+              module: 'auth',
+              role: 'foundation',
+              evidence: { incomingDependencies: 1, outgoingDependencies: 0, dependencyDirection: 'inbound' }
+            },
+            {
+              module: 'workouts',
+              role: 'interface',
+              evidence: { incomingDependencies: 0, outgoingDependencies: 1, dependencyDirection: 'outbound' }
+            }
+          ]
+        }
       }
     });
 

@@ -69,6 +69,8 @@ export type {
   PlaybookIgnoreApplyResult
 } from './indexer/playbookIgnore.js';
 export { generateRepositoryGraph, readRepositoryGraph, summarizeRepositoryGraph, summarizeGraphNeighborhood, REPOSITORY_GRAPH_RELATIVE_PATH, REPOSITORY_GRAPH_SCHEMA_VERSION } from './graph/repoGraph.js';
+export { inferArchitectureRoles, ARCHITECTURE_ROLE_INFERENCE_SCHEMA_VERSION } from './graph/architectureRoleInference.js';
+export type { ArchitectureRole, ArchitectureRoleInferenceRecord, ArchitectureRoleInferenceSummary } from './graph/architectureRoleInference.js';
 export { buildModuleContextDigests, writeModuleContextDigests, readModuleContextDigest, MODULE_CONTEXT_DIR_RELATIVE_PATH } from './context/moduleContext.js';
 export { buildModuleDigestsArtifact, writeModuleDigestsArtifact, readModuleDigestsArtifact, readModuleDigest, MODULE_DIGESTS_RELATIVE_PATH, MODULE_DIGESTS_SCHEMA_VERSION } from './context/moduleDigests.js';
 
