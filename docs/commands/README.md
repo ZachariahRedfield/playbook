@@ -138,7 +138,7 @@ Do not hand-edit entries inside the managed markers.
 - `status proof` is the canonical external-consumer bootstrap proof surface for proving runtime + CLI + docs/artifact + execution/governance readiness in one read-only flow. It now also reads existing parallel-work artifacts (`lane-state`, `worker-results`, `docs-consolidation-plan`, and guarded-apply outcomes) to emit one compact operator brief while keeping required automation truth in the canonical `proof` payload and deterministic additive detail in JSON, including failure-domain ownership fields (`failureDomains`, `primaryFailureDomain`, `domainBlockers`, `domainNextActions`) mapped to canonical domains (`contract_validation`, `runtime_execution`, `ci_bootstrap`, `sync_drift`, `governance_planning`) plus additive continuity/evidence summary fields under `continuity`.
 - Enforcement note: `status proof` is report-first (exit 0 for readable proof state), while `status proof --proof-gate` enables fail-closed bootstrap/readiness gating semantics.
 - Rule: Proof reporting and proof enforcement are separate contracts.
-- Pattern: Render truth first, enforce policy second.
+- Pattern: Render proof state first, apply enforcement policy second.
 - Failure Mode: Deriving proof exit code directly from `proof.ok` collapses operator status and enforcement behavior into one path and makes tests fail in opposite directions.
 - Rule: Status proof mode must preserve additive-safe enrichment even when the base status envelope is valid.
 - Pattern: Separate “state is bad” from “command failed” so status proof can report blocked/conflicted operator states without turning readable state into a command execution failure.

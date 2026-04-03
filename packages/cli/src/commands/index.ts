@@ -379,7 +379,14 @@ const commandRunners: Record<
                 : scopeArg === "proof"
                   ? "proof"
                   : "repo";
-    return runStatus(cwd, { ci, format, quiet, scope, enforceProofGate: proofGate });
+    return runStatus(cwd, {
+      ci,
+      format,
+      quiet,
+      scope,
+      proofPolicy: proofGate ? "enforce" : "report",
+      enforceProofGate: proofGate,
+    });
   },
   upgrade: async ({ cwd, commandArgs, ci, explain, format, quiet }) => {
     const { runUpgrade } = await import("./upgrade.js");

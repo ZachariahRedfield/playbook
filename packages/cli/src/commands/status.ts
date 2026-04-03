@@ -53,6 +53,7 @@ type StatusOptions = {
   format: 'text' | 'json';
   quiet: boolean;
   scope?: 'repo' | 'fleet' | 'queue' | 'execute' | 'receipt' | 'updated' | 'proof';
+  proofPolicy?: 'report' | 'enforce';
   enforceProofGate?: boolean;
 };
 
@@ -588,7 +589,12 @@ const resolveProofExitCode = (result: StatusProofResult, options?: { enforceGate
   return hasRenderableProofContract(result) ? ExitCode.Success : ExitCode.Failure;
 };
 
-const shouldEnforceProofGate = (options: StatusOptions): boolean => options.enforceProofGate ?? false;
+const shouldEnforceProofGate = (options: StatusOptions): boolean => {
+  if (options.proofPolicy) {
+    return options.proofPolicy === 'enforce';
+  }
+  return options.enforceProofGate ?? false;
+};
 
 const toUpdatedStateStatusResult = (cwd: string): { result: StatusUpdatedStateResult; exitCode: ExitCode } => {
   const { fleet, queue, executionPlan, receipt } = computeReceipt(cwd);
