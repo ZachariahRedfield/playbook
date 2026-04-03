@@ -48,6 +48,7 @@ Includes:
 Status:
 
 - **Already existing:** core deterministic observation surfaces and artifacts.
+- **Already existing (additive read surface):** architecture role inference and dependency-direction matrix observations are emitted as observation-only repository intelligence (no policy enforcement path yet).
 - **Partially defined:** richer recurrence tracking across runs.
 - **Missing future capability:** normalized event/observation history contracts for longitudinal learning.
 

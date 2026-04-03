@@ -678,7 +678,7 @@
       "feature_id": "PB-V09-ARCHITECTURE-ROLE-INFERENCE-001",
       "version": "v0.9",
       "title": "Architecture role inference and dependency-direction matrix validation",
-      "goal": "Extend the architecture graph to classify package roles (interface, orchestration, foundation, adapter) and validate dependency direction against a deterministic role matrix.",
+      "goal": "Expose additive, observation-only architecture role inference (interface, orchestration, foundation, adapter) and dependency-direction matrix observations in repository intelligence artifacts without policy enforcement.",
       "commands": [
         "index",
         "graph",
@@ -707,7 +707,7 @@
         "pnpm playbook graph --json",
         "node scripts/validate-roadmap-contract.mjs --ci"
       ],
-      "status": "planned",
+      "status": "implemented",
       "effort": "low-medium",
       "package_ownership": [
         "@zachariahredfield/playbook-engine",

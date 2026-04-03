@@ -25,6 +25,7 @@ export type RepositoryIndex = {
   configs: RepositoryConfigEntry[];
   database: string;
   rules: string[];
+  architectureRoleInference: RepositoryArchitectureRoleInference;
 };
 
 export type RepositoryWorkspaceNode = {
@@ -32,6 +33,31 @@ export type RepositoryWorkspaceNode = {
   path: string;
   role: 'cli' | 'core' | 'engine' | 'node' | 'package';
   dependsOn: string[];
+};
+
+export type ArchitectureRole = 'interface' | 'orchestration' | 'foundation' | 'adapter';
+
+export type RepositoryArchitectureRoleNode = {
+  workspace: string;
+  inferredRole: ArchitectureRole;
+  evidence: string[];
+};
+
+export type RepositoryArchitectureDependencyObservation = {
+  from: string;
+  to: string;
+  fromRole: ArchitectureRole;
+  toRole: ArchitectureRole;
+  status: 'allowed' | 'out_of_direction';
+};
+
+export type RepositoryArchitectureRoleInference = {
+  classificationMode: 'observation-only';
+  classifierVersion: 'role-heuristic-v1';
+  policyEnforcement: 'none';
+  dependencyMatrix: Record<ArchitectureRole, ArchitectureRole[]>;
+  nodes: RepositoryArchitectureRoleNode[];
+  dependencyObservations: RepositoryArchitectureDependencyObservation[];
 };
 
 export type RepositoryTestCoverage = {
@@ -332,9 +358,6 @@ const detectWorkspace = (projectRoot: string): RepositoryWorkspaceNode[] => {
   }
 
   const inferRole = (name: string): RepositoryWorkspaceNode['role'] => {
-    if (name.includes('/playbook') || name.endsWith('/cli')) {
-      return 'cli';
-    }
     if (name.includes('/playbook-core') || name.endsWith('/core')) {
       return 'core';
     }
@@ -343,6 +366,9 @@ const detectWorkspace = (projectRoot: string): RepositoryWorkspaceNode[] => {
     }
     if (name.includes('/playbook-node') || name.endsWith('/node')) {
       return 'node';
+    }
+    if (name.endsWith('/playbook') || name.endsWith('/cli') || name.includes('-cli')) {
+      return 'cli';
     }
     return 'package';
   };
@@ -355,6 +381,81 @@ const detectWorkspace = (projectRoot: string): RepositoryWorkspaceNode[] => {
       dependsOn: Array.from(dependencyMap.get(workspace.name) ?? []).sort((left, right) => left.localeCompare(right))
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
+};
+
+const DEPENDENCY_DIRECTION_MATRIX: Record<ArchitectureRole, ArchitectureRole[]> = {
+  interface: ['foundation', 'adapter'],
+  orchestration: ['interface', 'foundation', 'adapter'],
+  foundation: ['foundation'],
+  adapter: ['interface', 'foundation']
+};
+
+const inferArchitectureRoleFromWorkspace = (workspace: RepositoryWorkspaceNode): RepositoryArchitectureRoleNode => {
+  if (workspace.role === 'cli') {
+    return { workspace: workspace.name, inferredRole: 'interface', evidence: ['workspace-role:cli'] };
+  }
+  if (workspace.role === 'engine') {
+    return { workspace: workspace.name, inferredRole: 'orchestration', evidence: ['workspace-role:engine'] };
+  }
+  if (workspace.role === 'core') {
+    return { workspace: workspace.name, inferredRole: 'foundation', evidence: ['workspace-role:core'] };
+  }
+  if (workspace.role === 'node') {
+    return { workspace: workspace.name, inferredRole: 'adapter', evidence: ['workspace-role:node'] };
+  }
+
+  const normalizedName = workspace.name.toLowerCase();
+  if (/(^|\/)(cli|ui|api|web)$/.test(normalizedName) || normalizedName.includes('interface')) {
+    return { workspace: workspace.name, inferredRole: 'interface', evidence: ['name-heuristic:interface'] };
+  }
+  if (normalizedName.includes('orchestrat') || normalizedName.includes('engine') || normalizedName.includes('workflow')) {
+    return { workspace: workspace.name, inferredRole: 'orchestration', evidence: ['name-heuristic:orchestration'] };
+  }
+  if (normalizedName.includes('core') || normalizedName.includes('foundation') || normalizedName.includes('shared')) {
+    return { workspace: workspace.name, inferredRole: 'foundation', evidence: ['name-heuristic:foundation'] };
+  }
+  if (normalizedName.includes('adapter') || normalizedName.includes('plugin') || normalizedName.includes('bridge') || normalizedName.includes('node')) {
+    return { workspace: workspace.name, inferredRole: 'adapter', evidence: ['name-heuristic:adapter'] };
+  }
+
+  if (workspace.dependsOn.length === 0) {
+    return { workspace: workspace.name, inferredRole: 'foundation', evidence: ['topology-heuristic:no-dependencies'] };
+  }
+
+  return { workspace: workspace.name, inferredRole: 'interface', evidence: ['fallback-heuristic:default-interface'] };
+};
+
+const inferArchitectureRoles = (workspace: RepositoryWorkspaceNode[]): RepositoryArchitectureRoleInference => {
+  const nodes = workspace
+    .map((node) => inferArchitectureRoleFromWorkspace(node))
+    .sort((left, right) => left.workspace.localeCompare(right.workspace));
+  const roleByWorkspace = new Map(nodes.map((node) => [node.workspace, node.inferredRole]));
+
+  const dependencyObservations = workspace
+    .flatMap((node) =>
+      node.dependsOn.map((dependency) => {
+        const fromRole = roleByWorkspace.get(node.name) ?? 'interface';
+        const toRole = roleByWorkspace.get(dependency) ?? 'interface';
+        const allowedTargets = DEPENDENCY_DIRECTION_MATRIX[fromRole] ?? [];
+        return {
+          from: node.name,
+          to: dependency,
+          fromRole,
+          toRole,
+          status: allowedTargets.includes(toRole) ? ('allowed' as const) : ('out_of_direction' as const)
+        };
+      })
+    )
+    .sort((left, right) => left.from.localeCompare(right.from) || left.to.localeCompare(right.to));
+
+  return {
+    classificationMode: 'observation-only',
+    classifierVersion: 'role-heuristic-v1',
+    policyEnforcement: 'none',
+    dependencyMatrix: DEPENDENCY_DIRECTION_MATRIX,
+    nodes,
+    dependencyObservations
+  };
 };
 
 const detectTests = (projectRoot: string, modules: RepositoryModule[], workspace: RepositoryWorkspaceNode[]): RepositoryTestCoverage[] => {
@@ -432,6 +533,7 @@ export const generateRepositoryIndex = (projectRoot: string): RepositoryIndex =>
   const architecture = detectArchitecture(projectRoot);
   const modules = detectModules(projectRoot, architecture);
   const workspace = detectWorkspace(projectRoot);
+  const architectureRoleInference = inferArchitectureRoles(workspace);
 
   return {
     schemaVersion: '1.0',
@@ -444,6 +546,7 @@ export const generateRepositoryIndex = (projectRoot: string): RepositoryIndex =>
     tests: detectTests(projectRoot, modules, workspace),
     configs: detectConfigs(projectRoot),
     database: detectDatabase(projectRoot),
-    rules: detectRules(projectRoot)
+    rules: detectRules(projectRoot),
+    architectureRoleInference
   };
 };

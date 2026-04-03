@@ -44,7 +44,20 @@ describe('generateRepositoryIndex', () => {
         'requireNotesFileWhenGovernanceExists',
         'requireNotesOnChanges',
         'verify.rule.tests.required'
-      ])
+      ]),
+      architectureRoleInference: {
+        classificationMode: 'observation-only',
+        classifierVersion: 'role-heuristic-v1',
+        policyEnforcement: 'none',
+        dependencyMatrix: {
+          interface: ['foundation', 'adapter'],
+          orchestration: ['interface', 'foundation', 'adapter'],
+          foundation: ['foundation'],
+          adapter: ['interface', 'foundation']
+        },
+        nodes: [],
+        dependencyObservations: []
+      }
     });
 
     expect(index.rules).toEqual([...index.rules].sort((left, right) => left.localeCompare(right)));
@@ -157,6 +170,30 @@ describe('generateRepositoryIndex', () => {
       { name: '@acme/core', path: 'packages/core', role: 'core', dependsOn: [] },
       { name: '@acme/engine', path: 'packages/engine', role: 'engine', dependsOn: ['@acme/core'] }
     ]);
+    expect(index.architectureRoleInference).toEqual({
+      classificationMode: 'observation-only',
+      classifierVersion: 'role-heuristic-v1',
+      policyEnforcement: 'none',
+      dependencyMatrix: {
+        interface: ['foundation', 'adapter'],
+        orchestration: ['interface', 'foundation', 'adapter'],
+        foundation: ['foundation'],
+        adapter: ['interface', 'foundation']
+      },
+      nodes: [
+        { workspace: '@acme/core', inferredRole: 'foundation', evidence: ['workspace-role:core'] },
+        { workspace: '@acme/engine', inferredRole: 'orchestration', evidence: ['workspace-role:engine'] }
+      ],
+      dependencyObservations: [
+        {
+          from: '@acme/engine',
+          to: '@acme/core',
+          fromRole: 'orchestration',
+          toRole: 'foundation',
+          status: 'allowed'
+        }
+      ]
+    });
     expect(index.dependencies).toEqual([
       { from: '@acme/engine', to: '@acme/core', type: 'source-import' },
       { from: '@acme/engine', to: '@acme/core', type: 'workspace-manifest' }
@@ -170,5 +207,51 @@ describe('generateRepositoryIndex', () => {
       expect.objectContaining({ name: 'vitest', path: 'vitest.config.ts', present: true }),
       expect.objectContaining({ name: 'command-inventory', commands: ['build', 'test'] })
     ]));
+  });
+
+  it('classifies package workspaces deterministically and reports out-of-direction observations without enforcement', () => {
+    const repo = createRepo('playbook-repo-index-role-inference');
+    fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({
+      private: true,
+      workspaces: ['packages/*']
+    }, null, 2));
+    fs.writeFileSync(path.join(repo, 'pnpm-workspace.yaml'), 'packages:\n  - "packages/*"\n');
+    fs.mkdirSync(path.join(repo, 'packages', 'foundation-lib'), { recursive: true });
+    fs.mkdirSync(path.join(repo, 'packages', 'api'), { recursive: true });
+    fs.mkdirSync(path.join(repo, 'packages', 'sdk-adapter'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'packages', 'foundation-lib', 'package.json'), JSON.stringify({
+      name: '@acme/foundation-lib',
+      dependencies: { '@acme/api': '^1.0.0' }
+    }, null, 2));
+    fs.writeFileSync(path.join(repo, 'packages', 'api', 'package.json'), JSON.stringify({ name: '@acme/api' }, null, 2));
+    fs.writeFileSync(path.join(repo, 'packages', 'sdk-adapter', 'package.json'), JSON.stringify({
+      name: '@acme/sdk-adapter',
+      dependencies: { '@acme/foundation-lib': '^1.0.0' }
+    }, null, 2));
+
+    const index = generateRepositoryIndex(repo);
+
+    expect(index.architectureRoleInference.nodes).toEqual([
+      { workspace: '@acme/api', inferredRole: 'interface', evidence: ['name-heuristic:interface'] },
+      { workspace: '@acme/foundation-lib', inferredRole: 'foundation', evidence: ['name-heuristic:foundation'] },
+      { workspace: '@acme/sdk-adapter', inferredRole: 'adapter', evidence: ['name-heuristic:adapter'] }
+    ]);
+    expect(index.architectureRoleInference.dependencyObservations).toEqual([
+      {
+        from: '@acme/foundation-lib',
+        to: '@acme/api',
+        fromRole: 'foundation',
+        toRole: 'interface',
+        status: 'out_of_direction'
+      },
+      {
+        from: '@acme/sdk-adapter',
+        to: '@acme/foundation-lib',
+        fromRole: 'adapter',
+        toRole: 'foundation',
+        status: 'allowed'
+      }
+    ]);
+    expect(index.architectureRoleInference.policyEnforcement).toBe('none');
   });
 });

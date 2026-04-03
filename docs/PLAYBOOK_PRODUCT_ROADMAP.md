@@ -773,8 +773,8 @@ Near-term dependency chain:
 Tiny roadmap entry (visibility-first, low-distraction):
 
 - **ID:** `PB-V09-ARCHITECTURE-ROLE-INFERENCE-001`
-- **Description:** Extend architecture graph to classify package roles (`interface`, `orchestration`, `foundation`, `adapter`) and validate dependency direction against a deterministic matrix.
-- **Status:** `planned`
+- **Description:** Additive read surface now exposes observation-first architecture role inference (`interface`, `orchestration`, `foundation`, `adapter`) and dependency-direction matrix observations from repository intelligence artifacts.
+- **Status:** `implemented` (observation-only, no policy enforcement)
 - **Effort:** `low-medium`
 - **Dependencies:** graph extraction, dependency indexing, architecture diagram generation.
 
@@ -782,6 +782,7 @@ Rule worth preserving:
 
 - Observation systems should mature before governance systems.
 - Playbook should see clearly before it starts judging architecture.
+- Role inference currently remains read-only observation data; governance/policy gating is intentionally deferred.
 
 ### 4) Later platform layers (dependency-blocked until prior trust slices are proven)
 
