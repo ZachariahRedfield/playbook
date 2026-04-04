@@ -402,6 +402,11 @@
         "id": "control-plane",
         "version": "1.0",
         "path": "packages/contracts/src/control-plane.schema.json"
+      },
+      {
+        "id": "multi-repo-control-plane-read-interface",
+        "version": "1.0",
+        "path": "packages/contracts/src/multi-repo-control-plane-read-interface.schema.json"
       }
     ]
   }
