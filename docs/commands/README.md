@@ -851,3 +851,7 @@ In v1, this state is surfaced additively (without introducing a new top-level co
 - `agent run --from-plan ... --dry-run`
 
 Authority remains unchanged: this artifact does not grant new mutation behavior.
+
+- Rule: Any intentional CLI contract surface change must ship with regenerated committed snapshots.
+- Pattern: New artifact surfaces are not complete until contract snapshot drift is reconciled and reviewed.
+- Failure Mode: Passing build + failing contracts:check usually means schema/contract evolution was intentional but snapshot artifacts were not updated.

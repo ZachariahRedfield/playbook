@@ -388,6 +388,11 @@
         "id": "change-scope",
         "version": "1.0",
         "path": "packages/contracts/src/change-scope.schema.json"
+      },
+      {
+        "id": "control-plane",
+        "version": "1.0",
+        "path": "packages/contracts/src/control-plane.schema.json"
       }
     ]
   }
