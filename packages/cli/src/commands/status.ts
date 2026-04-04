@@ -584,6 +584,10 @@ const resolveProofExitCode = (result: StatusProofResult, proofPolicy: ProofPolic
       return result.proof.ok ? ExitCode.Success : ExitCode.Failure;
     case 'report':
       return ExitCode.Success;
+    default: {
+      const exhaustivePolicy: never = proofPolicy;
+      return exhaustivePolicy;
+    }
   }
 };
 
