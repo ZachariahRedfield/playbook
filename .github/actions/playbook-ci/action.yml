@@ -16,7 +16,7 @@ inputs:
     required: false
     default: "."
   install-args:
-    description: Additional arguments for pnpm install.
+    description: Additional arguments for pnpm install (must keep --frozen-lockfile and must not disable optional dependencies).
     required: false
     default: "--frozen-lockfile"
   enable-test-autofix:
@@ -117,13 +117,25 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         node "$GITHUB_WORKSPACE/scripts/assert-install-env.mjs"
+        if [[ "${{ inputs.install-args }}" != *"--frozen-lockfile"* ]]; then
+          echo "install-args must include --frozen-lockfile for deterministic CI installs."
+          exit 1
+        fi
+        if [[ "${{ inputs.install-args }}" == *"--no-frozen-lockfile"* ]]; then
+          echo "install-args must not include --no-frozen-lockfile."
+          exit 1
+        fi
+        if [[ "${{ inputs.install-args }}" == *"--no-optional"* || "${{ inputs.install-args }}" == *"--optional=false"* ]]; then
+          echo "install-args must not disable optional dependencies."
+          exit 1
+        fi
         pnpm config set fetch-retries 5
         pnpm config set fetch-retry-factor 2
         pnpm config set fetch-retry-mintimeout 10000
         pnpm config set fetch-retry-maxtimeout 60000
         pnpm config set network-timeout 120000
         pnpm config set registry https://registry.npmjs.org/
-        pnpm install --config.optional=true --frozen-lockfile || pnpm install --config.optional=true --no-frozen-lockfile
+        pnpm install --config.optional=true ${{ inputs.install-args }}
 
     - name: Install diagnostics (on failure)
       if: failure()
@@ -152,7 +164,11 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        node scripts/assert-esbuild.mjs
+        if ! node scripts/assert-esbuild.mjs; then
+          echo "esbuild preflight failed after install; rebuilding esbuild once as deterministic recovery."
+          pnpm rebuild esbuild
+          node scripts/assert-esbuild.mjs
+        fi
 
     - name: Build workspace packages
       shell: bash

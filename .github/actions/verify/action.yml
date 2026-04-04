@@ -39,7 +39,7 @@ runs:
       shell: bash
       run: |
         node "$GITHUB_WORKSPACE/scripts/assert-install-env.mjs"
-        pnpm install --frozen-lockfile
+        pnpm install --config.optional=true --frozen-lockfile
 
     - name: Build workspace
       shell: bash

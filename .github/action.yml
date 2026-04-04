@@ -60,7 +60,7 @@ runs:
       working-directory: ${{ inputs.repo-path }}
       run: |
         node "$GITHUB_WORKSPACE/scripts/assert-install-env.mjs"
-        pnpm install --frozen-lockfile
+        pnpm install --config.optional=true --frozen-lockfile
 
     - name: Build Playbook CLI from repository source
       shell: bash

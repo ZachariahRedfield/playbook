@@ -59,7 +59,7 @@ jobs:
           pnpm config set fetch-retry-maxtimeout 60000
           pnpm config set network-timeout 120000
           pnpm config set registry https://registry.npmjs.org/
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          pnpm install --config.optional=true --frozen-lockfile
 
       - name: Build workspace
         run: pnpm -r build

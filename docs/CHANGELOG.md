@@ -18,6 +18,9 @@
 - Rule: AI proposals may be compiled into bounded request drafts, but may not execute them directly.
 - Pattern: AI proposal -> request draft -> explicit interop emit -> receipt -> updated truth.
 - Failure Mode: Operators manually re-translating proposal artifacts into runtime requests recreates hidden session state and weakens auditability.
+- Rule: CI test environments must install native optional toolchain packages required by transform-based runners (esbuild/rollup) using frozen-lockfile installs with optional dependencies enabled.
+- Pattern: If TypeScript build passes but Vitest fails on esbuild native resolution, treat it as install/bootstrap drift first and validate the shared CI bootstrap action.
+- Failure Mode: Cross-platform cache reuse or optional-dependency suppression can preserve broken native-package state and create false regressions across Playbook/Lifeline pipelines.
 
 ## 0.39.0 - 2026-03-29
 - Recommended bump: minor
