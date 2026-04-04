@@ -1629,6 +1629,10 @@ Phase 16 allowed vs forbidden input examples:
 
 17. **Phase 17 â€” Outcome Feedback + Automation Runtime Learning (Human-Reviewed)**  
     Governed feedback loops that convert verified runtime outcomes, rollback/deactivation events, and later regressions into provenance-linked repo-local candidate learning artifacts (confidence, template suitability, trigger quality, rollback heuristics, stale-knowledge flags, and trend updates). Outputs remain candidate artifacts until explicit human-reviewed promotion/demotion/supersession.
+    - Operator-visible read surface (implemented): `pnpm playbook memory outcome-feedback --json` now exposes the canonical `.playbook/outcome-feedback.json` artifact as a first-class read-only runtime surface with compact text mode and additive JSON fields for outcome class, confidence/trigger/stale-knowledge signals, trend updates, provenance refs, and deterministic next-review guidance.
+    - Rule: Runtime outcome learning must remain candidate-only until explicit review.
+    - Pattern: execution -> receipt -> updated truth -> outcome feedback -> reviewed learning.
+    - Failure Mode: Outcome feedback that exists only as an internal artifact never becomes an operator-visible learning loop.
 18. **Phase 18 â€” Governed Cross-Repo Pattern Promotion / Transfer**  
     Controlled compounding of reusable engineering knowledge across repositories through explicit, provenance-preserving, sanitization-verified, compatibility-gated transfer packages. Imported patterns are candidate inputs until locally reviewed; no hidden telemetry or automatic global sync.
 19. **Phase 19 â€” Governed Interface / API Surfaces for Multi-Repo Control Planes**  

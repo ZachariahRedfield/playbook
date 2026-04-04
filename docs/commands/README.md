@@ -437,11 +437,15 @@ Doctrine summary anchors:
 - `memory candidates` lists replay candidates for review from `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`) and now emits additive deterministic `source_metadata` so interop-derived candidates remain visible/identifiable on the existing memory surface; use `--source replay|interop-followup` for narrow filtering.
 - replay/consolidation remain candidate-only: replay is derived from memory evidence, and consolidation writes `.playbook/memory/consolidation-candidates.json` for explicit review without auto-promotion.
 - `memory knowledge` lists promoted knowledge records.
+- `memory outcome-feedback` exposes `.playbook/outcome-feedback.json` as a first-class read-only operator surface with compact text output and additive JSON fields for outcome class, confidence/trigger/stale-knowledge signals, trend updates, provenance refs, and a deterministic next review action.
 - `memory pressure` exposes read-only pressure/operator inspection from canonical `.playbook/memory-pressure.json` + `.playbook/memory-pressure-plan.json`, with lightweight `--band` and `--action` filters.
 - `memory show <id>` resolves either a candidate id or knowledge id, including provenance expansion for candidates.
 - `memory promote <candidate-id>` and `memory retire <knowledge-id>` provide explicit, human-driven lifecycle actions.
 - Postmortem reconsolidation stays inside this existing review boundary: incidents/changes should produce a structured postmortem, explicit candidate extraction, and then reviewed movement through `memory` / `promote` surfaces rather than any new command family or auto-promotion path.
 - `status` now exposes additive read-only memory pressure inspection (`memory_pressure`) with score, band, hysteresis thresholds, usage totals, recommended actions, and an action-plan summary (`current_band`, highest-priority actions, and counts by action type) sourced from `.playbook/memory-pressure-plan.json`; canonical pressure artifact path remains `.playbook/memory-pressure.json`.
+- Rule: Runtime outcome learning must remain candidate-only until explicit review.
+- Pattern: execution -> receipt -> updated truth -> outcome feedback -> reviewed learning.
+- Failure Mode: Outcome feedback that exists only as an internal artifact never becomes an operator-visible learning loop.
 - Rule: Postmortems must separate observed facts from interpretation and promotion candidates.
 - Pattern: Recall -> reinterpret -> promote -> restabilize becomes concrete through structured postmortems.
 - Failure Mode: Blending fact, explanation, and doctrine in one narrative rewrites history and weakens promotion quality.
@@ -453,6 +457,7 @@ pnpm playbook memory events --json
 pnpm playbook memory candidates --json
 pnpm playbook memory candidates --source interop-followup --json
 pnpm playbook memory knowledge --json
+pnpm playbook memory outcome-feedback --json
 pnpm playbook memory pressure --json
 pnpm playbook memory pressure --band pressure --action summarize --json
 pnpm playbook memory show <id> --json

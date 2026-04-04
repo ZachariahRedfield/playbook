@@ -263,6 +263,91 @@ describe('runMemory', () => {
     logSpy.mockRestore();
   });
 
+  it('supports outcome-feedback subcommand and emits deterministic read-only summary', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-outcome-feedback-'));
+
+    fs.mkdirSync(path.join(repoRoot, '.playbook'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repoRoot, '.playbook', 'outcome-feedback.json'),
+      `${JSON.stringify({
+        schemaVersion: '1.0',
+        kind: 'playbook-outcome-feedback',
+        command: 'outcome-feedback',
+        outcomeCounts: { success: 1, 'bounded-failure': 1, 'blocked-policy': 0, 'rollback-deactivation': 0, 'later-regression': 0 },
+        outcomes: [
+          {
+            outcomeId: 'outcome-1',
+            outcomeClass: 'success',
+            sourceType: 'execution-receipt',
+            sourceRef: 'prompt_results/prompt-1',
+            observedAt: '2026-04-03T00:00:00.000Z',
+            provenanceRefs: ['.playbook/execution-receipt.json', 'receipt:prompt-1'],
+            candidateSignals: {
+              confidenceUpdate: { direction: 'up', magnitude: 0.1, rationale: 'success' },
+              triggerQualityNotes: ['good trigger'],
+              staleKnowledgeFlags: [],
+              trendUpdates: ['success trend']
+            }
+          },
+          {
+            outcomeId: 'outcome-2',
+            outcomeClass: 'bounded-failure',
+            sourceType: 'remediation-history',
+            sourceRef: 'runs/run-2',
+            observedAt: '2026-04-03T01:00:00.000Z',
+            provenanceRefs: ['.playbook/test-autofix-history.json', 'run:run-2'],
+            candidateSignals: {
+              confidenceUpdate: { direction: 'down', magnitude: 0.2, rationale: 'bounded failure' },
+              triggerQualityNotes: ['review trigger'],
+              staleKnowledgeFlags: ['possible stale rule'],
+              trendUpdates: ['failure trend']
+            }
+          }
+        ],
+        governance: { candidateOnly: true, autoPromotion: false, autoMutation: false, reviewRequired: true }
+      }, null, 2)}\n`,
+      'utf8'
+    );
+
+    const exitCode = await runMemory(repoRoot, ['outcome-feedback'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-outcome-feedback');
+    expect(payload.outcome_counts.success).toBe(1);
+    expect(payload.signals.stale_knowledge).toEqual(['possible stale rule']);
+    expect(payload.provenance_refs).toEqual([
+      '.playbook/execution-receipt.json',
+      '.playbook/test-autofix-history.json',
+      'receipt:prompt-1',
+      'run:run-2'
+    ]);
+    expect(payload.next_review_action).toContain('stale-knowledge');
+    expect(payload.governance).toEqual({
+      candidate_only: true,
+      auto_promotion: false,
+      auto_mutation: false,
+      review_required: true
+    });
+    logSpy.mockRestore();
+  });
+
+  it('returns deterministic failure envelope when outcome-feedback artifact is missing', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-outcome-feedback-missing-'));
+
+    const exitCode = await runMemory(repoRoot, ['outcome-feedback'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-outcome-feedback');
+    expect(payload.error).toContain('missing required artifact .playbook/outcome-feedback.json');
+    logSpy.mockRestore();
+  });
+
   it('supports pressure subcommand and emits filtered recommended actions', async () => {
     const { runMemory } = await import('./memory.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
