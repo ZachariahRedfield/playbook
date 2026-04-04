@@ -423,6 +423,8 @@ export type { ImpactQueryResult } from './query/impact.js';
 export { knowledgeCompareQuery, knowledgeInspect, knowledgeList, knowledgeProvenance, knowledgeQuery, knowledgeStale, knowledgeSupersession, knowledgeTimeline } from './query/knowledge.js';
 export type {
   KnowledgeCompareQueryResult,
+  KnowledgeInspectionCategory,
+  KnowledgeInspectionRecord,
   KnowledgeInspectResult,
   KnowledgeListResult,
   KnowledgeProvenanceQueryResult,

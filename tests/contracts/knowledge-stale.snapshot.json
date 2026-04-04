@@ -29,6 +29,27 @@
       "demoted": 0
     }
   },
+  "inspection": {
+    "byCategory": {
+      "session-evidence": [],
+      "repo-longitudinal-memory": [],
+      "candidate-knowledge": [
+        "cand-live",
+        "cand-stale"
+      ],
+      "promoted-governance-knowledge": [
+        "pattern-old"
+      ],
+      "upstream-promotable-reusable-patterns": []
+    },
+    "totals": {
+      "session-evidence": 0,
+      "repo-longitudinal-memory": 0,
+      "candidate-knowledge": 2,
+      "promoted-governance-knowledge": 1,
+      "upstream-promotable-reusable-patterns": 0
+    }
+  },
   "knowledge": [
     {
       "id": "cand-live",
@@ -86,7 +107,8 @@
         ],
         "supersedes": [],
         "supersededBy": []
-      }
+      },
+      "inspectionCategory": "candidate-knowledge"
     },
     {
       "id": "pattern-old",
@@ -150,7 +172,8 @@
         "supersededBy": [
           "pattern-live"
         ]
-      }
+      },
+      "inspectionCategory": "promoted-governance-knowledge"
     },
     {
       "id": "cand-stale",
@@ -208,7 +231,8 @@
         ],
         "supersedes": [],
         "supersededBy": []
-      }
+      },
+      "inspectionCategory": "candidate-knowledge"
     }
   ]
 }

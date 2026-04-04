@@ -2,6 +2,9 @@
   "schemaVersion": "1.0",
   "command": "knowledge-provenance",
   "id": "pattern-live",
+  "inspection": {
+    "category": "promoted-governance-knowledge"
+  },
   "provenance": {
     "record": {
       "id": "pattern-live",
@@ -58,7 +61,8 @@
         "warnings": [],
         "supersedes": [],
         "supersededBy": []
-      }
+      },
+      "inspectionCategory": "promoted-governance-knowledge"
     },
     "evidence": [
       {
@@ -120,7 +124,8 @@
           "warnings": [],
           "supersedes": [],
           "supersededBy": []
-        }
+        },
+        "inspectionCategory": "session-evidence"
       }
     ],
     "relatedRecords": [
@@ -180,7 +185,8 @@
           ],
           "supersedes": [],
           "supersededBy": []
-        }
+        },
+        "inspectionCategory": "candidate-knowledge"
       }
     ]
   }

@@ -31,7 +31,7 @@ export type JsonSchema = {
 const knowledgeRecordSchema: JsonSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['id', 'type', 'createdAt', 'repo', 'source', 'confidence', 'status', 'lifecycle', 'provenance', 'metadata'],
+  required: ['id', 'type', 'createdAt', 'repo', 'source', 'confidence', 'status', 'lifecycle', 'provenance', 'metadata', 'inspectionCategory'],
   properties: {
     id: { type: 'string' },
     type: { enum: ['evidence', 'candidate', 'promoted', 'superseded'] },
@@ -42,7 +42,7 @@ const knowledgeRecordSchema: JsonSchema = {
       additionalProperties: false,
       required: ['kind', 'path', 'command'],
       properties: {
-        kind: { enum: ['memory-event', 'memory-candidate', 'memory-knowledge', 'global-pattern-memory'] },
+        kind: { enum: ['memory-event', 'memory-candidate', 'memory-knowledge', 'global-pattern-memory', 'lifecycle-candidate'] },
         path: { type: 'string' },
         command: { type: ['string', 'null'] }
       }
@@ -78,6 +78,45 @@ const knowledgeRecordSchema: JsonSchema = {
     metadata: {
       type: 'object',
       additionalProperties: true
+    },
+    inspectionCategory: {
+      enum: ['session-evidence', 'repo-longitudinal-memory', 'candidate-knowledge', 'promoted-governance-knowledge', 'upstream-promotable-reusable-patterns']
+    }
+  }
+};
+
+const knowledgeInspectionCategorySchema: JsonSchema = {
+  enum: ['session-evidence', 'repo-longitudinal-memory', 'candidate-knowledge', 'promoted-governance-knowledge', 'upstream-promotable-reusable-patterns']
+};
+
+const knowledgeInspectionSummarySchema: JsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['byCategory', 'totals'],
+  properties: {
+    byCategory: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['session-evidence', 'repo-longitudinal-memory', 'candidate-knowledge', 'promoted-governance-knowledge', 'upstream-promotable-reusable-patterns'],
+      properties: {
+        'session-evidence': { type: 'array', items: { type: 'string' } },
+        'repo-longitudinal-memory': { type: 'array', items: { type: 'string' } },
+        'candidate-knowledge': { type: 'array', items: { type: 'string' } },
+        'promoted-governance-knowledge': { type: 'array', items: { type: 'string' } },
+        'upstream-promotable-reusable-patterns': { type: 'array', items: { type: 'string' } }
+      }
+    },
+    totals: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['session-evidence', 'repo-longitudinal-memory', 'candidate-knowledge', 'promoted-governance-knowledge', 'upstream-promotable-reusable-patterns'],
+      properties: {
+        'session-evidence': { type: 'integer' },
+        'repo-longitudinal-memory': { type: 'integer' },
+        'candidate-knowledge': { type: 'integer' },
+        'promoted-governance-knowledge': { type: 'integer' },
+        'upstream-promotable-reusable-patterns': { type: 'integer' }
+      }
     }
   }
 };
@@ -1885,12 +1924,13 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'command', 'filters', 'summary', 'knowledge'],
+        required: ['schemaVersion', 'command', 'filters', 'summary', 'inspection', 'knowledge'],
         properties: {
           schemaVersion: { const: '1.0' },
           command: { enum: ['knowledge-list', 'knowledge-query', 'knowledge-timeline', 'knowledge-stale'] },
           filters: knowledgeFiltersSchema,
           summary: knowledgeSummarySchema,
+          inspection: knowledgeInspectionSummarySchema,
           knowledge: {
             type: 'array',
             items: knowledgeRecordSchema
@@ -1900,7 +1940,7 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'command', 'leftId', 'rightId', 'comparison'],
+        required: ['schemaVersion', 'command', 'leftId', 'rightId', 'comparison', 'inspection'],
         properties: {
           schemaVersion: { const: '1.0' },
           command: { const: 'knowledge-compare' },
@@ -1924,28 +1964,55 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
                 }
               }
             }
+          },
+          inspection: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['leftCategory', 'rightCategory', 'categoryMatch'],
+            properties: {
+              leftCategory: knowledgeInspectionCategorySchema,
+              rightCategory: knowledgeInspectionCategorySchema,
+              categoryMatch: { type: 'boolean' }
+            }
           }
         }
       },
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'command', 'id', 'knowledge'],
+        required: ['schemaVersion', 'command', 'id', 'inspection', 'knowledge'],
         properties: {
           schemaVersion: { const: '1.0' },
           command: { const: 'knowledge-inspect' },
           id: { type: 'string' },
+          inspection: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['category', 'staleOrSuperseded'],
+            properties: {
+              category: knowledgeInspectionCategorySchema,
+              staleOrSuperseded: { type: 'boolean' }
+            }
+          },
           knowledge: knowledgeRecordSchema
         }
       },
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'command', 'id', 'provenance'],
+        required: ['schemaVersion', 'command', 'id', 'inspection', 'provenance'],
         properties: {
           schemaVersion: { const: '1.0' },
           command: { const: 'knowledge-provenance' },
           id: { type: 'string' },
+          inspection: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['category'],
+            properties: {
+              category: knowledgeInspectionCategorySchema
+            }
+          },
           provenance: {
             type: 'object',
             additionalProperties: false,
@@ -1961,11 +2028,19 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
       {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'command', 'id', 'supersession'],
+        required: ['schemaVersion', 'command', 'id', 'inspection', 'supersession'],
         properties: {
           schemaVersion: { const: '1.0' },
           command: { const: 'knowledge-supersession' },
           id: { type: 'string' },
+          inspection: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['category'],
+            properties: {
+              category: knowledgeInspectionCategorySchema
+            }
+          },
           supersession: {
             type: 'object',
             additionalProperties: false,

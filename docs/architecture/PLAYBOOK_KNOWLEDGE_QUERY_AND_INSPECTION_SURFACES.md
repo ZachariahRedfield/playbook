@@ -19,13 +19,19 @@ This architecture is directional and contract-oriented. It does **not** add broa
 - Pattern: Inspectable Memory Before Automated Memory Consumption
 - Pattern: Queryable Repository Knowledge
 - Pattern: Provenance-Preserving Inspection
+- Pattern: observe -> preserve lineage -> inspect -> review
 - Rule: Candidate knowledge must remain distinguishable from promoted governance
+- Rule: Knowledge inspection must preserve provenance, lifecycle state, and candidate/promoted distinction
 - Rule: Memory query surfaces are read-only intelligence surfaces
+- Rule: JSON contract surfaces must not change shape without updating contract schemas/snapshots in the same PR
 - Rule: Repo-local knowledge remains private-first unless intentionally promoted/exported
 - Failure Mode: Memory exists but cannot be trusted or inspected
 - Failure Mode: Free-form memory blob without deterministic inspection contracts
 - Failure Mode: Automation consumes knowledge before humans can inspect provenance
 - Failure Mode: Query surfaces imply enforcement
+- Failure Mode: Query surfaces that flatten candidate, promoted, and stale knowledge create false certainty and unsafe automation inputs
+- Failure Mode: A command can execute successfully while contract validation fails because of silent JSON shape drift or stdout contamination
+- Pattern: For CLI JSON surfaces, validate actual stdout against the canonical schema before merging
 
 ## Core memory classes exposed by inspection surfaces
 

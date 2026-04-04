@@ -30,6 +30,29 @@
       "demoted": 0
     }
   },
+  "inspection": {
+    "byCategory": {
+      "session-evidence": [
+        "event-1",
+        "event-2"
+      ],
+      "repo-longitudinal-memory": [],
+      "candidate-knowledge": [
+        "cand-stale"
+      ],
+      "promoted-governance-knowledge": [
+        "pattern-old"
+      ],
+      "upstream-promotable-reusable-patterns": []
+    },
+    "totals": {
+      "session-evidence": 2,
+      "repo-longitudinal-memory": 0,
+      "candidate-knowledge": 1,
+      "promoted-governance-knowledge": 1,
+      "upstream-promotable-reusable-patterns": 0
+    }
+  },
   "knowledge": [
     {
       "id": "cand-stale",
@@ -87,7 +110,8 @@
         ],
         "supersedes": [],
         "supersededBy": []
-      }
+      },
+      "inspectionCategory": "candidate-knowledge"
     },
     {
       "id": "pattern-old",
@@ -151,7 +175,8 @@
         "supersededBy": [
           "pattern-live"
         ]
-      }
+      },
+      "inspectionCategory": "promoted-governance-knowledge"
     },
     {
       "id": "event-1",
@@ -212,7 +237,8 @@
         "warnings": [],
         "supersedes": [],
         "supersededBy": []
-      }
+      },
+      "inspectionCategory": "session-evidence"
     },
     {
       "id": "event-2",
@@ -273,7 +299,8 @@
         "warnings": [],
         "supersedes": [],
         "supersededBy": []
-      }
+      },
+      "inspectionCategory": "session-evidence"
     }
   ]
 }

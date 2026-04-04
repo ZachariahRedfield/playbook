@@ -25,6 +25,13 @@ describe('knowledge query services', () => {
     try {
       const listed = knowledgeList(root);
       expect(listed.command).toBe('knowledge-list');
+      expect(listed.inspection.totals).toEqual({
+        'session-evidence': 2,
+        'repo-longitudinal-memory': 0,
+        'candidate-knowledge': 2,
+        'promoted-governance-knowledge': 2,
+        'upstream-promotable-reusable-patterns': 0
+      });
       expect(listed.summary.byType).toEqual({ evidence: 2, candidate: 2, promoted: 1, superseded: 1 });
       expect(listed.summary.byStatus).toEqual({ observed: 2, active: 2, stale: 1, retired: 0, superseded: 1 });
       expect(listed.summary.byLifecycle).toEqual({ observed: 2, candidate: 1, active: 1, stale: 1, retired: 0, superseded: 1, demoted: 0 });
@@ -49,6 +56,7 @@ describe('knowledge query services', () => {
     try {
       const inspected = knowledgeInspect(root, 'pattern-live').knowledge;
       expect(inspected.type).toBe('promoted');
+      expect(inspected.inspectionCategory).toBe('promoted-governance-knowledge');
       expect(inspected.metadata.summary).toBe('Reusable guidance');
       expect(inspected.provenance.relatedRecordIds).toEqual(['cand-live']);
       expect(inspected.status).toBe('active');
@@ -107,9 +115,13 @@ describe('knowledge query services', () => {
 
       const compared = knowledgeCompareQuery(root, 'pattern.global.active', 'pattern-live');
       expect(compared.comparison.left.lifecycle.state).toBe('active');
+      expect(compared.inspection.leftCategory).toBe('upstream-promotable-reusable-patterns');
+      expect(compared.inspection.rightCategory).toBe('promoted-governance-knowledge');
+      expect(compared.inspection.categoryMatch).toBe(false);
 
       const supersession = knowledgeSupersession(root, 'pattern.global.demoted');
       expect(supersession.supersession.record.lifecycle.state).toBe('demoted');
+      expect(supersession.supersession.record.inspectionCategory).toBe('upstream-promotable-reusable-patterns');
       expect(supersession.supersession.record.lifecycle.warnings[0]).toContain('demoted');
     } finally {
       delete process.env.PLAYBOOK_HOME;
