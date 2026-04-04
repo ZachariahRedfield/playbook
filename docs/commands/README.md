@@ -28,6 +28,8 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - Pattern: Declare scope -> enforce scope -> mutate -> receipt.
 - Failure Mode: Scope bundles that are not enforced become advisory paperwork instead of real safety boundaries.
 - `.playbook/session.json` (including `evidenceEnvelope`) is a canonical runtime truth artifact for continuity + provenance across `verify/plan/apply/policy/receipt` seams; downstream control-plane and memory interpretations should consume this deterministic envelope rather than infer lineage from ad-hoc file deltas.
+- `PB-V09-SESSION-EVIDENCE-001` is treated as current runtime truth in command doctrine: session continuity, evidence lineage, approval decisions, and receipt references must resolve through the same deterministic envelope surface before trust-sensitive follow-on actions.
+- Deterministic invalidation/staleness handling for trust-sensitive seams should key off explicit envelope evidence state (`present`, stale, contradictory), not implicit assumptions about prior command success.
 - Rule: Runtime decisions that claim approval or execution lineage must resolve to explicit session/evidence/receipt references.
 - Pattern: session continuity -> evidence lineage -> approval decision -> receipt/update.
 - Failure Mode: If approvals or outcomes are detached from the session/evidence envelope, trust state becomes narrative-only and non-replayable.

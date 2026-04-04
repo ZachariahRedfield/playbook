@@ -2,11 +2,9 @@
 
 ## Purpose
 
-This document defines the prerequisite Session + Evidence architecture layer for Playbook's long-term engineering-AI direction.
+This document defines the Session + Evidence architecture layer for Playbook's deterministic runtime and long-term engineering-AI direction.
 
-It does **not** introduce new runtime commands or claim already-shipped behavior.
-
-It clarifies the architecture dependency chain that must exist before broader AI execution/runtime expansion.
+It clarifies what is **already canonical runtime truth** today and what remains dependency-ordered future hardening for broader AI execution/runtime expansion.
 
 ## Scope and positioning
 
@@ -111,6 +109,10 @@ Session + Evidence is now a canonical runtime truth seam, not only a future depe
   - envelope references remain explicit about presence/staleness and must fail closed for trust-sensitive downstream decisions when required evidence is missing, stale, or contradictory.
 
 Rule: Session continuity, evidence lineage, and approval/receipt linkage must be inspectable from deterministic artifacts, not reconstructed from narrative.
+
+Rule: Deterministic staleness/invalidation decisions must be made from explicit envelope evidence state, not inferred from operator memory.
+Pattern: session continuity -> evidence lineage -> approval/policy decision -> receipt linkage -> deterministic staleness gate.
+Failure Mode: Treating session/evidence as advisory metadata allows stale or missing evidence to pass trust-sensitive flows.
 
 ## Dependency chain (long-term architecture)
 

@@ -765,6 +765,8 @@ Near-term dependency chain:
 1. `PB-V07-ARCH-INTELLIGENCE-GRAPH-001`
 2. `PB-V09-ARCHITECTURE-ROLE-INFERENCE-001`
 3. `PB-V09-SESSION-EVIDENCE-001` (implemented canonical runtime truth surface; hardening continues)
+   - Runtime truth boundary: `.playbook/session.json` + `evidenceEnvelope` is the canonical continuity/provenance seam for downstream policy, approval, receipt, and memory interpretation.
+   - Deterministic trust rule: missing/stale/contradictory required evidence remains fail-closed for trust-sensitive downstream actions.
 4. `PB-V09-CONTROL-PLANE-001` (depends on Session + Evidence runtime truth)
 5. `PB-V09-PR-REVIEW-LOOP-001`
 6. `PB-V09-LONGITUDINAL-STATE-001`
@@ -872,7 +874,7 @@ Pattern: Same runtime, different operational surfaces.
 - **Already exists today**
   - deterministic command artifacts (`.playbook/repo-index.json`, findings/plan outputs, and verify/apply execution outputs) provide the substrate that a session envelope must compose.
   - repo-scoped workflow continuity now persists in `.playbook/session.json` and supports deterministic `session show/pin/resume/clear` semantics with stale-artifact warnings.
-  - `PB-V09-SESSION-EVIDENCE-001` is an active runtime truth layer, not roadmap-only labeling: the session/evidence envelope seam is the canonical continuity + provenance boundary for downstream policy/control-plane and longitudinal-memory flows.
+  - `PB-V09-SESSION-EVIDENCE-001` is an active runtime truth layer, not roadmap-only labeling: the session/evidence envelope seam is the canonical continuity + provenance boundary for downstream policy/control-plane and longitudinal-memory flows, including explicit approval/receipt linkage and deterministic staleness/invalidation behavior.
 - **Partially defined**
   - evidence-linked findings/plans and trust-boundary language exist, while broader actor/ref/approval/promotion-candidate lineage contracts still need deeper unification across layers.
 - **Future work**
