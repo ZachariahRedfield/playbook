@@ -815,6 +815,12 @@ describe('runStatus', () => {
       domainBlockers: [],
       domainNextActions: [],
       continuity: expect.any(Object),
+      longitudinal_state: expect.objectContaining({
+        unresolved_risk_summary: expect.any(Object),
+        recurring_finding_clusters: expect.any(Array),
+        verification_lineage: expect.any(Object),
+        knowledge_lifecycle_summary: expect.any(Object)
+      }),
       interpretation: {
         pattern: 'interpretation-layer',
         progressive_disclosure: {

@@ -29,6 +29,7 @@ import {
 } from '@zachariahredfield/playbook-engine';
 import { ExitCode } from '../lib/cliContract.js';
 import { emitJsonOutput } from '../lib/jsonArtifact.js';
+import { formatLongitudinalThinText, readLongitudinalStateSummary } from './longitudinalState.js';
 
 type QueryOptions = {
   format: 'text' | 'json';
@@ -768,7 +769,8 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
     try {
       const runs = listOrchestrationExecutionRuns(cwd);
       const continuity = buildContinuitySnapshot(cwd, runs);
-      const payload = { schemaVersion: '1.0', command: 'query', type: 'runs', runs, continuity, control_plane: safeControlPlaneState(cwd) };
+      const longitudinal_state = readLongitudinalStateSummary(cwd);
+      const payload = { schemaVersion: '1.0', command: 'query', type: 'runs', runs, continuity, longitudinal_state, control_plane: safeControlPlaneState(cwd) };
       if (options.format === 'json') {
         emitJsonOutput({ cwd, command: 'query', payload, outFile: options.outFile });
         return ExitCode.Success;
@@ -791,6 +793,7 @@ export const runQuery = async (cwd: string, commandArgs: string[], options: Quer
         console.log(
           `lineage latest_run=${continuity.lineage.latestRunId ?? 'none'} latest_receipts=${continuity.lineage.latestReceiptRefs.length} stale=${continuity.staleSignals.length > 0 ? 'yes' : 'no'}`
         );
+        console.log(formatLongitudinalThinText(longitudinal_state));
       }
 
       return ExitCode.Success;

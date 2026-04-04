@@ -49,6 +49,7 @@ import {
   type InterpretationLayer
 } from '../lib/interpretation.js';
 import { renderBriefOutput } from '../lib/briefOutput.js';
+import { formatLongitudinalThinText, readLongitudinalStateSummary } from './longitudinalState.js';
 
 type StatusOptions = {
   ci: boolean;
@@ -158,6 +159,7 @@ type StatusProofResult = {
     latest_receipt_refs: string[];
     stale_or_missing_state: string[];
   };
+  longitudinal_state: ReturnType<typeof readLongitudinalStateSummary>;
   control_plane: ControlPlaneStateArtifact | null;
   interpretation: InterpretationLayer;
 };
@@ -581,6 +583,7 @@ const toProofStatusResult = (cwd: string): StatusProofResult => {
   const parallelWork = readProofParallelWorkSummary(cwd);
   const failureDomainSummary = classifyProofFailureDomains(proof, parallelWork);
   const continuity = readContinuitySummary(cwd);
+  const longitudinal_state = readLongitudinalStateSummary(cwd);
   return {
     schemaVersion: '1.0',
     command: 'status',
@@ -592,6 +595,7 @@ const toProofStatusResult = (cwd: string): StatusProofResult => {
     domainBlockers: failureDomainSummary.domainBlockers,
     domainNextActions: failureDomainSummary.domainNextActions,
     continuity,
+    longitudinal_state,
     control_plane: safeControlPlaneState(cwd),
     interpretation: buildProofInterpretation(proof)
   };
@@ -820,6 +824,11 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
               `latest_run=${proofResult.continuity.latest_run_id ?? 'none'}`,
               `latest_receipts=${proofResult.continuity.latest_receipt_refs.length}`,
               `stale=${proofResult.continuity.stale_or_missing_state.join(',') || 'none'}`
+            ]
+          }, {
+            label: 'Longitudinal state',
+            items: [
+              formatLongitudinalThinText(proofResult.longitudinal_state)
             ]
           }]
         }));

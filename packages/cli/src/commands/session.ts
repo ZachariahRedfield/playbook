@@ -14,6 +14,7 @@ import {
 } from '@zachariahredfield/playbook-engine';
 import { resolveSessionMergeInputs } from './sessionMergeInputs.js';
 import { buildResult, emitResult, ExitCode } from '../lib/cliContract.js';
+import { formatLongitudinalThinText, readLongitudinalStateSummary } from './longitudinalState.js';
 
 type SessionConflict = ReturnType<typeof mergeSessionSnapshots>['conflicts'][number];
 
@@ -127,6 +128,8 @@ export const runSession = async (cwd: string, args: string[], options: SessionOp
       staleSignals.push('latest_run_missing_receipts');
     }
 
+    const longitudinalState = readLongitudinalStateSummary(cwd);
+
     const baseResult = buildResult({
       command: 'session.show',
       ok: true,
@@ -138,7 +141,8 @@ export const runSession = async (cwd: string, args: string[], options: SessionOp
         { id: 'session.show.artifacts', level: 'info', message: `pinnedArtifacts=${session.pinnedArtifacts.length}` },
         { id: 'session.show.refs', level: 'info', message: `activeSessionRefs=${session.evidenceEnvelope.artifacts.filter((entry) => entry.present).length}` },
         { id: 'session.show.lineage', level: 'info', message: `latestRun=${latestRun?.run_id ?? 'none'} latestReceipts=${latestReceiptRefs.length}` },
-        { id: 'session.show.continuity', level: staleSignals.length > 0 ? 'warning' : 'info', message: `staleSignals=${staleSignals.join(',') || 'none'}` }
+        { id: 'session.show.continuity', level: staleSignals.length > 0 ? 'warning' : 'info', message: `staleSignals=${staleSignals.join(',') || 'none'}` },
+        { id: 'session.show.longitudinal', level: 'info', message: formatLongitudinalThinText(longitudinalState) }
       ],
       nextActions: []
     });
@@ -153,7 +157,8 @@ export const runSession = async (cwd: string, args: string[], options: SessionOp
           latest_receipt_refs: latestReceiptRefs,
           missing_session_refs: missingEvidenceRefs,
           stale_or_missing_state: staleSignals
-        }
+        },
+        longitudinal_state: longitudinalState
       }, null, 2));
       return ExitCode.Success;
     }

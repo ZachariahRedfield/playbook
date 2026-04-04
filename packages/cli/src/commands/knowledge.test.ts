@@ -179,6 +179,7 @@ describe('runKnowledge', () => {
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload.command).toBe('knowledge-list');
     expect(payload.knowledge).toHaveLength(1);
+    expect(payload).not.toHaveProperty('longitudinal_state');
     logSpy.mockRestore();
   });
 

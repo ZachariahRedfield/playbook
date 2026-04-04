@@ -223,6 +223,29 @@ const writeVerifyReport = (repo: string): void => {
   );
 };
 
+
+const writeLongitudinalStateFixture = (repo: string): void => {
+  const filePath = path.join(repo, '.playbook', 'longitudinal-state.json');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(
+      {
+        unresolved_risk_summary: { total_open: 3, high: 1, medium: 1, low: 1 },
+        recurring_finding_clusters: [{ cluster_id: 'cluster-auth', occurrences: 4, unresolved: 2 }],
+        verification_lineage: {
+          latest_verification_ref: '.playbook/verify-report.json',
+          latest_verified_at: '2026-01-01T00:01:00.000Z',
+          latest_approval_refs: ['.playbook/improvement-approvals.json']
+        },
+        knowledge_lifecycle_summary: { candidate: 2, promoted: 5, superseded: 1 }
+      },
+      null,
+      2
+    )
+  );
+};
+
 const writeExecutionRunsFixture = (repo: string): void => {
   const runsDir = path.join(repo, '.playbook', 'execution-runs');
   fs.mkdirSync(runsDir, { recursive: true });
@@ -355,6 +378,7 @@ describe('runQuery', () => {
     const repo = createRepo('playbook-cli-query-runs');
     writeExecutionRunsFixture(repo);
     writeSessionFixture(repo);
+    writeLongitudinalStateFixture(repo);
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const exitCode = await runQuery(repo, ['runs'], { format: 'json', quiet: false });
@@ -377,6 +401,16 @@ describe('runQuery', () => {
         latestReceiptRefs: ['execution-state:pb-exec-0001:lane:lane-1:worker:worker-lane-1']
       },
       staleSignals: []
+    });
+
+    expect(payload.longitudinal_state).toMatchObject({
+      unresolved_risk_summary: { total_open: 3, high: 1, medium: 1, low: 1 },
+      recurring_finding_clusters: [{ cluster_id: 'cluster-auth', occurrences: 4, unresolved: 2 }],
+      verification_lineage: {
+        latest_verification_ref: '.playbook/verify-report.json',
+        latest_approval_refs: ['.playbook/improvement-approvals.json']
+      },
+      knowledge_lifecycle_summary: { candidate: 2, promoted: 5, superseded: 1 }
     });
 
     expect(payload.control_plane.kind).toBe('playbook-control-plane-state');
