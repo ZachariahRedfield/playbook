@@ -103,7 +103,19 @@ describe('story helpers', () => {
     fs.writeFileSync(artifactPath, `${JSON.stringify({ schemaVersion: '1.0', repo: 'repo', stories: [baseStory] }, null, 2)}\n`, 'utf8');
 
     expect(validateStoriesArtifact({ schemaVersion: '1.0', repo: 'repo', stories: [baseStory] })).toEqual([]);
-    expect(readStoriesArtifact(repoRoot).stories[0]).toEqual(baseStory);
+    const persistedStory = readStoriesArtifact(repoRoot).stories[0];
+    expect(persistedStory).toEqual(expect.objectContaining(baseStory));
+    expect(persistedStory?.backlog_order).toBe(1);
+    expect(persistedStory?.backlog_priority_score).toBe(332);
+    expect(persistedStory?.backlog_unmet_dependencies).toEqual([]);
+    expect(persistedStory?.backlog_score_explanation).toEqual([
+      'priority:high=300',
+      'severity:medium=20',
+      'confidence:high=9',
+      'status:ready=20',
+      'type:governance=4',
+      'unmet_dependencies:0=-0'
+    ]);
 
     const withProvenance = createStoryRecord('repo', {
       ...baseStory,
