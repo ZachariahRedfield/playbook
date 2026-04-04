@@ -33,6 +33,10 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - Rule: Runtime decisions that claim approval or execution lineage must resolve to explicit session/evidence/receipt references.
 - Pattern: session continuity -> evidence lineage -> approval decision -> receipt/update.
 - Failure Mode: If approvals or outcomes are detached from the session/evidence envelope, trust state becomes narrative-only and non-replayable.
+- `.playbook/pr-review-loop.json` is the canonical PR Review Loop runtime contract. It composes existing canonical surfaces (`analyze-pr`, session/evidence refs, policy gate output, remediation status, verify/preflight state, and available plan/apply/receipt refs) into one deterministic review-loop artifact with explicit escalation + next action.
+- Rule: PR review should resolve through one canonical session/evidence/policy loop, not a set of adjacent tools.
+- Pattern: trigger -> hydrate evidence -> analyze -> gate -> bounded action -> re-verify -> escalate.
+- Failure Mode: When PR review logic is spread across separate commands and comments without one runtime contract, operators see fragments instead of one governed loop.
 - `pnpm playbook test-triage --input .playbook/ci-failure.log` is the canonical CI/test failure summarization surface: it preserves raw logs while emitting deterministic `.playbook/test-triage.json` / `.playbook/failure-summary.md` artifacts and a copy-paste-ready markdown brief for GitHub step summaries.
 - `pnpm playbook rendezvous create|status|release --dry-run` is the canonical read-first artifact rendezvous seam for remediation pause/resume/release decisions: text mode stays brief (decision, status, missing artifacts, blockers, next action) while full detail remains in JSON plus `.playbook/rendezvous-manifest.json`.
 - `pnpm playbook interop fitness-contract` is the canonical read-only inspect seam for the consumed Fitness contract boundary: text mode stays brief-thin (source pointer + canonical names/types), while full detail remains in JSON plus `.playbook/fitness-contract.json`.

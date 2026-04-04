@@ -3,8 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   analyzePullRequest,
+  buildPrReviewLoopArtifact,
   evaluateImprovementPolicy,
   generateImprovementCandidates,
+  writePrReviewLoopArtifact,
   type ImprovementCandidatesArtifact,
   type PolicyEvaluationArtifact
 } from '@zachariahredfield/playbook-engine';
@@ -47,6 +49,7 @@ export type ReviewPrArtifact = {
 
 
 const REVIEW_PR_ARTIFACT_RELATIVE_PATH = '.playbook/pr-review.json' as const;
+const REVIEW_PR_LOOP_ARTIFACT_RELATIVE_PATH = '.playbook/pr-review-loop.json' as const;
 
 const deterministicStringify = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
 
@@ -222,6 +225,8 @@ export const runReviewPr = async (cwd: string, options: ReviewPrOptions): Promis
 
     const artifact = toReviewPrArtifact({ analysis, improvements, policy });
     writeReviewPrArtifact(cwd, artifact);
+    const reviewLoopArtifact = buildPrReviewLoopArtifact(cwd, { analysis, review: artifact });
+    writePrReviewLoopArtifact(cwd, reviewLoopArtifact);
 
     if (options.format === 'json') {
       emitJsonOutput({ cwd, command: 'review-pr', payload: artifact });
@@ -236,7 +241,7 @@ export const runReviewPr = async (cwd: string, options: ReviewPrOptions): Promis
     tracker.finish({
       inputsSummary: `format=${options.format}`,
       artifactsRead: ['.playbook/repo-index.json', '.playbook/memory/events', '.playbook/learning-state.json', '.playbook/cycle-history.json'],
-      artifactsWritten: ['.playbook/pr-review.json'],
+      artifactsWritten: [REVIEW_PR_ARTIFACT_RELATIVE_PATH, REVIEW_PR_LOOP_ARTIFACT_RELATIVE_PATH],
       successStatus: 'success',
       warningsCount: artifact.summary.blocked + artifact.summary.requires_review
     });
