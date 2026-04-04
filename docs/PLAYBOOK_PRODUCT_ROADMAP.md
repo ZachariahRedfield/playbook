@@ -929,11 +929,11 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
   - deterministic artifacts provide point-in-time evidence (index/findings/plan/apply/verify outputs) and candidate knowledge lifecycle framing.
   - explicit memory lifecycle commands now support replayed candidate promotion into repo-local semantic memory plus deterministic prune workflows for stale/superseded/duplicate artifacts.
 - **Partially defined**
-  - initial promotion/prune semantics are productized for local semantic memory, while broader repo-level longitudinal state and deeper review contracts remain directional.
+  - canonical architecture truth is now defined in `docs/architecture/PLAYBOOK_REPO_LONGITUDINAL_STATE_AND_KNOWLEDGE_PROMOTION.md`; runtime adoption remains in-progress across artifacts and command surfaces.
 - **Future work**
-  - formalize the canonical architecture in `docs/architecture/PLAYBOOK_REPO_LONGITUDINAL_STATE_AND_KNOWLEDGE_PROMOTION.md`.
-  - define schema-governed repo-local longitudinal state (session/review timelines, recurring findings, remediation history, verification outcomes, approvals, recurring failure clusters, unresolved risks, candidate/promoted/superseded knowledge).
-  - implement a human-reviewed knowledge-promotion pipeline with provenance-preserving compaction, demotion, supersession, and stale-knowledge handling.
+  - implement schema-governed repo-local longitudinal state (session/review timelines, recurring findings, remediation history, verification outcomes, approvals, recurring failure clusters, unresolved risks, candidate/promoted/superseded knowledge) as one queryable truth surface.
+  - ensure review, remediation, verification, and promotion outputs resolve through provenance-preserving longitudinal contracts rather than implied aggregation.
+  - continue human-reviewed knowledge-promotion hardening for compaction, demotion, supersession, and stale-knowledge handling without introducing automatic doctrine mutation.
 - **Execution window**
   - after Session + Evidence, Control Plane, and PR Review Loop architecture layers; outside the current near-term execution window unless explicitly promoted in roadmap status.
 

@@ -10,7 +10,7 @@ It introduces **Repo Longitudinal State** and a **Knowledge Promotion pipeline**
 2. Control Plane (`docs/architecture/PLAYBOOK_CONTROL_PLANE_ARCHITECTURE.md`)
 3. PR Review Loop (`docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md`)
 
-This architecture is directional and contract-oriented. It does **not** claim broad runtime implementation is complete.
+This architecture is canonical and contract-oriented. Runtime adoption can be incremental, but this document defines the truth surface that runtime artifacts, command outputs, and roadmap status must align to.
 
 ## Docs summary labels
 
@@ -27,6 +27,16 @@ This architecture is directional and contract-oriented. It does **not** claim br
 - Failure Mode: Premature canonicalization
 - Failure Mode: Longitudinal state treated as hidden telemetry
 - Failure Mode: Accumulating logs instead of compacting knowledge
+
+
+## Canonical runtime truth stance
+
+Repo Longitudinal State is a first-class runtime truth surface, not an implied aggregation hidden across adjacent artifacts.
+
+- It is **deterministic**: same evidence inputs and policies must yield the same longitudinal state projection.
+- It is **provenance-preserving**: promoted or candidate knowledge must retain links back to source evidence bundles.
+- It is **governance-aware**: candidate knowledge, promoted doctrine, and enforced policy state remain distinct and queryable.
+- It is **review-compatible**: operators should be able to inspect, challenge, and evolve state without bypassing existing review and approval boundaries.
 
 ## Canonical model: Repo Longitudinal State
 
@@ -63,9 +73,9 @@ Playbook longitudinal memory should be modeled as explicit classes:
 5. **Upstream-promotable reusable patterns**
    - Explicitly selected reusable patterns that may be promoted beyond a single repository.
 
-## Evidence sources for longitudinal learning
+## Artifact feeds for longitudinal state
 
-Longitudinal learning may use deterministic evidence from:
+Longitudinal state is fed by deterministic runtime and repository artifacts, including:
 
 - source code
 - repository structure
@@ -79,7 +89,25 @@ Longitudinal learning may use deterministic evidence from:
 - ownership metadata
 - architecture metadata
 
-Evidence should be normalized and lineage-linked before promotion decisions.
+Evidence should be normalized, lineage-linked, and retained as replayable references before any candidate extraction or promotion decision.
+
+
+## Relationship to review, remediation, verification, and promotion
+
+Repo Longitudinal State is downstream of existing deterministic seams and must not create a parallel governance path.
+
+1. **Review loop relationship**
+   - PR review-loop outputs are longitudinal evidence inputs, not separate memory systems.
+   - Review findings should project into recurring-finding and unresolved-risk longitudinal fields with provenance refs.
+2. **Remediation relationship**
+   - `verify -> plan -> apply -> verify` receipts and outcomes are canonical longitudinal timeline events.
+   - Remediation history should remain replayable as structured state transitions, not inferred from commit narratives.
+3. **Verification relationship**
+   - Verification outcomes and policy results are longitudinal trust-state updates.
+   - Contradictions or stale evidence must be represented as explicit longitudinal-state flags, not silently overwritten.
+4. **Promotion relationship**
+   - Promotion consumes candidate knowledge derived from longitudinal evidence bundles.
+   - Promotion decisions write audited receipts and update promoted/superseded state without destroying candidate lineage.
 
 ## Knowledge Promotion pipeline
 
@@ -126,6 +154,20 @@ Candidate artifacts remain non-governing until reviewed and promoted.
 Recommended dependency ladder:
 
 `deterministic runtime -> session/evidence -> control plane -> PR review loop -> repo longitudinal state/knowledge promotion -> later automation surfaces`
+
+
+## Canonical longitudinal truth fields (minimum contract shape)
+
+The longitudinal truth surface should expose deterministic fields covering:
+
+- identity and scope (`repoId`, scope boundaries, schema version)
+- timeline (`sessionTimeline`, `reviewTimeline`, `remediationTimeline`)
+- trust outcomes (`verificationOutcomes`, policy/approval decisions, receipt references)
+- recurring signals (`recurringFindings`, `failureClusters`, unresolved risks/questions)
+- knowledge lifecycle (`candidate`, `promoted`, `demoted`, `superseded`, `stale`)
+- provenance (`evidenceRefs`, fingerprints, source artifacts, timestamps)
+
+Field names may evolve, but these categories are canonical and required for contract-aligned runtime truth.
 
 ## Artifact and storage direction under `.playbook/`
 
