@@ -914,13 +914,14 @@ Failure Mode - If workflow memory lives only in chat or human recall, the system
 
 - **Already exists today**
   - deterministic `analyze-pr` analysis and reviewed `verify -> plan -> apply -> verify` remediation loops provide the current substrate for PR intelligence and guarded remediation.
+  - canonical PR Review Loop runtime contract is now materialized as `.playbook/pr-review-loop.json`, built from existing canonical artifacts and surfaced through existing operator seams (`review-pr`, `status proof` continuity).
 - **Partially defined**
-  - review finding taxonomy, evidence-linked comment/suggestion contracts, action-class semantics, and escalation policy are not yet fully standardized as one canonical PR review loop.
+  - review finding taxonomy, evidence-linked comment/suggestion contracts, and action-class semantics continue to evolve, now anchored to the canonical loop contract.
 - **Future work**
-  - formalize the PR Review Loop architecture in `docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md` so trigger normalization, session creation, artifact hydration, deterministic analysis, evidence attachment, policy gating, bounded autofix eligibility, re-verification, and human escalation share one governed runtime contract.
+  - continue tightening policy and escalation semantics on top of `docs/architecture/PLAYBOOK_PR_REVIEW_LOOP_ARCHITECTURE.md` while preserving additive read-first behavior.
   - enforce thin review interfaces (CI, PR comments, future UI/API) over the same deterministic runtime and control-plane checks.
 - **Execution window**
-  - outside the current near-term execution window except for currently implemented deterministic `analyze-pr` and remediation trust hardening.
+  - active now as an additive architecture/runtime hardening seam, with deeper interface and taxonomy standardization continuing in later windows.
 
 #### 7. Repo Longitudinal State + Knowledge Promotion
 

@@ -320,6 +320,11 @@
         "path": "packages/contracts/src/pr-review.schema.json"
       },
       {
+        "id": "pr-review-loop",
+        "version": "1.0",
+        "path": "packages/contracts/src/pr-review-loop.schema.json"
+      },
+      {
         "id": "story",
         "version": "1.0",
         "path": "packages/contracts/src/story.schema.json"

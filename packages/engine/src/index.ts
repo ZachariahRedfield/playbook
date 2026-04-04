@@ -303,6 +303,8 @@ export type { ChangeScopeArtifact, ChangeScopeBundle, MutationScopeDeclaration, 
 
 export { analyzePullRequest } from './pr/analyzePr.js';
 export type { AnalyzePullRequestResult } from './pr/analyzePr.js';
+export { buildPrReviewLoopArtifact, writePrReviewLoopArtifact, PR_REVIEW_LOOP_ARTIFACT_RELATIVE_PATH } from './pr/reviewLoop.js';
+export type { PrReviewLoopArtifact } from './pr/reviewLoop.js';
 export { formatAnalyzePrOutput, formatAnalyzePrText, formatAnalyzePrJson, formatAnalyzePrGithubComment, formatAnalyzePrGithubReview } from './formatters/analyzePrFormatter.js';
 export type { AnalyzePrOutputFormat } from './formatters/analyzePrFormatter.js';
 

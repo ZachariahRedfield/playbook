@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/pr-review-loop.schema.json",
+  "title": "Playbook PR Review Loop Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "trigger",
+    "session_refs",
+    "hydrated_evidence_refs",
+    "policy_gate",
+    "bounded_autofix_eligibility",
+    "reverification",
+    "escalation"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "pr-review-loop" },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "normalized", "base_ref"],
+      "properties": {
+        "source": { "enum": ["analyze-pr", "session", "unknown"] },
+        "normalized": { "type": "string", "minLength": 1 },
+        "base_ref": { "type": ["string", "null"] }
+      }
+    },
+    "session_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_path", "session_present", "selected_run_id"],
+      "properties": {
+        "session_path": { "const": ".playbook/session.json" },
+        "session_present": { "type": "boolean" },
+        "selected_run_id": { "type": ["string", "null"] }
+      }
+    },
+    "hydrated_evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "kind", "present"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "present": { "type": "boolean" }
+        }
+      }
+    },
+    "policy_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "safe", "requires_review", "blocked", "decision"],
+      "properties": {
+        "source": { "const": ".playbook/pr-review.json" },
+        "safe": { "type": "integer", "minimum": 0 },
+        "requires_review": { "type": "integer", "minimum": 0 },
+        "blocked": { "type": "integer", "minimum": 0 },
+        "decision": { "enum": ["pass", "requires_review", "blocked"] }
+      }
+    },
+    "bounded_autofix_eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["remediation_status_path", "remediation_status_present", "eligible", "reason"],
+      "properties": {
+        "remediation_status_path": { "const": ".playbook/remediation-status.json" },
+        "remediation_status_present": { "type": "boolean" },
+        "eligible": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "reverification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verify", "verify_preflight"],
+      "properties": {
+        "verify": { "$ref": "#/$defs/verifyRef" },
+        "verify_preflight": { "$ref": "#/$defs/verifyRef" }
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "next_action"],
+      "properties": {
+        "state": { "enum": ["none", "requires_review", "blocked"] },
+        "next_action": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "verifyRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "present", "ok"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "present": { "type": "boolean" },
+        "ok": { "type": ["boolean", "null"] }
+      }
+    }
+  }
+}

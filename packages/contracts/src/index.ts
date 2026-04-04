@@ -37,6 +37,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   memoryPressurePlan: 'packages/contracts/src/memory-pressure-plan.schema.json',
   memoryPressureFollowups: 'packages/contracts/src/memory-pressure-followups.schema.json',
   prReview: 'packages/contracts/src/pr-review.schema.json',
+  prReviewLoop: 'packages/contracts/src/pr-review-loop.schema.json',
   story: 'packages/contracts/src/story.schema.json',
   stories: 'packages/contracts/src/stories.schema.json',
   testTriage: 'packages/contracts/src/test-triage.schema.json',

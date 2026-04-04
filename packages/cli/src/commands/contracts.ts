@@ -65,6 +65,7 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'consolidation-candidates', version: '1.0', path: 'packages/contracts/src/consolidation-candidates.schema.json' },
   { id: 'memory-compaction-review', version: '1.0', path: 'packages/contracts/src/memory-compaction-review.schema.json' },
   { id: 'pr-review', version: '1.0', path: 'packages/contracts/src/pr-review.schema.json' },
+  { id: 'pr-review-loop', version: '1.0', path: 'packages/contracts/src/pr-review-loop.schema.json' },
   { id: 'story', version: '1.0', path: 'packages/contracts/src/story.schema.json' },
   { id: 'stories', version: '1.0', path: 'packages/contracts/src/stories.schema.json' },
   { id: 'explain.memoryKnowledge', version: '1.0', path: 'schema://cli/explain' },

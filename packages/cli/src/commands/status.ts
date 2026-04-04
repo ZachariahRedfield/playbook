@@ -151,6 +151,8 @@ type StatusProofResult = {
   domainNextActions: FailureDomainSummary['domainNextActions'];
   continuity: {
     active_session_ref: string | null;
+    pr_review_loop_ref: string | null;
+    pr_review_loop_escalation_state: string | null;
     pinned_evidence_refs: string[];
     latest_run_id: string | null;
     latest_receipt_refs: string[];
@@ -529,6 +531,10 @@ const safeControlPlaneState = (cwd: string): ControlPlaneStateArtifact | null =>
 
 const readContinuitySummary = (cwd: string): StatusProofResult['continuity'] => {
   const session = readSession(cwd) as SessionLike | null;
+  const prReviewLoopPath = path.join(cwd, '.playbook', 'pr-review-loop.json');
+  const prReviewLoop = fs.existsSync(prReviewLoopPath)
+    ? (JSON.parse(fs.readFileSync(prReviewLoopPath, 'utf8')) as { escalation?: { state?: string } })
+    : null;
   const runs = listOrchestrationExecutionRuns(cwd);
   const latestRun = [...runs].sort((left, right) => {
     const timeDelta = toTimeMs(right.updated_at) - toTimeMs(left.updated_at);
@@ -561,6 +567,8 @@ const readContinuitySummary = (cwd: string): StatusProofResult['continuity'] => 
 
   return {
     active_session_ref: session ? '.playbook/session.json' : null,
+    pr_review_loop_ref: prReviewLoop ? '.playbook/pr-review-loop.json' : null,
+    pr_review_loop_escalation_state: prReviewLoop?.escalation?.state ?? null,
     pinned_evidence_refs: session ? session.pinnedArtifacts.map((entry: { artifact: string }) => entry.artifact).sort((left, right) => left.localeCompare(right)) : [],
     latest_run_id: latestRun?.run_id ?? null,
     latest_receipt_refs: latestReceiptRefs,
@@ -806,6 +814,8 @@ export const runStatus = async (cwd: string, options: StatusOptions): Promise<nu
             label: 'Continuity',
             items: [
               `session=${proofResult.continuity.active_session_ref ?? 'none'}`,
+              `pr_loop=${proofResult.continuity.pr_review_loop_ref ?? 'none'}`,
+              `pr_loop_escalation=${proofResult.continuity.pr_review_loop_escalation_state ?? 'none'}`,
               `pinned_refs=${proofResult.continuity.pinned_evidence_refs.length}`,
               `latest_run=${proofResult.continuity.latest_run_id ?? 'none'}`,
               `latest_receipts=${proofResult.continuity.latest_receipt_refs.length}`,
