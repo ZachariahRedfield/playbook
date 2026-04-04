@@ -57,6 +57,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   managedSurfaceManifest: 'packages/contracts/src/managed-surface-manifest.schema.json',
   aiProposal: 'packages/contracts/src/ai-proposal.schema.json',
   contextCacheIndex: 'packages/contracts/src/context-cache-index.schema.json',
+  automationSuggestions: 'packages/contracts/src/automation-suggestions.schema.json',
   interopRequestDraft: 'packages/contracts/src/interop-request-draft.schema.json',
   interopFollowups: 'packages/contracts/src/interop-followups.schema.json',
   interopPlanHints: 'packages/contracts/src/interop-plan-hints.schema.json',

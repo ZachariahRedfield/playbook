@@ -256,6 +256,17 @@ export type {
 export { lookupMemoryCompactionReview } from './memory/inspection.js';
 export { listCandidateKnowledge, loadCandidateKnowledgeById, promoteMemoryCandidate, retirePromotedKnowledge, supersedePromotedKnowledge, pruneMemoryKnowledge } from './memory/knowledge.js';
 export type { MemoryKnowledgeKind, MemoryKnowledgeEntry, MemoryKnowledgeArtifact, MemoryPromotionResult, MemoryRetireResult, MemorySupersedeResult, MemoryPruneResult } from './memory/knowledge.js';
+export {
+  AUTOMATION_SUGGESTIONS_SCHEMA_VERSION,
+  AUTOMATION_SUGGESTIONS_RELATIVE_PATH,
+  buildAutomationSuggestionsArtifact,
+  writeAutomationSuggestionsArtifact
+} from './knowledge/automationSuggestions.js';
+export type {
+  AutomationSuggestion,
+  AutomationSuggestionsArtifact,
+  BuildAutomationSuggestionsOptions
+} from './knowledge/automationSuggestions.js';
 export { REVIEW_QUEUE_SCHEMA_VERSION, REVIEW_QUEUE_RELATIVE_PATH, buildReviewQueue, writeReviewQueueArtifact } from './retrieval/reviewQueue.js';
 export type { ReviewRecommendedAction, ReviewPriority, ReviewTargetKind, ReviewQueueEntry, ReviewQueueArtifact, BuildReviewQueueOptions } from './retrieval/reviewQueue.js';
 export { REVIEW_HANDOFFS_SCHEMA_VERSION, REVIEW_HANDOFFS_RELATIVE_PATH, buildReviewHandoffsArtifact, writeReviewHandoffsArtifact } from './retrieval/reviewHandoffs.js';

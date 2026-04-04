@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/automation-suggestions.schema.json",
+  "title": "Automation Suggestions",
+  "description": "Deterministic, proposal-only automation synthesis suggestions generated strictly from promoted, provenance-linked knowledge surfaces.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "proposalOnly",
+    "authority",
+    "generatedAt",
+    "artifactPath",
+    "inputs",
+    "suggestions"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "kind": { "type": "string", "const": "playbook-automation-suggestions" },
+    "proposalOnly": { "type": "boolean", "const": true },
+    "authority": { "type": "string", "const": "read-only" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "artifactPath": { "type": "string", "const": ".playbook/automation-suggestions.json" },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["promotedKnowledgePaths", "approvedPolicyPackRefs", "excludedSources"],
+      "properties": {
+        "promotedKnowledgePaths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "approvedPolicyPackRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "excludedSources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "raw-chat-memory",
+              "unreviewed-candidate-knowledge",
+              "evidence-free-inferred-rules"
+            ]
+          }
+        }
+      }
+    },
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "suggestionId",
+          "sourceKnowledgeRefs",
+          "suggestedAutomationPattern",
+          "rationale",
+          "confidence",
+          "riskSummary",
+          "rollbackAccountability",
+          "provenanceRefs",
+          "freshness"
+        ],
+        "properties": {
+          "suggestionId": { "type": "string", "minLength": 1 },
+          "sourceKnowledgeRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "suggestedAutomationPattern": { "type": "string", "minLength": 1 },
+          "rationale": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "riskSummary": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["level", "summary"],
+            "properties": {
+              "level": { "type": "string", "enum": ["low", "medium", "high"] },
+              "summary": { "type": "string", "minLength": 1 }
+            }
+          },
+          "rollbackAccountability": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["owner", "rollbackPlan", "accountabilityRefs"],
+            "properties": {
+              "owner": { "type": "string", "minLength": 1 },
+              "rollbackPlan": { "type": "string", "minLength": 1 },
+              "accountabilityRefs": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "provenanceRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["knowledgeId", "eventId", "sourcePath", "fingerprint"],
+              "properties": {
+                "knowledgeId": { "type": "string", "minLength": 1 },
+                "eventId": { "type": "string", "minLength": 1 },
+                "sourcePath": { "type": "string", "minLength": 1 },
+                "fingerprint": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "freshness": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["promotedAt", "knowledgeGeneratedAt", "ageDays", "stale"],
+            "properties": {
+              "promotedAt": { "type": "string", "format": "date-time" },
+              "knowledgeGeneratedAt": { "type": "string", "format": "date-time" },
+              "ageDays": { "type": "integer", "minimum": 0 },
+              "stale": { "type": "boolean" }
+            }
+          },
+          "policyPackRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}
