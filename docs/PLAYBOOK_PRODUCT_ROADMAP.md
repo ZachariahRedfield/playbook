@@ -1618,6 +1618,10 @@ Use a layered phase model so each phase compounds directly on the previous one:
     - Recent implementation note: replay candidates now materialize at `.playbook/memory/replay-candidates.json` (compat-written to `.playbook/memory/candidates.json`) with explicit `candidateOnly`, `authority`, salience, and event provenance fields derived from memory index + append-only event evidence rather than opaque raw logs.
     - Recent implementation note: consolidation now emits `.playbook/memory/consolidation-candidates.json`, preserving replay and event provenance end-to-end, surfacing salience for review, and marking every promotion path as explicit `reviewRequired` with no auto-promotion behavior.
     - Recent implementation note: compaction review now emits `.playbook/memory/compaction-review.json`, making deterministic `discard` / `attach` / `merge` / `new_candidate` bucket decisions explicit with canonical reason codes, replay/consolidation/promotion provenance, and unchanged read-only / review-required authority.
+    - Recent implementation note: replay/consolidation/compaction/promotion now converge into canonical read-only runtime contract `.playbook/replay-promotion-system.json`, built deterministically from replay candidates, consolidation candidates, compaction review, lifecycle candidate state, promoted knowledge state, and memory-system summaries while preserving explicit candidate-only vs promotion-ready boundaries.
+    - Rule: Replay, consolidation, compaction, and promotion must remain explicit, provenance-preserving layers.
+    - Pattern: observe -> replay -> consolidate -> compact -> review -> promote.
+    - Failure Mode: Adjacent memory artifacts without a canonical replay/promotion contract create lifecycle drift and unclear promotion authority.
 12. **Phase 12 â€” Session + Evidence Layer** (implemented; runtime truth hardening continues)  
     Session envelope and evidence provenance contracts bind actor context, command lineage, approvals, and deterministic artifact references as a canonical runtime truth surface.
 13. **Phase 13 â€” Control Plane / Agent Runtime v1**  

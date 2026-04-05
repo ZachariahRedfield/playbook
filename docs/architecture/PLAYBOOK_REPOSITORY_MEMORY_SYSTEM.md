@@ -7,6 +7,7 @@ Define one canonical, read-only repository memory contract so Playbook memory/ev
 Canonical artifact:
 
 - `.playbook/memory-system.json`
+- `.playbook/replay-promotion-system.json`
 
 This contract is v1 and **does not widen mutation authority**.
 
@@ -24,6 +25,21 @@ This contract is v1 and **does not widen mutation authority**.
 4. **Promoted doctrine**
    - Source artifacts: `.playbook/memory/knowledge/decisions.json`, `.playbook/memory/knowledge/patterns.json`, `.playbook/memory/knowledge/failure-modes.json`, `.playbook/memory/knowledge/invariants.json`
    - Role: reviewed, durable doctrine
+
+
+## Replay/Consolidation/Compaction/Promotion dependency layer
+
+`.playbook/replay-promotion-system.json` is the canonical read-only dependency layer that unifies:
+
+- replay candidate inventory,
+- consolidation candidate inventory,
+- compaction review buckets,
+- salience and review-required status,
+- promotion-ready vs candidate-only boundaries,
+- lifecycle summaries (candidate/promoted/stale/superseded/retired),
+- provenance refs end-to-end across replay -> consolidation -> compaction -> promotion/lifecycle state.
+
+It is built from canonical source artifacts only and preserves explicit promotion authority boundaries.
 
 ## Deterministic boundaries
 
@@ -49,5 +65,6 @@ The canonical `.playbook/memory-system.json` contract includes:
 ## Operating doctrine
 
 - Rule: Structural graph, temporal memory, candidate knowledge, and promoted doctrine must remain separate explicit layers.
-- Pattern: observe -> store episodic evidence -> cluster/compact -> review -> promote doctrine.
-- Failure Mode: Without a canonical memory-system contract, adjacent memory artifacts drift into overlapping authority and unclear lifecycle boundaries.
+- Rule: Replay, consolidation, compaction, and promotion must remain explicit, provenance-preserving layers.
+- Pattern: observe -> replay -> consolidate -> compact -> review -> promote.
+- Failure Mode: Without a canonical replay/promotion contract, adjacent memory artifacts drift into overlapping authority and unclear promotion authority.

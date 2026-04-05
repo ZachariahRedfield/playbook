@@ -66,6 +66,10 @@
         "producer": "memory"
       },
       {
+        "path": ".playbook/replay-promotion-system.json",
+        "producer": "memory"
+      },
+      {
         "path": ".playbook/module-digests.json",
         "producer": "index"
       },

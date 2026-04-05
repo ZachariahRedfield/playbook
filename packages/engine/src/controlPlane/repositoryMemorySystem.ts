@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { writeReplayPromotionSystem } from './replayPromotionSystem.js';
 
 export const REPOSITORY_MEMORY_SYSTEM_RELATIVE_PATH = '.playbook/memory-system.json' as const;
 
@@ -367,5 +368,6 @@ export const writeRepositoryMemorySystem = (repoRoot: string): RepositoryMemoryS
   const absolutePath = path.join(repoRoot, REPOSITORY_MEMORY_SYSTEM_RELATIVE_PATH);
   fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
   fs.writeFileSync(absolutePath, deterministicStringify(artifact), 'utf8');
+  writeReplayPromotionSystem(repoRoot);
   return artifact;
 };
