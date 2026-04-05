@@ -836,6 +836,18 @@ export type {
   LearningClusterCandidateType,
   LearningClusterRiskReviewRequirement
 } from './learning/learningClusters.js';
+
+export {
+  GRAPH_INFORMED_LEARNING_SCHEMA_VERSION,
+  GRAPH_INFORMED_LEARNING_RELATIVE_PATH,
+  buildGraphInformedLearningArtifact,
+  writeGraphInformedLearningArtifact,
+  buildAndWriteGraphInformedLearningArtifact
+} from './learning/graphInformedLearning.js';
+export type {
+  GraphInformedLearningArtifact,
+  GraphInformedLearningCluster
+} from './learning/graphInformedLearning.js';
 export { GLOBAL_PATTERNS_RELATIVE_PATH, readCanonicalPatternsArtifact, materializeStoryFromSource, materializePatternFromCandidate, transitionPatternLifecycle } from './promotion.js';
 export { exportPatternTransferPackage, importPatternTransferPackage, PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR } from './patternTransfer.js';
 export type { PromotionSourceRef, StoryRecordWithProvenance, StoryPromotionProvenance as PromotionStoryProvenance, PromotedPatternRecord, CanonicalPatternsArtifact, PreparedPromotion } from './promotion.js';
