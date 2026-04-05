@@ -28,6 +28,15 @@ This document defines:
 - identity split between `eventInstanceId` and `eventFingerprint` (semantic identity),
 - Rule / Pattern / Failure Mode note candidates.
 
+
+## Canonical read-runtime dependency contract
+
+The replay/consolidation/compaction/promotion layer is materialized as:
+
+- `.playbook/replay-promotion-system.json`
+
+This read-only contract deterministically aggregates replay candidates, consolidation candidates, compaction review buckets, lifecycle summaries, promotion-ready versus candidate-only boundaries, and end-to-end provenance references. It does not introduce auto-promotion or broaden mutation authority.
+
 ## Non-goals
 
 - autonomous doctrine/rule mutation,

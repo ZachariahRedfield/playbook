@@ -1040,6 +1040,7 @@ export type { ControlPlaneStateArtifact } from './controlPlane/controlPlaneState
 export { readLongitudinalState, writeLongitudinalState, LONGITUDINAL_STATE_RELATIVE_PATH } from './controlPlane/longitudinalState.js';
 export type { LongitudinalStateArtifact } from './controlPlane/longitudinalState.js';
 export { readRepositoryMemorySystem, writeRepositoryMemorySystem, REPOSITORY_MEMORY_SYSTEM_RELATIVE_PATH } from './controlPlane/repositoryMemorySystem.js';
+export { readReplayPromotionSystem, writeReplayPromotionSystem, REPLAY_PROMOTION_SYSTEM_RELATIVE_PATH } from './controlPlane/replayPromotionSystem.js';
 export type { RepositoryMemorySystemArtifact } from './controlPlane/repositoryMemorySystem.js';
 export { readMaintenancePlan, writeMaintenancePlan, MAINTENANCE_PLAN_RELATIVE_PATH, MAINTENANCE_PLAN_SCHEMA_VERSION } from './controlPlane/maintenancePlan.js';
 export type { MaintenancePlanArtifact, MaintenancePlanRow } from './controlPlane/maintenancePlan.js';

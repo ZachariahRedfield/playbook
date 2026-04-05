@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { REPLAY_PROMOTION_SYSTEM_RELATIVE_PATH } from './replayPromotionSystem.js';
 import { REPOSITORY_MEMORY_SYSTEM_RELATIVE_PATH, readRepositoryMemorySystem, writeRepositoryMemorySystem } from './repositoryMemorySystem.js';
 
 const writeJson = (repo: string, relativePath: string, value: unknown): void => {
@@ -88,5 +89,6 @@ describe('repositoryMemorySystem', () => {
     expect(artifact.state_summaries.promoted.superseded).toBe(1);
     expect(artifact.state_summaries.promoted.retired).toBe(1);
     expect(fs.existsSync(path.join(repo, REPOSITORY_MEMORY_SYSTEM_RELATIVE_PATH))).toBe(true);
+    expect(fs.existsSync(path.join(repo, REPLAY_PROMOTION_SYSTEM_RELATIVE_PATH))).toBe(true);
   });
 });
