@@ -587,17 +587,10 @@ export const runTelemetry = async (
   if (subcommand === 'learning') {
     const learningCompaction = generateLearningCompactionArtifact(cwd);
     writeLearningCompactionArtifact(cwd, learningCompaction);
-    const higherOrderSynthesis = buildAndWriteHigherOrderSynthesisArtifact(cwd);
+    buildAndWriteHigherOrderSynthesisArtifact(cwd);
 
     if (options.format === 'json') {
-      emitJsonOutput({
-        cwd,
-        command: 'telemetry',
-        payload: {
-          learningCompaction,
-          higherOrderSynthesis: higherOrderSynthesis.artifact
-        }
-      });
+      emitJsonOutput({ cwd, command: 'telemetry', payload: learningCompaction });
       tracker.finish({
         inputsSummary: 'subcommand=learning',
         artifactsWritten: ['.playbook/learning-compaction.json', '.playbook/higher-order-synthesis.json'],

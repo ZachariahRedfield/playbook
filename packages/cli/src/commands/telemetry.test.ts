@@ -578,16 +578,12 @@ describe('runTelemetry', () => {
 
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
-    const learningCompaction = payload.learningCompaction as Record<string, unknown>;
-    expect(learningCompaction.kind).toBe('learning-compaction');
-    const summary = learningCompaction.summary as Record<string, unknown>;
+    expect(payload.kind).toBe('learning-compaction');
+    const summary = payload.summary as Record<string, unknown>;
     expect(summary.source_run_ids).toEqual(['run-alpha', 'run-beta']);
     expect((summary.route_patterns as Array<Record<string, unknown>>)[0]?.route_id).toBe('deterministic_local:docs_only');
     expect((summary.recurring_failures as Array<Record<string, unknown>>).some((entry) => entry.signal_id === 'failure.retry-heavy.engine_scoring')).toBe(true);
     expect((summary.open_questions as string[]).includes('Low cross-run evidence: collect at least two run_ids before promotion decisions.')).toBe(false);
-    const higherOrder = payload.higherOrderSynthesis as Record<string, unknown>;
-    expect(higherOrder.kind).toBe('higher-order-synthesis');
-    expect(higherOrder.proposalOnly).toBe(true);
 
     const written = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'learning-compaction.json'), 'utf8')) as Record<string, unknown>;
     expect((written.summary as Record<string, unknown>).summary_id).toBe(summary.summary_id);
