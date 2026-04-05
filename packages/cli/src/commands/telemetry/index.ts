@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  buildAndWriteHigherOrderSynthesisArtifact,
   buildCommandQualitySummaryArtifact,
   deriveLearningStateSnapshot,
   generateLearningCompactionArtifact,
@@ -12,6 +13,7 @@ import {
   summarizeCycleRegressions,
   type LearningStateSnapshotArtifact,
   type LearningCompactionArtifact,
+  type HigherOrderSynthesisArtifact,
   type OutcomeTelemetryArtifact,
   type ProcessTelemetryArtifact,
   type TaskExecutionProfileArtifact,
@@ -81,6 +83,17 @@ type LearningClustersReadModel = {
     };
     next_review_action: string;
   };
+  higher_order_synthesis: {
+    proposal_count: number;
+    review_required: boolean;
+    top_proposals: Array<{
+      synthesis_proposal_id: string;
+      contributing_cluster_count: number;
+      confidence: number;
+      proposed_generalized_abstraction: string;
+      next_action_text: string;
+    }>;
+  };
 };
 
 const OUTCOME_TELEMETRY_PATH = ['.playbook', 'outcome-telemetry.json'] as const;
@@ -91,6 +104,7 @@ const CYCLE_HISTORY_PATH = ['.playbook', 'cycle-history.json'] as const;
 const CYCLE_STATE_PATH = ['.playbook', 'cycle-state.json'] as const;
 const LEARNING_CLUSTERS_PATH = ['.playbook', 'learning-clusters.json'] as const;
 const REPO_GRAPH_PATH = ['.playbook', 'repo-graph.json'] as const;
+const HIGHER_ORDER_SYNTHESIS_PATH = ['.playbook', 'higher-order-synthesis.json'] as const;
 
 type LearningClustersArtifactRead = {
   clusters?: Array<{
@@ -113,6 +127,8 @@ type RepoGraphArtifactRead = {
     kind?: string;
   }>;
 };
+
+type HigherOrderSynthesisArtifactRead = Pick<HigherOrderSynthesisArtifact, 'synthesisProposals'>;
 
 const readJsonArtifact = <T>(cwd: string, segments: readonly string[]): T | undefined => {
   const artifactPath = path.join(cwd, ...segments);
@@ -177,6 +193,7 @@ const renderTextLearningState = (artifact: LearningStateSnapshotArtifact): void 
 const deriveLearningClustersReadModel = (cwd: string): LearningClustersReadModel => {
   const artifact = readJsonArtifact<LearningClustersArtifactRead>(cwd, LEARNING_CLUSTERS_PATH);
   const repoGraph = tryReadJsonArtifact<RepoGraphArtifactRead>(cwd, REPO_GRAPH_PATH);
+  const higherOrderSynthesis = tryReadJsonArtifact<HigherOrderSynthesisArtifactRead>(cwd, HIGHER_ORDER_SYNTHESIS_PATH);
   const clusters = artifact?.clusters ?? [];
   const moduleNodes = (repoGraph?.nodes ?? []).filter((node) => node.kind === 'module' && typeof node.id === 'string');
   const moduleIds = new Set(moduleNodes.map((node) => node.id as string));
@@ -238,6 +255,23 @@ const deriveLearningClustersReadModel = (cwd: string): LearningClustersReadModel
         concentration_label: concentrationLabel
       },
       next_review_action: graphReviewAction
+    },
+    higher_order_synthesis: {
+      proposal_count: higherOrderSynthesis?.synthesisProposals?.length ?? 0,
+      review_required: true,
+      top_proposals: (higherOrderSynthesis?.synthesisProposals ?? []).slice(0, 3).map((proposal: {
+        synthesisProposalId: string;
+        contributingClusterIds: string[];
+        confidence: number;
+        proposedGeneralizedAbstraction: string;
+        nextActionText: string;
+      }) => ({
+        synthesis_proposal_id: proposal.synthesisProposalId,
+        contributing_cluster_count: proposal.contributingClusterIds.length,
+        confidence: proposal.confidence,
+        proposed_generalized_abstraction: proposal.proposedGeneralizedAbstraction,
+        next_action_text: proposal.nextActionText
+      }))
     }
   };
 };
@@ -266,6 +300,12 @@ const renderTextLearningClusters = (readModel: LearningClustersReadModel): void 
     `Structural spread: ${readModel.graph_informed.structural_spread.concentration_label} (affected=${readModel.graph_informed.structural_spread.affected_module_count}/${readModel.graph_informed.structural_spread.module_count}, concentration=${readModel.graph_informed.structural_spread.concentration_index})`
   );
   console.log(`Next review action: ${readModel.graph_informed.next_review_action}`);
+  console.log(`Higher-order synthesis proposals: ${readModel.higher_order_synthesis.proposal_count}`);
+  if (readModel.higher_order_synthesis.top_proposals.length > 0) {
+    const top = readModel.higher_order_synthesis.top_proposals[0];
+    console.log(`Top synthesis: ${top.synthesis_proposal_id} (clusters=${top.contributing_cluster_count}, confidence=${top.confidence})`);
+    console.log(`Synthesis next action: ${top.next_action_text}`);
+  }
 };
 
 const renderTextLearningCompaction = (artifact: LearningCompactionArtifact): void => {
@@ -307,7 +347,7 @@ export const runTelemetry = async (
       usage: 'playbook telemetry <subcommand> [options]',
       description: 'Inspect deterministic telemetry artifacts and cross-run learning summaries.',
       options: ['outcomes                  Inspect .playbook/outcome-telemetry.json', 'process                   Inspect .playbook/process-telemetry.json', 'learning-state            Show compacted deterministic learning snapshot', 'learning                  Compact cross-run learning signals and write artifact', 'summary                   Show combined deterministic telemetry summary', 'cycle                     Show cycle runtime summary from governed cycle artifacts', '  --detect-regressions      Add deterministic cycle regression warnings from governed cycle evidence', 'commands                  Show command-quality summary for core execution commands', '--json                    Alias for --format=json', '--format <text|json>      Output format', '--quiet                   Suppress success output in text mode', '--help                    Show help'],
-      artifacts: ['.playbook/outcome-telemetry.json (read)', '.playbook/process-telemetry.json (read)', '.playbook/task-execution-profile.json (optional read)', '.playbook/repo-graph.json (optional read for learning-state graph context)', '.playbook/telemetry/command-quality.json (read for commands)', '.playbook/cycle-history.json (read for cycle)', '.playbook/cycle-state.json (optional read for cycle)', '.playbook/cycle-history.json (read for cycle regression detection)', '.playbook/learning-compaction.json (write for learning)']
+      artifacts: ['.playbook/outcome-telemetry.json (read)', '.playbook/process-telemetry.json (read)', '.playbook/task-execution-profile.json (optional read)', '.playbook/repo-graph.json (optional read for learning-state graph context)', '.playbook/higher-order-synthesis.json (optional read for learning-state synthesis view)', '.playbook/telemetry/command-quality.json (read for commands)', '.playbook/cycle-history.json (read for cycle)', '.playbook/cycle-state.json (optional read for cycle)', '.playbook/cycle-history.json (read for cycle regression detection)', '.playbook/learning-compaction.json (write for learning)', '.playbook/higher-order-synthesis.json (write for learning)']
     });
     const exitCode = options.help || hasHelpFlag(args) ? ExitCode.Success : ExitCode.Failure;
     tracker.finish({ inputsSummary: `subcommand=${subcommand ?? 'none'}`, successStatus: exitCode === ExitCode.Success ? 'success' : 'failure', warningsCount: exitCode === ExitCode.Success ? 0 : 1 });
@@ -394,7 +434,7 @@ export const runTelemetry = async (
       });
       tracker.finish({
         inputsSummary: 'subcommand=learning-state',
-        artifactsRead: ['.playbook/outcome-telemetry.json', '.playbook/process-telemetry.json', '.playbook/task-execution-profile.json', '.playbook/repo-graph.json'],
+        artifactsRead: ['.playbook/outcome-telemetry.json', '.playbook/process-telemetry.json', '.playbook/task-execution-profile.json', '.playbook/repo-graph.json', '.playbook/higher-order-synthesis.json'],
         successStatus: 'success',
         openQuestionsCount: learningState.confidenceSummary.open_questions.length
       });
@@ -414,7 +454,7 @@ export const runTelemetry = async (
 
     tracker.finish({
       inputsSummary: 'subcommand=learning-state',
-      artifactsRead: ['.playbook/outcome-telemetry.json', '.playbook/process-telemetry.json', '.playbook/task-execution-profile.json', '.playbook/repo-graph.json'],
+      artifactsRead: ['.playbook/outcome-telemetry.json', '.playbook/process-telemetry.json', '.playbook/task-execution-profile.json', '.playbook/repo-graph.json', '.playbook/higher-order-synthesis.json'],
       successStatus: 'success',
       openQuestionsCount: learningState.confidenceSummary.open_questions.length
     });
@@ -547,13 +587,14 @@ export const runTelemetry = async (
   if (subcommand === 'learning') {
     const learningCompaction = generateLearningCompactionArtifact(cwd);
     writeLearningCompactionArtifact(cwd, learningCompaction);
+    buildAndWriteHigherOrderSynthesisArtifact(cwd);
 
     if (options.format === 'json') {
       emitJsonOutput({ cwd, command: 'telemetry', payload: learningCompaction });
       tracker.finish({
         inputsSummary: 'subcommand=learning',
-        artifactsWritten: ['.playbook/learning-compaction.json'],
-        downstreamArtifactsProduced: ['.playbook/learning-compaction.json'],
+        artifactsWritten: ['.playbook/learning-compaction.json', '.playbook/higher-order-synthesis.json'],
+        downstreamArtifactsProduced: ['.playbook/learning-compaction.json', '.playbook/higher-order-synthesis.json'],
         successStatus: 'success',
         openQuestionsCount: learningCompaction.summary.open_questions.length
       });
@@ -569,12 +610,13 @@ export const runTelemetry = async (
         }
       }
       console.log('Artifact: .playbook/learning-compaction.json');
+      console.log('Artifact: .playbook/higher-order-synthesis.json');
     }
 
     tracker.finish({
       inputsSummary: 'subcommand=learning',
-      artifactsWritten: ['.playbook/learning-compaction.json'],
-      downstreamArtifactsProduced: ['.playbook/learning-compaction.json'],
+      artifactsWritten: ['.playbook/learning-compaction.json', '.playbook/higher-order-synthesis.json'],
+      downstreamArtifactsProduced: ['.playbook/learning-compaction.json', '.playbook/higher-order-synthesis.json'],
       successStatus: 'success',
       openQuestionsCount: learningCompaction.summary.open_questions.length
     });

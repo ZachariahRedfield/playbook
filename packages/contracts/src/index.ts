@@ -15,6 +15,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   learningState: 'packages/contracts/src/learning-state.schema.json',
   learningClusters: 'packages/contracts/src/learning-clusters.schema.json',
   graphInformedLearning: 'packages/contracts/src/graph-informed-learning.schema.json',
+  higherOrderSynthesis: 'packages/contracts/src/higher-order-synthesis.schema.json',
   repositoryEvents: 'packages/contracts/src/repository-events.schema.json',
   improvementCandidates: 'packages/contracts/src/improvement-candidates.schema.json',
   policyEvaluation: 'packages/contracts/src/policy-evaluation.schema.json',

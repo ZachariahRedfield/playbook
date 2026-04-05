@@ -448,6 +448,34 @@ describe('runTelemetry', () => {
         2
       )
     );
+    fs.writeFileSync(
+      path.join(repo, '.playbook', 'higher-order-synthesis.json'),
+      JSON.stringify(
+        {
+          schemaVersion: '1.0',
+          kind: 'higher-order-synthesis',
+          generatedAt: '2026-03-20T00:00:00.000Z',
+          proposalOnly: true,
+          reviewOnly: true,
+          sourceArtifacts: ['.playbook/learning-clusters.json', '.playbook/graph-informed-learning.json'],
+          synthesisProposals: [
+            {
+              synthesisProposalId: 'synthesis:repeated_failure_shape:verify_rule_improvement',
+              contributingClusterIds: ['cluster:repeated_failure_shape:sample', 'cluster:repeated_failure_shape:sample-2'],
+              contributingGraphInformedRefs: ['.playbook/graph-informed-learning.json#clusterId=cluster:repeated_failure_shape:sample'],
+              proposedGeneralizedAbstraction: 'Generalize repeated failure shapes as candidate-only review guidance.',
+              rationale: 'Repeated cluster signals suggest a generalized proposal-only abstraction.',
+              confidence: 0.72,
+              provenanceRefs: ['.playbook/learning-clusters.json#clusterId=cluster:repeated_failure_shape:sample'],
+              reviewRequired: true,
+              nextActionText: 'Human-review required before any doctrine or rule changes.'
+            }
+          ]
+        },
+        null,
+        2
+      )
+    );
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const exitCode = await runTelemetry(repo, ['learning-state'], { format: 'json', quiet: false });
@@ -483,6 +511,15 @@ describe('runTelemetry', () => {
       concentration_index: 0.3333,
       concentration_label: 'distributed'
     });
+    const higherOrder = learningClusters.higher_order_synthesis as Record<string, unknown>;
+    expect(higherOrder.proposal_count).toBe(1);
+    expect(higherOrder.review_required).toBe(true);
+    expect((higherOrder.top_proposals as Array<Record<string, unknown>>)[0]).toEqual(
+      expect.objectContaining({
+        synthesis_proposal_id: 'synthesis:repeated_failure_shape:verify_rule_improvement',
+        contributing_cluster_count: 2
+      })
+    );
 
     logSpy.mockRestore();
   });
@@ -550,6 +587,7 @@ describe('runTelemetry', () => {
 
     const written = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'learning-compaction.json'), 'utf8')) as Record<string, unknown>;
     expect((written.summary as Record<string, unknown>).summary_id).toBe(summary.summary_id);
+    expect(fs.existsSync(path.join(repo, '.playbook', 'higher-order-synthesis.json'))).toBe(true);
 
     logSpy.mockRestore();
   });

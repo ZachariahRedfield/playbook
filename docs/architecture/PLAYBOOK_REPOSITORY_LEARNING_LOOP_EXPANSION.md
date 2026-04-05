@@ -78,12 +78,32 @@ Required boundaries:
 
 Output class: **candidate synthesis proposal**.
 
+Current thin implementation slice (read/runtime additive):
+
+- deterministic artifact: `.playbook/higher-order-synthesis.json`
+- canonical inputs only: `.playbook/learning-clusters.json` + `.playbook/graph-informed-learning.json`
+- output contract remains proposal-only and review-required (`reviewRequired = true`)
+- surfaced via telemetry learning-state read model and telemetry learning runtime artifact generation
+
+Required proposal fields per synthesis row:
+
+- `synthesisProposalId`
+- `contributingClusterIds`
+- `contributingGraphInformedRefs`
+- `proposedGeneralizedAbstraction`
+- `rationale`
+- `confidence`
+- `provenanceRefs`
+- `reviewRequired` (must be `true`)
+- `nextActionText`
+
 ## Governance invariants (must remain true)
 
 - Learning outputs are candidate-only until explicit review.
 - Promotion/demotion/supersession remains human-reviewed.
 - Structural enrichment cannot bypass deterministic remediation and policy boundaries.
 - Artifact provenance must remain inspectable end-to-end.
+- Higher-order synthesis may generalize repeated signals, but may not bypass human-reviewed promotion.
 
 ## Implementation posture
 
@@ -92,5 +112,13 @@ Repository Learning Loop Expansion should be implemented incrementally as additi
 1. deterministic learning-cluster artifacts,
 2. graph-informed enrichment fields over those clusters,
 3. optional later higher-order synthesis proposals.
+
+Canonical pattern:
+
+- repeated signals -> learning clusters -> graph-informed learning -> higher-order synthesis proposal.
+
+Failure mode:
+
+- Treating synthesis as automatic doctrine creation turns learning aggregation into silent governance mutation.
 
 Each increment must preserve operator-visible contracts and avoid hidden mutation authority expansion.

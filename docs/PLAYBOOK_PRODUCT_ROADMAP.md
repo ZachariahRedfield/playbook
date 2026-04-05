@@ -1649,6 +1649,10 @@ Phase 16 allowed vs forbidden input examples:
     - Failure Mode: Proposal-only maintenance that never reaches an approved execution path creates planning theater; execution without approval breaks the trust model.
 22. **Phase 22 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
     Canonical repository-learning expansion that formalizes a three-step ladder: (1) deterministic learning clusters as repeated-signal aggregation, (2) graph-informed learning artifacts as structural enrichment over those clusters, and (3) later higher-order synthesis proposals. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
+    - Implemented thin additive synthesis artifact: `.playbook/higher-order-synthesis.json` generated deterministically from canonical cluster + graph-informed learning inputs.
+    - Rule: Higher-order synthesis may generalize repeated signals, but may not bypass human-reviewed promotion.
+    - Pattern: repeated signals -> clusters -> graph-informed learning -> higher-order synthesis proposal.
+    - Failure Mode: Treating synthesis as automatic doctrine creation turns learning aggregation into silent governance mutation.
 
 Reasoning for reordering:
 

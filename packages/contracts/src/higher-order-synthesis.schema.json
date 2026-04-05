@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/higher-order-synthesis.schema.json",
+  "title": "PlaybookHigherOrderSynthesisArtifact",
+  "description": "Deterministic, proposal-only higher-order synthesis proposals derived from learning clusters and graph-informed learning outputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "proposalOnly",
+    "reviewOnly",
+    "sourceArtifacts",
+    "synthesisProposals"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "higher-order-synthesis" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "proposalOnly": { "const": true },
+    "reviewOnly": { "const": true },
+    "sourceArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          ".playbook/learning-clusters.json",
+          ".playbook/graph-informed-learning.json"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "synthesisProposals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "synthesisProposalId",
+          "contributingClusterIds",
+          "contributingGraphInformedRefs",
+          "proposedGeneralizedAbstraction",
+          "rationale",
+          "confidence",
+          "provenanceRefs",
+          "reviewRequired",
+          "nextActionText"
+        ],
+        "properties": {
+          "synthesisProposalId": { "type": "string", "minLength": 1, "pattern": "^synthesis:" },
+          "contributingClusterIds": {
+            "type": "array",
+            "minItems": 2,
+            "items": { "type": "string", "minLength": 1, "pattern": "^cluster:" },
+            "uniqueItems": true
+          },
+          "contributingGraphInformedRefs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "proposedGeneralizedAbstraction": { "type": "string", "minLength": 1 },
+          "rationale": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "provenanceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "reviewRequired": { "const": true },
+          "nextActionText": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

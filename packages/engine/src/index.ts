@@ -848,6 +848,18 @@ export type {
   GraphInformedLearningArtifact,
   GraphInformedLearningCluster
 } from './learning/graphInformedLearning.js';
+
+export {
+  HIGHER_ORDER_SYNTHESIS_SCHEMA_VERSION,
+  HIGHER_ORDER_SYNTHESIS_RELATIVE_PATH,
+  buildHigherOrderSynthesisArtifact,
+  writeHigherOrderSynthesisArtifact,
+  buildAndWriteHigherOrderSynthesisArtifact
+} from './learning/higherOrderSynthesis.js';
+export type {
+  HigherOrderSynthesisArtifact,
+  HigherOrderSynthesisProposal
+} from './learning/higherOrderSynthesis.js';
 export { GLOBAL_PATTERNS_RELATIVE_PATH, readCanonicalPatternsArtifact, materializeStoryFromSource, materializePatternFromCandidate, transitionPatternLifecycle } from './promotion.js';
 export { exportPatternTransferPackage, importPatternTransferPackage, PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR } from './patternTransfer.js';
 export type { PromotionSourceRef, StoryRecordWithProvenance, StoryPromotionProvenance as PromotionStoryProvenance, PromotedPatternRecord, CanonicalPatternsArtifact, PreparedPromotion } from './promotion.js';

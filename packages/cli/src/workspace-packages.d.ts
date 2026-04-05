@@ -507,6 +507,11 @@ declare module "@zachariahredfield/playbook-engine" {
     ...args: any[]
   ) => LearningCompactionArtifact;
   export const writeLearningCompactionArtifact: (...args: any[]) => string;
+  export type HigherOrderSynthesisArtifact = any;
+  export const buildAndWriteHigherOrderSynthesisArtifact: (...args: any[]) => {
+    artifact: HigherOrderSynthesisArtifact;
+    artifactPath: string;
+  };
   export type PortabilityOutcomesArtifact = any;
   export const readPortabilityOutcomesArtifact: (
     ...args: any[]
