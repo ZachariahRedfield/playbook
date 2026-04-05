@@ -1648,7 +1648,7 @@ Phase 16 allowed vs forbidden input examples:
     - Pattern: recurring evidence -> maintenance plan -> approval -> bounded execution -> receipt.
     - Failure Mode: Proposal-only maintenance that never reaches an approved execution path creates planning theater; execution without approval breaks the trust model.
 22. **Phase 22 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
-    Broader pattern detection and candidate improvements from repeated findings/remediations/query usage, including advanced clustering, graph-informed learning artifacts, and higher-order synthesis inputs. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
+    Canonical repository-learning expansion that formalizes a three-step ladder: (1) deterministic learning clusters as repeated-signal aggregation, (2) graph-informed learning artifacts as structural enrichment over those clusters, and (3) later higher-order synthesis proposals. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
 
 Reasoning for reordering:
 
@@ -1702,9 +1702,10 @@ TODO (roadmap contract alignment): add explicit feature IDs, dependencies, and v
    - Focuses on bounded recurring maintenance workflows under explicit approval and fail-closed policies.
    - Does not imply autonomous doctrine promotion or uncontrolled mutation.
 
-7. **Repository Learning Loop Expansion (later phase)**
+7. **Repository Learning Loop Expansion (later phase sequencing; canonical architecture defined now)**
    - Distinct from control-plane foundations and from autonomous maintenance.
-   - Expands pattern discovery and repository-level learning after the previous trust layers are stable.
+   - Canonical architecture is defined in `docs/architecture/PLAYBOOK_REPOSITORY_LEARNING_LOOP_EXPANSION.md` with explicit ordering: learning clusters -> graph-informed learning -> later higher-order synthesis.
+   - Expands pattern discovery and repository-level learning after the previous trust layers are stable, without changing candidate-only and human-reviewed promotion boundaries.
 
 ### Missing Capabilities to Formalize
 
@@ -1750,7 +1751,7 @@ Rewrite/reorganize these sections in `docs/PLAYBOOK_PRODUCT_ROADMAP.md`:
 - Keep **AI Efficiency & Context Compression** as an explicit numbered phase.
 - Move **PR Intelligence (Implemented)** under the read-runtime phase grouping.
 - Add an explicit "Phase 13 prerequisites" block requiring deterministic mutation scope, policy gates, repository-memory boundaries, and contract validation before `pnpm playbook agent` expansion.
-- Add a future **Repository Learning Loop** phase scoped to human-reviewed suggestions only (no autonomous mutation).
+- Keep **Repository Learning Loop Expansion** as a canonical architecture phase with human-reviewed suggestions only (no autonomous mutation), including explicit learning-cluster and graph-informed artifact definitions.
 
 ### Documentation Capture Rules (Post-Audit)
 
@@ -1760,7 +1761,7 @@ Roadmap documentation must preserve these architectural statements:
 - Persistent repository intelligence is the default mechanism for reducing AI token usage.
 - Context compression and deterministic mutation scope are core AI-efficiency and safety mechanisms.
 - Future phases should prioritize intelligence quality and contract durability over command-surface growth.
-- A repository learning loop can propose rule/context improvements from observed patterns, with human review required.
+- A repository learning loop can propose rule/context improvements from observed patterns through canonical learning-cluster and graph-informed candidate artifacts, with human review required.
 
 PHASE 1 â€” CLI FOUNDATIONS
 
