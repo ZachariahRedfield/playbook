@@ -394,6 +394,33 @@ describe('runTelemetry', () => {
     const repo = createRepo('playbook-learning-state');
     writeTelemetryArtifacts(repo);
     fs.rmSync(path.join(repo, '.playbook', 'task-execution-profile.json'));
+    fs.writeFileSync(
+      path.join(repo, '.playbook', 'learning-clusters.json'),
+      JSON.stringify(
+        {
+          schemaVersion: '1.0',
+          kind: 'learning-clusters',
+          generatedAt: '2026-03-20T00:00:00.000Z',
+          proposalOnly: true,
+          reviewOnly: true,
+          sourceArtifacts: ['.playbook/learning-compaction.json'],
+          clusters: [
+            {
+              clusterId: 'cluster:repeated_failure_shape:sample',
+              dimension: 'repeated_failure_shape',
+              sourceEvidenceRefs: ['.playbook/learning-compaction.json#recurring_failures/sig'],
+              repeatedSignalSummary: 'Recurring failure signal observed in deterministic telemetry.',
+              suggestedImprovementCandidateType: 'verify_rule_improvement',
+              confidence: 0.77,
+              riskReviewRequirement: 'maintainer-review',
+              nextActionText: 'Translate recurring signal failure.retry-heavy.engine_scoring into a candidate-only deterministic improvement proposal and preserve review gates.'
+            }
+          ]
+        },
+        null,
+        2
+      )
+    );
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const exitCode = await runTelemetry(repo, ['learning-state'], { format: 'json', quiet: false });
@@ -404,6 +431,58 @@ describe('runTelemetry', () => {
     expect((payload.metrics as Record<string, unknown>).first_pass_yield).toBe(0.5);
     const sources = payload.sourceArtifacts as Record<string, Record<string, unknown>>;
     expect(sources.taskExecutionProfile.available).toBe(false);
+    const learningClusters = payload.learning_clusters as Record<string, unknown>;
+    expect(learningClusters.cluster_count).toBeGreaterThan(0);
+    expect((learningClusters.clusters as Array<Record<string, unknown>>)[0]).toEqual(
+      expect.objectContaining({
+        cluster_type: 'repeated_failure_shape',
+        repeated_signal_summary: expect.any(String),
+        confidence: expect.any(Number),
+        next_review_action: expect.any(String)
+      })
+    );
+
+    logSpy.mockRestore();
+  });
+
+  it('prints compact learning-cluster highlights in learning-state text mode', async () => {
+    const repo = createRepo('playbook-learning-state-text');
+    writeTelemetryArtifacts(repo);
+    fs.writeFileSync(
+      path.join(repo, '.playbook', 'learning-clusters.json'),
+      JSON.stringify(
+        {
+          schemaVersion: '1.0',
+          kind: 'learning-clusters',
+          generatedAt: '2026-03-20T00:00:00.000Z',
+          proposalOnly: true,
+          reviewOnly: true,
+          sourceArtifacts: ['.playbook/learning-compaction.json'],
+          clusters: [
+            {
+              clusterId: 'cluster:repeated_failure_shape:sample',
+              dimension: 'repeated_failure_shape',
+              sourceEvidenceRefs: ['.playbook/learning-compaction.json#recurring_failures/sig'],
+              repeatedSignalSummary: 'Recurring failure signal observed in deterministic telemetry.',
+              suggestedImprovementCandidateType: 'verify_rule_improvement',
+              confidence: 0.77,
+              riskReviewRequirement: 'maintainer-review',
+              nextActionText: 'Translate recurring signal failure.retry-heavy.engine_scoring into a candidate-only deterministic improvement proposal and preserve review gates.'
+            }
+          ]
+        },
+        null,
+        2
+      )
+    );
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runTelemetry(repo, ['learning-state'], { format: 'text', quiet: false });
+
+    expect(exitCode).toBe(ExitCode.Success);
+    const text = logSpy.mock.calls.flat().join('\n');
+    expect(text).toContain('Learning clusters: 1');
+    expect(text).toContain('Next review: Translate recurring signal failure.retry-heavy.engine_scoring');
 
     logSpy.mockRestore();
   });

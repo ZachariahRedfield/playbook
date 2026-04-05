@@ -61,12 +61,32 @@ type CycleTelemetryOutput = ReturnType<typeof summarizeCycleTelemetry> & {
   };
 };
 
+type LearningClustersReadModel = {
+  cluster_count: number;
+  clusters: Array<{
+    cluster_type: string;
+    repeated_signal_summary: string;
+    confidence: number;
+    next_review_action: string;
+  }>;
+};
+
 const OUTCOME_TELEMETRY_PATH = ['.playbook', 'outcome-telemetry.json'] as const;
 const PROCESS_TELEMETRY_PATH = ['.playbook', 'process-telemetry.json'] as const;
 const TASK_EXECUTION_PROFILE_PATH = ['.playbook', 'task-execution-profile.json'] as const;
 const COMMAND_QUALITY_PATH = ['.playbook', 'telemetry', 'command-quality.json'] as const;
 const CYCLE_HISTORY_PATH = ['.playbook', 'cycle-history.json'] as const;
 const CYCLE_STATE_PATH = ['.playbook', 'cycle-state.json'] as const;
+const LEARNING_CLUSTERS_PATH = ['.playbook', 'learning-clusters.json'] as const;
+
+type LearningClustersArtifactRead = {
+  clusters?: Array<{
+    dimension?: string;
+    repeatedSignalSummary?: string;
+    confidence?: number;
+    nextActionText?: string;
+  }>;
+};
 
 const readJsonArtifact = <T>(cwd: string, segments: readonly string[]): T | undefined => {
   const artifactPath = path.join(cwd, ...segments);
@@ -126,6 +146,37 @@ const renderTextLearningState = (artifact: LearningStateSnapshotArtifact): void 
   console.log(`Validation cost pressure: ${artifact.metrics.validation_cost_pressure}`);
   console.log(`Portability confidence: ${artifact.metrics.portability_confidence}`);
   console.log(`Overall confidence: ${artifact.confidenceSummary.overall_confidence}`);
+};
+
+const deriveLearningClustersReadModel = (cwd: string): LearningClustersReadModel => {
+  const artifact = readJsonArtifact<LearningClustersArtifactRead>(cwd, LEARNING_CLUSTERS_PATH);
+  const clusters = artifact?.clusters ?? [];
+  return {
+    cluster_count: clusters.length,
+    clusters: clusters.map((cluster) => ({
+      cluster_type: cluster.dimension ?? 'unknown',
+      repeated_signal_summary: cluster.repeatedSignalSummary ?? 'No repeated signal summary available.',
+      confidence: typeof cluster.confidence === 'number' ? cluster.confidence : 0,
+      next_review_action: cluster.nextActionText ?? 'Review supporting evidence before proposing candidate-only follow-up.'
+    }))
+  };
+};
+
+const renderTextLearningClusters = (readModel: LearningClustersReadModel): void => {
+  console.log(`Learning clusters: ${readModel.cluster_count}`);
+  if (readModel.cluster_count === 0) {
+    console.log('Cluster highlights: none');
+    return;
+  }
+
+  const preview = readModel.clusters.slice(0, 3);
+  for (const cluster of preview) {
+    console.log(`- ${cluster.cluster_type} (confidence ${cluster.confidence}): ${cluster.repeated_signal_summary}`);
+    console.log(`  Next review: ${cluster.next_review_action}`);
+  }
+  if (readModel.cluster_count > preview.length) {
+    console.log(`- ... ${readModel.cluster_count - preview.length} additional cluster(s) omitted from text preview`);
+  }
 };
 
 const renderTextLearningCompaction = (artifact: LearningCompactionArtifact): void => {
@@ -241,9 +292,17 @@ export const runTelemetry = async (
       processTelemetry: processArtifact,
       taskExecutionProfile
     });
+    const learningClusters = deriveLearningClustersReadModel(cwd);
 
     if (options.format === 'json') {
-      emitJsonOutput({ cwd, command: 'telemetry', payload: learningState });
+      emitJsonOutput({
+        cwd,
+        command: 'telemetry',
+        payload: {
+          ...learningState,
+          learning_clusters: learningClusters
+        }
+      });
       tracker.finish({
         inputsSummary: 'subcommand=learning-state',
         artifactsRead: ['.playbook/outcome-telemetry.json', '.playbook/process-telemetry.json', '.playbook/task-execution-profile.json'],
@@ -255,6 +314,7 @@ export const runTelemetry = async (
 
     if (!options.quiet) {
       renderTextLearningState(learningState);
+      renderTextLearningClusters(learningClusters);
       if (learningState.confidenceSummary.open_questions.length > 0) {
         console.log('Open questions:');
         for (const question of learningState.confidenceSummary.open_questions) {
