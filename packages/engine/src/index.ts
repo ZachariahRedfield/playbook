@@ -1002,6 +1002,8 @@ export { readLongitudinalState, writeLongitudinalState, LONGITUDINAL_STATE_RELAT
 export type { LongitudinalStateArtifact } from './controlPlane/longitudinalState.js';
 export { readMaintenancePlan, writeMaintenancePlan, MAINTENANCE_PLAN_RELATIVE_PATH, MAINTENANCE_PLAN_SCHEMA_VERSION } from './controlPlane/maintenancePlan.js';
 export type { MaintenancePlanArtifact, MaintenancePlanRow } from './controlPlane/maintenancePlan.js';
+export { buildApprovedMaintenanceTasks, parseMaintenanceApprovals, writeMaintenanceExecutionArtifacts, MAINTENANCE_APPROVALS_RELATIVE_PATH, MAINTENANCE_EXECUTION_RECEIPT_RELATIVE_PATH, MAINTENANCE_EXECUTION_STATE_RELATIVE_PATH } from './controlPlane/maintenanceExecution.js';
+export type { MaintenanceApprovalArtifact, MaintenanceExecutionTask, MaintenanceExecutionOutcome, MaintenanceExecutionReceipt, MaintenanceExecutionState } from './controlPlane/maintenanceExecution.js';
 export { buildWorkspaceGovernanceArtifact, WORKSPACE_GOVERNANCE_RELATIVE_PATH } from './controlPlane/workspaceGovernance.js';
 export type { WorkspaceGovernanceArtifact } from './controlPlane/workspaceGovernance.js';
 export { buildMultiRepoReadInterfaceEnvelope } from './controlPlane/multiRepoControlPlaneReadInterface.js';

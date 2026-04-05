@@ -24,6 +24,10 @@
 - Rule: Any intentional contract-surface change must land with regenerated committed snapshots in the same PR.
 - Pattern: Canonical artifact additions are governed as contract changes, not just implementation changes.
 - Failure Mode: Feature work that adds or reshapes emitted artifacts can pass build/test but still fail CI at the contract snapshot gate if snapshots are not refreshed.
+- WHAT: Added an approval-gated bounded maintenance execution bridge that consumes `.playbook/maintenance-plan.json` rows through `playbook apply --from-plan` only when explicit `.playbook/maintenance-approvals.json` approvals, safe policy-evaluation entries, and referenced evidence are present; persisted deterministic `.playbook/maintenance-execution-receipt.json` and `.playbook/maintenance-execution-state.json`; and added focused engine/CLI coverage for approved execution and fail-closed gating. WHY: Advances Autonomous Maintenance beyond proposal-only planning without expanding mutation authority outside existing governed apply boundaries.
+- Rule: Autonomous Maintenance may execute only through explicit approval-gated bounded actions.
+- Pattern: recurring evidence -> maintenance plan -> approval -> bounded execution -> receipt.
+- Failure Mode: Proposal-only maintenance that never reaches an approved execution path creates planning theater; execution without approval breaks the trust model.
 
 ## 0.39.0 - 2026-03-29
 - Recommended bump: minor

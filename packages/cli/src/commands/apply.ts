@@ -22,6 +22,7 @@ type ApplyOptions = {
   policyCheck?: boolean;
   policy?: boolean;
   fromPlan?: string;
+  maintenanceApprovalsPath?: string;
   tasks?: string[];
   runId?: string;
   skipReleaseGovernanceBoundary?: boolean;
@@ -79,6 +80,12 @@ type PlanSelection = {
   tasks: PlanTask[];
   remediation: PlanRemediation;
   releaseLockstepGroups?: Array<{ name: string; taskIds: string[] }>;
+  maintenanceExecution?: {
+    sourcePlan: string;
+    sourceApprovals: string;
+    sourcePolicy: string;
+    byTaskId: Record<string, engine.MaintenanceExecutionTask>;
+  };
 };
 
 type PolicyCheckJsonResult = {
@@ -423,10 +430,35 @@ const normalizeApplyPlanArtifact = (payload: unknown): NormalizedPlanArtifact =>
     };
   }
 
-  throw new Error('Invalid plan payload: command must be "plan", "test-fix-plan", or "docs-consolidate-plan", or kind must be "playbook-release-plan".');
+  if (normalizedPayload.kind === 'playbook-maintenance-plan') {
+    const maintenanceRows = Array.isArray(normalizedPayload.maintenanceRows) ? normalizedPayload.maintenanceRows.length : 0;
+    return {
+      tasks: [],
+      remediation: buildPlanRemediation({
+        failureCount: maintenanceRows,
+        stepCount: 0,
+        unresolvedFailureCount: maintenanceRows,
+        unavailableReason: 'Maintenance plans require explicit approval + policy gating before execution.'
+      })
+    };
+  }
+
+  throw new Error('Invalid plan payload: command must be "plan", "test-fix-plan", or "docs-consolidate-plan", or kind must be "playbook-release-plan" or "playbook-maintenance-plan".');
 };
 
-const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
+const loadMaintenanceApprovals = (cwd: string, approvalsPath: string): engine.MaintenanceApprovalArtifact => {
+  const resolvedPath = path.resolve(cwd, approvalsPath);
+  let rawPayload = '';
+  try {
+    rawPayload = fs.readFileSync(resolvedPath, 'utf8');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to read maintenance approvals file at ${resolvedPath}: ${message}`);
+  }
+  return engine.parseMaintenanceApprovals(rawPayload, approvalsPath);
+};
+
+const loadPlanFromFile = (cwd: string, fromPlan: string, options: Pick<ApplyOptions, 'maintenanceApprovalsPath'>): PlanSelection => {
   const resolvedPath = path.resolve(cwd, fromPlan);
 
   let rawPayload = '';
@@ -450,6 +482,38 @@ const loadPlanFromFile = (cwd: string, fromPlan: string): PlanSelection => {
       ? ' The file appears to use a shell-specific encoding (for example UTF-16/BOM from PowerShell redirection). Re-write the plan file as UTF-8 and retry.'
       : '';
     throw new Error(`Invalid plan JSON in ${resolvedPath}: ${message}.${encodingHint}`);
+  }
+
+  if (payload && typeof payload === 'object' && !Array.isArray(payload) && (payload as Record<string, unknown>).kind === 'playbook-maintenance-plan') {
+    const approvalsPath = options.maintenanceApprovalsPath ?? engine.MAINTENANCE_APPROVALS_RELATIVE_PATH;
+    const approvals = loadMaintenanceApprovals(cwd, approvalsPath);
+    const policy = loadPolicyEvaluationArtifact(cwd);
+    const tasks: engine.MaintenanceExecutionTask[] = engine.buildApprovedMaintenanceTasks(payload as engine.MaintenancePlanArtifact, approvals, policy, { repoRoot: cwd });
+    return {
+      tasks: tasks.map((task: engine.MaintenanceExecutionTask) => ({
+        id: task.id,
+        ruleId: 'maintenance.execution',
+        file: null,
+        action: task.command,
+        autoFix: false,
+        task_kind: 'maintenance-execution',
+        provenance: {
+          maintenance_id: task.maintenanceId,
+          maintenance_type: task.maintenanceType,
+          bounded_target_surface: task.boundedTargetSurface,
+          approval_ref: task.approvalRef,
+          policy_ref: task.policyRef,
+          source_evidence_refs: task.sourceEvidenceRefs
+        }
+      })),
+      remediation: buildPlanRemediation({ failureCount: tasks.length, stepCount: tasks.length, unresolvedFailureCount: 0 }),
+      maintenanceExecution: {
+        sourcePlan: fromPlan,
+        sourceApprovals: approvalsPath,
+        sourcePolicy: engine.POLICY_EVALUATION_RELATIVE_PATH,
+        byTaskId: Object.fromEntries(tasks.map((task: engine.MaintenanceExecutionTask) => [task.id, task]))
+      }
+    };
   }
 
   return normalizeApplyPlanArtifact(payload);
@@ -760,6 +824,7 @@ const printApplyHelp = (): void => {
   console.log('  --policy-check             Read-only preflight of policy-evaluated proposal eligibility');
   console.log('  --policy                   Controlled policy-gated execution for safe proposals only');
   console.log('  --from-plan <path>         Apply tasks from a previously saved `playbook plan --json` artifact');
+  console.log(`  --maintenance-approvals <path>  Approval artifact for maintenance-plan execution (default: ${engine.MAINTENANCE_APPROVALS_RELATIVE_PATH})`);
   console.log('  --task <id>                Apply only selected task ID (repeatable; requires --from-plan)');
   console.log('  --json                     Alias for --format=json');
   console.log('  --format <text|json>       Output format');
@@ -1002,8 +1067,8 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
 
   const runId = resolveRunId(cwd, options.runId);
 
-  const plan = options.fromPlan
-    ? loadPlanFromFile(cwd, options.fromPlan)
+  const plan: PlanSelection = options.fromPlan
+    ? loadPlanFromFile(cwd, options.fromPlan, options)
     : (() => {
         const generatedPlan = engine.generatePlanContract(cwd);
         const verifyPayload = typeof generatedPlan === 'object' && generatedPlan !== null && 'verify' in generatedPlan
@@ -1067,6 +1132,90 @@ export const runApply = async (cwd: string, options: ApplyOptions): Promise<numb
   }
 
   const selectedTasks = selectPlanTasks(plan.tasks, options.tasks);
+  if (plan.maintenanceExecution) {
+    const outcomes: engine.MaintenanceExecutionOutcome[] = [];
+    for (const selectedTask of selectedTasks) {
+      const executionTask = plan.maintenanceExecution.byTaskId[selectedTask.id];
+      if (!executionTask) {
+        throw new Error(`Missing maintenance execution mapping for task ${selectedTask.id}.`);
+      }
+
+      try {
+        execSync(executionTask.command, { cwd, stdio: 'pipe' });
+        outcomes.push({
+          taskId: executionTask.id,
+          maintenanceId: executionTask.maintenanceId,
+          maintenanceType: executionTask.maintenanceType,
+          command: executionTask.command,
+          status: 'executed',
+          boundedTargetSurface: executionTask.boundedTargetSurface,
+          approvalRef: executionTask.approvalRef,
+          policyRef: executionTask.policyRef,
+          sourceEvidenceRefs: executionTask.sourceEvidenceRefs,
+          exitCode: 0,
+          message: 'maintenance command completed'
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        outcomes.push({
+          taskId: executionTask.id,
+          maintenanceId: executionTask.maintenanceId,
+          maintenanceType: executionTask.maintenanceType,
+          command: executionTask.command,
+          status: 'failed',
+          boundedTargetSurface: executionTask.boundedTargetSurface,
+          approvalRef: executionTask.approvalRef,
+          policyRef: executionTask.policyRef,
+          sourceEvidenceRefs: executionTask.sourceEvidenceRefs,
+          exitCode: 1,
+          message
+        });
+      }
+    }
+
+    const { receipt } = engine.writeMaintenanceExecutionArtifacts(cwd, {
+      sourcePlan: plan.maintenanceExecution.sourcePlan,
+      sourceApprovals: plan.maintenanceExecution.sourceApprovals,
+      sourcePolicy: plan.maintenanceExecution.sourcePolicy,
+      outcomes
+    });
+    const executionResults: ApplyResult[] = outcomes.map((entry) => ({
+      id: entry.taskId,
+      ruleId: 'maintenance.execution',
+      file: null,
+      action: entry.command,
+      autoFix: false,
+      status: entry.status === 'executed' ? 'applied' : 'failed',
+      message: entry.message,
+      details: {
+        maintenance_id: entry.maintenanceId,
+        maintenance_type: entry.maintenanceType,
+        bounded_target_surface: entry.boundedTargetSurface,
+        approval_ref: entry.approvalRef,
+        policy_ref: entry.policyRef
+      }
+    }));
+    const exitCode = receipt.summary.failed > 0 ? ExitCode.Failure : ExitCode.Success;
+    const payload: ApplyJsonResult = {
+      schemaVersion: '1.0',
+      command: 'apply',
+      ok: exitCode === ExitCode.Success,
+      exitCode,
+      remediation: plan.remediation,
+      message: 'Executed approval-gated bounded maintenance tasks through apply boundary.',
+      results: executionResults,
+      summary: {
+        applied: receipt.summary.executed,
+        skipped: 0,
+        unsupported: 0,
+        failed: receipt.summary.failed
+      }
+    };
+    writeCanonicalApplyArtifact(cwd, executionResults);
+    attachApplyRunArtifacts(cwd, runId, options.fromPlan);
+    return emitApplyOutput(options, payload, renderTextApply);
+  }
+
   validateReleaseTaskSelection(plan, selectedTasks);
   const declaredScope = engine.readApplyChangeScope(cwd);
   if (declaredScope) {

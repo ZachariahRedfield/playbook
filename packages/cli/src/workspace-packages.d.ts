@@ -218,6 +218,14 @@ declare module "@zachariahredfield/playbook-engine" {
   export const runDocsAudit: (...args: any[]) => any;
   export const runDocsConsolidation: (...args: any[]) => any;
   export const runDocsConsolidationPlan: (...args: any[]) => any;
+  export const MAINTENANCE_APPROVALS_RELATIVE_PATH: '.playbook/maintenance-approvals.json';
+  export const parseMaintenanceApprovals: (...args: any[]) => any;
+  export const buildApprovedMaintenanceTasks: (...args: any[]) => any;
+  export const writeMaintenanceExecutionArtifacts: (...args: any[]) => any;
+  export type MaintenanceApprovalArtifact = any;
+  export type MaintenancePlanArtifact = any;
+  export type MaintenanceExecutionTask = any;
+  export type MaintenanceExecutionOutcome = any;
   export type DependenciesQueryResult = any;
   export type ImpactQueryResult = any;
   export type RiskQueryResult = any;

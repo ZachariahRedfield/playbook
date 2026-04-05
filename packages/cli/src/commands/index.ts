@@ -336,6 +336,7 @@ const commandRunners: Record<
       policyCheck: parseFlag(commandArgs, "--policy-check"),
       policy: parseFlag(commandArgs, "--policy"),
       fromPlan: parseOptionValue(commandArgs, "--from-plan"),
+      maintenanceApprovalsPath: parseOptionValue(commandArgs, "--maintenance-approvals"),
       tasks: parseOptionValues(commandArgs, "--task"),
       runId: parseOptionValue(commandArgs, "--run-id"),
     });

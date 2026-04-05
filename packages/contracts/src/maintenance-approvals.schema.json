@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/maintenance-approvals.schema.json",
+  "title": "Playbook Maintenance Approvals Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "generatedAt", "approvals"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-maintenance-approvals" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["maintenanceId", "approved", "approvalRef", "approvedBy", "boundedTargetSurface"],
+        "properties": {
+          "maintenanceId": { "type": "string", "minLength": 1 },
+          "approved": { "const": true },
+          "approvalRef": { "type": "string", "minLength": 1 },
+          "approvedBy": { "type": "string", "minLength": 1 },
+          "boundedTargetSurface": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

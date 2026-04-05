@@ -22,10 +22,13 @@ const pinSessionArtifact = vi.fn();
 const updateSession = vi.fn();
 const assessReleaseSync = vi.fn();
 const classifyReleaseSyncReconciliation = vi.fn();
+const parseMaintenanceApprovals = vi.fn();
+const buildApprovedMaintenanceTasks = vi.fn();
+const writeMaintenanceExecutionArtifacts = vi.fn();
 const loadVerifyRules = vi.fn();
 const execSyncMock = vi.fn();
 
-vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, readApplyChangeScope, enforceApplyChangeScope, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, pinSessionArtifact, updateSession, assessReleaseSync, classifyReleaseSyncReconciliation, POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
+vi.mock('@zachariahredfield/playbook-engine', () => ({ generatePlanContract, routeTask, applyExecutionPlan, parsePlanArtifact, validateRemediationPlan, readApplyChangeScope, enforceApplyChangeScope, getLatestMutableRun, createExecutionIntent, createExecutionRun, appendExecutionStep, executionRunPath, attachSessionRunState, buildPolicyPreflight, pinSessionArtifact, updateSession, assessReleaseSync, classifyReleaseSyncReconciliation, parseMaintenanceApprovals, buildApprovedMaintenanceTasks, writeMaintenanceExecutionArtifacts, MAINTENANCE_APPROVALS_RELATIVE_PATH: '.playbook/maintenance-approvals.json', POLICY_EVALUATION_RELATIVE_PATH: '.playbook/policy-evaluation.json' }));
 vi.mock('../lib/loadVerifyRules.js', () => ({ loadVerifyRules }));
 vi.mock('node:child_process', () => ({ execSync: execSyncMock }));
 
@@ -177,6 +180,9 @@ describe('runApply', () => {
     updateSession.mockReset();
     assessReleaseSync.mockReset();
     classifyReleaseSyncReconciliation.mockReset();
+    parseMaintenanceApprovals.mockReset();
+    buildApprovedMaintenanceTasks.mockReset();
+    writeMaintenanceExecutionArtifacts.mockReset();
     loadVerifyRules.mockReset();
     execSyncMock.mockReset();
     execSyncMock.mockReturnValue('');
@@ -1147,6 +1153,117 @@ describe('runApply warning-only remediation handling', () => {
     expect(payload.message).toBe('No verify failures were detected.');
 
     logSpy.mockRestore();
+    fs.rmSync(repoDir, { recursive: true, force: true });
+  });
+});
+
+describe('runApply maintenance execution bridge', () => {
+  beforeEach(() => {
+    routeTask.mockReset();
+    parseMaintenanceApprovals.mockReset();
+    buildApprovedMaintenanceTasks.mockReset();
+    writeMaintenanceExecutionArtifacts.mockReset();
+    loadVerifyRules.mockReset();
+    execSyncMock.mockReset();
+    getLatestMutableRun.mockReset();
+    appendExecutionStep.mockReset();
+    executionRunPath.mockReset();
+    assessReleaseSync.mockReset();
+    classifyReleaseSyncReconciliation.mockReset();
+    readApplyChangeScope.mockReset();
+
+    execSyncMock.mockReturnValue('');
+    getLatestMutableRun.mockReturnValue({ id: 'run-test' });
+    appendExecutionStep.mockReturnValue({ id: 'run-test' });
+    executionRunPath.mockReturnValue('.playbook/runs/run-test.json');
+    routeTask.mockReturnValue({
+      route: 'hybrid',
+      why: 'ok',
+      requiredInputs: [],
+      missingPrerequisites: [],
+      repoMutationAllowed: true
+    });
+    assessReleaseSync.mockReturnValue({
+      schemaVersion: '1.0',
+      kind: 'playbook-release-sync',
+      generatedAt: '2026-03-29T00:00:00.000Z',
+      mode: 'check',
+      plan: { summary: { recommendedBump: 'none', reasons: [] }, tasks: [] },
+      hasDrift: false,
+      drift: [],
+      governanceFailures: [],
+      actionableTasks: []
+    });
+    classifyReleaseSyncReconciliation.mockReturnValue({
+      status: 'no_drift',
+      taskCount: 0,
+      plannedVersions: [],
+      reason: 'release-governed state is already aligned'
+    });
+    readApplyChangeScope.mockReturnValue(null);
+  });
+
+  it('executes approved bounded maintenance rows and writes receipt/state', async () => {
+    const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-maintenance-'));
+    fs.mkdirSync(path.join(repoDir, '.playbook'), { recursive: true });
+    fs.writeFileSync(path.join(repoDir, '.playbook', 'maintenance-plan.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'playbook-maintenance-plan',
+      maintenanceRows: [{ maintenanceId: 'maintenance.docs-audit.recurring-findings' }]
+    }), 'utf8');
+    fs.writeFileSync(path.join(repoDir, '.playbook', 'maintenance-approvals.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'playbook-maintenance-approvals',
+      approvals: []
+    }), 'utf8');
+    fs.writeFileSync(path.join(repoDir, '.playbook', 'policy-evaluation.json'), JSON.stringify({
+      evaluations: [{ proposal_id: 'maintenance:maintenance.docs-audit.recurring-findings', decision: 'safe', reason: 'approved' }]
+    }), 'utf8');
+    parseMaintenanceApprovals.mockReturnValue({ schemaVersion: '1.0', kind: 'playbook-maintenance-approvals', generatedAt: new Date(0).toISOString(), approvals: [] });
+    buildApprovedMaintenanceTasks.mockReturnValue([{
+      id: 'maintenance:maintenance.docs-audit.recurring-findings',
+      maintenanceId: 'maintenance.docs-audit.recurring-findings',
+      maintenanceType: 'docs-audit-maintenance',
+      command: 'pnpm playbook docs audit --json',
+      boundedTargetSurface: 'docs/',
+      sourceEvidenceRefs: ['.playbook/longitudinal-state.json'],
+      approvalRef: 'approval:1',
+      policyRef: 'maintenance:maintenance.docs-audit.recurring-findings'
+    }]);
+    writeMaintenanceExecutionArtifacts.mockReturnValue({
+      receipt: { summary: { executed: 1, failed: 0, total: 1 } }
+    });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const exitCode = await runApply(repoDir, { format: 'json', ci: false, quiet: false, fromPlan: '.playbook/maintenance-plan.json' });
+    expect(exitCode).toBe(ExitCode.Success);
+    expect(execSyncMock).toHaveBeenCalledWith('pnpm playbook docs audit --json', expect.any(Object));
+    expect(writeMaintenanceExecutionArtifacts).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.summary.applied).toBe(1);
+    logSpy.mockRestore();
+    fs.rmSync(repoDir, { recursive: true, force: true });
+  });
+
+  it('fails closed when maintenance policy evidence is missing', async () => {
+    const { runApply } = await import('./apply.js');
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-apply-maintenance-missing-policy-'));
+    fs.mkdirSync(path.join(repoDir, '.playbook'), { recursive: true });
+    fs.writeFileSync(path.join(repoDir, '.playbook', 'maintenance-plan.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'playbook-maintenance-plan',
+      maintenanceRows: [{ maintenanceId: 'maintenance.docs-audit.recurring-findings' }]
+    }), 'utf8');
+    fs.writeFileSync(path.join(repoDir, '.playbook', 'maintenance-approvals.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'playbook-maintenance-approvals',
+      approvals: []
+    }), 'utf8');
+
+    await expect(runApply(repoDir, { format: 'json', ci: false, quiet: false, fromPlan: '.playbook/maintenance-plan.json' }))
+      .rejects.toThrow(/policy evaluation artifact/);
+    expect(buildApprovedMaintenanceTasks).not.toHaveBeenCalled();
     fs.rmSync(repoDir, { recursive: true, force: true });
   });
 });
