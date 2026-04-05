@@ -62,6 +62,10 @@
         "producer": "session"
       },
       {
+        "path": ".playbook/memory-system.json",
+        "producer": "memory"
+      },
+      {
         "path": ".playbook/module-digests.json",
         "producer": "index"
       },
