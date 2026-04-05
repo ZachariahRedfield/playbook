@@ -116,6 +116,7 @@ export const additiveCommandFieldSchemaRegistry: RegisteredSchemaContract[] = [
   { id: 'test-fix-plan', version: '1.0', path: 'packages/contracts/src/test-fix-plan.schema.json', kind: 'command-output' },
   { id: 'test-autofix', version: '1.0', path: 'packages/contracts/src/test-autofix.schema.json', kind: 'command-output' },
   { id: 'remediation-status', version: '1.0', path: 'packages/contracts/src/remediation-status.schema.json', kind: 'command-output' },
+  { id: 'maintenance-plan', version: '1.0', path: 'packages/contracts/src/maintenance-plan.schema.json', kind: 'command-output' },
   { id: 'test-autofix-remediation-history', version: '1.0', path: 'packages/contracts/src/test-autofix-remediation-history.schema.json', kind: 'command-output' }
 ] as const;
 

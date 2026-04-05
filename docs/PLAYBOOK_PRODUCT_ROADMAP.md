@@ -1644,6 +1644,9 @@ Phase 16 allowed vs forbidden input examples:
     Optional workspace/tenant governance and deployment packaging layer over the same deterministic runtime, defining policy inheritance, per-repo accountability, and hosted/self-hosted parity without making cloud connectivity mandatory.
 21. **Phase 21 â€” Autonomous Maintenance (Policy-Gated)**  
     Recurring maintenance execution modes with approval and policy controls, layered after governed synthesis, outcome-feedback, cross-repo transfer, governed control-plane interface contracts, and workspace/tenant governance boundaries.
+    - Rule: Autonomous Maintenance begins as proposal-only recurring maintenance planning under explicit approval gates.
+    - Pattern: recurring evidence -> maintenance plan -> approval -> bounded execution.
+    - Failure Mode: Jumping directly from recurring signal detection to execution bypasses the policy-gated trust model.
 22. **Phase 22 â€” Repository Learning Loop Expansion (Human-Reviewed)**  
     Broader pattern detection and candidate improvements from repeated findings/remediations/query usage, including advanced clustering, graph-informed learning artifacts, and higher-order synthesis inputs. Outputs remain candidate knowledge artifacts until human review promotes them to enforced governance.
 

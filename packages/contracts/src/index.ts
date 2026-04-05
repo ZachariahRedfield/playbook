@@ -66,6 +66,7 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   changeScope: 'packages/contracts/src/change-scope.schema.json',
   controlPlane: 'packages/contracts/src/control-plane.schema.json',
   longitudinalState: 'packages/contracts/src/longitudinal-state.schema.json',
+  maintenancePlan: 'packages/contracts/src/maintenance-plan.schema.json',
   multiRepoControlPlaneReadInterface: 'packages/contracts/src/multi-repo-control-plane-read-interface.schema.json',
   workspaceGovernance: 'packages/contracts/src/workspace-governance.schema.json'
 } as const;

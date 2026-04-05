@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/maintenance-plan.schema.json",
+  "title": "Playbook Maintenance Plan Artifact",
+  "description": "Deterministic, proposal-only recurring maintenance planning artifact compiled from canonical governance and runtime evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "proposalOnly",
+    "generatedAt",
+    "sourceArtifacts",
+    "maintenanceRows",
+    "summary",
+    "authority"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "playbook-maintenance-plan" },
+    "command": { "const": "maintenance-plan" },
+    "proposalOnly": { "const": true },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "sourceArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verify", "verifyPreflight", "longitudinalState", "outcomeFeedback", "remediationStatus", "remediationHistory"],
+      "properties": {
+        "verify": { "const": ".playbook/verify.json" },
+        "verifyPreflight": { "const": ".playbook/verify-preflight.json" },
+        "longitudinalState": { "const": ".playbook/longitudinal-state.json" },
+        "outcomeFeedback": { "const": ".playbook/outcome-feedback.json" },
+        "remediationStatus": { "const": ".playbook/remediation-status.json" },
+        "remediationHistory": { "const": ".playbook/test-autofix-history.json" }
+      }
+    },
+    "maintenanceRows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "maintenanceId",
+          "sourceEvidenceRefs",
+          "maintenanceType",
+          "boundedTargetSurface",
+          "recurrenceTrendRationale",
+          "requiredApprovals",
+          "confidence",
+          "nextActionText"
+        ],
+        "properties": {
+          "maintenanceId": { "type": "string", "minLength": 1 },
+          "sourceEvidenceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "maintenanceType": {
+            "enum": [
+              "docs-audit-maintenance",
+              "release-governance-drift-reconciliation",
+              "ignore-cleanup-hygiene-recommendations",
+              "approved-low-risk-remediation-patterns"
+            ]
+          },
+          "boundedTargetSurface": { "type": "string", "minLength": 1 },
+          "recurrenceTrendRationale": { "type": "string", "minLength": 1 },
+          "requiredApprovals": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "nextActionText": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["totalCandidates", "byType"],
+      "properties": {
+        "totalCandidates": { "type": "integer", "minimum": 0 },
+        "byType": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "docs-audit-maintenance",
+            "release-governance-drift-reconciliation",
+            "ignore-cleanup-hygiene-recommendations",
+            "approved-low-risk-remediation-patterns"
+          ],
+          "properties": {
+            "docs-audit-maintenance": { "type": "integer", "minimum": 0 },
+            "release-governance-drift-reconciliation": { "type": "integer", "minimum": 0 },
+            "ignore-cleanup-hygiene-recommendations": { "type": "integer", "minimum": 0 },
+            "approved-low-risk-remediation-patterns": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "execution", "doctrinePromotion"],
+      "properties": {
+        "mutation": { "const": "read-only" },
+        "execution": { "const": "unchanged" },
+        "doctrinePromotion": { "const": "forbidden" }
+      }
+    }
+  }
+}

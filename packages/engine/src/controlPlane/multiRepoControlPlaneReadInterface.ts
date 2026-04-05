@@ -3,7 +3,8 @@ export type MultiRepoReadInterfaceSlice =
   | 'run-state-inspection'
   | 'longitudinal-state-summary'
   | 'cross-repo-pattern-comparison'
-  | 'workspace-tenant-governance';
+  | 'workspace-tenant-governance'
+  | 'maintenance-plan-summary';
 
 export type MultiRepoReadInterfaceRepoScope = {
   repo_id: string;

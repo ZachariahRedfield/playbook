@@ -1000,6 +1000,8 @@ export { readControlPlaneState, writeControlPlaneState, CONTROL_PLANE_STATE_RELA
 export type { ControlPlaneStateArtifact } from './controlPlane/controlPlaneState.js';
 export { readLongitudinalState, writeLongitudinalState, LONGITUDINAL_STATE_RELATIVE_PATH } from './controlPlane/longitudinalState.js';
 export type { LongitudinalStateArtifact } from './controlPlane/longitudinalState.js';
+export { readMaintenancePlan, writeMaintenancePlan, MAINTENANCE_PLAN_RELATIVE_PATH, MAINTENANCE_PLAN_SCHEMA_VERSION } from './controlPlane/maintenancePlan.js';
+export type { MaintenancePlanArtifact, MaintenancePlanRow } from './controlPlane/maintenancePlan.js';
 export { buildWorkspaceGovernanceArtifact, WORKSPACE_GOVERNANCE_RELATIVE_PATH } from './controlPlane/workspaceGovernance.js';
 export type { WorkspaceGovernanceArtifact } from './controlPlane/workspaceGovernance.js';
 export { buildMultiRepoReadInterfaceEnvelope } from './controlPlane/multiRepoControlPlaneReadInterface.js';
