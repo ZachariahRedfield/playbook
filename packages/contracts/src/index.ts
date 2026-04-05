@@ -67,6 +67,9 @@ export const PLAYBOOK_SCHEMA_PATHS = {
   controlPlane: 'packages/contracts/src/control-plane.schema.json',
   longitudinalState: 'packages/contracts/src/longitudinal-state.schema.json',
   maintenancePlan: 'packages/contracts/src/maintenance-plan.schema.json',
+  maintenanceApprovals: 'packages/contracts/src/maintenance-approvals.schema.json',
+  maintenanceExecutionReceipt: 'packages/contracts/src/maintenance-execution-receipt.schema.json',
+  maintenanceExecutionState: 'packages/contracts/src/maintenance-execution-state.schema.json',
   multiRepoControlPlaneReadInterface: 'packages/contracts/src/multi-repo-control-plane-read-interface.schema.json',
   workspaceGovernance: 'packages/contracts/src/workspace-governance.schema.json'
 } as const;

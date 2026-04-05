@@ -80,6 +80,9 @@ Routing semantics for review outcomes are canonicalized in `docs/commands/knowle
 - Failure Mode: Review systems that ignore fresh evidence become formally tidy but operationally stale.
 - Failure Mode: Review outcomes become dead-end records instead of governed work handoffs.
 - Failure Mode: Operators interpret revise/supersede differently across knowledge, docs, and backlog flows.
+- Rule: Autonomous Maintenance may execute only through explicit approval-gated bounded actions.
+- Pattern: recurring evidence -> maintenance plan -> approval -> bounded execution -> receipt.
+- Failure Mode: Proposal-only maintenance that never reaches an approved execution path creates planning theater; execution without approval breaks the trust model.
 
 ```bash
 pnpm playbook knowledge review --due overdue --json
