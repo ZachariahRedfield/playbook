@@ -821,6 +821,15 @@ export {
   PATTERN_CONVERGENCE_RELATIVE_PATH
 } from './learning/patternConvergence.js';
 export type { PatternConvergenceMember, PatternConvergenceCluster, PatternConvergenceArtifact } from './learning/patternConvergence.js';
+
+export {
+  LEARNING_CLUSTERS_SCHEMA_VERSION,
+  LEARNING_CLUSTERS_RELATIVE_PATH,
+  buildLearningClustersArtifact,
+  writeLearningClustersArtifact,
+  buildAndWriteLearningClustersArtifact
+} from './learning/learningClusters.js';
+export type { LearningClustersArtifact, LearningClusterRow, LearningClusterDimension, LearningClusterCandidateType } from './learning/learningClusters.js';
 export { GLOBAL_PATTERNS_RELATIVE_PATH, readCanonicalPatternsArtifact, materializeStoryFromSource, materializePatternFromCandidate, transitionPatternLifecycle } from './promotion.js';
 export { exportPatternTransferPackage, importPatternTransferPackage, PATTERN_TRANSFER_PACKAGES_RELATIVE_DIR } from './patternTransfer.js';
 export type { PromotionSourceRef, StoryRecordWithProvenance, StoryPromotionProvenance as PromotionStoryProvenance, PromotedPatternRecord, CanonicalPatternsArtifact, PreparedPromotion } from './promotion.js';

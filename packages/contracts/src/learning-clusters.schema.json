@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/learning-clusters.schema.json",
+  "title": "PlaybookLearningClustersArtifact",
+  "description": "Deterministic, read-only, candidate-only learning clusters synthesized from canonical repository learning artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "proposalOnly",
+    "reviewOnly",
+    "sourceArtifacts",
+    "clusters"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "learning-clusters" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "proposalOnly": { "const": true },
+    "reviewOnly": { "const": true },
+    "sourceArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          ".playbook/outcome-feedback.json",
+          ".playbook/remediation-status.json",
+          ".playbook/learning-compaction.json",
+          ".playbook/test-autofix-history.json",
+          ".playbook/telemetry/command-quality.json",
+          ".playbook/pattern-convergence.json",
+          ".playbook/pattern-review-queue.json"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "clusters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "clusterId",
+          "dimension",
+          "sourceEvidenceRefs",
+          "repeatedSignalSummary",
+          "suggestedImprovementCandidateType",
+          "confidence",
+          "riskReviewRequirement",
+          "nextActionText"
+        ],
+        "properties": {
+          "clusterId": { "type": "string", "minLength": 1 },
+          "dimension": {
+            "enum": [
+              "repeated_failure_shape",
+              "repeated_remediation_outcome",
+              "repeated_query_usage_pattern",
+              "repeated_governance_blocker"
+            ]
+          },
+          "sourceEvidenceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "repeatedSignalSummary": { "type": "string", "minLength": 1 },
+          "suggestedImprovementCandidateType": {
+            "enum": [
+              "repair_class_investigation",
+              "threshold_tuning",
+              "verify_rule_improvement",
+              "docs_doctrine_update",
+              "query_experience_hardening"
+            ]
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "riskReviewRequirement": {
+            "enum": ["none", "maintainer-review", "governance-review"]
+          },
+          "nextActionText": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

@@ -32,6 +32,7 @@ import {
   type CommandImprovementsArtifact
 } from './commandProposals.js';
 import { readJsonIfExists, writeDeterministicJsonAtomic } from '../learning/io.js';
+import { buildLearningClustersArtifact, writeLearningClustersArtifact } from '../learning/learningClusters.js';
 import { analyzeImprovementOpportunities, type OpportunityAnalysisArtifact } from './opportunityAnalysis.js';
 
 export { KNOWLEDGE_CANDIDATES_RELATIVE_PATH, KNOWLEDGE_PROMOTIONS_RELATIVE_PATH } from './doctrinePromotion.js';
@@ -1009,6 +1010,7 @@ export const writeImprovementCandidatesArtifact = (
   });
   writeCommandImprovementArtifact(repoRoot, artifact.command_improvements, COMMAND_IMPROVEMENTS_RELATIVE_PATH);
   writeRouterRecommendationsArtifact(repoRoot, artifact.router_recommendations);
+  writeLearningClustersArtifact(repoRoot, buildLearningClustersArtifact(repoRoot));
   const resolvedPath = path.resolve(repoRoot, artifactPath);
   writeDeterministicJsonAtomic(resolvedPath, artifact);
   return resolvedPath;
