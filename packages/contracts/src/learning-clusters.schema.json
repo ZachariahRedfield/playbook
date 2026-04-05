@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playbook.dev/schemas/learning-clusters.schema.json",
+  "title": "Repository Learning Clusters Artifact",
+  "description": "Deterministic proposal-only clustering of repeated runtime findings, remediation outcomes, and usage/governance signals for candidate learning follow-up.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "proposalOnly",
+    "nonAutonomous",
+    "sourceArtifacts",
+    "clusters"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "learning-clusters" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "proposalOnly": { "const": true },
+    "nonAutonomous": { "const": true },
+    "sourceArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcomeFeedbackPath",
+        "remediationStatusPath",
+        "remediationHistoryPath",
+        "learningStatePath",
+        "processTelemetryPath",
+        "longitudinalStatePath",
+        "patternConvergencePath"
+      ],
+      "properties": {
+        "outcomeFeedbackPath": { "const": ".playbook/outcome-feedback.json" },
+        "remediationStatusPath": { "const": ".playbook/remediation-status.json" },
+        "remediationHistoryPath": { "const": ".playbook/test-autofix-history.json" },
+        "learningStatePath": { "const": ".playbook/learning-state.json" },
+        "processTelemetryPath": { "const": ".playbook/process-telemetry.json" },
+        "longitudinalStatePath": { "const": ".playbook/longitudinal-state.json" },
+        "patternConvergencePath": { "const": ".playbook/pattern-convergence.json" }
+      }
+    },
+    "clusters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/learningCluster" }
+    }
+  },
+  "$defs": {
+    "learningCluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clusterId",
+        "clusterDimension",
+        "sourceEvidenceRefs",
+        "repeatedSignalSummary",
+        "suggestedImprovementCandidateType",
+        "confidence",
+        "riskReviewRequirement",
+        "nextActionText",
+        "candidateOnly"
+      ],
+      "properties": {
+        "clusterId": {
+          "type": "string",
+          "pattern": "^cluster:[a-z0-9-]+$"
+        },
+        "clusterDimension": {
+          "type": "string",
+          "enum": [
+            "repeated_failure_shape",
+            "repeated_remediation_outcome",
+            "repeated_query_runtime_usage",
+            "repeated_governance_blocker"
+          ]
+        },
+        "sourceEvidenceRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "repeatedSignalSummary": { "type": "string", "minLength": 1 },
+        "suggestedImprovementCandidateType": {
+          "type": "string",
+          "enum": [
+            "threshold_tuning",
+            "repair_class_investigation",
+            "verify_rule_improvement",
+            "fixture_contract_hardening",
+            "docs_doctrine_update"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "riskReviewRequirement": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "nextActionText": { "type": "string", "minLength": 1 },
+        "candidateOnly": { "const": true }
+      }
+    }
+  }
+}

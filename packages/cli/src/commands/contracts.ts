@@ -46,6 +46,7 @@ const additiveCommandOutputSchemas: RegisteredSchema[] = [
   { id: 'workset-plan', version: '1.0', path: 'packages/contracts/src/workset-plan.schema.json' },
   { id: 'outcome-telemetry', version: '1.0', path: 'packages/contracts/src/outcome-telemetry.schema.json' },
   { id: 'learning-state', version: '1.0', path: 'packages/contracts/src/learning-state.schema.json' },
+  { id: 'learning-clusters', version: '1.0', path: 'packages/contracts/src/learning-clusters.schema.json' },
   { id: 'improvement-candidates', version: '1.0', path: 'packages/contracts/src/improvement-candidates.schema.json' },
   { id: 'policy-evaluation', version: '1.0', path: 'packages/contracts/src/policy-evaluation.schema.json' },
   { id: 'policy-apply-result', version: '1.0', path: 'packages/contracts/src/policy-apply-result.schema.json' },
