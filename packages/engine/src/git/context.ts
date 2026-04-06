@@ -1,4 +1,4 @@
-import { getMergeBase, isGitRepository, resolveDiffBase } from './base.js';
+import { collectScmContext } from '@zachariahredfield/playbook-core';
 
 export type ScmDiffBaseResolution = {
   baseRef: string;
@@ -9,29 +9,22 @@ export const resolveScmDiffBase = (
   repoRoot: string,
   options: { baseRef?: string; commandName: string }
 ): ScmDiffBaseResolution => {
-  if (!isGitRepository(repoRoot)) {
+  const context = collectScmContext(repoRoot, { baseRef: options.baseRef });
+
+  if (!context.git.isRepository) {
     throw new Error(`${options.commandName}: git diff is unavailable because this directory is not a git repository.`);
   }
 
-  if (options.baseRef) {
-    const mergeBase = getMergeBase(repoRoot, options.baseRef, 'HEAD');
-    if (!mergeBase) {
-      throw new Error(`${options.commandName}: unable to determine git diff from base "${options.baseRef}".`);
-    }
-
-    return {
-      baseRef: options.baseRef,
-      baseSha: mergeBase
-    };
+  if (options.baseRef && !context.diffBase.baseSha) {
+    throw new Error(`${options.commandName}: unable to determine git diff from base "${options.baseRef}".`);
   }
 
-  const resolved = resolveDiffBase(repoRoot);
-  if (!resolved.baseRef || !resolved.baseSha) {
+  if (!context.diffBase.baseRef || !context.diffBase.baseSha) {
     throw new Error(`${options.commandName}: unable to determine git diff base. Provide --base <ref>.`);
   }
 
   return {
-    baseRef: resolved.baseRef,
-    baseSha: resolved.baseSha
+    baseRef: context.diffBase.baseRef,
+    baseSha: context.diffBase.baseSha
   };
 };

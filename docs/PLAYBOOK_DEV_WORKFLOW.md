@@ -21,6 +21,9 @@ This document defines the standard workflow for developing Playbook so changes r
 - Deterministic changes: every change is intentional, documented, and traceable.
 - Documentation-driven delivery: command and behavior changes update their owning docs in the same change.
 - Small increments: split large refactors into focused pull requests.
+- Rule: SCM truth must be normalized once and reused, not re-derived differently per command.
+- Pattern: repository state -> shared SCM context -> governed read/change surfaces.
+- Failure Mode: Divergent merge-base/shallow/detached-head handling makes deterministic commands disagree about the same repository state.
 
 ## Development loop
 

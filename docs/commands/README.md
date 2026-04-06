@@ -66,6 +66,7 @@ Roadmap and planning docs may describe sequencing intent, but they are not comma
 - Pattern: AI proposal -> request draft -> explicit interop emit -> receipt -> updated truth.
 - Failure Mode: Requiring operators to manually re-translate proposal artifacts into runtime requests recreates hidden session state and weakens auditability.
 - `pnpm playbook release plan --json --out .playbook/release-plan.json` is now auto-materialized in normal Playbook CI whenever release governance is present or the repository is eligible for it; CI immediately follows with `pnpm playbook verify --phase preflight --json --out .playbook/verify-preflight.json`, fails before `pnpm test` when canonical release/version evidence is already blocking, then still runs the later full `.playbook/verify.json` gate on aligned branches.
+- SCM context note: `analyze-pr`, `review-pr`, `release`, and SCM-aware `verify` paths consume one normalized read-only SCM context substrate (base resolution, detached-head, shallow clone, dirty tree, rename summary, repo identity) so the same repository state produces aligned command decisions.
 - Rule: Diff-based release governance should fail before expensive test execution when canonical preflight evidence is already sufficient.
 - Pattern: Release plan -> preflight verify -> tests -> full verify.
 - Failure Mode: Late release-governance failures waste CI time and make correct policy failures look like random downstream breakage.

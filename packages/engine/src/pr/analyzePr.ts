@@ -4,6 +4,7 @@ import { queryModuleOwners } from '../query/moduleOwners.js';
 import { queryRuleOwners } from '../query/ruleOwners.js';
 import { resolveDiffAskContext } from '../ask/diffContext.js';
 import { execFileSync } from 'node:child_process';
+import { collectScmContext } from '@zachariahredfield/playbook-core';
 import { resolveScmDiffBase } from '../git/context.js';
 import { captureMemoryEventSafe } from '../memory/index.js';
 import { expandMemoryProvenance, lookupPromotedMemoryKnowledge } from '../memory/inspection.js';
@@ -19,6 +20,7 @@ type AnalyzePrContextSource =
   | { type: 'docs-coverage'; modules: string[] }
   | { type: 'module-owners'; path: '.playbook/module-owners.json' | 'generated-default' }
   | { type: 'rule-owners'; rules: string[] }
+  | { type: 'scm-context'; detachedHead: boolean; shallowClone: boolean; dirtyWorkingTree: boolean; renameCount: number }
   | { type: 'promoted-knowledge'; knowledgeIds: string[] };
 
 type ContractImpactCategory = 'schema-registry' | 'knowledge-list' | 'cli-json-output' | 'persisted-artifact' | 'snapshot-fixture';
@@ -609,6 +611,7 @@ export const analyzePullRequest = (
   if (changedFiles.length === 0) {
     throw new Error('playbook analyze-pr: no changed files remained after excluding runtime-generated review artifacts.');
   }
+  const scmContext = collectScmContext(projectRoot, { baseRef: diffContext.baseRef });
 
   const affectedModules = [...diffContext.affectedModules];
 
@@ -765,6 +768,13 @@ export const analyzePullRequest = (
         { type: 'docs-coverage', modules: affectedModules },
         { type: 'module-owners', path: moduleOwnersList.length > 0 ? '.playbook/module-owners.json' : 'generated-default' },
         { type: 'rule-owners', rules: relatedRules },
+        {
+          type: 'scm-context',
+          detachedHead: scmContext.git.detachedHead,
+          shallowClone: scmContext.git.isShallow,
+          dirtyWorkingTree: scmContext.workingTree.dirty,
+          renameCount: scmContext.renameSummary.count
+        },
         { type: 'promoted-knowledge', knowledgeIds: preventionGuidance.map((entry) => entry.provenance.knowledgeId) }
       ]
     }

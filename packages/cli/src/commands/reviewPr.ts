@@ -45,6 +45,12 @@ export type ReviewPrArtifact = {
     requires_review: number;
     blocked: number;
   };
+  scm: {
+    detached_head: boolean;
+    shallow_clone: boolean;
+    dirty_working_tree: boolean;
+    rename_count: number;
+  } | null;
 };
 
 
@@ -139,6 +145,16 @@ const toReviewPrArtifact = (input: {
   const proposals = [...input.improvements.candidates].sort((left, right) => left.candidate_id.localeCompare(right.candidate_id));
   const policy = toPolicyGroups(input.policy.evaluations);
 
+  const scmSource = input.analysis.context.sources.find(
+    (source: AnalyzePullRequestResult['context']['sources'][number]): source is {
+      type: 'scm-context';
+      detachedHead: boolean;
+      shallowClone: boolean;
+      dirtyWorkingTree: boolean;
+      renameCount: number;
+    } => source.type === 'scm-context'
+  );
+
   return {
     schemaVersion: '1.0',
     kind: 'pr-review',
@@ -151,7 +167,15 @@ const toReviewPrArtifact = (input: {
       safe: policy.safe.length,
       requires_review: policy.requires_review.length,
       blocked: policy.blocked.length
-    }
+    },
+    scm: scmSource
+      ? {
+          detached_head: scmSource.detachedHead,
+          shallow_clone: scmSource.shallowClone,
+          dirty_working_tree: scmSource.dirtyWorkingTree,
+          rename_count: scmSource.renameCount
+        }
+      : null
   };
 };
 

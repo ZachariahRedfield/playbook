@@ -1,6 +1,6 @@
+import { collectScmContext } from '@zachariahredfield/playbook-core';
 import { loadConfig } from '../config/load.js';
 import { getChangedFiles } from '../git/diff.js';
-import { resolveDiffBase } from '../git/base.js';
 import type { VerifyReport } from '../report/types.js';
 import { loadPlugins } from '../plugins/loadPlugins.js';
 import { getRegisteredRules, registerRule, resetPluginRegistry } from '../plugins/pluginRegistry.js';
@@ -39,25 +39,30 @@ export const verifyRepo = (repoRoot: string, options: VerifyRepoOptions = {}): V
   const { config, warning: cfgWarning } = loadConfig(repoRoot);
   if (cfgWarning) warnings.push({ id: 'config-missing', message: cfgWarning });
 
-  const base = resolveDiffBase(repoRoot);
-  if (base.warning) warnings.push({ id: 'base-selection', message: base.warning });
+  const scmContext = collectScmContext(repoRoot);
+  if (scmContext.diffBase.warning) warnings.push({ id: 'base-selection', message: scmContext.diffBase.warning });
 
-  const changedFiles = base.baseSha ? getChangedFiles(repoRoot, base.baseSha) : [];
+  const changedFiles = scmContext.diffBase.baseSha ? getChangedFiles(repoRoot, scmContext.diffBase.baseSha) : [];
 
   resetPluginRegistry();
   getCoreRules(config).forEach(registerRule);
   loadPlugins(repoRoot);
 
   const runner = new RuleRunner(filterRulesForExecution(getRegisteredRules(), options));
-  const { failures } = runner.run({ repoRoot, changedFiles, baseRef: base.baseRef, baseSha: base.baseSha });
+  const { failures } = runner.run({
+    repoRoot,
+    changedFiles,
+    baseRef: scmContext.diffBase.baseRef,
+    baseSha: scmContext.diffBase.baseSha
+  });
 
   const report: VerifyReport = {
     ok: failures.length === 0,
     summary: {
       failures: failures.length,
       warnings: warnings.length,
-      baseRef: base.baseRef,
-      baseSha: base.baseSha,
+      baseRef: scmContext.diffBase.baseRef,
+      baseSha: scmContext.diffBase.baseSha,
       phase: options.phase,
       ruleIds: options.ruleIds
     },

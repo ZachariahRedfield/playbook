@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { collectScmContext } from '@zachariahredfield/playbook-core';
 import { resolveScmDiffBase } from '../git/context.js';
 
 export type ReleaseBump = 'none' | 'patch' | 'minor' | 'major';
@@ -84,6 +85,14 @@ export type ReleasePlan = {
     baseSha: string;
     headSha: string;
     changedFiles: ChangedFileEvidence[];
+    scm: {
+      repoRoot: string;
+      branch: string | null;
+      detachedHead: boolean;
+      shallowClone: boolean;
+      dirtyWorkingTree: boolean;
+      renameCount: number;
+    };
   };
   summary: {
     recommendedBump: ReleaseBump;
@@ -335,7 +344,8 @@ export const readWorkspacePackages = (repoRoot: string, policy: VersionPolicy): 
 };
 
 const resolveHeadSha = (repoRoot: string): string =>
-  execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+  collectScmContext(repoRoot).git.headSha
+    ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
 
 const readPackageVersionAtGitRef = (repoRoot: string, gitRef: string, packagePath: string): string | null => {
   try {
@@ -452,6 +462,14 @@ export const buildReleasePlanFromInputs = (
     baseRef: string;
     baseSha: string;
     headSha: string;
+    scm: {
+      repoRoot: string;
+      branch: string | null;
+      detachedHead: boolean;
+      shallowClone: boolean;
+      dirtyWorkingTree: boolean;
+      renameCount: number;
+    };
     policy?: VersionPolicy;
     changedFiles: Array<{ path: string; status: string }>;
   }
@@ -571,7 +589,10 @@ export const buildReleasePlanFromInputs = (
       baseRef: inputs.baseRef,
       baseSha: inputs.baseSha,
       headSha: inputs.headSha,
-      changedFiles
+      changedFiles,
+      scm: {
+        ...inputs.scm
+      }
     },
     summary: {
       recommendedBump,
@@ -587,11 +608,20 @@ export const buildReleasePlan = (repoRoot: string, options: { baseRef?: string; 
   const diffBase = resolveScmDiffBase(repoRoot, { baseRef: options.baseRef, commandName: 'playbook release plan' });
   const headSha = resolveHeadSha(repoRoot);
   const changedFiles = readChangedFiles(repoRoot, diffBase.baseSha);
+  const scmContext = collectScmContext(repoRoot, { baseRef: diffBase.baseRef });
   return buildReleasePlanFromInputs(repoRoot, {
     generatedAt: options.generatedAt ?? new Date().toISOString(),
     baseRef: diffBase.baseRef,
     baseSha: diffBase.baseSha,
     headSha,
+    scm: {
+      repoRoot: scmContext.repoRoot,
+      branch: scmContext.git.branch,
+      detachedHead: scmContext.git.detachedHead,
+      shallowClone: scmContext.git.isShallow,
+      dirtyWorkingTree: scmContext.workingTree.dirty,
+      renameCount: scmContext.renameSummary.count
+    },
     changedFiles
   });
 };
@@ -780,11 +810,20 @@ export const verifyReleaseGovernance = (repoRoot: string, options: { baseRef: st
 
   let plan: ReleasePlan;
   try {
+    const scmContext = collectScmContext(repoRoot, { baseRef: options.baseRef });
     plan = buildReleasePlanFromInputs(repoRoot, {
       generatedAt: new Date().toISOString(),
       baseRef: options.baseRef,
       baseSha: options.baseSha,
       headSha: resolveHeadSha(repoRoot),
+      scm: {
+        repoRoot: scmContext.repoRoot,
+        branch: scmContext.git.branch,
+        detachedHead: scmContext.git.detachedHead,
+        shallowClone: scmContext.git.isShallow,
+        dirtyWorkingTree: scmContext.workingTree.dirty,
+        renameCount: scmContext.renameSummary.count
+      },
       policy,
       changedFiles
     });

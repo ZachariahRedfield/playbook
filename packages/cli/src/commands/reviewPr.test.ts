@@ -153,7 +153,7 @@ describe('runReviewPr', () => {
     expect(exitCode).toBe(ExitCode.Success);
     const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(payload).toMatchObject({ schemaVersion: '1.0', kind: 'pr-review' });
-    expect(Object.keys(payload)).toEqual(['schemaVersion', 'kind', 'findings', 'proposals', 'policy', 'summary']);
+    expect(Object.keys(payload)).toEqual(['schemaVersion', 'kind', 'findings', 'proposals', 'policy', 'summary', 'scm']);
     expect(Array.isArray(payload.findings)).toBe(true);
     expect(Array.isArray(payload.proposals)).toBe(true);
     expect(Array.isArray(payload.policy.safe)).toBe(true);
@@ -165,6 +165,7 @@ describe('runReviewPr', () => {
     expect(payload.summary.safe).toBe(payload.policy.safe.length);
     expect(payload.summary.requires_review).toBe(payload.policy.requires_review.length);
     expect(payload.summary.blocked).toBe(payload.policy.blocked.length);
+    expect(payload.scm).toEqual(expect.objectContaining({ rename_count: expect.any(Number) }));
 
     const persisted = JSON.parse(fs.readFileSync(path.join(repo, '.playbook', 'pr-review.json'), 'utf8')) as Record<string, unknown>;
     expect(persisted).toEqual(payload);

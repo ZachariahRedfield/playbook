@@ -1,3 +1,5 @@
+export type { ScmContext, ScmDiffBase, ScmRenameEntry } from './scm/context.js';
+export { collectScmContext } from './scm/context.js';
 export type { TestAutofixArtifact, TestAutofixApplySummary, TestAutofixConfidenceDetails, TestAutofixExcludedFindingSummary, TestAutofixFinalStatus, TestAutofixHistorySummary, TestAutofixMode, TestAutofixRetryPolicyDecision, TestAutofixSourceReference, TestAutofixVerificationCommandResult, TestAutofixVerificationSummary } from './contracts/testAutofix.js';
 export { TEST_AUTOFIX_ARTIFACT_KIND, TEST_AUTOFIX_SCHEMA_VERSION, testAutofixFinalStatuses, testAutofixModes, testAutofixRetryPolicyDecisions } from './contracts/testAutofix.js';
 export type { TestFixPlanArtifact, TestFixPlanExclusion, TestFixPlanExclusionReason, TestFixPlanTask, TestFixPlanTaskKind, TestFixPlanTaskProvenance } from './contracts/testFixPlan.js';

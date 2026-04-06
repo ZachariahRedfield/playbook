@@ -34,6 +34,14 @@ const buildPlan = (repoRoot: string, changedFiles: Array<{ path: string; status:
     baseRef: 'origin/main',
     baseSha: 'base',
     headSha: 'head',
+    scm: {
+      repoRoot,
+      branch: 'feature/test',
+      detachedHead: false,
+      shallowClone: false,
+      dirtyWorkingTree: false,
+      renameCount: 0
+    },
     changedFiles
   });
 
