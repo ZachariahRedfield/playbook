@@ -554,6 +554,116 @@ describe('runMemory', () => {
     logSpy.mockRestore();
   });
 
+  it('supports replay-promotion subcommand and emits full read-only lifecycle contract', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-replay-promotion-'));
+
+    fs.mkdirSync(path.join(repoRoot, '.playbook'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repoRoot, '.playbook', 'replay-promotion-system.json'),
+      `${JSON.stringify({
+        schemaVersion: '1.0',
+        kind: 'playbook-replay-promotion-system',
+        generatedAt: '1970-01-01T00:00:00.000Z',
+        replay_candidate_inventory: { path: '.playbook/memory/replay-candidates.json', count: 3, byKind: { decision: 2, pattern: 1 }, candidateIds: ['cand-1', 'cand-2', 'cand-3'] },
+        consolidation_candidate_inventory: { path: '.playbook/memory/consolidation-candidates.json', count: 2, reviewRequired: 2, alreadyPromotedMatch: 0, candidateIds: ['cons-1', 'cons-2'] },
+        compaction_review_buckets: {
+          path: '.playbook/memory/compaction-review.json',
+          total: 4,
+          buckets: { discard: 1, attach: 1, merge: 1, new_candidate: 1 },
+          reviewIds: ['rev-1', 'rev-2', 'rev-3', 'rev-4']
+        },
+        salience_review_required_status: {
+          replaySalience: { max: 0.9, min: 0.2, average: 0.567 },
+          reviewRequired: { replay: 3, consolidation: 2, compaction: 1 }
+        },
+        promotion_boundaries: {
+          candidateOnly: { replay: 3, consolidation: 2, compaction: 4 },
+          promotionReady: { consolidationEligible: 2, compactionNewCandidate: 1 },
+          explicitAuthority: { mutation: 'read-only', promotion: 'review-required', autoPromotion: false }
+        },
+        lifecycle_state_summaries: {
+          candidates: 3,
+          promoted: 5,
+          stale: 1,
+          superseded: 2,
+          retired: 0,
+          byState: { candidate: 3, promoted: 5, stale: 1, superseded: 2, retired: 0 }
+        },
+        provenance_refs_end_to_end: {
+          replayCandidateIds: ['cand-1', 'cand-2', 'cand-3'],
+          consolidationCandidateIds: ['cons-1', 'cons-2'],
+          compactionReviewIds: ['rev-1', 'rev-2', 'rev-3', 'rev-4'],
+          promotedKnowledgeIds: ['knowledge-1', 'knowledge-2'],
+          lifecycleRecommendationIds: ['life-1'],
+          eventRefs: ['evt-1:.playbook/memory/events/evt-1.json']
+        }
+      }, null, 2)}\n`,
+      'utf8'
+    );
+
+    const exitCode = await runMemory(repoRoot, ['replay-promotion'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-replay-promotion');
+    expect(payload.status).toBe('review-required');
+    expect(payload.replay_promote_summary_counts).toEqual({ replay_candidates: 3, promotion_ready: 3, promoted: 5 });
+    expect(payload.top_review_required_boundaries[0]).toEqual({ boundary: 'replay', count: 3 });
+    expect(payload.replay_promotion_system.kind).toBe('playbook-replay-promotion-system');
+    logSpy.mockRestore();
+  });
+
+  it('supports replay-promotion lightweight state and bucket filters', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-replay-promotion-filter-'));
+
+    fs.mkdirSync(path.join(repoRoot, '.playbook'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repoRoot, '.playbook', 'replay-promotion-system.json'),
+      `${JSON.stringify({
+        schemaVersion: '1.0',
+        kind: 'playbook-replay-promotion-system',
+        generatedAt: '1970-01-01T00:00:00.000Z',
+        replay_candidate_inventory: { count: 5 },
+        consolidation_candidate_inventory: { count: 4 },
+        compaction_review_buckets: { total: 9 },
+        salience_review_required_status: { reviewRequired: { replay: 2, consolidation: 3, compaction: 1 } },
+        promotion_boundaries: { promotionReady: { consolidationEligible: 4, compactionNewCandidate: 2 } },
+        lifecycle_state_summaries: { byState: { candidate: 7, promoted: 10, stale: 1, superseded: 2 } }
+      }, null, 2)}\n`,
+      'utf8'
+    );
+
+    const exitCode = await runMemory(repoRoot, ['replay-promotion', '--state', 'promotion-ready', '--bucket', 'compaction'], {
+      format: 'json',
+      quiet: false
+    });
+    expect(exitCode).toBe(ExitCode.Success);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.filters).toEqual({ state: 'promotion-ready', bucket: 'compaction' });
+    expect(payload.state_inventory).toEqual({ 'promotion-ready': 6 });
+    expect(payload.bucket_inventory).toEqual({ compaction: 9 });
+    logSpy.mockRestore();
+  });
+
+  it('returns deterministic failure envelope when replay-promotion artifact is missing', async () => {
+    const { runMemory } = await import('./memory.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-memory-replay-promotion-missing-'));
+
+    const exitCode = await runMemory(repoRoot, ['replay-promotion'], { format: 'json', quiet: false });
+    expect(exitCode).toBe(ExitCode.Failure);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
+    expect(payload.command).toBe('memory-replay-promotion');
+    expect(payload.error).toContain('missing required artifact .playbook/replay-promotion-system.json');
+    logSpy.mockRestore();
+  });
+
   it('returns deterministic failure envelope for unsupported subcommands', async () => {
     const { runMemory } = await import('./memory.js');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);

@@ -19,11 +19,13 @@ type MemoryOptions = {
   quiet: boolean;
 };
 
-type MemorySubcommand = 'events' | 'query' | 'candidates' | 'knowledge' | 'outcome-feedback' | 'policy-improvement' | 'compaction' | 'pressure' | 'show' | 'promote' | 'retire';
+type MemorySubcommand = 'events' | 'query' | 'candidates' | 'knowledge' | 'outcome-feedback' | 'policy-improvement' | 'compaction' | 'pressure' | 'replay-promotion' | 'show' | 'promote' | 'retire';
 type MemoryPressureBand = 'normal' | 'warm' | 'pressure' | 'critical';
 type MemoryPressureActionFilter = 'dedupe' | 'compact' | 'summarize' | 'evict';
 type MemoryClassFilter = 'canonical' | 'compactable' | 'disposable';
 type MemoryCandidateSourceFilter = 'replay' | 'interop-followup';
+type ReplayPromotionStateFilter = 'candidate' | 'promotion-ready' | 'promoted' | 'stale' | 'superseded';
+type ReplayPromotionBucketFilter = 'replay' | 'consolidation' | 'compaction' | 'promotion';
 
 const printMemoryHelp = (): void => {
   console.log(`Usage: playbook memory <subcommand> [options]
@@ -39,6 +41,7 @@ Subcommands:
   policy-improvement               Inspect candidate-only policy improvement suggestions
   compaction                       Review deterministic compaction decisions
   pressure                         Inspect read-only memory pressure status + plan
+  replay-promotion                Inspect replay/consolidation/compaction/promotion lifecycle contract
   show <id>                        Show a candidate or knowledge record by id
   promote <candidate-id>           Promote one candidate into knowledge
   retire <knowledge-id>            Retire one promoted knowledge record
@@ -64,6 +67,8 @@ Options:
   --band <name>                Filter memory pressure by band (normal|warm|pressure|critical)
   --action <name>              Filter memory pressure plan actions (dedupe|compact|summarize|evict)
   --class <name>               Filter pressure followups by retention class (canonical|compactable|disposable)
+  --state <name>               Filter replay-promotion lifecycle state (candidate|promotion-ready|promoted|stale|superseded)
+  --bucket <name>              Filter replay-promotion inventory bucket (replay|consolidation|compaction|promotion)
   --json                       Print machine-readable JSON output
   --help                       Show help`);
 };
@@ -130,7 +135,7 @@ const parseSubcommand = (args: string[]): MemorySubcommand | null => {
     return null;
   }
 
-  if (['events', 'query', 'candidates', 'knowledge', 'outcome-feedback', 'policy-improvement', 'compaction', 'pressure', 'show', 'promote', 'retire'].includes(subcommand)) {
+  if (['events', 'query', 'candidates', 'knowledge', 'outcome-feedback', 'policy-improvement', 'compaction', 'pressure', 'replay-promotion', 'show', 'promote', 'retire'].includes(subcommand)) {
     return subcommand as MemorySubcommand;
   }
 
@@ -167,6 +172,20 @@ const parseMemoryCandidateSourceOption = (raw: string | null): MemoryCandidateSo
     return raw;
   }
   throw new Error(`playbook memory candidates: invalid --source value "${raw}"; expected replay or interop-followup`);
+};
+
+const parseReplayPromotionStateOption = (raw: string | null): ReplayPromotionStateFilter | undefined => {
+  if (raw === null) return undefined;
+  if (raw === 'candidate' || raw === 'promotion-ready' || raw === 'promoted' || raw === 'stale' || raw === 'superseded') return raw;
+  throw new Error(
+    `playbook memory replay-promotion: invalid --state value "${raw}"; expected candidate, promotion-ready, promoted, stale, or superseded`
+  );
+};
+
+const parseReplayPromotionBucketOption = (raw: string | null): ReplayPromotionBucketFilter | undefined => {
+  if (raw === null) return undefined;
+  if (raw === 'replay' || raw === 'consolidation' || raw === 'compaction' || raw === 'promotion') return raw;
+  throw new Error(`playbook memory replay-promotion: invalid --bucket value "${raw}"; expected replay, consolidation, compaction, or promotion`);
 };
 
 type InteropDerivedCandidateMetadata = {
@@ -232,7 +251,11 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
   }
 
   if (!subcommand) {
-    emitMemoryError(options, requestedSubcommand, 'playbook memory: unsupported subcommand. Use events, query, candidates, knowledge, outcome-feedback, policy-improvement, compaction, pressure, show, promote, or retire.');
+    emitMemoryError(
+      options,
+      requestedSubcommand,
+      'playbook memory: unsupported subcommand. Use events, query, candidates, knowledge, outcome-feedback, policy-improvement, compaction, pressure, replay-promotion, show, promote, or retire.'
+    );
     return ExitCode.Failure;
   }
 
@@ -787,6 +810,95 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
       return ExitCode.Success;
     }
 
+    if (subcommand === 'replay-promotion') {
+      const artifactPath = path.join(cwd, '.playbook/replay-promotion-system.json');
+      if (!fs.existsSync(artifactPath)) {
+        throw new Error('playbook memory replay-promotion: missing required artifact .playbook/replay-promotion-system.json');
+      }
+
+      const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as {
+        replay_candidate_inventory?: { count?: number };
+        consolidation_candidate_inventory?: { count?: number };
+        compaction_review_buckets?: { total?: number };
+        salience_review_required_status?: { reviewRequired?: { replay?: number; consolidation?: number; compaction?: number } };
+        promotion_boundaries?: { candidateOnly?: { replay?: number; consolidation?: number; compaction?: number }; promotionReady?: { consolidationEligible?: number; compactionNewCandidate?: number } };
+        lifecycle_state_summaries?: { byState?: Record<string, number> };
+      } & Record<string, unknown>;
+      const stateFilter = parseReplayPromotionStateOption(readOptionValue(args, '--state'));
+      const bucketFilter = parseReplayPromotionBucketOption(readOptionValue(args, '--bucket'));
+
+      const lifecycleByState = artifact.lifecycle_state_summaries?.byState ?? {};
+      const promotionReadyCount = (artifact.promotion_boundaries?.promotionReady?.consolidationEligible ?? 0) + (artifact.promotion_boundaries?.promotionReady?.compactionNewCandidate ?? 0);
+      const stateInventory = {
+        candidate: lifecycleByState.candidate ?? 0,
+        'promotion-ready': promotionReadyCount,
+        promoted: lifecycleByState.promoted ?? 0,
+        stale: lifecycleByState.stale ?? 0,
+        superseded: lifecycleByState.superseded ?? 0
+      };
+      const bucketInventory = {
+        replay: artifact.replay_candidate_inventory?.count ?? 0,
+        consolidation: artifact.consolidation_candidate_inventory?.count ?? 0,
+        compaction: artifact.compaction_review_buckets?.total ?? 0,
+        promotion: stateInventory.promoted
+      };
+      const reviewRequired = {
+        replay: artifact.salience_review_required_status?.reviewRequired?.replay ?? 0,
+        consolidation: artifact.salience_review_required_status?.reviewRequired?.consolidation ?? 0,
+        compaction: artifact.salience_review_required_status?.reviewRequired?.compaction ?? 0
+      };
+      const topReviewRequiredBoundaries = Object.entries(reviewRequired)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 3)
+        .map(([boundary, count]) => ({ boundary, count }));
+      const status = promotionReadyCount > 0 ? 'review-required' : 'stable';
+      const nextAction = topReviewRequiredBoundaries[0] && topReviewRequiredBoundaries[0].count > 0
+        ? `review ${topReviewRequiredBoundaries[0].boundary} boundary`
+        : 'no review-required boundaries';
+
+      const payload = {
+        schemaVersion: '1.0',
+        command: 'memory-replay-promotion',
+        artifactPath: '.playbook/replay-promotion-system.json',
+        filters: {
+          ...(stateFilter ? { state: stateFilter } : {}),
+          ...(bucketFilter ? { bucket: bucketFilter } : {})
+        },
+        status,
+        replay_promote_summary_counts: {
+          replay_candidates: bucketInventory.replay,
+          promotion_ready: stateInventory['promotion-ready'],
+          promoted: stateInventory.promoted
+        },
+        top_review_required_boundaries: topReviewRequiredBoundaries,
+        next_action: nextAction,
+        state_inventory: stateFilter ? { [stateFilter]: stateInventory[stateFilter] } : stateInventory,
+        bucket_inventory: bucketFilter ? { [bucketFilter]: bucketInventory[bucketFilter] } : bucketInventory,
+        replay_candidate_inventory: artifact.replay_candidate_inventory ?? {},
+        consolidation_candidate_inventory: artifact.consolidation_candidate_inventory ?? {},
+        compaction_review_buckets: artifact.compaction_review_buckets ?? {},
+        salience_review_required_status: artifact.salience_review_required_status ?? {},
+        promotion_boundaries: artifact.promotion_boundaries ?? {},
+        lifecycle_state_summaries: artifact.lifecycle_state_summaries ?? {},
+        provenance_refs_end_to_end: artifact.provenance_refs_end_to_end ?? {},
+        replay_promotion_system: artifact
+      };
+
+      emitMemoryResult(
+        cwd,
+        options,
+        'memory replay-promotion',
+        payload,
+        [
+          `Status: ${payload.status}`,
+          `Replay/promote summary: replay=${payload.replay_promote_summary_counts.replay_candidates} promotion-ready=${payload.replay_promote_summary_counts.promotion_ready} promoted=${payload.replay_promote_summary_counts.promoted}`,
+          `Top review-required boundaries: ${payload.top_review_required_boundaries.map((entry) => `${entry.boundary}(${entry.count})`).join(', ') || 'none'}`,
+          `Next action: ${payload.next_action}`
+        ].join('\n')
+      );
+      return ExitCode.Success;
+    }
+
     if (subcommand === 'show') {
       const id = resolveSubcommandArgument(args);
       if (!id) {
@@ -856,7 +968,7 @@ export const runMemory = async (cwd: string, args: string[], options: MemoryOpti
       emitMemoryResult(cwd, options, 'memory retire', payload, `Retired knowledge ${knowledgeId}.`);
       return ExitCode.Success;
     }
-    throw new Error('playbook memory: unsupported subcommand. Use events, query, candidates, knowledge, outcome-feedback, policy-improvement, compaction, pressure, show, promote, or retire.');
+    throw new Error('playbook memory: unsupported subcommand. Use events, query, candidates, knowledge, outcome-feedback, policy-improvement, compaction, pressure, replay-promotion, show, promote, or retire.');
 
   } catch (error) {
     emitMemoryError(options, subcommand, error);

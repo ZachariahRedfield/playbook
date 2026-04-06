@@ -121,6 +121,41 @@ Lightweight filters:
 - `--class canonical|compactable|disposable`
 - `--band warm|pressure|critical`
 
+### `memory replay-promotion`
+
+Expose the canonical replay/promotion lifecycle contract as a first-class **read-only** operator surface:
+
+- `.playbook/replay-promotion-system.json`
+
+This subcommand reads the canonical artifact directly and does not rebuild lifecycle state in the CLI. JSON output remains full and additive, including:
+
+- replay candidate inventory
+- consolidation candidate inventory
+- compaction review buckets
+- salience and review-required status
+- promotion-ready vs candidate-only boundaries
+- lifecycle state summaries
+- provenance refs
+
+Text output stays brief-thin:
+
+- status
+- replay/promote summary counts
+- top review-required boundaries
+- next action
+
+Lightweight filters:
+
+- `--state candidate|promotion-ready|promoted|stale|superseded`
+- `--bucket replay|consolidation|compaction|promotion`
+
+Governance boundary:
+
+- read-only inspection only
+- no auto-promotion
+- no mutation authority widening
+- no new top-level command family
+
 ### `memory show <id>`
 
 Show one memory candidate or promoted knowledge entry by id.
@@ -148,7 +183,10 @@ Retire an existing promoted knowledge record without deleting provenance.
 - Pattern: **Fast Episodic Store, Slow Doctrine Store**.
 - Rule: **Working Memory Is Not Doctrine**.
 - Rule: **Retrieval Must Return Provenance**.
+- Rule: **Replay, consolidation, compaction, and promotion must remain explicit, provenance-preserving layers.**
+- Pattern: **observe -> replay -> consolidate -> compact -> review -> promote**.
 - Failure Mode: **Memory Hoarding**.
+- Failure Mode: **A canonical replay/promotion contract that remains internal-only leaves operators reviewing adjacent artifacts instead of the actual lifecycle boundary.**
 
 ## Retention classes (canonical policy inputs)
 
@@ -216,6 +254,8 @@ pnpm playbook memory pressure --json
 pnpm playbook memory pressure --band pressure --action compact --json
 pnpm playbook memory pressure followups --json
 pnpm playbook memory pressure followups --band pressure --action summarize --class compactable --json
+pnpm playbook memory replay-promotion --json
+pnpm playbook memory replay-promotion --state promotion-ready --bucket promotion --json
 pnpm playbook memory show <id> --json
 pnpm playbook memory promote <candidate-id> --json
 pnpm playbook memory retire <knowledge-id> --json

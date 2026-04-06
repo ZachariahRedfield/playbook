@@ -443,6 +443,7 @@ Doctrine summary anchors:
 - `memory outcome-feedback` exposes `.playbook/outcome-feedback.json` as a first-class read-only operator surface with compact text output and additive JSON fields for outcome class, confidence/trigger/stale-knowledge signals, trend updates, provenance refs, and a deterministic next review action.
 - `memory policy-improvement` exposes `.playbook/policy-improvement.json` as a first-class read-only operator surface with deterministic candidate ranking adjustments, prioritization suggestions, repeated blocker influence, confidence trend notes, review-required flags, and provenance refs.
 - `memory pressure` exposes read-only pressure/operator inspection from canonical `.playbook/memory-pressure.json` + `.playbook/memory-pressure-plan.json`, with lightweight `--band` and `--action` filters.
+- `memory replay-promotion` exposes canonical `.playbook/replay-promotion-system.json` directly as a first-class read-only lifecycle boundary surface (replay inventory, consolidation inventory, compaction buckets, salience/review-required status, promotion boundaries, lifecycle summaries, provenance refs) with lightweight `--state` and `--bucket` filters.
 - `memory show <id>` resolves either a candidate id or knowledge id, including provenance expansion for candidates.
 - `memory promote <candidate-id>` and `memory retire <knowledge-id>` provide explicit, human-driven lifecycle actions.
 - `.playbook/memory-system.json` is the canonical read-only repository memory architecture contract. It deterministically summarizes layer boundaries (structural graph vs temporal memory, episodic vs doctrine), current class inventory, replay/consolidation/promotion boundary refs, pressure/retention classes, and stale/superseded/candidate summaries.
@@ -451,11 +452,14 @@ Doctrine summary anchors:
 - Rule: Runtime outcome learning must remain candidate-only until explicit review.
 - Rule: Reviewed outcomes may improve ranking/prioritization, but may not mutate governance directly.
 - Rule: Structural graph, temporal memory, candidate knowledge, and promoted doctrine must remain separate explicit layers.
+- Rule: Replay, consolidation, compaction, and promotion must remain explicit, provenance-preserving layers.
 - Pattern: execution -> receipt -> updated truth -> outcome feedback -> reviewed learning.
 - Pattern: outcome feedback -> learning signals -> policy improvement candidates -> human-reviewed promotion.
+- Pattern: observe -> replay -> consolidate -> compact -> review -> promote.
 - Pattern: observe -> store episodic evidence -> cluster/compact -> review -> promote doctrine.
 - Failure Mode: Outcome feedback that exists only as an internal artifact never becomes an operator-visible learning loop.
 - Failure Mode: Treating outcome learning as direct policy mutation bypasses the same review boundaries the rest of the system already enforces.
+- Failure Mode: A canonical replay/promotion contract that remains internal-only leaves operators reviewing adjacent artifacts instead of the actual lifecycle boundary.
 - Failure Mode: Without a canonical memory-system contract, adjacent memory artifacts drift into overlapping authority and unclear lifecycle boundaries.
 - Rule: Postmortems must separate observed facts from interpretation and promotion candidates.
 - Pattern: Recall -> reinterpret -> promote -> restabilize becomes concrete through structured postmortems.
@@ -472,6 +476,8 @@ pnpm playbook memory outcome-feedback --json
 pnpm playbook memory policy-improvement --json
 pnpm playbook memory pressure --json
 pnpm playbook memory pressure --band pressure --action summarize --json
+pnpm playbook memory replay-promotion --json
+pnpm playbook memory replay-promotion --state candidate --bucket replay --json
 pnpm playbook memory show <id> --json
 ```
 
