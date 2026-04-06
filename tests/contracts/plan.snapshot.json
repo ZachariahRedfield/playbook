@@ -1,5 +1,6 @@
 {
   "schemaVersion": "1.0",
+  "taskIdSchemaVersion": "1.0",
   "command": "plan",
   "ok": true,
   "exitCode": 0,

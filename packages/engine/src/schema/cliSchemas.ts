@@ -527,9 +527,10 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
     title: 'PlaybookPlanOutput',
     type: 'object',
     additionalProperties: false,
-    required: ['schemaVersion', 'command', 'ok', 'exitCode', 'verify', 'remediation', 'tasks'],
+    required: ['schemaVersion', 'taskIdSchemaVersion', 'command', 'ok', 'exitCode', 'verify', 'remediation', 'tasks'],
     properties: {
       schemaVersion: { type: 'string' },
+      taskIdSchemaVersion: { type: 'string', const: '1.0' },
       command: { const: 'plan' },
       ok: { type: 'boolean' },
       exitCode: { type: 'integer' },
@@ -559,7 +560,10 @@ const cliSchemas: Record<CliSchemaCommand, JsonSchema> = {
           additionalProperties: true,
           required: ['id', 'ruleId', 'action'],
           properties: {
-            id: { type: 'string' },
+            id: {
+              type: 'string',
+              pattern: '^(task-[a-f0-9]{10}-[1-9][0-9]*|task-artifact-[A-Za-z0-9._-]+|maintenance:[A-Za-z0-9._:-]+|release-[A-Za-z0-9:._-]+)$'
+            },
             ruleId: { type: 'string' },
             file: { type: ['string', 'null'] },
             action: { type: 'string' },
